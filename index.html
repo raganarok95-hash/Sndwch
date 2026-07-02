@@ -19,6 +19,8 @@ button{cursor:pointer;border:none}
 @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .pulse{animation:pulse 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.blink{animation:blink 1.4s infinite}
 
 input,textarea,select{color:#F2F0EB !important}
 input::placeholder,textarea::placeholder{color:#8BAF9A !important;opacity:1}
@@ -45,7 +47,7 @@ body.no-fi .fi{animation:none}
 var SB_URL='https://rjosezuoyngiadunfzyn.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb3NlenVveW5naWFkdW5menluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODA0MTgsImV4cCI6MjA5MjE1NjQxOH0.fl4gayRXQvplNPzhf4TEzyWqrZXxXYBYHV0tMdJw1fs';
 var API_FN_URL=SB_URL+'/functions/v1/api';
-var WA='51930957640',BLU='#CBA258',CK='sw_c_v3',YP='#6D0F8C',YN='930957640';
+var WA='51930957640',BLU='#CBA258';
 // PASARELA DE PAGO — CULQI
 // ⚠️ Reemplaza esto con tu llave PÚBLICA real (pk_test_... o pk_live_...) desde tu dashboard de Culqi.
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
@@ -135,7 +137,7 @@ var scheduledFor=null,useCredit=false;
 var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
-var ltaps=0,ltimer=null,pollTimer=null,lastPollCount=0;
+var pollTimer=null,lastPollCount=0;
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 var invStock={};
@@ -145,6 +147,8 @@ var myAddresses=[],myFavorites=[],pickedAddrId=null;
 var wPhone='',wAmt='',wMsg='';
 var rtStars=0,rtMsg='',chalMsg='';
 var addrText='',scheduleMode='now';
+var confNom='',confEmail='',confNotes='';
+var checkoutLocked=false,lockedMsg='',_payingInProgress=false;
 var newAddrMsg='',favMsg='';
 (function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();}catch(e){}})();
 
@@ -205,6 +209,7 @@ async function sbG(t,q){var r=await fetch(SB_URL+'/rest/v1/'+t+'?'+q,{headers:sb
 
 // UTILS
 function fn(arr,id){var i=arr.find(function(x){return x.id===id;});return i?i.l+' // '+i.s:'';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function isAvail(code){return invStock[code]!==false;}
 function protPrice(p){return !p||!size?0:(size==='15'?p.p15:p.p30);}
 function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
@@ -238,7 +243,7 @@ function H(sub,bk){
   var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
   var sz=sub?'26':'40';
   var s2=sub?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1c1c1c;letter-spacing:.35em;margin-top:4px">BUILD // YOUR // BITE</div>';
-  return'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">'+b+'<div onclick="tapLogo()" style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:'+sz+'px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">SND<span style="color:'+BLU+'">//</span>WCH</div>'+s2+'</div></div>';
+  return'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:'+sz+'px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">SND<span style="color:'+BLU+'">//</span>WCH</div>'+s2+'</div></div>';
 }
 function NAV(){
   var oa=tab==='order';
@@ -252,14 +257,13 @@ function AB(t,can,bk,nfn,nl){
 }
 function CARD(item,sel,fn,right){return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+item.l+'<span style="color:'+BLU+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+item.d+'</p>':'')+'</div>';}
 function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">'+n+'<span style="color:'+BLU+'"> // </span>'+t+'</h2>'+(s?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:5px">'+s+'</p>':'')+'</div>';}
-function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
+function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
 function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
 function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1E3932"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.08em;margin-bottom:16px">SND<span style="color:'+BLU+'">//</span>WCH</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 
 // NAV
 function go(s){sc=s;render();}
 function swTab(t){tab=t;sc=t==='order'?'o_home':(cust?'p_home':'p_auth');aErr='';render();}
-function tapLogo(){}
 
 // Reconstruye el estado global del builder a partir de un "build" guardado
 // (viene de un pedido pasado o de un favorito) y salta directo a confirmar.
@@ -268,8 +272,46 @@ function loadBuild(bld){
   mode=bld.mode;sigId=bld.sigId||null;base=bld.base||null;prot=bld.prot||null;
   cheese=bld.cheese||null;tops=(bld.tops||[]).slice();sauces=(bld.sauces||[]).slice();
   size=bld.size||null;doubleProt=!!bld.doubleProt;extraSauce=!!bld.extraSauce;
+  enterConfirm();
+}
+// Limpia el estado del builder antes de empezar un pedido nuevo — evita que un
+// build abandonado (o de un pedido anterior en la misma sesión) reaparezca
+// precargado en un pedido sin relación.
+function resetBuilder(){
+  sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
+}
+function startOrder(m){
+  resetBuilder();
+  mode=m;
+  go(m==='sig'?'o_sig':'o_build');
+}
+// Punto de entrada único a la pantalla de confirmación — reinicia los campos
+// transitorios del checkout (nombre/correo/notas/dirección/programación/crédito)
+// para que un pedido nuevo nunca arrastre texto o selecciones de un intento anterior.
+function enterConfirm(){
+  confNom=cust?cust.name:'';
+  confEmail=cust&&cust.email?cust.email:'';
+  confNotes='';
+  addrText=cust&&cust.last_address?cust.last_address:'';
+  pickedAddrId=null;
+  scheduleMode='now';
+  useCredit=false;
+  checkoutLocked=false;lockedMsg='';
+  _payingInProgress=false;
   go('o_confirm');
 }
+// Antes de cualquier re-render disparado DESDE la propia pantalla de confirmación
+// (toggle de extras, horario, crédito, elegir una dirección guardada) hay que
+// preservar lo que el cliente ya escribió — render() reconstruye todo el innerHTML,
+// así que sin esto cada toque borraría nombre/correo/notas/dirección en curso.
+function syncConfirmFields(){
+  var n=document.getElementById('o-nom'),e=document.getElementById('o-email'),no=document.getElementById('o-notes'),a=document.getElementById('o-addr');
+  if(n)confNom=n.value;
+  if(e)confEmail=e.value;
+  if(no)confNotes=no.value;
+  if(a)addrText=a.value;
+}
+function confirmRerender(){syncConfirmFields();render();}
 function lastPaidOrder(){
   return myOrders.find(function(o){return o.payment_status==='paid'&&o.build;});
 }
@@ -295,13 +337,13 @@ function sOHome(){
     +hoursBadge
     +recoCard
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:20px">\xbfCÓMO QUIERES PEDIR? //</div>'
-    +'<div onclick="mode=\'sig\';go(\'o_sig\')" style="background:#1A3028;border:1px solid '+BLU+';border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:12px;position:relative">'
+    +'<div onclick="startOrder(\'sig\')" style="background:#1A3028;border:1px solid '+BLU+';border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:12px;position:relative">'
     +'<div style="position:absolute;right:16px;top:16px;font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+'">RECOMENDADO //</div>'
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">SIGNATURE<span style="color:'+BLU+'"> // </span>BUILDS</div>'
     +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:#8BAF9A;line-height:1.5">6 combinaciones curadas. Rápido, sin decisiones.</p>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">'+SIGS.map(function(s){var nw=s.badge==='NUEVO';return'<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(nw?'#25D366':BLU)+';background:'+(nw?'rgba(37,211,102,.08)':'rgba(203,162,88,.08)')+';border:1px solid '+(nw?'rgba(37,211,102,.2)':'rgba(203,162,88,.2)')+';border-radius:4px;padding:2px 8px">'+s.n+'</span>';}).join('')+'</div>'
     +'</div>'
-    +'<div onclick="mode=\'byo\';go(\'o_build\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:16px">'
+    +'<div onclick="startOrder(\'byo\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:16px">'
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">BUILD<span style="color:'+BLU+'"> // </span>YOUR OWN</div>'
     +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;line-height:1.5">Elige base, proteína, toppings y salsas.</p>'
     +'</div>'
@@ -319,7 +361,7 @@ function sOSig(){
     return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+BLU+'"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?BLU:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div></div>';
   }).join('');
   var sig=SIGS.find(function(x){return x.id===sigId;});
-  return h+'</div>'+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','go(\'o_confirm\')');
+  return h+'</div>'+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','enterConfirm()');
 }
 
 // ORDER BUILD
@@ -358,7 +400,7 @@ function sOBuild(){
     var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
     return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+BLU+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
   }).join('');
-  h+='</div>'+AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','go(\'o_confirm\')');
+  h+='</div>'+AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','enterConfirm()');
   return h;
 }
 function CARDOFF(item){return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#8BAF9A">'+item.l+'<span style="color:#8BAF9A"> // </span>'+item.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div></div>';}
@@ -378,7 +420,7 @@ function sOConfirm(){
   function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:false;}
   function uBtn(k,e,l,d,p,sel){
     var act=k==='doubleProt'?'doubleProt=!doubleProt':'extraSauce=!extraSauce';
-    return'<div onclick="'+act+';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+'S/'+p+'</span></div>';
+    return'<div onclick="'+act+';confirmRerender()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+'S/'+p+'</span></div>';
   }
   var pBox=cust
     ?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:4px">PUNTOS QUE GANARÁS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">+'+t+' pts <span style="font-size:11px;color:#8BAF9A;font-weight:400">pendientes hasta confirmar pago</span></div></div>'
@@ -388,23 +430,26 @@ function sOConfirm(){
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt','💪','DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
     +pBox
-    +(cust&&myAddresses.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+a.label+'</div>';}).join('')+'</div>':'')
-    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText||(cust&&cust.last_address?cust.last_address:''))+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div>'
+    +(cust&&myAddresses.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+esc(a.label)+'</div>';}).join('')+'</div>':'')
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-email','CORREO // Para tu comprobante de pago','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
     +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px">'
-    +'<div onclick="scheduleMode=\'now\';render()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div>'
-    +'<div onclick="scheduleMode=\'later\';render()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div>'
+    +'<div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div>'
+    +'<div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div>'
     +'</div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px">':'')+'</div>'
-    +(cust&&(cust.credit_balance||0)>0?(function(){var canCover=(cust.credit_balance||0)>=t;return'<div onclick="'+(canCover?'useCredit=!useCredit;render()':'')+'" style="margin-top:16px;background:'+(useCredit?'#1E4A38':'#1A3028')+';border:1px solid '+(useCredit?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(useCredit?BLU:'#8BAF9A')+'">'+(useCredit?'\u2713':'\u25cb')+'</span></div></div>';})():'')
+    +(cust&&(cust.credit_balance||0)>0?(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'\u2713':'\u25cb')+'</span></div></div>';})():'')
     +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">\u2606 GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // Ej: Mi combo" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:6px">'+favMsg+'</div></div>':'')
+    +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
-    +AB(t,true,'go(\''+bk+'\')','doOrder()',useCredit?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
+    +AB(t,!checkoutLocked,'go(\''+bk+'\')','doOrder()',(useCredit&&cust&&(cust.credit_balance||0)>=t)?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
 }
 function pickAddr(id){
   var a=myAddresses.find(function(x){return x.id===id;});
   if(!a)return;
+  syncConfirmFields();
   pickedAddrId=id;addrText=a.address;render();
 }
 async function doSaveFavorite(){
+  syncConfirmFields();
   var nameEl=document.getElementById('o-favname');
   var name=nameEl?nameEl.value.trim():'';
   if(!name){favMsg='Ponle un nombre.';render();return;}
@@ -417,6 +462,7 @@ async function doSaveFavorite(){
 
 var _pendingOrder=null;
 function doOrder(){
+  if(_payingInProgress)return;
   var nom=document.getElementById('o-nom').value.trim();
   var email=document.getElementById('o-email').value.trim();
   var addr=document.getElementById('o-addr').value.trim();
@@ -452,6 +498,7 @@ function doOrder(){
   var productKey=mode==='sig'?sigId:prot;
   var ingredients=(mode==='sig'&&sig)?[sig.base,sig.prot].concat(sig.tops).concat(sig.sauces):[base,prot].concat(tops).concat(cheese?[cheese]:[]).concat(sauces);
   if(doubleProt){var dProtCode=(mode==='sig'&&sig)?sig.prot:prot;ingredients.push(dProtCode);}
+  _payingInProgress=true;
   _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce,scheduledFor:schedIso};
   if(useCredit&&cust&&(cust.credit_balance||0)>=t){
     payWithCredit();
@@ -465,9 +512,9 @@ async function payWithCredit(){
   busy=true;busyMsg='Pagando con tu crédito...';render();
   var res;
   try{
-    res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor});
+    res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor});
   }catch(e){
-    busy=false;render();
+    busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
     if(errEl)errEl.textContent=e.message;else alert(e.message);
     return;
@@ -488,7 +535,7 @@ function payWithCulqi(amountSoles,email){
   Culqi.options({
     lang:'auto',
     installments:false,
-    paymentMethods:{tarjeta:true,yape:true,billetera:false,bancaMovil:false,agente:false,cuotealo:false}
+    paymentMethods:{tarjeta:true,yape:false,billetera:false,bancaMovil:false,agente:false,cuotealo:false}
   });
   Culqi.open();
 }
@@ -498,17 +545,15 @@ window.culqi=function(){
   if(!_pendingOrder)return;
   if(Culqi.token){
     chargeAndFinalize(Culqi.token.id);
-  }else if(Culqi.order){
-    // Flujo de orden (Yape/otros medios asíncronos) — Culqi confirma vía su propio flujo
-    chargeAndFinalize(null,Culqi.order.id);
   }else{
+    _payingInProgress=false;
     var msg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta con otra tarjeta.';
     var errEl=document.getElementById('o-err');
     if(errEl)errEl.textContent=msg;else alert(msg);
   }
 };
 
-async function chargeAndFinalize(culqiToken,culqiOrderId){
+async function chargeAndFinalize(culqiToken){
   if(!_pendingOrder)return;
   var po=_pendingOrder;
   busy=true;busyMsg='Procesando pago...';render();
@@ -520,7 +565,7 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){
-      busy=false;render();
+      busy=false;_payingInProgress=false;render();
       var errEl=document.getElementById('o-err');
       var msg=data.error||'El pago fue rechazado. Intenta con otra tarjeta.';
       if(errEl)errEl.textContent=msg;else alert(msg);
@@ -532,15 +577,16 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     try{
       res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor});
     }catch(e){
-      busy=false;render();
-      var errEl3=document.getElementById('o-err');
-      var msg3=e.message||'No se pudo registrar tu pedido tras el pago. Contáctanos con tu referencia: '+po.ref;
-      if(errEl3)errEl3.textContent=msg3;else alert(msg3);
+      // El cobro ya se hizo pero el pedido no quedó registrado — bloqueamos un reintento
+      // desde aquí (crearía un SEGUNDO cobro real) y pedimos contactar al local con la ref.
+      busy=false;checkoutLocked=true;
+      lockedMsg=(e.message||'No se pudo registrar tu pedido tras el pago.')+' Ya se realizó el cobro — contáctanos con tu referencia '+po.ref+' para confirmar tu pedido manualmente. No vuelvas a intentar pagar.';
+      render();
       return;
     }
     finalizeOrderSuccess(res,po,data.chargeId);
   }catch(e){
-    busy=false;render();
+    busy=false;_payingInProgress=false;render();
     var errEl2=document.getElementById('o-err');
     if(errEl2)errEl2.textContent='Error de conexión al procesar el pago. Intenta de nuevo.';
   }
@@ -553,6 +599,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   window._lTot=po.total;window._lRef=po.ref;window._lChargeId=chargeId;
   mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
   useCredit=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
+  confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   _pendingOrder=null;
   busy=false;sc='o_sent';render();
   if(cust)loadUserExtras();
@@ -580,7 +627,7 @@ function sOSent(){
 
 // AUTH
 function sPAuth(){
-  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo','text',window._lastGuestName||'')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email',window._lastGuestEmail||'')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+INP('r-ref','CÓDIGO DE REFERIDO // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#CBA258;cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
+  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo','text',window._lastGuestName||'')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email',window._lastGuestEmail||'')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+INP('r-ref','CÓDIGO DE REFERIDO // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="recNewPin=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#CBA258;cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
 }
 async function doReg(){
   var name=document.getElementById('r-name').value.trim(),
@@ -632,7 +679,7 @@ function sWelcome(){
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#8BAF9A;letter-spacing:.3em;margin-bottom:16px">SND//WCH</div>'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#CBA258;letter-spacing:.2em;margin-bottom:8px">BIENVENIDO DE VUELTA</div>'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:46px;font-weight:900;color:#F2F0EB;line-height:1;margin-bottom:4px">'+nm.toUpperCase()+'</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:46px;font-weight:900;color:#F2F0EB;line-height:1;margin-bottom:4px">'+esc(nm.toUpperCase())+'</div>'
     +'<div style="width:60px;height:3px;background:#CBA258;margin:16px auto 24px;border-radius:2px"></div>'
     +'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.25);border-radius:16px;padding:20px;margin-bottom:16px">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#CBA258;letter-spacing:.2em;font-weight:700;margin-bottom:12px">TUS PUNTOS //</div>'
@@ -659,7 +706,7 @@ function sPHome(){
   var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
   var unlocked=RWDS.filter(function(r){return r.pts<=pts;});
   return H()+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:14px">HOLA, '+cust.name.split(' ')[0].toUpperCase()+' //</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:14px">HOLA, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
     +'<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+BLU+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+BLU+'">'+next.n+' // '+next.s+'</span></div>':'')
@@ -694,10 +741,10 @@ function sPOrders(){
     var ci=STEPS.indexOf(o.status);
     return'<div onclick="_od=\''+o.id+'\';rtStars=0;rtMsg=\'\';sc=\'p_ord_detail\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-      +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+o.customer_name+'</div>'
-      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+o.ref+' · '+o.date+'</div></div>'
+      +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
       +'<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:#CBA258;flex-shrink:0">S/'+o.total+'</div></div>'
-      +'<div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:8px">'+o.summary+'</div>'
+      +'<div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:8px">'+esc(o.summary)+'</div>'
       +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci,c2=STATUSES[st];return'<div style="flex:1;height:3px;background:'+(dn?c2.c:'#3A6B58')+';border-radius:3px"></div>';}).join('')+'</div>'
       +stBadge(o.status)+'<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#CBA258;text-align:right;margin-top:4px">ver detalle ›</div></div>';
   }
@@ -725,14 +772,14 @@ function sOrdDetail(){
   return H('DETALLE',"sc='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:18px;margin-bottom:12px">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
-    +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">'+o.customer_name+'</div>'
-    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;margin-top:2px">'+o.ref+'</div>'
-    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#8BAF9A;margin-top:2px">'+o.date+'</div></div>'
+    +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
+    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;margin-top:2px">'+esc(o.ref)+'</div>'
+    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#8BAF9A;margin-top:2px">'+esc(o.date)+'</div></div>'
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:#CBA258">S/'+o.total+'</div></div>'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:4px">PEDIDO //</div>'
-    +'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+o.summary+'</div>'
+    +'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+esc(o.summary)+'</div>'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:4px">DIRECCIÓN //</div>'
-    +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#aaa">'+o.customer_address+'</div>'
+    +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#aaa">'+esc(o.customer_address)+'</div>'
     +'</div>'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:10px">ESTADO //</div>'
@@ -785,7 +832,7 @@ function sPHistory(){
   }else{
     h+=txns.map(function(t){
       var pos=(t.points||0)>=0;
-      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(t.description||t.type)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+(t.date||'')+'</div></div><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</div></div>';
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+esc(t.description||t.type)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+esc(t.date||'')+'</div></div><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</div></div>';
     }).join('');
   }
   h+='</div>'+NAV();
@@ -812,7 +859,7 @@ function sPProfile(){
   var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">PROGRAMA DE REFERIDOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:#25D366;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">CRÉDITO SND//WCH //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">S/'+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
   var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">RETO MENSUAL //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
-  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
+  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
     +referralHTML+creditHTML+challengeHTML
     +'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();
 }
@@ -824,12 +871,13 @@ async function doCreditGift(){
   var phoneEl=document.getElementById('cg-phone'),amtEl=document.getElementById('cg-amt');
   var phone=phoneEl?phoneEl.value.trim():'';
   var amt=amtEl?parseFloat(amtEl.value):NaN;
+  wPhone=phone;wAmt=amtEl?amtEl.value:'';
   if(!phone||!amt||amt<=0){wMsg='Ingresa un teléfono y un monto válido.';render();return;}
   try{
     await api('credit-gift',{token:token,toPhone:phone,amount:amt});
     var r=await api('session-check',{token:token});
     if(r.valid)cust=r.customer;
-    wMsg='¡Crédito enviado!';
+    wMsg='¡Crédito enviado!';wPhone='';wAmt='';
   }catch(e){wMsg=e.message;}
   render();
 }
@@ -841,7 +889,7 @@ async function doClaimChallenge(){
   }catch(e){chalMsg=e.message;}
   render();
 }
-function doLogout(){cust=null;isAdmin=false;savedPh='';token='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
+function doLogout(){cust=null;isAdmin=false;savedPh='';token='';aErr='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
 
 // FAVORITOS
 async function loadFavorites(){
@@ -855,7 +903,7 @@ function sPFavorites(){
     h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
   }else{
     h+=myFavorites.map(function(f){
-      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+f.name+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
     }).join('');
   }
   h+='</div>'+NAV();
@@ -876,7 +924,7 @@ function sPAddresses(){
   var h=H('MIS DIRECCIONES',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
   if(myAddresses.length){
     h+=myAddresses.map(function(a){
-      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+a.label+'</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+a.address+'</div></div><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0;margin-left:10px">ELIMINAR</button></div>';
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(a.label)+'</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(a.address)+'</div></div><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0;margin-left:10px">ELIMINAR</button></div>';
     }).join('');
   }else{
     h+='<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN DIRECCIONES GUARDADAS //</div></div>';
@@ -888,12 +936,12 @@ function sPAddresses(){
 async function doAddAddress(){
   var label=document.getElementById('na-label').value.trim();
   var addr=document.getElementById('na-addr').value.trim();
-  var msgEl=document.getElementById('na-msg');
-  if(!label||!addr){if(msgEl)msgEl.textContent='Completa nombre y dirección.';return;}
+  if(!label||!addr){newAddrMsg='Completa nombre y dirección.';render();return;}
   try{
     await api('addresses-add',{token:token,label:label,address:addr});
+    newAddrMsg='';
     await loadAddresses();
-  }catch(e){if(msgEl)msgEl.textContent=e.message;}
+  }catch(e){newAddrMsg=e.message;render();}
 }
 async function doDeleteAddress(id){
   if(!confirm('¿Eliminar esta dirección?'))return;
@@ -977,11 +1025,11 @@ function sAdminHome(){
       var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
       return'<div style="background:#2D5246;border:1px solid '+(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c')+';border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-        +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+o.customer_name+'</div>'
-        +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+o.customer_address+'</div>'
-        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+o.ref+' · S/'+o.total+' · '+o.date+'</div></div>'
+        +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
+        +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(o.customer_address)+'</div>'
+        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+esc(o.ref)+' · S/'+o.total+' · '+esc(o.date)+'</div></div>'
         +stBadge(o.status)+'</div>'
-        +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+o.summary+'</div>'
+        +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.customer_phone?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.4);color:#25D366;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-bottom:8px">💬 WHATSAPP AL CLIENTE →</button>':'')
         +(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+STATUSES[s.next].icon+' MARCAR COMO '+s.next+' →</button>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;text-align:center;padding:8px">✅ COMPLETADO</div>')
         +'</div>';
