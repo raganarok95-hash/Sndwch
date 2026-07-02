@@ -116,11 +116,23 @@ var RWDS=[
   {id:'R06',pts:400,n:'SÁNDWICH', s:'GRATIS', d:'Sándwich 15CM gratis — cualquier proteína',sizeOnly:'15'}
 ];
 
+// HORARIO — placeholder. [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
+// ⚠️ EDITA ESTOS HORARIOS con el horario real del local antes de confiar en el badge
+// "ABIERTO/CERRADO" — por ahora asume 11am-10pm todos los días.
+var STORE_HOURS=[[11,22],[11,22],[11,22],[11,22],[11,22],[11,22],[11,22]];
+function storeStatus(){
+  var now=new Date(),h=now.getHours()+now.getMinutes()/60,range=STORE_HOURS[now.getDay()];
+  if(!range)return{open:false,label:'CERRADO HOY'};
+  var open=h>=range[0]&&h<range[1];
+  return open?{open:true,label:'ABIERTO AHORA · cierra '+String(range[1]).padStart(2,'0')+':00'}:{open:false,label:'CERRADO · abre '+String(range[0]).padStart(2,'0')+':00'};
+}
+
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
-var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='';
+var scheduledFor=null,useCredit=false;
+var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
 var ltaps=0,ltimer=null,pollTimer=null,lastPollCount=0;
@@ -129,6 +141,12 @@ var token=localStorage.getItem('sw_tok')||'';
 var invStock={};
 var dashStats=null;
 var recNewPin=null;
+var myAddresses=[],myFavorites=[],pickedAddrId=null;
+var wPhone='',wAmt='',wMsg='';
+var rtStars=0,rtMsg='',chalMsg='';
+var addrText='',scheduleMode='now';
+var newAddrMsg='',favMsg='';
+(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();}catch(e){}})();
 
 // API — todas las operaciones sensibles (login, pedidos, puntos, admin) pasan
 // por este Edge Function, que usa la service key en el servidor. El cliente
@@ -243,13 +261,39 @@ function go(s){sc=s;render();}
 function swTab(t){tab=t;sc=t==='order'?'o_home':(cust?'p_home':'p_auth');aErr='';render();}
 function tapLogo(){}
 
+// Reconstruye el estado global del builder a partir de un "build" guardado
+// (viene de un pedido pasado o de un favorito) y salta directo a confirmar.
+function loadBuild(bld){
+  if(!bld)return;
+  mode=bld.mode;sigId=bld.sigId||null;base=bld.base||null;prot=bld.prot||null;
+  cheese=bld.cheese||null;tops=(bld.tops||[]).slice();sauces=(bld.sauces||[]).slice();
+  size=bld.size||null;doubleProt=!!bld.doubleProt;extraSauce=!!bld.extraSauce;
+  go('o_confirm');
+}
+function lastPaidOrder(){
+  return myOrders.find(function(o){return o.payment_status==='paid'&&o.build;});
+}
+function ratedRefs(){try{return JSON.parse(localStorage.getItem('sw_rated')||'[]');}catch(e){return[];}}
+function markRated(ref){var r=ratedRefs();if(r.indexOf(ref)<0){r.push(ref);localStorage.setItem('sw_rated',JSON.stringify(r));}}
+async function loadUserExtras(){
+  if(!cust)return;
+  try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
+  try{myFavorites=(await api('favorites-list',{token:token})).favorites||[];}catch(e){}
+  render();
+}
 // ORDER SIGNATURE
 function sOHome(){
   var pc=cust
     ?'<div onclick="swTab(\'points\')" style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:2px">TUS PUNTOS //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+(cust.points||0)+'</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>'
     :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">ACUMULA<span style="color:'+BLU+'"> // </span>PUNTOS</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">UNIRSE \u2192</span></div>';
+  var ss=storeStatus();
+  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px"><span style="width:6px;height:6px;border-radius:50%;background:'+(ss.open?'#25D366':'#ff8888')+'"></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(ss.open?'#25D366':'#ff8888')+';letter-spacing:.1em">'+ss.label+'</span></div>';
+  var lastOrd=cust?lastPaidOrder():null;
+  var recoCard=lastOrd?'<div onclick="loadBuild('+JSON.stringify(lastOrd.build).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+    +hoursBadge
+    +recoCard
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:20px">\xbfCÓMO QUIERES PEDIR? //</div>'
     +'<div onclick="mode=\'sig\';go(\'o_sig\')" style="background:#1A3028;border:1px solid '+BLU+';border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:12px;position:relative">'
     +'<div style="position:absolute;right:16px;top:16px;font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+'">RECOMENDADO //</div>'
@@ -261,6 +305,7 @@ function sOHome(){
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">BUILD<span style="color:'+BLU+'"> // </span>YOUR OWN</div>'
     +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;line-height:1.5">Elige base, proteína, toppings y salsas.</p>'
     +'</div>'
+    +(cust&&myFavorites.length?'<div onclick="sc=\'p_favorites\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">☆ MIS<span style="color:'+BLU+'"> // </span>FAVORITOS</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>':'')
     +pc
     +'</div>'+NAV();
 }
@@ -342,8 +387,32 @@ function sOConfirm(){
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">S/'+r.p+'</span>':'')+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span></div></div>'
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt','💪','DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
-    +pBox+'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',cust&&cust.last_address?cust.last_address:'')+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div><div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
-    +AB(t,true,'go(\''+bk+'\')','doOrder()','PAGAR Y ENVIAR //');
+    +pBox
+    +(cust&&myAddresses.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+a.label+'</div>';}).join('')+'</div>':'')
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText||(cust&&cust.last_address?cust.last_address:''))+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div>'
+    +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px">'
+    +'<div onclick="scheduleMode=\'now\';render()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div>'
+    +'<div onclick="scheduleMode=\'later\';render()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div>'
+    +'</div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px">':'')+'</div>'
+    +(cust&&(cust.credit_balance||0)>0?(function(){var canCover=(cust.credit_balance||0)>=t;return'<div onclick="'+(canCover?'useCredit=!useCredit;render()':'')+'" style="margin-top:16px;background:'+(useCredit?'#1E4A38':'#1A3028')+';border:1px solid '+(useCredit?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(useCredit?BLU:'#8BAF9A')+'">'+(useCredit?'\u2713':'\u25cb')+'</span></div></div>';})():'')
+    +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">\u2606 GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // Ej: Mi combo" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:6px">'+favMsg+'</div></div>':'')
+    +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
+    +AB(t,true,'go(\''+bk+'\')','doOrder()',useCredit?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
+}
+function pickAddr(id){
+  var a=myAddresses.find(function(x){return x.id===id;});
+  if(!a)return;
+  pickedAddrId=id;addrText=a.address;render();
+}
+async function doSaveFavorite(){
+  var nameEl=document.getElementById('o-favname');
+  var name=nameEl?nameEl.value.trim():'';
+  if(!name){favMsg='Ponle un nombre.';render();return;}
+  try{
+    await api('favorites-add',{token:token,name:name,mode:mode,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce});
+    favMsg='\u00a1Guardado!';
+    loadUserExtras();
+  }catch(e){favMsg=e.message;render();}
 }
 
 var _pendingOrder=null;
@@ -355,6 +424,15 @@ function doOrder(){
   var errEl=document.getElementById('o-err');
   if(!nom||!addr){if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;}
   if(!email||!/^[^@]+@[^@]+\.[^@]+$/.test(email)){if(errEl)errEl.textContent='Ingresa un correo válido para tu comprobante de pago.';return;}
+  var schedIso=null;
+  if(scheduleMode==='later'){
+    var schedEl=document.getElementById('o-sched');
+    var schedVal=schedEl?schedEl.value:'';
+    if(!schedVal){if(errEl)errEl.textContent='Elige una hora para tu pedido programado.';return;}
+    var schedDate=new Date(schedVal);
+    if(isNaN(schedDate.getTime())||schedDate.getTime()<Date.now()-60000){if(errEl)errEl.textContent='La hora programada no es válida.';return;}
+    schedIso=schedDate.toISOString();
+  }
   if(errEl)errEl.textContent='';
   var sig=SIGS.find(function(x){return x.id===sigId;}),pr=PROTS.find(function(x){return x.id===prot;}),t=total(),ref=oref();
   var dbl=dblProtRef();
@@ -374,8 +452,27 @@ function doOrder(){
   var productKey=mode==='sig'?sigId:prot;
   var ingredients=(mode==='sig'&&sig)?[sig.base,sig.prot].concat(sig.tops).concat(sig.sauces):[base,prot].concat(tops).concat(cheese?[cheese]:[]).concat(sauces);
   if(doubleProt){var dProtCode=(mode==='sig'&&sig)?sig.prot:prot;ingredients.push(dProtCode);}
-  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce};
-  payWithCulqi(t,email);
+  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce,scheduledFor:schedIso};
+  if(useCredit&&cust&&(cust.credit_balance||0)>=t){
+    payWithCredit();
+  }else{
+    payWithCulqi(t,email);
+  }
+}
+async function payWithCredit(){
+  if(!_pendingOrder)return;
+  var po=_pendingOrder;
+  busy=true;busyMsg='Pagando con tu crédito...';render();
+  var res;
+  try{
+    res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor});
+  }catch(e){
+    busy=false;render();
+    var errEl=document.getElementById('o-err');
+    if(errEl)errEl.textContent=e.message;else alert(e.message);
+    return;
+  }
+  finalizeOrderSuccess(res,po,null);
 }
 
 function payWithCulqi(amountSoles,email){
@@ -433,7 +530,7 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
     var res;
     try{
-      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce});
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor});
     }catch(e){
       busy=false;render();
       var errEl3=document.getElementById('o-err');
@@ -441,18 +538,24 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
       if(errEl3)errEl3.textContent=msg3;else alert(msg3);
       return;
     }
-    if(res.customer)cust=res.customer;
-    window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
-    localStorage.setItem('sw_last_ref',po.ref);
-    window._lTot=po.total;window._lRef=po.ref;window._lChargeId=data.chargeId;
-    mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
-    _pendingOrder=null;
-    busy=false;sc='o_sent';render();
+    finalizeOrderSuccess(res,po,data.chargeId);
   }catch(e){
     busy=false;render();
     var errEl2=document.getElementById('o-err');
     if(errEl2)errEl2.textContent='Error de conexión al procesar el pago. Intenta de nuevo.';
   }
+}
+function finalizeOrderSuccess(res,po,chargeId){
+  if(res.customer)cust=res.customer;
+  if(!cust){window._lastGuestName=po.nom;window._lastGuestEmail=po.email;}
+  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
+  localStorage.setItem('sw_last_ref',po.ref);
+  window._lTot=po.total;window._lRef=po.ref;window._lChargeId=chargeId;
+  mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
+  useCredit=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
+  _pendingOrder=null;
+  busy=false;sc='o_sent';render();
+  if(cust)loadUserExtras();
 }
 
 
@@ -470,12 +573,14 @@ function sOSent(){
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
     +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;padding:12px 22px;border-radius:10px">NUEVO PEDIDO</button>'
     +(cust?'<button onclick="sc=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+BLU+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;padding:12px 22px;border-radius:10px">VER ESTADO →</button>':'')
-    +'</div></div>';
+    +'</div>'
+    +(!cust?'<div onclick="atab=\'reg\';sc=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.1em">→ CREAR CUENTA Y GANAR PUNTOS POR ESTE PEDIDO</div>':'')
+    +'</div>';
 }
 
 // AUTH
 function sPAuth(){
-  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#CBA258;cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
+  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo','text',window._lastGuestName||'')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email',window._lastGuestEmail||'')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+INP('r-ref','CÓDIGO DE REFERIDO // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#CBA258;cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
 }
 async function doReg(){
   var name=document.getElementById('r-name').value.trim(),
@@ -483,7 +588,9 @@ async function doReg(){
       pin=document.getElementById('r-pin').value.trim(),
       email=document.getElementById('r-email').value.trim(),
       dni=document.getElementById('r-dni').value.trim(),
-      bdayRaw=document.getElementById('r-bday').value.trim();
+      bdayRaw=document.getElementById('r-bday').value.trim(),
+      refEl=document.getElementById('r-ref'),
+      referredBy=refEl?refEl.value.trim():'';
   var err=document.getElementById('auth-err');
   if(!name||!phone||pin.length<4){if(err)err.textContent='Completa nombre, teléfono y PIN (mínimo 4 dígitos).';return;}
   if(!dni||!/^\d{8}$/.test(dni)){if(err)err.textContent='DNI es obligatorio y debe tener 8 dígitos.';return;}
@@ -496,11 +603,11 @@ async function doReg(){
   }
   busy=true;busyMsg='Creando cuenta...';render();
   try{
-    var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday});
+    var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday,referredBy:referredBy||null});
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;
   }
   catch(e){aErr=e.message;busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();setTimeout(function(){sc='p_home';render();},3200);
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();loadUserExtras();setTimeout(function(){sc='p_home';render();},3200);
 }
 async function doLogin(){
   var phone=document.getElementById('l-phone').value.trim(),pin=document.getElementById('l-pin').value.trim();
@@ -509,7 +616,7 @@ async function doLogin(){
   busy=true;busyMsg='Verificando...';render();
   try{var r=await api('login',{phone:phone,pin:pin});cust=r.customer;isAdmin=r.isAdmin;token=r.token;}
   catch(e){aErr=e.message;busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_home';render();
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_home';render();loadUserExtras();
 }
 
 // POINTS HOME
@@ -557,7 +664,7 @@ function sPHome(){
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+BLU+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+BLU+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#CBA258;letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':BLU)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()'],['MIS','DIRECCIONES','loadAddresses()'],['MIS','FAVORITOS','loadFavorites()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':BLU)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
     +(unlocked.length?'<div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">LISTAS PARA CANJEAR //</div>'+unlocked.map(function(r){return'<div onclick="doRedeem(\''+r.id+'\')" style="background:#1A3028;border:1px solid '+BLU+';border-radius:10px;padding:13px 16px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+BLU+'"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+'">CANJEAR →</span></div>';}).join('')+'</div>':'')
     +'</div>'+NAV();
 }
@@ -585,7 +692,7 @@ function sPOrders(){
   var done=myOrders.filter(function(o){return o.status==='ENTREGADO';});
   function card(o){
     var ci=STEPS.indexOf(o.status);
-    return'<div onclick="_od=\''+o.id+'\';sc=\'p_ord_detail\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
+    return'<div onclick="_od=\''+o.id+'\';rtStars=0;rtMsg=\'\';sc=\'p_ord_detail\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+o.customer_name+'</div>'
       +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+o.ref+' · '+o.date+'</div></div>'
@@ -633,7 +740,29 @@ function sOrdDetail(){
     +stBadge(o.status)
     +'</div>'
     +(o.status!=='ENTREGADO'?'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;text-align:center" class="blink">&#8635; Toca ACTUALIZAR en MIS PEDIDOS</div>':'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#25D366;text-align:center">&#9989; ¡Entregado!</div>')
+    +ratingHTML(o)
     +'</div>'+NAV();
+}
+function ratingHTML(o){
+  if(o.status!=='ENTREGADO')return'';
+  if(ratedRefs().indexOf(o.ref)>=0){
+    return'<div style="margin-top:12px;background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
+  }
+  return'<div style="margin-top:12px;background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:18px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:10px">¿CÓMO ESTUVO TU PEDIDO? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:10px 12px;color:#FFFFFF;width:100%;font-size:12px;font-family:Barlow,sans-serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><div id="rt-msg" style="font-family:Barlow,sans-serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('ENVIAR CALIFICACIÓN //','doSubmitRating(\''+o.ref+'\')')+'</div>';
+}
+async function doSubmitRating(ref){
+  if(!rtStars){rtMsg='Elige de 1 a 5 estrellas.';render();return;}
+  var commentEl=document.getElementById('rt-comment');
+  var comment=commentEl?commentEl.value.trim():'';
+  try{
+    await api('submit-rating',{ref:ref,stars:rtStars,comment:comment});
+    markRated(ref);
+    rtStars=0;rtMsg='';
+  }catch(e){
+    if(e.message&&e.message.indexOf('ya fue calificado')>=0)markRated(ref);
+    rtMsg=e.message;
+  }
+  render();
 }
 
 async function loadHist(){
@@ -678,8 +807,98 @@ async function doRedeem(id){
 
 function sPRedeemed(){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;background:#1E3932" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.25em;margin-bottom:16px">RECOMPENSA CANJEADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1.1;margin-bottom:32px">'+(rdRwd?rdRwd.n:'')+'<span style="color:'+BLU+'"> // </span>'+(rdRwd?rdRwd.s:'')+'</div><div style="background:#1A3028;border:2px solid '+BLU+';border-radius:16px;padding:28px 24px;width:100%;max-width:320px;margin-bottom:32px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">TU CÓDIGO //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+BLU+';word-break:break-all">'+rdCode+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;margin-top:12px">Muéstralo al recibir tu pedido</div>'+(rdRwd&&rdRwd.sizeOnly?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:8px">⚠ Válido solo en tamaño '+rdRwd.sizeOnly+'CM</div>':'')+'</div><button onclick="sc=\'p_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.15em;padding:13px 36px;border-radius:10px">VOLVER AL INICIO //</button></div>';}
 
-function sPProfile(){var t=tier(cust.points||0);return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div><div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();}
+function sPProfile(){
+  var t=tier(cust.points||0);
+  var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">PROGRAMA DE REFERIDOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:#25D366;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
+  var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">CRÉDITO SND//WCH //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">S/'+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
+  var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">RETO MENSUAL //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
+  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
+    +referralHTML+creditHTML+challengeHTML
+    +'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();
+}
+function shareReferral(){
+  var text='Usa mi código de referido '+cust.phone+' al crear tu cuenta en SND//WCH y ambos ganamos 50 puntos.';
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+async function doCreditGift(){
+  var phoneEl=document.getElementById('cg-phone'),amtEl=document.getElementById('cg-amt');
+  var phone=phoneEl?phoneEl.value.trim():'';
+  var amt=amtEl?parseFloat(amtEl.value):NaN;
+  if(!phone||!amt||amt<=0){wMsg='Ingresa un teléfono y un monto válido.';render();return;}
+  try{
+    await api('credit-gift',{token:token,toPhone:phone,amount:amt});
+    var r=await api('session-check',{token:token});
+    if(r.valid)cust=r.customer;
+    wMsg='¡Crédito enviado!';
+  }catch(e){wMsg=e.message;}
+  render();
+}
+async function doClaimChallenge(){
+  try{
+    var res=await api('claim-challenge',{token:token});
+    if(res.customer)cust=res.customer;
+    chalMsg='¡Reto completado! +50 pts';
+  }catch(e){chalMsg=e.message;}
+  render();
+}
 function doLogout(){cust=null;isAdmin=false;savedPh='';token='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
+
+// FAVORITOS
+async function loadFavorites(){
+  sc='p_favorites';busy=true;busyMsg='Cargando favoritos...';render();
+  try{myFavorites=(await api('favorites-list',{token:token})).favorites;}catch(e){myFavorites=[];}
+  busy=false;render();
+}
+function sPFavorites(){
+  var h=H('MIS FAVORITOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+  if(!myFavorites.length){
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
+  }else{
+    h+=myFavorites.map(function(f){
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+f.name+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
+    }).join('');
+  }
+  h+='</div>'+NAV();
+  return h;
+}
+async function doDeleteFavorite(id){
+  if(!confirm('¿Eliminar este favorito?'))return;
+  try{await api('favorites-delete',{token:token,id:id});await loadFavorites();}catch(e){alert(e.message);}
+}
+
+// DIRECCIONES
+async function loadAddresses(){
+  sc='p_addresses';busy=true;busyMsg='Cargando direcciones...';render();
+  try{myAddresses=(await api('addresses-list',{token:token})).addresses;}catch(e){myAddresses=[];}
+  busy=false;render();
+}
+function sPAddresses(){
+  var h=H('MIS DIRECCIONES',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+  if(myAddresses.length){
+    h+=myAddresses.map(function(a){
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+a.label+'</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+a.address+'</div></div><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0;margin-left:10px">ELIMINAR</button></div>';
+    }).join('');
+  }else{
+    h+='<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN DIRECCIONES GUARDADAS //</div></div>';
+  }
+  h+='<div style="margin-top:20px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:10px">AGREGAR DIRECCIÓN //</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','NOMBRE // Casa, Trabajo...')+INP('na-addr','DIRECCIÓN COMPLETA')+'<div id="na-msg" style="font-family:Barlow,sans-serif;font-size:11px;color:#ff5555;min-height:14px">'+newAddrMsg+'</div>'+BTN('GUARDAR DIRECCIÓN //','doAddAddress()')+'</div></div>';
+  h+='</div>'+NAV();
+  return h;
+}
+async function doAddAddress(){
+  var label=document.getElementById('na-label').value.trim();
+  var addr=document.getElementById('na-addr').value.trim();
+  var msgEl=document.getElementById('na-msg');
+  if(!label||!addr){if(msgEl)msgEl.textContent='Completa nombre y dirección.';return;}
+  try{
+    await api('addresses-add',{token:token,label:label,address:addr});
+    await loadAddresses();
+  }catch(e){if(msgEl)msgEl.textContent=e.message;}
+}
+async function doDeleteAddress(id){
+  if(!confirm('¿Eliminar esta dirección?'))return;
+  try{await api('addresses-delete',{token:token,id:id});await loadAddresses();}catch(e){alert(e.message);}
+}
 async function doLogoutEverywhere(){
   if(!confirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?'))return;
   busy=true;busyMsg='Cerrando sesiones...';render();
@@ -696,6 +915,16 @@ async function loadAdmin(){
   busy=false;startPoll();render();
 }
 
+function waAdmin(ordId){
+  var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
+  if(!o||!o.customer_phone)return;
+  var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
+  var msg='Hola '+o.customer_name+'! Tu pedido '+o.ref+' de SND//WCH está: '+o.status+'.';
+  if(o.status==='PREPARANDO')msg+=' Lo estamos preparando ahora mismo.';
+  if(o.status==='EN CAMINO')msg+=' Ya va en camino a tu dirección'+(o.eta_minutes?' (ETA ~'+o.eta_minutes+' min)':'')+'.';
+  msg+=' ¡Gracias por tu pedido!';
+  window.open('https://wa.me/51'+o.customer_phone+'?text='+encodeURIComponent(msg),'_blank');
+}
 async function updateStatus(ordId,newSt){
   var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
   var eta=null;
@@ -753,6 +982,7 @@ function sAdminHome(){
         +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+o.ref+' · S/'+o.total+' · '+o.date+'</div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+o.summary+'</div>'
+        +(o.customer_phone?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.4);color:#25D366;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-bottom:8px">💬 WHATSAPP AL CLIENTE →</button>':'')
         +(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+STATUSES[s.next].icon+' MARCAR COMO '+s.next+' →</button>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;text-align:center;padding:8px">✅ COMPLETADO</div>')
         +'</div>';
     }).join(''):'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:20px;text-align:center;margin-bottom:8px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A">SIN PEDIDOS ACTIVOS //</div></div>')
@@ -1052,6 +1282,8 @@ function render(){
     case'p_orders':    h=sPOrders();break;
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_profile':   h=sPProfile();break;
+    case'p_favorites': h=sPFavorites();break;
+    case'p_addresses': h=sPAddresses();break;
     case'admin_home':  h=sAdminHome();break;
     case'admin_upsell':h=sAdminUpsell();break;
     case'admin_gen':   h=sAdminGen();break;
@@ -1231,6 +1463,7 @@ async function doRecover(){
   }
   render();
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
+  if(cust)loadUserExtras();
 })();
 </script>
 <div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
