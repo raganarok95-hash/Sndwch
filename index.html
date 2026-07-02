@@ -40,7 +40,8 @@ input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shad
 'use strict';
 var SB_URL='https://rjosezuoyngiadunfzyn.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb3NlenVveW5naWFkdW5menluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODA0MTgsImV4cCI6MjA5MjE1NjQxOH0.fl4gayRXQvplNPzhf4TEzyWqrZXxXYBYHV0tMdJw1fs';
-var WA='51930957640',APIN='7640',BLU='#CBA258',CK='sw_c_v3',YP='#6D0F8C',YN='930957640';
+var API_FN_URL=SB_URL+'/functions/v1/api';
+var WA='51930957640',BLU='#CBA258',CK='sw_c_v3',YP='#6D0F8C',YN='930957640';
 // PASARELA DE PAGO — CULQI
 // ⚠️ Reemplaza esto con tu llave PÚBLICA real (pk_test_... o pk_live_...) desde tu dashboard de Culqi.
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
@@ -116,12 +117,25 @@ var sc='o_home',tab='order',busy=false,busyMsg='';
 var mode=null,sigId=null,base=null,prot=null,cheese=null,lAddr='';
 var tops=[],sauces=[],large=false,combo=null;
 var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='';
-var adminOrders=[],adminPending=[],myOrders=[];
+var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
 var ltaps=0,ltimer=null,pollTimer=null,lastPollCount=0;
 var savedPh=localStorage.getItem('sw_ph')||'';
-var savedPn=localStorage.getItem('sw_pn')||'';
+var token=localStorage.getItem('sw_tok')||'';
 var invStock={},_invList=[];
+var dashStats=null;
+var recNewPin=null;
+
+// API — todas las operaciones sensibles (login, pedidos, puntos, admin) pasan
+// por este Edge Function, que usa la service key en el servidor. El cliente
+// nunca toca directamente las tablas customers/orders/transactions/admin_accounts.
+async function api(action,payload){
+  var body=Object.assign({action:action},payload||{});
+  var r=await fetch(API_FN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var data=await r.json().catch(function(){return{};});
+  if(!r.ok)throw new Error(data.error||'Error de conexión.');
+  return data;
+}
 
 // SOUND
 function playNotif(){
@@ -146,12 +160,11 @@ function startPoll(){
   pollTimer=setInterval(async function(){
     if(sc!=='admin_home')return;
     try{
-      var o=await sbG('orders','status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=30');
-      var p=await sbG('transactions','confirmed=eq.false&type=eq.earn_pending&order=created_at.desc&limit=50');
-      var total=o.length+p.length;
+      var r=await api('admin-orders',{token:token});
+      var total=r.orders.length;
       if(total>lastPollCount&&lastPollCount>=0)playNotif();
       lastPollCount=total;
-      adminOrders=o;adminPending=p;
+      adminOrders=r.orders;
       render();
     }catch(e){}
   },25000);
@@ -327,7 +340,8 @@ function doOrder(){
   if(notes)lines.push('📝 '+notes);
   lines.push('','*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
-  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines};
+  var productKey=mode==='sig'?sigId:prot;
+  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey};
   payWithCulqi(t,email);
 }
 
@@ -364,7 +378,7 @@ window.culqi=function(){
   }
 };
 
-async function chargeAndFinalize(token,culqiOrderId){
+async function chargeAndFinalize(culqiToken,culqiOrderId){
   if(!_pendingOrder)return;
   var po=_pendingOrder;
   busy=true;busyMsg='Procesando pago...';render();
@@ -372,7 +386,7 @@ async function chargeAndFinalize(token,culqiOrderId){
     var resp=await fetch(CHARGE_FN_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:token,amountSoles:po.total,email:po.email,orderRef:po.ref})
+      body:JSON.stringify({token:culqiToken,amountSoles:po.total,email:po.email,orderRef:po.ref})
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){
@@ -382,19 +396,21 @@ async function chargeAndFinalize(token,culqiOrderId){
       if(errEl)errEl.textContent=msg;else alert(msg);
       return;
     }
-    // Pago confirmado — crear pedido y acreditar puntos ya confirmados (sin espera)
-    try{await sbP('orders',{ref:po.ref,customer_phone:cust?cust.phone:null,customer_name:po.nom,customer_email:po.email,customer_address:po.addr,summary:po.summary,total:po.total,status:'RECIBIDO',date:today(),payment_status:'paid',payment_id:data.chargeId,payment_method:'culqi'});}catch(e){console.warn('Order:',e);}
-    if(cust){
-      try{
-        await sbP('transactions',{customer_phone:cust.phone,type:'earn_confirmed',points:po.total,description:'Pedido SND//WCH (pago con tarjeta)',order_ref:po.ref,confirmed:true,date:today()});
-        var upd=await sbU('customers','phone=eq.'+encodeURIComponent(cust.phone),{points:(cust.points||0)+po.total,total_orders:(cust.total_orders||0)+1});
-        if(upd&&upd[0])cust=Object.assign({},cust,upd[0]);
-        else{cust.points=(cust.points||0)+po.total;cust.total_orders=(cust.total_orders||0)+1;}
-      }catch(e){console.warn('Points:',e);}
+    // Pago confirmado con Culqi — el servidor re-verifica el cargo antes de crear
+    // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
+    var res;
+    try{
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey});
+    }catch(e){
+      busy=false;render();
+      var errEl3=document.getElementById('o-err');
+      var msg3=e.message||'No se pudo registrar tu pedido tras el pago. Contáctanos con tu referencia: '+po.ref;
+      if(errEl3)errEl3.textContent=msg3;else alert(msg3);
+      return;
     }
+    if(res.customer)cust=res.customer;
     window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
     localStorage.setItem('sw_last_ref',po.ref);
-    if(cust&&po.addr)try{await sbU('customers','phone=eq.'+encodeURIComponent(cust.phone),{last_address:po.addr});cust.last_address=po.addr;}catch(e2){}
     window._lTot=po.total;window._lRef=po.ref;window._lChargeId=data.chargeId;
     mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];large=false;combo=null;
     _pendingOrder=null;
@@ -447,22 +463,20 @@ async function doReg(){
   }
   busy=true;busyMsg='Creando cuenta...';render();
   try{
-    var ex=await sbG('customers','phone=eq.'+encodeURIComponent(phone));if(ex.length){aErr='Ya existe una cuenta con ese teléfono.';busy=false;render();return;}
-    var exDni=await sbG('customers','dni=eq.'+encodeURIComponent(dni));if(exDni.length){aErr='Ya existe una cuenta con ese DNI.';busy=false;render();return;}
-    var r=await sbP('customers',{phone:phone,name:name,pin:pin,email:email||null,dni:dni,birthday:bday,points:0,pending_points:0,total_orders:0,total_redeemed:0,created_at:today()});
-    cust=r[0]||{phone:phone,name:name,pin:pin,points:0,pending_points:0,total_orders:0,total_redeemed:0};
+    var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday});
+    cust=r.customer;isAdmin=r.isAdmin;token=r.token;
   }
-  catch(e){aErr='Error: '+e.message;busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_pn',pin);savedPh=phone;savedPn=pin;busy=false;sc='p_welcome';render();setTimeout(function(){sc='p_home';render();},3200);
+  catch(e){aErr=e.message;busy=false;render();return;}
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();setTimeout(function(){sc='p_home';render();},3200);
 }
 async function doLogin(){
   var phone=document.getElementById('l-phone').value.trim(),pin=document.getElementById('l-pin').value.trim();
   var err=document.getElementById('auth-err');
   if(!phone||!pin){if(err)err.textContent='Ingresa teléfono y PIN.';return;}
   busy=true;busyMsg='Verificando...';render();
-  try{var c=await sbG('customers','phone=eq.'+encodeURIComponent(phone));if(!c.length||c[0].pin!==pin){aErr='Teléfono o PIN incorrecto.';busy=false;render();return;}cust=c[0];checkAdmin(phone);}
-  catch(e){aErr='Error de conexión.';busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_pn',pin);savedPh=phone;savedPn=pin;busy=false;sc='p_home';render();
+  try{var r=await api('login',{phone:phone,pin:pin});cust=r.customer;isAdmin=r.isAdmin;token=r.token;}
+  catch(e){aErr=e.message;busy=false;render();return;}
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_home';render();
 }
 
 // POINTS HOME
@@ -525,10 +539,10 @@ async function loadMyOrders(){
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{
     if(cust){
-      myOrders=await sbG('orders','customer_phone=eq.'+encodeURIComponent(cust.phone)+'&order=created_at.desc&limit=20');
+      myOrders=(await api('my-orders',{token:token})).orders;
     }else{
       var lr=localStorage.getItem('sw_last_ref');
-      myOrders=lr?(await sbG('orders','ref=eq.'+encodeURIComponent(lr))):[];
+      myOrders=lr?(await api('my-orders',{ref:lr})).orders:[];
     }
   }catch(e){myOrders=[];}
   if(!done){done=true;clearTimeout(timer);busy=false;render();}
@@ -597,11 +611,25 @@ async function loadHist(){
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{
     if(cust){
-      var txns=await sbG('transactions','customer_phone=eq.'+encodeURIComponent(cust.phone)+'&order=created_at.desc&limit=50');
-      cust._txns=txns;
+      var r=await api('my-history',{token:token});
+      cust._txns=r.transactions;
     }
   }catch(e){if(cust)cust._txns=[];}
   if(!done){done=true;clearTimeout(timer);busy=false;render();}
+}
+function sPHistory(){
+  var txns=(cust&&cust._txns)||[];
+  var h=H('HISTORIAL DE PUNTOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+  if(!txns.length){
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN MOVIMIENTOS //</div></div>';
+  }else{
+    h+=txns.map(function(t){
+      var pos=(t.points||0)>=0;
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(t.description||t.type)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+(t.date||'')+'</div></div><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</div></div>';
+    }).join('');
+  }
+  h+='</div>'+NAV();
+  return h;
 }
 
 function sPRewards(){
@@ -611,28 +639,23 @@ function sPRewards(){
 
 async function doRedeem(id){
   var r=RWDS.find(function(x){return x.id===id;});if(!r||(cust.points||0)<r.pts)return;
-  var code='RDM-'+r.n+'-'+r.pts+'PTS-'+Date.now().toString(36).toUpperCase().slice(-4);
   busy=true;busyMsg='Procesando canje...';render();
-  try{await sbP('transactions',{customer_phone:cust.phone,type:'redeem',points:-r.pts,description:r.n+' // '+r.s+' canjeado',confirmed:true,date:today()});var upd=await sbU('customers','phone=eq.'+encodeURIComponent(cust.phone),{points:(cust.points||0)-r.pts,total_redeemed:(cust.total_redeemed||0)+1});if(upd&&upd[0])cust=Object.assign({},cust,upd[0]);else{cust.points=(cust.points||0)-r.pts;cust.total_redeemed=(cust.total_redeemed||0)+1;}}
-  catch(e){busy=false;render();return;}
-  busy=false;rdRwd=r;rdCode=code;sc='p_redeemed';render();
+  try{var res=await api('redeem',{token:token,rewardId:id});cust=res.customer;rdRwd=r;rdCode=res.code;}
+  catch(e){busy=false;render();alert(e.message);return;}
+  busy=false;sc='p_redeemed';render();
 }
 
 function sPRedeemed(){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;background:#1E3932" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.25em;margin-bottom:16px">RECOMPENSA CANJEADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1.1;margin-bottom:32px">'+(rdRwd?rdRwd.n:'')+'<span style="color:'+BLU+'"> // </span>'+(rdRwd?rdRwd.s:'')+'</div><div style="background:#1A3028;border:2px solid '+BLU+';border-radius:16px;padding:28px 24px;width:100%;max-width:320px;margin-bottom:32px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">TU CÓDIGO //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+BLU+';word-break:break-all">'+rdCode+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;margin-top:12px">Muéstralo al recibir tu pedido</div></div><button onclick="sc=\'p_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.15em;padding:13px 36px;border-radius:10px">VOLVER AL INICIO //</button></div>';}
 
 function sPProfile(){var t=tier(cust.points||0);return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button></div>'+NAV();}
-function doLogout(){cust=null;isAdmin=false;savedPh='';savedPn='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_pn');sc='p_auth';render();}
-
-// ADMIN PIN
-function sAdminPin(){return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px;border-bottom:1px solid #3A6B58"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:#FFFFFF">ADMIN<span style="color:'+BLU+'">//</span>ACCESO</div></div><div style="flex:1;padding:40px 20px;display:flex;flex-direction:column;justify-content:center" class="fi"><div style="max-width:360px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:12px">'+INP('a-pin','PIN DE OPERADOR','password')+BTN('ENTRAR //','doAdminPin()')+'<button onclick="sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:#CBA258;text-align:center;padding:8px">Cancelar</button></div></div></div>';}
-function doAdminPin(){var p=document.getElementById('a-pin').value;if(p===APIN){loadAdmin();}else{var el=document.getElementById('a-pin');if(el){el.value='';el.style.borderColor='#ff5555';setTimeout(function(){if(el)el.style.borderColor='#0d0d0d';},1200);}}}
+function doLogout(){cust=null;isAdmin=false;savedPh='';token='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
 
 async function loadAdmin(){
   sc='admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
-  try{adminOrders=await sbG('orders','status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=30');adminPending=await sbG('transactions','confirmed=eq.false&type=eq.earn_pending&order=created_at.desc&limit=50');lastPollCount=adminOrders.length+adminPending.length;}
-  catch(e){adminOrders=[];adminPending=[];}
+  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;lastPollCount=adminOrders.length;}
+  catch(e){adminOrders=[];}
   busy=false;startPoll();render();
 }
 
@@ -646,10 +669,8 @@ async function updateStatus(ordId,newSt){
     if(!eta||eta<=0)eta=20;
   }
   try{
-    var upd={status:newSt};
-    if(eta!=null)upd.eta_minutes=eta;
-    await sbU('orders','id=eq.'+ordId,upd);
-    adminOrders=adminOrders.map(function(o){return o.id===ordId?Object.assign({},o,upd):o;});
+    var r=await api('admin-update-status',{token:token,orderId:ordId,status:newSt,etaMinutes:eta});
+    adminOrders=adminOrders.map(function(o){return o.id===ordId?r.order:o;});
     if(newSt==='ENTREGADO')adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     render();
   }catch(e){console.warn(e);return;}
@@ -668,47 +689,21 @@ async function notifyOrderEmail(to,name,ref,status,eta){
     if(!resp.ok||!data.success){console.warn('Email no enviado:',data.error||data);}
   }catch(e){console.warn('Error enviando correo:',e);}
 }
-async function doConfirm(txnId,phone,pts){
-  try{
-    await sbU('transactions','id=eq.'+txnId,{confirmed:true});
-    var cd=await sbG('customers','phone=eq.'+encodeURIComponent(phone));
-    var newPts=0,custName='cliente';
-    if(cd.length){
-      var c=cd[0];
-      custName=c.name||'cliente';
-      newPts=(c.points||0)+pts;
-      await sbU('customers','phone=eq.'+encodeURIComponent(phone),{points:newPts,pending_points:Math.max(0,(c.pending_points||0)-pts)});
-    }
-    adminPending=adminPending.filter(function(t){return t.id!==txnId;});
-    if(cust&&cust.phone===phone){cust.points=newPts;cust.pending_points=Math.max(0,(cust.pending_points||0)-pts);}
-    // Build WA message with points + redemption hint
-    var hint='';
-    var elig=RWDS.slice().reverse().find(function(r){return newPts>=r.pts;});
-    if(elig)hint='\n\n✨ Con tus '+newPts+' pts puedes canjear: *'+elig.n+' '+elig.s+'* ('+elig.v+')\nIngresa en sndwch.vercel.app → PUNTOS → CANJEAR';
-    var waMsg='¡Listo '+custName+'! Pago confirmado ✅\n\nTus puntos: *'+newPts+' pts*'+hint+'\n\n⏱️ Tu pedido está en preparación.';
-    render();
-    setTimeout(function(){
-      if(confirm('¿Notificar a '+custName+' por WhatsApp?')){
-        window.open('https://wa.me/51'+phone.replace(/^51/,'')+'?text='+encodeURIComponent(waMsg),'_blank');
-      }
-    },200);
-  }catch(e){console.warn(e);}
-}
-
-async function doReject(txnId,phone,pts){
-  try{await sbU('transactions','id=eq.'+txnId,{type:'earn_rejected'});var cd=await sbG('customers','phone=eq.'+encodeURIComponent(phone));if(cd.length){var c=cd[0];await sbU('customers','phone=eq.'+encodeURIComponent(phone),{pending_points:Math.max(0,(c.pending_points||0)-pts)});}adminPending=adminPending.filter(function(t){return t.id!==txnId;});render();}catch(e){console.warn(e);}
-}
 
 // ADMIN HOME
 function sAdminHome(){
-  var ao=adminOrders||[],ap=adminPending||[];
-  var badge=ao.length+ap.length;
+  var ao=adminOrders||[];
+  var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
     +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:'+BLU+'"> // </span>OPERADOR</div>'
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
     +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:#CBA258">← salir</button></div>'
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
+
+    +'<div onclick="loadDashboard()" style="background:linear-gradient(135deg,#1a1200,#0d0d0d);border:1px solid rgba(245,197,24,.35);border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+    +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#F5C518">PANEL<span style="color:#fff"> // </span>DE NEGOCIO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#a08010;letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
+    +'<span style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:#F5C518">VER →</span></div>'
 
     // Active orders
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">PEDIDOS ACTIVOS // '+(ao.length||'ninguno')+'</div>'
@@ -727,14 +722,91 @@ function sAdminHome(){
 
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
-    // Points confirmation
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">CONFIRMAR PAGOS // '+(ap.length||'ninguno')+'</div>'
-    +(ap.length?ap.map(function(t){return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+t.customer_phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+(t.order_ref||'—')+' · '+t.date+'</div></div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#ffa500;flex-shrink:0;margin-left:12px">+'+t.points+'<span style="font-size:13px"> pts</span></div></div><div style="display:flex;gap:8px"><button onclick="doConfirm(\''+t.id+'\',\''+t.customer_phone+'\','+t.points+')" style="all:unset;cursor:pointer;flex:1;background:'+BLU+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:11px 0;border-radius:8px;text-align:center">✓ PAGO CONFIRMADO</button><button onclick="doReject(\''+t.id+'\',\''+t.customer_phone+'\','+t.points+')" style="all:unset;cursor:pointer;flex-shrink:0;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:11px 16px;border-radius:8px">✗</button></div></div>';}).join(''):'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:20px;text-align:center;margin-bottom:8px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A">SIN PAGOS PENDIENTES //</div></div>')
-
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS UPSELL //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#CBA258">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS UPSELL //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#CBA258">'+x[0]+'</span></div>';}).join('')
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
     +'</div></div></div>';
+}
+
+// ADMIN DASHBOARD — vista de negocio (ventas, productos, clientes, puntos)
+async function loadDashboard(){
+  sc='admin_dashboard';busy=true;busyMsg='Calculando métricas...';render();
+  try{dashStats=await api('dashboard-stats',{token:token});}
+  catch(e){dashStats=null;}
+  busy=false;render();
+}
+function DTILE(label,big,sub){
+  return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px"><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">'+label+'</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;line-height:1">'+big+'</div>'+(sub?'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+sub+'</div>':'')+'</div>';
+}
+function DBAR(label,value,max,color){
+  var pct=max>0?Math.min(100,Math.round((value/max)*100)):0;
+  return'<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+label+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+(color||BLU)+'">'+value+'</span></div><div style="background:#1E3932;border-radius:4px;height:8px;overflow:hidden"><div style="background:'+(color||BLU)+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+}
+function sAdminDashboard(){
+  var h=H('PANEL DE NEGOCIO',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!dashStats){
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>'+BTN('REINTENTAR //','loadDashboard()');
+    return h+'</div>';
+  }
+  var d=dashStats;
+  // Alertas
+  var alerts=[];
+  if(d.pendingPayment>0)alerts.push(d.pendingPayment+' pedido(s) sin pago confirmado (posible prueba o error de checkout)');
+  if(d.outOfStock&&d.outOfStock.length)alerts.push(d.outOfStock.length+' producto(s) sin stock: '+d.outOfStock.map(function(o){return o.product_name||o.product_code;}).join(', '));
+  if(alerts.length){
+    h+='<div style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.3);border-radius:10px;padding:14px 16px;margin-bottom:18px">'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.15em;margin-bottom:6px">ALERTAS //</div>'
+      +alerts.map(function(a){return'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;margin-bottom:4px">⚠ '+a+'</div>';}).join('')
+      +'</div>';
+  }
+  // Ventas
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">VENTAS //</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
+    +DTILE('HOY','S/'+d.revenue.today.revenue,d.revenue.today.count+' pedidos · tkt S/'+d.revenue.today.avgTicket)
+    +DTILE('SEMANA','S/'+d.revenue.week.revenue,d.revenue.week.count+' pedidos · tkt S/'+d.revenue.week.avgTicket)
+    +DTILE('MES','S/'+d.revenue.month.revenue,d.revenue.month.count+' pedidos · tkt S/'+d.revenue.month.avgTicket)
+    +DTILE('TOTAL','S/'+d.revenue.allTime.revenue,d.revenue.allTime.count+' pedidos · tkt S/'+d.revenue.allTime.avgTicket)
+    +'</div>';
+  // Pedidos por estado
+  var stEntries=Object.keys(d.ordersByStatus||{});
+  var stMax=Math.max.apply(null,stEntries.map(function(k){return d.ordersByStatus[k];}).concat([1]));
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PEDIDOS POR ESTADO //</div>';
+  h+=stEntries.length?stEntries.map(function(k){return DBAR(k,d.ordersByStatus[k],stMax,(STATUSES[k]||{}).c);}).join(''):'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:16px">Sin pedidos todavía.</div>';
+  h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
+  // Productos top
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PRODUCTOS MÁS VENDIDOS //</div>';
+  if(d.topProducts&&d.topProducts.length){
+    var pMax=Math.max.apply(null,d.topProducts.map(function(p){return p.count;}).concat([1]));
+    h+=d.topProducts.map(function(p){
+      var pct=Math.round((p.count/pMax)*100);
+      return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+p.name+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">'+p.count+' vendidos · S/'+p.revenue+'</span></div><div style="background:#1E3932;border-radius:4px;height:8px;overflow:hidden"><div style="background:'+BLU+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+    }).join('');
+  }else{
+    h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:16px">Aún no hay ventas pagadas para rankear productos.</div>';
+  }
+  h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
+  // Clientes
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">CLIENTES //</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +DTILE('TOTAL',d.customers.total)
+    +DTILE('RECURRENTES',d.customers.returning,'>1 pedido')
+    +DTILE('NUEVOS · SEMANA',d.customers.newThisWeek)
+    +DTILE('NUEVOS · MES',d.customers.newThisMonth)
+    +'</div>';
+  var tiers=d.customers.tiers||{};
+  var tMax=Math.max(tiers.VIP||0,tiers.FREQUENT||0,tiers.REGULAR||0,tiers.MEMBER||0,1);
+  h+=DBAR('VIP',tiers.VIP||0,tMax,'#F5C518')+DBAR('FREQUENT',tiers.FREQUENT||0,tMax,'#C0C0C0')+DBAR('REGULAR',tiers.REGULAR||0,tMax,BLU)+DBAR('MEMBER',tiers.MEMBER||0,tMax,'#666');
+  h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
+  // Puntos
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PUNTOS //</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">'
+    +DTILE('EMITIDOS',d.points.issued)
+    +DTILE('CANJEADOS',d.points.redeemed)
+    +DTILE('EN CIRCULACIÓN',d.points.outstanding)
+    +'</div>';
+  h+=BTN('ACTUALIZAR //','loadDashboard()',true);
+  h+='</div>';
+  return h;
 }
 
 // ADMIN UPSELL
@@ -760,7 +832,7 @@ async function doManualPts(){
   var ph=document.getElementById('ag-ph').value.trim(),pts=parseInt(document.getElementById('ag-pts').value||0);
   agPhone=ph;agPts=String(pts);if(!ph||pts<1){agMsg='Ingresa teléfono y puntos válidos.';render();return;}
   busy=true;busyMsg='Otorgando puntos...';render();
-  try{var cd=await sbG('customers','phone=eq.'+encodeURIComponent(ph));if(!cd.length){agMsg='Cliente no encontrado: '+ph;busy=false;render();return;}await sbP('transactions',{customer_phone:ph,type:'earn_confirmed',points:pts,description:'Puntos manuales (admin)',confirmed:true,date:today()});await sbU('customers','phone=eq.'+encodeURIComponent(ph),{points:(cd[0].points||0)+pts});agMsg='✓ +'+pts+' puntos a '+cd[0].name;if(cust&&cust.phone===ph)cust.points=(cust.points||0)+pts;}
+  try{var r=await api('admin-manual-points',{token:token,phone:ph,pts:pts});agMsg='✓ +'+pts+' puntos a '+r.name;if(cust&&cust.phone===ph)cust.points=r.newPoints;}
   catch(e){agMsg='Error: '+e.message;}
   busy=false;render();
 }
@@ -876,12 +948,12 @@ function render(){
     case'p_orders':    h=sPOrders();break;
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_profile':   h=sPProfile();break;
-    case'admin_pin':   h=sAdminPin();break;
     case'admin_home':  h=sAdminHome();break;
     case'admin_upsell':h=sAdminUpsell();break;
     case'admin_gen':   h=sAdminGen();break;
     case'admin_mgr':   h=sAdminMgr();break;
     case'admin_inventory':h=sAdminInventory();break;
+    case'admin_dashboard':h=sAdminDashboard();break;
     default:           h=sOHome();
   }
   document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'+h+'</div>';
@@ -921,12 +993,7 @@ async function toggleStock(code,name){
   if(!confirm(msg))return;
   busy=true;busyMsg='Actualizando...';render();
   try{
-    var ex=await sbG('inventory','product_code=eq.'+encodeURIComponent(code));
-    if(ex.length){
-      await sbU('inventory','product_code=eq.'+encodeURIComponent(code),{in_stock:goingTo,updated_at:today()});
-    }else{
-      await sbP('inventory',{product_code:code,product_name:name,in_stock:goingTo,updated_at:today()});
-    }
+    await api('admin-inventory-toggle',{token:token,code:code,name:name,inStock:goingTo});
     invStock[code]=goingTo;
   }catch(e){alert('Error al actualizar: '+e.message);}
   busy=false;render();
@@ -952,19 +1019,19 @@ function sAdminInventory(){
 }
 
 var _adminList=[];
-async function loadAdminMgr(){sc='admin_mgr';busy=true;busyMsg='Cargando...';render();try{_adminList=await sbG('admin_accounts','order=created_at.asc');}catch(e){_adminList=[];}busy=false;render();}
+async function loadAdminMgr(){sc='admin_mgr';busy=true;busyMsg='Cargando...';render();try{var r=await api('admin-accounts-list',{token:token});_adminList=r.accounts;}catch(e){_adminList=[];}busy=false;render();}
 async function addAdmin(){
   var ph=document.getElementById('aa-ph')&&document.getElementById('aa-ph').value.trim();
   var nm=document.getElementById('aa-nm')&&document.getElementById('aa-nm').value.trim();
   if(!ph||!nm){alert('Ingresa nombre y teléfono.');return;}
   try{
-    await fetch(SB_URL+'/rest/v1/admin_accounts',{method:'POST',headers:Object.assign({},sbH(),{Prefer:'return=representation'}),body:JSON.stringify({phone:ph,name:nm,role:'admin'})});
+    await api('admin-accounts-add',{token:token,phone:ph,name:nm});
     await loadAdminMgr();
-  }catch(e){alert('Error: '+e);}
+  }catch(e){alert('Error: '+e.message);}
 }
 async function delAdmin(ph){
   if(!confirm('¿Eliminar admin '+ph+'?'))return;
-  try{await fetch(SB_URL+'/rest/v1/admin_accounts?phone=eq.'+encodeURIComponent(ph),{method:'DELETE',headers:sbH()});await loadAdminMgr();}catch(e){}
+  try{await api('admin-accounts-delete',{token:token,phone:ph});await loadAdminMgr();}catch(e){alert('Error: '+e.message);}
 }
 function sAdminMgr(){
   return H('ADMINISTRADORES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
@@ -982,16 +1049,18 @@ function sAdminMgr(){
 
 
 function sPRecover(){
+  var pinBox=recNewPin?'<div style="background:#1A3028;border:2px solid '+BLU+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:'+BLU+'">'+recNewPin+'</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono.</div></div>':'';
   return H('RECUPERAR CUENTA',"sc='p_auth';render()")
     +'<div style="flex:1;padding:24px 20px 40px" class="fi">'
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#F2F0EB;margin-bottom:6px">RECUPERAR PIN //</div>'
     +'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Te generamos un PIN nuevo al instante.</div>'
+    +pinBox
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
     +INP('rec-phone','TELÉFONO // 9XXXXXXXX','tel')
     +INP('rec-dni','DNI // Tu número de 8 dígitos','text')
     +INP('rec-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')
     +'</div>'
-    +'<div id="rec-msg" style="font-family:Barlow,sans-serif;font-size:12px;color:#CBA258;min-height:16px;margin-bottom:12px;text-align:center"></div>'
+    +'<div id="rec-msg" style="font-family:Barlow,sans-serif;font-size:12px;color:#ff5555;min-height:16px;margin-bottom:12px;text-align:center"></div>'
     +BTN('RECUPERAR MI PIN //','doRecover()')
     +'</div>';
 }
@@ -1006,55 +1075,28 @@ async function doRecover(){
   var bday=m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
   busy=true;busyMsg='Verificando...';render();
   try{
-    var r=await sbG('customers','phone=eq.'+encodeURIComponent(phone)+'&dni=eq.'+encodeURIComponent(dni)+'&birthday=eq.'+encodeURIComponent(bday));
-    if(!r.length){
-      busy=false;sc='p_recover';render();
-      var m2=document.getElementById('rec-msg');
-      if(m2)m2.textContent='No encontramos una cuenta con esos datos exactos.';
-      return;
-    }
-    var c=r[0];
-    var newPin=String(Math.floor(1000+Math.random()*9000));
-    await sbU('customers','phone=eq.'+encodeURIComponent(c.phone),{pin:newPin});
-    busy=false;
-    var waMsg='Hola '+c.name+'! Verificamos tu identidad ✅\n\nTu nuevo PIN de SND//WCH es: *'+newPin+'*\n\nIngresa en sndwch.vercel.app con tu teléfono '+c.phone+' y este nuevo PIN.';
-    window.open('https://wa.me/51930957640?text='+encodeURIComponent(waMsg),'_blank');
-    sc='p_recover';render();
-    setTimeout(function(){
-      var m3=document.getElementById('rec-msg');
-      if(m3){m3.style.color='#25D366';m3.textContent='✓ PIN actualizado. Te lo enviamos por WhatsApp.';}
-    },300);
-  }catch(e){busy=false;sc='p_recover';render();}
-}
-
-// ADMIN CHECK
-async function checkAdmin(phone){
-  // Non-blocking with 3s timeout — never delays render
-  try{
-    var controller=typeof AbortController!=='undefined'?new AbortController():null;
-    var timer=controller?setTimeout(function(){controller.abort();},3000):null;
-    var opts=controller?{signal:controller.signal,headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}}:{headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}};
-    var resp=await fetch(SB_URL+'/rest/v1/admin_accounts?phone=eq.'+encodeURIComponent(phone),opts);
-    if(timer)clearTimeout(timer);
-    var data=await resp.json();
-    isAdmin=Array.isArray(data)&&data.length>0;
+    var r=await api('recover',{phone:phone,dni:dni,bday:bday});
+    recNewPin=r.newPin;
+    busy=false;sc='p_recover';render();
   }catch(e){
-    isAdmin=false; // timeout or network error — fail silently
+    busy=false;sc='p_recover';render();
+    var m2=document.getElementById('rec-msg');
+    if(m2)m2.textContent=e.message;
   }
-  render(); // re-render now that we know admin status
 }
 
 // INIT
 (async function(){
   render(); // render immediately — never show black screen
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
-  if(savedPh&&savedPn){
+  if(token){
     try{
-      var c=await sbG('customers','phone=eq.'+encodeURIComponent(savedPh));
-      if(c.length&&c[0].pin===savedPn){
-        cust=c[0];
+      var r=await api('session-check',{token:token});
+      if(r.valid){
+        cust=r.customer;isAdmin=r.isAdmin;
         render(); // re-render with customer data
-        checkAdmin(savedPh); // check admin in background, will render again when done
+      }else{
+        token='';localStorage.removeItem('sw_tok');
       }
     }catch(e){} // silently fail if offline
   }
