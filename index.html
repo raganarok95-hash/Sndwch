@@ -174,8 +174,6 @@ function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;lastPo
 // SUPABASE
 function sbH(x){var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};if(x)Object.keys(x).forEach(function(k){h[k]=x[k];});return h;}
 async function sbG(t,q){var r=await fetch(SB_URL+'/rest/v1/'+t+'?'+q,{headers:sbH(),signal:(function(){try{var ac=new AbortController();setTimeout(function(){ac.abort();},10000);return ac.signal;}catch(e){return undefined;}})()});if(!r.ok){var e=await r.json();throw new Error(e.message||'Error');}return r.json();}
-async function sbP(t,d){var r=await fetch(SB_URL+'/rest/v1/'+t,{method:'POST',headers:sbH({Prefer:'return=representation'}),body:JSON.stringify(d)});if(!r.ok){var e=await r.json();throw new Error(e.details||e.message||'Error');}return r.json();}
-async function sbU(t,q,d){var r=await fetch(SB_URL+'/rest/v1/'+t+'?'+q,{method:'PATCH',headers:sbH({Prefer:'return=representation'}),body:JSON.stringify(d)});if(!r.ok){var e=await r.json();throw new Error(e.message||'Error');}return r.json();}
 
 // UTILS
 function fn(arr,id){var i=arr.find(function(x){return x.id===id;});return i?i.l+' // '+i.s:'';}
@@ -222,7 +220,7 @@ function tapLogo(){}
 // ORDER SIGNATURE
 function sOHome(){
   var pc=cust
-    ?'<div onclick="swTab(\'points\')" style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:2px">TUS PUNTOS //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+(cust.points||0)+(cust.pending_points>0?'<span style="font-size:13px;color:#ffa500;margin-left:8px">+'+(cust.pending_points)+' pendiente</span>':'')+'</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>'
+    ?'<div onclick="swTab(\'points\')" style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:2px">TUS PUNTOS //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+(cust.points||0)+'</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>'
     :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">ACUMULA<span style="color:'+BLU+'"> // </span>PUNTOS</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">UNIRSE \u2192</span></div>';
   return H()
     +'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
@@ -486,8 +484,7 @@ async function doLogin(){
 // POINTS HOME
 function sWelcome(){
   var pts=cust?cust.points||0:0;
-  var pend=cust?cust.pending_points||0:0;
-  var t=cust?tier(pts):{name:'MEMBER',color:'#8BAF9A'};
+  var t=cust?tier(pts):{n:'MEMBER',c:'#8BAF9A'};
   var nm=cust?cust.name.split(' ')[0]:'';
   var rwd=RWDS.slice().reverse().find(function(r){return pts>=r.pts;});
   var next=RWDS.find(function(r){return r.pts>pts;});
@@ -502,23 +499,23 @@ function sWelcome(){
     +'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.25);border-radius:16px;padding:20px;margin-bottom:16px">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#CBA258;letter-spacing:.2em;font-weight:700;margin-bottom:12px">TUS PUNTOS //</div>'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:72px;font-weight:900;color:#CBA258;line-height:1">'+pts+'</div>'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">PUNTOS ACUMULADOS'+(pend>0?' · <span style="color:#ffa500">+'+pend+' PENDIENTES</span>':'')+'</div>'
-    +(rwd?'<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#CBA258">✓ PUEDES CANJEAR: '+rwd.name.toUpperCase()+'</div></div>':'')
-    +(next?'<div style="margin-top:8px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A">Te faltan <span style="color:#F2F0EB;font-weight:700">'+(next.pts-pts)+' pts</span> para '+next.name+'</div></div>':'')
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">PUNTOS ACUMULADOS</div>'
+    +(rwd?'<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#CBA258">✓ PUEDES CANJEAR: '+(rwd.n+' '+rwd.s).toUpperCase()+'</div></div>':'')
+    +(next?'<div style="margin-top:8px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A">Te faltan <span style="color:#F2F0EB;font-weight:700">'+(next.pts-pts)+' pts</span> para '+next.n+' // '+next.s+'</div></div>':'')
     +'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
     +'<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#F2F0EB">'+(cust?cust.total_orders||0:0)+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">PEDIDOS</div></div>'
     +'<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+t.color+'">'+t.name+'</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+t.c+'">'+t.n+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">NIVEL</div></div>'
     +'</div>'
     +'<div style="margin-top:20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#F2F0EB;letter-spacing:.15em;opacity:.7" class="blink">cargando... //</div>'
     +'</div></div>';
 }
 function sPHome(){
-  var pts=cust.points||0,pend=cust.pending_points||0,t=tier(pts);
+  var pts=cust.points||0,t=tier(pts);
   var next=RWDS.find(function(r){return r.pts>pts;}),prev=null;
   RWDS.forEach(function(r){if(r.pts<=pts)prev=r;});
   var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
@@ -526,8 +523,7 @@ function sPHome(){
   return H()+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:14px">HOLA, '+cust.name.split(' ')[0].toUpperCase()+' //</div>'
     +'<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">PUNTOS CONFIRMADOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
-    +(pend>0?'<div style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.25);border-radius:8px;padding:10px 14px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.15em">PENDIENTES //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#ffa500">+'+pend+' pts <span style="font-size:12px;font-weight:400">en espera de pago</span></div></div>':'')
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+BLU+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+BLU+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#CBA258;letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':BLU)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
@@ -1010,6 +1006,8 @@ function render(){
     case'o_confirm':   h=sOConfirm();break;
     case'o_sent':      h=sOSent();break;
     case'p_auth':      h=sPAuth();break;
+    case'p_welcome':   h=sWelcome();break;
+    case'p_recover':   h=sPRecover();break;
     case'p_home':      h=sPHome();break;
     case'p_rewards':   h=sPRewards();break;
     case'p_redeemed':  h=sPRedeemed();break;
