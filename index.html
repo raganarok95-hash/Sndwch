@@ -344,7 +344,8 @@ function doOrder(){
   lines.push('','*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
   var productKey=mode==='sig'?sigId:prot;
-  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey};
+  var ingredients=(mode==='sig'&&sig)?[sig.base,sig.prot].concat(sig.tops).concat(sig.sauces):[base,prot].concat(tops).concat(cheese?[cheese]:[]).concat(sauces);
+  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients};
   payWithCulqi(t,email);
 }
 
@@ -403,7 +404,7 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
     var res;
     try{
-      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey});
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients});
     }catch(e){
       busy=false;render();
       var errEl3=document.getElementById('o-err');
@@ -762,6 +763,7 @@ function sAdminDashboard(){
   var alerts=[];
   if(d.pendingPayment>0)alerts.push(d.pendingPayment+' pedido(s) sin pago confirmado (posible prueba o error de checkout)');
   if(d.outOfStock&&d.outOfStock.length)alerts.push(d.outOfStock.length+' producto(s) sin stock: '+d.outOfStock.map(function(o){return o.product_name||o.product_code;}).join(', '));
+  if(d.lowStock&&d.lowStock.length)alerts.push('Stock bajo: '+d.lowStock.map(function(o){return(o.product_name||o.product_code)+' ('+o.stock_qty+')';}).join(', '));
   if(alerts.length){
     h+='<div style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.3);border-radius:10px;padding:14px 16px;margin-bottom:18px">'
       +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.15em;margin-bottom:6px">ALERTAS //</div>'
@@ -1015,19 +1017,20 @@ var INV_CATS=[
   {t:'QUESOS',arr:CHEESE},
   {t:'SALSAS',arr:SAUCES}
 ];
+var invQty={};
 async function loadInvBackground(){
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock');
-    invStock={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;});
+    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
+    invStock={};invQty={};
+    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
   }catch(e){}
 }
 async function loadInventory(){
   sc='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock');
-    invStock={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;});
+    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
+    invStock={};invQty={};
+    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
   }catch(e){}
   busy=false;render();
 }
@@ -1045,19 +1048,39 @@ async function toggleStock(code,name){
   }catch(e){alert('Error al actualizar: '+e.message);}
   busy=false;render();
 }
+async function setStock(code,name){
+  var el=document.getElementById('qty-'+code);
+  var raw=el?el.value.trim():'';
+  var qty=raw===''?null:parseInt(raw,10);
+  busy=true;busyMsg='Guardando stock...';render();
+  try{
+    await api('admin-inventory-set-stock',{token:token,code:code,name:name,qty:qty});
+    invQty[code]=qty;
+    if(qty!=null)invStock[code]=qty>0;
+  }catch(e){alert('Error al actualizar: '+e.message);}
+  busy=false;render();
+}
 function sAdminInventory(){
   var h=H('INVENTARIO',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:6px">CONTROL DE STOCK //</div>';
-  h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Cada cambio pide tu confirmación. Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives.</div>';
+  h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
   INV_CATS.forEach(function(cat){
     h+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF;margin:18px 0 10px">'+cat.t+'<span style="color:'+BLU+'"> //</span></div>';
     h+=cat.arr.map(function(item){
       var name=item.l+(item.s&&item.s!=='//'?' // '+item.s:'');
       var av=invStock[item.id]!==false;
-      return'<div style="background:'+(av?'#2D5246':'#1A2420')+';border:1px solid '+(av?'#3A6B58':'rgba(255,85,85,.3)')+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
+      var qty=invQty[item.id];
+      var tracked=qty!=null;
+      return'<div style="background:'+(av?'#2D5246':'#1A2420')+';border:1px solid '+(av?'#3A6B58':'rgba(255,85,85,.3)')+';border-radius:10px;padding:13px 16px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:'+(av?'#FFFFFF':'#8BAF9A')+'">'+name+'</div>'
-        +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(av?'#25D366':'#ff8888')+';margin-top:2px;letter-spacing:.1em">'+(av?'● DISPONIBLE':'● SIN STOCK')+'</div></div>'
+        +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(av?'#25D366':'#ff8888')+';margin-top:2px;letter-spacing:.1em">'+(av?'● DISPONIBLE':'● SIN STOCK')+(tracked?' · '+qty+' unid.':'')+'</div></div>'
         +'<button onclick="toggleStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:'+(av?'rgba(255,85,85,.12)':'rgba(37,211,102,.15)')+';border:1px solid '+(av?'rgba(255,85,85,.4)':'rgba(37,211,102,.4)')+';color:'+(av?'#ff8888':'#25D366')+';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 14px;border-radius:8px;text-align:center;flex-shrink:0">'+(av?'MARCAR AGOTADO':'REACTIVAR')+'</button>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;margin-top:10px;align-items:center">'
+        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="Sin rastreo de cantidad" value="'+(tracked?qty:'')+'" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-size:12px;font-family:Share Tech Mono,monospace">'
+        +'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+BLU+';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;padding:9px 14px;border-radius:8px;flex-shrink:0">GUARDAR STOCK</button>'
+        +'</div>'
         +'</div>';
     }).join('');
   });
