@@ -155,6 +155,10 @@ function playNotif(){
 }
 
 // POLLING
+// Firma barata de la lista de pedidos activos (id+estado+eta) — si no cambió
+// nada desde el último poll, no tocamos el DOM. Evita reconstruir toda la
+// pantalla cada 25s cuando no hay novedades, que es el caso más común.
+function ordersSig(orders){return(orders||[]).map(function(o){return o.id+':'+o.status+':'+(o.eta_minutes||'');}).join('|');}
 function startPoll(){
   if(pollTimer)clearInterval(pollTimer);
   pollTimer=setInterval(async function(){
@@ -164,8 +168,10 @@ function startPoll(){
       var total=r.orders.length;
       if(total>lastPollCount&&lastPollCount>=0)playNotif();
       lastPollCount=total;
-      adminOrders=r.orders;
-      render();
+      if(ordersSig(r.orders)!==ordersSig(adminOrders)){
+        adminOrders=r.orders;
+        render();
+      }
     }catch(e){}
   },25000);
 }
@@ -1017,6 +1023,12 @@ function confirmMap(){
   setTimeout(function(){var e=document.getElementById('o-addr');if(e)e.style.borderColor='#0d0d0d';},3000);
 }
 
+// Recordamos qué pantalla se pintó la última vez para distinguir "sigo en la
+// misma pantalla, solo cambió algo" (hay que mantener el scroll donde estaba)
+// de "el usuario navegó a otra pantalla" (ahí sí corresponde subir al inicio).
+// Esto evita el salto visible al tope cada vez que algo se actualiza solo
+// (poll del panel admin) o con cada toque al armar un pedido.
+var _lastRenderedSc=null;
 function render(){
   if(busy){document.getElementById('app').innerHTML=LOAD(busyMsg);return;}
   var h;
@@ -1044,7 +1056,10 @@ function render(){
     case'admin_dashboard':h=sAdminDashboard();break;
     default:           h=sOHome();
   }
+  var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
   document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'+h+'</div>';
+  window.scrollTo(0,sameScreen?scrollY:0);
+  _lastRenderedSc=sc;
 }
 
 
