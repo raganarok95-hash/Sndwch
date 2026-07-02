@@ -647,8 +647,14 @@ async function doRedeem(id){
 
 function sPRedeemed(){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;background:#1E3932" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.25em;margin-bottom:16px">RECOMPENSA CANJEADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1.1;margin-bottom:32px">'+(rdRwd?rdRwd.n:'')+'<span style="color:'+BLU+'"> // </span>'+(rdRwd?rdRwd.s:'')+'</div><div style="background:#1A3028;border:2px solid '+BLU+';border-radius:16px;padding:28px 24px;width:100%;max-width:320px;margin-bottom:32px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">TU CÓDIGO //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+BLU+';word-break:break-all">'+rdCode+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;margin-top:12px">Muéstralo al recibir tu pedido</div></div><button onclick="sc=\'p_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.15em;padding:13px 36px;border-radius:10px">VOLVER AL INICIO //</button></div>';}
 
-function sPProfile(){var t=tier(cust.points||0);return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button></div>'+NAV();}
+function sPProfile(){var t=tier(cust.points||0);return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+cust.name+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+cust.phone+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div><div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();}
 function doLogout(){cust=null;isAdmin=false;savedPh='';token='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
+async function doLogoutEverywhere(){
+  if(!confirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?'))return;
+  busy=true;busyMsg='Cerrando sesiones...';render();
+  try{await api('logout-everywhere',{token:token});}catch(e){}
+  busy=false;doLogout();
+}
 
 async function loadAdmin(){
   sc='admin_home';busy=true;busyMsg='Cargando...';render();
@@ -814,9 +820,39 @@ function sAdminDashboard(){
     +DTILE('CANJEADOS',d.points.redeemed)
     +DTILE('EN CIRCULACIÓN',d.points.outstanding)
     +'</div>';
+  h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">EXPORTAR //</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+    +'<button onclick="exportCsv(\'export-orders\',\'pedidos\')" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">EXPORTAR PEDIDOS (CSV) //</button>'
+    +'<button onclick="exportCsv(\'export-customers\',\'clientes\')" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">EXPORTAR CLIENTES (CSV) //</button>'
+    +'</div>';
   h+=BTN('ACTUALIZAR //','loadDashboard()',true);
   h+='</div>';
   return h;
+}
+function toCsv(rows){
+  if(!rows||!rows.length)return'';
+  var cols=Object.keys(rows[0]);
+  function esc(v){if(v==null)return'';var s=String(v);return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  var lines=[cols.join(',')];
+  rows.forEach(function(r){lines.push(cols.map(function(c){return esc(r[c]);}).join(','));});
+  return lines.join('\n');
+}
+async function exportCsv(action,filename){
+  busy=true;busyMsg='Generando CSV...';render();
+  try{
+    var r=await api(action,{token:token});
+    var rows=r.orders||r.customers||[];
+    var csv=toCsv(rows);
+    if(!csv){busy=false;render();alert('No hay datos para exportar.');return;}
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download='sndwch-'+filename+'-'+today().replace(/\//g,'-')+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  }catch(e){alert('Error al exportar: '+e.message);}
+  busy=false;render();
 }
 
 // ADMIN UPSELL
