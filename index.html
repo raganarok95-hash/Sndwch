@@ -115,7 +115,7 @@ var RWDS=[
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
 var mode=null,sigId=null,base=null,prot=null,cheese=null,lAddr='';
-var tops=[],sauces=[],large=false,combo=null;
+var tops=[],sauces=[],large=false,combo=null,extraSauce=false;
 var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
@@ -184,7 +184,7 @@ function total(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
   var pr=PROTS.find(function(x){return x.id===prot;});
   var bp=mode==='sig'?(sig?sig.p:0):(pr?pr.p:0);
-  return bp+(large?5:0)+(combo==='full'?8:combo==='simple'?4:0);
+  return bp+(large?5:0)+(combo==='full'?8:combo==='simple'?4:0)+(extraSauce?2:0);
 }
 function tier(p){if(p>=500)return{n:'VIP',c:'#F5C518'};if(p>=250)return{n:'FREQUENT',c:'#C0C0C0'};if(p>=100)return{n:'REGULAR',c:BLU};return{n:'MEMBER',c:'#666'};}
 function today(){return new Date().toLocaleDateString('es-PE');}
@@ -300,9 +300,11 @@ function sOConfirm(){
   else{rows.push({k:'PAN',v:fn(BASES,base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,prot),p:pr?pr.p:0});rows.push({k:'TOPPINGS',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'QUESO',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'SALSAS',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
   if(large)rows.push({k:'LARGE',v:'Upgrade de tamaño',p:5});
   if(combo)rows.push({k:'COMBO',v:combo==='full'?'Bebida + extra':'Bebida',p:combo==='full'?8:4});
-  var recU=(!large&&!combo)?{k:'large',e:'💪',l:'LARGE',d:'Upgrade de tamaño',p:5}:(!combo)?{k:'combo',e:'🥤',l:'COMBO SIMPLE',d:'Bebida a elección',p:4}:null;
+  if(extraSauce)rows.push({k:'SALSA EXTRA',v:'Salsa adicional a tu elección',p:2});
+  var recU=!large?{k:'large',e:'💪',l:'LARGE',d:'Upgrade de tamaño',p:5}:!combo?{k:'combo',e:'🥤',l:'COMBO SIMPLE',d:'Bebida a elección',p:4}:!extraSauce?{k:'sauce',e:'🌶️',l:'SALSA EXTRA',d:'Salsa adicional a tu elección',p:2}:null;
+  function uSel(k){return k==='large'?large:k==='combo'?combo==='simple':k==='sauce'?extraSauce:false;}
   function uBtn(k,e,l,d,p,sel){
-    var act=k==='large'?'large=!large':k==='combo'?'combo=(combo===\'simple\'?null:\'simple\')':'combo=(combo===\'full\'?null:\'full\')';
+    var act=k==='large'?'large=!large':k==='sauce'?'extraSauce=!extraSauce':k==='combo'?'combo=(combo===\'simple\'?null:\'simple\')':'combo=(combo===\'full\'?null:\'full\')';
     return'<div onclick="'+act+';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+'S/'+p+'</span></div>';
   }
   var pBox=cust
@@ -310,8 +312,8 @@ function sOConfirm(){
     :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px;margin-top:14px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+'">↗ Regístrate en PUNTOS para ganar +'+t+' pts</div></div>';
   return H('CONFIRMAR PEDIDO','go(\''+bk+'\')')+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">S/'+r.p+'</span>':'')+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span></div></div>'
-    +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">RECOMENDADO //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,(recU.k==='large'?large:combo==='simple'))+'</div>':'')
-    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS UPGRADES // ▾</summary><div style="margin-top:8px">'+uBtn('large','💪','LARGE','Upgrade de tamaño',5,large)+uBtn('combo','🥤','COMBO SIMPLE','Bebida a elección',4,combo==='simple')+uBtn('combof','🥤','COMBO FULL','Bebida + extra',8,combo==='full')+'</div></details>'
+    +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
+    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+uBtn('large','💪','LARGE','Upgrade de tamaño',5,large)+uBtn('combo','🥤','COMBO SIMPLE','Bebida a elección',4,combo==='simple')+uBtn('combof','🥤','COMBO FULL','Bebida + extra',8,combo==='full')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
     +pBox+'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',lAddr||(cust&&cust.last_address?cust.last_address:''))+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div><div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
     +AB(t,true,'go(\''+bk+'\')','doOrder()','PAGAR Y ENVIAR //');
 }
@@ -330,13 +332,14 @@ function doOrder(){
   var sumParts=[];
   if(mode==='sig'&&sig){sumParts.push(sig.n+' S/'+sig.p);}
   else{sumParts.push(fn(PROTS,prot)+' S/'+(pr?pr.p:''));}
-  if(large)sumParts.push('+LARGE');if(combo)sumParts.push('+COMBO');
+  if(large)sumParts.push('+LARGE');if(combo)sumParts.push('+COMBO');if(extraSauce)sumParts.push('+SALSA EXTRA');
   var summary=sumParts.join(' · ');
   var lines=['*PEDIDO SND//WCH*','Ref: '+ref,'','👤 '+nom,'📍 '+addr,''];
   if(mode==='sig'&&sig){lines.push('★ '+sig.n+' — S/'+sig.p);lines.push('Pan: '+fn(BASES,sig.base));lines.push('Proteína: '+fn(PROTS,sig.prot));lines.push('Toppings: '+sig.tops.map(function(id){return fn(TOPS,id);}).join(', '));lines.push('Salsas: '+sig.sauces.map(function(id){return fn(SAUCES,id);}).join(' + '));}
   else{lines.push('Pan: '+fn(BASES,base));lines.push('Proteína: '+fn(PROTS,prot)+' S/'+(pr?pr.p:''));lines.push('Toppings: '+(tops.length?tops.map(function(id){return fn(TOPS,id);}).join(', '):'ninguno'));lines.push('Queso: '+(cheese?fn(CHEESE,cheese):'sin queso'));lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'ninguna'));}
   if(large)lines.push('+ LARGE S/5');
   if(combo)lines.push('+ COMBO '+(combo==='full'?'FULL S/8':'SIMPLE S/4'));
+  if(extraSauce)lines.push('+ SALSA EXTRA S/2');
   if(notes)lines.push('📝 '+notes);
   lines.push('','*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
@@ -412,7 +415,7 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
     localStorage.setItem('sw_last_ref',po.ref);
     window._lTot=po.total;window._lRef=po.ref;window._lChargeId=data.chargeId;
-    mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];large=false;combo=null;
+    mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];large=false;combo=null;extraSauce=false;
     _pendingOrder=null;
     busy=false;sc='o_sent';render();
   }catch(e){
@@ -729,7 +732,7 @@ function sAdminHome(){
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS UPSELL //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#CBA258">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#CBA258">'+x[0]+'</span></div>';}).join('')
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
     +'</div></div></div>';
 }
@@ -855,19 +858,17 @@ async function exportCsv(action,filename){
   busy=false;render();
 }
 
-// ADMIN UPSELL
+// ADMIN WHATSAPP — solo comunicación con el cliente. Los upsells (LARGE, SALSA
+// EXTRA, COMBO) ahora se ofrecen solos en el checkout, ya no hace falta pedirlos
+// manualmente por WhatsApp.
 function sAdminUpsell(){
   var ph=uPhone||'',nm=uName||'el cliente';
   var MSGS=[
-    ['💪','LARGE','¡Hola '+nm+'! Pedido recibido 💪\n\n¿Quieres el LARGE? Upgrade de tamaño por solo S/5 más.\n¿Lo agrego?'],
-    ['🌶️','SALSA EXTRA','¡Hola '+nm+'! ✅\n\n¿Agregamos una salsa más? Tenemos 11 opciones, hasta 3 sin costo.\n¿Cuál quisieras?'],
-    ['🥤','COMBO','¡Hola '+nm+'! ✅\n\n¿Agrego una bebida? Agua, Inca Kola o energy — solo S/4 más 🥤'],
-    ['✅','PAGO OK + PUNTOS','¡Perfecto '+nm+'! 🎉\nPago confirmado. Empezamos ahora.\n\nTu código de puntos: [CÓDIGO]\nIngrésalo → sndwch.vercel.app → PUNTOS 📱\n\nTiempo estimado: 20-25 min ⏱️'],
     ['🛵','EN CAMINO','🛵 '+nm+', tu pedido ya va en camino!\nLlega en aprox. [X] minutos 👌'],
     ['⭐','POST-ENTREGA','Hola '+nm+'! Espero que hayas disfrutado tu SND//WCH 🙌\n\nSi te gustó, una reseña nos ayudaría mucho:\n[LINK GOOGLE MAPS]\nSolo 30 segundos ✨'],
   ];
   function waBtn(e,l,msg){var num='51'+(ph.replace(/[^0-9]/g,'').replace(/^51/,''));return'<button onclick="window.open(\'https://wa.me/'+num+'?text=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\'),\'_blank\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#0a1a0a;border:1px solid #25D366;border-radius:10px;padding:12px 16px;margin-bottom:8px;text-align:left"><div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366">→</span></div></button>';}
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 12px 0 0">←</button><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">SCRIPTS<span style="color:'+BLU+'"> // </span>UPSELL</div></div>'
+  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 12px 0 0">←</button><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">SCRIPTS<span style="color:'+BLU+'"> // </span>WHATSAPP</div></div>'
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi"><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">'+INP('u-phone','TELÉFONO // 9XXXXXXXX','tel',ph)+INP('u-name','NOMBRE DEL CLIENTE','text',nm)+'<button onclick="uPhone=document.getElementById(\'u-phone\').value;uName=document.getElementById(\'u-name\').value||\'el cliente\';render()" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">ACTUALIZAR //</button></div>'
     +MSGS.map(function(m){return waBtn(m[0],m[1],m[2]);}).join('')+'</div></div>';
 }
