@@ -887,20 +887,38 @@ async function doManualPts(){
 }
 
 // RENDER
+function setGpsHint(msg,color){var h=document.getElementById('gps-hint');if(h)h.innerHTML='<span style="color:'+(color||'#ffa500')+'">'+msg+'</span>';}
 function doGPS(){
-  if(!navigator.geolocation){openMap(-8.1120,-79.0290);return;}
   var btn=document.getElementById('gps-btn');
+  function done(){if(btn){btn.innerHTML='&#128205;';btn.disabled=false;}}
+  function fail(err){
+    done();
+    var msg='No pudimos obtener tu ubicación exacta. Arrastra el mapa hasta tu dirección.';
+    if(err&&err.code===1)msg='Bloqueaste el permiso de ubicación, o estás dentro de una app como WhatsApp que no deja usar el GPS. Toca los tres puntos → "Abrir en el navegador", o arrastra el mapa manualmente.';
+    else if(err&&err.code===2)msg='Tu dispositivo no pudo determinar tu ubicación. Arrastra el mapa hasta tu dirección.';
+    else if(err&&err.code===3)msg='La búsqueda de ubicación tardó demasiado. Arrastra el mapa hasta tu dirección.';
+    setGpsHint(msg);
+    openMap(-8.1120,-79.0290,true);
+  }
+  if(!navigator.geolocation){fail();return;}
   if(btn){btn.innerHTML='<span class="sp">&#8635;</span>';btn.disabled=true;}
+  setGpsHint('Buscando tu ubicación...','#8BAF9A');
   navigator.geolocation.getCurrentPosition(
-    function(pos){
-      if(btn){btn.innerHTML='&#128205;';btn.disabled=false;}
-      openMap(pos.coords.latitude,pos.coords.longitude);
+    function(pos){done();setGpsHint('','#8BAF9A');openMap(pos.coords.latitude,pos.coords.longitude,false);},
+    function(err){
+      // Un GPS "frío" (primer intento) puede tardar más de lo que da un timeout agresivo.
+      // Antes de rendirnos, reintentamos una vez con precisión más baja (mucho más rápida).
+      if(err&&err.code===3){
+        navigator.geolocation.getCurrentPosition(
+          function(pos){done();setGpsHint('','#8BAF9A');openMap(pos.coords.latitude,pos.coords.longitude,false);},
+          function(err2){fail(err2);},
+          {timeout:8000,enableHighAccuracy:false,maximumAge:120000}
+        );
+        return;
+      }
+      fail(err);
     },
-    function(){
-      if(btn){btn.innerHTML='&#128205;';btn.disabled=false;}
-      openMap(-8.1120,-79.0290);
-    },
-    {timeout:10000,enableHighAccuracy:true,maximumAge:0}
+    {timeout:15000,enableHighAccuracy:true,maximumAge:60000}
   );
 }
 var _lmap=null,_mTimer=null;
@@ -918,10 +936,12 @@ function loadLeaflet(cb){
   s.onerror=function(){alert('No se pudo cargar el mapa. Verifica tu conexión.');};
   document.head.appendChild(s);
 }
-function openMap(lat,lon){
+function openMap(lat,lon,approx){
   var m=document.getElementById('mmap');
   if(!m)return;
   m.style.display='flex';
+  var banner=document.getElementById('mmap-accuracy-banner');
+  if(banner)banner.style.display=approx?'block':'none';
   loadLeaflet(function(){
     setTimeout(function(){
       if(!_lmap){
@@ -940,7 +960,7 @@ function revGeo(lat,lon){
   window._mLat=lat;window._mLon=lon;
   // Nominatim for approximate reference only
   var url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=18';
-  fetch(url,{headers:{'User-Agent':'SndwchApp/1.0'}})
+  fetch(url)
     .then(function(r){return r.json();})
     .then(function(d){
       var a=d.address||{};
@@ -1172,6 +1192,6 @@ async function doRecover(){
   }
 })();
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
 </body>
 </html>
