@@ -114,7 +114,7 @@ var RWDS=[
 
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
-var mode=null,sigId=null,base=null,prot=null,cheese=null,lAddr='';
+var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],large=false,combo=null,extraSauce=false;
 var cust=null,isAdmin=false,rdRwd=null,rdCode='',atab='reg',aErr='';
 var adminOrders=[],myOrders=[];
@@ -122,7 +122,7 @@ var agPhone='',agPts='',agMsg='',uPhone='',uName='';
 var ltaps=0,ltimer=null,pollTimer=null,lastPollCount=0;
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
-var invStock={},_invList=[];
+var invStock={};
 var dashStats=null;
 var recNewPin=null;
 
@@ -312,7 +312,7 @@ function sOConfirm(){
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">S/'+r.p+'</span>':'')+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span></div></div>'
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+uBtn('large','💪','LARGE','Upgrade de tamaño',5,large)+uBtn('combo','🥤','COMBO SIMPLE','Bebida a elección',4,combo==='simple')+uBtn('combof','🥤','COMBO FULL','Bebida + extra',8,combo==='full')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
-    +pBox+'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',lAddr||(cust&&cust.last_address?cust.last_address:''))+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div><div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
+    +pBox+'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',cust?cust.name:'')+INP('o-email','CORREO // Para tu comprobante de pago','email',cust&&cust.email?cust.email:'')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',cust&&cust.last_address?cust.last_address:'')+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional')+'</div><div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
     +AB(t,true,'go(\''+bk+'\')','doOrder()','PAGAR Y ENVIAR //');
 }
 
@@ -343,7 +343,7 @@ function doOrder(){
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
   var productKey=mode==='sig'?sigId:prot;
   var ingredients=(mode==='sig'&&sig)?[sig.base,sig.prot].concat(sig.tops).concat(sig.sauces):[base,prot].concat(tops).concat(cheese?[cheese]:[]).concat(sauces);
-  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients};
+  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,large:large,combo:combo,extraSauce:extraSauce};
   payWithCulqi(t,email);
 }
 
@@ -402,7 +402,7 @@ async function chargeAndFinalize(culqiToken,culqiOrderId){
     // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
     var res;
     try{
-      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients});
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,large:po.large,combo:po.combo,extraSauce:po.extraSauce});
     }catch(e){
       busy=false;render();
       var errEl3=document.getElementById('o-err');
