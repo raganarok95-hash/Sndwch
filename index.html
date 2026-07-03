@@ -159,7 +159,7 @@ function storeStatus(){
 var sc='o_home',tab='order',busy=false,busyMsg='';
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
-var scheduledFor=null,useCredit=false,useCOD=false;
+var useCredit=false;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
@@ -258,11 +258,11 @@ function total(){
   var dbl=dblProtRef();
   return bp+(doubleProt&&dbl?dbl.pDbl:0)+(extraSauce?2:0);
 }
-function tier(p){if(p>=400)return{n:'VIP',c:'#E53935'};if(p>=200)return{n:'FREQUENT',c:'#F5C518'};if(p>=80)return{n:'REGULAR',c:'#CBA258'};return{n:'MEMBER',c:'#8BAF9A'};}
+function tier(p){if(p>=400)return{n:'VIP',c:'#E53935'};if(p>=200)return{n:'FREQUENT',c:'#F5C518'};if(p>=80)return{n:'REGULAR',c:BLU};return{n:'MEMBER',c:'#8BAF9A'};}
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
 function SZTOG(){
-  function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+(sel?'#FFFFFF':'#A8C8B0')+'">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#8BAF9A;margin-top:2px">'+d+'</div></div>';}
+  function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+(sel?'#FFFFFF':'#A8C8B0')+'">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#8BAF9A;margin-top:2px">'+d+'</div></div>';}
   return ST('00','TAMAÑO','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','Individual')+opt('30','30CM','Clásico')+'</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
 }
 function today(){return new Date().toLocaleDateString('es-PE');}
@@ -273,7 +273,7 @@ function stBadge(st){var s=STATUSES[st]||STATUSES['RECIBIDO'];return'<span style
 function H(sub,bk){
   var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
   var sz=sub?'26':'40';
-  var s2=sub?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1c1c1c;letter-spacing:.35em;margin-top:4px">BUILD // YOUR // BITE</div>';
+  var s2=sub?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1c1c1c;letter-spacing:.35em;margin-top:4px">BUILD // YOUR // BITE</div>';
   return'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:'+sz+'px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">SND<span style="color:'+BLU+'">//</span>WCH</div>'+s2+'</div></div>';
 }
 function NAV(){
@@ -283,10 +283,13 @@ function NAV(){
 }
 function AB(t,can,bk,nfn,nl){
   var bb=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← ATRÁS</button>':'';
-  var tt=t?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#CBA258;letter-spacing:.2em">TOTAL //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">'+SOLES+'<span style="color:'+BLU+'">'+t+'</span></div>':'';
+  var tt=t?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:'+BLU+';letter-spacing:.2em">TOTAL //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">'+SOLES+'<span style="color:'+BLU+'">'+t+'</span></div>':'';
   return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?BLU:'#1E3932')+';color:'+(can?'#fff':'#4A7A68')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'CONTINUAR //')+'</button></div>';
 }
-function CARD(item,sel,fn,right){return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+item.l+'<span style="color:'+BLU+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+item.d+'</p>':'')+'</div>';}
+// Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
+// selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
+function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'';}
+function CARD(item,sel,fn,right){return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+item.l+'<span style="color:'+BLU+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+item.d+'</p>':'')+'</div>';}
 function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">'+n+'<span style="color:'+BLU+'"> // </span>'+t+'</h2>'+(s?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:5px">'+s+'</p>':'')+'</div>';}
 function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
 function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
@@ -366,7 +369,6 @@ function initCheckoutFields(){
   pickedAddrId=null;
   scheduleMode='now';
   useCredit=false;
-  useCOD=false;
   checkoutLocked=false;lockedMsg='';
   _payingInProgress=false;
   appliedReward=null;
@@ -541,7 +543,7 @@ function sOSig(){
     var av=isAvail(s.base)&&isAvail(s.prot);
     var priceTag=size?SOLES+sigPrice(s):'—';
     if(!av)return'<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.4"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#8BAF9A">'+s.n+'<span style="color:#8BAF9A"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div></div>';
-    return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+BLU+'"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?BLU:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.1em;cursor:pointer">📷 VER IMAGEN REFERENCIAL →</div></div>';
+    return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+BLU+'"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?BLU:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.1em;cursor:pointer">📷 VER IMAGEN REFERENCIAL →</div></div>';
   }).join('');
   var sig=SIGS.find(function(x){return x.id===sigId;});
   return h+'</div>'+(previewSigId?sigPreviewOverlayHTML():'')+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','enterConfirm()');
@@ -596,7 +598,7 @@ function sOBuild(){
     var av=isAvail(t.id);
     if(!av)return TOPOFF(t);
     var sel=tops.indexOf(t.id)>=0;
-    return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+BLU+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
+    return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+BLU+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
   }).join('');
   h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('04','QUESO','Incluido sin costo, elige 1.');
@@ -605,7 +607,7 @@ function sOBuild(){
     var av=isAvail(c.id);
     if(!av)return TOPOFF(c);
     var sel=cheese===c.id;
-    return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
+    return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
   }).join('');
   h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('05','SALSAS','Hasta 3, incluidas sin costo.');
@@ -614,7 +616,7 @@ function sOBuild(){
     var av=isAvail(s.id);
     if(!av)return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#8BAF9A">'+s.l+'<span style="color:#8BAF9A"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
     var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-    return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+BLU+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
+    return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+BLU+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
   }).join('');
   h+='</div>'+AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','enterConfirm()');
   return h;
@@ -631,7 +633,7 @@ function sOItemConfirm(){
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dblSurcharge=(doubleProt&&dbl)?dbl.pDbl:0;
   var sauceSurcharge=extraSauce?2:0;
-  var t=quickPayEligible?cartFinalTotal():bp+dblSurcharge+sauceSurcharge;
+  var t=quickPayEligible?cartFinalTotal():total();
   rows.push({k:'TAMAÑO',v:szLabel(size)});
   if(mode==='sig'&&sig){rows.push({k:'SIGNATURE',v:sig.n+' // '+sig.s,p:sigPrice(sig)});rows.push({k:'PAN',v:fn(BASES,sig.base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,sig.prot)});rows.push({k:'TOPPINGS',v:sig.tops.map(function(id){return fn(TOPS,id);}).join(' · ')});rows.push({k:'SALSAS',v:sig.sauces.map(function(id){return fn(SAUCES,id);}).join(' + ')});}
   else{rows.push({k:'PAN',v:fn(BASES,base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'TOPPINGS',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'QUESO',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'SALSAS',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
@@ -641,12 +643,12 @@ function sOItemConfirm(){
   function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:false;}
   function uBtn(k,e,l,d,p,sel){
     var act=(k==='doubleProt'?'doubleProt=!doubleProt':'extraSauce=!extraSauce')+(quickPayEligible?';cart[0]=currentBuiltItem()':'');
-    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+SOLES+p+'</span></div>';
+    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+SOLES+p+'</span></div>';
   }
   return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'))+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">'+SOLES+t+'</span></div></div>'
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
-    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt','💪','DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
+    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt','💪','DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
     +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">☆ GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // Ej: Mi combo" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
         ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ CARRITO</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#8BAF9A;margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
@@ -681,7 +683,7 @@ function sOSides(){
 
 // CARRITO + CHECKOUT
 function cartItemsHTML(){
-  if(!cart.length)return'<div style="text-align:center;padding:24px 0"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">CARRITO VACÍO //</div></div>';
+  if(!cart.length)return'<div style="text-align:center;padding:24px 0"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em">CARRITO VACÍO //</div></div>';
   return cart.map(function(it,idx){
     var extras=itemExtrasLabel(it);
     return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">'+esc(extras)+'</div>':'')+'</div><button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'Share Tech Mono\',monospace;font-size:10px;flex-shrink:0">QUITAR</button></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#1A3028;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#1A3028;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+BLU+'">'+SOLES+itemLineTotal(it)+'</span></div></div>';
@@ -759,7 +761,6 @@ function doOrder(){
   if(_payingInProgress)return;
   if(!cart.length)return;
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
-  if(useCOD)appliedReward=null;
   var nom=document.getElementById('o-nom').value.trim();
   var email=document.getElementById('o-email').value.trim();
   var addr=document.getElementById('o-addr').value.trim();
@@ -815,8 +816,6 @@ function doOrder(){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
     payWithCredit();
-  }else if(useCOD){
-    payWithCOD();
   }else{
     payWithCulqi(t,email);
   }
@@ -828,25 +827,6 @@ async function payWithCredit(){
   var res;
   try{
     res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
-  }catch(e){
-    busy=false;_payingInProgress=false;render();
-    var errEl=document.getElementById('o-err');
-    if(errEl)errEl.textContent=e.message;else alert(e.message);
-    return;
-  }
-  finalizeOrderSuccess(res,po,null);
-}
-// Pago contra entrega — el pedido se registra de inmediato (para que cocina/reparto lo
-// vean) pero el servidor lo marca payment_status:'pending' y NO otorga puntos todavía;
-// esos se acreditan recién cuando el operador confirma la entrega (se cobra en efectivo/Yape
-// al momento), igual que el resto de métodos solo otorgan puntos tras el pago confirmado.
-async function payWithCOD(){
-  if(!_pendingOrder)return;
-  var po=_pendingOrder;
-  busy=true;busyMsg='Confirmando tu pedido...';render();
-  var res;
-  try{
-    res=await api('place-order',{token:token,cod:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
@@ -950,10 +930,9 @@ function finalizeOrderSuccess(res,po,chargeId){
   localStorage.setItem('sw_last_ref',po.ref);
   window._lTot=po.total;window._lRef=po.ref;window._lChargeId=chargeId;
   window._lRewardLabel=res.order&&res.order.redeemed_reward?res.order.redeemed_reward:null;
-  window._lCOD=res.order&&res.order.payment_method==='cod';
   cart=[];
-  mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
-  useCredit=false;useCOD=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
+  resetBuilder();mode=null;
+  useCredit=false;scheduleMode='now';pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
   _pendingOrder=null;
@@ -965,14 +944,14 @@ function finalizeOrderSuccess(res,po,chargeId){
 function sOSent(){
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#1E3932" class="fi">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:52px;font-weight:900;color:#fff;letter-spacing:.08em;line-height:1;margin-bottom:12px">SND<span style="color:'+BLU+'">//</span>WCH</div>'
-    +(window._lCOD?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#CBA258;letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO RECIBIDO //</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>')
-    +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;max-width:260px;line-height:1.6;margin-bottom:16px">'+(window._lCOD?'Tu pedido ya está en preparación. Paga en efectivo o Yape al repartidor cuando llegue.':'Tu pago fue procesado y tu pedido ya está en preparación.')+'</p>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>'
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;max-width:260px;line-height:1.6;margin-bottom:16px">Tu pago fue procesado y tu pedido ya está en preparación.</p>'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
     +stBadge('RECIBIDO')
     +'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:10px;line-height:1.5">Sigue el estado en PUNTOS → MIS PEDIDOS</div></div>'
-    +'<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(window._lCOD?'PAGAS AL RECIBIR //':'MONTO COBRADO //')+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">'+SOLES+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#8BAF9A;margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
-    +(window._lCOD?(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0">+'+(window._lTot||0)+' pts pendientes hasta que se confirme la entrega y el pago</div></div>':''):(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS GANADOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:'+BLU+'">+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span></div></div>':''))
+    +'<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">MONTO COBRADO //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">'+SOLES+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#8BAF9A;margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
+    +(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS GANADOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:'+BLU+'">+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span></div></div>':'')
     +(window._lRewardLabel?'<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">🎁 RECOMPENSA APLICADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+esc(window._lRewardLabel)+'</div></div>':'')
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
     +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;padding:12px 22px;border-radius:10px">NUEVO PEDIDO</button>'
@@ -984,7 +963,7 @@ function sOSent(){
 
 // AUTH
 function sPAuth(){
-  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo','text',window._lastGuestName||'')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email',window._lastGuestEmail||'')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+INP('r-ref','CÓDIGO DE REFERIDO // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="recNewPin=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#CBA258;cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
+  return H()+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:'+BLU+'"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#8BAF9A;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','CREAR CUENTA'],['login','INGRESAR']].map(function(x){return'<button onclick="atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?BLU:'transparent')+';color:'+(atab===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+INP('r-name','NOMBRE // Tu nombre completo','text',window._lastGuestName||'')+INP('r-phone','TELÉFONO // 9XXXXXXXX','tel')+INP('r-pin','PIN PERSONAL // Mínimo 4 dígitos','password')+INP('r-email','CORREO // Para recuperar tu cuenta','email',window._lastGuestEmail||'')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text')+INP('r-bday','FECHA NACIMIENTO // DD/MM/AAAA','text')+INP('r-ref','CÓDIGO DE REFERIDO // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('CREAR CUENTA //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','TELÉFONO // 9XXXXXXXX','tel',savedPh)+INP('l-pin','PIN PERSONAL','password')+'<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('INGRESAR //','doLogin()')+' '+`<div onclick="recNewPin=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+BLU+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">'+r.n+'<span style="color:#8BAF9A"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
 }
 async function doReg(){
   var name=document.getElementById('r-name').value.trim(),
@@ -1035,14 +1014,14 @@ function sWelcome(){
     +'<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#8BAF9A;letter-spacing:.3em;margin-bottom:16px">SND//WCH</div>'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#CBA258;letter-spacing:.2em;margin-bottom:8px">BIENVENIDO DE VUELTA</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">BIENVENIDO DE VUELTA</div>'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:46px;font-weight:900;color:#F2F0EB;line-height:1;margin-bottom:4px">'+esc(nm.toUpperCase())+'</div>'
-    +'<div style="width:60px;height:3px;background:#CBA258;margin:16px auto 24px;border-radius:2px"></div>'
+    +'<div style="width:60px;height:3px;background:'+BLU+';margin:16px auto 24px;border-radius:2px"></div>'
     +'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.25);border-radius:16px;padding:20px;margin-bottom:16px">'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#CBA258;letter-spacing:.2em;font-weight:700;margin-bottom:12px">TUS PUNTOS //</div>'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:72px;font-weight:900;color:#CBA258;line-height:1">'+pts+'</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em;font-weight:700;margin-bottom:12px">TUS PUNTOS //</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:72px;font-weight:900;color:'+BLU+';line-height:1">'+pts+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">PUNTOS ACUMULADOS</div>'
-    +(rwd?'<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#CBA258">✓ PUEDES CANJEAR: '+(rwd.n+' '+rwd.s).toUpperCase()+'</div></div>':'')
+    +(rwd?'<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:'+BLU+'">✓ PUEDES CANJEAR: '+(rwd.n+' '+rwd.s).toUpperCase()+'</div></div>':'')
     +(next?'<div style="margin-top:8px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A">Te faltan <span style="color:#F2F0EB;font-weight:700">'+(next.pts-pts)+' pts</span> para '+next.n+' // '+next.s+'</div></div>':'')
     +'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
@@ -1063,13 +1042,13 @@ function sPHome(){
   var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
   var unlocked=RWDS.filter(function(r){return r.pts<=pts;});
   return H()+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:14px">HOLA, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:14px">HOLA, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
     +'<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+BLU+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+BLU+'">'+next.n+' // '+next.s+'</span></div>':'')
-    +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#CBA258;letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
+    +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:'+BLU+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()'],['MIS','DIRECCIONES','loadAddresses()'],['MIS','FAVORITOS','loadFavorites()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':BLU)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
-    +(unlocked.length?'<div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">LISTAS PARA USAR //</div>'+unlocked.map(function(r){return'<div style="background:#1A3028;border:1px solid '+BLU+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+BLU+'"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A">se usa al pedir</span></div>';}).join('')+'</div>':'')
+    +(unlocked.length?'<div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">LISTAS PARA USAR //</div>'+unlocked.map(function(r){return'<div style="background:#1A3028;border:1px solid '+BLU+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+BLU+'"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A">se usa al pedir</span></div>';}).join('')+'</div>':'')
     +'</div>'+NAV();
 }
 
@@ -1100,10 +1079,10 @@ function sPOrders(){
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
       +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
-      +'<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:#CBA258;flex-shrink:0">'+SOLES+o.total+'</div></div>'
+      +'<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+BLU+';flex-shrink:0">'+SOLES+o.total+'</div></div>'
       +'<div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:8px">'+esc(o.summary)+'</div>'
       +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci,c2=STATUSES[st];return'<div style="flex:1;height:3px;background:'+(dn?c2.c:'#3A6B58')+';border-radius:3px"></div>';}).join('')+'</div>'
-      +stBadge(o.status)+'<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#CBA258;text-align:right;margin-top:4px">ver detalle ›</div></div>';
+      +stBadge(o.status)+'<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
   }
   var h=H('MIS PEDIDOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
   if(act.length){
@@ -1111,11 +1090,11 @@ function sPOrders(){
     h+=act.map(card).join('');
   }
   if(done.length){
-    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">ANTERIORES // '+done.length+'</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">ANTERIORES // '+done.length+'</div>';
     h+=done.map(card).join('');
   }
   if(!myOrders.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">SIN PEDIDOS //</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>';
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">SIN PEDIDOS //</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>';
   }
   h+='<div style="margin-top:14px">'+BTN('ACTUALIZAR //','loadMyOrders()',true)+'</div></div>'+NAV();
   return h;
@@ -1130,9 +1109,9 @@ function sOrdDetail(){
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:18px;margin-bottom:12px">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
     +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
-    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;margin-top:2px">'+esc(o.ref)+'</div>'
+    +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:2px">'+esc(o.ref)+'</div>'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#8BAF9A;margin-top:2px">'+esc(o.date)+'</div></div>'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:#CBA258">'+SOLES+o.total+'</div></div>'
+    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:34px;font-weight:900;color:'+BLU+'">'+SOLES+o.total+'</div></div>'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:4px">PEDIDO //</div>'
     +'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+esc(o.summary)+'</div>'
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:4px">DIRECCIÓN //</div>'
@@ -1186,7 +1165,7 @@ function sPHistory(){
   var txns=(cust&&cust._txns)||[];
   var h=H('HISTORIAL DE PUNTOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
   if(!txns.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN MOVIMIENTOS //</div></div>';
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em">SIN MOVIMIENTOS //</div></div>';
   }else{
     h+=txns.map(function(t){
       var pos=(t.points||0)>=0;
@@ -1199,7 +1178,7 @@ function sPHistory(){
 
 function sPRewards(){
   var pts=cust.points||0;
-  return H('RECOMPENSAS','sc=\'p_home\';render()')+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">'+pts+'<span style="color:'+BLU+';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>'+RWDS.map(function(r){var ok=pts>=r.pts,pct=Math.min((pts/r.pts)*100,100);return'<div style="background:'+(ok?'#0c1d30':'#0d0d0d')+';border:1px solid '+(ok?BLU:'#1a1a1a')+';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:'+(ok?10:6)+'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:19px;font-weight:700;color:'+(ok?'#fff':'#666')+';letter-spacing:.04em">'+r.n+'<span style="color:'+(ok?BLU:'#2a2a2a')+'"> // </span>'+r.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:'+(ok?'#888':'#555')+';margin-top:2px">'+r.d+'</p>'+(r.sizeOnly?'<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px">⚠ Válido solo en tamaño '+r.sizeOnly+'CM</p>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+(ok?BLU:'#444')+';line-height:1">'+r.pts+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#CBA258">PTS</div></div></div>'+(!ok?'<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:'+BLU+';height:100%;width:'+pct+'%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258">Faltan '+(r.pts-pts)+' puntos</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>')+'</div>';}).join('')+'</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>'+NAV();
+  return H('RECOMPENSAS','sc=\'p_home\';render()')+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">'+pts+'<span style="color:'+BLU+';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>'+RWDS.map(function(r){var ok=pts>=r.pts,pct=Math.min((pts/r.pts)*100,100);return'<div style="background:'+(ok?'#0c1d30':'#0d0d0d')+';border:1px solid '+(ok?BLU:'#1a1a1a')+';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:'+(ok?10:6)+'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:19px;font-weight:700;color:'+(ok?'#fff':'#666')+';letter-spacing:.04em">'+r.n+'<span style="color:'+(ok?BLU:'#2a2a2a')+'"> // </span>'+r.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:'+(ok?'#888':'#555')+';margin-top:2px">'+r.d+'</p>'+(r.sizeOnly?'<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px">⚠ Válido solo en tamaño '+r.sizeOnly+'CM</p>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+(ok?BLU:'#444')+';line-height:1">'+r.pts+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:'+BLU+'">PTS</div></div></div>'+(!ok?'<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:'+BLU+';height:100%;width:'+pct+'%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+'">Faltan '+(r.pts-pts)+' puntos</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>')+'</div>';}).join('')+'</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>'+NAV();
 }
 
 
@@ -1251,7 +1230,7 @@ async function loadFavorites(){
 function sPFavorites(){
   var h=H('MIS FAVORITOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
   if(!myFavorites.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
+    h+='<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
   }else{
     h+=myFavorites.map(function(f){
       return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
@@ -1278,7 +1257,7 @@ function sPAddresses(){
       return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(a.label)+'</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(a.address)+'</div></div><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0;margin-left:10px">ELIMINAR</button></div>';
     }).join('');
   }else{
-    h+='<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">SIN DIRECCIONES GUARDADAS //</div></div>';
+    h+='<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em">SIN DIRECCIONES GUARDADAS //</div></div>';
   }
   h+='<div style="margin-top:20px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:10px">AGREGAR DIRECCIÓN //</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','NOMBRE // Casa, Trabajo...')+INP('na-addr','DIRECCIÓN COMPLETA')+'<div id="na-msg" style="font-family:Barlow,sans-serif;font-size:11px;color:#ff5555;min-height:14px">'+newAddrMsg+'</div>'+BTN('GUARDAR DIRECCIÓN //','doAddAddress()')+'</div></div>';
   h+='</div>'+NAV();
@@ -1363,7 +1342,7 @@ function sAdminHome(){
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
     +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:'+BLU+'"> // </span>OPERADOR</div>'
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
-    +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:#CBA258">← salir</button></div>'
+    +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
 
     +'<div onclick="loadDashboard()" style="background:linear-gradient(135deg,#1a1200,#0d0d0d);border:1px solid rgba(245,197,24,.35);border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
@@ -1371,7 +1350,7 @@ function sAdminHome(){
     +'<span style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:#F5C518">VER →</span></div>'
 
     // Active orders
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">PEDIDOS ACTIVOS // '+(ao.length||'ninguno')+'</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">PEDIDOS ACTIVOS // '+(ao.length||'ninguno')+'</div>'
     +(ao.length?ao.map(function(o){
       var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
       return'<div style="background:#2D5246;border:1px solid '+(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c')+';border-radius:10px;padding:16px;margin-bottom:12px">'
@@ -1391,7 +1370,7 @@ function sAdminHome(){
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#CBA258">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
     +'</div></div></div>';
 }
@@ -1429,7 +1408,7 @@ function sAdminDashboard(){
       +'</div>';
   }
   // Ventas
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">VENTAS //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">VENTAS //</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
     +DTILE('HOY',SOLES+d.revenue.today.revenue,d.revenue.today.count+' pedidos · tkt '+SOLES+d.revenue.today.avgTicket)
     +DTILE('SEMANA',SOLES+d.revenue.week.revenue,d.revenue.week.count+' pedidos · tkt '+SOLES+d.revenue.week.avgTicket)
@@ -1442,21 +1421,21 @@ function sAdminDashboard(){
   // Tendencia 14 días
   if(d.trend&&d.trend.length){
     var trMax=Math.max.apply(null,d.trend.map(function(t){return t.revenue;}).concat([1]));
-    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">TENDENCIA · 14 DÍAS //</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">TENDENCIA · 14 DÍAS //</div>';
     h+='<div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-bottom:6px">'+d.trend.map(function(t){var pct=Math.round((t.revenue/trMax)*100);return'<div style="flex:1;height:100%;display:flex;align-items:flex-end" title="'+t.date+': S/'+t.revenue+'"><div style="width:100%;background:'+(t.revenue>0?BLU:'#2D5246')+';height:'+Math.max(pct,t.revenue>0?4:2)+'%;border-radius:2px 2px 0 0"></div></div>';}).join('')+'</div>';
     h+='<div style="display:flex;gap:3px;margin-bottom:18px">'+d.trend.map(function(t,i){return'<div style="flex:1;text-align:center;font-family:Share Tech Mono,monospace;font-size:6px;color:#8BAF9A">'+(i%2===0?t.date:'')+'</div>';}).join('')+'</div>';
   }
   // Pedidos por estado
   var stEntries=Object.keys(d.ordersByStatus||{});
   var stMax=Math.max.apply(null,stEntries.map(function(k){return d.ordersByStatus[k];}).concat([1]));
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PEDIDOS POR ESTADO //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PEDIDOS POR ESTADO //</div>';
   h+=stEntries.length?stEntries.map(function(k){return DBAR(k,d.ordersByStatus[k],stMax,(STATUSES[k]||{}).c);}).join(''):'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:16px">Sin pedidos todavía.</div>';
   if(d.avgEtaMinutes!=null){
     h+='<div style="margin-top:10px">'+DTILE('TIEMPO ESTIMADO PROMEDIO OFRECIDO',d.avgEtaMinutes+' min','Cuando se marca "EN CAMINO"')+'</div>';
   }
   h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
   // Productos top
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PRODUCTOS MÁS VENDIDOS //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PRODUCTOS MÁS VENDIDOS //</div>';
   if(d.topProducts&&d.topProducts.length){
     var pMax=Math.max.apply(null,d.topProducts.map(function(p){return p.count;}).concat([1]));
     h+=d.topProducts.map(function(p){
@@ -1468,7 +1447,7 @@ function sAdminDashboard(){
   }
   h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
   // Clientes
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">CLIENTES //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">CLIENTES //</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
     +DTILE('TOTAL',d.customers.total)
     +DTILE('RECURRENTES',d.customers.returning,'>1 pedido')
@@ -1480,14 +1459,14 @@ function sAdminDashboard(){
   h+=DBAR('VIP',tiers.VIP||0,tMax,'#E53935')+DBAR('FREQUENT',tiers.FREQUENT||0,tMax,'#F5C518')+DBAR('REGULAR',tiers.REGULAR||0,tMax,BLU)+DBAR('MEMBER',tiers.MEMBER||0,tMax,'#8BAF9A');
   h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
   // Puntos
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">PUNTOS //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PUNTOS //</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">'
     +DTILE('EMITIDOS',d.points.issued)
     +DTILE('CANJEADOS',d.points.redeemed)
     +DTILE('EN CIRCULACIÓN',d.points.outstanding)
     +'</div>';
   h+='<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:10px;font-weight:700">EXPORTAR //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">EXPORTAR //</div>';
   h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
     +'<button onclick="exportCsv(\'export-orders\',\'pedidos\')" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">EXPORTAR PEDIDOS (CSV) //</button>'
     +'<button onclick="exportCsv(\'export-customers\',\'clientes\')" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">EXPORTAR CLIENTES (CSV) //</button>'
@@ -1633,7 +1612,7 @@ function revGeo(lat,lon){
       var hint=parts.length?parts.join(', '):'';
       window._mHint=hint;
       var h=document.getElementById('maddr-hint');
-      if(h)h.innerHTML=hint?'<span style="color:#CBA258">&#8599; Referencia: </span>'+hint:'';
+      if(h)h.innerHTML=hint?'<span style="color:'+BLU+'">&#8599; Referencia: </span>'+hint:'';
       // Pre-fill input if empty
       var inp=document.getElementById('maddr-input');
       if(inp&&!inp.value&&hint)inp.value=hint;
@@ -1657,7 +1636,7 @@ function confirmMap(){
   var el=document.getElementById('o-addr');
   if(el){el.value=a;el.style.borderColor='#3A86FF';el.focus();}
   var h=document.getElementById('gps-hint');
-  if(h)h.innerHTML='<a href="https://maps.google.com/?q='+window._mLat+','+window._mLon+'" target="_blank" style="color:#CBA258;font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
+  if(h)h.innerHTML='<a href="https://maps.google.com/?q='+window._mLat+','+window._mLon+'" target="_blank" style="color:'+BLU+';font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
   setTimeout(function(){var e=document.getElementById('o-addr');if(e)e.style.borderColor='#0d0d0d';},3000);
 }
 
@@ -1758,7 +1737,7 @@ async function setStock(code,name){
 }
 function sAdminInventory(){
   var h=H('INVENTARIO',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
-  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:6px">CONTROL DE STOCK //</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:6px">CONTROL DE STOCK //</div>';
   h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
   INV_CATS.forEach(function(cat){
     h+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF;margin:18px 0 10px">'+cat.t+'<span style="color:'+BLU+'"> //</span></div>';
@@ -1801,10 +1780,10 @@ async function delAdmin(ph){
 }
 function sAdminMgr(){
   return H('ADMINISTRADORES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:14px">CUENTAS ADMIN // '+_adminList.length+'</div>'
+    +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:14px">CUENTAS ADMIN // '+_adminList.length+'</div>'
     +_adminList.map(function(a){var sp=a.role==='superadmin';return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+a.name+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#8BAF9A;margin-top:2px">'+a.phone+' · '+(sp?'SUPERADMIN':'admin')+'</div></div>'+(sp?'<span style="font-family:Share Tech Mono,monospace;font-size:8px;color:#F5C518">PRINCIPAL</span>':'<button onclick="delAdmin(\''+a.phone+'\')" style="all:unset;cursor:pointer;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;color:#ff5555">ELIMINAR</button>')+'</div>';}).join('')
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
-    +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:12px">AGREGAR ADMIN //</div>'
+    +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">AGREGAR ADMIN //</div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +INP('aa-nm','NOMBRE DEL NUEVO ADMIN')
     +INP('aa-ph','TELÉFONO','tel')
