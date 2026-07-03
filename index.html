@@ -117,6 +117,15 @@ var RWDS=[
   {id:'R05',pts:250,n:'BEBIDA',   s:'GRATIS', d:'Bebida a elección'},
   {id:'R06',pts:400,n:'SÁNDWICH', s:'GRATIS', d:'Sándwich 15CM gratis — cualquier proteína',sizeOnly:'15'}
 ];
+// BEBIDAS Y SIDES — catálogo placeholder, precios de ejemplo.
+// ⚠️ EDITA esta lista con tus productos y precios reales antes de publicar.
+var SIDES=[
+  {id:'D01',l:'CHICHA MORADA',s:'500ML',p:5},
+  {id:'D02',l:'INCA KOLA',    s:'355ML',p:5},
+  {id:'D03',l:'AGUA',        s:'SIN GAS',p:3},
+  {id:'D04',l:'PAPAS',       s:'CHIPS',p:4},
+  {id:'D05',l:'GALLETA',     s:'AVENA',p:3}
+];
 
 // HORARIO — placeholder. [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
 // ⚠️ EDITA ESTOS HORARIOS con el horario real del local antes de confiar en el badge
@@ -151,6 +160,7 @@ var confNom='',confEmail='',confNotes='';
 var checkoutLocked=false,lockedMsg='',_payingInProgress=false;
 var appliedReward=null;
 var newAddrMsg='',favMsg='';
+var cart=[];
 (function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();}catch(e){}})();
 
 // API — todas las operaciones sensibles (login, pedidos, puntos, admin) pasan
@@ -275,6 +285,15 @@ function loadBuild(bld){
   size=bld.size||null;doubleProt=!!bld.doubleProt;extraSauce=!!bld.extraSauce;
   enterConfirm();
 }
+// Convierte el "build" legado (un pedido/favorito de antes del carrito) al formato
+// de línea de carrito actual.
+function buildToCartItem(bld){
+  var item=Object.assign({},bld);
+  item.type=bld.mode;
+  delete item.mode;
+  item.qty=1;
+  return item;
+}
 // Limpia el estado del builder antes de empezar un pedido nuevo — evita que un
 // build abandonado (o de un pedido anterior en la misma sesión) reaparezca
 // precargado en un pedido sin relación.
@@ -286,10 +305,16 @@ function startOrder(m){
   mode=m;
   go(m==='sig'?'o_sig':'o_build');
 }
-// Punto de entrada único a la pantalla de confirmación — reinicia los campos
-// transitorios del checkout (nombre/correo/notas/dirección/programación/crédito)
-// para que un pedido nuevo nunca arrastre texto o selecciones de un intento anterior.
+// Entrada a la pantalla de revisar UN sándwich recién armado, antes de agregarlo
+// al carrito — no toca los campos del checkout (esos viven a nivel de carrito).
 function enterConfirm(){
+  go('o_item_confirm');
+}
+// Reinicia los campos transitorios del checkout (nombre/correo/notas/dirección/
+// programación/crédito/recompensa) — se llama solo cuando el carrito pasa de estar
+// vacío a tener su primer producto, para que un pedido nuevo nunca arrastre texto
+// o selecciones de un carrito anterior ya finalizado.
+function initCheckoutFields(){
   confNom=cust?cust.name:'';
   confEmail=cust&&cust.email?cust.email:'';
   confNotes='';
@@ -300,10 +325,9 @@ function enterConfirm(){
   checkoutLocked=false;lockedMsg='';
   _payingInProgress=false;
   appliedReward=null;
-  go('o_confirm');
 }
-// Antes de cualquier re-render disparado DESDE la propia pantalla de confirmación
-// (toggle de extras, horario, crédito, elegir una dirección guardada) hay que
+// Antes de cualquier re-render disparado DESDE la propia pantalla de carrito/checkout
+// (toggle de recompensa, horario, crédito, elegir una dirección guardada) hay que
 // preservar lo que el cliente ya escribió — render() reconstruye todo el innerHTML,
 // así que sin esto cada toque borraría nombre/correo/notas/dirección en curso.
 function syncConfirmFields(){
@@ -315,7 +339,117 @@ function syncConfirmFields(){
 }
 function confirmRerender(){syncConfirmFields();render();}
 function lastPaidOrder(){
-  return myOrders.find(function(o){return o.payment_status==='paid'&&o.build;});
+  return myOrders.find(function(o){return o.payment_status==='paid'&&((o.items&&o.items.length)||o.build);});
+}
+// Precio de una línea del carrito (una unidad, sin multiplicar por qty) — usado
+// tanto para mostrar el carrito como para armar el pedido a enviar.
+function itemUnitPrice(item){
+  if(item.type==='side'){var d=SIDES.find(function(x){return x.id===item.code;});return d?d.p:0;}
+  if(item.type==='sig'){
+    var sig=SIGS.find(function(x){return x.id===item.sigId;});
+    if(!sig)return 0;
+    var pr=PROTS.find(function(x){return x.id===sig.prot;});
+    var bp=item.size==='15'?sig.p15:sig.p30;
+    var dbl=(item.doubleProt&&pr)?pr.pDbl:0;
+    var sc=item.extraSauce?2:0;
+    return bp+dbl+sc;
+  }
+  var pr2=PROTS.find(function(x){return x.id===item.prot;});
+  if(!pr2)return 0;
+  var bp2=item.size==='15'?pr2.p15:pr2.p30;
+  var dbl2=item.doubleProt?pr2.pDbl:0;
+  var sc2=item.extraSauce?2:0;
+  return bp2+dbl2+sc2;
+}
+function itemLineTotal(item){return itemUnitPrice(item)*item.qty;}
+function itemLabel(item){
+  if(item.type==='side'){var d=SIDES.find(function(x){return x.id===item.code;});return d?d.l+' // '+d.s:'';}
+  if(item.type==='sig'){var sig=SIGS.find(function(x){return x.id===item.sigId;});return(sig?sig.n+' // '+sig.s:'')+' '+szLabel(item.size);}
+  return fn(PROTS,item.prot)+' '+szLabel(item.size);
+}
+function itemExtrasLabel(item){
+  if(item.type==='side')return'';
+  var parts=[];
+  if(item.doubleProt)parts.push('doble proteína');
+  if(item.extraSauce)parts.push('salsa extra');
+  return parts.join(' · ');
+}
+function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
+// Busca el primer producto del carrito elegible para una recompensa — R04 necesita
+// una línea con doble proteína activada, R06 necesita una línea 15CM. El resto de
+// recompensas no tiene requisito propio (basta con que el carrito no esté vacío).
+function findRewardTargetIndex(rewardId){
+  if(rewardId==='R04'){for(var i=0;i<cart.length;i++){if(cart[i].type!=='side'&&cart[i].doubleProt)return i;}return -1;}
+  if(rewardId==='R06'){for(var j=0;j<cart.length;j++){if(cart[j].type!=='side'&&cart[j].size==='15')return j;}return -1;}
+  return cart.length?0:-1;
+}
+function rewardWaiverAmount(rewardId,targetIdx){
+  if(targetIdx<0)return 0;
+  var it=cart[targetIdx];
+  if(rewardId==='R04'){
+    var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
+    var pr=PROTS.find(function(x){return x.id===protCode;});
+    return pr?pr.pDbl:0;
+  }
+  if(rewardId==='R06'){
+    if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?(it.size==='15'?sig.p15:sig.p30):0;}
+    var pr2=PROTS.find(function(x){return x.id===it.prot;});
+    return pr2?(it.size==='15'?pr2.p15:pr2.p30):0;
+  }
+  return 0;
+}
+function cartFinalTotal(){
+  var base=cartBaseTotal();
+  if(!appliedReward)return base;
+  var idx=findRewardTargetIndex(appliedReward);
+  return Math.max(0,base-rewardWaiverAmount(appliedReward,idx));
+}
+function addSandwichToCart(){
+  var wasEmpty=cart.length===0;
+  var item=mode==='sig'
+    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:1}
+    :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:1};
+  cart.push(item);
+  if(wasEmpty)initCheckoutFields();
+  resetBuilder();mode=null;
+  go('o_cart');
+}
+function addSideToCart(code){
+  var wasEmpty=cart.length===0;
+  var existing=cart.find(function(it){return it.type==='side'&&it.code===code;});
+  if(existing){existing.qty++;}else{cart.push({type:'side',code:code,qty:1});}
+  if(wasEmpty)initCheckoutFields();
+  render();
+}
+function sideQtyChange(code,delta){
+  var it=cart.find(function(x){return x.type==='side'&&x.code===code;});
+  if(!it)return;
+  it.qty+=delta;
+  if(it.qty<=0)cart=cart.filter(function(x){return x!==it;});
+  render();
+}
+function cartQtyChange(idx,delta){
+  syncConfirmFields();
+  var it=cart[idx];if(!it)return;
+  it.qty+=delta;
+  if(it.qty<=0)cart.splice(idx,1);
+  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  render();
+}
+function cartRemove(idx){
+  syncConfirmFields();
+  cart.splice(idx,1);
+  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  render();
+}
+function clearCart(){cart=[];appliedReward=null;go('o_home');}
+// Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
+// — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
+function loadCart(items){
+  if(!items||!items.length)return;
+  cart=items.map(function(it){return Object.assign({},it);});
+  initCheckoutFields();
+  go('o_cart');
 }
 function ratedRefs(){try{return JSON.parse(localStorage.getItem('sw_rated')||'[]');}catch(e){return[];}}
 function markRated(ref){var r=ratedRefs();if(r.indexOf(ref)<0){r.push(ref);localStorage.setItem('sw_rated',JSON.stringify(r));}}
@@ -333,10 +467,13 @@ function sOHome(){
   var ss=storeStatus();
   var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px"><span style="width:6px;height:6px;border-radius:50%;background:'+(ss.open?'#25D366':'#ff8888')+'"></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(ss.open?'#25D366':'#ff8888')+';letter-spacing:.1em">'+ss.label+'</span></div>';
   var lastOrd=cust?lastPaidOrder():null;
-  var recoCard=lastOrd?'<div onclick="loadBuild('+JSON.stringify(lastOrd.build).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
+  var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
+  var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
+  var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:#2D5246;border:1px solid '+BLU+';border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🛒 CARRITO<span style="color:'+BLU+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
     +hoursBadge
+    +cartCard
     +recoCard
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:20px">\xbfCÓMO QUIERES PEDIR? //</div>'
     +'<div onclick="startOrder(\'sig\')" style="background:#1A3028;border:1px solid '+BLU+';border-radius:12px;padding:22px 20px;cursor:pointer;margin-bottom:12px;position:relative">'
@@ -409,65 +546,82 @@ function CARDOFF(item){return'<div style="background:#1A3028;border:1px solid #2
 function TOPOFF(t){return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:13px 14px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#8BAF9A">'+t.l+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#ff8888;display:block;margin-top:3px">AGOTADO</span></div></div>';}
 
 // ORDER CONFIRM + SMART UPSELL
-function sOConfirm(){
+// PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito
+function sOItemConfirm(){
   var sig=SIGS.find(function(x){return x.id===sigId;}),pr=PROTS.find(function(x){return x.id===prot;});
   var bk=mode==='sig'?'o_sig':'o_build',rows=[];
   var dbl=dblProtRef();
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dblSurcharge=(doubleProt&&dbl)?dbl.pDbl:0;
   var sauceSurcharge=extraSauce?2:0;
-  var rewardWaiverAmt=0;
-  if(appliedReward==='R04'&&doubleProt&&dbl)rewardWaiverAmt=dblSurcharge;
-  else if(appliedReward==='R06'&&size==='15')rewardWaiverAmt=bp;
-  var t=Math.max(0,bp+dblSurcharge+sauceSurcharge-rewardWaiverAmt);
+  var t=bp+dblSurcharge+sauceSurcharge;
   rows.push({k:'TAMAÑO',v:szLabel(size)});
   if(mode==='sig'&&sig){rows.push({k:'SIGNATURE',v:sig.n+' // '+sig.s,p:sigPrice(sig)});rows.push({k:'PAN',v:fn(BASES,sig.base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,sig.prot)});rows.push({k:'TOPPINGS',v:sig.tops.map(function(id){return fn(TOPS,id);}).join(' · ')});rows.push({k:'SALSAS',v:sig.sauces.map(function(id){return fn(SAUCES,id);}).join(' + ')});}
   else{rows.push({k:'PAN',v:fn(BASES,base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'TOPPINGS',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'QUESO',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'SALSAS',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
-  if(doubleProt&&dbl)rows.push({k:'DOBLE',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl,free:appliedReward==='R04'});
+  if(doubleProt&&dbl)rows.push({k:'DOBLE',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl});
   if(extraSauce)rows.push({k:'SALSA EXTRA',v:'Salsa adicional a tu elección',p:2});
   var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:'💪',l:'DOBLE PROTEÍNA',d:'El doble de tu proteína elegida',p:dbl.pDbl}:!extraSauce?{k:'sauce',e:'🌶️',l:'SALSA EXTRA',d:'Salsa adicional a tu elección',p:2}:null;
   function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:false;}
   function uBtn(k,e,l,d,p,sel){
-    var act=k==='doubleProt'?'doubleProt=!doubleProt;if(!doubleProt&&appliedReward===\'R04\')appliedReward=null':'extraSauce=!extraSauce';
-    return'<div onclick="'+act+';confirmRerender()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+'S/'+p+'</span></div>';
+    var act=k==='doubleProt'?'doubleProt=!doubleProt':'extraSauce=!extraSauce';
+    return'<div onclick="'+act+';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+(sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'')+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?BLU:'#8BAF9A')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+'S/'+p+'</span></div>';
   }
-  var pBox=cust
-    ?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:4px">PUNTOS QUE GANARÁS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">+'+t+' pts <span style="font-size:11px;color:#8BAF9A;font-weight:400">pendientes hasta confirmar pago</span></div></div>'
-    :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px;margin-top:14px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+'">↗ Regístrate en PUNTOS para ganar +'+t+' pts</div></div>';
-  return H('CONFIRMAR PEDIDO','go(\''+bk+'\')')+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
-    +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.free?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;flex-shrink:0">GRATIS</span>':(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">S/'+r.p+'</span>':''))+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span></div></div>'
+  return H('CONFIRMAR SÁNDWICH','go(\''+bk+'\')')+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
+    +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">TU BUILD //</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';flex-shrink:0">S/'+r.p+'</span>':'')+'</div>';}).join('')+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span></div></div>'
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt','💪','DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce','🌶️','SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
-    +pBox
-    +rewardsPickerHTML(t,bp,dblSurcharge)
-    +(cust&&myAddresses.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+esc(a.label)+'</div>';}).join('')+'</div>':'')
-    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-email','CORREO // Para tu comprobante de pago','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
-    +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px">'
-    +'<div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div>'
-    +'<div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div>'
-    +'</div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px">':'')+'</div>'
-    +(cust&&(cust.credit_balance||0)>0?(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'\u2713':'\u25cb')+'</span></div></div>';})():'')
-    +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">\u2606 GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // Ej: Mi combo" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:6px">'+favMsg+'</div></div>':'')
-    +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
+    +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">☆ GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // Ej: Mi combo" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:6px">'+favMsg+'</div></div>':'')
     +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div></div>'
-    +AB(t,!checkoutLocked,'go(\''+bk+'\')','doOrder()',(useCredit&&cust&&(cust.credit_balance||0)>=t)?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
+    +AB(t,true,'go(\''+bk+'\')','addSandwichToCart()','AGREGAR AL CARRITO //');
+}
+async function doSaveFavorite(){
+  var nameEl=document.getElementById('o-favname');
+  var name=nameEl?nameEl.value.trim():'';
+  if(!name){favMsg='Ponle un nombre.';render();return;}
+  try{
+    await api('favorites-add',{token:token,name:name,mode:mode,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce});
+    favMsg='¡Guardado!';
+    loadUserExtras();
+  }catch(e){favMsg=e.message;render();}
+}
+
+// SIDES/BEBIDAS
+function sOSides(){
+  var h=H('BEBIDAS Y SIDES',"sc='o_cart';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'+ST('01','ELIGE','Se agregan a tu carrito.');
+  h+=SIDES.map(function(d){
+    var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
+    var qty=inCart?inCart.qty:0;
+    return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+d.l+'<span style="color:'+BLU+'"> // </span>'+d.s+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';margin-top:2px">S/'+d.p+'</div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>')+'</div>';
+  }).join('');
+  h+='</div>'+AB(null,true,null,"sc='o_cart';render()",'VER CARRITO //');
+  return h;
+}
+
+// CARRITO + CHECKOUT
+function cartItemsHTML(){
+  if(!cart.length)return'<div style="text-align:center;padding:24px 0"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#CBA258;letter-spacing:.2em">CARRITO VACÍO //</div></div>';
+  return cart.map(function(it,idx){
+    var extras=itemExtrasLabel(it);
+    return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">'+esc(extras)+'</div>':'')+'</div><button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'Share Tech Mono\',monospace;font-size:10px;flex-shrink:0">QUITAR</button></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#1A3028;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#1A3028;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+BLU+'">S/'+itemLineTotal(it)+'</span></div></div>';
+  }).join('');
 }
 // Recompensas aplicables directamente al pedido en curso — reemplaza el viejo flujo
 // de "canjear ahora y mostrar un código al repartidor". R04 y R06 descuentan el
-// precio (calculado arriba en sOConfirm); el resto no tiene mecánica de precio en
-// el menú actual mensajes de un solo producto — quedan registradas en el pedido
-// (recibo, ticket de cocina, WhatsApp) para que el local las prepare junto con él.
-function rewardsPickerHTML(t,bp,dblSurcharge){
+// precio de la línea del carrito a la que apliquen; el resto no tiene mecánica de
+// precio en el menú actual — quedan registradas en el pedido (recibo, ticket de
+// cocina, WhatsApp) para que el local las prepare junto con él.
+function rewardsPickerHTML(){
   if(!cust)return'';
   var unlocked=RWDS.filter(function(r){return(cust.points||0)>=r.pts;});
   if(!unlocked.length)return'';
   var rows=unlocked.map(function(r){
     var selected=appliedReward===r.id;
-    var eligible=r.id==='R06'?size==='15':true;
-    var savings=0;
-    if(selected&&r.id==='R04')savings=dblSurcharge;
-    else if(selected&&r.id==='R06')savings=bp;
-    var sub=r.d+(r.id==='R06'&&!eligible?' · solo válido en 15CM':'')+(selected&&savings>0?' · ahorras S/'+savings:(selected?' · se incluye con tu pedido':''));
+    var targetIdx=findRewardTargetIndex(r.id);
+    var eligible=targetIdx>=0;
+    var savings=selected?rewardWaiverAmount(r.id,targetIdx):0;
+    var targetLabel=selected&&targetIdx>=0?itemLabel(cart[targetIdx]):'';
+    var reqText=r.id==='R06'?' · agrega un sándwich 15CM para usarla':r.id==='R04'?' · agrega un sándwich con doble proteína para usarla':' · agrega algo a tu carrito para usarla';
+    var sub=r.d+(!eligible?reqText:'')+(selected&&savings>0?' · ahorras S/'+savings+' en '+targetLabel:(selected?' · se incluye con tu pedido':''));
     return'<div onclick="'+(eligible?'toggleReward(\''+r.id+'\')':'')+'" style="background:'+(selected?'#1E4A38':'#1A3028')+';border:1px solid '+(selected?BLU:'#3A6B58')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:'+(eligible?'pointer':'not-allowed')+';opacity:'+(eligible?1:.4)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;padding-right:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+BLU+'"> // </span>'+r.s+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">'+esc(sub)+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(selected?BLU:'#8BAF9A')+';flex-shrink:0">'+(selected?'✓':'○')+'</span></div></div>';
   }).join('');
   return'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">USA TUS PUNTOS //</div>'+rows+'</div>';
@@ -475,9 +629,8 @@ function rewardsPickerHTML(t,bp,dblSurcharge){
 function toggleReward(id){
   syncConfirmFields();
   if(appliedReward===id){appliedReward=null;render();return;}
-  if(id==='R06'&&size!=='15')return;
+  if(findRewardTargetIndex(id)<0)return;
   appliedReward=id;
-  if(id==='R04')doubleProt=true;
   render();
 }
 function pickAddr(id){
@@ -486,21 +639,35 @@ function pickAddr(id){
   syncConfirmFields();
   pickedAddrId=id;addrText=a.address;render();
 }
-async function doSaveFavorite(){
-  syncConfirmFields();
-  var nameEl=document.getElementById('o-favname');
-  var name=nameEl?nameEl.value.trim():'';
-  if(!name){favMsg='Ponle un nombre.';render();return;}
-  try{
-    await api('favorites-add',{token:token,name:name,mode:mode,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce});
-    favMsg='\u00a1Guardado!';
-    loadUserExtras();
-  }catch(e){favMsg=e.message;render();}
+function sOCart(){
+  var baseTotal=cartBaseTotal();
+  var t=cartFinalTotal();
+  var empty=!cart.length;
+  var pBox=cust
+    ?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:4px">PUNTOS QUE GANARÁS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">+'+t+' pts <span style="font-size:11px;color:#8BAF9A;font-weight:400">pendientes hasta confirmar pago</span></div></div>'
+    :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px;margin-top:14px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+'">↗ Regístrate en PUNTOS para ganar +'+t+' pts</div></div>';
+  return H('TU CARRITO',"sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
+    +cartItemsHTML()
+    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span>'+(t!==baseTotal?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras S/'+(baseTotal-t)+'</div>':'')+'</div></div>':'')
+    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="go(\'o_home\')" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ SÁNDWICH</div><div onclick="sc=\'o_sides\';render()" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ BEBIDA/SIDE</div></div>'
+    +(empty?'':pBox)
+    +(empty?'':rewardsPickerHTML())
+    +(empty||!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
+    +(empty?'':'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-email','CORREO // Para tu comprobante de pago','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>')
+    +(empty?'':'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px">':'')+'</div>')
+    +(empty||!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
+    +(empty?'':'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>')
+    +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">VACIAR CARRITO</div>':'')
+    +'</div>'
+    +AB(cart.length?t:null,cart.length>0&&!checkoutLocked,null,'doOrder()',(useCredit&&cust&&(cust.credit_balance||0)>=t)?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
 }
 
 var _pendingOrder=null;
 function doOrder(){
   if(_payingInProgress)return;
+  if(!cart.length)return;
+  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
   var nom=document.getElementById('o-nom').value.trim();
   var email=document.getElementById('o-email').value.trim();
   var addr=document.getElementById('o-addr').value.trim();
@@ -518,36 +685,40 @@ function doOrder(){
     schedIso=schedDate.toISOString();
   }
   if(errEl)errEl.textContent='';
-  var sig=SIGS.find(function(x){return x.id===sigId;}),pr=PROTS.find(function(x){return x.id===prot;}),ref=oref();
-  var dbl=dblProtRef();
-  var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
-  var dblSurcharge=(doubleProt&&dbl)?dbl.pDbl:0;
-  var sauceSurcharge=extraSauce?2:0;
-  var rewardWaiverAmt=0;
-  if(appliedReward==='R04'&&doubleProt&&dbl)rewardWaiverAmt=dblSurcharge;
-  else if(appliedReward==='R06'&&size==='15')rewardWaiverAmt=bp;
-  var t=Math.max(0,bp+dblSurcharge+sauceSurcharge-rewardWaiverAmt);
+  var ref=oref();
+  var t=cartFinalTotal();
   var rewardObj=appliedReward?RWDS.find(function(x){return x.id===appliedReward;}):null;
-  var sumParts=[szLabel(size)];
-  if(mode==='sig'&&sig){sumParts.push(sig.n+' S/'+sigPrice(sig));}
-  else{sumParts.push(fn(PROTS,prot)+' S/'+protPrice(pr));}
-  if(doubleProt)sumParts.push('+DOBLE PROTEÍNA');if(extraSauce)sumParts.push('+SALSA EXTRA');
-  if(rewardObj)sumParts.push('🎁 '+rewardObj.n+' '+rewardObj.s);
-  var summary=sumParts.join(' · ');
-  var lines=['*PEDIDO SND//WCH*','Ref: '+ref,'','👤 '+nom,'📍 '+addr,'','Tamaño: '+szLabel(size)];
-  if(mode==='sig'&&sig){lines.push('★ '+sig.n+' — S/'+sigPrice(sig));lines.push('Pan: '+fn(BASES,sig.base));lines.push('Proteína: '+fn(PROTS,sig.prot));lines.push('Toppings: '+sig.tops.map(function(id){return fn(TOPS,id);}).join(', '));lines.push('Salsas: '+sig.sauces.map(function(id){return fn(SAUCES,id);}).join(' + '));}
-  else{lines.push('Pan: '+fn(BASES,base));lines.push('Proteína: '+fn(PROTS,prot)+' S/'+protPrice(pr));lines.push('Toppings: '+(tops.length?tops.map(function(id){return fn(TOPS,id);}).join(', '):'ninguno'));lines.push('Queso: '+(cheese?fn(CHEESE,cheese):'sin queso'));lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'ninguna'));}
-  if(doubleProt&&dbl)lines.push('+ DOBLE '+dbl.l+' // '+dbl.s+(appliedReward==='R04'?' GRATIS':' S/'+dbl.pDbl));
-  if(extraSauce)lines.push('+ SALSA EXTRA S/2');
-  if(rewardObj)lines.push('🎁 RECOMPENSA: '+rewardObj.n+' // '+rewardObj.s);
-  if(notes)lines.push('📝 '+notes);
+  var rewardTargetIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
+  var itemSummaries=cart.map(function(it){var extras=itemExtrasLabel(it);return it.qty+'x '+itemLabel(it)+(extras?' ('+extras+')':'');});
+  var summary=itemSummaries.join(' · ')+(rewardObj?' · 🎁 '+rewardObj.n+' '+rewardObj.s:'');
+  var lines=['*PEDIDO SND//WCH*','Ref: '+ref,'','👤 '+nom,'📍 '+addr,''];
+  cart.forEach(function(it,idx){
+    var extras=itemExtrasLabel(it);
+    lines.push((idx+1)+') '+it.qty+'x '+itemLabel(it)+(extras?' — '+extras:'')+' — S/'+itemLineTotal(it));
+    if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
+  });
+  if(notes)lines.push('','📝 '+notes);
   lines.push('','*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
-  var productKey=mode==='sig'?sigId:prot;
-  var ingredients=(mode==='sig'&&sig)?[sig.base,sig.prot].concat(sig.tops).concat(sig.sauces):[base,prot].concat(tops).concat(cheese?[cheese]:[]).concat(sauces);
-  if(doubleProt){var dProtCode=(mode==='sig'&&sig)?sig.prot:prot;ingredients.push(dProtCode);}
+  var ingredients=[];
+  cart.forEach(function(it){
+    if(it.type==='side'){for(var k=0;k<it.qty;k++)ingredients.push(it.code);return;}
+    var sig=it.type==='sig'?SIGS.find(function(x){return x.id===it.sigId;}):null;
+    var baseCode=it.type==='sig'?sig.base:it.base;
+    var protCode=it.type==='sig'?sig.prot:it.prot;
+    var topsArr=it.type==='sig'?sig.tops:it.tops;
+    var saucesArr=it.type==='sig'?sig.sauces:it.sauces;
+    var cheeseCode=it.type==='byo'?it.cheese:null;
+    for(var q=0;q<it.qty;q++){
+      ingredients.push(baseCode,protCode);
+      ingredients=ingredients.concat(topsArr);
+      if(cheeseCode)ingredients.push(cheeseCode);
+      ingredients=ingredients.concat(saucesArr);
+      if(it.doubleProt)ingredients.push(protCode);
+    }
+  });
   _payingInProgress=true;
-  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,mode:mode,productKey:productKey,ingredients:ingredients,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce,scheduledFor:schedIso,rewardId:appliedReward};
+  _pendingOrder={ref:ref,nom:nom,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward};
   if(t===0){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
@@ -562,7 +733,7 @@ async function payWithCredit(){
   busy=true;busyMsg='Pagando con tu crédito...';render();
   var res;
   try{
-    res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+    res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
@@ -571,16 +742,16 @@ async function payWithCredit(){
   }
   finalizeOrderSuccess(res,po,null);
 }
-// Un pedido cubierto por completo por una recompensa (S/06 sándwich gratis en 15CM,
-// o R04 doble proteína gratis si eso era todo el excedente) no necesita ni Culqi ni
-// crédito interno — el servidor lo acepta con total 0 mientras la recompensa sea válida.
+// Un pedido cubierto por completo por una recompensa (ej. S/06 sándwich gratis en
+// 15CM) no necesita ni Culqi ni crédito interno — el servidor lo acepta con total
+// 0 mientras la recompensa sea válida.
 async function payAsRewardOnly(){
   if(!_pendingOrder)return;
   var po=_pendingOrder;
   busy=true;busyMsg='Aplicando tu recompensa...';render();
   var res;
   try{
-    res=await api('place-order',{token:token,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+    res=await api('place-order',{token:token,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
@@ -643,7 +814,7 @@ async function chargeAndFinalize(culqiToken){
     // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
     var res;
     try{
-      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,mode:po.mode,productKey:po.productKey,ingredients:po.ingredients,sigId:po.sigId,base:po.base,prot:po.prot,tops:po.tops,cheese:po.cheese,sauces:po.sauces,size:po.size,doubleProt:po.doubleProt,extraSauce:po.extraSauce,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
     }catch(e){
       // El cobro ya se hizo pero el pedido no quedó registrado — bloqueamos un reintento
       // desde aquí (crearía un SEGUNDO cobro real) y pedimos contactar al local con la ref.
@@ -666,6 +837,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   localStorage.setItem('sw_last_ref',po.ref);
   window._lTot=po.total;window._lRef=po.ref;window._lChargeId=chargeId;
   window._lRewardLabel=res.order&&res.order.redeemed_reward?res.order.redeemed_reward:null;
+  cart=[];
   mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
   useCredit=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
@@ -1383,7 +1555,9 @@ function render(){
     case'o_home':      h=sOHome();break;
     case'o_sig':       h=sOSig();break;
     case'o_build':     h=sOBuild();break;
-    case'o_confirm':   h=sOConfirm();break;
+    case'o_item_confirm':h=sOItemConfirm();break;
+    case'o_cart':      h=sOCart();break;
+    case'o_sides':     h=sOSides();break;
     case'o_sent':      h=sOSent();break;
     case'p_auth':      h=sPAuth();break;
     case'p_welcome':   h=sWelcome();break;
