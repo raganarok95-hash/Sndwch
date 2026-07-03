@@ -142,7 +142,7 @@ function storeStatus(){
 var sc='o_home',tab='order',busy=false,busyMsg='';
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
-var scheduledFor=null,useCredit=false;
+var scheduledFor=null,useCredit=false,useCOD=false;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
@@ -322,6 +322,7 @@ function initCheckoutFields(){
   pickedAddrId=null;
   scheduleMode='now';
   useCredit=false;
+  useCOD=false;
   checkoutLocked=false;lockedMsg='';
   _payingInProgress=false;
   appliedReward=null;
@@ -651,16 +652,17 @@ function sOCart(){
     +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">S/'+t+'</span>'+(t!==baseTotal?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras S/'+(baseTotal-t)+'</div>':'')+'</div></div>':'')
     +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="go(\'o_home\')" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ SÁNDWICH</div><div onclick="sc=\'o_sides\';render()" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ BEBIDA/SIDE</div></div>'
     +(empty?'':pBox)
-    +(empty?'':rewardsPickerHTML())
+    +(empty||useCOD?'':rewardsPickerHTML())
     +(empty||!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#8BAF9A')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
     +(empty?'':'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-email','CORREO // Para tu comprobante de pago','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#8BAF9A;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>')
     +(empty?'':'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px">':'')+'</div>')
-    +(empty||!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(empty||!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)useCOD=false;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: S/'+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(empty||useCredit&&cust&&(cust.credit_balance||0)>=t?'':'<div onclick="useCOD=!useCOD;if(useCOD){useCredit=false;appliedReward=null;}confirmRerender()" style="margin-top:16px;background:'+(useCOD?'#1E4A38':'#1A3028')+';border:1px solid '+(useCOD?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CONTRA ENTREGA</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Efectivo o Yape al repartidor'+(useCOD?' · las recompensas no se aplican en este método':'')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(useCOD?BLU:'#8BAF9A')+'">'+(useCOD?'✓':'○')+'</span></div></div>')
     +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +(empty?'':'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>')
     +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">VACIAR CARRITO</div>':'')
     +'</div>'
-    +AB(cart.length?t:null,cart.length>0&&!checkoutLocked,null,'doOrder()',(useCredit&&cust&&(cust.credit_balance||0)>=t)?'CONFIRMAR CON CRÉDITO //':'PAGAR Y ENVIAR //');
+    +AB(cart.length?t:null,cart.length>0&&!checkoutLocked,null,'doOrder()',(useCredit&&cust&&(cust.credit_balance||0)>=t)?'CONFIRMAR CON CRÉDITO //':useCOD?'CONFIRMAR // PAGAS AL RECIBIR':'PAGAR Y ENVIAR //');
 }
 
 var _pendingOrder=null;
@@ -668,6 +670,7 @@ function doOrder(){
   if(_payingInProgress)return;
   if(!cart.length)return;
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  if(useCOD)appliedReward=null;
   var nom=document.getElementById('o-nom').value.trim();
   var email=document.getElementById('o-email').value.trim();
   var addr=document.getElementById('o-addr').value.trim();
@@ -723,6 +726,8 @@ function doOrder(){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
     payWithCredit();
+  }else if(useCOD){
+    payWithCOD();
   }else{
     payWithCulqi(t,email);
   }
@@ -734,6 +739,25 @@ async function payWithCredit(){
   var res;
   try{
     res=await api('place-order',{token:token,useCredit:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+  }catch(e){
+    busy=false;_payingInProgress=false;render();
+    var errEl=document.getElementById('o-err');
+    if(errEl)errEl.textContent=e.message;else alert(e.message);
+    return;
+  }
+  finalizeOrderSuccess(res,po,null);
+}
+// Pago contra entrega — el pedido se registra de inmediato (para que cocina/reparto lo
+// vean) pero el servidor lo marca payment_status:'pending' y NO otorga puntos todavía;
+// esos se acreditan recién cuando el operador confirma la entrega (se cobra en efectivo/Yape
+// al momento), igual que el resto de métodos solo otorgan puntos tras el pago confirmado.
+async function payWithCOD(){
+  if(!_pendingOrder)return;
+  var po=_pendingOrder;
+  busy=true;busyMsg='Confirmando tu pedido...';render();
+  var res;
+  try{
+    res=await api('place-order',{token:token,cod:true,ref:po.ref,name:po.nom,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
@@ -837,9 +861,10 @@ function finalizeOrderSuccess(res,po,chargeId){
   localStorage.setItem('sw_last_ref',po.ref);
   window._lTot=po.total;window._lRef=po.ref;window._lChargeId=chargeId;
   window._lRewardLabel=res.order&&res.order.redeemed_reward?res.order.redeemed_reward:null;
+  window._lCOD=res.order&&res.order.payment_method==='cod';
   cart=[];
   mode=null;sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
-  useCredit=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
+  useCredit=false;useCOD=false;scheduleMode='now';scheduledFor=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
   _pendingOrder=null;
@@ -851,14 +876,14 @@ function finalizeOrderSuccess(res,po,chargeId){
 function sOSent(){
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#1E3932" class="fi">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:52px;font-weight:900;color:#fff;letter-spacing:.08em;line-height:1;margin-bottom:12px">SND<span style="color:'+BLU+'">//</span>WCH</div>'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>'
-    +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;max-width:260px;line-height:1.6;margin-bottom:16px">Tu pago fue procesado y tu pedido ya está en preparación.</p>'
+    +(window._lCOD?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#CBA258;letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO RECIBIDO //</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>')
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;max-width:260px;line-height:1.6;margin-bottom:16px">'+(window._lCOD?'Tu pedido ya está en preparación. Paga en efectivo o Yape al repartidor cuando llegue.':'Tu pago fue procesado y tu pedido ya está en preparación.')+'</p>'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#CBA258;letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
     +stBadge('RECIBIDO')
     +'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:10px;line-height:1.5">Sigue el estado en PUNTOS → MIS PEDIDOS</div></div>'
-    +'<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">MONTO COBRADO //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">S/'+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#8BAF9A;margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
-    +(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS GANADOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:'+BLU+'">+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span></div></div>':'')
+    +'<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(window._lCOD?'PAGAS AL RECIBIR //':'MONTO COBRADO //')+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">S/'+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#8BAF9A;margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
+    +(window._lCOD?(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0">+'+(window._lTot||0)+' pts pendientes hasta que se confirme la entrega y el pago</div></div>':''):(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">PUNTOS GANADOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:'+BLU+'">+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span></div></div>':''))
     +(window._lRewardLabel?'<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">🎁 RECOMPENSA APLICADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+esc(window._lRewardLabel)+'</div></div>':'')
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
     +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;padding:12px 22px;border-radius:10px">NUEVO PEDIDO</button>'
@@ -1267,6 +1292,7 @@ function sAdminHome(){
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 '+esc(o.redeemed_reward)+'</div>':'')
+        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-bottom:10px">💵 COBRAR S/'+o.total+' AL ENTREGAR</div>':'')
         +(o.customer_phone?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.4);color:#25D366;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-bottom:8px">💬 WHATSAPP AL CLIENTE →</button>':'')
         +(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+STATUSES[s.next].icon+' MARCAR COMO '+s.next+' →</button>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;text-align:center;padding:8px">✅ COMPLETADO</div>')
         +'</div>';
@@ -1320,6 +1346,9 @@ function sAdminDashboard(){
     +DTILE('MES','S/'+d.revenue.month.revenue,d.revenue.month.count+' pedidos · tkt S/'+d.revenue.month.avgTicket)
     +DTILE('TOTAL','S/'+d.revenue.allTime.revenue,d.revenue.allTime.count+' pedidos · tkt S/'+d.revenue.allTime.avgTicket)
     +'</div>';
+  if(d.codPending&&d.codPending.count>0){
+    h+='<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.15em">POR COBRAR · CONTRA ENTREGA //</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+d.codPending.count+' pedido(s) sin cobrar todavía</div></div><div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#ffa500">S/'+d.codPending.total+'</div></div>';
+  }
   // Tendencia 14 días
   if(d.trend&&d.trend.length){
     var trMax=Math.max.apply(null,d.trend.map(function(t){return t.revenue;}).concat([1]));
