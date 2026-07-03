@@ -478,11 +478,36 @@ function cartFinalTotal(){
   var idx=findRewardTargetIndex(appliedReward);
   return Math.max(0,base-rewardWaiverAmount(appliedReward,idx));
 }
+// El carrito se guarda en localStorage en cada cambio y se restaura al abrir la app
+// (ver restoreCart() en INIT) — sin esto, refrescar la página, cerrar la pestaña por
+// error o recibir una llamada a medio armar el pedido borraba todo el carrito, una
+// causa común de abandono en apps de delivery. Se descarta si tiene más de 24h para
+// no resucitar un carrito viejo con precios/catálogo ya desactualizados.
+function saveCart(){
+  try{
+    if(cart.length)localStorage.setItem('sw_cart',JSON.stringify({items:cart,reward:appliedReward,ts:Date.now()}));
+    else localStorage.removeItem('sw_cart');
+  }catch(e){}
+}
+// Se llama una sola vez al abrir la app (ver INIT), después de resolver la sesión —
+// así, si el cliente tiene cuenta, initCheckoutFields() prellena nombre/correo/
+// dirección desde su perfil en vez de con campos vacíos.
+function restoreCart(){
+  try{
+    var raw=JSON.parse(localStorage.getItem('sw_cart')||'null');
+    if(raw&&Array.isArray(raw.items)&&raw.items.length&&Date.now()-(raw.ts||0)<24*3600*1000){
+      cart=raw.items;
+      initCheckoutFields();
+      appliedReward=raw.reward||null;
+    }
+  }catch(e){}
+}
 function addSandwichToCart(){
   var wasEmpty=cart.length===0;
   cart.push(currentBuiltItem());
   if(wasEmpty)initCheckoutFields();
   resetBuilder();mode=null;
+  saveCart();
   go('o_cart');
 }
 function addSideToCart(code){
@@ -490,6 +515,7 @@ function addSideToCart(code){
   var existing=cart.find(function(it){return it.type==='side'&&it.code===code;});
   if(existing){existing.qty++;}else{cart.push({type:'side',code:code,qty:1});}
   if(wasEmpty)initCheckoutFields();
+  saveCart();
   render();
 }
 function sideQtyChange(code,delta){
@@ -497,6 +523,7 @@ function sideQtyChange(code,delta){
   if(!it)return;
   it.qty+=delta;
   if(it.qty<=0)cart=cart.filter(function(x){return x!==it;});
+  saveCart();
   render();
 }
 function cartQtyChange(idx,delta){
@@ -505,21 +532,24 @@ function cartQtyChange(idx,delta){
   it.qty+=delta;
   if(it.qty<=0)cart.splice(idx,1);
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  saveCart();
   render();
 }
 function cartRemove(idx){
   syncConfirmFields();
   cart.splice(idx,1);
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  saveCart();
   render();
 }
-function clearCart(){cart=[];appliedReward=null;go('o_home');}
+function clearCart(){cart=[];appliedReward=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 function loadCart(items){
   if(!items||!items.length)return;
   cart=items.map(function(it){return Object.assign({},it);});
   initCheckoutFields();
+  saveCart();
   go('o_cart');
 }
 function ratedRefs(){try{return JSON.parse(localStorage.getItem('sw_rated')||'[]');}catch(e){return[];}}
@@ -725,6 +755,7 @@ function editCartItem(idx){
   syncConfirmFields();
   cart.splice(idx,1);
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  saveCart();
   var bld=Object.assign({},it);
   bld.mode=it.type;
   delete bld.type;
@@ -737,6 +768,7 @@ function editItemNote(idx){
   var n=prompt('Nota para este producto (ej. sin cebolla, poca sal)',it.note||'');
   if(n===null)return;
   it.note=n.trim().slice(0,140);
+  saveCart();
   render();
 }
 // Recompensas aplicables directamente al pedido en curso — reemplaza el viejo flujo
@@ -762,9 +794,10 @@ function rewardsPickerHTML(){
 }
 function toggleReward(id){
   syncConfirmFields();
-  if(appliedReward===id){appliedReward=null;render();return;}
+  if(appliedReward===id){appliedReward=null;saveCart();render();return;}
   if(findRewardTargetIndex(id)<0)return;
   appliedReward=id;
+  saveCart();
   render();
 }
 function pickAddr(id){
@@ -1052,6 +1085,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   useCredit=false;manualPayMethod=null;scheduleMode='now';pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
+  saveCart();
   _pendingOrder=null;
   busy=false;sc='o_sent';render();
   if(cust)loadUserExtras();
@@ -2061,6 +2095,7 @@ async function togglePushNotifications(){
     }catch(e){} // sin conexión — sigue como invitado, no se pierde la sesión guardada
     busy=false;
   }
+  restoreCart();
   render();
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
   if(cust)loadUserExtras();
