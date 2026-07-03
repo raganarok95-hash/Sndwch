@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>SND//WCH</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@300;400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E3932">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SND//WCH">
 <script src="https://checkout.culqi.com/js/v4"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -53,6 +60,9 @@ var WA='51930957640',BLU='#CBA258';
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
 // solo en Supabase → Edge Functions → create-charge → Secrets, nunca aquí.
 var CULQI_PUBLIC_KEY='pk_test_REEMPLAZA_ESTA_LLAVE';
+// Llave pública VAPID para notificaciones push — DEBE ser el mismo par que
+// VAPID_PRIVATE_KEY en el servidor (api/index.ts). La pública no es secreta.
+var VAPID_PUBLIC_KEY='BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3BDMSItRVHlan23RQZA6dF3wpbU1rA0';
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
 var EMAIL_FN_URL=SB_URL+'/functions/v1/send-order-email';
 
@@ -147,6 +157,8 @@ var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[];
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
 var pollTimer=null,lastPollCount=0;
+var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
+var pushSubscribed=false,pushMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 var invStock={};
@@ -471,9 +483,11 @@ function sOHome(){
   var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
   var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:#2D5246;border:1px solid '+BLU+';border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🛒 CARRITO<span style="color:'+BLU+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>':'';
+  var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">📲 INSTALAR<span style="color:'+BLU+'"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" style="all:unset;cursor:pointer;color:#8BAF9A;font-size:16px;padding:0 4px">&#10005;</button></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
     +hoursBadge
+    +pwaCard
     +cartCard
     +recoCard
     +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:20px">\xbfCÓMO QUIERES PEDIR? //</div>'
@@ -1120,8 +1134,9 @@ function sPProfile(){
   var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">PROGRAMA DE REFERIDOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:#25D366;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">CRÉDITO SND//WCH //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">S/'+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
   var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">RETO MENSUAL //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
+  var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'#1E4A38':'#1A3028')+';border:1px solid '+(pushSubscribed?BLU:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:'+BLU+'"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(pushSubscribed?BLU:'#8BAF9A')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
   return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
-    +referralHTML+creditHTML+challengeHTML
+    +pushHTML+referralHTML+creditHTML+challengeHTML
     +'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();
 }
 function shareReferral(){
@@ -1761,6 +1776,76 @@ async function doRecover(){
   }
 }
 
+// PWA — registro del service worker (habilita instalación + apertura offline del
+// shell) y captura del prompt nativo de instalación para ofrecerlo desde un botón
+// propio en vez de esperar a que el navegador lo muestre por su cuenta.
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+}
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  render();
+});
+window.addEventListener('appinstalled',function(){
+  deferredInstallPrompt=null;
+  render();
+});
+async function installPwa(){
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  render();
+}
+function dismissPwaBanner(){
+  pwaDismissed=true;
+  localStorage.setItem('sw_pwa_dismissed','1');
+  render();
+}
+
+// NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
+// incluso con la app cerrada. Solo disponibles para clientes con cuenta (la suscripción
+// se guarda ligada a tu teléfono) y requieren HTTPS (o localhost) + un navegador
+// compatible con Push API.
+function urlBase64ToUint8Array(base64String){
+  var padding='='.repeat((4-base64String.length%4)%4);
+  var base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  var rawData=atob(base64);
+  var out=new Uint8Array(rawData.length);
+  for(var i=0;i<rawData.length;i++)out[i]=rawData.charCodeAt(i);
+  return out;
+}
+async function checkPushSubscription(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window))return;
+  try{
+    var reg=await navigator.serviceWorker.ready;
+    var sub=await reg.pushManager.getSubscription();
+    pushSubscribed=!!sub;
+    render();
+  }catch(e){}
+}
+async function togglePushNotifications(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no soporta notificaciones push.';render();return;}
+  if(!cust){pushMsg='Inicia sesión para activar notificaciones.';render();return;}
+  try{
+    var reg=await navigator.serviceWorker.ready;
+    var existing=await reg.pushManager.getSubscription();
+    if(existing){
+      await api('push-unsubscribe',{token:token,endpoint:existing.endpoint});
+      await existing.unsubscribe();
+      pushSubscribed=false;pushMsg='Notificaciones desactivadas.';render();
+      return;
+    }
+    var perm=await Notification.requestPermission();
+    if(perm!=='granted'){pushMsg='Necesitas permitir notificaciones desde tu navegador.';render();return;}
+    var sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    var subJson=sub.toJSON();
+    await api('push-subscribe',{token:token,endpoint:subJson.endpoint,p256dh:subJson.keys.p256dh,auth:subJson.keys.auth});
+    pushSubscribed=true;pushMsg='¡Notificaciones activadas!';render();
+  }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo.');render();}
+}
+
 // INIT
 // Si hay un token guardado, esperamos a confirmarlo con el servidor ANTES del
 // primer pintado — así nunca se ve el parpadeo de "no tienes cuenta" seguido
@@ -1779,6 +1864,7 @@ async function doRecover(){
   render();
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
   if(cust)loadUserExtras();
+  checkPushSubscription();
 })();
 </script>
 <div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
