@@ -187,7 +187,8 @@ var manualPayMethod=null;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[],adminOrdersTruncated=false;
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
-var pollTimer=null,lastPollCount=0;
+var pollTimer=null,lastPollCount=0,pollFailing=false;
+var isOffline=!navigator.onLine;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
 var pushSubscribed=false,pushMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
@@ -213,7 +214,20 @@ var cart=[];
 // nunca toca directamente las tablas customers/orders/transactions/admin_accounts.
 async function api(action,payload){
   var body=Object.assign({action:action},payload||{});
-  var r=await fetch(API_FN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  // Antes sin timeout: una red colgada (no caída, solo estancada) dejaba el spinner
+  // pegado indefinidamente en cualquier pantalla de la app. sbG() ya usaba este patrón
+  // en otra parte del archivo; faltaba aplicarlo aquí, el wrapper que usa casi todo.
+  var ctrl=new AbortController();
+  var timeoutId=setTimeout(function(){ctrl.abort();},15000);
+  var r;
+  try{
+    r=await fetch(API_FN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+  }catch(e){
+    if(e && e.name==='AbortError')throw new Error('La conexión tardó demasiado. Intenta de nuevo.');
+    throw new Error('No se pudo conectar. Revisa tu conexión a internet.');
+  }finally{
+    clearTimeout(timeoutId);
+  }
   var data=await r.json().catch(function(){return{};});
   if(!r.ok)throw new Error(data.error||'Error de conexión.');
   return data;
@@ -251,11 +265,16 @@ function startPoll(){
       if(total>lastPollCount&&lastPollCount>=0)playNotif();
       lastPollCount=total;
       adminOrdersTruncated=!!r.truncated;
+      // Antes un poll fallido quedaba en silencio total — el operador veía el estado
+      // de siempre sin ninguna señal de que en realidad no se está actualizando.
+      if(pollFailing){pollFailing=false;render();}
       if(ordersSig(r.orders)!==ordersSig(adminOrders)){
         adminOrders=r.orders;
         render();
       }
-    }catch(e){}
+    }catch(e){
+      if(!pollFailing){pollFailing=true;render();}
+    }
   },25000);
 }
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;lastPollCount=0;}}
@@ -582,7 +601,9 @@ function sOHome(){
     ?'<div onclick="swTab(\'points\')" style="background:#1A3028;border:1px solid rgba(203,162,88,.2);border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:2px">TUS PUNTOS //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+(cust.points||0)+'</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>'
     :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">ACUMULA<span style="color:'+BLU+'"> // </span>PUNTOS</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">UNIRSE \u2192</span></div>';
   var ss=storeStatus();
-  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px"><span style="width:6px;height:6px;border-radius:50%;background:'+(ss.open?'#25D366':'#ff8888')+'"></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(ss.open?'#25D366':'#ff8888')+';letter-spacing:.1em">'+ss.label+'</span></div>';
+  // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
+  // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
+  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(ss.open?'#25D366':'#ff8888')+'"></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(ss.open?'#25D366':'#ff8888')+';letter-spacing:.1em">'+ss.label+'</span>'+(ss.open?'<span style="color:#8BAF9A;font-family:Share Tech Mono,monospace;font-size:9px">· 🕐 '+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</span>':'')+'</div>';
   var lastOrd=cust?lastPaidOrder():null;
   var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+esc(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
@@ -844,7 +865,10 @@ function checkoutExtrasHTML(){
     +'<div style="margin-top:10px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4">🛵 El costo de delivery se paga <b style="color:#FFFFFF">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</div></div>'
     +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='now'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'#1E4A38':'#1A3028')+';border:1px solid '+(scheduleMode==='later'?BLU:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">Debe caer dentro de nuestro horario de atención.</div>':'')+'</div>'
     +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'#1E4A38':'#1A3028')+';border:1px solid '+(checked?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?BLU:'#8BAF9A')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
-    +(payingWithCreditFully?'':paymentMethodPickerHTML(t))
+    // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
+    // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
+    // antes) para un pedido que no cuesta nada.
+    +(payingWithCreditFully||t===0?'':paymentMethodPickerHTML(t))
     +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>'
     +(!cust||pushSubscribed||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<div onclick="togglePushNotifications()" style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;cursor:pointer"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">🔔 Te notificamos del estado de tu pedido<span style="color:'+BLU+'"> — </span><span style="color:'+BLU+';font-weight:700">actívalo aquí →</span></div>'+(pushMsg?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>');
@@ -886,6 +910,7 @@ function copyYapePlinPhone(){
 // Etiqueta del botón de pago principal — compartida entre TU CARRITO y el pago directo
 // de un solo sándwich, ya que ambos ofrecen los mismos métodos de pago.
 function payButtonLabel(t,fallback){
+  if(t===0)return'CONFIRMAR PEDIDO GRATIS //';
   if(useCredit&&cust&&(cust.credit_balance||0)>=t)return'CONFIRMAR CON CRÉDITO //';
   if(manualPayMethod)return'YA REALICÉ EL PAGO //';
   return fallback;
@@ -894,10 +919,13 @@ function sOCart(){
   var baseTotal=cartBaseTotal();
   var t=cartFinalTotal();
   var empty=!cart.length;
-  return H('TU CARRITO',"sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
+  return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
     +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+BLU+'">'+SOLES+t+'</span>'+(t!==baseTotal?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+(baseTotal-t)+'</div>':'')+'</div></div>':'')
-    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="go(\'o_home\')" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ SÁNDWICH</div><div onclick="sc=\'o_sides\';render()" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ BEBIDA/SIDE</div></div>'
+    // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
+    // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
+    // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
+    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="syncConfirmFields();go(\'o_home\')" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ SÁNDWICH</div><div onclick="syncConfirmFields();sc=\'o_sides\';render()" style="flex:1;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ BEBIDA/SIDE</div></div>'
     +(empty?'':checkoutExtrasHTML())
     +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">VACIAR CARRITO</div>':'')
     +'</div>'
@@ -1200,7 +1228,10 @@ function sWelcome(){
     +'<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#8BAF9A;letter-spacing:.3em;margin-bottom:16px">SND//WCH</div>'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">BIENVENIDO DE VUELTA</div>'
+    // sc='p_welcome' solo se dispara al final de doReg() — doLogin() va directo a p_home
+    // sin pasar por aquí — así que esta pantalla SIEMPRE es un registro nuevo, nunca un
+    // login de alguien que vuelve. "de vuelta" era simplemente incorrecto en todos los casos.
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¡BIENVENIDO A SND//WCH!</div>'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:46px;font-weight:900;color:#F2F0EB;line-height:1;margin-bottom:4px">'+esc(nm.toUpperCase())+'</div>'
     +'<div style="width:60px;height:3px;background:'+BLU+';margin:16px auto 24px;border-radius:2px"></div>'
     +'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.25);border-radius:16px;padding:20px;margin-bottom:16px">'
@@ -1377,11 +1408,19 @@ function sPProfile(){
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'#1E4A38':'#1A3028')+';border:1px solid '+(pushSubscribed?BLU:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:'+BLU+'"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(pushSubscribed?BLU:'#8BAF9A')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
   return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
     +pushHTML+referralHTML+creditHTML+challengeHTML
-    +'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button></div></div>'+NAV();
+    +'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
-  var text='Usa mi código de referido '+cust.phone+' al crear tu cuenta en SND//WCH y ambos ganamos 50 puntos.';
-  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  // Antes solo mandaba el número como "código" — el amigo tenía que escribirlo a mano
+  // en el registro. El link con ?ref= ya existe y auto-rellena ese campo (ver refCode
+  // arriba); solo faltaba usarlo aquí.
+  var link=location.origin+location.pathname+'?ref='+encodeURIComponent(cust.phone);
+  var text='Usa mi link para crear tu cuenta en SND//WCH y ambos ganamos 50 puntos: '+link;
+  if(navigator.share){
+    navigator.share({title:'SND//WCH',text:text,url:link}).catch(function(){});
+  }else{
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  }
 }
 async function doCreditGift(){
   var phoneEl=document.getElementById('cg-phone'),amtEl=document.getElementById('cg-amt');
@@ -1470,6 +1509,26 @@ async function doLogoutEverywhere(){
   busy=false;doLogout();
 }
 
+// Antes no existía ningún camino para que un cliente pidiera borrar su cuenta — solo un
+// borrado manual del dueño en la base de datos. Pide el PIN de nuevo (no solo el token de
+// sesión) para que un dispositivo desbloqueado/token filtrado no baste para esta acción.
+async function doDeleteAccount(){
+  if(!confirm('Esto eliminará tu cuenta de forma permanente: pierdes tus puntos, crédito, direcciones y favoritos guardados. Tu historial de pedidos se conserva para el negocio, pero sin tu nombre ni datos de contacto. Esta acción NO se puede deshacer.\n\n¿Continuar?'))return;
+  var pin=prompt('Ingresa tu PIN para confirmar:');
+  if(!pin)return;
+  busy=true;busyMsg='Eliminando cuenta...';render();
+  try{
+    await api('delete-account',{token:token,pin:pin});
+  }catch(e){
+    busy=false;render();
+    alert('No se pudo eliminar la cuenta: '+e.message);
+    return;
+  }
+  busy=false;
+  alert('Tu cuenta fue eliminada.');
+  doLogout();
+}
+
 async function loadAdmin(){
   sc='admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
@@ -1549,6 +1608,10 @@ function sAdminHome(){
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
     +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
     +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500">⚠ Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</div>':'')
+    // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
+    // un estado desactualizado sin ninguna señal de que la actualización automática dejó
+    // de funcionar.
+    +(pollFailing?'<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">⚠ No se pudo actualizar la cola de pedidos — reintentando…</div>':'')
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
 
     +'<div onclick="loadDashboard()" style="background:linear-gradient(135deg,#1a1200,#0d0d0d);border:1px solid rgba(245,197,24,.35);border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
@@ -1622,10 +1685,18 @@ function sAdminDashboard(){
   }
   // Ventas
   h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">VENTAS //</div>';
+  // Antes había que comparar los números a mano contra la semana/mes pasado — el dato
+  // del período anterior ya se calcula en el servidor, esto solo arma el "+X% vs antes".
+  function deltaTxt(pct){
+    if(pct==null)return'';
+    var arrow=pct>0?'▲':pct<0?'▼':'●';
+    var color=pct>0?'#25D366':pct<0?'#ff8888':'#8BAF9A';
+    return' · <span style="color:'+color+'">'+arrow+' '+(pct>0?'+':'')+pct+'% vs. antes</span>';
+  }
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
     +DTILE('HOY',SOLES+d.revenue.today.revenue,d.revenue.today.count+' pedidos · tkt '+SOLES+d.revenue.today.avgTicket)
-    +DTILE('SEMANA',SOLES+d.revenue.week.revenue,d.revenue.week.count+' pedidos · tkt '+SOLES+d.revenue.week.avgTicket)
-    +DTILE('MES',SOLES+d.revenue.month.revenue,d.revenue.month.count+' pedidos · tkt '+SOLES+d.revenue.month.avgTicket)
+    +DTILE('SEMANA',SOLES+d.revenue.week.revenue,d.revenue.week.count+' pedidos · tkt '+SOLES+d.revenue.week.avgTicket+deltaTxt(d.deltas&&d.deltas.weekRevenuePct))
+    +DTILE('MES',SOLES+d.revenue.month.revenue,d.revenue.month.count+' pedidos · tkt '+SOLES+d.revenue.month.avgTicket+deltaTxt(d.deltas&&d.deltas.monthRevenuePct))
     +DTILE('TOTAL',SOLES+d.revenue.allTime.revenue,d.revenue.allTime.count+' pedidos · tkt '+SOLES+d.revenue.allTime.avgTicket)
     +'</div>';
   if(d.codPending&&d.codPending.count>0){
@@ -1666,7 +1737,16 @@ function sAdminDashboard(){
     +DTILE('RECURRENTES',d.customers.returning,'>1 pedido')
     +DTILE('NUEVOS · SEMANA',d.customers.newThisWeek)
     +DTILE('NUEVOS · MES',d.customers.newThisMonth)
+    // ROI del programa de referidos — antes no había ninguna forma de ver si el bono
+    // de 50 puntos por referido realmente atrae clientes/ingresos.
+    +(d.referrals?DTILE('CLIENTES REFERIDOS',d.referrals.referredCustomers,SOLES+d.referrals.revenue+' en ventas'):'')
     +'</div>';
+  if(d.peakHours&&d.peakHours.length){
+    var peakTop=d.peakHours.slice().sort(function(a,b){return b.count-a.count;})[0];
+    var peakDayNames=['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+    var peakDayTop=d.peakDays&&d.peakDays.length?d.peakDays.slice().sort(function(a,b){return b.count-a.count;})[0]:null;
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-bottom:14px">📈 Hora pico (últimos 90 días): <b style="color:#FFFFFF">'+peakTop.hour+':00-'+(peakTop.hour+1)+':00</b>'+(peakDayTop?' · Día pico: <b style="color:#FFFFFF">'+peakDayNames[peakDayTop.dow]+'</b>':'')+'</div>';
+  }
   var tiers=d.customers.tiers||{};
   var tMax=Math.max(tiers.VIP||0,tiers.FREQUENT||0,tiers.REGULAR||0,tiers.MEMBER||0,1);
   h+=DBAR('VIP',tiers.VIP||0,tMax,'#E53935')+DBAR('FREQUENT',tiers.FREQUENT||0,tMax,'#F5C518')+DBAR('REGULAR',tiers.REGULAR||0,tMax,BLU)+DBAR('MEMBER',tiers.MEMBER||0,tMax,'#8BAF9A');
@@ -1892,7 +1972,10 @@ function render(){
   }
   var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
   document.body.classList.toggle('no-fi',sameScreen);
-  document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'+h+'</div>';
+  // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
+  // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
+  var offlineBanner=isOffline?'<div style="background:#ffa500;color:#1a1200;text-align:center;padding:6px;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:.1em;font-weight:700">⚠ SIN CONEXIÓN — reconectando…</div>':'';
+  document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'+offlineBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sc;
 }
@@ -2061,6 +2144,10 @@ window.addEventListener('appinstalled',function(){
   deferredInstallPrompt=null;
   render();
 });
+// Antes no había ninguna detección de modo sin conexión — cada acción fallaba por
+// separado con su propio mensaje genérico en vez de un aviso único y proactivo.
+window.addEventListener('offline',function(){isOffline=true;render();});
+window.addEventListener('online',function(){isOffline=false;render();});
 async function installPwa(){
   if(!deferredInstallPrompt)return;
   deferredInstallPrompt.prompt();
