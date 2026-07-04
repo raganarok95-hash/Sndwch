@@ -185,7 +185,7 @@ var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
 var useCredit=false;
 var manualPayMethod=null;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
-var adminOrders=[],myOrders=[];
+var adminOrders=[],myOrders=[],adminOrdersTruncated=false;
 var agPhone='',agPts='',agMsg='',uPhone='',uName='';
 var pollTimer=null,lastPollCount=0;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
@@ -250,6 +250,7 @@ function startPoll(){
       var total=r.orders.length;
       if(total>lastPollCount&&lastPollCount>=0)playNotif();
       lastPollCount=total;
+      adminOrdersTruncated=!!r.truncated;
       if(ordersSig(r.orders)!==ordersSig(adminOrders)){
         adminOrders=r.orders;
         render();
@@ -1166,7 +1167,12 @@ async function doReg(){
   }
   busy=true;busyMsg='Creando cuenta...';render();
   try{
-    var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday,referredBy:referredBy||null});
+    // Si venimos de "CREAR CUENTA Y GANAR PUNTOS POR ESTE PEDIDO" en la confirmación de un
+    // pedido de invitado, sw_last_ref sigue siendo la prueba de acceso a ESE pedido (igual
+    // que en my-orders/submit-rating de invitado) — el servidor solo lo vincula si sigue
+    // sin dueño, así que mandarlo siempre aquí es seguro aunque no venga de ese flujo.
+    var claimRef=localStorage.getItem('sw_last_ref')||null;
+    var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday,referredBy:referredBy||null,claimOrderRef:claimRef});
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;
   }
   catch(e){aErr=e.message;busy=false;render();return;}
@@ -1468,7 +1474,7 @@ async function loadAdmin(){
   sc='admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
-  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;lastPollCount=adminOrders.length;}
+  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;lastPollCount=adminOrders.length;}
   catch(e){adminOrders=[];}
   busy=false;startPoll();render();
 }
@@ -1542,6 +1548,7 @@ function sAdminHome(){
     +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:'+BLU+'"> // </span>OPERADOR</div>'
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
     +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
+    +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500">⚠ Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</div>':'')
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
 
     +'<div onclick="loadDashboard()" style="background:linear-gradient(135deg,#1a1200,#0d0d0d);border:1px solid rgba(245,197,24,.35);border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
@@ -1606,6 +1613,7 @@ function sAdminDashboard(){
   if(d.pendingPayment>0)alerts.push(d.pendingPayment+' pedido(s) sin pago confirmado (posible prueba o error de checkout)');
   if(d.outOfStock&&d.outOfStock.length)alerts.push(d.outOfStock.length+' producto(s) sin stock: '+d.outOfStock.map(function(o){return o.product_name||o.product_code;}).join(', '));
   if(d.lowStock&&d.lowStock.length)alerts.push('Stock bajo: '+d.lowStock.map(function(o){return(o.product_name||o.product_code)+' ('+o.stock_qty+')';}).join(', '));
+  if(d.trendTruncated)alerts.push('Hay tantos pedidos en el período reciente que la tendencia y los productos top de abajo no cubren todo el rango esperado.');
   if(alerts.length){
     h+='<div style="background:rgba(255,165,0,.1);border:1px solid rgba(255,165,0,.3);border-radius:10px;padding:14px 16px;margin-bottom:18px">'
       +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.15em;margin-bottom:6px">ALERTAS //</div>'
@@ -1701,6 +1709,7 @@ async function exportCsv(action,filename){
     a.href=url;a.download='sndwch-'+filename+'-'+today().replace(/\//g,'-')+'.csv';
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    if(r.truncated)alert('El negocio ya tiene más de '+rows.length+' registros — este CSV solo incluye los más recientes, no todo el historial.');
   }catch(e){alert('Error al exportar: '+e.message);}
   busy=false;render();
 }
