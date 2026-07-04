@@ -500,10 +500,17 @@ function saveCart(){
 // Se llama una sola vez al abrir la app (ver INIT), después de resolver la sesión —
 // así, si el cliente tiene cuenta, initCheckoutFields() prellena nombre/correo/
 // dirección desde su perfil en vez de con campos vacíos.
+// Un ítem de carrito válido siempre tiene un type reconocido y un qty numérico — sin
+// esto, un localStorage corrupto o de una versión vieja de la app restauraba el carrito
+// tal cual, y la pantalla de inicio terminaba mostrando "CARRITO // NaN items" en vez de
+// simplemente empezar con el carrito vacío.
+function isValidCartItem(it){
+  return it&&typeof it==='object'&&(it.type==='byo'||it.type==='sig'||it.type==='side')&&typeof it.qty==='number'&&it.qty>0;
+}
 function restoreCart(){
   try{
     var raw=JSON.parse(localStorage.getItem('sw_cart')||'null');
-    if(raw&&Array.isArray(raw.items)&&raw.items.length&&Date.now()-(raw.ts||0)<24*3600*1000){
+    if(raw&&Array.isArray(raw.items)&&raw.items.length&&raw.items.every(isValidCartItem)&&Date.now()-(raw.ts||0)<24*3600*1000){
       cart=raw.items;
       initCheckoutFields();
       appliedReward=raw.reward||null;
@@ -1017,8 +1024,13 @@ async function payAsRewardOnly(){
 }
 
 function payWithCulqi(amountSoles,email){
-  if(typeof Culqi==='undefined'){alert('No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.');return;}
-  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){alert('La pasarela de pago aún no está configurada. Contacta al administrador.');return;}
+  // Ambos early-return de abajo DEBEN limpiar busy/_payingInProgress antes de salir —
+  // doOrder() bloquea todo nuevo intento mientras _payingInProgress sea true, así que
+  // dejarlo en true aquí (ej. Culqi.js no cargó por un adblocker/CDN caído) deja el botón
+  // de pagar muerto para el resto de la sesión, sin ningún mensaje de error visible en
+  // los siguientes clics.
+  if(typeof Culqi==='undefined'){busy=false;_payingInProgress=false;render();alert('No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.');return;}
+  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){busy=false;_payingInProgress=false;render();alert('La pasarela de pago aún no está configurada. Contacta al administrador.');return;}
   Culqi.publicKey=CULQI_PUBLIC_KEY;
   Culqi.settings({
     title:'SND//WCH',
@@ -1040,7 +1052,7 @@ window.culqi=function(){
   if(Culqi.token){
     chargeAndFinalize(Culqi.token.id);
   }else{
-    _payingInProgress=false;
+    busy=false;_payingInProgress=false;render();
     var msg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta con otra tarjeta.';
     var errEl=document.getElementById('o-err');
     if(errEl)errEl.textContent=msg;else alert(msg);
@@ -1805,7 +1817,7 @@ function revGeo(lat,lon){
       var hint=parts.length?parts.join(', '):'';
       window._mHint=hint;
       var h=document.getElementById('maddr-hint');
-      if(h)h.innerHTML=hint?'<span style="color:'+BLU+'">&#8599; Referencia: </span>'+hint:'';
+      if(h)h.innerHTML=hint?'<span style="color:'+BLU+'">&#8599; Referencia: </span>'+esc(hint):'';
       // Pre-fill input if empty
       var inp=document.getElementById('maddr-input');
       if(inp&&!inp.value&&hint)inp.value=hint;

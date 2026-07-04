@@ -39,6 +39,13 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Tu pedido tiene una actualización.',
     icon: 'icon-192.png',
     badge: 'icon-192.png',
+    vibrate: [200, 100, 200],
+    // tag+renotify: una actualización de estado (RECIBIDO→PREPARANDO→EN CAMINO→ENTREGADO)
+    // del MISMO pedido reemplaza la notificación anterior en vez de apilarse — así el
+    // cliente ve una sola tarjeta de seguimiento que se actualiza, como en las apps de
+    // delivery, en vez de acumular una notificación por cada cambio de estado.
+    tag: data.tag || 'sndwch-order',
+    renotify: data.renotify !== false,
     data: { url: data.url || './index.html' },
   };
   event.waitUntil(self.registration.showNotification(title, options));
