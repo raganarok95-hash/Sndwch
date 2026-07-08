@@ -1,7 +1,7 @@
 {
   "name": "SND//WCH",
   "short_name": "SND//WCH",
-  "description": "Pide tu sándwich, gana puntos y sigue tu pedido en tiempo real.",
+  "description": "Arma tu sándwich a tu gusto, gana puntos y recompensas con cada pedido, invita amigos y sigue tu entrega en tiempo real.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

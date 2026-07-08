@@ -1,0 +1,339 @@
+// SND//WCH — api / catalog
+// Catálogo de productos (proteínas, signatures, bebidas/sides, recompensas) y toda la
+// lógica de tasación/validación de un pedido — nunca confía en precios/etiquetas que
+// reporte el cliente, todo se recalcula aquí a partir de estos datos.
+import { sbGet } from "./db.ts";
+import { ApiError } from "./types.ts";
+
+export const REWARDS: Record<string, { pts: number; label: string }> = {
+  R01: { pts: 40, label: "TOPPING // EXTRA" },
+  R02: { pts: 80, label: "4TA // SALSA" },
+  R03: { pts: 140, label: "SAUCE // SET" },
+  R04: { pts: 180, label: "DOBLE // PROTEÍNA" },
+  R05: { pts: 250, label: "BEBIDA // GRATIS" },
+  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
+};
+
+export function tierName(pts: number): string {
+  if (pts >= 400) return "VIP";
+  if (pts >= 200) return "FREQUENT";
+  if (pts >= 80) return "REGULAR";
+  return "MEMBER";
+}
+
+export const VALID_BASES = new Set(["B01", "B02", "B03"]);
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06"]);
+export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12"]);
+export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
+  P01: { p15: 14, p30: 22, pDbl: 6 },
+  P02: { p15: 13, p30: 21, pDbl: 6 },
+  P03: { p15: 12, p30: 20, pDbl: 4 },
+  P04: { p15: 12, p30: 20, pDbl: 5 },
+  P05: { p15: 16, p30: 26, pDbl: 9 },
+  P06: { p15: 14, p30: 24, pDbl: 7 },
+};
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number }> = {
+  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
+  SIG02: { base: "B02", prot: "P06", tops: ["T04", "T03", "T01"], sauces: ["S02", "S07"], p15: 19, p30: 24 },
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 20 },
+};
+export const SIDE_PRICE: Record<string, number> = { D01: 5, D02: 5, D03: 3, D04: 4, D05: 3 };
+export const SIDE_LABEL: Record<string, string> = {
+  D01: "CHICHA MORADA // 500ML",
+  D02: "INCA KOLA // 355ML",
+  D03: "AGUA // SIN GAS",
+  D04: "PAPAS // CHIPS",
+  D05: "GALLETA // AVENA",
+};
+export const SIG_LABEL: Record<string, string> = {
+  SIG01: "THE ORIGINAL // SIGNATURE",
+  SIG02: "THE FIRE // BUILD",
+  SIG03: "THE SMOKE // BUILD",
+  SIG04: "THE FRESH // BUILD",
+};
+// Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
+// esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
+// sobreescribe los números hardcodeados de arriba con lo que haya en la tabla, dejando
+// nombres/ingredientes/composición sin tocar (siguen siendo criterio de un developer,
+// cambian con mucha menos frecuencia). Se llama al inicio de cada acción sensible al
+// precio — a esta escala de negocio, un round-trip extra por pedido es aceptable frente
+// a la simplicidad de no tener que cachear/invalidar nada.
+export async function loadCatalogPrices(): Promise<void> {
+  try {
+    const rows = await sbGet("catalog_prices", "select=code,category,values");
+    for (const row of rows) {
+      const v = row.values || {};
+      if (row.category === "protein" && PROT_PRICE[row.code]) {
+        if (typeof v.p15 === "number") PROT_PRICE[row.code].p15 = v.p15;
+        if (typeof v.p30 === "number") PROT_PRICE[row.code].p30 = v.p30;
+        if (typeof v.pDbl === "number") PROT_PRICE[row.code].pDbl = v.pDbl;
+      } else if (row.category === "sig" && SIG_DATA[row.code]) {
+        if (typeof v.p15 === "number") SIG_DATA[row.code].p15 = v.p15;
+        if (typeof v.p30 === "number") SIG_DATA[row.code].p30 = v.p30;
+      } else if (row.category === "side" && row.code in SIDE_PRICE) {
+        if (typeof v.price === "number") SIDE_PRICE[row.code] = v.price;
+      } else if (row.category === "reward" && REWARDS[row.code]) {
+        if (typeof v.pts === "number") REWARDS[row.code].pts = v.pts;
+      }
+    }
+  } catch (e) {
+    // Si falla, seguimos con los valores hardcodeados de arriba como respaldo — nunca
+    // debe bloquear un pedido por un problema leyendo la tabla de precios.
+    console.error("loadCatalogPrices failed:", e);
+  }
+}
+export const PROT_LABEL: Record<string, string> = {
+  P01: "ASADO // RES",
+  P02: "POLLO // TERIYAKI",
+  P03: "POLLO // CAJUN",
+  P04: "ATÚN // HOUSE",
+  P05: "THE ITALIAN",
+  P06: "MEATBALL // MARINARA",
+};
+
+export function rewardWaiver(rewardId: string | null, b: any, basePrice: number, dblSurcharge: number): number {
+  if (!rewardId) return 0;
+  const reward = REWARDS[rewardId];
+  if (!reward) throw new ApiError("Recompensa inválida.");
+  if (rewardId === "R04") {
+    if (!b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
+    return dblSurcharge;
+  }
+  if (rewardId === "R06") {
+    if (b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
+    return basePrice;
+  }
+  return 0;
+}
+
+// Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,
+// que por ahora solo guardan UN sándwich (no un carrito completo).
+export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: number } {
+  const size = b.size === "15" ? "15" : b.size === "30" ? "30" : null;
+  if (!size) throw new ApiError("Tamaño inválido.");
+  const doubleProt = !!b.doubleProt;
+  const extraSauce = !!b.extraSauce;
+  const rewardId = b.rewardId ? String(b.rewardId) : null;
+
+  if (b.mode === "sig") {
+    const sig = SIG_DATA[String(b.sigId || "")];
+    if (!sig) throw new ApiError("Signature inválida.");
+    const protInfo = PROT_PRICE[sig.prot];
+    const basePrice = size === "15" ? sig.p15 : sig.p30;
+    const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+    const sauceSurcharge = extraSauce ? 2 : 0;
+    const waiver = rewardWaiver(rewardId, b, basePrice, dblSurcharge);
+    const ingredients = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
+    if (doubleProt) ingredients.push(sig.prot);
+    return { ingredients, expectedTotal: Math.max(0, basePrice + dblSurcharge + sauceSurcharge - waiver) };
+  }
+
+  const base = String(b.base || "");
+  const prot = String(b.prot || "");
+  const cheese = b.cheese ? String(b.cheese) : null;
+  const tops: string[] = Array.isArray(b.tops) ? b.tops.filter((x: any) => typeof x === "string") : [];
+  const sauces: string[] = Array.isArray(b.sauces) ? b.sauces.filter((x: any) => typeof x === "string") : [];
+
+  if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.");
+  const protInfo = PROT_PRICE[prot];
+  if (!protInfo) throw new ApiError("Proteína inválida.");
+  if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
+  if (tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
+  if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
+
+  const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
+  const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+  const sauceSurcharge = extraSauce ? 2 : 0;
+  const waiver = rewardWaiver(rewardId, b, basePrice, dblSurcharge);
+  const ingredients = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
+  if (doubleProt) ingredients.push(prot);
+  return { ingredients, expectedTotal: Math.max(0, basePrice + dblSurcharge + sauceSurcharge - waiver) };
+}
+
+export function buildFromOrder(b: any): Record<string, unknown> {
+  if (b.mode === "sig") {
+    return { mode: "sig", sigId: b.sigId, size: b.size, doubleProt: !!b.doubleProt, extraSauce: !!b.extraSauce };
+  }
+  return {
+    mode: "byo",
+    base: b.base,
+    prot: b.prot,
+    tops: Array.isArray(b.tops) ? b.tops : [],
+    cheese: b.cheese || null,
+    sauces: Array.isArray(b.sauces) ? b.sauces : [],
+    size: b.size,
+    doubleProt: !!b.doubleProt,
+    extraSauce: !!b.extraSauce,
+  };
+}
+
+export function validateQty(q: any): number {
+  const n = parseInt(q, 10);
+  if (!n || n < 1 || n > 20) throw new ApiError("Cantidad inválida.");
+  return n;
+}
+
+export type PricedItem = {
+  item: Record<string, unknown>;
+  qty: number;
+  unitPrice: number;
+  basePrice: number;
+  dblSurcharge: number;
+  ingredientsPerUnit: string[];
+  label: string;
+  eligibleR04: boolean;
+  eligibleR06: boolean;
+};
+
+// Tasa y valida UNA línea del carrito (sándwich signature/build o bebida/side).
+// Nunca confía en el precio/etiqueta que reporte el cliente — todo se recalcula aquí
+// a partir de los catálogos del servidor.
+export function priceCartItem(raw: any): PricedItem {
+  const qty = validateQty(raw?.qty);
+
+  if (raw?.type === "side") {
+    const code = String(raw.code || "");
+    const price = SIDE_PRICE[code];
+    if (price == null) throw new ApiError("Bebida/side inválido.");
+    return {
+      item: { type: "side", code, qty },
+      qty,
+      unitPrice: price,
+      basePrice: price,
+      dblSurcharge: 0,
+      ingredientsPerUnit: [code],
+      label: SIDE_LABEL[code] || code,
+      eligibleR04: false,
+      eligibleR06: false,
+    };
+  }
+
+  const size = raw?.size === "15" ? "15" : raw?.size === "30" ? "30" : null;
+  if (!size) throw new ApiError("Tamaño inválido.");
+  const doubleProt = !!raw?.doubleProt;
+  const extraSauce = !!raw?.extraSauce;
+  // Nota libre del cliente para este producto (ej. "sin cebolla") — puramente
+  // informativa para cocina, no afecta precio/ingredientes ni se valida.
+  const note = raw?.note ? String(raw.note).trim().slice(0, 140) || null : null;
+
+  if (raw?.type === "sig") {
+    const sig = SIG_DATA[String(raw.sigId || "")];
+    if (!sig) throw new ApiError("Signature inválida.");
+    const protInfo = PROT_PRICE[sig.prot];
+    const basePrice = size === "15" ? sig.p15 : sig.p30;
+    const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+    const sauceSurcharge = extraSauce ? 2 : 0;
+    const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
+    if (doubleProt) ingredientsPerUnit.push(sig.prot);
+    return {
+      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, note, qty },
+      qty,
+      unitPrice: basePrice + dblSurcharge + sauceSurcharge,
+      basePrice,
+      dblSurcharge,
+      ingredientsPerUnit,
+      label: SIG_LABEL[String(raw.sigId)] || String(raw.sigId),
+      eligibleR04: doubleProt,
+      eligibleR06: size === "15",
+    };
+  }
+
+  if (raw?.type === "byo") {
+    const base = String(raw.base || "");
+    const prot = String(raw.prot || "");
+    const cheese = raw.cheese ? String(raw.cheese) : null;
+    const tops: string[] = Array.isArray(raw.tops) ? raw.tops.filter((x: any) => typeof x === "string") : [];
+    const sauces: string[] = Array.isArray(raw.sauces) ? raw.sauces.filter((x: any) => typeof x === "string") : [];
+    if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.");
+    const protInfo = PROT_PRICE[prot];
+    if (!protInfo) throw new ApiError("Proteína inválida.");
+    if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
+    if (tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
+    if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
+    const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
+    const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+    const sauceSurcharge = extraSauce ? 2 : 0;
+    const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
+    if (doubleProt) ingredientsPerUnit.push(prot);
+    return {
+      item: { type: "byo", base, prot, cheese, tops, sauces, size, doubleProt, extraSauce, note, qty },
+      qty,
+      unitPrice: basePrice + dblSurcharge + sauceSurcharge,
+      basePrice,
+      dblSurcharge,
+      ingredientsPerUnit,
+      label: PROT_LABEL[prot] || prot,
+      eligibleR04: doubleProt,
+      eligibleR06: size === "15",
+    };
+  }
+
+  throw new ApiError("Tipo de producto inválido.");
+}
+
+// R04 (doble proteína gratis) solo aplica a la primera línea con doble proteína activada;
+// R06 (15CM gratis) solo a la primera línea 15CM. El resto de recompensas no exige nada
+// del carrito aparte de que no esté vacío — el servidor recalcula esto de forma
+// independiente al índice que el cliente crea haber elegido.
+export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): number {
+  if (rewardId === "R04") return priced.findIndex((p) => p.eligibleR04);
+  if (rewardId === "R06") return priced.findIndex((p) => p.eligibleR06);
+  return priced.length ? 0 : -1;
+}
+
+export function deriveCart(rawItems: any, rewardId: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
+  if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
+  if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
+
+  const priced = rawItems.map(priceCartItem);
+  const totalQty = priced.reduce((s, p) => s + p.qty, 0);
+  if (totalQty > 100) throw new ApiError("Cantidad total del carrito demasiado alta.", 400);
+
+  let total = priced.reduce((s, p) => s + p.unitPrice * p.qty, 0);
+  const ingredients: string[] = [];
+  priced.forEach((p) => {
+    for (let i = 0; i < p.qty; i++) ingredients.push(...p.ingredientsPerUnit);
+  });
+
+  if (rewardId) {
+    const reward = REWARDS[rewardId];
+    if (!reward) throw new ApiError("Recompensa inválida.");
+    const targetIdx = findRewardTargetIndex(priced, rewardId);
+    if (targetIdx < 0) throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
+    const target = priced[targetIdx];
+    const waiver = rewardId === "R04" ? target.dblSurcharge : rewardId === "R06" ? target.basePrice : 0;
+    total = Math.max(0, total - waiver);
+  }
+
+  return { ingredients, expectedTotal: total, sanitizedItems: priced.map((p) => p.item) };
+}
+
+// Precio aproximado de una línea de carrito YA guardada en un pedido — usado solo para
+// atribuir ingresos por producto en el dashboard (no revalida nada, los pedidos ya
+// pasaron por deriveCart al crearse).
+export function statUnitPrice(it: any): number {
+  try {
+    if (it.type === "side") return SIDE_PRICE[it.code] || 0;
+    const size = it.size;
+    if (it.type === "sig") {
+      const sig = SIG_DATA[it.sigId];
+      if (!sig) return 0;
+      const pr = PROT_PRICE[sig.prot];
+      const base = size === "15" ? sig.p15 : sig.p30;
+      return base + (it.doubleProt && pr ? pr.pDbl : 0) + (it.extraSauce ? 2 : 0);
+    }
+    const pr2 = PROT_PRICE[it.prot];
+    if (!pr2) return 0;
+    const base2 = size === "15" ? pr2.p15 : pr2.p30;
+    return base2 + (it.doubleProt ? pr2.pDbl : 0) + (it.extraSauce ? 2 : 0);
+  } catch {
+    return 0;
+  }
+}
+export function statItemLabel(it: any): string {
+  if (it.type === "side") return SIDE_LABEL[it.code] || it.code || "otro";
+  if (it.type === "sig") return SIG_LABEL[it.sigId] || it.sigId || "otro";
+  return PROT_LABEL[it.prot] || it.prot || "otro";
+}
