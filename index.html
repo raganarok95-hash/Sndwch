@@ -1365,7 +1365,7 @@ async function doReg(){
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;
   }
   catch(e){aErr=e.message;busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();loadUserExtras();setTimeout(function(){sc='p_home';render();},3200);
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();loadUserExtras();setTimeout(function(){sc='p_home';render();},6500);
 }
 async function doLogin(){
   var phone=document.getElementById('l-phone').value.trim(),pin=document.getElementById('l-pin').value.trim();
@@ -1384,7 +1384,7 @@ function sWelcome(){
   var nm=cust?cust.name.split(' ')[0]:'';
   var rwd=RWDS.slice().reverse().find(function(r){return pts>=r.pts;});
   var next=RWDS.find(function(r){return r.pts>pts;});
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#1E3932;padding:40px 24px;position:relative;overflow:hidden">'
+  return'<div onclick="sc=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#1E3932;padding:40px 24px;position:relative;overflow:hidden">'
     +'<div style="position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(203,162,88,.06)"></div>'
     +'<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
@@ -1410,7 +1410,14 @@ function sWelcome(){
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+t.c+'">'+t.n+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">NIVEL</div></div>'
     +'</div>'
-    +'<div style="margin-top:20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#F2F0EB;letter-spacing:.15em;opacity:.7" class="blink">cargando... //</div>'
+    // Antes esta pantalla solo mostraba el saldo de bienvenida sin explicar cómo
+    // funciona el programa — un cliente nuevo no tenía forma de saber que hay recompensas,
+    // referidos o un reto mensual hasta toparse con esas pantallas por su cuenta.
+    +'<div style="margin-top:20px;text-align:left;background:rgba(242,240,235,.05);border-radius:12px;padding:16px 18px">'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.15em;margin-bottom:10px">CÓMO FUNCIONA //</div>'
+    +[['🛒','Gana puntos con cada pedido pagado.'],['🎁','Canjéalos por salsas, upgrades y sándwiches gratis.'],['💌','Invita amigos — ambos ganan 50 puntos extra.']].map(function(x){return'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px"><span style="font-size:15px">'+x[0]+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;line-height:1.4">'+x[1]+'</span></div>';}).join('')
+    +'</div>'
+    +'<div style="margin-top:20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#F2F0EB;letter-spacing:.15em;opacity:.7" class="blink">toca para continuar //</div>'
     +'</div></div>';
 }
 function sPHome(){
