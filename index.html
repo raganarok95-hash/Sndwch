@@ -207,6 +207,14 @@ var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismiss
 var pushSubscribed=false,pushMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
+// Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato
+// en el arranque (sin esperar la respuesta de session-check) para quien ya tenía sesión
+// guardada; session-check sigue corriendo en segundo plano para confirmar o corregir en
+// silencio, en vez de bloquear el primer pintado con un spinner cada vez que se recarga.
+function cacheCust(c,adminFlag){
+  if(c){localStorage.setItem('sw_cust_cache',JSON.stringify(c));localStorage.setItem('sw_is_admin_cache',adminFlag?'1':'0');}
+  else{localStorage.removeItem('sw_cust_cache');localStorage.removeItem('sw_is_admin_cache');}
+}
 var invStock={};
 var dashStats=null;
 // Panel admin — ficha de cliente, búsqueda de pedidos, auditoría, horario, reportes,
@@ -1296,7 +1304,7 @@ async function chargeAndFinalize(culqiToken){
   }
 }
 function finalizeOrderSuccess(res,po,chargeId){
-  if(res.customer)cust=res.customer;
+  if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
   if(!cust){window._lastGuestName=po.nom;window._lastGuestEmail=po.email;}
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
@@ -1375,7 +1383,7 @@ async function doReg(){
     // sin dueño, así que mandarlo siempre aquí es seguro aunque no venga de ese flujo.
     var claimRef=localStorage.getItem('sw_last_ref')||null;
     var r=await api('register',{name:name,phone:phone,pin:pin,email:email||null,dni:dni,bday:bday,referredBy:referredBy||null,claimOrderRef:claimRef});
-    cust=r.customer;isAdmin=r.isAdmin;token=r.token;
+    cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
   }
   catch(e){aErr=e.message;busy=false;render();return;}
   localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();loadUserExtras();setTimeout(function(){sc='p_home';render();},6500);
@@ -1385,7 +1393,7 @@ async function doLogin(){
   var err=document.getElementById('auth-err');
   if(!phone||!pin){if(err)err.textContent='Ingresa teléfono y PIN.';return;}
   busy=true;busyMsg='Verificando...';render();
-  try{var r=await api('login',{phone:phone,pin:pin});cust=r.customer;isAdmin=r.isAdmin;token=r.token;}
+  try{var r=await api('login',{phone:phone,pin:pin});cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);}
   catch(e){aErr=e.message;busy=false;render();return;}
   localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_home';render();loadUserExtras();
 }
@@ -1616,7 +1624,7 @@ async function doCreditGift(){
   try{
     await api('credit-gift',{token:token,toPhone:phone,amount:amt});
     var r=await api('session-check',{token:token});
-    if(r.valid)cust=r.customer;
+    if(r.valid){cust=r.customer;cacheCust(cust,isAdmin);}
     wMsg='¡Crédito enviado!';wPhone='';wAmt='';
   }catch(e){wMsg=e.message;}
   render();
@@ -1624,12 +1632,12 @@ async function doCreditGift(){
 async function doClaimChallenge(){
   try{
     var res=await api('claim-challenge',{token:token});
-    if(res.customer)cust=res.customer;
+    if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
   render();
 }
-function doLogout(){cust=null;isAdmin=false;savedPh='';token='';aErr='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');sc='p_auth';render();}
+function doLogout(){cust=null;isAdmin=false;savedPh='';token='';aErr='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');cacheCust(null);sc='p_auth';render();}
 
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
@@ -2835,22 +2843,34 @@ async function togglePushNotifications(){
 }
 
 // INIT
-// Si hay un token guardado, esperamos a confirmarlo con el servidor ANTES del
-// primer pintado — así nunca se ve el parpadeo de "no tienes cuenta" seguido
-// un instante después de "ya tienes cuenta". Sin token no hay nada que
-// esperar, así que se pinta de inmediato como antes.
+// Antes esperábamos la respuesta de session-check ANTES del primer pintado siempre que
+// hubiera un token guardado — un solo round-trip al backend (que puede tardar 1-3s por
+// cold start de la Edge Function + la vuelta Perú↔servidor) bloqueaba la pantalla de
+// carga en CADA recarga, incluso para alguien que ya estaba con sesión iniciada. Ahora,
+// si hay una copia cacheada del cliente (ver cacheCust), se pinta con ella de inmediato
+// — session-check sigue corriendo en segundo plano para confirmar/corregir en silencio.
+// Solo se bloquea con el spinner cuando no hay nada que mostrar todavía (primer login en
+// este dispositivo tras limpiar datos, por ejemplo).
 (async function(){
+  var haveCachedCust=false;
   if(token){
-    busy=true;busyMsg='Verificando tu sesión...';render();
     try{
-      var r=await api('session-check',{token:token});
-      if(r.valid){cust=r.customer;isAdmin=r.isAdmin;}
-      else{token='';localStorage.removeItem('sw_tok');}
-    }catch(e){} // sin conexión — sigue como invitado, no se pierde la sesión guardada
-    busy=false;
+      var cachedRaw=localStorage.getItem('sw_cust_cache');
+      if(cachedRaw){cust=JSON.parse(cachedRaw);isAdmin=localStorage.getItem('sw_is_admin_cache')==='1';haveCachedCust=true;}
+    }catch(e){}
   }
   restoreCart();
   render();
+  if(token){
+    if(!haveCachedCust){busy=true;busyMsg='Verificando tu sesión...';render();}
+    try{
+      var r=await api('session-check',{token:token});
+      if(r.valid){cust=r.customer;isAdmin=r.isAdmin;cacheCust(cust,isAdmin);}
+      else{token='';localStorage.removeItem('sw_tok');cust=null;isAdmin=false;cacheCust(null);}
+    }catch(e){} // sin conexión — sigue con lo ya pintado (cache o invitado), no se pierde la sesión guardada
+    if(!haveCachedCust)busy=false;
+    render();
+  }
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
   loadCatalogBackground().then(function(){render();}); // load current prices in background, re-render when ready
   if(cust)loadUserExtras();
