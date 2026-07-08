@@ -19,7 +19,7 @@ import {
 } from "./actions/auth.ts";
 import {
   actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
-  actAdminConfirmPayment, actAdminCancelOrder, actExpireStaleManualPayments,
+  actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actExpireStaleManualPayments,
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
@@ -30,8 +30,10 @@ import {
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
   actAdminInventoryToggle, actAdminInventorySetStock, actAdminExportOrders, actAdminExportCustomers,
-  actDashboardStats,
+  actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
+  actAdminRangeReport, actAdminRatingsList,
 } from "./actions/admin.ts";
+import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 
@@ -71,6 +73,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "credit-gift": actCreditGift,
   "admin-orders": actAdminOrders,
   "admin-update-status": actAdminUpdateStatus,
+  "admin-bulk-update-status": actAdminBulkUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
   "admin-cancel-order": actAdminCancelOrder,
   "expire-stale-manual-payments": actExpireStaleManualPayments,
@@ -86,6 +89,13 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "export-customers": actAdminExportCustomers,
   "push-subscribe": actPushSubscribe,
   "push-unsubscribe": actPushUnsubscribe,
+  "admin-customer-detail": actAdminCustomerDetail,
+  "admin-search-orders": actAdminSearchOrders,
+  "admin-audit-log": actAdminAuditLog,
+  "admin-range-report": actAdminRangeReport,
+  "admin-ratings-list": actAdminRatingsList,
+  "get-store-hours": actGetStoreHours,
+  "admin-set-store-hours": actAdminSetStoreHours,
 };
 
 Deno.serve(async (req: Request) => {

@@ -3,7 +3,7 @@
 // del panel de negocio.
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { requireAdmin } from "../session.ts";
+import { requireAdmin, safeCustomer } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, statUnitPrice, statItemLabel } from "../catalog.ts";
 
@@ -243,4 +243,147 @@ export async function actDashboardStats(b: any) {
     peakHours: agg.peakHours,
     peakDays: agg.peakDays,
   };
+}
+
+// Antes, ver el historial completo de un cliente exigía cruzar 3 pantallas distintas
+// (pedidos, puntos, admin_action_log) o consultar la DB a mano — esto lo junta en una
+// sola llamada para la ficha de cliente del panel admin.
+const CUSTOMER_DETAIL_LIMIT = 30;
+export async function actAdminCustomerDetail(b: any) {
+  await requireAdmin(b.token);
+  const phone = String(b.phone || "").trim();
+  if (!phone) throw new ApiError("Falta el teléfono.", 400);
+  const [custRows, orders, transactions, ratings, creditLedger] = await Promise.all([
+    sbGet("customers", `phone=eq.${encodeURIComponent(phone)}`),
+    sbGet("orders", `customer_phone=eq.${encodeURIComponent(phone)}&order=created_at.desc&limit=${CUSTOMER_DETAIL_LIMIT}`),
+    sbGet("transactions", `customer_phone=eq.${encodeURIComponent(phone)}&order=created_at.desc&limit=${CUSTOMER_DETAIL_LIMIT}`),
+    sbGet("ratings", `customer_phone=eq.${encodeURIComponent(phone)}&order=created_at.desc&limit=${CUSTOMER_DETAIL_LIMIT}`),
+    sbGet("credit_ledger", `customer_phone=eq.${encodeURIComponent(phone)}&order=created_at.desc&limit=${CUSTOMER_DETAIL_LIMIT}`),
+  ]);
+  if (!custRows.length) throw new ApiError("Cliente no encontrado.", 404);
+  return { customer: safeCustomer(custRows[0]), orders, transactions, ratings, creditLedger };
+}
+
+// Búsqueda libre de pedidos — antes la cola admin solo mostraba los últimos pedidos
+// activos (actAdminOrders), sin forma de encontrar uno viejo/entregado salvo el link de
+// seguimiento del propio cliente. `q` busca por ref, teléfono o nombre a la vez.
+const SEARCH_ORDERS_LIMIT = 50;
+export async function actAdminSearchOrders(b: any) {
+  await requireAdmin(b.token);
+  const q = String(b.q || "").trim().slice(0, 60);
+  const status = b.status ? String(b.status) : null;
+  const dateFrom = b.dateFrom ? String(b.dateFrom) : null;
+  const dateTo = b.dateTo ? String(b.dateTo) : null;
+  if (!q && !status && !dateFrom && !dateTo) throw new ApiError("Ingresa al menos un criterio de búsqueda.", 400);
+
+  const parts: string[] = [];
+  if (q) {
+    const esc = q.replace(/[,()]/g, "");
+    parts.push(`or=(ref.ilike.*${encodeURIComponent(esc)}*,customer_phone.ilike.*${encodeURIComponent(esc)}*,customer_name.ilike.*${encodeURIComponent(esc)}*)`);
+  }
+  if (status) parts.push(`status=eq.${encodeURIComponent(status)}`);
+  if (dateFrom) parts.push(`created_at=gte.${encodeURIComponent(dateFrom)}`);
+  if (dateTo) parts.push(`created_at=lte.${encodeURIComponent(dateTo)}`);
+  parts.push(`order=created_at.desc&limit=${SEARCH_ORDERS_LIMIT + 1}`);
+
+  const rows = await sbGet("orders", parts.join("&"));
+  return { orders: rows.slice(0, SEARCH_ORDERS_LIMIT), truncated: rows.length > SEARCH_ORDERS_LIMIT };
+}
+
+// Visor del registro de auditoría (admin_action_log) — hasta ahora esa tabla solo se
+// podía revisar directo desde el dashboard de Supabase, no desde el panel del negocio.
+const AUDIT_LOG_LIMIT = 100;
+export async function actAdminAuditLog(b: any) {
+  await requireAdmin(b.token);
+  const limit = Math.min(AUDIT_LOG_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
+  const actorPhone = b.actorPhone ? String(b.actorPhone).trim() : null;
+  const query = actorPhone
+    ? `actor_phone=eq.${encodeURIComponent(actorPhone)}&order=created_at.desc&limit=${limit}`
+    : `order=created_at.desc&limit=${limit}`;
+  return { log: await sbGet("admin_action_log", query) };
+}
+
+// Reporte de ingresos/pedidos por rango de fechas libre — el dashboard normal solo cubre
+// hoy/semana/mes fijos; esto deja al dueño elegir cualquier rango (ej. para comparar un
+// fin de semana largo contra uno normal).
+const RANGE_REPORT_ORDER_LIMIT = 5000;
+export async function actAdminRangeReport(b: any) {
+  await requireAdmin(b.token);
+  const from = b.from ? new Date(String(b.from)) : null;
+  const to = b.to ? new Date(String(b.to)) : null;
+  if (!from || !to || isNaN(from.getTime()) || isNaN(to.getTime()) || from > to) {
+    throw new ApiError("Rango de fechas inválido.", 400);
+  }
+  await loadCatalogPrices();
+  const rows = await sbGet(
+    "orders",
+    `created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lte.${encodeURIComponent(to.toISOString())}` +
+      `&select=total,payment_status,payment_method,created_at,items,product_key,summary&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
+  );
+  const truncated = rows.length > RANGE_REPORT_ORDER_LIMIT;
+  const orders = rows.slice(0, RANGE_REPORT_ORDER_LIMIT);
+  const paid = orders.filter((o: any) => o.payment_status === "paid");
+
+  const revenue = paid.reduce((s: number, o: any) => s + (o.total || 0), 0);
+  const byMethod: Record<string, { count: number; revenue: number }> = {};
+  paid.forEach((o: any) => {
+    const m = o.payment_method || "otro";
+    if (!byMethod[m]) byMethod[m] = { count: 0, revenue: 0 };
+    byMethod[m].count++;
+    byMethod[m].revenue += o.total || 0;
+  });
+
+  const byDayMap: Record<string, { count: number; revenue: number }> = {};
+  paid.forEach((o: any) => {
+    const day = String(o.created_at).slice(0, 10);
+    if (!byDayMap[day]) byDayMap[day] = { count: 0, revenue: 0 };
+    byDayMap[day].count++;
+    byDayMap[day].revenue += o.total || 0;
+  });
+  const byDay = Object.entries(byDayMap).map(([date, v]) => ({ date, ...v })).sort((a, b2) => a.date.localeCompare(b2.date));
+
+  const productMap: Record<string, { count: number; revenue: number }> = {};
+  paid.forEach((o: any) => {
+    if (Array.isArray(o.items) && o.items.length) {
+      o.items.forEach((it: any) => {
+        const key = statItemLabel(it);
+        const qty = it.qty || 1;
+        if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
+        productMap[key].count += qty;
+        productMap[key].revenue += statUnitPrice(it) * qty;
+      });
+      return;
+    }
+    const key = o.product_key || (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
+    if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
+    productMap[key].count += 1;
+    productMap[key].revenue += o.total || 0;
+  });
+  const topProducts = Object.entries(productMap).map(([name, v]) => ({ name, ...v })).sort((a, b2) => b2.count - a.count).slice(0, 10);
+
+  return {
+    revenue,
+    count: paid.length,
+    avgTicket: paid.length ? Math.round((revenue / paid.length) * 100) / 100 : 0,
+    byMethod,
+    byDay,
+    topProducts,
+    truncated,
+  };
+}
+
+// Antes las calificaciones solo se veían resumidas (promedio + últimos 5 comentarios) en
+// el dashboard — esto expone el listado completo con filtros para revisar reclamos o
+// buscar sándwiches con mala nota de forma sistemática.
+const RATINGS_LIST_LIMIT = 200;
+export async function actAdminRatingsList(b: any) {
+  await requireAdmin(b.token);
+  const limit = Math.min(RATINGS_LIST_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
+  const minStars = b.minStars ? Math.max(1, Math.min(5, parseInt(b.minStars, 10) || 1)) : null;
+  const onlyWithComments = !!b.onlyWithComments;
+  const parts: string[] = [];
+  if (minStars) parts.push(`stars=gte.${minStars}`);
+  if (onlyWithComments) parts.push("comment=not.is.null");
+  parts.push(`order=created_at.desc&limit=${limit}`);
+  return { ratings: await sbGet("ratings", parts.join("&")) };
 }

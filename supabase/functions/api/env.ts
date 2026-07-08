@@ -57,3 +57,21 @@ export function isWithinStoreHours(d: Date): boolean {
   const h = d.getHours() + d.getMinutes() / 60;
   return h >= range[0] && h < range[1];
 }
+
+// Igual que loadCatalogPrices (catalog.ts) — una tabla (store_hours) sobreescribe estos
+// valores hardcodeados EN EL MISMO ARRAY (nunca reasignando el binding `const`), así que
+// cambiar el horario desde el panel admin ya no exige editar código y redesplegar. Si la
+// tabla está vacía o falla la lectura, el horario hardcodeado de arriba sigue de respaldo.
+export async function loadStoreHours(): Promise<void> {
+  try {
+    const { sbGet } = await import("./db.ts");
+    const rows = await sbGet("store_hours", "select=weekday,open_hour,close_hour,closed");
+    for (const row of rows) {
+      const idx = Number(row.weekday);
+      if (!Number.isInteger(idx) || idx < 0 || idx > 6) continue;
+      STORE_HOURS[idx] = row.closed ? null : [Number(row.open_hour), Number(row.close_hour)];
+    }
+  } catch (e) {
+    console.error("loadStoreHours failed:", e);
+  }
+}

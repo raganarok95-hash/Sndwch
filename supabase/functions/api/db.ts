@@ -42,6 +42,18 @@ export async function sbInsert(table: string, data: unknown) {
   }
   return r.json();
 }
+// Upsert masivo (usado por store_hours: siempre reemplaza las 7 filas de weekday 0-6 de
+// una vez) — PostgREST hace INSERT ... ON CONFLICT (onConflict) DO UPDATE vía el header
+// Prefer: resolution=merge-duplicates + el parámetro on_conflict en la URL.
+export async function sbUpsert(table: string, data: unknown, onConflict: string) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`, {
+    method: "POST",
+    headers: sbHeaders({ Prefer: "resolution=merge-duplicates,return=representation" }),
+    body: JSON.stringify(data),
+  });
+  if (!r.ok) throw new Error(`Error en upsert de ${table}: ${await r.text()}`);
+  return r.json();
+}
 export async function sbUpdate(table: string, query: string, data: unknown) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, {
     method: "PATCH",

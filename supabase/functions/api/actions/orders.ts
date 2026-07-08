@@ -341,15 +341,16 @@ async function confirmManualPayment(order: any) {
 // actAdminCancelOrder, que además restituye el inventario descontado — si se agregara
 // aquí, este endpoint genérico permitiría "cancelar" un pedido sin devolver el stock.
 const VALID_ORDER_STATUSES = new Set(["RECIBIDO", "PREPARANDO", "EN CAMINO", "ENTREGADO"]);
-export async function actAdminUpdateStatus(b: any) {
-  await requireAdmin(b.token);
-  const orderId = String(b.orderId || "");
-  const status = String(b.status || "");
-  if (!orderId || !status) throw new ApiError("Faltan datos.");
+
+// Núcleo compartido entre actAdminUpdateStatus (un pedido) y actAdminBulkUpdateStatus
+// (varios a la vez, ver #113) — mismo guard de pago pendiente, mismo otorgamiento de
+// puntos al entregar COD, y mismo push de seguimiento, sin duplicar la lógica en dos
+// lugares que inevitablemente terminarían divergiendo.
+async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
   const upd: Record<string, unknown> = { status };
-  if (b.etaMinutes) {
-    const eta = Number(b.etaMinutes);
+  if (etaMinutes) {
+    const eta = Number(etaMinutes);
     if (!Number.isFinite(eta) || eta < 0 || eta > 240) throw new ApiError("ETA inválida.", 400);
     upd.eta_minutes = eta;
   }
@@ -360,11 +361,11 @@ export async function actAdminUpdateStatus(b: any) {
 
   // Yape/Plin sin confirmar: no se puede avanzar el pedido de RECIBIDO — evita que
   // cocina empiece a preparar un pedido que en realidad nunca se pagó.
-  if (order && (order.payment_method === "yape" || order.payment_method === "plin") && order.payment_status !== "paid" && status !== "RECIBIDO") {
+  if ((order.payment_method === "yape" || order.payment_method === "plin") && order.payment_status !== "paid" && status !== "RECIBIDO") {
     throw new ApiError("Confirma que el pago llegó antes de avanzar el estado del pedido.", 400);
   }
 
-  if (status === "ENTREGADO" && order && order.payment_method === "cod" && order.payment_status !== "paid") {
+  if (status === "ENTREGADO" && order.payment_method === "cod" && order.payment_status !== "paid") {
     // Reclamo atómico: el filtro payment_status=neq.paid en la MISMA sentencia hace que,
     // si dos solicitudes llegan casi juntas (doble clic en "ENTREGADO"), solo una de ellas
     // encuentre la fila para actualizar — la otra recibe un array vacío y no vuelve a
@@ -375,7 +376,7 @@ export async function actAdminUpdateStatus(b: any) {
 
   const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, upd);
 
-  if (order?.customer_phone && STATUS_PUSH_MESSAGES[status]) {
+  if (order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
     const msg = STATUS_PUSH_MESSAGES[status];
     // En "EN CAMINO" con ETA cargada, reemplazamos el cuerpo genérico por una ventana de
     // hora real (ej. "9:20 - 9:40") en vez de solo "ya casi llega" — mismo tipo de dato que
@@ -396,7 +397,46 @@ export async function actAdminUpdateStatus(b: any) {
     }
   }
 
-  return { success: true, order: rows[0] };
+  return rows[0];
+}
+
+export async function actAdminUpdateStatus(b: any) {
+  await requireAdmin(b.token);
+  const orderId = String(b.orderId || "");
+  const status = String(b.status || "");
+  if (!orderId || !status) throw new ApiError("Faltan datos.");
+  const order = await applyOrderStatusUpdate(orderId, status, b.etaMinutes);
+  return { success: true, order };
+}
+
+// Acción para pasar varios pedidos al mismo estado de un solo tap (ej. marcar "EN CAMINO"
+// toda una tanda que sale junta en el mismo repartidor) — cada pedido se procesa por
+// separado y un fallo en uno (pago Yape/Plin sin confirmar, id inexistente) no aborta el
+// resto del lote, para que el operador no tenga que repetir los que sí eran válidos.
+const MAX_BULK_STATUS_ORDERS = 30;
+export async function actAdminBulkUpdateStatus(b: any) {
+  const s = await requireAdmin(b.token);
+  const orderIds: string[] = Array.isArray(b.orderIds)
+    ? Array.from(new Set(b.orderIds.map((x: any) => String(x)).filter(Boolean)))
+    : [];
+  const status = String(b.status || "");
+  if (!orderIds.length || !status) throw new ApiError("Faltan datos.");
+  if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
+  if (orderIds.length > MAX_BULK_STATUS_ORDERS) {
+    throw new ApiError("Demasiados pedidos a la vez (máximo " + MAX_BULK_STATUS_ORDERS + ").", 400);
+  }
+
+  const updated: any[] = [];
+  const failed: { orderId: string; error: string }[] = [];
+  for (const orderId of orderIds) {
+    try {
+      updated.push(await applyOrderStatusUpdate(orderId, status));
+    } catch (e) {
+      failed.push({ orderId, error: e instanceof ApiError ? e.message : "Error interno." });
+    }
+  }
+  await logAdminAction(s.phone, "bulk-update-status", orderIds.join(",") + " -> " + status);
+  return { success: true, updated, failed };
 }
 
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó
