@@ -1030,7 +1030,10 @@ function checkoutExtrasHTML(){
     +(payingWithCreditFully||t===0?'':paymentMethodPickerHTML(t))
     +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>'
-    +(!cust||pushSubscribed||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<div onclick="togglePushNotifications()" style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;cursor:pointer"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">🔔 Te notificamos del estado de tu pedido<span style="color:'+BLU+'"> — </span><span style="color:'+BLU+';font-weight:700">actívalo aquí →</span></div>'+(pushMsg?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>');
+    // Los clientes en su primer pedido reciben este mismo ofrecimiento, más prominente,
+    // justo después de que el pago se confirma (ver sOSent) — no se les pregunta dos
+    // veces en la misma compra.
+    +(!cust||pushSubscribed||!cust.total_orders||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<div onclick="togglePushNotifications()" style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;cursor:pointer"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">🔔 Te notificamos del estado de tu pedido<span style="color:'+BLU+'"> — </span><span style="color:'+BLU+';font-weight:700">actívalo aquí →</span></div>'+(pushMsg?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>');
 }
 // Selector de método de pago (tarjeta/Yape/Plin) — se oculta si el pedido ya se cubre
 // por completo con crédito interno. Mientras Culqi no esté configurado (ver
@@ -1322,6 +1325,11 @@ function sOSent(){
     +'<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(pending?'MONTO A PAGAR //':'MONTO COBRADO //')+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">'+SOLES+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#8BAF9A;margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
     +(cust?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">'+(pending?'PUNTOS //':'PUNTOS GANADOS //')+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:'+(pending?'12px':'32px')+';font-weight:900;color:'+BLU+'">'+(pending?'+'+(window._lTot||0)+' pts pendientes hasta confirmar tu pago':'+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span>')+'</div></div>':'')
     +(window._lRewardLabel?'<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">🎁 RECOMPENSA APLICADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+esc(window._lRewardLabel)+'</div></div>':'')
+    // Antes el único lugar para activar notificaciones push era un toggle escondido en
+    // el perfil (o una fila discreta en el checkout) — justo después del primer pedido
+    // pagado es el momento de mayor intención: el cliente ya vio el valor de la app y
+    // quiere saber cuándo llega SU pedido, así que se ofrece aquí de forma prominente.
+    +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<div onclick="togglePushNotifications()" style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">🔔 NO TE PIERDAS TU PEDIDO //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>'+(pushMsg?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>':'')
     +(cust?'<div onclick="shareReferral()" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">💌 INVITA A UN AMIGO //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;line-height:1.5">Comparte tu código <b style="color:#FFFFFF">'+esc(cust.phone)+'</b> — ambos ganan 50 puntos en su primer pedido.</div></div>':'')
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
     +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+BLU+';color:'+BLU+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;padding:12px 22px;border-radius:10px">NUEVO PEDIDO</button>'
@@ -1659,7 +1667,19 @@ function sPFavorites(){
 }
 async function doDeleteFavorite(id){
   if(!(await showConfirm('¿Eliminar este favorito?')))return;
-  try{await api('favorites-delete',{token:token,id:id});await loadFavorites();}catch(e){showToast(e.message);}
+  // Optimista: se quita de la lista al instante en vez de esperar la respuesta del
+  // servidor Y encima recargar toda la lista de nuevo — si el borrado falla, se
+  // reinserta en su posición original y se avisa con un toast.
+  var idx=myFavorites.findIndex(function(f){return f.id==id;});
+  var removed=idx>=0?myFavorites.splice(idx,1)[0]:null;
+  render();
+  try{
+    await api('favorites-delete',{token:token,id:id});
+  }catch(e){
+    if(removed)myFavorites.splice(idx,0,removed);
+    render();
+    showToast(e.message);
+  }
 }
 
 // DIRECCIONES
@@ -1693,7 +1713,16 @@ async function doAddAddress(){
 }
 async function doDeleteAddress(id){
   if(!(await showConfirm('¿Eliminar esta dirección?')))return;
-  try{await api('addresses-delete',{token:token,id:id});await loadAddresses();}catch(e){showToast(e.message);}
+  var idx=myAddresses.findIndex(function(a){return a.id==id;});
+  var removed=idx>=0?myAddresses.splice(idx,1)[0]:null;
+  render();
+  try{
+    await api('addresses-delete',{token:token,id:id});
+  }catch(e){
+    if(removed)myAddresses.splice(idx,0,removed);
+    render();
+    showToast(e.message);
+  }
 }
 async function doLogoutEverywhere(){
   if(!(await showConfirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?')))return;
