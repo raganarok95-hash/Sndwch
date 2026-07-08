@@ -209,6 +209,28 @@ var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 var invStock={};
 var dashStats=null;
+// Panel admin — ficha de cliente, búsqueda de pedidos, auditoría, horario, reportes,
+// calificaciones y selección múltiple para acciones en lote (ver #94-99/#113).
+var custDetailPhone='',custDetail=null,custDetailErr='';
+var searchQ='',searchStatus='',searchFrom='',searchTo='',searchResults=null,searchTruncated=false;
+var auditLog=null;
+var storeHoursForm=null,storeHoursMsg='';
+var reportFrom='',reportTo='',reportData=null,reportErr='';
+var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false;
+var bulkSelected={};
+// Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
+// distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
+var NOTIF_SOUND_PRESETS={
+  campana:[[523,0],[659,.15],[784,.30]],
+  timbre: [[880,0],[880,.12],[880,.24]],
+  grave:  [[220,0],[330,.14],[440,.28]]
+};
+var notifSoundPreset=localStorage.getItem('sw_notif_sound')||'campana';
+// Modo claro del panel admin — se aplica invirtiendo el filtro CSS sobre todo el
+// contenedor en vez de reescribir cada color hardcodeado de ~10 pantallas: la UI del
+// panel es solo color plano + emoji (sin fotos), así que invert+hue-rotate produce un
+// tema claro coherente sin duplicar estilos.
+var adminLightMode=localStorage.getItem('sw_admin_light')==='1';
 var recNewPin=null;
 var recEmailMasked=null;
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
@@ -353,7 +375,7 @@ async function api(action,payload){
 function playNotif(){
   try{
     var ctx=new(window.AudioContext||window.webkitAudioContext)();
-    [[523,0],[659,.15],[784,.30]].forEach(function(n){
+    (NOTIF_SOUND_PRESETS[notifSoundPreset]||NOTIF_SOUND_PRESETS.campana).forEach(function(n){
       var o=ctx.createOscillator(),g=ctx.createGain();
       o.connect(g);g.connect(ctx.destination);
       o.frequency.value=n[0];o.type='sine';
@@ -364,6 +386,17 @@ function playNotif(){
       o.stop(ctx.currentTime+n[1]+.42);
     });
   }catch(e){}
+}
+function setNotifSound(preset){
+  notifSoundPreset=NOTIF_SOUND_PRESETS[preset]?preset:'campana';
+  localStorage.setItem('sw_notif_sound',notifSoundPreset);
+  playNotif();
+  render();
+}
+function toggleAdminLight(){
+  adminLightMode=!adminLightMode;
+  localStorage.setItem('sw_admin_light',adminLightMode?'1':'0');
+  render();
 }
 
 // POLLING
@@ -1760,15 +1793,19 @@ async function loadAdmin(){
   busy=false;startPoll();render();
 }
 
-function waAdmin(ordId){
-  var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
+// Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para
+// poder reusarse también desde resultados de búsqueda (sc='admin_search', ver #95), que
+// no viven en adminOrders.
+function waAdminOrder(o){
   if(!o||!o.customer_phone)return;
-  var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
   var msg='Hola '+o.customer_name+'! Tu pedido '+o.ref+' de SND//WCH está: '+o.status+'.';
   if(o.status==='PREPARANDO')msg+=' Lo estamos preparando ahora mismo.';
   if(o.status==='EN CAMINO')msg+=' Ya va en camino a tu dirección'+(o.eta_minutes?' (ETA ~'+o.eta_minutes+' min)':'')+'.';
   msg+=' ¡Gracias por tu pedido!';
   window.open('https://wa.me/51'+o.customer_phone+'?text='+encodeURIComponent(msg),'_blank');
+}
+function waAdmin(ordId){
+  waAdminOrder((adminOrders||[]).find(function(x){return x.id===ordId;}));
 }
 async function updateStatus(ordId,newSt){
   var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
@@ -1808,6 +1845,49 @@ async function cancelOrder(ordId){
     render();
   }catch(e){showToast(e.message);}
 }
+function toggleBulkSelect(ordId){
+  if(bulkSelected[ordId])delete bulkSelected[ordId];else bulkSelected[ordId]=true;
+  render();
+}
+// Avanza todos los pedidos seleccionados al mismo estado de un solo tap (ver #113 y
+// actAdminBulkUpdateStatus) — cada pedido se procesa por separado en el servidor, así que
+// un pago Yape/Plin sin confirmar en uno de ellos no bloquea al resto del lote.
+async function bulkAdvanceStatus(status){
+  var ids=Object.keys(bulkSelected).filter(function(k){return bulkSelected[k];});
+  if(!ids.length)return;
+  if(!(await showConfirm('¿Marcar '+ids.length+' pedido(s) como '+status+'?')))return;
+  busy=true;busyMsg='Actualizando pedidos...';render();
+  try{
+    var r=await api('admin-bulk-update-status',{token:token,orderIds:ids,status:status});
+    var updatedIds={};
+    (r.updated||[]).forEach(function(o){updatedIds[o.id]=o;});
+    adminOrders=adminOrders.map(function(o){return updatedIds[o.id]?updatedIds[o.id]:o;});
+    if(status==='ENTREGADO')adminOrders=adminOrders.filter(function(o){return !updatedIds[o.id];});
+    bulkSelected={};
+    if(r.failed&&r.failed.length)showToast(r.failed.length+' pedido(s) no se pudieron actualizar.');
+  }catch(e){showToast('Error: '+e.message);}
+  busy=false;render();
+}
+// Ticket de cocina imprimible (#114) — abre una ventana aparte con solo lo que cocina
+// necesita ver (sin datos de cliente/entrega que no aportan al armado del pedido) y
+// dispara el diálogo de impresión del navegador directamente.
+function printTicket(ordId){
+  var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
+  if(!o)return;
+  var items=Array.isArray(o.items)&&o.items.length
+    ?o.items.map(function(it){return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #000"><span>'+(it.qty||1)+'x '+esc(it.label||it.sigId||it.prot||it.code||'ítem')+(it.note?' ('+esc(it.note)+')':'')+'</span></div>';}).join('')
+    :'<div style="padding:4px 0">'+esc(o.summary||'')+'</div>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>Ticket '+esc(o.ref)+'</title>'
+    +'<style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;color:#000}h1{font-size:16px;margin:0 0 4px}.hr{border-top:1px dashed #000;margin:8px 0}</style></head><body>'
+    +'<h1>SND//WCH — COCINA</h1><div>REF: '+esc(o.ref)+'</div><div>'+esc(o.date||'')+'</div><div class="hr"></div>'
+    +items
+    +'<div class="hr"></div>'+(o.notes?'<div><b>NOTA:</b> '+esc(o.notes)+'</div>':'')
+    +'<script>window.onload=function(){window.print();}<\/script></body></html>';
+  var w=window.open('','_blank','width=340,height=600');
+  if(!w){showToast('El navegador bloqueó la ventana de impresión.');return;}
+  w.document.write(html);
+  w.document.close();
+}
 async function notifyOrderEmail(to,name,ref,status,eta){
   try{
     var resp=await fetch(EMAIL_FN_URL,{
@@ -1821,6 +1901,20 @@ async function notifyOrderEmail(to,name,ref,status,eta){
 }
 
 // ADMIN HOME
+// Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
+// seleccionados; deja avanzar varios a la vez al mismo estado en un solo tap.
+function bulkBar(){
+  var ids=Object.keys(bulkSelected).filter(function(k){return bulkSelected[k];});
+  if(!ids.length)return'';
+  var n=ids.length;
+  return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;padding:12px 20px;display:flex;gap:8px;align-items:center;z-index:110">'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';flex-shrink:0">'+n+' sel.</div>'
+    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">PREPARANDO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">EN CAMINO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">ENTREGADO</button>'
+    +'<button onclick="bulkSelected={};render()" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;padding:0 4px;flex-shrink:0">✕</button>'
+    +'</div>';
+}
 function sAdminHome(){
   var ao=adminOrders||[];
   var badge=ao.length;
@@ -1828,7 +1922,8 @@ function sAdminHome(){
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
     +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:'+BLU+'"> // </span>OPERADOR</div>'
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
-    +'</div><button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
+    +'</div><button onclick="toggleAdminLight()" title="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">'+(adminLightMode?'🌙':'☀️')+'</button>'
+    +'<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
     +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500">⚠ Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</div>':'')
     // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
     // un estado desactualizado sin ninguna señal de que la actualización automática dejó
@@ -1846,16 +1941,20 @@ function sAdminHome(){
       var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
       var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
       var manualLabel=o.payment_method==='yape'?'YAPE':'PLIN';
+      var checked=!!bulkSelected[o.id];
       return'<div style="background:#2D5246;border:1px solid '+(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c')+';border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
+        +'<div style="display:flex;gap:10px;flex:1">'
+        +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+BLU+'">'
         +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+'</div></div>'
+        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+'</div></div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 '+esc(o.redeemed_reward)+'</div>':'')
         +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-bottom:10px">💵 COBRAR '+SOLES+o.total+' AL ENTREGAR</div>':'')
         +(manualPending?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-bottom:8px">⚠ PAGO '+manualLabel+' SIN CONFIRMAR — revisa tu app antes de continuar</div>':'')
+        +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-bottom:8px">🖨️ IMPRIMIR TICKET DE COCINA</button>'
         +(o.customer_phone?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.4);color:#25D366;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-bottom:8px">💬 WHATSAPP AL CLIENTE →</button>':'')
         +(manualPending
           ?'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:8px">✅ CONFIRMAR PAGO RECIBIDO</button>'
@@ -1867,9 +1966,15 @@ function sAdminHome(){
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
+    +'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#A8C8B0">SONIDO DE NUEVO PEDIDO</span>'
+    +'<select onchange="setNotifSound(this.value)" style="background:#1E3932;color:#FFFFFF;border:1px solid #3A6B58;border-radius:6px;padding:6px 8px;font-family:\'Share Tech Mono\',monospace;font-size:10px">'
+    +['campana','timbre','grave'].map(function(p){return'<option value="'+p+'" '+(notifSoundPreset===p?'selected':'')+'>'+p+'</option>';}).join('')
+    +'</select></div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
-    +'</div></div></div>';
+    +'</div></div>'
+    +bulkBar()
+    +'</div>';
 }
 
 // ADMIN DASHBOARD — vista de negocio (ventas, productos, clientes, puntos)
@@ -2192,6 +2297,12 @@ function render(){
     case'admin_inventory':h=sAdminInventory();break;
     case'admin_catalog':h=sAdminCatalog();break;
     case'admin_dashboard':h=sAdminDashboard();break;
+    case'admin_customer':h=sAdminCustomer();break;
+    case'admin_search':h=sAdminSearch();break;
+    case'admin_audit': h=sAdminAudit();break;
+    case'admin_hours': h=sAdminHours();break;
+    case'admin_report':h=sAdminReport();break;
+    case'admin_ratings':h=sAdminRatings();break;
     default:           h=sOHome();
   }
   var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
@@ -2199,7 +2310,10 @@ function render(){
   // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
   // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
   var offlineBanner=isOffline?'<div style="background:#ffa500;color:#1a1200;text-align:center;padding:6px;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:.1em;font-weight:700">⚠ SIN CONEXIÓN — reconectando…</div>':'';
-  document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'+offlineBanner+h+'</div>';
+  // Modo claro del panel admin: invertir el filtro CSS de todo el contenedor en vez de
+  // reescribir cada color hardcodeado (ver comentario en la declaración de adminLightMode).
+  var adminLight=sc.indexOf('admin')===0&&adminLightMode;
+  document.getElementById('app').innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932'+(adminLight?';filter:invert(1) hue-rotate(180deg)':'')+'">'+offlineBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sc;
   renderOverlays();
@@ -2408,6 +2522,233 @@ async function saveCatalogPrice(category,code){
   }
   busy=false;render();
   setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2500);
+}
+
+// FICHA DE CLIENTE (#94) — historial completo de un cliente (pedidos, puntos,
+// calificaciones, crédito) en una sola búsqueda por teléfono en vez de cruzar pantallas.
+async function loadCustomerDetail(){
+  var el=document.getElementById('cd-phone');
+  var phone=(el?el.value:custDetailPhone).trim();
+  if(!phone){custDetailErr='Ingresa un teléfono.';render();return;}
+  custDetailPhone=phone;custDetailErr='';
+  busy=true;busyMsg='Buscando cliente...';render();
+  try{custDetail=await api('admin-customer-detail',{token:token,phone:phone});}
+  catch(e){custDetail=null;custDetailErr=e.message;}
+  busy=false;render();
+}
+function sAdminCustomer(){
+  var h=H('FICHA DE CLIENTE',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+=INP('cd-phone','TELÉFONO DEL CLIENTE','tel',custDetailPhone);
+  h+='<div style="margin-top:10px">'+BTN('BUSCAR //','loadCustomerDetail()')+'</div>';
+  if(custDetailErr)h+='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;margin-top:12px;text-align:center">'+esc(custDetailErr)+'</div>';
+  if(custDetail){
+    var c=custDetail.customer;
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>'
+      +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:16px">'
+      +'<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:#FFFFFF">'+esc(c.name)+'</div>'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(c.phone)+(c.email?' · '+esc(c.email):'')+'</div>'
+      +'<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">'
+      +'<div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+'">PUNTOS</div><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+(c.points||0)+'</div></div>'
+      +'<div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+'">PEDIDOS</div><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+(c.total_orders||0)+'</div></div>'
+      +'<div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+'">CRÉDITO</div><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+SOLES+(c.credit_balance||0)+'</div></div>'
+      +'</div></div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">PEDIDOS RECIENTES // '+custDetail.orders.length+'</div>';
+    h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(o.ref)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A">'+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin pedidos //</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:18px 0 10px">HISTORIAL DE PUNTOS // '+custDetail.transactions.length+'</div>';
+    h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0">'+esc(t.description)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:12px;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin movimientos //</div>';
+    if(custDetail.ratings&&custDetail.ratings.length){
+      h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:18px 0 10px">CALIFICACIONES // '+custDetail.ratings.length+'</div>';
+      h+=custDetail.ratings.map(function(r){return'<div style="padding:8px 0;border-bottom:1px solid #1E3932"><span style="color:#F5C518">'+'★'.repeat(r.stars)+'</span>'+(r.comment?'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(r.comment)+'</div>':'')+'</div>';}).join('');
+    }
+  }
+  h+='</div>';
+  return h;
+}
+
+// BUSCAR PEDIDOS (#95) — búsqueda libre de cualquier pedido (no solo los activos que
+// muestra admin_home) por ref/teléfono/nombre y/o estado.
+async function doSearchOrders(){
+  var qEl=document.getElementById('so-q'),stEl=document.getElementById('so-status');
+  searchQ=qEl?qEl.value.trim():'';
+  searchStatus=stEl?stEl.value:'';
+  if(!searchQ&&!searchStatus){showToast('Ingresa un texto o elige un estado.');return;}
+  busy=true;busyMsg='Buscando pedidos...';render();
+  try{
+    var r=await api('admin-search-orders',{token:token,q:searchQ||undefined,status:searchStatus||undefined});
+    searchResults=r.orders;searchTruncated=!!r.truncated;
+  }catch(e){searchResults=[];showToast('Error: '+e.message);}
+  busy=false;render();
+}
+function waSearchResult(i){waAdminOrder(searchResults[i]);}
+function sAdminSearch(){
+  var h=H('BUSCAR PEDIDOS',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+=INP('so-q','REF, TELÉFONO O NOMBRE','text',searchQ);
+  h+='<div style="margin:10px 0"><select id="so-status" style="width:100%;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;font-size:14px">'
+    +'<option value="">Todos los estados</option>'
+    +Object.keys(STATUSES).map(function(s){return'<option value="'+s+'" '+(searchStatus===s?'selected':'')+'>'+s+'</option>';}).join('')
+    +'</select></div>';
+  h+=BTN('BUSCAR //','doSearchOrders()');
+  if(searchResults!==null){
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">RESULTADOS // '+searchResults.length+(searchTruncated?' (recortado)':'')+'</div>';
+    h+=searchResults.length?searchResults.map(function(o,i){
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px;margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name||'Invitado')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A">'+esc(o.ref)+' · '+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>'
+        +(o.customer_phone?'<button onclick="waSearchResult('+i+')" style="all:unset;cursor:pointer;font-family:Barlow Condensed,sans-serif;font-size:11px;color:#25D366">💬 WhatsApp</button>':'')
+        +'</div>';
+    }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin resultados //</div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+// AUDITORÍA (#96) — visor de admin_action_log (antes solo consultable desde el
+// dashboard de Supabase).
+async function loadAuditLog(){
+  sc='admin_audit';busy=true;busyMsg='Cargando auditoría...';render();
+  try{var r=await api('admin-audit-log',{token:token,limit:50});auditLog=r.log;}
+  catch(e){auditLog=[];}
+  busy=false;render();
+}
+function sAdminAudit(){
+  var h=H('REGISTRO DE AUDITORÍA',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  var log=auditLog||[];
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:14px">ÚLTIMAS '+log.length+' ACCIONES //</div>';
+  h+=log.length?log.map(function(l){
+    return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between"><span style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+esc(l.action)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A">'+esc(l.actor_phone)+'</span></div>'
+      +(l.target?'<div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:4px;word-break:break-all">'+esc(String(l.target))+'</div>':'')
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:4px">'+esc(new Date(l.created_at).toLocaleString('es-PE'))+'</div>'
+      +'</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin registros aún //</div>';
+  h+='</div>';
+  return h;
+}
+
+// HORARIO DE ATENCIÓN (#97) — ver comentario en env.ts/loadStoreHours: antes el
+// horario era un array hardcodeado que exigía redesplegar la función para cambiarlo.
+var DOW_NAMES=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+async function loadStoreHoursForm(){
+  sc='admin_hours';busy=true;busyMsg='Cargando horario...';render();
+  try{var r=await api('get-store-hours',{});storeHoursForm=r.hours;}
+  catch(e){storeHoursForm=DOW_NAMES.map(function(){return{open:11,close:22,closed:false};});}
+  busy=false;render();
+}
+function toggleClosedDay(i){
+  if(!storeHoursForm)return;
+  var el=document.getElementById('sh-closed-'+i);
+  var checked=el&&el.checked;
+  var d=storeHoursForm[i]||{};
+  storeHoursForm[i]=checked?{open:d.open,close:d.close,closed:true}:{open:d.open==null?11:d.open,close:d.close==null?22:d.close,closed:false};
+  render();
+}
+async function saveStoreHours(){
+  var days=DOW_NAMES.map(function(_,i){
+    var d=storeHoursForm[i]||{};
+    if(d.closed)return{closed:true};
+    var openEl=document.getElementById('sh-open-'+i),closeEl=document.getElementById('sh-close-'+i);
+    return{open:Number(openEl.value),close:Number(closeEl.value),closed:false};
+  });
+  busy=true;busyMsg='Guardando horario...';render();
+  try{
+    await api('admin-set-store-hours',{token:token,days:days});
+    storeHoursMsg='Horario actualizado.';
+  }catch(e){showToast('Error: '+e.message);}
+  busy=false;render();
+  setTimeout(function(){storeHoursMsg='';if(sc==='admin_hours')render();},2500);
+}
+function sAdminHours(){
+  var h=H('HORARIO DE ATENCIÓN',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(storeHoursMsg)h+='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">'+esc(storeHoursMsg)+'</div>';
+  var days=storeHoursForm||[];
+  h+=DOW_NAMES.map(function(name,i){
+    var d=days[i]||{open:11,close:22,closed:false};
+    return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:'+(d.closed?'0':'10px')+'">'
+      +'<span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+name+'</span>'
+      +'<label style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;display:flex;align-items:center;gap:6px"><input type="checkbox" id="sh-closed-'+i+'" '+(d.closed?'checked':'')+' onchange="toggleClosedDay('+i+')" style="accent-color:'+BLU+'">CERRADO</label>'
+      +'</div>'
+      +(d.closed?'':'<div style="display:flex;gap:8px;align-items:center"><input id="sh-open-'+i+'" type="number" min="0" max="24" value="'+(d.open==null?11:d.open)+'" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-family:Share Tech Mono,monospace;font-size:12px"><span style="color:#8BAF9A">a</span><input id="sh-close-'+i+'" type="number" min="0" max="24" value="'+(d.close==null?22:d.close)+'" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-family:Share Tech Mono,monospace;font-size:12px"></div>')
+      +'</div>';
+  }).join('');
+  h+=BTN('GUARDAR HORARIO //','saveStoreHours()');
+  h+='</div>';
+  return h;
+}
+
+// REPORTE POR FECHAS (#98) — el dashboard normal solo cubre hoy/semana/mes fijos; esto
+// deja elegir cualquier rango libre.
+async function doRangeReport(){
+  var fromEl=document.getElementById('rr-from'),toEl=document.getElementById('rr-to');
+  var from=fromEl?fromEl.value:'',to=toEl?toEl.value:'';
+  if(!from||!to){reportErr='Elige ambas fechas.';render();return;}
+  reportFrom=from;reportTo=to;reportErr='';
+  busy=true;busyMsg='Generando reporte...';render();
+  try{
+    reportData=await api('admin-range-report',{token:token,from:from,to:to+'T23:59:59'});
+  }catch(e){reportData=null;reportErr=e.message;}
+  busy=false;render();
+}
+function sAdminReport(){
+  var h=H('REPORTE POR FECHAS',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<div style="display:flex;gap:8px;margin-bottom:10px">'
+    +'<input id="rr-from" type="date" value="'+esc(reportFrom)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:13px">'
+    +'<input id="rr-to" type="date" value="'+esc(reportTo)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:13px">'
+    +'</div>';
+  h+=BTN('GENERAR REPORTE //','doRangeReport()');
+  if(reportErr)h+='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;margin-top:12px;text-align:center">'+esc(reportErr)+'</div>';
+  if(reportData){
+    var d=reportData;
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+    h+='<div style="display:flex;gap:10px;margin-bottom:16px">'
+      +DTILE('INGRESOS',SOLES+d.revenue,d.count+' pedidos')
+      +DTILE('TICKET PROM.',SOLES+d.avgTicket)
+      +'</div>';
+    if(d.truncated)h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;margin-bottom:12px">⚠ Hay más pedidos en este rango de los que se muestran aquí.</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">POR MÉTODO DE PAGO //</div>';
+    h+=Object.keys(d.byMethod).length?Object.keys(d.byMethod).map(function(m){var v=d.byMethod[m];return DBAR(m.toUpperCase(),v.count,d.count);}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin datos //</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:18px 0 10px">PRODUCTOS TOP //</div>';
+    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(p.name)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">'+p.count+' · '+SOLES+p.revenue+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin datos //</div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:18px 0 10px">POR DÍA //</div>';
+    h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:#A8C8B0">'+esc(day.date)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">'+day.count+' · '+SOLES+day.revenue+'</span></div>';}).join(''):'';
+  }
+  h+='</div>';
+  return h;
+}
+
+// CALIFICACIONES (#99) — antes solo se veían resumidas (promedio + últimos 5 comentarios)
+// en el dashboard; esto expone el listado completo con filtros.
+async function loadRatingsList(){
+  sc='admin_ratings';busy=true;busyMsg='Cargando calificaciones...';render();
+  try{var r=await api('admin-ratings-list',{token:token,limit:50,minStars:ratingsMinStars||undefined,onlyWithComments:ratingsOnlyComments});ratingsList=r.ratings;}
+  catch(e){ratingsList=[];}
+  busy=false;render();
+}
+function applyRatingsFilter(){
+  var minEl=document.getElementById('rt-min'),cEl=document.getElementById('rt-comments');
+  ratingsMinStars=minEl?Number(minEl.value):0;
+  ratingsOnlyComments=cEl?cEl.checked:false;
+  loadRatingsList();
+}
+function sAdminRatings(){
+  var h=H('CALIFICACIONES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">'
+    +'<select id="rt-min" onchange="applyRatingsFilter()" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-family:Share Tech Mono,monospace;font-size:11px">'
+    +[0,1,2,3,4,5].map(function(n){return'<option value="'+n+'" '+(ratingsMinStars===n?'selected':'')+'>'+(n===0?'Todas':n+'★ o más')+'</option>';}).join('')
+    +'</select>'
+    +'<label style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;display:flex;align-items:center;gap:6px"><input type="checkbox" id="rt-comments" onchange="applyRatingsFilter()" '+(ratingsOnlyComments?'checked':'')+' style="accent-color:'+BLU+'">Solo con comentario</label>'
+    +'</div>';
+  var list=ratingsList||[];
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">'+list.length+' CALIFICACIONES //</div>';
+  h+=list.length?list.map(function(r){
+    return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between"><span style="color:#F5C518;font-size:14px">'+'★'.repeat(r.stars)+'<span style="color:#3A6B58">'+'★'.repeat(5-r.stars)+'</span></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A">'+esc(r.order_ref||'')+'</span></div>'
+      +(r.comment?'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB;margin-top:6px">'+esc(r.comment)+'</div>':'')
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +'</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin calificaciones //</div>';
+  h+='</div>';
+  return h;
 }
 
 
