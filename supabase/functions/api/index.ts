@@ -712,6 +712,77 @@ const SIG_LABEL: Record<string, string> = {
   SIG03: "THE SMOKE // BUILD",
   SIG04: "THE FRESH // BUILD",
 };
+// Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
+// esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
+// sobreescribe los números hardcodeados de arriba con lo que haya en la tabla, dejando
+// nombres/ingredientes/composición sin tocar (siguen siendo criterio de un developer,
+// cambian con mucha menos frecuencia). Se llama al inicio de cada acción sensible al
+// precio — a esta escala de negocio, un round-trip extra por pedido es aceptable frente
+// a la simplicidad de no tener que cachear/invalidar nada.
+async function loadCatalogPrices(): Promise<void> {
+  try {
+    const rows = await sbGet("catalog_prices", "select=code,category,values");
+    for (const row of rows) {
+      const v = row.values || {};
+      if (row.category === "protein" && PROT_PRICE[row.code]) {
+        if (typeof v.p15 === "number") PROT_PRICE[row.code].p15 = v.p15;
+        if (typeof v.p30 === "number") PROT_PRICE[row.code].p30 = v.p30;
+        if (typeof v.pDbl === "number") PROT_PRICE[row.code].pDbl = v.pDbl;
+      } else if (row.category === "sig" && SIG_DATA[row.code]) {
+        if (typeof v.p15 === "number") SIG_DATA[row.code].p15 = v.p15;
+        if (typeof v.p30 === "number") SIG_DATA[row.code].p30 = v.p30;
+      } else if (row.category === "side" && row.code in SIDE_PRICE) {
+        if (typeof v.price === "number") SIDE_PRICE[row.code] = v.price;
+      } else if (row.category === "reward" && REWARDS[row.code]) {
+        if (typeof v.pts === "number") REWARDS[row.code].pts = v.pts;
+      }
+    }
+  } catch (e) {
+    // Si falla, seguimos con los valores hardcodeados de arriba como respaldo — nunca
+    // debe bloquear un pedido por un problema leyendo la tabla de precios.
+    console.error("loadCatalogPrices failed:", e);
+  }
+}
+// Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
+// que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
+async function actGetCatalog(_b: any) {
+  await loadCatalogPrices();
+  const sigs: Record<string, { p15: number; p30: number }> = {};
+  for (const code of Object.keys(SIG_DATA)) sigs[code] = { p15: SIG_DATA[code].p15, p30: SIG_DATA[code].p30 };
+  const rewardPts: Record<string, number> = {};
+  for (const code of Object.keys(REWARDS)) rewardPts[code] = REWARDS[code].pts;
+  return { proteins: PROT_PRICE, sigs, sides: SIDE_PRICE, rewardPts };
+}
+async function actAdminCatalogSetPrice(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.code || "").trim();
+  const category = String(b.category || "").trim();
+  const values = b.values;
+  if (!values || typeof values !== "object") throw new ApiError("Faltan los valores del precio.");
+  // Valida la forma exacta esperada por categoría antes de guardar — evita que un typo
+  // en el panel guarde un jsonb con campos faltantes/de más que luego rompa el pricing.
+  if (category === "protein") {
+    if (!PROT_PRICE[code]) throw new ApiError("Proteína desconocida.");
+    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || typeof values.pDbl !== "number" || values.p15 < 0 || values.p30 < 0 || values.pDbl < 0) {
+      throw new ApiError("Precio inválido.");
+    }
+  } else if (category === "sig") {
+    if (!SIG_DATA[code]) throw new ApiError("Signature desconocida.");
+    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || values.p15 < 0 || values.p30 < 0) throw new ApiError("Precio inválido.");
+  } else if (category === "side") {
+    if (!(code in SIDE_PRICE)) throw new ApiError("Bebida/side desconocido.");
+    if (typeof values.price !== "number" || values.price < 0) throw new ApiError("Precio inválido.");
+  } else if (category === "reward") {
+    if (!REWARDS[code]) throw new ApiError("Recompensa desconocida.");
+    if (typeof values.pts !== "number" || values.pts < 1) throw new ApiError("Costo en puntos inválido.");
+  } else {
+    throw new ApiError("Categoría inválida.");
+  }
+  await sbUpdate("catalog_prices", `code=eq.${encodeURIComponent(code)}`, { values, updated_at: new Date().toISOString() });
+  await logAdminAction(s.phone, "catalog-set-price", code, values);
+  await loadCatalogPrices();
+  return { success: true };
+}
 const PROT_LABEL: Record<string, string> = {
   P01: "ASADO // RES",
   P02: "POLLO // TERIYAKI",
@@ -964,6 +1035,9 @@ async function actPlaceOrder(b: any) {
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   }
 
+  // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
+  // ver loadCatalogPrices/catalog_prices.
+  await loadCatalogPrices();
   const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId);
   if (Math.round(expectedTotal) !== Math.round(clientTotal)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
@@ -1217,6 +1291,7 @@ async function actFavoritesAdd(b: any) {
   if (!name) throw new ApiError("Ponle un nombre a tu favorito.");
   const existing = await sbGet("favorites", `customer_phone=eq.${encodeURIComponent(s.phone)}&select=id`);
   if (existing.length >= MAX_FAVORITES) throw new ApiError("Ya tienes el máximo de favoritos guardados (" + MAX_FAVORITES + ").", 400);
+  await loadCatalogPrices();
   deriveOrder(b);
   const rows = await sbInsert("favorites", { customer_phone: s.phone, name, build: buildFromOrder(b) });
   return { success: true, favorite: rows[0] };
@@ -1669,6 +1744,9 @@ function statItemLabel(it: any): string {
 const DASHBOARD_WINDOW_LIMIT = 5000;
 async function actDashboardStats(b: any) {
   await requireAdmin(b.token);
+  // Sin esto, "productos más vendidos" atribuiría ingresos con precios viejos si el
+  // dueño cambió alguno desde que se desplegó la función por última vez.
+  await loadCatalogPrices();
 
   const now = Date.now();
   const DAY = 86400000;
@@ -1837,6 +1915,7 @@ async function actPing(_b: any) {
 
 const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   ping: actPing,
+  "get-catalog": actGetCatalog,
   register: actRegister,
   login: actLogin,
   "session-check": actSessionCheck,
@@ -1866,6 +1945,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-accounts-delete": actAdminAccountsDelete,
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
+  "admin-catalog-set-price": actAdminCatalogSetPrice,
   "dashboard-stats": actDashboardStats,
   "export-orders": actAdminExportOrders,
   "export-customers": actAdminExportCustomers,
