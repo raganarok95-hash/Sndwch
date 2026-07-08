@@ -49,6 +49,7 @@ body.no-fi .fi{animation:none}
 </head>
 <body>
 <div id="app"></div>
+<div id="ui-overlays"></div>
 <script>
 'use strict';
 var SB_URL='https://rjosezuoyngiadunfzyn.supabase.co';
@@ -208,6 +209,76 @@ var previewSigId=null;
 var newAddrMsg='',favMsg='';
 var cart=[];
 (function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();}catch(e){}})();
+
+// TOAST / CONFIRM / PROMPT — reemplazan alert()/confirm()/prompt() nativos del navegador,
+// que rompían la identidad visual de la marca (aparecían como cuadros de diálogo genéricos
+// del sistema en vez de la estética verde/dorado del resto de la app). Se renderizan en su
+// propio contenedor (#ui-overlays), independiente del árbol que controla render() — así
+// siguen apareciendo aunque en ese momento la pantalla esté en el estado "busy" (spinner
+// de carga), igual que antes alert()/confirm() podían aparecer sobre cualquier pantalla.
+var toastMsg=null,toastType='error',toastTimer=null;
+function showToast(msg,type){
+  type=type||'error';
+  if(toastTimer)clearTimeout(toastTimer);
+  toastMsg=msg;toastType=type;
+  renderOverlays();
+  toastTimer=setTimeout(function(){toastMsg=null;toastTimer=null;renderOverlays();},type==='error'?5000:3200);
+}
+function dismissToast(){
+  if(toastTimer){clearTimeout(toastTimer);toastTimer=null;}
+  toastMsg=null;renderOverlays();
+}
+var confirmState=null;
+function showConfirm(msg){
+  return new Promise(function(resolve){confirmState={msg:msg,resolve:resolve};renderOverlays();});
+}
+function resolveConfirm(val){
+  var st=confirmState;confirmState=null;renderOverlays();
+  if(st)st.resolve(val);
+}
+var promptState=null;
+function showPrompt(msg,defVal,inputType){
+  return new Promise(function(resolve){promptState={msg:msg,defVal:defVal||'',inputType:inputType||'text',resolve:resolve};renderOverlays();});
+}
+function resolvePrompt(val){
+  var st=promptState;promptState=null;renderOverlays();
+  if(st)st.resolve(val);
+}
+function submitPrompt(){
+  var inp=document.getElementById('ui-prompt-input');
+  resolvePrompt(inp?inp.value:null);
+}
+function renderOverlays(){
+  var el=document.getElementById('ui-overlays');
+  if(!el)return;
+  var html='';
+  if(toastMsg){
+    var isErr=toastType==='error';
+    html+='<div style="position:fixed;left:16px;right:16px;bottom:20px;z-index:400;display:flex;justify-content:center" class="fi">'
+      +'<div style="max-width:420px;width:100%;background:'+(isErr?'#3a1414':'#1A3028')+';border:1px solid '+(isErr?'rgba(255,85,85,.5)':'rgba(203,162,88,.4)')+';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
+      +'<div style="flex:1;font-family:\'Barlow\',sans-serif;font-size:13px;color:'+(isErr?'#ffb3b3':'#F2F0EB')+';line-height:1.4">'+esc(toastMsg)+'</div>'
+      +'<button onclick="dismissToast()" style="all:unset;cursor:pointer;color:'+(isErr?'#ffb3b3':'#8BAF9A')+';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
+      +'</div></div>';
+  }
+  if(confirmState){
+    html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:410;display:flex;align-items:flex-end;justify-content:center" class="fi">'
+      +'<div style="background:#1E3932;border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
+      +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#F2F0EB;line-height:1.5;margin-bottom:20px;white-space:pre-line">'+esc(confirmState.msg)+'</p>'
+      +'<button onclick="resolveConfirm(true)" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">CONFIRMAR //</button>'
+      +'<button onclick="resolveConfirm(false)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">CANCELAR</button>'
+      +'</div></div>';
+  }
+  if(promptState){
+    html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:420;display:flex;align-items:flex-end;justify-content:center" class="fi">'
+      +'<div style="background:#1E3932;border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
+      +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#F2F0EB;line-height:1.5;margin-bottom:14px;white-space:pre-line">'+esc(promptState.msg)+'</p>'
+      +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;box-sizing:border-box;margin-bottom:16px">'
+      +'<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">ACEPTAR //</button>'
+      +'<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">CANCELAR</button>'
+      +'</div></div>';
+  }
+  el.innerHTML=html;
+}
 
 // API — todas las operaciones sensibles (login, pedidos, puntos, admin) pasan
 // por este Edge Function, que usa la service key en el servidor. El cliente
@@ -803,10 +874,10 @@ function editCartItem(idx){
   delete bld.qty;
   loadBuild(bld);
 }
-function editItemNote(idx){
+async function editItemNote(idx){
   var it=cart[idx];
   if(!it)return;
-  var n=prompt('Nota para este producto (ej. sin cebolla, poca sal)',it.note||'');
+  var n=await showPrompt('Nota para este producto (ej. sin cebolla, poca sal)',it.note||'');
   if(n===null)return;
   it.note=n.trim().slice(0,140);
   saveCart();
@@ -1009,7 +1080,7 @@ async function payWithCredit(){
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
-    if(errEl)errEl.textContent=e.message;else alert(e.message);
+    if(errEl)errEl.textContent=e.message;else showToast(e.message);
     return;
   }
   finalizeOrderSuccess(res,po,null);
@@ -1028,7 +1099,7 @@ async function payWithManualMethod(){
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
-    if(errEl)errEl.textContent=e.message;else alert(e.message);
+    if(errEl)errEl.textContent=e.message;else showToast(e.message);
     return;
   }
   finalizeOrderSuccess(res,po,null);
@@ -1046,7 +1117,7 @@ async function payAsRewardOnly(){
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=document.getElementById('o-err');
-    if(errEl)errEl.textContent=e.message;else alert(e.message);
+    if(errEl)errEl.textContent=e.message;else showToast(e.message);
     return;
   }
   finalizeOrderSuccess(res,po,null);
@@ -1058,8 +1129,8 @@ function payWithCulqi(amountSoles,email){
   // dejarlo en true aquí (ej. Culqi.js no cargó por un adblocker/CDN caído) deja el botón
   // de pagar muerto para el resto de la sesión, sin ningún mensaje de error visible en
   // los siguientes clics.
-  if(typeof Culqi==='undefined'){busy=false;_payingInProgress=false;render();alert('No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.');return;}
-  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){busy=false;_payingInProgress=false;render();alert('La pasarela de pago aún no está configurada. Contacta al administrador.');return;}
+  if(typeof Culqi==='undefined'){busy=false;_payingInProgress=false;render();showToast('No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.');return;}
+  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){busy=false;_payingInProgress=false;render();showToast('La pasarela de pago aún no está configurada. Contacta al administrador.');return;}
   Culqi.publicKey=CULQI_PUBLIC_KEY;
   Culqi.settings({
     title:'SND//WCH',
@@ -1084,7 +1155,7 @@ window.culqi=function(){
     busy=false;_payingInProgress=false;render();
     var msg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta con otra tarjeta.';
     var errEl=document.getElementById('o-err');
-    if(errEl)errEl.textContent=msg;else alert(msg);
+    if(errEl)errEl.textContent=msg;else showToast(msg);
   }
 };
 
@@ -1103,7 +1174,7 @@ async function chargeAndFinalize(culqiToken){
       busy=false;_payingInProgress=false;render();
       var errEl=document.getElementById('o-err');
       var msg=data.error||'El pago fue rechazado. Intenta con otra tarjeta.';
-      if(errEl)errEl.textContent=msg;else alert(msg);
+      if(errEl)errEl.textContent=msg;else showToast(msg);
       return;
     }
     // Pago confirmado con Culqi — el servidor re-verifica el cargo antes de crear
@@ -1465,8 +1536,8 @@ function sPFavorites(){
   return h;
 }
 async function doDeleteFavorite(id){
-  if(!confirm('¿Eliminar este favorito?'))return;
-  try{await api('favorites-delete',{token:token,id:id});await loadFavorites();}catch(e){alert(e.message);}
+  if(!(await showConfirm('¿Eliminar este favorito?')))return;
+  try{await api('favorites-delete',{token:token,id:id});await loadFavorites();}catch(e){showToast(e.message);}
 }
 
 // DIRECCIONES
@@ -1499,11 +1570,11 @@ async function doAddAddress(){
   }catch(e){newAddrMsg=e.message;render();}
 }
 async function doDeleteAddress(id){
-  if(!confirm('¿Eliminar esta dirección?'))return;
-  try{await api('addresses-delete',{token:token,id:id});await loadAddresses();}catch(e){alert(e.message);}
+  if(!(await showConfirm('¿Eliminar esta dirección?')))return;
+  try{await api('addresses-delete',{token:token,id:id});await loadAddresses();}catch(e){showToast(e.message);}
 }
 async function doLogoutEverywhere(){
-  if(!confirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?'))return;
+  if(!(await showConfirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?')))return;
   busy=true;busyMsg='Cerrando sesiones...';render();
   try{await api('logout-everywhere',{token:token});}catch(e){}
   busy=false;doLogout();
@@ -1513,19 +1584,19 @@ async function doLogoutEverywhere(){
 // borrado manual del dueño en la base de datos. Pide el PIN de nuevo (no solo el token de
 // sesión) para que un dispositivo desbloqueado/token filtrado no baste para esta acción.
 async function doDeleteAccount(){
-  if(!confirm('Esto eliminará tu cuenta de forma permanente: pierdes tus puntos, crédito, direcciones y favoritos guardados. Tu historial de pedidos se conserva para el negocio, pero sin tu nombre ni datos de contacto. Esta acción NO se puede deshacer.\n\n¿Continuar?'))return;
-  var pin=prompt('Ingresa tu PIN para confirmar:');
+  if(!(await showConfirm('Esto eliminará tu cuenta de forma permanente: pierdes tus puntos, crédito, direcciones y favoritos guardados. Tu historial de pedidos se conserva para el negocio, pero sin tu nombre ni datos de contacto. Esta acción NO se puede deshacer.\n\n¿Continuar?')))return;
+  var pin=await showPrompt('Ingresa tu PIN para confirmar:','','tel');
   if(!pin)return;
   busy=true;busyMsg='Eliminando cuenta...';render();
   try{
     await api('delete-account',{token:token,pin:pin});
   }catch(e){
     busy=false;render();
-    alert('No se pudo eliminar la cuenta: '+e.message);
+    showToast('No se pudo eliminar la cuenta: '+e.message);
     return;
   }
   busy=false;
-  alert('Tu cuenta fue eliminada.');
+  showToast('Tu cuenta fue eliminada.','success');
   doLogout();
 }
 
@@ -1552,7 +1623,7 @@ async function updateStatus(ordId,newSt){
   var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
   var eta=null;
   if(newSt==='EN CAMINO'){
-    var etaStr=prompt('¿Tiempo estimado de entrega en minutos?','20');
+    var etaStr=await showPrompt('¿Tiempo estimado de entrega en minutos?','20','number');
     if(etaStr===null)return; // admin canceló
     eta=parseInt(etaStr,10);
     if(!eta||eta<=0)eta=20;
@@ -1574,17 +1645,17 @@ async function confirmOrderPayment(ordId){
     var r=await api('admin-confirm-payment',{token:token,orderId:ordId});
     adminOrders=adminOrders.map(function(o){return o.id===ordId?r.order:o;});
     render();
-  }catch(e){alert(e.message);}
+  }catch(e){showToast(e.message);}
 }
 // Cancela un pedido cuyo pago (Yape/Plin) nunca llegó — el servidor restituye el stock
 // que se había descontado al registrarlo (ver actAdminCancelOrder).
 async function cancelOrder(ordId){
-  if(!confirm('¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.'))return;
+  if(!(await showConfirm('¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.')))return;
   try{
     var r=await api('admin-cancel-order',{token:token,orderId:ordId});
     adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     render();
-  }catch(e){alert(e.message);}
+  }catch(e){showToast(e.message);}
 }
 async function notifyOrderEmail(to,name,ref,status,eta){
   try{
@@ -1782,15 +1853,15 @@ async function exportCsv(action,filename){
     var r=await api(action,{token:token});
     var rows=r.orders||r.customers||[];
     var csv=toCsv(rows);
-    if(!csv){busy=false;render();alert('No hay datos para exportar.');return;}
+    if(!csv){busy=false;render();showToast('No hay datos para exportar.','info');return;}
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
     a.href=url;a.download='sndwch-'+filename+'-'+today().replace(/\//g,'-')+'.csv';
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(url);},2000);
-    if(r.truncated)alert('El negocio ya tiene más de '+rows.length+' registros — este CSV solo incluye los más recientes, no todo el historial.');
-  }catch(e){alert('Error al exportar: '+e.message);}
+    if(r.truncated)showToast('El negocio ya tiene más de '+rows.length+' registros — este CSV solo incluye los más recientes, no todo el historial.','info');
+  }catch(e){showToast('Error al exportar: '+e.message);}
   busy=false;render();
 }
 
@@ -1867,7 +1938,7 @@ function loadLeaflet(cb){
   var s=document.createElement('script');
   s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
   s.onload=cb;
-  s.onerror=function(){alert('No se pudo cargar el mapa. Verifica tu conexión.');};
+  s.onerror=function(){showToast('No se pudo cargar el mapa. Verifica tu conexión.');};
   document.head.appendChild(s);
 }
 function openMap(lat,lon,approx){
@@ -2026,12 +2097,12 @@ async function toggleStock(code,name){
   var msg=goingTo
     ?'¿Confirmas que "'+name+'" vuelve a estar DISPONIBLE?'
     :'¿Confirmas marcar "'+name+'" como SIN STOCK? No se podrá elegir en pedidos hasta que lo reactives.';
-  if(!confirm(msg))return;
+  if(!(await showConfirm(msg)))return;
   busy=true;busyMsg='Actualizando...';render();
   try{
     await api('admin-inventory-toggle',{token:token,code:code,name:name,inStock:goingTo});
     invStock[code]=goingTo;
-  }catch(e){alert('Error al actualizar: '+e.message);}
+  }catch(e){showToast('Error al actualizar: '+e.message);}
   busy=false;render();
 }
 async function setStock(code,name){
@@ -2043,7 +2114,7 @@ async function setStock(code,name){
     await api('admin-inventory-set-stock',{token:token,code:code,name:name,qty:qty});
     invQty[code]=qty;
     if(qty!=null)invStock[code]=qty>0;
-  }catch(e){alert('Error al actualizar: '+e.message);}
+  }catch(e){showToast('Error al actualizar: '+e.message);}
   busy=false;render();
 }
 function sAdminInventory(){
@@ -2079,15 +2150,15 @@ async function loadAdminMgr(){sc='admin_mgr';busy=true;busyMsg='Cargando...';ren
 async function addAdmin(){
   var ph=document.getElementById('aa-ph')&&document.getElementById('aa-ph').value.trim();
   var nm=document.getElementById('aa-nm')&&document.getElementById('aa-nm').value.trim();
-  if(!ph||!nm){alert('Ingresa nombre y teléfono.');return;}
+  if(!ph||!nm){showToast('Ingresa nombre y teléfono.');return;}
   try{
     await api('admin-accounts-add',{token:token,phone:ph,name:nm});
     await loadAdminMgr();
-  }catch(e){alert('Error: '+e.message);}
+  }catch(e){showToast('Error: '+e.message);}
 }
 async function delAdmin(ph){
-  if(!confirm('¿Eliminar admin '+ph+'?'))return;
-  try{await api('admin-accounts-delete',{token:token,phone:ph});await loadAdminMgr();}catch(e){alert('Error: '+e.message);}
+  if(!(await showConfirm('¿Eliminar admin '+ph+'?')))return;
+  try{await api('admin-accounts-delete',{token:token,phone:ph});await loadAdminMgr();}catch(e){showToast('Error: '+e.message);}
 }
 function sAdminMgr(){
   return H('ADMINISTRADORES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
@@ -2174,7 +2245,7 @@ async function saveCatalogPrice(category,code){
     catalogMsg='Precio actualizado.';
   }catch(e){
     busy=false;render();
-    alert('Error: '+e.message);
+    showToast('Error: '+e.message);
     return;
   }
   busy=false;render();
