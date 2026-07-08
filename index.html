@@ -284,22 +284,6 @@ function submitPrompt(){
   resolvePrompt(inp?inp.value:null);
 }
 
-// CELEBRACIÓN DE TIER — antes subir de MEMBER→REGULAR→FREQUENT→VIP no tenía ninguna
-// señal, era solo una etiqueta/color distinto la próxima vez que abrías tu perfil. Se
-// detecta comparando el tier ANTES y DESPUÉS de una acción que realmente otorga puntos
-// (pedido pagado, reto mensual reclamado) — nunca en login/boot, donde solo se está
-// restaurando el estado existente, no ganando puntos en ese momento.
-var tierUpState=null;
-var TIER_ORDER=['MEMBER','REGULAR','FREQUENT','VIP'];
-function checkTierUp(before,after){
-  if(!before||!after)return;
-  var ot=tier(before.points||0),nt=tier(after.points||0);
-  if(ot.n!==nt.n&&TIER_ORDER.indexOf(nt.n)>TIER_ORDER.indexOf(ot.n)){
-    tierUpState=nt;
-    renderOverlays();
-  }
-}
-function dismissTierUp(){tierUpState=null;renderOverlays();}
 function renderOverlays(){
   var el=document.getElementById('ui-overlays');
   if(!el)return;
@@ -327,15 +311,6 @@ function renderOverlays(){
       +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;box-sizing:border-box;margin-bottom:16px">'
       +'<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">ACEPTAR //</button>'
       +'<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">CANCELAR</button>'
-      +'</div></div>';
-  }
-  if(tierUpState){
-    html+='<div onclick="dismissTierUp()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:430;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px" class="fi">'
-      +'<div onclick="event.stopPropagation()">'
-      +'<div style="font-size:52px;margin-bottom:12px">🎉</div>'
-      +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#8BAF9A;letter-spacing:.25em;margin-bottom:10px">¡SUBISTE DE NIVEL!</div>'
-      +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:42px;font-weight:900;color:'+tierUpState.c+';letter-spacing:.05em;line-height:1;margin-bottom:20px">'+tierUpState.n+'</div>'
-      +'<button onclick="dismissTierUp()" style="all:unset;cursor:pointer;display:inline-block;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px 28px;border-radius:10px">GENIAL //</button>'
       +'</div></div>';
   }
   // Botón flotante de soporte por WhatsApp — visible desde cualquier pantalla del
@@ -452,7 +427,6 @@ function total(){
   var dbl=dblProtRef();
   return bp+(doubleProt&&dbl?dbl.pDbl:0)+(extraSauce?2:0);
 }
-function tier(p){if(p>=400)return{n:'VIP',c:'#E53935'};if(p>=200)return{n:'FREQUENT',c:'#F5C518'};if(p>=80)return{n:'REGULAR',c:BLU};return{n:'MEMBER',c:'#8BAF9A'};}
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
 function SZTOG(){
@@ -1322,9 +1296,7 @@ async function chargeAndFinalize(culqiToken){
   }
 }
 function finalizeOrderSuccess(res,po,chargeId){
-  var prevCust=cust;
   if(res.customer)cust=res.customer;
-  checkTierUp(prevCust,cust);
   if(!cust){window._lastGuestName=po.nom;window._lastGuestEmail=po.email;}
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
@@ -1421,7 +1393,6 @@ async function doLogin(){
 // POINTS HOME
 function sWelcome(){
   var pts=cust?cust.points||0:0;
-  var t=cust?tier(pts):{n:'MEMBER',c:'#8BAF9A'};
   var nm=cust?cust.name.split(' ')[0]:'';
   var rwd=RWDS.slice().reverse().find(function(r){return pts>=r.pts;});
   var next=RWDS.find(function(r){return r.pts>pts;});
@@ -1448,8 +1419,8 @@ function sWelcome(){
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#F2F0EB">'+(cust?cust.total_orders||0:0)+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">PEDIDOS</div></div>'
     +'<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
-    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:'+t.c+'">'+t.n+'</div>'
-    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">NIVEL</div></div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#F2F0EB">'+(cust?cust.total_redeemed||0:0)+'</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#8BAF9A;margin-top:2px">CANJEADOS</div></div>'
     +'</div>'
     // Antes esta pantalla solo mostraba el saldo de bienvenida sin explicar cómo
     // funciona el programa — un cliente nuevo no tenía forma de saber que hay recompensas,
@@ -1462,7 +1433,7 @@ function sWelcome(){
     +'</div></div>';
 }
 function sPHome(){
-  var pts=cust.points||0,t=tier(pts);
+  var pts=cust.points||0;
   var next=RWDS.find(function(r){return r.pts>pts;}),prev=null;
   RWDS.forEach(function(r){if(r.pts<=pts)prev=r;});
   var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
@@ -1470,7 +1441,7 @@ function sPHome(){
   return H()+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:14px">HOLA, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
     +'<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';letter-spacing:.15em">'+t.n+'</div></div>'
+    +'<div style="margin-bottom:8px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+BLU+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+BLU+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:'+BLU+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()'],['MIS','DIRECCIONES','loadAddresses()'],['MIS','FAVORITOS','loadFavorites()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':BLU)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
@@ -1616,12 +1587,11 @@ function sPRewards(){
 
 
 function sPProfile(){
-  var t=tier(cust.points||0);
   var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">PROGRAMA DE REFERIDOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#8BAF9A;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:#25D366;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">CRÉDITO SND//WCH //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+SOLES+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
   var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">RETO MENSUAL //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'#1E4A38':'#1A3028')+';border:1px solid '+(pushSubscribed?BLU:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:'+BLU+'"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(pushSubscribed?BLU:'#8BAF9A')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+BLU+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
-  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+t.c+';margin-top:8px;letter-spacing:.1em">'+t.n+' // '+(cust.points||0)+' pts</div></div>'
+  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:20px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-top:8px;letter-spacing:.1em">'+(cust.points||0)+' pts</div></div>'
     +pushHTML+referralHTML+creditHTML+challengeHTML
     +'<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
@@ -1652,11 +1622,9 @@ async function doCreditGift(){
   render();
 }
 async function doClaimChallenge(){
-  var prevCust=cust;
   try{
     var res=await api('claim-challenge',{token:token});
     if(res.customer)cust=res.customer;
-    checkTierUp(prevCust,cust);
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
   render();
