@@ -440,6 +440,15 @@ function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family
 function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
 function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
 function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1E3932"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.08em;margin-bottom:16px">SND<span style="color:'+BLU+'">//</span>WCH</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
+// Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
+// mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
+// botón atrás) con bloques pulsantes del mismo tamaño que las tarjetas reales, en vez de
+// un splash sin relación con lo que está por aparecer.
+var listLoading=false;
+function skeletonCards(n,heightPx){
+  var row='<div class="pulse" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;height:'+(heightPx||64)+'px;margin-bottom:10px"></div>';
+  return new Array(n||3).fill(row).join('');
+}
 
 // NAV
 function go(s){sc=s;render();}
@@ -468,6 +477,7 @@ function buildToCartItem(bld){
 // precargado en un pedido sin relación.
 function resetBuilder(){
   sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
+  menuSearchQ='';
 }
 function startOrder(m){
   resetBuilder();
@@ -777,42 +787,69 @@ function sigPreviewOverlayHTML(){
 }
 
 // ORDER BUILD
+// Filtro de texto compartido por todas las categorías de BUILD YOUR OWN — antes
+// no había forma de saltar directo a un ingrediente sin scrollear las ~30 opciones
+// repartidas en 5 categorías (pan, proteína, toppings, queso, salsas).
+var menuSearchQ='';
+function matchesMenuSearch(item){
+  if(!menuSearchQ)return true;
+  var hay=(item.l+' '+(item.s||'')+' '+(item.d||'')).toLowerCase();
+  return hay.indexOf(menuSearchQ.toLowerCase())>=0;
+}
+function onMenuSearchInput(v){menuSearchQ=v;render();}
 function sOBuild(){
   var tL=tops.length,sL=sauces.length;
   var h=H('BUILD YOUR OWN','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'+SZTOG();
-  h+=ST('01','PAN','');
-  h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
-  h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('02','PROTEÍNA','');
-  h+=PROTS.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?BLU:'#444')+'">'+priceTag+'</span>'):CARDOFF(p);}).join('');
-  h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
-  h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  h+=TOPS.map(function(t){
-    var av=isAvail(t.id);
-    if(!av)return TOPOFF(t);
-    var sel=tops.indexOf(t.id)>=0;
-    return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+BLU+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
-  }).join('');
-  h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('04','QUESO','Incluido sin costo, elige 1.');
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  h+=CHEESE.map(function(c){
-    var av=isAvail(c.id);
-    if(!av)return TOPOFF(c);
-    var sel=cheese===c.id;
-    return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
-  }).join('');
-  h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('05','SALSAS','Hasta 3, incluidas sin costo.');
-  h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-bottom:12px">'+sL+' // 3</div>';
-  h+=SAUCES.map(function(s){
-    var av=isAvail(s.id);
-    if(!av)return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#8BAF9A">'+s.l+'<span style="color:#8BAF9A"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
-    var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-    return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+BLU+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
-  }).join('');
-  h+='</div>'+AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','enterConfirm()');
+  h+='<input id="menu-search" type="text" placeholder="🔎 Buscar ingrediente..." value="'+esc(menuSearchQ)+'" oninput="onMenuSearchInput(this.value)" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:13px;margin-bottom:18px;box-sizing:border-box">';
+  var basesF=BASES.filter(matchesMenuSearch),protsF=PROTS.filter(matchesMenuSearch),topsF=TOPS.filter(matchesMenuSearch),cheeseF=CHEESE.filter(matchesMenuSearch),saucesF=SAUCES.filter(matchesMenuSearch);
+  var anyMatch=basesF.length||protsF.length||topsF.length||cheeseF.length||saucesF.length;
+  if(menuSearchQ&&!anyMatch){
+    h+='<div style="text-align:center;padding:32px 0"><div style="font-size:28px;margin-bottom:10px;opacity:.5">🔎</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A">Sin resultados para "'+esc(menuSearchQ)+'"</div></div>';
+  }
+  if(basesF.length){
+    h+=ST('01','PAN','');
+    h+=basesF.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+  }
+  if(protsF.length){
+    h+=ST('02','PROTEÍNA','');
+    h+=protsF.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?BLU:'#444')+'">'+priceTag+'</span>'):CARDOFF(p);}).join('');
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+  }
+  if(topsF.length){
+    h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=topsF.map(function(t){
+      var av=isAvail(t.id);
+      if(!av)return TOPOFF(t);
+      var sel=tops.indexOf(t.id)>=0;
+      return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+BLU+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
+    }).join('');
+    h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+  }
+  if(cheeseF.length){
+    h+=ST('04','QUESO','Incluido sin costo, elige 1.');
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=cheeseF.map(function(c){
+      var av=isAvail(c.id);
+      if(!av)return TOPOFF(c);
+      var sel=cheese===c.id;
+      return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
+    }).join('');
+    h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+  }
+  if(saucesF.length){
+    h+=ST('05','SALSAS','Hasta 3, incluidas sin costo.');
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-bottom:12px">'+sL+' // 3</div>';
+    h+=saucesF.map(function(s){
+      var av=isAvail(s.id);
+      if(!av)return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#8BAF9A">'+s.l+'<span style="color:#8BAF9A"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
+      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+BLU+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
+    }).join('');
+    h+='</div>';
+  }
+  h+=AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','enterConfirm()');
   return h;
 }
 function CARDOFF(item){return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#8BAF9A">'+item.l+'<span style="color:#8BAF9A"> // </span>'+item.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div></div>';}
@@ -1367,10 +1404,10 @@ function sPHome(){
 
 // MY ORDERS — client side
 async function loadMyOrders(){
-  sc='p_orders';busy=true;busyMsg='Cargando pedidos...';render();
+  sc='p_orders';listLoading=true;render();
   // Timeout safety — never stay stuck more than 8 seconds
   var done=false;
-  var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
+  var timer=setTimeout(function(){if(!done){done=true;listLoading=false;render();}},8000);
   try{
     if(cust){
       myOrders=(await api('my-orders',{token:token})).orders;
@@ -1379,7 +1416,7 @@ async function loadMyOrders(){
       myOrders=lr?(await api('my-orders',{ref:lr})).orders:[];
     }
   }catch(e){myOrders=[];}
-  if(!done){done=true;clearTimeout(timer);busy=false;render();}
+  if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
 }
 
 function sPOrders(){
@@ -1398,16 +1435,20 @@ function sPOrders(){
       +stBadge(o.status)+'<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+BLU+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
   }
   var h=H('MIS PEDIDOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
-  if(act.length){
-    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.2em;margin-bottom:10px" class="blink">● ACTIVOS // '+act.length+'</div>';
-    h+=act.map(card).join('');
-  }
-  if(done.length){
-    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">ANTERIORES // '+done.length+'</div>';
-    h+=done.map(card).join('');
-  }
-  if(!myOrders.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="font-size:32px;margin-bottom:12px;opacity:.5">🧾</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">SIN PEDIDOS //</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>';
+  if(listLoading){
+    h+=skeletonCards(3,132);
+  }else{
+    if(act.length){
+      h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.2em;margin-bottom:10px" class="blink">● ACTIVOS // '+act.length+'</div>';
+      h+=act.map(card).join('');
+    }
+    if(done.length){
+      h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">ANTERIORES // '+done.length+'</div>';
+      h+=done.map(card).join('');
+    }
+    if(!myOrders.length){
+      h+='<div style="text-align:center;padding-top:64px"><div style="font-size:32px;margin-bottom:12px;opacity:.5">🧾</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">SIN PEDIDOS //</div>'+BTN('HACER UN PEDIDO //','swTab(\'order\')')+'</div>';
+    }
   }
   h+='<div style="margin-top:14px">'+BTN('ACTUALIZAR //','loadMyOrders()',true)+'</div></div>'+NAV();
   return h;
@@ -1463,21 +1504,23 @@ async function doSubmitRating(ref){
 }
 
 async function loadHist(){
-  sc='p_history';busy=true;busyMsg='Cargando...';render();
+  sc='p_history';listLoading=true;render();
   var done=false;
-  var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
+  var timer=setTimeout(function(){if(!done){done=true;listLoading=false;render();}},8000);
   try{
     if(cust){
       var r=await api('my-history',{token:token});
       cust._txns=r.transactions;
     }
   }catch(e){if(cust)cust._txns=[];}
-  if(!done){done=true;clearTimeout(timer);busy=false;render();}
+  if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
 }
 function sPHistory(){
   var txns=(cust&&cust._txns)||[];
   var h=H('HISTORIAL DE PUNTOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
-  if(!txns.length){
+  if(listLoading){
+    h+=skeletonCards(5,48);
+  }else if(!txns.length){
     h+='<div style="text-align:center;padding-top:64px"><div style="font-size:32px;margin-bottom:12px;opacity:.5">⭐</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+BLU+';letter-spacing:.2em">SIN MOVIMIENTOS //</div></div>';
   }else{
     h+=txns.map(function(t){
@@ -2094,6 +2137,11 @@ function render(){
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sc;
   renderOverlays();
+  // El buscador de BUILD YOUR OWN llama a render() en cada tecla (oninput) para filtrar
+  // en vivo — reemplazar todo el innerHTML normalmente le haría perder el foco y la
+  // posición del cursor a mitad de escribir. Se restaura aquí, justo después de pintar.
+  var searchEl=document.getElementById('menu-search');
+  if(searchEl&&sameScreen){searchEl.focus();var vlen=searchEl.value.length;searchEl.setSelectionRange(vlen,vlen);}
 }
 
 
