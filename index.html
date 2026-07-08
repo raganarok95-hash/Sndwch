@@ -261,6 +261,23 @@ function submitPrompt(){
   var inp=document.getElementById('ui-prompt-input');
   resolvePrompt(inp?inp.value:null);
 }
+
+// CELEBRACIÓN DE TIER — antes subir de MEMBER→REGULAR→FREQUENT→VIP no tenía ninguna
+// señal, era solo una etiqueta/color distinto la próxima vez que abrías tu perfil. Se
+// detecta comparando el tier ANTES y DESPUÉS de una acción que realmente otorga puntos
+// (pedido pagado, reto mensual reclamado) — nunca en login/boot, donde solo se está
+// restaurando el estado existente, no ganando puntos en ese momento.
+var tierUpState=null;
+var TIER_ORDER=['MEMBER','REGULAR','FREQUENT','VIP'];
+function checkTierUp(before,after){
+  if(!before||!after)return;
+  var ot=tier(before.points||0),nt=tier(after.points||0);
+  if(ot.n!==nt.n&&TIER_ORDER.indexOf(nt.n)>TIER_ORDER.indexOf(ot.n)){
+    tierUpState=nt;
+    renderOverlays();
+  }
+}
+function dismissTierUp(){tierUpState=null;renderOverlays();}
 function renderOverlays(){
   var el=document.getElementById('ui-overlays');
   if(!el)return;
@@ -288,6 +305,15 @@ function renderOverlays(){
       +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;box-sizing:border-box;margin-bottom:16px">'
       +'<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">ACEPTAR //</button>'
       +'<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">CANCELAR</button>'
+      +'</div></div>';
+  }
+  if(tierUpState){
+    html+='<div onclick="dismissTierUp()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:430;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px" class="fi">'
+      +'<div onclick="event.stopPropagation()">'
+      +'<div style="font-size:52px;margin-bottom:12px">🎉</div>'
+      +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#8BAF9A;letter-spacing:.25em;margin-bottom:10px">¡SUBISTE DE NIVEL!</div>'
+      +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:42px;font-weight:900;color:'+tierUpState.c+';letter-spacing:.05em;line-height:1;margin-bottom:20px">'+tierUpState.n+'</div>'
+      +'<button onclick="dismissTierUp()" style="all:unset;cursor:pointer;display:inline-block;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px 28px;border-radius:10px">GENIAL //</button>'
       +'</div></div>';
   }
   // Botón flotante de soporte por WhatsApp — visible desde cualquier pantalla del
@@ -1260,7 +1286,9 @@ async function chargeAndFinalize(culqiToken){
   }
 }
 function finalizeOrderSuccess(res,po,chargeId){
+  var prevCust=cust;
   if(res.customer)cust=res.customer;
+  checkTierUp(prevCust,cust);
   if(!cust){window._lastGuestName=po.nom;window._lastGuestEmail=po.email;}
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(po.waLines.join('\n')),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
@@ -1576,9 +1604,11 @@ async function doCreditGift(){
   render();
 }
 async function doClaimChallenge(){
+  var prevCust=cust;
   try{
     var res=await api('claim-challenge',{token:token});
     if(res.customer)cust=res.customer;
+    checkTierUp(prevCust,cust);
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
   render();
