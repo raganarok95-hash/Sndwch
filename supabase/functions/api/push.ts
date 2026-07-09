@@ -33,12 +33,8 @@ export function etaWindowText(etaMinutes: number): string {
   return `${fmt(from)} - ${fmt(to)}`;
 }
 
-export async function sendPushToPhone(
-  phone: string,
-  payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean },
-) {
+async function sendPushToSubs(subs: any[], payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean }) {
   if (!VAPID_PRIVATE_KEY) return;
-  const subs = await sbGet("push_subscriptions", `customer_phone=eq.${encodeURIComponent(phone)}`);
   for (const sub of subs) {
     try {
       await webpush.sendNotification(
@@ -51,8 +47,31 @@ export async function sendPushToPhone(
         await sbDelete("push_subscriptions", `id=eq.${encodeURIComponent(sub.id)}`);
       } else {
         // Cualquier otro fallo de envío quedaba completamente silencioso antes de esto.
-        await debugLog({ stage: "exception", context: "sendPushToPhone", statusCode: e?.statusCode, error: String(e) });
+        await debugLog({ stage: "exception", context: "sendPushToSubs", statusCode: e?.statusCode, error: String(e) });
       }
     }
   }
+}
+
+export async function sendPushToPhone(
+  phone: string,
+  payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean },
+) {
+  if (!VAPID_PRIVATE_KEY) return;
+  const subs = await sbGet("push_subscriptions", `customer_phone=eq.${encodeURIComponent(phone)}`);
+  await sendPushToSubs(subs, payload);
+}
+
+// push_subscriptions no distingue admin de cliente — un dueño/operador es simplemente una
+// cuenta cuyo teléfono también aparece en admin_accounts, así que para avisarle buscamos sus
+// suscripciones cruzando ambas tablas en vez de necesitar una columna/flag nueva.
+export async function sendPushToAdmins(
+  payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean },
+) {
+  if (!VAPID_PRIVATE_KEY) return;
+  const admins = await sbGet("admin_accounts", "select=phone");
+  if (!admins.length) return;
+  const phones = admins.map((a: any) => `"${a.phone}"`).join(",");
+  const subs = await sbGet("push_subscriptions", `customer_phone=in.(${phones})`);
+  await sendPushToSubs(subs, payload);
 }

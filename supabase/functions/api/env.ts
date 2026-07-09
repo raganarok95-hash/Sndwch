@@ -56,10 +56,26 @@ export const CONTACT_EMAIL = "contacto@sndwch.com";
 export const STORE_HOURS: Array<[number, number] | null> = [
   [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22],
 ];
+// d.getHours()/getDay() usan la zona horaria del SERVIDOR (Deno Deploy corre en UTC), no
+// la de Perú (UTC-5) — con eso, "cierra a las 22:00" se aplicaba como si cerrara a las
+// 17:00 hora Perú, 5 horas antes de lo real. Un cliente que pagaba con tarjeta entre esas
+// 5 horas veía el cobro pasar en Culqi (create-charge no valida horario) y recién
+// place-order lo rechazaba después — cobro real, pedido nunca creado (hallazgo en vivo
+// tras activar Culqi). Convertir explícitamente a America/Lima antes de comparar evita
+// que esto dependa de en qué zona horaria le toque correr al runtime.
 export function isWithinStoreHours(d: Date): boolean {
-  const range = STORE_HOURS[d.getDay()];
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Lima",
+    weekday: "short",
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  const WEEKDAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const range = STORE_HOURS[WEEKDAY_INDEX[get("weekday")]];
   if (!range) return false;
-  const h = d.getHours() + d.getMinutes() / 60;
+  const h = Number(get("hour")) + Number(get("minute")) / 60;
   return h >= range[0] && h < range[1];
 }
 

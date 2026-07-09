@@ -10,8 +10,34 @@ import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS } from "../catalog.ts";
-import { sendPushToPhone, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
+import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { logAdminAction } from "../logging.ts";
+
+// Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
+// llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
+// notificaciones repetidas por el mismo producto. Ítems sin seguimiento de cantidad
+// (stock_qty null, solo el toggle in_stock) quedan fuera del filtro sin querer alertar.
+async function alertLowStockCrossing(codes: string[], qtys: number[]): Promise<void> {
+  const rows = await sbGet(
+    "inventory",
+    `product_code=in.(${codes.join(",")})&stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold`,
+  );
+  for (const row of rows) {
+    const idx = codes.indexOf(row.product_code);
+    if (idx < 0) continue;
+    const threshold = row.low_stock_threshold || 5;
+    const after = row.stock_qty || 0;
+    const before = after + qtys[idx];
+    if (before > threshold && after <= threshold) {
+      await sendPushToAdmins({
+        title: after === 0 ? "Se agotó un producto ⚠️" : "Stock bajo ⚠️",
+        body: (row.product_name || row.product_code) + ": quedan " + after + " unidades.",
+        url: "./index.html",
+        tag: "sndwch-low-stock-" + row.product_code,
+      });
+    }
+  }
+}
 
 async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number): Promise<boolean> {
   if (!CULQI_SECRET_KEY) return false;
@@ -94,6 +120,11 @@ export async function actPlaceOrder(b: any) {
       await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
     } catch (e) {
       throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
+    }
+    try {
+      await alertLowStockCrossing(codes, qtys);
+    } catch {
+      // una alerta fallida no debe afectar el pedido — el stock ya se descontó de verdad
     }
   }
 
@@ -264,6 +295,18 @@ export async function actPlaceOrder(b: any) {
     } else {
       orderRows = await insertOrder();
       orderInserted = true;
+    }
+
+    try {
+      await sendPushToAdmins({
+        title: "Nuevo pedido " + ref + " 🥪",
+        body: (name || "Cliente") + " — S/" + total.toFixed(2)
+          + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : ""),
+        url: "./index.html",
+        tag: "sndwch-new-order-" + ref,
+      });
+    } catch {
+      // un push fallido no debe bloquear la creación del pedido
     }
 
     return { success: true, order: orderRows[0], customer };
@@ -618,4 +661,37 @@ export async function actExpireStaleManualPayments(b: any) {
     }
   }
   return { success: true, cancelled };
+}
+
+// Avisa al dueño cuando un pedido lleva demasiado tiempo sin que cocina lo tome — mismo
+// umbral de 10 min que ya usa el badge visual "hace X min" del panel admin (ver isStale
+// en index.html). alerted_stuck evita reenviar la misma alerta cada vez que corre este
+// cron (cada 5 min) mientras el pedido sigue sin atenderse; una vez que avanza de estado
+// o se cancela, deja de aparecer en el filtro status=eq.RECIBIDO y nunca se vuelve a tocar.
+const STUCK_ORDER_MINUTES = 10;
+export async function actAlertStuckOrders(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const cutoff = new Date(Date.now() - STUCK_ORDER_MINUTES * 60000).toISOString();
+  const stuck = await sbGet(
+    "orders",
+    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}&select=id,ref,customer_name,payment_method,payment_status`,
+  );
+  let alerted = 0;
+  for (const order of stuck) {
+    try {
+      const manualPending = (order.payment_method === "yape" || order.payment_method === "plin") && order.payment_status !== "paid";
+      await sendPushToAdmins({
+        title: "Pedido estancado ⏰",
+        body: order.ref + " (" + (order.customer_name || "cliente") + ") lleva más de " + STUCK_ORDER_MINUTES + " min en RECIBIDO"
+          + (manualPending ? " — pago sin confirmar" : "") + ".",
+        url: "./index.html",
+        tag: "sndwch-stuck-" + order.id,
+      });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { alerted_stuck: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-stuck-orders failed for order", order.id, e);
+    }
+  }
+  return { success: true, alerted };
 }

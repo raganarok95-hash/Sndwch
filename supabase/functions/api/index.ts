@@ -20,7 +20,7 @@ import {
 import {
   actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
-  actExpireStaleManualPayments,
+  actExpireStaleManualPayments, actAlertStuckOrders,
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
@@ -81,6 +81,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-cancel-order": actAdminCancelOrder,
   "cancel-my-order": actCancelMyOrder,
   "expire-stale-manual-payments": actExpireStaleManualPayments,
+  "alert-stuck-orders": actAlertStuckOrders,
   "admin-manual-points": actAdminManualPoints,
   "admin-accounts-list": actAdminAccountsList,
   "admin-accounts-add": actAdminAccountsAdd,
