@@ -81,11 +81,10 @@ var BIZ_NAME='Ezra Kemish Vertiz Labarrera',BIZ_RUC='10736044523',BIZ_CITY='Truj
 // El prefijo de moneda "S/" se muestra más chico que el monto — a tamaño completo
 // se confundía visualmente con un "5" pegado al número (ej. "S/22" leído como "5/22").
 var SOLES='<span style="font-size:.6em">S/</span>';
-// PASARELA DE PAGO — CULQI
-// ⚠️ Reemplaza esto con tu llave PÚBLICA real (pk_test_... o pk_live_...) desde tu dashboard de Culqi.
+// PASARELA DE PAGO — CULQI (LIVE — los cargos son reales)
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
-// solo en Supabase → Edge Functions → create-charge → Secrets, nunca aquí.
-var CULQI_PUBLIC_KEY='pk_test_REEMPLAZA_ESTA_LLAVE';
+// solo en Supabase → Edge Functions → Secrets (CULQI_SECRET_KEY), nunca aquí.
+var CULQI_PUBLIC_KEY='pk_live_q82LnGIDlmQ0bpUC';
 // PAGO MANUAL — YAPE / PLIN
 // El cliente transfiere por su cuenta desde su propia app — nosotros no procesamos el
 // cobro. El pedido queda pendiente hasta que el operador confirme en el panel de admin
