@@ -32,13 +32,14 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
   SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 20 },
 };
-export const SIDE_PRICE: Record<string, number> = { D01: 5, D02: 5, D03: 3, D04: 4, D05: 3, D06: 4, D07: 3, D08: 4, D09: 6 };
+// D01-D05 (chicha morada, inca kola, agua, papas, galleta) se retiraron del catálogo a
+// pedido del dueño — solo era reventa de botellas/paquetes sin nada distinto a lo que
+// vende cualquier otro local. Pedidos viejos que ya tenían estos códigos en su
+// items[] siguen mostrando bien (ver statItemLabel/statUnitPrice más abajo, y el
+// try/catch en restockOrderItems de orders.ts que ya contemplaba ítems legados que no
+// encajan en el catálogo actual) — solo dejan de poder pedirse de nuevo.
+export const SIDE_PRICE: Record<string, number> = { D06: 4, D07: 3, D08: 4, D09: 6 };
 export const SIDE_LABEL: Record<string, string> = {
-  D01: "CHICHA MORADA // 500ML",
-  D02: "INCA KOLA // 355ML",
-  D03: "AGUA // SIN GAS",
-  D04: "PAPAS // CHIPS",
-  D05: "GALLETA // AVENA",
   // Catálogo de bebidas de la casa — sin jugos a propósito (decisión de negocio: los
   // jugos ya los vende cualquier juguería del barrio, esto busca diferenciarse).
   D06: "THE BLOOM // HIBISCUS",
