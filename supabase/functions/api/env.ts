@@ -45,6 +45,14 @@ export const VAPID_SUBJECT = "mailto:contacto@sndwch.com";
 export const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 export const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "SND//WCH <pedidos@sndwch.app>";
 
+// Identidad legal del negocio — persona natural con negocio (RUC 10). Usada en el
+// Libro de Reclamaciones (obligatorio por el Código de Protección y Defensa del
+// Consumidor / INDECOPI) y en el correo de notificación de reclamos al negocio.
+export const BUSINESS_LEGAL_NAME = "Ezra Kemish Vertiz Labarrera";
+export const BUSINESS_RUC = "10736044523";
+export const BUSINESS_CITY = "Trujillo, Perú";
+export const CONTACT_EMAIL = "contacto@sndwch.com";
+
 // Horario de atención — debe reflejar EXACTAMENTE el mismo horario que STORE_HOURS en
 // index.html (usado ahí solo para el badge visual; aquí se usa para rechazar pedidos
 // programados fuera de horario, que el cliente podría forzar sin este chequeo).

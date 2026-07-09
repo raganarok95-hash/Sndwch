@@ -69,6 +69,12 @@ var SB_URL='https://rjosezuoyngiadunfzyn.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb3NlenVveW5naWFkdW5menluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODA0MTgsImV4cCI6MjA5MjE1NjQxOH0.fl4gayRXQvplNPzhf4TEzyWqrZXxXYBYHV0tMdJw1fs';
 var API_FN_URL=SB_URL+'/functions/v1/api';
 var WA='51930957640',BLU='#CBA258';
+// Identidad legal del negocio — mostrada en el pie de página, en Términos, y como
+// identificación del proveedor en el Libro de Reclamaciones (exigido por el Código de
+// Protección y Defensa del Consumidor). Debe coincidir EXACTAMENTE con lo que el backend
+// tiene en env.ts (BUSINESS_LEGAL_NAME/BUSINESS_RUC) — ese es el que de verdad manda en
+// los correos de reclamos; esta copia es solo para pintar la UI.
+var BIZ_NAME='Ezra Kemish Vertiz Labarrera',BIZ_RUC='10736044523',BIZ_CITY='Trujillo, Perú',BIZ_EMAIL='contacto@sndwch.com',BIZ_IG='https://www.instagram.com/snd__wch/';
 // El prefijo de moneda "S/" se muestra más chico que el monto — a tamaño completo
 // se confundía visualmente con un "5" pegado al número (ej. "S/22" leído como "5/22").
 var SOLES='<span style="font-size:.6em">S/</span>';
@@ -194,6 +200,11 @@ var ESTIMATED_DELIVERY_RANGE=[25,40];
 
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
+// A dónde vuelve el botón "←" en pantallas legales que se abren desde más de un lugar
+// (registro, perfil, o el pie de contacto del home) — sin esto, sPLegal() solo podía
+// adivinar el origen mirando si `cust` existe, y desde el pie del home eso mandaba a un
+// invitado de vuelta al login en vez de al home. Se fija justo antes de cada navegación.
+var bkTo=null;
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
 var useCredit=false;
@@ -244,6 +255,8 @@ var recEmailMasked=null;
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
 var wPhone='',wAmt='',wMsg='';
 var rtStars=0,rtMsg='',chalMsg='';
+var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
+var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
 var addrText='',scheduleMode='now';
 var confNom='',confEmail='',confNotes='';
 var checkoutLocked=false,lockedMsg='',_payingInProgress=false;
@@ -467,6 +480,29 @@ function NAV(){
   var oa=tab==='order';
   function nb(t,l,a){return'<button onclick="swTab(\''+t+'\')" style="all:unset;cursor:pointer;flex:1;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.12em;color:'+(a?'#fff':'#555')+'">'+l+(a?' <span style="color:'+BLU+'">//</span>':'')+'</div><div style="width:4px;height:4px;border-radius:50%;background:'+BLU+';opacity:'+(a?1:0)+'"></div></button>';}
   return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;display:flex;z-index:100">'+nb('order','PEDIDO',oa)+nb('points','PUNTOS',!oa)+'</div>';
+}
+// Pie de contacto — datos del comercio, redes sociales y links legales. Requisito de
+// Culqi para aprobar el comercio en producción (y buena práctica de por sí): un cliente
+// debe poder identificar quién opera la web sin tener que abrir WhatsApp primero.
+// Vive solo en el home (la primera pantalla que ve cualquiera, con o sin cuenta) para no
+// repetir el mismo bloque en cada pantalla de la app.
+function contactFooterHTML(){
+  var igIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
+  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid #1E3932">'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:12px">CONTACTO //</div>'
+    +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;line-height:2.1">'
+    +'<div>📍 Delivery — '+BIZ_CITY+'</div>'
+    +'<div>✉️ <a href="mailto:'+BIZ_EMAIL+'" style="color:#A8C8B0;text-decoration:none">'+BIZ_EMAIL+'</a></div>'
+    +'<div>💬 <a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:#A8C8B0;text-decoration:none">+51 930 957 640</a></div>'
+    +'</div>'
+    +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:#1A3028;border:1px solid #3A6B58;display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+BLU+'">'+igIcon+'</a>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
+    +'<span onclick="bkTo=\'o_home\';sc=\'p_legal\';render()" style="cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;letter-spacing:.06em;text-decoration:underline">TÉRMINOS //</span>'
+    +'<span onclick="bkTo=\'o_home\';sc=\'p_returns\';render()" style="cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;letter-spacing:.06em;text-decoration:underline">CAMBIOS Y DEVOLUCIONES //</span>'
+    +'<span onclick="bkTo=\'o_home\';sc=\'p_complaints\';cmplStep=\'form\';render()" style="cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;letter-spacing:.06em;text-decoration:underline">LIBRO DE RECLAMACIONES //</span>'
+    +'</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
+    +'</div>';
 }
 function AB(t,can,bk,nfn,nl){
   var bb=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← ATRÁS</button>':'';
@@ -774,6 +810,7 @@ function sOHome(){
     +'</div>'
     +(cust&&myFavorites.length?'<div onclick="sc=\'p_favorites\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">☆ MIS<span style="color:'+BLU+'"> // </span>FAVORITOS</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+BLU+'">VER \u2192</span></div>':'')
     +pc
+    +contactFooterHTML()
     +'</div>'+NAV();
 }
 
@@ -1624,17 +1661,111 @@ function doLogout(){cust=null;isAdmin=false;savedPh='';token='';aErr='';localSto
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
 // de operar de cara al público — esto es un punto de partida razonable, no asesoría legal.
 function sPLegal(){
-  var bk=cust?"sc='p_profile';render()":"sc='p_auth';render()";
+  var bk=(bkTo||(cust?'p_profile':'p_auth'));bkTo=null;
   function sec(t,b){return'<div style="margin-bottom:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">'+t+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;line-height:1.6">'+b+'</p></div>';}
-  return H('TÉRMINOS Y PRIVACIDAD',bk)+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  return H('TÉRMINOS Y PRIVACIDAD',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">TÉRMINOS<span style="color:'+BLU+'"> // </span>Y PRIVACIDAD</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-bottom:20px">Última actualización: 2026</div>'
+    +providerBlockHTML()
+    +sec('QUÉ VENDEMOS //','Sándwiches preparados al momento, para delivery en '+BIZ_CITY+' — como Signature (combinaciones curadas por la casa) o armados a tu gusto (BUILD YOUR OWN), además de bebidas y snacks. El menú, con descripción y precio de cada producto, está disponible dentro de la app desde el home.')
     +sec('QUÉ DATOS PEDIMOS //','Nombre, teléfono, PIN, DNI y fecha de nacimiento al crear tu cuenta; correo y dirección son opcionales. El DNI y la fecha de nacimiento solo se usan para verificar tu identidad si necesitas recuperar tu cuenta — no se muestran a nadie más.')
     +sec('PARA QUÉ LOS USAMOS //','Para procesar tus pedidos, acreditar tus puntos y recompensas, prevenir fraude y contactarte sobre el estado de tu pedido.')
     +sec('CON QUIÉN LOS COMPARTIMOS //','No vendemos ni compartimos tus datos con terceros para publicidad. Solo se comparten con los proveedores estrictamente necesarios para operar (pasarela de pago, envío de correos).')
     +sec('TUS DATOS, TU DECISIÓN //','Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio.')
-    +sec('CONTACTO //','¿Preguntas sobre tus datos? Escríbenos por WhatsApp desde el botón de soporte en cualquier pantalla de la app.')
+    +sec('CONTACTO //','¿Preguntas sobre tus datos o tu pedido? Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
     +'</div>';
+}
+// Identificación del proveedor — se repite al inicio de Términos, Cambios/Devoluciones
+// y el Libro de Reclamaciones porque cada una de esas páginas debe poder leerse por sí
+// sola (un consumidor puede llegar directo a cualquiera de ellas desde el pie del home).
+function providerBlockHTML(){
+  return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;line-height:1.9">'
+    +'<div><span style="color:'+BLU+'">Proveedor · </span>'+esc(BIZ_NAME)+'</div>'
+    +'<div><span style="color:'+BLU+'">RUC · </span>'+BIZ_RUC+'</div>'
+    +'<div><span style="color:'+BLU+'">Cobertura · </span>Delivery en '+BIZ_CITY+' (sin local de atención al público)</div>'
+    +'<div><span style="color:'+BLU+'">Contacto · </span>'+BIZ_EMAIL+' · WhatsApp +51 930 957 640</div>'
+    +'</div>';
+}
+
+// CAMBIOS Y DEVOLUCIONES — al ser comida preparada al momento y perecible no aplica un
+// reembolso general como en retail, pero sí una política clara de reposición si el pedido
+// llega mal. ⚠️ Revisa estos plazos/condiciones con el negocio real antes de operar.
+function sPReturns(){
+  var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
+  function sec(t,b){return'<div style="margin-bottom:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';letter-spacing:.15em;margin-bottom:8px">'+t+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;line-height:1.6">'+b+'</p></div>';}
+  return H('CAMBIOS Y DEVOLUCIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">CAMBIOS<span style="color:'+BLU+'"> // </span>Y DEVOLUCIONES</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-bottom:20px">Última actualización: 2026</div>'
+    +providerBlockHTML()
+    +sec('POR QUÉ NO HAY DEVOLUCIÓN GENERAL //','Nuestros productos son alimentos preparados al momento y perecibles: una vez entregado el pedido, no aceptamos devoluciones de dinero por simple arrepentimiento, tal como establece el Código de Protección y Defensa del Consumidor para este tipo de bienes.')
+    +sec('SI TU PEDIDO LLEGÓ MAL //','Si el pedido llega incompleto, con un ingrediente distinto al pedido, o en mal estado, repórtalo dentro de las 2 horas siguientes a la entrega por WhatsApp (con foto si es posible) o desde el Libro de Reclamaciones. Verificado el problema, te ofrecemos —a tu elección— reposición sin costo, crédito interno equivalente en la app, o reembolso por el mismo medio de pago.')
+    +sec('CANCELACIONES //','Puedes cancelar sin costo antes de que la cocina empiece a preparar tu pedido. Una vez iniciada la preparación, ya no se puede cancelar ni reembolsar.')
+    +sec('TIEMPOS DE REEMBOLSO //','Cuando corresponde reembolso por el medio de pago original (tarjeta vía Culqi, Yape o Plin), el abono puede demorar entre 3 y 10 días hábiles según el operador financiero — nosotros lo iniciamos apenas se aprueba el caso.')
+    +sec('CONTACTO //','Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
+    +'</div>';
+}
+
+// LIBRO DE RECLAMACIONES VIRTUAL — exigido por el Código de Protección y Defensa del
+// Consumidor (D.S. 011-2011-PCM y modificatorias). Debe ser propio del sitio (no un
+// formulario externo ni un Drive), identificar al proveedor, y entregar un código de
+// reclamo al consumidor. Accesible SIN cuenta — cualquiera debe poder reclamar.
+function sPComplaints(){
+  var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
+  if(cmplStep==='success')return sComplaintsSuccess(bk);
+  var kindToggle='<div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:20px">'+[['reclamo','RECLAMO'],['queja','QUEJA']].map(function(x){return'<button onclick="cmplKind=\''+x[0]+'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(cmplKind===x[0]?BLU:'transparent')+';color:'+(cmplKind===x[0]?'#fff':'#555')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>';
+  var kindHint='<p style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;line-height:1.5;margin-bottom:20px">'+(cmplKind==='queja'?'Queja: malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).':'Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.')+'</p>';
+  var minorBlock='<label style="display:flex;align-items:center;gap:8px;font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin:6px 0 10px"><input type="checkbox" id="cq-minor" onchange="cmplMinor=this.checked;render()" '+(cmplMinor?'checked':'')+' style="accent-color:'+BLU+'">Soy menor de edad (o reclamo en representación de uno)</label>'
+    +(cmplMinor?INP('cq-guardian','NOMBRE DEL PADRE, MADRE O APODERADO','text'):'');
+  var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;min-height:90px;box-sizing:border-box"></textarea>';};
+  return H('LIBRO DE RECLAMACIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">LIBRO DE<span style="color:'+BLU+'"> // </span>RECLAMACIONES</div>'
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;line-height:1.6;margin-bottom:16px">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</p>'
+    +providerBlockHTML()
+    +kindToggle+kindHint
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +ST('01','TUS DATOS','')
+    +INP('cq-name','NOMBRES Y APELLIDOS','text')
+    +INP('cq-dni','DNI / CARNET DE EXTRANJERÍA','text')
+    +INP('cq-addr','DOMICILIO','text')
+    +INP('cq-phone','TELÉFONO','tel')
+    +INP('cq-email','CORREO ELECTRÓNICO','email')
+    +minorBlock
+    +'</div>'
+    +'<div style="height:1px;background:#1E3932;margin:20px 0"></div>'
+    +ST('02','EL '+(cmplKind==='queja'?'MALESTAR':'PEDIDO'),'')
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +INP('cq-ref','REFERENCIA DEL PEDIDO // opcional (ej: SND-1234)','text')
+    +INP('cq-amount','MONTO RECLAMADO // S/, opcional','number')
+    +ta('cq-detail','Describe lo que pasó, con el mayor detalle posible')
+    +ta('cq-request','¿Qué solicitas? (ej: reposición, reembolso, respuesta)')
+    +'</div>'
+    +'<div id="cq-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
+    +BTN(cmplBusy?'ENVIANDO...':'ENVIAR '+(cmplKind==='queja'?'QUEJA':'RECLAMO')+' //',cmplBusy?'':'doSubmitComplaint()')
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#555;line-height:1.5;margin-top:14px">Tenemos hasta 30 días calendario para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
+    +'</div>';
+}
+function sComplaintsSuccess(bk){
+  return H('LIBRO DE RECLAMACIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
+    +'<div style="font-size:44px;margin-bottom:16px">✓</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff;margin-bottom:8px">'+(cmplKind==='queja'?'QUEJA':'RECLAMO')+' REGISTRAD'+(cmplKind==='queja'?'A':'O')+'</div>'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:6px">TU CÓDIGO //</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:'+BLU+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 30 días calendario siguientes, conforme a ley.</p>'
+    +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('VOLVER AL INICIO //','sc=\'o_home\';cmplStep=\'form\';render()')+'</div>'
+    +'</div>';
+}
+async function doSubmitComplaint(){
+  var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+  var name=g('cq-name'),dni=g('cq-dni'),addr=g('cq-addr'),phone=g('cq-phone'),email=g('cq-email'),guardian=g('cq-guardian');
+  var ref=g('cq-ref'),amount=g('cq-amount'),detail=g('cq-detail'),request=g('cq-request');
+  if(!name||!dni||!addr||!phone||!email||!detail||!request){cmplErr='Completa todos los campos obligatorios.';render();return;}
+  if(!/^[^@]+@[^@]+\.[^@]+$/.test(email)){cmplErr='Ingresa un correo válido.';render();return;}
+  if(cmplMinor&&!guardian){cmplErr='Ingresa el nombre del padre, madre o apoderado.';render();return;}
+  cmplErr='';cmplBusy=true;render();
+  try{
+    var res=await api('submit-complaint',{kind:cmplKind,consumerName:name,consumerDni:dni,consumerAddress:addr,consumerPhone:phone,consumerEmail:email,isMinor:cmplMinor,guardianName:guardian,orderRef:ref,claimedAmount:amount?Number(amount):null,detail:detail,consumerRequest:request});
+    cmplCode=res.claimCode;cmplBusy=false;cmplStep='success';render();
+  }catch(e){cmplErr=e.message;cmplBusy=false;render();}
 }
 
 // FAVORITOS
@@ -1923,7 +2054,7 @@ function sAdminHome(){
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['RECLAMACIONES //','loadAdminComplaints()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
     +'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#A8C8B0">SONIDO DE NUEVO PEDIDO</span>'
     +'<select onchange="setNotifSound(this.value)" style="background:#1E3932;color:#FFFFFF;border:1px solid #3A6B58;border-radius:6px;padding:6px 8px;font-family:\'Share Tech Mono\',monospace;font-size:10px">'
     +['campana','timbre','grave'].map(function(p){return'<option value="'+p+'" '+(notifSoundPreset===p?'selected':'')+'>'+p+'</option>';}).join('')
@@ -2239,6 +2370,8 @@ function render(){
     case'p_welcome':   h=sWelcome();break;
     case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;
+    case'p_returns':   h=sPReturns();break;
+    case'p_complaints':h=sPComplaints();break;
     case'p_home':      h=sPHome();break;
     case'p_rewards':   h=sPRewards();break;
     case'p_history':   h=sPHistory();break;
@@ -2260,6 +2393,7 @@ function render(){
     case'admin_hours': h=sAdminHours();break;
     case'admin_report':h=sAdminReport();break;
     case'admin_ratings':h=sAdminRatings();break;
+    case'admin_complaints':h=sAdminComplaints();break;
     default:           h=sOHome();
   }
   var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
@@ -2703,7 +2837,54 @@ function sAdminRatings(){
   return h;
 }
 
-
+// RECLAMACIONES — el negocio tiene 30 días calendario para responder cada reclamo/queja
+// (obligación legal, no solo buena práctica); esta pantalla es donde el operador ve la
+// cola pendiente y deja constancia de la respuesta.
+async function loadAdminComplaints(){
+  sc='admin_complaints';busy=true;busyMsg='Cargando reclamaciones...';render();
+  try{var r=await api('admin-list-complaints',{token:token,status:cmplFilterStatus||undefined});adminComplaints=r.complaints;}
+  catch(e){adminComplaints=[];}
+  busy=false;render();
+}
+function setComplaintsFilter(v){cmplFilterStatus=v;loadAdminComplaints();}
+function sAdminComplaints(){
+  var h=H('RECLAMACIONES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<select onchange="setComplaintsFilter(this.value)" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-family:Share Tech Mono,monospace;font-size:11px;margin-bottom:14px">'
+    +[['','Todos'],['pendiente','Pendientes'],['atendido','Atendidos']].map(function(x){return'<option value="'+x[0]+'" '+(cmplFilterStatus===x[0]?'selected':'')+'>'+x[1]+'</option>';}).join('')
+    +'</select>';
+  var list=adminComplaints||[];
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:10px">'+list.length+' RECLAMACIONES //</div>';
+  h+=list.length?list.map(function(c){
+    var pending=c.status==='pendiente';
+    var openId=cmplRespondingId===c.id;
+    return'<div style="background:#2D5246;border:1px solid '+(pending?'rgba(255,165,0,.35)':'#3A6B58')+';border-radius:10px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div>'
+      +'<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(c.claim_code)+'<span style="color:'+BLU+'"> // </span>'+(c.kind==='queja'?'QUEJA':'RECLAMO')+'</div>'
+      +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(c.consumer_name)+' · '+esc(c.consumer_phone)+' · '+esc(c.consumer_email)+'</div>'
+      +'</div><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(pending?'#ffa500':'#25D366')+';flex-shrink:0">'+(pending?'⏳ PENDIENTE':'✓ ATENDIDO')+'</span></div>'
+      +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;margin-top:8px;line-height:1.5"><b>Detalle:</b> '+esc(c.detail)+'</div>'
+      +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px;line-height:1.5"><b>Pide:</b> '+esc(c.consumer_request)+'</div>'
+      +(c.order_ref?'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#8BAF9A;margin-top:6px">Pedido: '+esc(c.order_ref)+'</div>':'')
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +(c.provider_response?'<div style="background:#1A3028;border-radius:8px;padding:10px 12px;margin-top:10px;font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0"><b style="color:'+BLU+'">Respuesta:</b> '+esc(c.provider_response)+'</div>'
+        :(openId
+          ?'<div style="margin-top:10px"><textarea id="cq-resp-'+c.id+'" placeholder="Escribe tu respuesta al consumidor" style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:10px 12px;color:#FFFFFF;width:100%;font-size:12px;font-family:Barlow,sans-serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint(\''+c.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+BLU+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">GUARDAR RESPUESTA //</button></div>'
+          :'<button onclick="cmplRespondingId=\''+c.id+'\';render()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+BLU+';font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-top:10px">RESPONDER //</button>'))
+      +'</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin reclamaciones //</div>';
+  h+='</div>';
+  return h;
+}
+async function doRespondComplaint(id){
+  var el=document.getElementById('cq-resp-'+id);
+  var response=el?el.value.trim():'';
+  if(!response)return;
+  try{
+    await api('admin-respond-complaint',{token:token,id:id,response:response});
+    cmplRespondingId=null;
+    loadAdminComplaints();
+  }catch(e){showToast(e.message,'error');}
+}
 
 function sPRecover(){
   var pinBox=recNewPin?'<div style="background:#1A3028;border:2px solid '+BLU+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:'+BLU+'">'+recNewPin+'</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#8BAF9A;margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono.</div></div>'
