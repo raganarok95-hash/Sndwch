@@ -19,12 +19,13 @@ import {
 } from "./actions/auth.ts";
 import {
   actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
-  actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actExpireStaleManualPayments,
+  actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
+  actExpireStaleManualPayments,
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
-  actSubmitRating, actClaimChallenge, actCreditGift,
+  actSubmitRating, actClaimChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe,
 } from "./actions/customer.ts";
 import {
@@ -72,11 +73,13 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "submit-rating": actSubmitRating,
   "claim-challenge": actClaimChallenge,
   "credit-gift": actCreditGift,
+  "credit-lookup": actCreditLookup,
   "admin-orders": actAdminOrders,
   "admin-update-status": actAdminUpdateStatus,
   "admin-bulk-update-status": actAdminBulkUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
   "admin-cancel-order": actAdminCancelOrder,
+  "cancel-my-order": actCancelMyOrder,
   "expire-stale-manual-payments": actExpireStaleManualPayments,
   "admin-manual-points": actAdminManualPoints,
   "admin-accounts-list": actAdminAccountsList,

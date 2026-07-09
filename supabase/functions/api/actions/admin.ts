@@ -14,6 +14,12 @@ export async function actAdminManualPoints(b: any) {
   if (!phone || !pts || pts < 1) throw new ApiError("Ingresa teléfono y puntos válidos.");
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=name`);
   if (!rows.length) throw new ApiError("Cliente no encontrado: " + phone, 404);
+  // El RPC que de verdad mueve el saldo va PRIMERO — antes el insert de auditoría
+  // (transactions) se hacía antes que esto, así que un fallo entre ambos dejaba un
+  // registro de "se otorgaron puntos" sin que el saldo real cambiara. En el orden
+  // correcto, si algo falla es al revés: el saldo ya cambió pero falta la línea de
+  // historial, que es un problema mucho menor (hallazgo de la auditoría de backend).
+  const newPoints = await rpc("increment_customer_points", { p_phone: phone, p_delta: pts });
   await sbInsert("transactions", {
     customer_phone: phone,
     type: "earn_confirmed",
@@ -21,7 +27,6 @@ export async function actAdminManualPoints(b: any) {
     description: "Puntos manuales (admin)",
     confirmed: true,
   });
-  const newPoints = await rpc("increment_customer_points", { p_phone: phone, p_delta: pts });
   await logAdminAction(s.phone, "manual-points", phone, { pts });
   return { success: true, name: rows[0].name, newPoints };
 }

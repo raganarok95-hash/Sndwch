@@ -87,173 +87,196 @@ export async function actPlaceOrder(b: any) {
   // rechaza limpio en vez de sobrevender. Antes esto se hacía leyendo el stock y
   // escribiéndolo de vuelta al final del todo, sin rechazar el pedido ni protegerlo de
   // condiciones de carrera.
-  if (ingredients.length) {
-    const codes = Array.from(new Set(ingredients));
-    const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
+  const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+  const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
+  if (codes.length) {
     try {
       await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
     } catch (e) {
       throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
     }
   }
-  // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
-  // que mandó el cliente. Todo lo que mueve dinero (orders.total, cobro a Culqi, puntos,
-  // crédito) debe basarse en esta fuente de verdad, no en `clientTotal` (que solo sirvió
-  // para detectar un descuadre grosero arriba; confiar en él aquí abajo permitiría pagar
-  // centavos menos del precio real vía devtools).
-  const total = expectedTotal;
-  const chargeId = useCredit || manualMethod || total === 0 ? "" : String(b.chargeId || "").trim();
-  if (total > 0 && !useCredit && !manualMethod && !chargeId) throw new ApiError("Faltan datos del pedido.");
 
-  let phone: string | null = null;
-  let custRow: any = null;
-  const active = await sessionPromise;
-  if (active) {
-    phone = active.payload.phone;
-    custRow = active.row;
-  }
+  // A partir de aquí el inventario ya quedó reservado/descontado de verdad — cualquier
+  // salida de este punto en adelante (recompensa/crédito insuficiente, pago de Culqi
+  // rechazado, un fallo de red) DEBE devolver el stock antes de propagar el error. Sin
+  // esto, un pedido de invitado (sin sesión, sin límite de intentos) con un chargeId
+  // inválido a propósito vaciaba el inventario real sin pagar nada — hallazgo de la
+  // auditoría de este release. `orderInserted` marca el punto de no-retorno: una vez que
+  // el pedido ya quedó creado, un fallo posterior (ej. el insert de auditoría) NO debe
+  // restituir stock que de verdad se usó para armar el pedido.
+  let orderInserted = false;
+  try {
+    // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
+    // que mandó el cliente. Todo lo que mueve dinero (orders.total, cobro a Culqi, puntos,
+    // crédito) debe basarse en esta fuente de verdad, no en `clientTotal` (que solo sirvió
+    // para detectar un descuadre grosero arriba; confiar en él aquí abajo permitiría pagar
+    // centavos menos del precio real vía devtools).
+    const total = expectedTotal;
+    const chargeId = useCredit || manualMethod || total === 0 ? "" : String(b.chargeId || "").trim();
+    if (total > 0 && !useCredit && !manualMethod && !chargeId) throw new ApiError("Faltan datos del pedido.");
 
-  let reward: { pts: number; label: string } | null = null;
-  if (rewardId) {
-    if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-    reward = REWARDS[rewardId] || null;
-    if (!reward) throw new ApiError("Recompensa inválida.");
-    if ((custRow.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
-  }
-
-  let paymentMethod = "culqi";
-  let paymentId: string | null = null;
-  let paymentStatus = "paid";
-  if (total === 0) {
-    paymentMethod = "reward";
-  } else if (useCredit) {
-    if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
-    if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
-    paymentMethod = "credit";
-  } else if (manualMethod) {
-    paymentMethod = manualMethod;
-    paymentStatus = "pending";
-  } else {
-    const amountCents = Math.round(total * 100);
-    const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
-    if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
-    paymentId = chargeId;
-  }
-
-  async function insertOrder() {
-    return sbInsert("orders", {
-      ref,
-      customer_phone: phone,
-      contact_phone: contactPhone,
-      customer_name: name,
-      customer_email: email || null,
-      customer_address: address,
-      summary: b.summary || "",
-      notes: b.notes || null,
-      total,
-      status: "RECIBIDO",
-      payment_status: paymentStatus,
-      payment_id: paymentId,
-      payment_method: paymentMethod,
-      mode: null,
-      product_key: null,
-      size: null,
-      build: null,
-      items: sanitizedItems,
-      delivery_time: scheduledFor,
-      redeemed_reward: reward ? reward.label : null,
-    });
-  }
-
-  let customer = null;
-  let orderRows: any[];
-  if (phone && custRow && paymentStatus === "paid") {
-    const c = custRow;
-    const isFirstOrder = (c.total_orders || 0) === 0;
-    const isReferral = isFirstOrder && !!c.referred_by;
-    // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
-    // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
-    const basePoints = total;
-    let pointsDelta = basePoints;
-    if (reward) pointsDelta -= reward.pts;
-
-    // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
-    // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
-    // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
-    // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
-    // marcado "pagado" sin el débito real detrás. La función aplica puntos + crédito +
-    // contador de pedidos + última dirección + canje + bono de referido en UNA sola
-    // transacción de Postgres.
-    const updated = await rpc("finalize_order_customer_update", {
-      p_phone: phone,
-      p_points_delta: pointsDelta,
-      p_credit_delta: useCredit ? -total : 0,
-      p_total_orders_delta: 1,
-      p_last_address: address,
-      p_total_redeemed_delta: reward ? 1 : 0,
-      p_referrer_phone: isReferral ? c.referred_by : null,
-      p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
-    });
-    customer = safeCustomer(updated);
-
-    orderRows = await insertOrder();
-
-    // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
-    // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
-    // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
-    // Los inserts de abajo no dependen entre sí, así que corren en paralelo en vez de serie.
-    const auditInserts: Promise<unknown>[] = [
-      sbInsert("transactions", {
-        customer_phone: phone,
-        type: "earn_confirmed",
-        // basePoints (no `total`): mismo valor hoy, pero es la fuente de verdad de lo que
-        // finalize_order_customer_update realmente acreditó arriba (el costo de canje de
-        // recompensa, si hay, se refleja aparte como su propia transacción "redeem" más abajo).
-        points: basePoints,
-        description: useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
-        order_ref: ref,
-        confirmed: true,
-      }),
-    ];
-    if (useCredit) {
-      auditInserts.push(sbInsert("credit_ledger", {
-        customer_phone: phone,
-        delta: -total,
-        reason: "Pedido pagado con crédito (" + ref + ")",
-      }));
+    let phone: string | null = null;
+    let custRow: any = null;
+    const active = await sessionPromise;
+    if (active) {
+      phone = active.payload.phone;
+      custRow = active.row;
     }
-    if (reward) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: phone,
-        type: "redeem",
-        points: -reward.pts,
-        description: reward.label + " canjeado en pedido " + ref,
-        order_ref: ref,
-        confirmed: true,
-      }));
-    }
-    if (isReferral) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: phone,
-        type: "earn_confirmed",
-        points: REFERRAL_BONUS_POINTS,
-        description: "Bono por referido",
-        confirmed: true,
-      }));
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: c.referred_by,
-        type: "earn_confirmed",
-        points: REFERRAL_BONUS_POINTS,
-        description: "Bono por invitar a " + name,
-        confirmed: true,
-      }));
-    }
-    await Promise.all(auditInserts);
-  } else {
-    orderRows = await insertOrder();
-  }
 
-  return { success: true, order: orderRows[0], customer };
+    let reward: { pts: number; label: string } | null = null;
+    if (rewardId) {
+      if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+      reward = REWARDS[rewardId] || null;
+      if (!reward) throw new ApiError("Recompensa inválida.");
+      if ((custRow.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+    }
+
+    let paymentMethod = "culqi";
+    let paymentId: string | null = null;
+    let paymentStatus = "paid";
+    if (total === 0) {
+      paymentMethod = "reward";
+    } else if (useCredit) {
+      if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
+      if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
+      paymentMethod = "credit";
+    } else if (manualMethod) {
+      paymentMethod = manualMethod;
+      paymentStatus = "pending";
+    } else {
+      const amountCents = Math.round(total * 100);
+      const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
+      if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
+      paymentId = chargeId;
+    }
+
+    async function insertOrder() {
+      return sbInsert("orders", {
+        ref,
+        customer_phone: phone,
+        contact_phone: contactPhone,
+        customer_name: name,
+        customer_email: email || null,
+        customer_address: address,
+        summary: b.summary || "",
+        notes: b.notes || null,
+        total,
+        status: "RECIBIDO",
+        payment_status: paymentStatus,
+        payment_id: paymentId,
+        payment_method: paymentMethod,
+        mode: null,
+        product_key: null,
+        size: null,
+        build: null,
+        items: sanitizedItems,
+        delivery_time: scheduledFor,
+        redeemed_reward: reward ? reward.label : null,
+      });
+    }
+
+    let customer = null;
+    let orderRows: any[];
+    if (phone && custRow && paymentStatus === "paid") {
+      const c = custRow;
+      const isFirstOrder = (c.total_orders || 0) === 0;
+      const isReferral = isFirstOrder && !!c.referred_by;
+      // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
+      // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
+      const basePoints = total;
+      let pointsDelta = basePoints;
+      if (reward) pointsDelta -= reward.pts;
+
+      // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
+      // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
+      // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
+      // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
+      // marcado "pagado" sin el débito real detrás. La función aplica puntos + crédito +
+      // contador de pedidos + última dirección + canje + bono de referido en UNA sola
+      // transacción de Postgres.
+      const updated = await rpc("finalize_order_customer_update", {
+        p_phone: phone,
+        p_points_delta: pointsDelta,
+        p_credit_delta: useCredit ? -total : 0,
+        p_total_orders_delta: 1,
+        p_last_address: address,
+        p_total_redeemed_delta: reward ? 1 : 0,
+        p_referrer_phone: isReferral ? c.referred_by : null,
+        p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
+      });
+      customer = safeCustomer(updated);
+
+      orderRows = await insertOrder();
+      orderInserted = true;
+
+      // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
+      // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
+      // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
+      // Los inserts de abajo no dependen entre sí, así que corren en paralelo en vez de serie.
+      const auditInserts: Promise<unknown>[] = [
+        sbInsert("transactions", {
+          customer_phone: phone,
+          type: "earn_confirmed",
+          // basePoints (no `total`): mismo valor hoy, pero es la fuente de verdad de lo que
+          // finalize_order_customer_update realmente acreditó arriba (el costo de canje de
+          // recompensa, si hay, se refleja aparte como su propia transacción "redeem" más abajo).
+          points: basePoints,
+          description: useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
+          order_ref: ref,
+          confirmed: true,
+        }),
+      ];
+      if (useCredit) {
+        auditInserts.push(sbInsert("credit_ledger", {
+          customer_phone: phone,
+          delta: -total,
+          reason: "Pedido pagado con crédito (" + ref + ")",
+        }));
+      }
+      if (reward) {
+        auditInserts.push(sbInsert("transactions", {
+          customer_phone: phone,
+          type: "redeem",
+          points: -reward.pts,
+          description: reward.label + " canjeado en pedido " + ref,
+          order_ref: ref,
+          confirmed: true,
+        }));
+      }
+      if (isReferral) {
+        auditInserts.push(sbInsert("transactions", {
+          customer_phone: phone,
+          type: "earn_confirmed",
+          points: REFERRAL_BONUS_POINTS,
+          description: "Bono por referido",
+          confirmed: true,
+        }));
+        auditInserts.push(sbInsert("transactions", {
+          customer_phone: c.referred_by,
+          type: "earn_confirmed",
+          points: REFERRAL_BONUS_POINTS,
+          description: "Bono por invitar a " + name,
+          confirmed: true,
+        }));
+      }
+      await Promise.all(auditInserts);
+    } else {
+      orderRows = await insertOrder();
+      orderInserted = true;
+    }
+
+    return { success: true, order: orderRows[0], customer };
+  } catch (e) {
+    if (!orderInserted && codes.length) {
+      try {
+        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+      } catch (restockErr) {
+        console.error("Failed to restock inventory after order failure:", restockErr);
+      }
+    }
+    throw e;
+  }
 }
 
 // Campos que la pantalla de seguimiento de invitado (sin cuenta) realmente muestra —
@@ -349,7 +372,8 @@ async function confirmManualPayment(order: any) {
 // CANCELADO deliberadamente NO está aquí: solo se llega a ese estado a través de
 // actAdminCancelOrder, que además restituye el inventario descontado — si se agregara
 // aquí, este endpoint genérico permitiría "cancelar" un pedido sin devolver el stock.
-const VALID_ORDER_STATUSES = new Set(["RECIBIDO", "PREPARANDO", "EN CAMINO", "ENTREGADO"]);
+const STATUS_SEQUENCE = ["RECIBIDO", "PREPARANDO", "EN CAMINO", "ENTREGADO"];
+const VALID_ORDER_STATUSES = new Set(STATUS_SEQUENCE);
 
 // Núcleo compartido entre actAdminUpdateStatus (un pedido) y actAdminBulkUpdateStatus
 // (varios a la vez, ver #113) — mismo guard de pago pendiente, mismo otorgamiento de
@@ -364,9 +388,22 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,customer_phone,customer_name,customer_address,payment_method,payment_status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,customer_phone,customer_name,customer_address,payment_method,payment_status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
+  if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+
+  // Antes esto no revisaba el estado actual del pedido — la acción en lote
+  // (actAdminBulkUpdateStatus) podía seleccionar pedidos RECIBIDO recién llegados junto
+  // con otros ya en PREPARANDO y marcarlos todos ENTREGADO de un tiro, saltándose
+  // cocina/despacho por completo (hallazgo de la auditoría de flujo de pedidos). Ahora
+  // solo se permite avanzar un estado a la vez, o repetir el mismo estado (ej. para
+  // solo actualizar la ETA sin cambiar de estado).
+  const currentIdx = STATUS_SEQUENCE.indexOf(order.status);
+  const targetIdx = STATUS_SEQUENCE.indexOf(status);
+  if (status !== order.status && targetIdx !== currentIdx + 1) {
+    throw new ApiError(`No se puede pasar de ${order.status} directo a ${status} — avanza un estado a la vez.`, 400);
+  }
 
   // Yape/Plin sin confirmar: no se puede avanzar el pedido de RECIBIDO — evita que
   // cocina empiece a preparar un pedido que en realidad nunca se pagó.
@@ -503,14 +540,55 @@ export async function actAdminCancelOrder(b: any) {
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (order.status === "ENTREGADO") throw new ApiError("Un pedido ya entregado no se puede cancelar.", 400);
   if (order.status === "CANCELADO") throw new ApiError("Este pedido ya está cancelado.", 409);
-  if (order.payment_status === "paid") {
-    throw new ApiError("Este pedido ya fue pagado — coordina un reembolso manual si corresponde antes de cancelarlo.", 400);
+  // Antes esto bloqueaba por completo cancelar un pedido ya pagado — dejaba al operador sin
+  // ninguna forma de cancelar en la app un pedido pagado con tarjeta/crédito si, por ejemplo,
+  // se acabó un ingrediente a media preparación (hallazgo de la auditoría de flujo de
+  // pedidos). Ahora sí se puede, pero exige que el cliente mande `acknowledgeRefund:true`
+  // (el panel admin muestra una confirmación aparte explicando que el reembolso, si
+  // corresponde, se coordina manualmente — esta función no toca Culqi ni el saldo de crédito).
+  if (order.payment_status === "paid" && !b.acknowledgeRefund) {
+    throw new ApiError("Este pedido ya fue pagado. Confirma que coordinarás el reembolso manualmente para cancelarlo.", 409);
   }
 
   await restockOrderItems(order.items);
 
   const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, { status: "CANCELADO" });
-  await logAdminAction(s.phone, "cancel-order", orderId);
+  await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid" });
+  return { success: true, order: rows[0] };
+}
+
+// La página de Cambios y Devoluciones promete "puedes cancelar sin costo antes de que la
+// cocina empiece a preparar tu pedido", pero hasta ahora no existía ningún camino en la
+// app para que el CLIENTE lo hiciera él mismo — solo un operador podía cancelar (hallazgo
+// de la auditoría de flujo de pedidos: la app no cumplía su propia promesa). Deliberadamente
+// solo permite cancelar en RECIBIDO (antes de que cocina empiece), igual que dice el texto
+// legal. Cliente con sesión: valida dueño por customer_phone. Invitado: el `ref` (con
+// componente aleatorio, ver oref() en el cliente) es la misma prueba de acceso que ya usan
+// actMyOrders/actSubmitRating.
+export async function actCancelMyOrder(b: any) {
+  const orderId = b.orderId ? String(b.orderId) : null;
+  const ref = b.ref ? String(b.ref).trim().slice(0, 40) : null;
+  if (!orderId && !ref) throw new ApiError("Falta el pedido.");
+
+  let order: any;
+  if (b.token) {
+    const s = await requireSession(b.token);
+    const query = orderId
+      ? `id=eq.${encodeURIComponent(orderId)}&customer_phone=eq.${encodeURIComponent(s.phone)}`
+      : `ref=eq.${encodeURIComponent(ref as string)}&customer_phone=eq.${encodeURIComponent(s.phone)}`;
+    const rows = await sbGet("orders", `${query}&select=id,status,payment_status,items`);
+    order = rows[0];
+  } else if (ref) {
+    const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,status,payment_status,items`);
+    order = rows[0];
+  }
+  if (!order) throw new ApiError("Pedido no encontrado.", 404);
+  if (order.status !== "RECIBIDO") {
+    throw new ApiError("Ya no se puede cancelar — la cocina ya empezó a preparar tu pedido.", 400);
+  }
+
+  await restockOrderItems(order.items);
+  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO" });
   return { success: true, order: rows[0] };
 }
 

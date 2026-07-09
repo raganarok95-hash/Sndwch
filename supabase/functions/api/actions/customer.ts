@@ -96,6 +96,14 @@ export async function actClaimChallenge(b: any) {
     `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
   );
   if (orders.length < CHALLENGE_TARGET_ORDERS) throw new ApiError(`Todavía te faltan pedidos este mes (${orders.length}/${CHALLENGE_TARGET_ORDERS}).`, 400);
+  // claim_monthly_challenge (marca el mes reclamado + suma el bono, atómico) va PRIMERO —
+  // antes el insert de auditoría (transactions) se hacía antes que esto, así que un fallo
+  // entre ambos dejaba un registro de bono sin el saldo real detrás (hallazgo de la
+  // auditoría de backend, mismo patrón que actAdminManualPoints). Dos solicitudes
+  // simultáneas no pueden ambas pasar el chequeo de arriba y duplicar el bono (la segunda
+  // llega tarde y la función lanza 'already_claimed').
+  const claimed = await rpc("claim_monthly_challenge", { p_phone: s.phone, p_month: thisMonth, p_bonus: CHALLENGE_BONUS_POINTS });
+  const finalRow = Array.isArray(claimed) ? claimed[0] : claimed;
   await sbInsert("transactions", {
     customer_phone: s.phone,
     type: "earn_confirmed",
@@ -103,14 +111,22 @@ export async function actClaimChallenge(b: any) {
     description: "Reto mensual completado (" + CHALLENGE_TARGET_ORDERS + " pedidos)",
     confirmed: true,
   });
-  // claim_monthly_challenge marca el mes como reclamado Y suma el bono en una sola
-  // sentencia atómica — dos solicitudes simultáneas no pueden ambas pasar el chequeo
-  // de arriba y duplicar el bono (la segunda llega tarde y la función lanza
-  // 'already_claimed'). Devuelve la fila ya actualizada, evitando un segundo fetch de
-  // customers que antes hacía falta solo para leer el estado post-bono.
-  const claimed = await rpc("claim_monthly_challenge", { p_phone: s.phone, p_month: thisMonth, p_bonus: CHALLENGE_BONUS_POINTS });
-  const finalRow = Array.isArray(claimed) ? claimed[0] : claimed;
   return { success: true, customer: safeCustomer(finalRow) };
+}
+
+// Antes actCreditGift transfería crédito con un solo tap y sin mostrarle al cliente el
+// nombre del destinatario — un typo en el teléfono mandaba dinero real a un desconocido
+// sin ninguna forma de verificar antes de confirmar (hallazgo de la auditoría de flujo de
+// pedidos). El cliente llama esto primero para mostrar "¿Enviar S/X a NOMBRE?" antes de
+// llamar a actCreditGift.
+export async function actCreditLookup(b: any) {
+  const s = await requireSession(b.token);
+  const toPhone = String(b.toPhone || "").trim();
+  if (!toPhone) throw new ApiError("Ingresa un teléfono.");
+  if (toPhone === s.phone) throw new ApiError("No puedes regalarte crédito a ti mismo.");
+  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(toPhone)}&select=name`);
+  if (!rows.length) throw new ApiError("No encontramos una cuenta con ese teléfono.", 404);
+  return { name: rows[0].name };
 }
 
 export async function actCreditGift(b: any) {

@@ -532,7 +532,11 @@ function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
 // la mayoría de teléfonos de los clientes.
 function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;caret-color:'+BLU+'">';}
-function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
+// box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
+// que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
+// padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
+// angostos (ej. GUARDAR HORARIO en el panel admin). Hallazgo de la auditoría visual.
+function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
 function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1E3932"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.08em;margin-bottom:16px">SND<span style="color:'+BLU+'">//</span>WCH</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
 // mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
@@ -1595,9 +1599,25 @@ function sOrdDetail(){
     +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci,c2=STATUSES[st];return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?c2.c:'#3A6B58')+';border-radius:4px"></div><div style="font-family:Share Tech Mono,monospace;font-size:7px;color:'+(dn?c2.c:'#4A7A68')+';text-align:center;line-height:1.3">'+st.replace(' ','<br>')+'</div></div>';}).join('')+'</div>'
     +stBadge(o.status)
     +'</div>'
-    +(o.status!=='ENTREGADO'?'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;text-align:center" class="blink">&#8635; Toca ACTUALIZAR en MIS PEDIDOS</div>':'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#25D366;text-align:center">&#9989; ¡Entregado!</div>')
+    // Antes la página de Cambios y Devoluciones prometía "puedes cancelar sin costo antes
+    // de que la cocina empiece a preparar tu pedido", pero no existía ningún botón para
+    // hacerlo desde la app — la única forma real era escribir por WhatsApp y esperar a que
+    // un operador lo cancelara manualmente (hallazgo de la auditoría de flujo de pedidos:
+    // una promesa que la app no cumplía por sí sola). Este botón cumple esa promesa
+    // directamente mientras el pedido sigue en RECIBIDO.
+    +(o.status==='RECIBIDO'?BTN('CANCELAR PEDIDO //','doCancelMyOrder(\''+o.id+'\',\''+o.ref+'\')',true):'')
+    +(o.status!=='ENTREGADO'?'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;text-align:center;margin-top:10px" class="blink">&#8635; Toca ACTUALIZAR en MIS PEDIDOS</div>':'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#25D366;text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>')
     +ratingHTML(o)
     +'</div>'+NAV();
+}
+async function doCancelMyOrder(ordId,ref){
+  if(!(await showConfirm('¿Cancelar este pedido? Como la cocina aún no empezó a prepararlo, no tiene costo.')))return;
+  try{
+    var r=await api('cancel-my-order',{token:token||undefined,orderId:ordId,ref:ref});
+    myOrders=myOrders.map(function(o){return o.id===ordId?r.order:o;});
+    showToast('Pedido cancelado.','success');
+    render();
+  }catch(e){showToast(e.message);}
 }
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
@@ -1686,11 +1706,20 @@ async function doCreditGift(){
   var amt=amtEl?parseFloat(amtEl.value):NaN;
   wPhone=phone;wAmt=amtEl?amtEl.value:'';
   if(!phone||!amt||amt<=0){wMsg='Ingresa un teléfono y un monto válido.';render();return;}
+  // Antes esto transfería con un solo tap y sin mostrar a quién le estaba llegando el
+  // dinero — un typo en el teléfono lo mandaba a un desconocido sin ninguna forma de
+  // darse cuenta antes de confirmar (hallazgo de la auditoría de flujo de pedidos).
+  var name;
+  try{
+    var lookup=await api('credit-lookup',{token:token,toPhone:phone});
+    name=lookup.name;
+  }catch(e){wMsg=e.message;render();return;}
+  if(!(await showConfirm('¿Enviar '+SOLES+amt+' de crédito a '+name+' ('+phone+')?')))return;
   try{
     await api('credit-gift',{token:token,toPhone:phone,amount:amt});
     var r=await api('session-check',{token:token});
     if(r.valid){cust=r.customer;cacheCust(cust,isAdmin);}
-    wMsg='¡Crédito enviado!';wPhone='';wAmt='';
+    wMsg='¡Crédito enviado a '+name+'!';wPhone='';wAmt='';
   }catch(e){wMsg=e.message;}
   render();
 }
@@ -1974,18 +2003,53 @@ async function confirmOrderPayment(ordId){
     render();
   }catch(e){showToast(e.message);}
 }
-// Cancela un pedido cuyo pago (Yape/Plin) nunca llegó — el servidor restituye el stock
-// que se había descontado al registrarlo (ver actAdminCancelOrder).
+// Cancela un pedido — libera el stock reservado (ver actAdminCancelOrder). Antes esto
+// solo funcionaba para pedidos nunca pagados (Yape/Plin sin confirmar); un pedido ya
+// pagado con tarjeta/crédito no se podía cancelar en la app aunque, por ejemplo, se
+// acabara un ingrediente a media preparación (hallazgo de la auditoría de flujo de
+// pedidos) — ahora sí, pero con una advertencia aparte de que el reembolso se coordina
+// manualmente (esta acción no toca Culqi ni el saldo de crédito).
 async function cancelOrder(ordId){
-  if(!(await showConfirm('¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.')))return;
+  var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
+  var wasPaid=ord&&ord.payment_status==='paid';
+  var msg=wasPaid
+    ?'¿Cancelar este pedido? YA FUE PAGADO — tendrás que coordinar el reembolso tú mismo (Culqi/Yape/Plin/crédito), esto solo libera el stock reservado.'
+    :'¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.';
+  if(!(await showConfirm(msg)))return;
   try{
-    var r=await api('admin-cancel-order',{token:token,orderId:ordId});
+    var r=await api('admin-cancel-order',{token:token,orderId:ordId,acknowledgeRefund:true});
     adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     render();
   }catch(e){showToast(e.message);}
 }
 function toggleBulkSelect(ordId){
   if(bulkSelected[ordId])delete bulkSelected[ordId];else bulkSelected[ordId]=true;
+  render();
+}
+// Confirma el pago Yape/Plin de todos los pedidos seleccionados que lo tengan pendiente
+// de un solo tap — antes había que confirmar uno por uno (ver confirmOrderPayment),
+// friccioso durante una tanda de varios pedidos simultáneos en hora pico (hallazgo de la
+// auditoría del panel admin).
+async function bulkConfirmPayments(){
+  var ids=Object.keys(bulkSelected).filter(function(k){return bulkSelected[k];});
+  var targets=ids.filter(function(id){
+    var o=(adminOrders||[]).find(function(x){return x.id===id;});
+    return o&&(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
+  });
+  if(!targets.length){showToast('Ningún pedido seleccionado tiene un pago pendiente de confirmar.');return;}
+  if(!(await showConfirm('¿Confirmar el pago de '+targets.length+' pedido(s)?')))return;
+  busy=true;busyMsg='Confirmando pagos...';render();
+  var okCount=0,failCount=0;
+  for(var i=0;i<targets.length;i++){
+    try{
+      var r=await api('admin-confirm-payment',{token:token,orderId:targets[i]});
+      adminOrders=adminOrders.map(function(o){return o.id===targets[i]?r.order:o;});
+      okCount++;
+    }catch(e){failCount++;}
+  }
+  bulkSelected={};
+  busy=false;
+  if(failCount)showToast(okCount+' confirmado(s), '+failCount+' fallaron.');
   render();
 }
 // Avanza todos los pedidos seleccionados al mismo estado de un solo tap (ver #113 y
@@ -2048,6 +2112,7 @@ function bulkBar(){
   var n=ids.length;
   return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;padding:12px 20px;display:flex;gap:8px;align-items:center;z-index:110">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';flex-shrink:0">'+n+' sel.</div>'
+    +'<button onclick="bulkConfirmPayments()" style="all:unset;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">✅ PAGO</button>'
     +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">PREPARANDO</button>'
     +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">EN CAMINO</button>'
     +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">ENTREGADO</button>'
@@ -2072,8 +2137,31 @@ var ADMIN_ICONS={
   auditoria:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
 };
 function adminIcon(name){return'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+BLU+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ADMIN_ICONS[name]||'')+'</svg>';}
+function minutesAgo(iso){
+  if(!iso)return null;
+  var t=new Date(iso).getTime();
+  if(!t)return null;
+  return Math.max(0,Math.round((Date.now()-t)/60000));
+}
+// Prioridad de triage: pago manual sin confirmar > RECIBIDO > PREPARANDO > EN CAMINO —
+// antes la cola ordenaba solo por más reciente, así que un pedido viejo esperando podía
+// quedar enterrado bajo pedidos nuevos ya en camino durante una hora pico (hallazgo de la
+// auditoría del panel admin).
+function orderPriority(o){
+  if((o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid')return 0;
+  if(o.status==='RECIBIDO')return 1;
+  if(o.status==='PREPARANDO')return 2;
+  if(o.status==='EN CAMINO')return 3;
+  return 4;
+}
 function sAdminHome(){
-  var ao=adminOrders||[];
+  // Dentro de cada nivel de prioridad, el más viejo primero (el que lleva más tiempo
+  // esperando es el que más urge atender).
+  var ao=(adminOrders||[]).slice().sort(function(a,b){
+    var pa=orderPriority(a),pb=orderPriority(b);
+    if(pa!==pb)return pa-pb;
+    return new Date(a.created_at||0).getTime()-new Date(b.created_at||0).getTime();
+  });
   var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
@@ -2103,13 +2191,19 @@ function sAdminHome(){
       // para pedidos viejos que sí guardaron 'plin' literal antes de este cambio.
       var manualLabel='YAPE/PLIN';
       var checked=!!bulkSelected[o.id];
-      return'<div style="background:#2D5246;border:1px solid '+(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c')+';border-radius:10px;padding:16px;margin-bottom:12px">'
+      // "Hace X min" + borde rojo pulsante pasados 10 min sin arrancar — antes la única
+      // pista de cuánto llevaba esperando un pedido era leer la hora absoluta y restarla
+      // mentalmente (hallazgo de la auditoría del panel admin: fácil pasar por alto el
+      // más viejo durante una hora pico).
+      var mins=minutesAgo(o.created_at);
+      var isStale=(o.status==='RECIBIDO'||manualPending)&&mins!==null&&mins>=10;
+      return'<div style="background:#2D5246;border:1px solid '+(isStale?'#ff5555':(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c'))+';border-radius:10px;padding:16px;margin-bottom:12px'+(isStale?'" class="pulse':'')+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
         +'<div style="display:flex;gap:10px;flex:1">'
         +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+BLU+'">'
         +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+'</div></div></div>'
+        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(isStale?'#ff8888':'#A8C8B0')+';margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</div></div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 '+esc(o.redeemed_reward)+'</div>':'')
@@ -2126,7 +2220,11 @@ function sAdminHome(){
         +(manualPending
           ?'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:8px">✅ CONFIRMAR PAGO RECIBIDO</button>'
           :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+(STATUSES[s.next].icon?STATUSES[s.next].icon+' ':'')+'MARCAR COMO '+s.next+' →</button>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;text-align:center;padding:8px">✅ COMPLETADO</div>'))
-        +(manualPending?'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">✕ CANCELAR PEDIDO (nunca pagó)</button>':'')
+        // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
+        // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
+        // (hallazgo de la auditoría de flujo de pedidos: sin esto, si se acaba un
+        // ingrediente a media preparación, el operador queda sin opciones).
+        +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">✕ CANCELAR PEDIDO'+(manualPending?' (nunca pagó)':'')+'</button>'
         +'</div>';
     }).join(''):'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:24px 20px;text-align:center;margin-bottom:8px"><div style="font-size:28px;margin-bottom:8px">✅</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0">SIN PEDIDOS ACTIVOS //</div></div>')
 
