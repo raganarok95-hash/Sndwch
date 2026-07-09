@@ -14,7 +14,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SND//WCH">
-<script src="https://checkout.culqi.com/js/v4"></script>
+<!-- defer: Culqi solo se usa dentro de payWithCulqi(), disparado por un clic del usuario
+     en el checkout — nunca en el primer render, así que no hace falta bloquear el
+     parseo/pintado inicial de la página esperando este script de terceros. -->
+<script src="https://checkout.culqi.com/js/v4" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
@@ -530,7 +533,10 @@ function CARD(item,sel,fn,right,thumb){
   return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
 }
 function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">'+n+'<span style="color:'+BLU+'"> // </span>'+t+'</h2>'+(s?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:5px">'+s+'</p>':'')+'</div>';}
-function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
+// font-size:16px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
+// cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
+// la mayoría de teléfonos de los clientes.
+function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;caret-color:'+BLU+'">';}
 function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
 function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1E3932"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:#fff;letter-spacing:.08em;margin-bottom:16px">SND<span style="color:'+BLU+'">//</span>WCH</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#8BAF9A;letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
@@ -2584,7 +2590,7 @@ function sAdminInventory(){
         +'<button onclick="toggleStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:'+(av?'rgba(255,85,85,.12)':'rgba(37,211,102,.15)')+';border:1px solid '+(av?'rgba(255,85,85,.4)':'rgba(37,211,102,.4)')+';color:'+(av?'#ff8888':'#25D366')+';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 14px;border-radius:8px;text-align:center;flex-shrink:0">'+(av?'MARCAR AGOTADO':'REACTIVAR')+'</button>'
         +'</div>'
         +'<div style="display:flex;gap:8px;margin-top:10px;align-items:center">'
-        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="Sin rastreo de cantidad" value="'+(tracked?qty:'')+'" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-size:12px;font-family:Share Tech Mono,monospace">'
+        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="Sin rastreo de cantidad" value="'+(tracked?qty:'')+'" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-size:16px;font-family:Share Tech Mono,monospace">'
         +'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+BLU+';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;padding:9px 14px;border-radius:8px;flex-shrink:0">GUARDAR STOCK</button>'
         +'</div>'
         +'</div>';
@@ -2869,8 +2875,8 @@ async function doRangeReport(){
 function sAdminReport(){
   var h=H('REPORTE POR FECHAS',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="display:flex;gap:8px;margin-bottom:10px">'
-    +'<input id="rr-from" type="date" value="'+esc(reportFrom)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:13px">'
-    +'<input id="rr-to" type="date" value="'+esc(reportTo)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:13px">'
+    +'<input id="rr-from" type="date" value="'+esc(reportFrom)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:16px">'
+    +'<input id="rr-to" type="date" value="'+esc(reportTo)+'" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:12px;color:#FFFFFF;font-size:16px">'
     +'</div>';
   h+=BTN('GENERAR REPORTE //','doRangeReport()');
   if(reportErr)h+='<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;margin-top:12px;text-align:center">'+esc(reportErr)+'</div>';
