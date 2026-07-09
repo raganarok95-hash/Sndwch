@@ -22,9 +22,6 @@ export const REFERRAL_BONUS_POINTS = 50;
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 export const WELCOME_BONUS_POINTS = 20;
-// Antes los tiers (MEMBER/REGULAR/FREQUENT/VIP) eran solo una etiqueta/color sin ningún
-// beneficio real — VIP ahora gana puntos extra por pedido.
-export const VIP_POINTS_MULTIPLIER = 1.25;
 export const STALE_MANUAL_PAYMENT_HOURS = 3;
 
 // Par de llaves VAPID para Web Push. La pública NO es secreta — vive tal cual en el

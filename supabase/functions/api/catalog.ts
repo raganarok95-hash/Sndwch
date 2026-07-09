@@ -14,13 +14,6 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
   R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
 };
 
-export function tierName(pts: number): string {
-  if (pts >= 400) return "VIP";
-  if (pts >= 200) return "FREQUENT";
-  if (pts >= 80) return "REGULAR";
-  return "MEMBER";
-}
-
 export const VALID_BASES = new Set(["B01", "B02", "B03"]);
 export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06"]);
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);

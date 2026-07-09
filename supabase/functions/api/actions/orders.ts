@@ -3,13 +3,13 @@
 // cola de pedidos: avanzar estado, confirmar pago manual (Yape/Plin/COD), cancelar, y
 // la expiración automática de pagos manuales nunca confirmados.
 import {
-  CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, VIP_POINTS_MULTIPLIER, STALE_MANUAL_PAYMENT_HOURS,
+  CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { loadCatalogPrices, deriveCart, priceCartItem, tierName, REWARDS } from "../catalog.ts";
+import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS } from "../catalog.ts";
 import { sendPushToPhone, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { logAdminAction } from "../logging.ts";
 
@@ -32,6 +32,12 @@ async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number):
 export async function actPlaceOrder(b: any) {
   const ref = String(b.ref || "").trim();
   const name = String(b.name || "").trim();
+  // Antes no se pedía ningún teléfono al invitado — la única forma de contactarlo era el
+  // mensaje de WhatsApp que él mismo debía enviar tras pagar (ver finalizeOrderSuccess en
+  // el cliente), y si ese paso fallaba un pedido ya cobrado quedaba sin ningún dato de
+  // contacto. contact_phone es del PEDIDO, distinto de customer_phone (el de la cuenta,
+  // null para invitados).
+  const contactPhone = String(b.phone || "").trim();
   const email = String(b.email || "").trim();
   const address = String(b.address || "").trim();
   const clientTotal = Number(b.total || 0);
@@ -44,7 +50,7 @@ export async function actPlaceOrder(b: any) {
   // (ver el guard en actAdminUpdateStatus).
   const manualMethod = b.paymentMethod === "yape" || b.paymentMethod === "plin" ? String(b.paymentMethod) : null;
   const rewardId = b.rewardId ? String(b.rewardId) : null;
-  if (!ref || !name || !address || clientTotal < 0) throw new ApiError("Faltan datos del pedido.");
+  if (!ref || !name || !contactPhone || !address || clientTotal < 0) throw new ApiError("Faltan datos del pedido.");
   if (manualMethod && rewardId) throw new ApiError("Las recompensas no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
 
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
@@ -53,6 +59,11 @@ export async function actPlaceOrder(b: any) {
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
+  } else if (!isWithinStoreHours(new Date())) {
+    // Antes solo se validaba el horario para pedidos programados — uno "AHORA" con la
+    // tienda cerrada se podía pagar igual (el cliente solo veía el badge de horario en el
+    // home, nunca un bloqueo real), y la cocina nunca lo iba a preparar.
+    throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
 
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
@@ -133,6 +144,7 @@ export async function actPlaceOrder(b: any) {
     return sbInsert("orders", {
       ref,
       customer_phone: phone,
+      contact_phone: contactPhone,
       customer_name: name,
       customer_email: email || null,
       customer_address: address,
@@ -159,11 +171,9 @@ export async function actPlaceOrder(b: any) {
     const c = custRow;
     const isFirstOrder = (c.total_orders || 0) === 0;
     const isReferral = isFirstOrder && !!c.referred_by;
-    // Perk real de tier (antes los tiers eran solo una etiqueta/color sin ningún beneficio
-    // tangible): VIP gana puntos 1.25x sobre el total del pedido. Se calcula sobre el tier
-    // ANTES de este pedido (el que ya tenía el cliente al entrar), no el que tendría después.
-    let basePoints = total;
-    if (tierName(c.points || 0) === "VIP") basePoints = Math.round(basePoints * VIP_POINTS_MULTIPLIER);
+    // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
+    // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
+    const basePoints = total;
     let pointsDelta = basePoints;
     if (reward) pointsDelta -= reward.pts;
 
@@ -196,10 +206,9 @@ export async function actPlaceOrder(b: any) {
       sbInsert("transactions", {
         customer_phone: phone,
         type: "earn_confirmed",
-        // basePoints (no `total`): ya incluye el multiplicador VIP — usar `total` acá
-        // desalinearía el historial visible del cliente con lo que finalize_order_customer_update
-        // realmente le acreditó arriba (el costo de canje de recompensa, si hay, se refleja
-        // aparte como su propia transacción "redeem" más abajo).
+        // basePoints (no `total`): mismo valor hoy, pero es la fuente de verdad de lo que
+        // finalize_order_customer_update realmente acreditó arriba (el costo de canje de
+        // recompensa, si hay, se refleja aparte como su propia transacción "redeem" más abajo).
         points: basePoints,
         description: useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
         order_ref: ref,
