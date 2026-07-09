@@ -214,7 +214,7 @@ var useCredit=false;
 var manualPayMethod=null;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var adminOrders=[],myOrders=[],adminOrdersTruncated=false;
-var agPhone='',agPts='',agMsg='',uPhone='',uName='';
+var agPhone='',agPts='',agMsg='';
 var pollTimer=null,lastPollCount=0,pollFailing=false;
 var isOffline=!navigator.onLine;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
@@ -2063,7 +2063,7 @@ function sAdminHome(){
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
     +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['RECLAMACIONES //','loadAdminComplaints()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['SCRIPTS WHATSAPP //','sc=\'admin_upsell\';uPhone=\'\';uName=\'\';render()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
+    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['RECLAMACIONES //','loadAdminComplaints()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
     +'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#A8C8B0">SONIDO DE NUEVO PEDIDO</span>'
     +'<select onchange="setNotifSound(this.value)" style="background:#1E3932;color:#FFFFFF;border:1px solid #3A6B58;border-radius:6px;padding:6px 8px;font-family:\'Share Tech Mono\',monospace;font-size:10px">'
     +['campana','timbre','grave'].map(function(p){return'<option value="'+p+'" '+(notifSoundPreset===p?'selected':'')+'>'+p+'</option>';}).join('')
@@ -2216,21 +2216,6 @@ async function exportCsv(action,filename){
     if(r.truncated)showToast('El negocio ya tiene más de '+rows.length+' registros — este CSV solo incluye los más recientes, no todo el historial.','info');
   }catch(e){showToast('Error al exportar: '+e.message);}
   busy=false;render();
-}
-
-// ADMIN WHATSAPP — solo comunicación con el cliente. Los upsells (DOBLE
-// PROTEÍNA, SALSA EXTRA) se ofrecen solos en el checkout, ya no hace falta
-// pedirlos manualmente por WhatsApp.
-function sAdminUpsell(){
-  var ph=uPhone||'',nm=uName||'el cliente';
-  var MSGS=[
-    ['🛵','EN CAMINO','🛵 '+nm+', tu pedido ya va en camino!\nLlega en aprox. [X] minutos 👌'],
-    ['⭐','POST-ENTREGA','Hola '+nm+'! Espero que hayas disfrutado tu SND//WCH 🙌\n\nSi te gustó, una reseña nos ayudaría mucho:\n[LINK GOOGLE MAPS]\nSolo 30 segundos ✨'],
-  ];
-  function waBtn(e,l,msg){var num='51'+(ph.replace(/[^0-9]/g,'').replace(/^51/,''));return'<button onclick="window.open(\'https://wa.me/'+num+'?text=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\'),\'_blank\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#0a1a0a;border:1px solid #25D366;border-radius:10px;padding:12px 16px;margin-bottom:8px;text-align:left"><div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366">→</span></div></button>';}
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 12px 0 0">←</button><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">SCRIPTS<span style="color:'+BLU+'"> // </span>WHATSAPP</div></div>'
-    +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi"><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">'+INP('u-phone','TELÉFONO // 9XXXXXXXX','tel',ph)+INP('u-name','NOMBRE DEL CLIENTE','text',nm)+'<button onclick="uPhone=document.getElementById(\'u-phone\').value;uName=document.getElementById(\'u-name\').value||\'el cliente\';render()" style="all:unset;cursor:pointer;background:#2D5246;border:1px solid #3A6B58;color:#8BAF9A;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:8px;text-align:center">ACTUALIZAR //</button></div>'
-    +MSGS.map(function(m){return waBtn(m[0],m[1],m[2]);}).join('')+'</div></div>';
 }
 
 // ADMIN GEN
@@ -2390,7 +2375,6 @@ function render(){
     case'p_favorites': h=sPFavorites();break;
     case'p_addresses': h=sPAddresses();break;
     case'admin_home':  h=sAdminHome();break;
-    case'admin_upsell':h=sAdminUpsell();break;
     case'admin_gen':   h=sAdminGen();break;
     case'admin_mgr':   h=sAdminMgr();break;
     case'admin_inventory':h=sAdminInventory();break;
