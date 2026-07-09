@@ -176,7 +176,14 @@ var SIDES=[
   {id:'D02',l:'INCA KOLA',    s:'355ML',p:5},
   {id:'D03',l:'AGUA',        s:'SIN GAS',p:3},
   {id:'D04',l:'PAPAS',       s:'CHIPS',p:4},
-  {id:'D05',l:'GALLETA',     s:'AVENA',p:3}
+  {id:'D05',l:'GALLETA',     s:'AVENA',p:3},
+  // Catálogo de bebidas de la casa — sin jugos a propósito, para diferenciarse de
+  // cualquier juguería del barrio. `d` es la descripción de venta que se muestra en
+  // BEBIDAS Y SIDES, único campo nuevo que no tienen los sides D01-D05.
+  {id:'D06',l:'THE BLOOM',    s:'HIBISCUS',p:4,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.'},
+  {id:'D07',l:'THE MIDNIGHT', s:'BREW',    p:3,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.'},
+  {id:'D08',l:'THE COOL',     s:'MINT',    p:4,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.'},
+  {id:'D09',l:'THE SPICE',    s:'CHAI',    p:6,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.'}
 ];
 
 // HORARIO — placeholder. [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
@@ -974,7 +981,7 @@ function sOSides(){
   h+=SIDES.map(function(d){
     var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
     var qty=inCart?inCart.qty:0;
-    return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+d.l+'<span style="color:'+BLU+'"> // </span>'+d.s+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';margin-top:2px">'+SOLES+d.p+'</div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>')+'</div>';
+    return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+d.l+'<span style="color:'+BLU+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+BLU+';margin-top:4px">'+SOLES+d.p+'</div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:28px;height:28px;background:#2D5246;border-radius:6px;text-align:center;color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+BLU+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>')+'</div>';
   }).join('');
   h+='</div>'+AB(null,true,null,"sc='o_cart';render()",'VER CARRITO //');
   return h;
