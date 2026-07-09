@@ -2019,7 +2019,8 @@ function sAdminHome(){
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
     +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:'+BLU+'"> // </span>OPERADOR</div>'
     +(badge>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' ACCIÓN REQUERIDA</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-top:3px">todo en orden //</div>')
-    +'</div><button onclick="toggleAdminLight()" title="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">'+(adminLightMode?'🌙':'☀️')+'</button>'
+    +'</div><button onclick="loadAdmin()" title="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">🔄</button>'
+    +'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">'+(adminLightMode?'🌙':'☀️')+'</button>'
     +'<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:'+BLU+'">← salir</button></div>'
     +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500">⚠ Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</div>':'')
     // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
@@ -2062,14 +2063,41 @@ function sAdminHome(){
 
     +'<div style="height:1px;background:#1E3932;margin:16px 0"></div>'
 
-    +'<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">'
-    +[['ACTUALIZAR //','loadAdmin()'],['CLIENTES //','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],['BUSCAR PEDIDOS //','sc=\'admin_search\';searchResults=null;render()'],['REPORTES POR FECHA //','sc=\'admin_report\';reportData=null;render()'],['CALIFICACIONES //','loadRatingsList()'],['RECLAMACIONES //','loadAdminComplaints()'],['AUDITORÍA //','loadAuditLog()'],['HORARIO DE ATENCIÓN //','loadStoreHoursForm()'],['INVENTARIO //','loadInventory()'],['PRECIOS //','loadAdminCatalog()'],['PUNTOS MANUALES //','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],['ADMINISTRADORES //','loadAdminMgr()']].map(function(x){return'<div onclick="'+x[1]+'" style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;cursor:pointer"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:'+BLU+'">'+x[0]+'</span></div>';}).join('')
-    +'<div style="background:#2D5246;border:1px solid #2D5246;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#A8C8B0">SONIDO DE NUEVO PEDIDO</span>'
+    // Antes esto era una lista plana de 11 filas idénticas sin agrupar ni con íconos —
+    // costaba escanear rápido cuál botón era cuál en medio de un turno con pedidos activos.
+    // Agrupado por qué tan seguido se usa cada herramienta, con un ícono por fila para
+    // reconocerla de un vistazo (mismo criterio que ya usan las tarjetas del perfil de
+    // cliente: 🔔 push, 💌 referidos, 💳 crédito).
+    +[
+      ['CLIENTES Y VENTAS //',[
+        ['👤','CLIENTES','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
+        ['🔍','BUSCAR PEDIDOS','sc=\'admin_search\';searchResults=null;render()'],
+        ['📊','REPORTES','sc=\'admin_report\';reportData=null;render()'],
+        ['⭐','CALIFICACIONES','loadRatingsList()'],
+        ['📋','RECLAMACIONES','loadAdminComplaints()'],
+      ]],
+      ['CATÁLOGO //',[
+        ['📦','INVENTARIO','loadInventory()'],
+        ['💲','PRECIOS','loadAdminCatalog()'],
+        ['🕐','HORARIO','loadStoreHoursForm()'],
+      ]],
+      ['CUENTA //',[
+        ['🎯','PUNTOS MANUALES','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],
+        ['🔑','ADMINISTRADORES','loadAdminMgr()'],
+        ['🧾','AUDITORÍA','loadAuditLog()'],
+      ]],
+    ].map(function(section){
+      return'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin:18px 0 10px">'+section[0]+'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +section[1].map(function(x){return'<div onclick="'+x[2]+'" style="background:#2D5246;border:1px solid #1c1c1c;border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center"><div style="font-size:20px;margin-bottom:4px">'+x[0]+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;color:'+BLU+';letter-spacing:.03em">'+x[1]+'</div></div>';}).join('')
+        +'</div>';
+    }).join('')
+    +'<div style="margin-top:18px;background:#2D5246;border:1px solid #1c1c1c;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#A8C8B0">🔊 SONIDO DE NUEVO PEDIDO</span>'
     +'<select onchange="setNotifSound(this.value)" style="background:#1E3932;color:#FFFFFF;border:1px solid #3A6B58;border-radius:6px;padding:6px 8px;font-family:\'Share Tech Mono\',monospace;font-size:10px">'
     +['campana','timbre','grave'].map(function(p){return'<option value="'+p+'" '+(notifSoundPreset===p?'selected':'')+'>'+p+'</option>';}).join('')
     +'</select></div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
-    +'</div></div>'
+    +'</div>'
     +bulkBar()
     +'</div>';
 }
