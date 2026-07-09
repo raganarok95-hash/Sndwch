@@ -1082,10 +1082,15 @@ function checkoutExtrasHTML(){
 // que sí funcionan hoy (Yape/Plin).
 function paymentMethodPickerHTML(t){
   var culqiConfigured=CULQI_PUBLIC_KEY&&CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')<0;
+  // Antes había un botón "YAPE" y otro "PLIN" por separado, pero ambos llevan a la
+  // misma pantalla de instrucciones (mismo número, mismo botón de copiar) — obligar al
+  // cliente a elegir entre los dos no le da ninguna información nueva, solo un tap de
+  // más. Un solo botón cubre ambas apps; internamente sigue mandando 'yape' al servidor
+  // (el backend solo distingue "pago manual pendiente de confirmar" de todo lo demás,
+  // nunca trató Yape y Plin como cosas distintas más allá de esa etiqueta).
   return'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';letter-spacing:.2em;margin-bottom:8px">¿CÓMO PAGAS? //</div><div style="display:flex;gap:8px">'
     +(culqiConfigured?payMethodBtn('culqi','TARJETA',true):'')
-    +payMethodBtn('yape','YAPE',true)
-    +payMethodBtn('plin','PLIN',true)
+    +payMethodBtn('yape','YAPE / PLIN',true)
     +'</div>'
     +(manualPayMethod?manualPayInstructionsHTML(t):'')
     +'</div>';
@@ -1100,8 +1105,9 @@ function selectPayMethod(m){
   confirmRerender();
 }
 function manualPayInstructionsHTML(t){
-  var label=manualPayMethod==='yape'?'Yape':'Plin';
-  return'<div style="margin-top:10px;background:#1A3028;border:1px solid '+BLU+';border-radius:10px;padding:14px 16px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.5">Transfiere <b style="color:'+BLU+'">'+SOLES+t+'</b> por '+label+' a:</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:#2D5246;border-radius:8px;padding:10px 12px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A">'+esc(YAPE_PLIN_NAME)+'</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:'+BLU+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR</button></div><div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';margin-top:6px;min-height:12px"></div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:8px;line-height:1.4">Envía el pago desde tu app y confirma abajo con "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando verifiquemos que llegó.</div></div>';
+  // Antes distinguía 'Yape'/'Plin' según manualPayMethod — desde que se fusionaron los
+  // botones de arriba en uno solo, el valor siempre es 'yape' así que ya no hace falta.
+  return'<div style="margin-top:10px;background:#1A3028;border:1px solid '+BLU+';border-radius:10px;padding:14px 16px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.5">Transfiere <b style="color:'+BLU+'">'+SOLES+t+'</b> por Yape o Plin a:</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:#2D5246;border-radius:8px;padding:10px 12px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A">'+esc(YAPE_PLIN_NAME)+'</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:'+BLU+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR</button></div><div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+BLU+';margin-top:6px;min-height:12px"></div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#8BAF9A;margin-top:8px;line-height:1.4">Envía el pago desde tu app y confirma abajo con "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando verifiquemos que llegó.</div></div>';
 }
 function copyYapePlinPhone(){
   var m=document.getElementById('ypc-msg');
@@ -2056,7 +2062,10 @@ function sAdminHome(){
     +(ao.length?ao.map(function(o){
       var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
       var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
-      var manualLabel=o.payment_method==='yape'?'YAPE':'PLIN';
+      // El checkout ya no obliga al cliente a declarar Yape vs Plin por separado (ambos
+      // muestran el mismo número) — la etiqueta aquí es genérica a propósito, incluso
+      // para pedidos viejos que sí guardaron 'plin' literal antes de este cambio.
+      var manualLabel='YAPE/PLIN';
       var checked=!!bulkSelected[o.id];
       return'<div style="background:#2D5246;border:1px solid '+(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c')+';border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
