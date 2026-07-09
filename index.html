@@ -158,6 +158,10 @@ var SIGS=[
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
 var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg'};
+// Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
+// muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
+// proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
+var PROT_IMG={};
 var RWDS=[
   {id:'R01',pts:40, n:'TOPPING',  s:'EXTRA',  d:'Un topping adicional gratis'},
   {id:'R02',pts:80, n:'4TA',      s:'SALSA',  d:'Cuarta salsa gratis'},
@@ -512,7 +516,13 @@ function AB(t,can,bk,nfn,nl){
 // Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
 // selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
 function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+BLU+';border-radius:10px 0 0 10px"></div>':'';}
-function CARD(item,sel,fn,right){return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+item.l+'<span style="color:'+BLU+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+item.d+'</p>':'')+'</div>';}
+// `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
+// mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
+// exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
+function CARD(item,sel,fn,right,thumb){
+  var inner='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+item.l+'<span style="color:'+BLU+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+item.d+'</p>':'');
+  return'<div onclick="'+fn+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?BLU:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
+}
 function ST(n,t,s){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1">'+n+'<span style="color:'+BLU+'"> // </span>'+t+'</h2>'+(s?'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:5px">'+s+'</p>':'')+'</div>';}
 function INP(id,ph,type,val){return'<input id="'+id+'" type="'+(type||'text')+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;caret-color:'+BLU+'">';}
 function BTN(l,fn,out){return'<button onclick="'+fn+'" style="all:unset;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':BLU)+';border:'+(out?'1px solid '+BLU:'none')+';color:'+(out?BLU:'#fff')+';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
@@ -871,7 +881,7 @@ function sOBuild(){
   h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
   h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('02','PROTEÍNA','');
-  h+=PROTS.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?BLU:'#444')+'">'+priceTag+'</span>'):CARDOFF(p);}).join('');
+  h+=PROTS.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?BLU:'#444')+'">'+priceTag+'</span>',thumb):CARDOFF(p);}).join('');
   h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
   h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+BLU+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
