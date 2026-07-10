@@ -3,7 +3,7 @@
 // borrado de cuenta y recuperación de PIN.
 import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
-import { ApiError } from "../types.ts";
+import { ApiError, isValidEmail } from "../types.ts";
 import {
   signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession,
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
@@ -21,7 +21,7 @@ export async function actRegister(b: any) {
 
   if (!name || !phone || pin.length < 4) throw new ApiError("Completa nombre, teléfono y PIN (mínimo 4 dígitos).");
   if (!/^\d{8}$/.test(dni)) throw new ApiError("DNI es obligatorio y debe tener 8 dígitos.");
-  if (email && !/^[^@]+@[^@]+\.[^@]+$/.test(email)) throw new ApiError("Correo inválido.");
+  if (email && !isValidEmail(email)) throw new ApiError("Correo inválido.");
 
   // Antes eran 2 consultas secuenciales a la misma tabla — un solo `or=()` cubre ambos
   // chequeos de duplicado en un round-trip. El lookup de referido no depende de este

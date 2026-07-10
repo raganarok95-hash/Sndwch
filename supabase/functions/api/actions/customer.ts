@@ -7,6 +7,14 @@ import { requireSession, safeCustomer } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso } from "../env.ts";
 
+// Antes actAddressesAdd y actFavoritesAdd repetían el mismo patrón de "cuenta las filas
+// existentes, rechaza si ya llegó al máximo" cada uno con su propio mensaje casi idéntico
+// (hallazgo de la auditoría de código) — este helper lo centraliza.
+async function assertUnderLimit(table: string, phone: string, max: number, label: string): Promise<void> {
+  const existing = await sbGet(table, `customer_phone=eq.${encodeURIComponent(phone)}&select=id`);
+  if (existing.length >= max) throw new ApiError(`Ya tienes el máximo de ${label} (${max}).`, 400);
+}
+
 const MAX_ADDRESSES = 6;
 export async function actAddressesList(b: any) {
   const s = await requireSession(b.token);
@@ -17,8 +25,7 @@ export async function actAddressesAdd(b: any) {
   const label = String(b.label || "").trim();
   const address = String(b.address || "").trim();
   if (!label || !address) throw new ApiError("Ingresa un nombre y la dirección.");
-  const existing = await sbGet("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}&select=id`);
-  if (existing.length >= MAX_ADDRESSES) throw new ApiError("Ya tienes el máximo de direcciones guardadas (" + MAX_ADDRESSES + ").", 400);
+  await assertUnderLimit("saved_addresses", s.phone, MAX_ADDRESSES, "direcciones guardadas");
   const rows = await sbInsert("saved_addresses", {
     customer_phone: s.phone,
     label,
@@ -45,8 +52,7 @@ export async function actFavoritesAdd(b: any) {
   const s = await requireSession(b.token);
   const name = String(b.name || "").trim();
   if (!name) throw new ApiError("Ponle un nombre a tu favorito.");
-  const existing = await sbGet("favorites", `customer_phone=eq.${encodeURIComponent(s.phone)}&select=id`);
-  if (existing.length >= MAX_FAVORITES) throw new ApiError("Ya tienes el máximo de favoritos guardados (" + MAX_FAVORITES + ").", 400);
+  await assertUnderLimit("favorites", s.phone, MAX_FAVORITES, "favoritos guardados");
   await loadCatalogPrices();
   deriveOrder(b);
   const rows = await sbInsert("favorites", { customer_phone: s.phone, name, build: buildFromOrder(b) });

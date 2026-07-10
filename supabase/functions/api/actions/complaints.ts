@@ -4,7 +4,7 @@
 // tenga o no cuenta), genera un código correlativo, y notifica por correo tanto al
 // consumidor (copia de su reclamo) como al negocio (para que pueda responder).
 import { sbGet, sbInsert, sbUpdate } from "../db.ts";
-import { ApiError } from "../types.ts";
+import { ApiError, isValidEmail } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendComplaintConfirmation, sendComplaintNotification } from "../email.ts";
@@ -24,7 +24,7 @@ export async function actSubmitComplaint(b: any) {
   if (!consumerName || !consumerDni || !consumerAddress || !consumerPhone || !consumerEmail || !detail || !consumerRequest) {
     throw new ApiError("Completa todos los campos obligatorios.");
   }
-  if (!/^[^@]+@[^@]+\.[^@]+$/.test(consumerEmail)) throw new ApiError("Ingresa un correo válido.");
+  if (!isValidEmail(consumerEmail)) throw new ApiError("Ingresa un correo válido.");
   if (isMinor && !guardianName) throw new ApiError("Ingresa el nombre del padre, madre o apoderado.");
   const claimedAmount = b.claimedAmount !== undefined && b.claimedAmount !== null && b.claimedAmount !== ""
     ? Number(b.claimedAmount)
