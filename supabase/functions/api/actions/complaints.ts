@@ -3,12 +3,20 @@
 // Consumidor. Público (no requiere sesión: cualquier consumidor debe poder reclamar,
 // tenga o no cuenta), genera un código correlativo, y notifica por correo tanto al
 // consumidor (copia de su reclamo) como al negocio (para que pueda responder).
-import { sbGet, sbInsert, sbUpdate } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendComplaintConfirmation, sendComplaintNotification } from "../email.ts";
 import { sendPushToAdmins } from "../push.ts";
+
+// El Libro de Reclamaciones es público por ley (ver arriba) — eso lo deja sin ningún
+// requisito de sesión que frene el abuso automatizado, a diferencia del resto de acciones
+// públicas de la app. El límite es generoso a propósito (no debe bloquear a un consumidor
+// real con más de un reclamo legítimo) — solo frena un script mandando cientos de filas
+// (hallazgo de la re-auditoría de 10 agentes).
+const COMPLAINT_RATE_LIMIT = 5;
+const COMPLAINT_RATE_WINDOW_MINUTES = 60;
 
 export async function actSubmitComplaint(b: any) {
   const kind = String(b.kind || "").trim();
@@ -27,6 +35,12 @@ export async function actSubmitComplaint(b: any) {
   }
   if (!isValidEmail(consumerEmail)) throw new ApiError("Ingresa un correo válido.");
   if (isMinor && !guardianName) throw new ApiError("Ingresa el nombre del padre, madre o apoderado.");
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `complaint:${consumerPhone}`,
+    p_limit: COMPLAINT_RATE_LIMIT,
+    p_window_minutes: COMPLAINT_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Ya registramos varios reclamos con este teléfono. Espera un momento antes de enviar otro.", 429);
   const claimedAmount = b.claimedAmount !== undefined && b.claimedAmount !== null && b.claimedAmount !== ""
     ? Number(b.claimedAmount)
     : null;
