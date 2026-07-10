@@ -73,6 +73,11 @@ async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number):
 // inventario y el cliente debe volver a intentar.
 const PENDING_CHARGE_TTL_MINUTES = 10;
 
+// Límite de pedidos con pago manual (Yape/Plin) sin confirmar por teléfono de contacto —
+// ver el comentario junto a check_rate_limit en actPlaceOrder.
+const MANUAL_ORDER_RATE_LIMIT = 4;
+const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
+
 type FinalizeOrderParams = {
   ref: string;
   phone: string | null;
@@ -459,6 +464,19 @@ export async function actPlaceOrder(b: any) {
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   if (!ref || !name || !contactPhone || !address || clientTotal < 0) throw new ApiError("Faltan datos del pedido.");
   if (manualMethod && rewardId) throw new ApiError("Las recompensas no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
+  // Yape/Plin no verifica el pago server-side al colocar el pedido (queda 'pending' hasta
+  // que un operador lo confirma a mano) — y reserve_inventory más abajo descuenta stock
+  // REAL de inmediato, con o sin cuenta. Sin límite, cualquiera (invitado incluido) podía
+  // spamear pedidos "pago pendiente" y agotar inventario real sin pagar nunca (hallazgo de
+  // la re-auditoría de 10 agentes). Va ANTES de tocar inventario a propósito.
+  if (manualMethod) {
+    const withinLimit = await rpc("check_rate_limit", {
+      p_key: `guest-manual-order:${contactPhone}`,
+      p_limit: MANUAL_ORDER_RATE_LIMIT,
+      p_window_minutes: MANUAL_ORDER_RATE_WINDOW_MINUTES,
+    });
+    if (!withinLimit) throw new ApiError("Ya tienes varios pedidos con pago pendiente de confirmar. Espera a que se confirmen antes de hacer otro.", 429);
+  }
 
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   if (scheduledFor) {
