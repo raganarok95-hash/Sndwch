@@ -1001,3 +1001,116 @@ export async function actExpirePendingCharges(b: any) {
   }
   return { success: true, expired };
 }
+
+// Recuerda a cocina un pedido "para más tarde" (ver scheduledFor/actPrepareOrder) antes
+// de su hora — sin esto, un pedido programado con horas de anticipación podía quedar
+// completamente fuera de la vista del operador hasta que ya era tarde para prepararlo a
+// tiempo (nunca aparecía como "atascado" porque isStale/actAlertStuckOrders miran cuánto
+// falta para scheduled_for, no cuánto pasó desde que se creó) (hallazgo de la
+// re-auditoría de automatización). alerted_scheduled_reminder evita reenviar el mismo
+// aviso en cada corrida de este cron mientras el pedido sigue sin empezar.
+const SCHEDULED_REMINDER_LEAD_MINUTES = 20;
+export async function actAlertScheduledOrders(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const nowIso = new Date().toISOString();
+  const windowEnd = new Date(Date.now() + SCHEDULED_REMINDER_LEAD_MINUTES * 60000).toISOString();
+  const upcoming = await sbGet(
+    "orders",
+    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time`,
+  );
+  let alerted = 0;
+  for (const order of upcoming) {
+    try {
+      const etaLabel = new Date(order.delivery_time).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+      await sendPushToAdmins({
+        title: "Pedido programado se acerca 🕒",
+        body: order.ref + " (" + (order.customer_name || "cliente") + ") es para las " + etaLabel + " — empieza a prepararlo.",
+        url: "./index.html",
+        tag: "sndwch-scheduled-" + order.id,
+      });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { alerted_scheduled_reminder: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-scheduled-orders failed for order", order.id, e);
+    }
+  }
+  return { success: true, alerted };
+}
+
+// Cruza los cobros recientes exitosos de Culqi contra los pedidos propios — un cobro real
+// sin ningún pedido que lo respalde significa que al cliente se le sacó dinero y no
+// recibió nada a cambio (ej. create-charge cobró bien pero el navegador del cliente se
+// cerró/perdió conexión ANTES de que llegara a llamar actConfirmCulqiOrder, así que la
+// reserva terminó expirando sola sin que nadie se enterara del cargo real ya hecho). El
+// resto del flujo de pagos (reserva atómica, reclamo pending->charging en create-charge)
+// ya reduce mucho este hueco, pero esto es la red de seguridad que lo detecta si de
+// todos modos ocurre (hallazgo de la re-auditoría de automatización). Usa check_rate_limit
+// como "avisar una sola vez por cargo" en vez de una columna propia — no hay ninguna fila
+// nuestra que corresponda a este cargo huérfano donde guardar ese estado.
+const CULQI_RECONCILE_LOOKBACK_MINUTES = 180;
+const CULQI_RECONCILE_GRACE_MINUTES = 15;
+export async function actReconcileCulqiCharges(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!CULQI_SECRET_KEY) return { success: true, checked: 0, orphaned: 0 };
+  const r = await fetch("https://api.culqi.com/v2/charges?limit=50", {
+    headers: { Authorization: `Bearer ${CULQI_SECRET_KEY}` },
+  });
+  if (!r.ok) {
+    console.error("reconcile-culqi-charges: Culqi list fetch failed", await r.text());
+    return { success: false, checked: 0, orphaned: 0 };
+  }
+  const data = await r.json();
+  const now = Date.now();
+  const lookbackMs = now - CULQI_RECONCILE_LOOKBACK_MINUTES * 60000;
+  const graceMs = now - CULQI_RECONCILE_GRACE_MINUTES * 60000;
+  const candidates = (data.data || []).filter((c: any) => {
+    const t = (c.creation_date || 0) * 1000;
+    return c.outcome?.type === "venta_exitosa" && t >= lookbackMs && t <= graceMs;
+  });
+  let orphaned = 0;
+  for (const charge of candidates) {
+    const orderRef = charge.metadata?.order_ref;
+    if (!orderRef) continue;
+    try {
+      const orders = await sbGet("orders", `payment_id=eq.${encodeURIComponent(charge.id)}&select=id`);
+      if (orders.length) continue;
+      const withinLimit = await rpc("check_rate_limit", { p_key: `orphan-charge:${charge.id}`, p_limit: 1, p_window_minutes: 60 * 24 * 7 });
+      if (!withinLimit) continue;
+      orphaned++;
+      await sendPushToAdmins({
+        title: "⚠️ Cobro sin pedido — revisar",
+        body: `Se cobró S/${(charge.amount / 100).toFixed(2)} (ref ${orderRef}) pero no existe ningún pedido con ese cargo. Verifica en Culqi y contacta al cliente.`,
+        url: "./index.html",
+        tag: "sndwch-orphan-charge-" + charge.id,
+      });
+    } catch (e) {
+      console.error("reconcile-culqi-charges failed for", charge.id, e);
+    }
+  }
+  return { success: true, checked: candidates.length, orphaned };
+}
+
+// A diferencia de alertLowStockCrossing (avisa solo el instante en que un producto CRUZA
+// su umbral), este cron diario re-revisa todo el inventario y manda un resumen si algo
+// SIGUE bajo/agotado — antes, si el dueño ignoraba el aviso de cruce inicial (o no vio la
+// notificación en el momento), un producto podía quedar agotado por días sin ningún
+// recordatorio adicional (hallazgo de la re-auditoría de automatización).
+export async function actRemindLowStock(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const rows = await sbGet("inventory", "select=product_code,product_name,in_stock,stock_qty,low_stock_threshold");
+  const outOfStock = rows.filter((r: any) => r.in_stock === false || (r.stock_qty != null && r.stock_qty <= 0));
+  const low = rows.filter((r: any) => r.stock_qty != null && r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
+  if (!outOfStock.length && !low.length) return { success: true, alerted: false };
+  const parts: string[] = [];
+  if (outOfStock.length) parts.push(outOfStock.length + " agotado(s)");
+  if (low.length) parts.push(low.length + " con stock bajo");
+  const names = [...outOfStock, ...low].slice(0, 6).map((r: any) => r.product_name || r.product_code).join(", ");
+  await sendPushToAdmins({
+    title: "Recordatorio de inventario 📦",
+    body: parts.join(" y ") + ": " + names + (outOfStock.length + low.length > 6 ? "…" : "") + ".",
+    url: "./index.html",
+    tag: "sndwch-daily-low-stock",
+    renotify: true,
+  });
+  return { success: true, alerted: true, outOfStock: outOfStock.length, low: low.length };
+}
