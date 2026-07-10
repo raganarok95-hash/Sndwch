@@ -205,6 +205,12 @@ export async function actDeleteAccount(b: any) {
     // personal se borra por completo en vez de conservarse sin identificar (mismo criterio
     // que direcciones/favoritos: es dato estrictamente personal, no una cifra de negocio).
     sbDelete("transactions", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    // Antes esta era la única tabla con datos personales (nombre/correo/dirección) que
+    // actDeleteAccount no tocaba — una reserva de pago vieja (ya consumida/expirada/
+    // cancelada) podía dejar esos datos vivos indefinidamente después de que el cliente
+    // pidió borrar su cuenta (hallazgo de la re-auditoría legal/datos). Se borra por
+    // completo, igual que direcciones/favoritos: es dato estrictamente personal.
+    sbDelete("pending_charges", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
     sbUpdate("orders", `customer_phone=eq.${encodeURIComponent(s.phone)}`, {
       customer_phone: null,
       customer_name: "Cuenta eliminada",

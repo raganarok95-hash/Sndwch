@@ -5,9 +5,10 @@
 // consumidor (copia de su reclamo) como al negocio (para que pueda responder).
 import { sbGet, sbInsert, sbUpdate } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
-import { requireAdmin } from "../session.ts";
+import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendComplaintConfirmation, sendComplaintNotification } from "../email.ts";
+import { sendPushToAdmins } from "../push.ts";
 
 export async function actSubmitComplaint(b: any) {
   const kind = String(b.kind || "").trim();
@@ -84,4 +85,38 @@ export async function actAdminRespondComplaint(b: any) {
   });
   await logAdminAction(s.phone, "respond-complaint", undefined, { id, claim_code: rows[0].claim_code });
   return { success: true };
+}
+
+// Antes ningún aviso avisaba que el plazo legal de 30 días calendario (Código de
+// Protección y Defensa del Consumidor) para responder un reclamo se acercaba a vencer —
+// a diferencia de un pedido atascado (aviso a los 10 min), un reclamo sin responder podía
+// vencer el plazo en silencio (hallazgo de la re-auditoría legal/datos y de
+// automatización). Avisa cuando falten DEADLINE_WARNING_DAYS días o menos para el
+// vencimiento, una sola vez por reclamo (alerted_deadline), igual que actAlertStuckOrders.
+const COMPLAINT_DEADLINE_DAYS = 30;
+const DEADLINE_WARNING_DAYS = 7;
+export async function actAlertComplaintDeadlines(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const warningCutoff = new Date(Date.now() - (COMPLAINT_DEADLINE_DAYS - DEADLINE_WARNING_DAYS) * 86400000).toISOString();
+  const nearing = await sbGet(
+    "complaints",
+    `status=neq.atendido&alerted_deadline=eq.false&created_at=lt.${encodeURIComponent(warningCutoff)}&select=id,claim_code,kind,created_at`,
+  );
+  let alerted = 0;
+  for (const c of nearing) {
+    try {
+      const daysLeft = COMPLAINT_DEADLINE_DAYS - Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000);
+      await sendPushToAdmins({
+        title: "Reclamo por vencer ⚠️",
+        body: `${c.claim_code} (${c.kind}) — quedan ~${Math.max(0, daysLeft)} días para responder antes del plazo legal.`,
+        url: "./index.html",
+        tag: "sndwch-complaint-deadline-" + c.id,
+      });
+      await sbUpdate("complaints", `id=eq.${c.id}`, { alerted_deadline: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-complaint-deadlines failed for", c.id, e);
+    }
+  }
+  return { success: true, alerted };
 }

@@ -161,7 +161,15 @@ export async function actPushSubscribe(b: any) {
   const p256dh = String(b.p256dh || "");
   const auth = String(b.auth || "");
   if (!endpoint || !p256dh || !auth) throw new ApiError("Faltan datos de la suscripción.");
-  const existing = await sbGet("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}`);
+  // Antes reasignaba una suscripción existente scoped solo por endpoint, sin verificar que
+  // ya perteneciera a este mismo cliente — si alguien llegara a conocer el endpoint push de
+  // otra persona, podía secuestrar esa suscripción hacia su propio teléfono (hallazgo de la
+  // re-auditoría de seguridad). El endpoint es opaco/impredecible (lo emite el navegador),
+  // así que el riesgo práctico era bajo, pero el chequeo de dueño faltaba por completo.
+  const existing = await sbGet("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}&select=id,customer_phone`);
+  if (existing.length && existing[0].customer_phone && existing[0].customer_phone !== s.phone) {
+    throw new ApiError("Este dispositivo ya está suscrito con otra cuenta.", 409);
+  }
   if (existing.length) {
     await sbUpdate("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}`, { customer_phone: s.phone, p256dh, auth });
   } else {

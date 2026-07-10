@@ -36,11 +36,22 @@ export async function signToken(payload: SessionPayload): Promise<string> {
   const s = await hmac(p);
   return `${p}.${s}`;
 }
+// Comparación de tiempo constante byte a byte — antes usaba !== directo entre la firma
+// calculada y la que manda el cliente, lo que en teoría abre un canal de temporización
+// (comparar string por string termina apenas difiere el primer byte, así que el tiempo de
+// respuesta podría filtrar cuántos bytes iniciales acertó un atacante) (hallazgo de la
+// re-auditoría de seguridad). Compara TODOS los bytes siempre, sin cortar temprano.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 export async function verifyToken(token: string | undefined | null): Promise<SessionPayload | null> {
   if (!token || token.indexOf(".") < 0) return null;
   const [p, s] = token.split(".");
   const expected = await hmac(p);
-  if (expected !== s) return null;
+  if (!timingSafeEqual(expected, s)) return null;
   try {
     const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(p))) as SessionPayload;
     if (!payload.exp || payload.exp < Date.now() / 1000) return null;
@@ -67,12 +78,13 @@ export async function requireAdmin(token: string | undefined): Promise<SessionPa
   // No reusa requireSession(): ambas consultas (customers para validar la sesión,
   // admin_accounts para el rol) solo dependen de payload.phone, ya conocido tras el HMAC
   // local — corrían en serie, sumando un round-trip completo a cada una de las ~13 acciones
-  // admin que pasan por aquí.
+  // admin que pasan por aquí. Solo trae session_version (lo único que se usa acá abajo) en
+  // vez de la fila completa del cliente (hallazgo de la re-auditoría de rendimiento).
   const payload = await verifyToken(token);
   const invalidSession = new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
   if (!payload) throw invalidSession;
   const [rows, adminRows] = await Promise.all([
-    sbGet("customers", `phone=eq.${encodeURIComponent(payload.phone)}`),
+    sbGet("customers", `phone=eq.${encodeURIComponent(payload.phone)}&select=session_version`),
     sbGet("admin_accounts", `phone=eq.${encodeURIComponent(payload.phone)}&select=phone`),
   ]);
   const row = rows[0];
