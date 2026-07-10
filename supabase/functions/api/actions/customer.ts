@@ -5,6 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder } from "../catalog.ts";
+import { limaMonthKey, limaMonthStartIso } from "../env.ts";
 
 const MAX_ADDRESSES = 6;
 export async function actAddressesList(b: any) {
@@ -79,18 +80,18 @@ export async function actSubmitRating(b: any) {
 
 const CHALLENGE_TARGET_ORDERS = 3;
 const CHALLENGE_BONUS_POINTS = 50;
-function monthKey(d: Date): string {
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-}
 export async function actClaimChallenge(b: any) {
   const s = await requireSession(b.token);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
   if (!rows.length) throw new ApiError("Cliente no encontrado.", 404);
   const c = rows[0];
   const now = new Date();
-  const thisMonth = monthKey(now);
+  // Antes usaba new Date().getFullYear()/getMonth() (hora del SERVIDOR, Deno Deploy
+  // corre en UTC) — mismo bug de zona horaria que tenía isWithinStoreHours: cerca de fin
+  // de mes, el "mes" del servidor podía ir ~5h adelantado del mes real en Lima.
+  const thisMonth = limaMonthKey(now);
   if (c.challenge_claimed_month === thisMonth) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const monthStart = limaMonthStartIso(now);
   const orders = await sbGet(
     "orders",
     `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,

@@ -18,9 +18,9 @@ import {
   actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
 } from "./actions/auth.ts";
 import {
-  actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
+  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
-  actExpireStaleManualPayments, actAlertStuckOrders,
+  actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
@@ -61,6 +61,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   recover: actRecover,
   "logout-everywhere": actLogoutEverywhere,
   "delete-account": actDeleteAccount,
+  "prepare-order": actPrepareOrder,
   "place-order": actPlaceOrder,
   "my-orders": actMyOrders,
   "my-history": actMyHistory,
@@ -82,6 +83,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "cancel-my-order": actCancelMyOrder,
   "expire-stale-manual-payments": actExpireStaleManualPayments,
   "alert-stuck-orders": actAlertStuckOrders,
+  "expire-pending-charges": actExpirePendingCharges,
   "admin-manual-points": actAdminManualPoints,
   "admin-accounts-list": actAdminAccountsList,
   "admin-accounts-add": actAdminAccountsAdd,

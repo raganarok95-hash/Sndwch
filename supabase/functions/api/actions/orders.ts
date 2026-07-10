@@ -39,23 +39,382 @@ async function alertLowStockCrossing(codes: string[], qtys: number[]): Promise<v
   }
 }
 
+// Antes un solo fallo de red (timeout, DNS, 5xx transitorio de Culqi) devolvía false y
+// rechazaba un pedido con un cargo real y válido detrás — un reintento cubre la gran
+// mayoría de esos blips sin debilitar el chequeo: un 4xx real de Culqi ("este chargeId
+// no existe/no coincide") sigue rechazando sin reintentar, solo se reintenta ante un
+// fallo de red o un 5xx del propio Culqi.
 async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number): Promise<boolean> {
   if (!CULQI_SECRET_KEY) return false;
-  try {
-    const r = await fetch(`https://api.culqi.com/v2/charges/${encodeURIComponent(chargeId)}`, {
-      headers: { Authorization: `Bearer ${CULQI_SECRET_KEY}` },
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(`https://api.culqi.com/v2/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: `Bearer ${CULQI_SECRET_KEY}` },
+      });
+      if (!r.ok) {
+        if (r.status >= 500 && attempt === 0) continue;
+        return false;
+      }
+      const data = await r.json();
+      const successful = data?.outcome?.type === "venta_exitosa";
+      const amountMatches = Number(data?.amount) === expectedAmountCents;
+      return successful && amountMatches;
+    } catch {
+      if (attempt === 0) continue;
+      return false;
+    }
+  }
+  return false;
+}
+
+// Ventana durante la cual una reserva de Culqi (ver actPrepareOrder) sigue siendo
+// válida para cobrarse — pasado esto, el cron actExpirePendingCharges libera el
+// inventario y el cliente debe volver a intentar.
+const PENDING_CHARGE_TTL_MINUTES = 10;
+
+type FinalizeOrderParams = {
+  ref: string;
+  phone: string | null;
+  contactPhone: string;
+  name: string;
+  email: string;
+  address: string;
+  summary: string;
+  notes: string | null;
+  total: number;
+  paymentStatus: string;
+  paymentId: string | null;
+  paymentMethod: string;
+  items: Record<string, unknown>[];
+  scheduledFor: string | null;
+  reward: { pts: number; label: string } | null;
+  useCredit: boolean;
+};
+
+// Núcleo compartido entre el pago con Culqi (confirmado desde una reserva ya validada,
+// ver actPrepareOrder/actConfirmCulqiOrder) y crédito/Yape-Plin/recompensa-gratis
+// (validados y cobrados en el mismo tiro dentro de actPlaceOrder) — ambos terminan
+// haciendo exactamente lo mismo: debitar puntos/crédito del cliente si corresponde,
+// insertar el pedido, y registrar la auditoría. Antes esta lógica estaba duplicada casi
+// entera en dos lugares del archivo.
+async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
+  async function insertOrder() {
+    return sbInsert("orders", {
+      ref: p.ref,
+      customer_phone: p.phone,
+      contact_phone: p.contactPhone,
+      customer_name: p.name,
+      customer_email: p.email || null,
+      customer_address: p.address,
+      summary: p.summary || "",
+      notes: p.notes,
+      total: p.total,
+      status: "RECIBIDO",
+      payment_status: p.paymentStatus,
+      payment_id: p.paymentId,
+      payment_method: p.paymentMethod,
+      mode: null,
+      product_key: null,
+      size: null,
+      build: null,
+      items: p.items,
+      delivery_time: p.scheduledFor,
+      redeemed_reward: p.reward ? p.reward.label : null,
     });
-    if (!r.ok) return false;
-    const data = await r.json();
-    const successful = data?.outcome?.type === "venta_exitosa";
-    const amountMatches = Number(data?.amount) === expectedAmountCents;
-    return successful && amountMatches;
-  } catch {
-    return false;
+  }
+
+  if (p.phone && p.paymentStatus === "paid") {
+    const custRows = await sbGet("customers", `phone=eq.${encodeURIComponent(p.phone)}`);
+    const c = custRows[0];
+    if (!c) throw new ApiError("Cliente no encontrado.", 404);
+    if (p.reward && (c.points || 0) < p.reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+    if (p.useCredit && (c.credit_balance || 0) < p.total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
+
+    const isFirstOrder = (c.total_orders || 0) === 0;
+    const isReferral = isFirstOrder && !!c.referred_by;
+    // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
+    // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
+    const basePoints = p.total;
+    let pointsDelta = basePoints;
+    if (p.reward) pointsDelta -= p.reward.pts;
+
+    // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
+    // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
+    // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
+    // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
+    // marcado "pagado" sin el débito real detrás.
+    const updated = await rpc("finalize_order_customer_update", {
+      p_phone: p.phone,
+      p_points_delta: pointsDelta,
+      p_credit_delta: p.useCredit ? -p.total : 0,
+      p_total_orders_delta: 1,
+      p_last_address: p.address,
+      p_total_redeemed_delta: p.reward ? 1 : 0,
+      p_referrer_phone: isReferral ? c.referred_by : null,
+      p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
+    });
+    const customer = safeCustomer(updated);
+    const orderRows = await insertOrder();
+
+    // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
+    // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
+    // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
+    const auditInserts: Promise<unknown>[] = [
+      sbInsert("transactions", {
+        customer_phone: p.phone,
+        type: "earn_confirmed",
+        points: basePoints,
+        description: p.useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
+        order_ref: p.ref,
+        confirmed: true,
+      }),
+    ];
+    if (p.useCredit) {
+      auditInserts.push(sbInsert("credit_ledger", {
+        customer_phone: p.phone,
+        delta: -p.total,
+        reason: "Pedido pagado con crédito (" + p.ref + ")",
+      }));
+    }
+    if (p.reward) {
+      auditInserts.push(sbInsert("transactions", {
+        customer_phone: p.phone,
+        type: "redeem",
+        points: -p.reward.pts,
+        description: p.reward.label + " canjeado en pedido " + p.ref,
+        order_ref: p.ref,
+        confirmed: true,
+      }));
+    }
+    if (isReferral) {
+      auditInserts.push(sbInsert("transactions", {
+        customer_phone: p.phone,
+        type: "earn_confirmed",
+        points: REFERRAL_BONUS_POINTS,
+        description: "Bono por referido",
+        confirmed: true,
+      }));
+      auditInserts.push(sbInsert("transactions", {
+        customer_phone: c.referred_by,
+        type: "earn_confirmed",
+        points: REFERRAL_BONUS_POINTS,
+        description: "Bono por invitar a " + p.name,
+        confirmed: true,
+      }));
+    }
+    await Promise.all(auditInserts);
+    return { order: orderRows[0], customer };
+  }
+
+  const orderRows = await insertOrder();
+  return { order: orderRows[0], customer: null };
+}
+
+// Antes el cobro real con Culqi pasaba en el cliente ANTES de que place-order validara
+// horario/inventario/carrito — cualquier rechazo posterior (el bug de zona horaria que
+// se arregló en vivo, inventario agotado a media compra, un fallo transitorio al
+// re-verificar el cargo) dejaba un cargo real sin ningún pedido creado. Ahora ese orden
+// se invierte: actPrepareOrder valida y RESERVA todo antes de que el cliente abra el
+// widget de Culqi; el cobro real solo ocurre si esto tuvo éxito. actPlaceOrder, cuando
+// llega con un chargeId, ya no repite esas validaciones — solo confirma el cargo contra
+// la reserva y crea el pedido (ver actConfirmCulqiOrder). Crédito/Yape-Plin/recompensa-
+// gratis no tienen este problema (no hay ningún cobro externo antes de crear el pedido),
+// así que siguen su camino directo de siempre, sin pasar por una reserva previa.
+export async function actPrepareOrder(b: any) {
+  const ref = String(b.ref || "").trim();
+  const name = String(b.name || "").trim();
+  const contactPhone = String(b.phone || "").trim();
+  const email = String(b.email || "").trim();
+  const address = String(b.address || "").trim();
+  const clientTotal = Number(b.total || 0);
+  const rewardId = b.rewardId ? String(b.rewardId) : null;
+  if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
+
+  const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
+  if (scheduledFor) {
+    const schedDate = new Date(scheduledFor);
+    const t = schedDate.getTime();
+    if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
+  } else if (!isWithinStoreHours(new Date())) {
+    throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
+  }
+
+  await loadCatalogPrices();
+  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId);
+  if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
+    throw new ApiError("El total no coincide con los productos del pedido.", 400);
+  }
+
+  let phone: string | null = null;
+  if (b.token) {
+    const active = await verifyActiveSession(b.token);
+    if (active) phone = active.payload.phone;
+    if (rewardId) {
+      if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+      const reward = REWARDS[rewardId];
+      if (!reward) throw new ApiError("Recompensa inválida.");
+      if ((active.row.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+    }
+  } else if (rewardId) {
+    throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+  }
+
+  // Bloquea una segunda reserva concurrente del mismo cliente (dos pestañas/dispositivos
+  // pagando el mismo carrito a la vez) — sin esto, cada pestaña podría terminar
+  // generando su propio cargo real. Solo aplica a clientes con sesión: un invitado no
+  // tiene una identidad estable contra la cual bloquear.
+  if (phone) {
+    const nowIso = new Date().toISOString();
+    const existing = await sbGet(
+      "pending_charges",
+      `customer_phone=eq.${encodeURIComponent(phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
+    );
+    if (existing.length) {
+      throw new ApiError("Ya tienes un pedido en proceso de pago. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
+    }
+  }
+
+  // Misma reserva atómica de siempre (ver reserve_inventory), solo que ahora ocurre
+  // ANTES del cobro en vez de después.
+  const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+  const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
+  if (codes.length) {
+    try {
+      await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
+    } catch (e) {
+      throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
+    }
+    try {
+      await alertLowStockCrossing(codes, qtys);
+    } catch {
+      // una alerta fallida no debe afectar la reserva
+    }
+  }
+
+  const expiresAt = new Date(Date.now() + PENDING_CHARGE_TTL_MINUTES * 60000).toISOString();
+  try {
+    await sbInsert("pending_charges", {
+      ref,
+      customer_phone: phone,
+      contact_phone: contactPhone,
+      customer_name: name,
+      customer_email: email || null,
+      customer_address: address,
+      notes: b.notes || null,
+      summary: b.summary || "",
+      expected_total: expectedTotal,
+      reserved_codes: codes,
+      reserved_qtys: qtys,
+      sanitized_items: sanitizedItems,
+      reward_id: rewardId,
+      scheduled_for: scheduledFor,
+      expires_at: expiresAt,
+    });
+  } catch (e) {
+    if (codes.length) {
+      try {
+        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+      } catch (restockErr) {
+        console.error("Failed to restock inventory after prepare-order failure:", restockErr);
+      }
+    }
+    if (e instanceof Error && e.message.includes("23505")) {
+      throw new ApiError("Ya hay un pago en proceso para este pedido. Espera un momento e intenta de nuevo.", 409);
+    }
+    throw e;
+  }
+
+  return { success: true, ref, expiresAt };
+}
+
+// Confirma un cobro de Culqi ya realizado contra la reserva creada por actPrepareOrder —
+// ya no repite horario/inventario/total (eso ya pasó ANTES de cobrar), solo verifica el
+// cargo real contra lo reservado y crea el pedido.
+async function actConfirmCulqiOrder(chargeId: string, ref: string) {
+  if (!chargeId || !ref) throw new ApiError("Faltan datos del pedido.");
+  const rows = await sbGet("pending_charges", `ref=eq.${encodeURIComponent(ref)}&select=*`);
+  const pc = rows[0];
+  if (!pc) throw new ApiError("No encontramos tu reserva. Vuelve a intentar tu pedido.", 410);
+  if (pc.status !== "pending") throw new ApiError("Este pedido ya fue procesado.", 409);
+  if (new Date(pc.expires_at).getTime() < Date.now()) {
+    throw new ApiError("Tu reserva expiró. Vuelve a intentar tu pedido — el inventario ya se liberó.", 410);
+  }
+
+  const total = Number(pc.expected_total);
+  const amountCents = Math.round(total * 100);
+  const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
+  if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
+
+  // Reclamo atómico pending -> consumed: si el cliente reintenta (ej. su navegador
+  // reintentó tras un timeout de red), la segunda llamada encuentra 0 filas y responde
+  // 409 en vez de crear un segundo pedido para el mismo cargo.
+  const claim = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.pending`, { status: "consumed" });
+  if (!claim.length) throw new ApiError("Este pedido ya fue procesado.", 409);
+
+  const codes: string[] = pc.reserved_codes || [];
+  const qtys: number[] = pc.reserved_qtys || [];
+  let orderInserted = false;
+  try {
+    const reward = pc.reward_id ? REWARDS[pc.reward_id] || null : null;
+    if (pc.reward_id && !reward) throw new ApiError("Recompensa inválida.");
+
+    const { order, customer } = await finalizeAndInsertOrder({
+      ref: pc.ref,
+      phone: pc.customer_phone,
+      contactPhone: pc.contact_phone,
+      name: pc.customer_name,
+      email: pc.customer_email || "",
+      address: pc.customer_address,
+      summary: pc.summary || "",
+      notes: pc.notes,
+      total,
+      paymentStatus: "paid",
+      paymentId: chargeId,
+      paymentMethod: "culqi",
+      items: pc.sanitized_items,
+      scheduledFor: pc.scheduled_for,
+      reward,
+      useCredit: false,
+    });
+    orderInserted = true;
+
+    try {
+      await sendPushToAdmins({
+        title: "Nuevo pedido " + pc.ref + " 🥪",
+        body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2),
+        url: "./index.html",
+        tag: "sndwch-new-order-" + pc.ref,
+      });
+    } catch {
+      // un push fallido no debe bloquear la creación del pedido
+    }
+
+    return { success: true, order, customer };
+  } catch (e) {
+    if (!orderInserted && codes.length) {
+      try {
+        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+      } catch (restockErr) {
+        console.error("Failed to restock inventory after confirm failure:", restockErr);
+      }
+    }
+    // La reserva ya quedó 'consumed' — si el pedido no llegó a crearse, la marcamos
+    // 'cancelled' para que el registro de conciliación refleje que el cobro real no
+    // terminó en un pedido (en vez de quedar engañosamente como 'consumed').
+    try {
+      await sbUpdate("pending_charges", `id=eq.${pc.id}`, { status: "cancelled" });
+    } catch {
+      // no debe tumbar la respuesta real
+    }
+    throw e;
   }
 }
 
 export async function actPlaceOrder(b: any) {
+  const chargeId = b.chargeId ? String(b.chargeId).trim() : "";
+  if (chargeId) return actConfirmCulqiOrder(chargeId, String(b.ref || "").trim());
+
   const ref = String(b.ref || "").trim();
   const name = String(b.name || "").trim();
   // Antes no se pedía ningún teléfono al invitado — la única forma de contactarlo era el
@@ -96,7 +455,7 @@ export async function actPlaceOrder(b: any) {
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId);
-  if (Math.round(expectedTotal) !== Math.round(clientTotal)) {
+  if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
 
@@ -107,12 +466,10 @@ export async function actPlaceOrder(b: any) {
     ? verifyActiveSession(b.token)
     : Promise.resolve(null);
 
-  // Reserva de stock ANTES de cobrar/registrar nada: reserve_inventory revisa Y descuenta
+  // Reserva de stock ANTES de registrar nada: reserve_inventory revisa Y descuenta
   // en una sola transacción atómica (con bloqueo de fila), así que dos pedidos concurrentes
   // por el último ingrediente disponible no pueden ambos "pasar" — el que llega segundo
-  // rechaza limpio en vez de sobrevender. Antes esto se hacía leyendo el stock y
-  // escribiéndolo de vuelta al final del todo, sin rechazar el pedido ni protegerlo de
-  // condiciones de carrera.
+  // rechaza limpio en vez de sobrevender.
   const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
   const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
   if (codes.length) {
@@ -129,23 +486,15 @@ export async function actPlaceOrder(b: any) {
   }
 
   // A partir de aquí el inventario ya quedó reservado/descontado de verdad — cualquier
-  // salida de este punto en adelante (recompensa/crédito insuficiente, pago de Culqi
-  // rechazado, un fallo de red) DEBE devolver el stock antes de propagar el error. Sin
-  // esto, un pedido de invitado (sin sesión, sin límite de intentos) con un chargeId
-  // inválido a propósito vaciaba el inventario real sin pagar nada — hallazgo de la
-  // auditoría de este release. `orderInserted` marca el punto de no-retorno: una vez que
-  // el pedido ya quedó creado, un fallo posterior (ej. el insert de auditoría) NO debe
-  // restituir stock que de verdad se usó para armar el pedido.
+  // salida de este punto en adelante (recompensa/crédito insuficiente, un fallo de red)
+  // DEBE devolver el stock antes de propagar el error. `orderInserted` marca el punto de
+  // no-retorno: una vez que el pedido ya quedó creado, un fallo posterior (ej. el insert
+  // de auditoría) NO debe restituir stock que de verdad se usó para armar el pedido.
   let orderInserted = false;
   try {
     // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
-    // que mandó el cliente. Todo lo que mueve dinero (orders.total, cobro a Culqi, puntos,
-    // crédito) debe basarse en esta fuente de verdad, no en `clientTotal` (que solo sirvió
-    // para detectar un descuadre grosero arriba; confiar en él aquí abajo permitiría pagar
-    // centavos menos del precio real vía devtools).
+    // que mandó el cliente.
     const total = expectedTotal;
-    const chargeId = useCredit || manualMethod || total === 0 ? "" : String(b.chargeId || "").trim();
-    if (total > 0 && !useCredit && !manualMethod && !chargeId) throw new ApiError("Faltan datos del pedido.");
 
     let phone: string | null = null;
     let custRow: any = null;
@@ -163,139 +512,28 @@ export async function actPlaceOrder(b: any) {
       if ((custRow.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
     }
 
-    let paymentMethod = "culqi";
-    let paymentId: string | null = null;
+    let paymentMethod = "reward";
     let paymentStatus = "paid";
-    if (total === 0) {
-      paymentMethod = "reward";
-    } else if (useCredit) {
-      if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
-      if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
-      paymentMethod = "credit";
-    } else if (manualMethod) {
-      paymentMethod = manualMethod;
-      paymentStatus = "pending";
-    } else {
-      const amountCents = Math.round(total * 100);
-      const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
-      if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
-      paymentId = chargeId;
-    }
-
-    async function insertOrder() {
-      return sbInsert("orders", {
-        ref,
-        customer_phone: phone,
-        contact_phone: contactPhone,
-        customer_name: name,
-        customer_email: email || null,
-        customer_address: address,
-        summary: b.summary || "",
-        notes: b.notes || null,
-        total,
-        status: "RECIBIDO",
-        payment_status: paymentStatus,
-        payment_id: paymentId,
-        payment_method: paymentMethod,
-        mode: null,
-        product_key: null,
-        size: null,
-        build: null,
-        items: sanitizedItems,
-        delivery_time: scheduledFor,
-        redeemed_reward: reward ? reward.label : null,
-      });
-    }
-
-    let customer = null;
-    let orderRows: any[];
-    if (phone && custRow && paymentStatus === "paid") {
-      const c = custRow;
-      const isFirstOrder = (c.total_orders || 0) === 0;
-      const isReferral = isFirstOrder && !!c.referred_by;
-      // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
-      // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
-      const basePoints = total;
-      let pointsDelta = basePoints;
-      if (reward) pointsDelta -= reward.pts;
-
-      // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
-      // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
-      // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
-      // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
-      // marcado "pagado" sin el débito real detrás. La función aplica puntos + crédito +
-      // contador de pedidos + última dirección + canje + bono de referido en UNA sola
-      // transacción de Postgres.
-      const updated = await rpc("finalize_order_customer_update", {
-        p_phone: phone,
-        p_points_delta: pointsDelta,
-        p_credit_delta: useCredit ? -total : 0,
-        p_total_orders_delta: 1,
-        p_last_address: address,
-        p_total_redeemed_delta: reward ? 1 : 0,
-        p_referrer_phone: isReferral ? c.referred_by : null,
-        p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
-      });
-      customer = safeCustomer(updated);
-
-      orderRows = await insertOrder();
-      orderInserted = true;
-
-      // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
-      // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
-      // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
-      // Los inserts de abajo no dependen entre sí, así que corren en paralelo en vez de serie.
-      const auditInserts: Promise<unknown>[] = [
-        sbInsert("transactions", {
-          customer_phone: phone,
-          type: "earn_confirmed",
-          // basePoints (no `total`): mismo valor hoy, pero es la fuente de verdad de lo que
-          // finalize_order_customer_update realmente acreditó arriba (el costo de canje de
-          // recompensa, si hay, se refleja aparte como su propia transacción "redeem" más abajo).
-          points: basePoints,
-          description: useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
-          order_ref: ref,
-          confirmed: true,
-        }),
-      ];
+    if (total > 0) {
       if (useCredit) {
-        auditInserts.push(sbInsert("credit_ledger", {
-          customer_phone: phone,
-          delta: -total,
-          reason: "Pedido pagado con crédito (" + ref + ")",
-        }));
+        if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
+        if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
+        paymentMethod = "credit";
+      } else if (manualMethod) {
+        paymentMethod = manualMethod;
+        paymentStatus = "pending";
+      } else {
+        throw new ApiError("Faltan datos del pedido.");
       }
-      if (reward) {
-        auditInserts.push(sbInsert("transactions", {
-          customer_phone: phone,
-          type: "redeem",
-          points: -reward.pts,
-          description: reward.label + " canjeado en pedido " + ref,
-          order_ref: ref,
-          confirmed: true,
-        }));
-      }
-      if (isReferral) {
-        auditInserts.push(sbInsert("transactions", {
-          customer_phone: phone,
-          type: "earn_confirmed",
-          points: REFERRAL_BONUS_POINTS,
-          description: "Bono por referido",
-          confirmed: true,
-        }));
-        auditInserts.push(sbInsert("transactions", {
-          customer_phone: c.referred_by,
-          type: "earn_confirmed",
-          points: REFERRAL_BONUS_POINTS,
-          description: "Bono por invitar a " + name,
-          confirmed: true,
-        }));
-      }
-      await Promise.all(auditInserts);
-    } else {
-      orderRows = await insertOrder();
-      orderInserted = true;
     }
+
+    const { order, customer } = await finalizeAndInsertOrder({
+      ref, phone, contactPhone, name, email, address,
+      summary: b.summary || "", notes: b.notes || null, total,
+      paymentStatus, paymentId: null, paymentMethod,
+      items: sanitizedItems, scheduledFor, reward, useCredit,
+    });
+    orderInserted = true;
 
     try {
       await sendPushToAdmins({
@@ -309,7 +547,7 @@ export async function actPlaceOrder(b: any) {
       // un push fallido no debe bloquear la creación del pedido
     }
 
-    return { success: true, order: orderRows[0], customer };
+    return { success: true, order, customer };
   } catch (e) {
     if (!orderInserted && codes.length) {
       try {
@@ -694,4 +932,32 @@ export async function actAlertStuckOrders(b: any) {
     }
   }
   return { success: true, alerted };
+}
+
+// Reserva de Culqi (ver actPrepareOrder) que nunca llegó a cobrarse — el cliente cerró
+// la pestaña, se arrepintió, o el pago de Culqi falló antes de que actConfirmCulqiOrder
+// llegara a correr. Libera el inventario reservado y marca la fila 'expired' en vez de
+// dejarla 'pending' para siempre — eso también es lo que le permite a actPrepareOrder
+// bloquear una segunda reserva concurrente sin quedar bloqueado para siempre si el
+// cliente simplemente abandonó el pago.
+export async function actExpirePendingCharges(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const nowIso = new Date().toISOString();
+  const stale = await sbGet(
+    "pending_charges",
+    `status=eq.pending&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,reserved_codes,reserved_qtys`,
+  );
+  let expired = 0;
+  for (const pc of stale) {
+    try {
+      const codes: string[] = pc.reserved_codes || [];
+      const qtys: number[] = pc.reserved_qtys || [];
+      if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+      await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.pending`, { status: "expired" });
+      expired++;
+    } catch (e) {
+      console.error("expire-pending-charges failed for", pc.id, e);
+    }
+  }
+  return { success: true, expired };
 }
