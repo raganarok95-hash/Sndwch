@@ -2001,6 +2001,32 @@ async function confirmOrderPayment(ordId){
     render();
   }catch(e){showToast(e.message);}
 }
+// Antes confirmar el pago y pasar a preparación eran 2 taps separados (confirmar, luego
+// tocar de nuevo "MARCAR COMO PREPARANDO") — en la inmensa mayoría de los casos el
+// operador hace ambas cosas seguidas apenas ve el dinero en su app (hallazgo de la
+// re-auditoría del panel admin). confirmOrderPayment sigue disponible aparte para el
+// caso raro en que quiera confirmar el pago sin arrancar cocina todavía.
+async function confirmAndAdvance(ordId){
+  try{
+    await api('admin-confirm-payment',{token:token,orderId:ordId});
+    var r=await api('admin-update-status',{token:token,orderId:ordId,status:'PREPARANDO'});
+    adminOrders=adminOrders.map(function(o){return o.id===ordId?r.order:o;});
+    render();
+  }catch(e){showToast(e.message);}
+}
+// Etiqueta compacta del método de pago una vez confirmado — antes una vez pagado el
+// pedido no mostraba de ninguna forma CÓMO se pagó (solo se veía mientras estaba
+// pendiente de confirmar), así que el operador no podía distinguir de un vistazo un
+// pedido pagado con tarjeta de uno pagado con crédito o recompensa (hallazgo de la
+// re-auditoría del panel admin).
+var PAYMENT_METHOD_BADGE={
+  culqi:'💳 TARJETA',
+  credit:'💰 CRÉDITO',
+  reward:'🎁 RECOMPENSA',
+  yape:'✅ YAPE/PLIN',
+  plin:'✅ YAPE/PLIN',
+  cod:'💵 CONTRA ENTREGA',
+};
 // Cancela un pedido — libera el stock reservado (ver actAdminCancelOrder). Antes esto
 // solo funcionaba para pedidos nunca pagados (Yape/Plin sin confirmar); un pedido ya
 // pagado con tarjeta/crédito no se podía cancelar en la app aunque, por ejemplo, se
@@ -2108,13 +2134,18 @@ function bulkBar(){
   var ids=Object.keys(bulkSelected).filter(function(k){return bulkSelected[k];});
   if(!ids.length)return'';
   var n=ids.length;
-  return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;padding:12px 20px;display:flex;gap:8px;align-items:center;z-index:110">'
+  // Antes cada botón medía ~10px de padding vertical (~34px de alto total) y el botón de
+  // cerrar apenas 4px de padding horizontal sin alto fijo — por debajo del mínimo táctil
+  // recomendado (~44px), justo en la barra que se usa a las apuradas en hora pico
+  // (hallazgo de la re-auditoría del panel admin). Ahora los 4 botones de acción miden
+  // ~44px de alto y el botón de cerrar es un cuadrado de 40x40 en vez de un ícono suelto.
+  return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid #0B0B0B;padding:12px 16px;display:flex;gap:6px;align-items:center;z-index:110">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';flex-shrink:0">'+n+' sel.</div>'
-    +'<button onclick="bulkConfirmPayments()" style="all:unset;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">✅ PAGO</button>'
-    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">PREPARANDO</button>'
-    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">EN CAMINO</button>'
-    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 0;border-radius:8px">ENTREGADO</button>'
-    +'<button onclick="bulkSelected={};render()" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;padding:0 4px;flex-shrink:0">✕</button>'
+    +'<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">✅ PAGO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">PREPARANDO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">EN CAMINO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">ENTREGADO</button>'
+    +'<button onclick="bulkSelected={};render()" style="all:unset;box-sizing:border-box;cursor:pointer;color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>'
     +'</div>';
 }
 // Íconos de línea minimalistas para el grid de herramientas del panel admin — mismo
@@ -2218,12 +2249,19 @@ function sAdminHome(){
         +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(o.customer_address)+'</div>'
         +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(isStale?'#ff8888':'#A8C8B0')+';margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</div>'
-        +(isScheduledAhead?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🕒 programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</div>':'')+'</div></div>'
+        +(isScheduledAhead?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🕒 programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</div>':'')
+        // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
+        // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
+        // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
+        // panel admin: el operador no tenía forma de recordar qué ETA le prometió a cada
+        // cliente sin abrir el detalle del pedido).
+        +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🛵 ETA ~'+o.eta_minutes+' min</div>':'')+'</div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 '+esc(o.redeemed_reward)+'</div>':'')
         +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-bottom:10px">💵 COBRAR '+SOLES+o.total+' AL ENTREGAR</div>':'')
         +(manualPending?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-bottom:8px">⚠ PAGO '+manualLabel+' SIN CONFIRMAR — revisa tu app antes de continuar</div>':'')
+        +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
         // Imprimir/WhatsApp son acciones secundarias (se usan, pero no en cada pedido) —
         // antes ocupaban una fila completa cada una, alargando la tarjeta innecesariamente.
         // Una fila de 2 columnas compactas deja la acción principal (avanzar estado) como
@@ -2233,7 +2271,8 @@ function sAdminHome(){
         +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;letter-spacing:.04em;padding:9px 4px;border-radius:8px">💬 WHATSAPP</button>':'')
         +'</div>'
         +(manualPending
-          ?'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:8px">✅ CONFIRMAR PAGO RECIBIDO</button>'
+          ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:6px">✅ CONFIRMAR PAGO Y PREPARAR</button>'
+            +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:#8BAF9A;font-family:\'Barlow\',sans-serif;font-size:10px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
           :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#FFFFFF;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+(STATUSES[s.next].icon?STATUSES[s.next].icon+' ':'')+'MARCAR COMO '+s.next+' →</button>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;text-align:center;padding:8px">✅ COMPLETADO</div>'))
         // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
         // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
