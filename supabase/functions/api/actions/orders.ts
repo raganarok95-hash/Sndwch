@@ -11,6 +11,7 @@ import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
+import { sendOrderConfirmationEmail } from "../email.ts";
 import { logAdminAction } from "../logging.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
@@ -97,6 +98,21 @@ type FinalizeOrderParams = {
 // haciendo exactamente lo mismo: debitar puntos/crédito del cliente si corresponde,
 // insertar el pedido, y registrar la auditoría. Antes esta lógica estaba duplicada casi
 // entera en dos lugares del archivo.
+// Antes de esto, ningún correo confirmaba la recepción del pedido para NINGÚN método de
+// pago — el único correo de pedido existente (send-order-email) solo se dispara cuando
+// el admin avanza el estado, y nunca se llama con status:'RECIBIDO' (hallazgo de la
+// auditoría de flujo de pedidos). Se manda aquí, en el único punto por el que pasan
+// TODOS los caminos de creación de pedido, en vez de depender de que el cliente siga
+// conectado tras pagar o de que un admin haga algo después.
+async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void> {
+  if (!p.email) return;
+  try {
+    await sendOrderConfirmationEmail(p.email, p.name, p.ref, p.total);
+  } catch {
+    // un correo fallido no debe bloquear la creación del pedido
+  }
+}
+
 async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
   async function insertOrder() {
     return sbInsert("orders", {
@@ -203,10 +219,12 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       }));
     }
     await Promise.all(auditInserts);
+    await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
   }
 
   const orderRows = await insertOrder();
+  await sendConfirmationEmailSafely(p);
   return { order: orderRows[0], customer: null };
 }
 
