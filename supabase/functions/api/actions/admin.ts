@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, statUnitPrice, statItemLabel } from "../catalog.ts";
+import { loadCatalogPrices, buildTopProducts } from "../catalog.ts";
 
 export async function actAdminManualPoints(b: any) {
   const s = await requireAdmin(b.token);
@@ -183,32 +183,10 @@ export async function actDashboardStats(b: any) {
   const pendingPayment = agg.pendingPayment as number;
   const codPending = agg.codPending as { count: number; total: number };
 
-  // Pedidos con carrito multi-producto (items[]) se cuentan por línea real; los pedidos
-  // legados de un solo sándwich (sin items[]) usan el resumen de texto como antes.
-  const productMap: Record<string, { count: number; revenue: number }> = {};
-  paidOrders.forEach((o: any) => {
-    if (Array.isArray(o.items) && o.items.length) {
-      o.items.forEach((it: any) => {
-        const key = statItemLabel(it);
-        const qty = it.qty || 1;
-        if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
-        productMap[key].count += qty;
-        productMap[key].revenue += statUnitPrice(it) * qty;
-      });
-      return;
-    }
-    const key = o.product_key || (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
-    if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
-    productMap[key].count += 1;
-    productMap[key].revenue += o.total || 0;
-  });
   // Top productos del mes en curso (misma ventana que arriba) — una vista "reciente" es más
   // útil operativamente que un ranking histórico que nunca cambia, y evita tener que replicar
   // la lógica de precio/etiqueta por ítem (statItemLabel/statUnitPrice) en SQL.
-  const topProducts = Object.entries(productMap)
-    .map(([name, v]) => ({ name, ...v }))
-    .sort((a, b2) => b2.count - a.count)
-    .slice(0, 6);
+  const topProducts = buildTopProducts(paidOrders, 6);
 
   // % de cambio vs. el período anterior de igual duración — el dato de "antes" ya viene
   // calculado en SQL (dashboard_aggregates), acá solo se arma el porcentaje; null cuando el
@@ -283,8 +261,10 @@ export async function actAdminSearchOrders(b: any) {
 
   const parts: string[] = [];
   if (q) {
-    const esc = q.replace(/[,()]/g, "");
-    parts.push(`or=(ref.ilike.*${encodeURIComponent(esc)}*,customer_phone.ilike.*${encodeURIComponent(esc)}*,customer_name.ilike.*${encodeURIComponent(esc)}*)`);
+    // Nombrado qSafe (no esc) para no confundirlo con el escHtml de email.ts — esto no
+    // escapa HTML, solo quita caracteres que romperían la sintaxis or=(...) de PostgREST.
+    const qSafe = q.replace(/[,()]/g, "");
+    parts.push(`or=(ref.ilike.*${encodeURIComponent(qSafe)}*,customer_phone.ilike.*${encodeURIComponent(qSafe)}*,customer_name.ilike.*${encodeURIComponent(qSafe)}*)`);
   }
   if (status) parts.push(`status=eq.${encodeURIComponent(status)}`);
   if (dateFrom) parts.push(`created_at=gte.${encodeURIComponent(dateFrom)}`);
@@ -347,24 +327,7 @@ export async function actAdminRangeReport(b: any) {
   });
   const byDay = Object.entries(byDayMap).map(([date, v]) => ({ date, ...v })).sort((a, b2) => a.date.localeCompare(b2.date));
 
-  const productMap: Record<string, { count: number; revenue: number }> = {};
-  paid.forEach((o: any) => {
-    if (Array.isArray(o.items) && o.items.length) {
-      o.items.forEach((it: any) => {
-        const key = statItemLabel(it);
-        const qty = it.qty || 1;
-        if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
-        productMap[key].count += qty;
-        productMap[key].revenue += statUnitPrice(it) * qty;
-      });
-      return;
-    }
-    const key = o.product_key || (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
-    if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
-    productMap[key].count += 1;
-    productMap[key].revenue += o.total || 0;
-  });
-  const topProducts = Object.entries(productMap).map(([name, v]) => ({ name, ...v })).sort((a, b2) => b2.count - a.count).slice(0, 10);
+  const topProducts = buildTopProducts(paid, 10);
 
   return {
     revenue,

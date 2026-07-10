@@ -37,6 +37,38 @@ export async function sendRecoveryEmail(to: string, name: string, newPin: string
   }
 }
 
+// Antes ningún correo confirmaba la recepción del pedido en sí — send-order-email
+// (la función vieja, invocada desde el cliente) solo se dispara cuando el ADMIN avanza
+// el estado, y nunca se llama con status:'RECIBIDO', así que ese primer aviso jamás
+// salía para NINGÚN método de pago (hallazgo de la auditoría de flujo de pedidos). Este
+// se llama desde el propio servidor en finalizeAndInsertOrder, en el mismo tiro en que
+// se crea el pedido — no depende de que el cliente siga conectado ni de que un admin
+// haga algo después.
+export async function sendOrderConfirmationEmail(to: string, name: string, ref: string, total: number): Promise<boolean> {
+  if (!RESEND_API_KEY) return false;
+  try {
+    const html = `
+      <div style="font-family:Arial,sans-serif;background:#1E3932;padding:32px;color:#fff">
+        <div style="max-width:420px;margin:0 auto;background:#2D5246;border-radius:14px;padding:28px">
+          <div style="font-size:26px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:#CBA258">//</span>WCH</div>
+          <div style="font-size:11px;color:#CBA258;letter-spacing:.2em;margin-bottom:20px">TU PEDIDO FUE RECIBIDO //</div>
+          <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
+          <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Recibimos tu pedido <b style="color:#fff">${escHtml(ref)}</b> por un total de <b style="color:#CBA258">S/${total.toFixed(2)}</b>.</p>
+          <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+        </div>
+      </div>
+    `;
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject: `SND//WCH — Recibimos tu pedido (${ref})`, html }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Copia del reclamo/queja para el consumidor — exigido por el Código de Protección y
 // Defensa del Consumidor: al registrar un reclamo se le debe entregar constancia con el
 // código y la fecha de recepción.

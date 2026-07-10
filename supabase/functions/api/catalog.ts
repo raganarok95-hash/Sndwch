@@ -337,3 +337,30 @@ export function statItemLabel(it: any): string {
   if (it.type === "sig") return SIG_LABEL[it.sigId] || it.sigId || "otro";
   return PROT_LABEL[it.prot] || it.prot || "otro";
 }
+
+// Antes actDashboardStats y actAdminRangeReport (admin.ts) repetían la misma agregación
+// de "producto -> {count, revenue}" carácter por carácter, cada uno con su propio límite
+// de resultados (hallazgo de la auditoría de código) — este helper la centraliza.
+export function buildTopProducts(orders: any[], limit: number): { name: string; count: number; revenue: number }[] {
+  const productMap: Record<string, { count: number; revenue: number }> = {};
+  orders.forEach((o: any) => {
+    if (Array.isArray(o.items) && o.items.length) {
+      o.items.forEach((it: any) => {
+        const key = statItemLabel(it);
+        const qty = it.qty || 1;
+        if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
+        productMap[key].count += qty;
+        productMap[key].revenue += statUnitPrice(it) * qty;
+      });
+      return;
+    }
+    const key = o.product_key || (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
+    if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
+    productMap[key].count += 1;
+    productMap[key].revenue += o.total || 0;
+  });
+  return Object.entries(productMap)
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
