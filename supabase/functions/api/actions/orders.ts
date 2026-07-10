@@ -40,6 +40,19 @@ async function alertLowStockCrossing(codes: string[], qtys: number[]): Promise<v
   }
 }
 
+// Devuelve al inventario, sin propagar el error si falla — usado en los 3 puntos donde
+// una reserva/pedido ya descontó stock real pero la operación termina fallando de
+// todos modos. Antes cada uno repetía el mismo try/catch con solo el texto del mensaje
+// de consola distinto (hallazgo de la auditoría de código).
+async function restockBestEffort(codes: string[], qtys: number[], context: string): Promise<void> {
+  if (!codes.length) return;
+  try {
+    await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+  } catch (restockErr) {
+    console.error(`Failed to restock inventory after ${context} failure:`, restockErr);
+  }
+}
+
 // Antes un solo fallo de red (timeout, DNS, 5xx transitorio de Culqi) devolvía false y
 // rechazaba un pedido con un cargo real y válido detrás — un reintento cubre la gran
 // mayoría de esos blips sin debilitar el chequeo: un 4xx real de Culqi ("este chargeId
@@ -339,13 +352,7 @@ export async function actPrepareOrder(b: any) {
       expires_at: expiresAt,
     });
   } catch (e) {
-    if (codes.length) {
-      try {
-        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
-      } catch (restockErr) {
-        console.error("Failed to restock inventory after prepare-order failure:", restockErr);
-      }
-    }
+    await restockBestEffort(codes, qtys, "prepare-order");
     if (e instanceof Error && e.message.includes("23505")) {
       throw new ApiError("Ya hay un pago en proceso para este pedido. Espera un momento e intenta de nuevo.", 409);
     }
@@ -419,13 +426,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
 
     return { success: true, order, customer };
   } catch (e) {
-    if (!orderInserted && codes.length) {
-      try {
-        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
-      } catch (restockErr) {
-        console.error("Failed to restock inventory after confirm failure:", restockErr);
-      }
-    }
+    if (!orderInserted) await restockBestEffort(codes, qtys, "confirm");
     // La reserva ya quedó 'consumed' — si el pedido no llegó a crearse, la marcamos
     // 'cancelled' para que el registro de conciliación refleje que el cobro real no
     // terminó en un pedido (en vez de quedar engañosamente como 'consumed').
@@ -589,13 +590,7 @@ export async function actPlaceOrder(b: any) {
 
     return { success: true, order, customer };
   } catch (e) {
-    if (!orderInserted && codes.length) {
-      try {
-        await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
-      } catch (restockErr) {
-        console.error("Failed to restock inventory after order failure:", restockErr);
-      }
-    }
+    if (!orderInserted) await restockBestEffort(codes, qtys, "order");
     throw e;
   }
 }

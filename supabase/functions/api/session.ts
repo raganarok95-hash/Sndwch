@@ -74,6 +74,13 @@ export async function requireSession(token: string | undefined): Promise<Session
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
   return active.payload;
 }
+// Antes session.ts (requireAdmin) y auth.ts (actLogin, actSessionCheck) repetían la
+// misma consulta a admin_accounts (mismo select, misma conversión a booleano) cada uno
+// con su propia copia (hallazgo de la auditoría de código) — este helper la centraliza.
+export async function fetchIsAdmin(phone: string): Promise<boolean> {
+  const rows = await sbGet("admin_accounts", `phone=eq.${encodeURIComponent(phone)}&select=phone`);
+  return Array.isArray(rows) && rows.length > 0;
+}
 export async function requireAdmin(token: string | undefined): Promise<SessionPayload> {
   // No reusa requireSession(): ambas consultas (customers para validar la sesión,
   // admin_accounts para el rol) solo dependen de payload.phone, ya conocido tras el HMAC
@@ -83,13 +90,13 @@ export async function requireAdmin(token: string | undefined): Promise<SessionPa
   const payload = await verifyToken(token);
   const invalidSession = new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
   if (!payload) throw invalidSession;
-  const [rows, adminRows] = await Promise.all([
+  const [rows, isAdmin] = await Promise.all([
     sbGet("customers", `phone=eq.${encodeURIComponent(payload.phone)}&select=session_version`),
-    sbGet("admin_accounts", `phone=eq.${encodeURIComponent(payload.phone)}&select=phone`),
+    fetchIsAdmin(payload.phone),
   ]);
   const row = rows[0];
   if (!row || (row.session_version || 1) !== (payload.v || 1)) throw invalidSession;
-  if (!Array.isArray(adminRows) || adminRows.length === 0) throw new ApiError("No autorizado.", 403);
+  if (!isAdmin) throw new ApiError("No autorizado.", 403);
   return payload;
 }
 export function safeCustomer(row: any) {
@@ -125,7 +132,12 @@ export async function verifyCronSecret(provided: unknown): Promise<boolean> {
   if (typeof provided !== "string" || !provided) return false;
   try {
     return await rpc("verify_cron_secret", { p_secret: provided });
-  } catch {
+  } catch (e) {
+    // rpc() ya loguea los fallos HTTP de PostgREST — este catch existe para el caso que
+    // rpc() no cubre (fetch() lanzando por un error de red antes de llegar a esa
+    // respuesta), que antes quedaba completamente silencioso (hallazgo de la
+    // re-auditoría de código). Sigue fallando cerrado (false) en cualquier caso.
+    console.error("verifyCronSecret failed:", e);
     return false;
   }
 }
