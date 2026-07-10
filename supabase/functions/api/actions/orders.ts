@@ -278,18 +278,22 @@ export async function actPrepareOrder(b: any) {
     throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
   }
 
-  // Bloquea una segunda reserva concurrente del mismo cliente (dos pestañas/dispositivos
-  // pagando el mismo carrito a la vez) — sin esto, cada pestaña podría terminar
-  // generando su propio cargo real. Solo aplica a clientes con sesión: un invitado no
-  // tiene una identidad estable contra la cual bloquear.
-  if (phone) {
+  // Bloquea una segunda reserva concurrente del mismo número de contacto (dos
+  // pestañas/dispositivos pagando el mismo carrito a la vez, o un reintento tras un fallo
+  // de red ambiguo) — sin esto, cada intento podría terminar generando su propio cargo
+  // real. Antes esto solo miraba customer_phone (null para invitados) — un invitado que
+  // reintentaba tras un fallo de red generaba una referencia nueva cada vez (ver oref() en
+  // el cliente) y se saltaba el bloqueo por completo (hallazgo de la re-auditoría de pagos).
+  // contact_phone es un campo obligatorio del checkout para TODOS, con o sin cuenta, así
+  // que sirve como identidad estable en ambos casos.
+  {
     const nowIso = new Date().toISOString();
     const existing = await sbGet(
       "pending_charges",
-      `customer_phone=eq.${encodeURIComponent(phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
+      `contact_phone=eq.${encodeURIComponent(contactPhone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
     );
     if (existing.length) {
-      throw new ApiError("Ya tienes un pedido en proceso de pago. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
+      throw new ApiError("Ya tienes un pedido en proceso de pago con este número. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
     }
   }
 
@@ -961,9 +965,14 @@ export async function actAlertStuckOrders(b: any) {
 export async function actExpirePendingCharges(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
+  // status=in.(pending,charging): 'charging' es el estado transitorio que create-charge usa
+  // para reclamar la reserva justo antes de cobrar en Culqi (ver create-charge/index.ts) —
+  // normalmente dura segundos, pero si la función se cae a mitad de camino (antes de
+  // revertir a 'pending') una fila podría quedar atascada en 'charging' para siempre sin
+  // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=eq.pending&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,reserved_codes,reserved_qtys`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -971,7 +980,7 @@ export async function actExpirePendingCharges(b: any) {
       const codes: string[] = pc.reserved_codes || [];
       const qtys: number[] = pc.reserved_qtys || [];
       if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
-      await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.pending`, { status: "expired" });
+      await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
       expired++;
     } catch (e) {
       console.error("expire-pending-charges failed for", pc.id, e);

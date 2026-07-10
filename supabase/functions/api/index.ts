@@ -35,7 +35,9 @@ import {
   actAdminRangeReport, actAdminRatingsList,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
-import { actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint } from "./actions/complaints.ts";
+import {
+  actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
+} from "./actions/complaints.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 
@@ -106,6 +108,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "submit-complaint": actSubmitComplaint,
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,
+  "alert-complaint-deadlines": actAlertComplaintDeadlines,
 };
 
 Deno.serve(async (req: Request) => {

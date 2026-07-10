@@ -123,7 +123,7 @@ export async function actDashboardStats(b: any) {
   // quedaría corto silenciosamente al crecer el negocio.
   const fetchSince = new Date(Math.min(monthStart, todayStart - 13 * DAY)).toISOString();
 
-  const [agg, ordersRaw, outOfStock, allInventory, recentComments] = await Promise.all([
+  const [agg, ordersRaw, outOfStock, allInventory] = await Promise.all([
     rpc("dashboard_aggregates", { p_week_start: new Date(weekStart).toISOString(), p_month_start: new Date(monthStart).toISOString() }),
     // Antes traía select=* (hasta 5000 filas x todas las columnas) cuando lo único que se
     // usa más abajo son estas 6 — total/payment_status/created_at para las métricas de
@@ -134,7 +134,6 @@ export async function actDashboardStats(b: any) {
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
-    sbGet("ratings", "select=stars,comment,order_ref,created_at&comment=not.is.null&order=created_at.desc&limit=5"),
   ]);
   // trend/topProducts se calculan sobre esta ventana reciente (no toda la tabla, ver
   // comentario arriba) — si algún día hay más de DASHBOARD_WINDOW_LIMIT pedidos en los
@@ -198,6 +197,10 @@ export async function actDashboardStats(b: any) {
   const weekPrev = agg.weekPrev as { revenue: number; count: number };
   const monthPrev = agg.monthPrev as { revenue: number; count: number };
 
+  // Se dejó de traer 5 calificaciones recientes en cada carga del dashboard — el panel de
+  // admin nunca las leía de esta respuesta (ese detalle vive en admin-ratings-list, su
+  // propia pantalla), así que era una consulta y bytes de payload desperdiciados en CADA
+  // apertura del dashboard (hallazgo de la re-auditoría de rendimiento).
   return {
     revenue: { today: todayStats, week: weekStats, month: monthStats, allTime: allTimeStats },
     trend,
@@ -216,7 +219,7 @@ export async function actDashboardStats(b: any) {
     avgEtaMinutes: agg.avgEtaMinutes,
     outOfStock,
     lowStock,
-    ratings: { avg: agg.ratingsAvg, count: agg.ratingsCount, recentComments },
+    ratings: { avg: agg.ratingsAvg, count: agg.ratingsCount },
     trendTruncated,
     referrals: agg.referrals,
     deltas: {
