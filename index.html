@@ -1231,7 +1231,7 @@ function doOrder(){
   }else if(manualPayMethod){
     payWithManualMethod();
   }else{
-    payWithCulqi(t,email);
+    prepareThenPayWithCulqi(t,email);
   }
 }
 // Las tres formas de pagar que NO pasan por Culqi (crédito interno, Yape/Plin manual,
@@ -1264,6 +1264,27 @@ function payWithManualMethod(){return placeOrderDirect('Registrando tu pedido...
 // 0 mientras la recompensa sea válida.
 function payAsRewardOnly(){return placeOrderDirect('Aplicando tu recompensa...',null);}
 
+// Antes el cliente abría el widget de Culqi (con un cobro real detrás) directo, y recién
+// DESPUÉS de cobrar el servidor validaba horario/inventario/carrito — cualquier rechazo
+// ahí dejaba un cargo real sin ningún pedido creado (así fue como se coló el bug de zona
+// horaria que se arregló en vivo). Ahora primero se valida y RESERVA todo (prepare-order,
+// ver orders.ts) y solo si eso tuvo éxito se abre Culqi — el cliente nunca llega a ver el
+// formulario de tarjeta si su pedido de todas formas iba a ser rechazado.
+async function prepareThenPayWithCulqi(amountSoles,email){
+  var po=_pendingOrder;
+  if(!po)return;
+  busy=true;busyMsg='Verificando tu pedido...';render();
+  try{
+    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+  }catch(e){
+    busy=false;_payingInProgress=false;render();
+    var errEl=document.getElementById('o-err');
+    if(errEl)errEl.textContent=e.message;else showToast(e.message);
+    return;
+  }
+  busy=false;render();
+  payWithCulqi(amountSoles,email);
+}
 function payWithCulqi(amountSoles,email){
   // Ambos early-return de abajo DEBEN limpiar busy/_payingInProgress antes de salir —
   // doOrder() bloquea todo nuevo intento mientras _payingInProgress sea true, así que
@@ -1318,11 +1339,12 @@ async function chargeAndFinalize(culqiToken){
       if(errEl)errEl.textContent=msg;else showToast(msg);
       return;
     }
-    // Pago confirmado con Culqi — el servidor re-verifica el cargo antes de crear
-    // el pedido y acreditar puntos (nunca confía en datos enviados por el cliente).
+    // Pago confirmado con Culqi — el servidor re-verifica el cargo contra la reserva que
+    // ya creó prepare-order (nombre/dirección/carrito/total ya quedaron ahí, no hace
+    // falta reenviarlos ni confiar de nuevo en lo que diga el cliente en este paso).
     var res;
     try{
-      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+      res=await api('place-order',{token:token,chargeId:data.chargeId,ref:po.ref});
     }catch(e){
       // El cobro ya se hizo pero el pedido no quedó registrado — bloqueamos un reintento
       // desde aquí (crearía un SEGUNDO cobro real) y pedimos contactar al local con la ref.

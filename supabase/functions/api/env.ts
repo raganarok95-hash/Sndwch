@@ -56,16 +56,19 @@ export const CONTACT_EMAIL = "contacto@sndwch.com";
 export const STORE_HOURS: Array<[number, number] | null> = [
   [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22],
 ];
-// d.getHours()/getDay() usan la zona horaria del SERVIDOR (Deno Deploy corre en UTC), no
-// la de Perú (UTC-5) — con eso, "cierra a las 22:00" se aplicaba como si cerrara a las
-// 17:00 hora Perú, 5 horas antes de lo real. Un cliente que pagaba con tarjeta entre esas
-// 5 horas veía el cobro pasar en Culqi (create-charge no valida horario) y recién
-// place-order lo rechazaba después — cobro real, pedido nunca creado (hallazgo en vivo
-// tras activar Culqi). Convertir explícitamente a America/Lima antes de comparar evita
-// que esto dependa de en qué zona horaria le toque correr al runtime.
-export function isWithinStoreHours(d: Date): boolean {
+// d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
+// corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
+// como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro
+// pasaba en Culqi y recién el servidor rechazaba el pedido después). Este helper
+// centraliza la conversión a America/Lima para que cualquier decisión de negocio basada
+// en fecha/hora (horario de atención, mes del reto de recurrencia, etc.) la use en vez
+// de reinventar la conversión — y así no se repita el mismo bug en otro lugar.
+function limaFields(d: Date): { year: number; month: number; day: number; weekday: number; hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Lima",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
     weekday: "short",
     hour: "numeric",
     minute: "numeric",
@@ -73,10 +76,37 @@ export function isWithinStoreHours(d: Date): boolean {
   }).formatToParts(d);
   const get = (type: string) => parts.find((p) => p.type === type)!.value;
   const WEEKDAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  const range = STORE_HOURS[WEEKDAY_INDEX[get("weekday")]];
+  return {
+    year: Number(get("year")),
+    month: Number(get("month")),
+    day: Number(get("day")),
+    weekday: WEEKDAY_INDEX[get("weekday")],
+    hour: Number(get("hour")),
+    minute: Number(get("minute")),
+  };
+}
+
+export function isWithinStoreHours(d: Date): boolean {
+  const f = limaFields(d);
+  const range = STORE_HOURS[f.weekday];
   if (!range) return false;
-  const h = Number(get("hour")) + Number(get("minute")) / 60;
+  const h = f.hour + f.minute / 60;
   return h >= range[0] && h < range[1];
+}
+
+// "YYYY-MM" del mes en curso en hora de Lima — usado por el reto mensual
+// (actClaimChallenge) para no repetir el mismo bug de zona horaria que tenía
+// isWithinStoreHours (el mes servidor-UTC puede ir 5h adelantado del mes real en Lima
+// cerca de fin de mes).
+export function limaMonthKey(d: Date): string {
+  const f = limaFields(d);
+  return f.year + "-" + String(f.month).padStart(2, "0");
+}
+// Instante UTC real que corresponde a la medianoche del día 1 del mes (hora Lima) —
+// Lima es UTC-5 sin horario de verano, así que medianoche Lima = 05:00 UTC.
+export function limaMonthStartIso(d: Date): string {
+  const f = limaFields(d);
+  return new Date(Date.UTC(f.year, f.month - 1, 1, 5, 0, 0)).toISOString();
 }
 
 // Igual que loadCatalogPrices (catalog.ts) — una tabla (store_hours) sobreescribe estos
