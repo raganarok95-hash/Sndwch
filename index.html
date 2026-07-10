@@ -184,9 +184,9 @@ var SIDES=[
   {id:'D09',l:'THE SPICE',    s:'CHAI',    p:6,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.'}
 ];
 
-// HORARIO — placeholder. [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
-// ⚠️ EDITA ESTOS HORARIOS con el horario real del local antes de confiar en el badge
-// "ABIERTO/CERRADO" — por ahora asume 11am-10pm todos los días.
+// HORARIO — valor de arranque mientras carga el real desde el servidor (ver
+// loadStoreHoursBackground más abajo, que lo sobreescribe con lo que el dueño configuró
+// en el panel admin). [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
 var STORE_HOURS=[[11,22],[11,22],[11,22],[11,22],[11,22],[11,22],[11,22]];
 function storeStatus(){
   var now=new Date(),h=now.getHours()+now.getMinutes()/60,range=STORE_HOURS[now.getDay()];
@@ -2154,13 +2154,21 @@ function orderPriority(o){
   if(o.status==='EN CAMINO')return 3;
   return 4;
 }
+// La referencia de urgencia de un pedido "para más tarde" es su hora programada, no la
+// hora en que se creó — antes el triage y el aviso de "atascado" leían siempre created_at,
+// así que un pedido programado para las 8pm creado a las 9am se veía tan urgente/viejo
+// como uno inmediato apenas pasaban 10 min desde que se creó (hallazgo de la re-auditoría
+// del panel admin: scheduled_for existe en la fila pero la cola nunca lo miraba).
+function orderDueTime(o){
+  return o.scheduled_for||o.created_at;
+}
 function sAdminHome(){
-  // Dentro de cada nivel de prioridad, el más viejo primero (el que lleva más tiempo
-  // esperando es el que más urge atender).
+  // Dentro de cada nivel de prioridad, el que antes vence primero (el que lleva más
+  // tiempo esperando, o el programado más próximo).
   var ao=(adminOrders||[]).slice().sort(function(a,b){
     var pa=orderPriority(a),pb=orderPriority(b);
     if(pa!==pb)return pa-pb;
-    return new Date(a.created_at||0).getTime()-new Date(b.created_at||0).getTime();
+    return new Date(orderDueTime(a)||0).getTime()-new Date(orderDueTime(b)||0).getTime();
   });
   var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932">'
@@ -2194,16 +2202,23 @@ function sAdminHome(){
       // "Hace X min" + borde rojo pulsante pasados 10 min sin arrancar — antes la única
       // pista de cuánto llevaba esperando un pedido era leer la hora absoluta y restarla
       // mentalmente (hallazgo de la auditoría del panel admin: fácil pasar por alto el
-      // más viejo durante una hora pico).
+      // más viejo durante una hora pico). El aviso de atascado usa minsDue (minutos desde
+      // que el pedido DEBÍA empezar, es decir desde scheduled_for si lo tiene) para que un
+      // pedido programado para más tarde no se marque "atascado" mientras aún falta para
+      // su hora — "hace X min" en la tarjeta sigue mostrando el tiempo desde que se creó,
+      // que es la info que le interesa al operador.
       var mins=minutesAgo(o.created_at);
-      var isStale=(o.status==='RECIBIDO'||manualPending)&&mins!==null&&mins>=10;
+      var minsDue=minutesAgo(orderDueTime(o));
+      var isScheduledAhead=o.scheduled_for&&new Date(o.scheduled_for).getTime()>Date.now();
+      var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
       return'<div style="background:#2D5246;border:1px solid '+(isStale?'#ff5555':(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'#1c1c1c'))+';border-radius:10px;padding:16px;margin-bottom:12px'+(isStale?'" class="pulse':'')+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
         +'<div style="display:flex;gap:10px;flex:1">'
         +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+GOLD+'">'
         +'<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(isStale?'#ff8888':'#A8C8B0')+';margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</div></div></div>'
+        +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(isStale?'#ff8888':'#A8C8B0')+';margin-top:4px">'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</div>'
+        +(isScheduledAhead?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🕒 programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</div>':'')+'</div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 '+esc(o.redeemed_reward)+'</div>':'')
@@ -2629,6 +2644,19 @@ async function loadCatalogBackground(){
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
+  }catch(e){}
+}
+// Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
+// STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
+// guardaba en "Admin: editable store hours", así que el badge ABIERTO/CERRADO y la
+// validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
+// el horario real ya hubiera cambiado en la base de datos.
+async function loadStoreHoursBackground(){
+  try{
+    var r=await api('get-store-hours',{});
+    if(Array.isArray(r.hours)&&r.hours.length===7){
+      STORE_HOURS=r.hours.map(function(d){return d.closed?null:[d.open,d.close];});
+    }
   }catch(e){}
 }
 async function loadInventory(){
@@ -3221,6 +3249,7 @@ async function togglePushNotifications(){
   }
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
   loadCatalogBackground().then(function(){render();}); // load current prices in background, re-render when ready
+  loadStoreHoursBackground().then(function(){render();}); // load real store hours in background, re-render when ready
   if(cust)loadUserExtras();
   checkPushSubscription();
 })();
