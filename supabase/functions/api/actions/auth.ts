@@ -5,7 +5,7 @@ import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS } from "
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
-  signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession,
+  signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession, fetchIsAdmin,
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
 } from "../session.ts";
 import { sendRecoveryEmail, maskEmail } from "../email.ts";
@@ -138,9 +138,9 @@ export async function actLogin(b: any) {
 
   // customers y admin_accounts no dependen entre sí (ambos solo necesitan `phone`) — se
   // piden juntos y el resultado de admin_accounts simplemente no se usa si el login falla.
-  const [rows, adminRowsEarly] = await Promise.all([
+  const [rows, isAdminEarly] = await Promise.all([
     sbGet("customers", `phone=eq.${encodeURIComponent(phone)}`),
-    sbGet("admin_accounts", `phone=eq.${encodeURIComponent(phone)}&select=phone`),
+    fetchIsAdmin(phone),
   ]);
   if (!rows.length) {
     await registerLoginFailure(phone);
@@ -153,9 +153,8 @@ export async function actLogin(b: any) {
     throw new ApiError("Teléfono o PIN incorrecto.", 401);
   }
   await resetLoginAttempts(phone);
-  const isAdmin = adminRowsEarly.length > 0;
-  const token = await signToken({ phone, isAdmin, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
-  return { customer: safeCustomer(row), isAdmin, token };
+  const token = await signToken({ phone, isAdmin: isAdminEarly, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
+  return { customer: safeCustomer(row), isAdmin: isAdminEarly, token };
 }
 
 export async function actSessionCheck(b: any) {
@@ -163,13 +162,13 @@ export async function actSessionCheck(b: any) {
   // admin_accounts pueden pedirse en paralelo en vez de en serie.
   const payload = await verifyToken(b.token);
   if (!payload) return { valid: false };
-  const [rows, adminRows] = await Promise.all([
+  const [rows, isAdmin] = await Promise.all([
     sbGet("customers", `phone=eq.${encodeURIComponent(payload.phone)}`),
-    sbGet("admin_accounts", `phone=eq.${encodeURIComponent(payload.phone)}&select=phone`),
+    fetchIsAdmin(payload.phone),
   ]);
   const row = rows[0];
   if (!row || (row.session_version || 1) !== (payload.v || 1)) return { valid: false };
-  return { valid: true, customer: safeCustomer(row), isAdmin: adminRows.length > 0 };
+  return { valid: true, customer: safeCustomer(row), isAdmin };
 }
 
 export async function actLogoutEverywhere(b: any) {
