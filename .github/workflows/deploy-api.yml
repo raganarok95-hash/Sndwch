@@ -1,4 +1,4 @@
-name: Deploy Supabase api edge function
+name: Deploy Supabase edge functions
 
 on:
   push:
@@ -16,5 +16,11 @@ jobs:
         with:
           version: latest
       - run: supabase functions deploy api --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase functions deploy create-charge --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase functions deploy create-credit-charge --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

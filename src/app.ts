@@ -27,6 +27,7 @@ var YAPE_PLIN_NAME='SND//WCH';
 // VAPID_PRIVATE_KEY en el servidor (api/index.ts). La pública no es secreta.
 var VAPID_PUBLIC_KEY='BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3BDMSItRVHlan23RQZA6dF3wpbU1rA0';
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
+var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
 var EMAIL_FN_URL=SB_URL+'/functions/v1/send-order-email';
 
 var STATUSES={
@@ -193,6 +194,8 @@ var recNewPin=null;
 var recEmailMasked=null;
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
 var wPhone='',wAmt='',wMsg='';
+var gcPhone='',gcAmt='',gcNote='',gcMsg='',gcName=null,gcEmail='';
+var _pendingGift=null;
 var rtStars=0,rtMsg='',chalMsg='';
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
@@ -1246,6 +1249,15 @@ function payWithCulqi(amountSoles,email){
 
 // Callback global requerido por Culqi Checkout V4 — se ejecuta tras el intento de pago
 window.culqi=function(){
+  if(_pendingGift){
+    if(Culqi.token){
+      chargeAndFinalizeGift(Culqi.token.id);
+    }else{
+      gcMsg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta con otra tarjeta.';
+      _pendingGift=null;render();
+    }
+    return;
+  }
   if(!_pendingOrder)return;
   if(Culqi.token){
     chargeAndFinalize(Culqi.token.id);
@@ -1618,10 +1630,11 @@ function sPProfile(){
   var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">'+esc(cust.phone)+'</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
   var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💌 PROGRAMA<span style="color:'+GOLD+'"> // </span>REFERIDOS</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💳 CRÉDITO<span style="color:'+GOLD+'"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+SOLES+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
+  var giftCardHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🎁 TARJETA<span style="color:'+GOLD+'"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('COMPRAR Y REGALAR //',"sc='gift_card';render()")+'</div>';
   var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🏆 RETO<span style="color:'+GOLD+'"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'#1E4A38':'#1A3028')+';border:1px solid '+(pushSubscribed?GOLD:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:'+GOLD+'"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(pushSubscribed?GOLD:'#A8C8B0')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
   return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'+heroHTML
-    +pushHTML+referralHTML+creditHTML+challengeHTML
+    +pushHTML+referralHTML+creditHTML+giftCardHTML+challengeHTML
     +'<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
@@ -1658,6 +1671,105 @@ async function doCreditGift(){
     wMsg='¡Crédito enviado a '+name+'!';wPhone='';wAmt='';
   }catch(e){wMsg=e.message;}
   render();
+}
+// Tarjeta de regalo digital: comprar crédito con un cobro real (Culqi) para acreditárselo
+// a OTRO cliente — distinta de doCreditGift (que transfiere saldo YA PROPIO, sin cobro
+// nuevo). Sigue el mismo esqueleto de dos pasos que el pago de pedidos (prepare-order +
+// Culqi + place-order): primero se valida y reserva la compra (prepare-credit-purchase),
+// solo si eso tuvo éxito se abre el widget de Culqi, y recién con el cobro confirmado se
+// acredita el saldo (confirm-credit-purchase).
+function sGiftCard(){
+  return H('TARJETA DE REGALO','sc=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">TARJETA<span style="color:'+GOLD+'"> // </span>DE REGALO</div>'
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Compra crédito SND//WCH con tu tarjeta y regálaselo a otro cliente al instante. Monto entre S/10 y S/500.</p>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px">'
+    +INP('gc-phone','TELÉFONO DEL DESTINATARIO // 9XXXXXXXX','tel',gcPhone)
+    +INP('gc-amt','MONTO // S/','number',gcAmt)
+    +INP('gc-email','TU CORREO (para el comprobante)','email',gcEmail||(cust&&cust.email)||'')
+    +INP('gc-note','MENSAJE PARA EL DESTINATARIO (opcional)','text',gcNote)
+    +'</div>'
+    +'<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px;margin:8px 0 12px">'+esc(gcMsg)+'</div>'
+    +BTN('COMPRAR Y REGALAR //','doGiftCardBuy()')
+    +'</div>'+NAV();
+}
+async function doGiftCardBuy(){
+  var phoneEl=(document.getElementById('gc-phone') as HTMLInputElement | null);
+  var amtEl=(document.getElementById('gc-amt') as HTMLInputElement | null);
+  var emailEl=(document.getElementById('gc-email') as HTMLInputElement | null);
+  var noteEl=(document.getElementById('gc-note') as HTMLInputElement | null);
+  var phone=phoneEl?phoneEl.value.trim():'';
+  var amt=amtEl?parseFloat(amtEl.value):NaN;
+  var email=emailEl?emailEl.value.trim():'';
+  var note=noteEl?noteEl.value.trim():'';
+  gcPhone=phone;gcAmt=amtEl?amtEl.value:'';gcEmail=email;gcNote=note;
+  if(!phone||!amt||amt<10||amt>500){gcMsg='Ingresa un teléfono y un monto entre S/10 y S/500.';render();return;}
+  if(!email){gcMsg='Ingresa tu correo para el comprobante de pago.';render();return;}
+  var name;
+  try{
+    var lookup=await api('credit-lookup',{token:token,toPhone:phone});
+    name=lookup.name;
+  }catch(e){gcMsg=e.message;render();return;}
+  if(!(await showConfirm('¿Comprar '+SOLES+amt+' de crédito para '+name+' ('+phone+')?')))return;
+  busy=true;busyMsg='Verificando...';render();
+  var prep;
+  try{
+    prep=await api('prepare-credit-purchase',{token:token,toPhone:phone,amount:amt,message:note});
+  }catch(e){
+    busy=false;gcMsg=e.message;render();return;
+  }
+  busy=false;render();
+  _pendingGift={ref:prep.ref,toPhone:phone,toName:prep.toName||name,amount:amt,email:email};
+  payGiftWithCulqi(amt,email,prep.ref);
+}
+function payGiftWithCulqi(amountSoles,email,ref){
+  if(typeof Culqi==='undefined'){gcMsg='No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';_pendingGift=null;render();return;}
+  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){gcMsg='La pasarela de pago aún no está configurada. Contacta al administrador.';_pendingGift=null;render();return;}
+  Culqi.publicKey=CULQI_PUBLIC_KEY;
+  Culqi.settings({
+    title:'SND//WCH',
+    currency:'PEN',
+    amount:Math.round(amountSoles*100),
+    description:'Tarjeta de regalo '+ref
+  });
+  Culqi.options({
+    lang:'auto',
+    installments:false,
+    paymentMethods:{tarjeta:true,yape:false,billetera:false,bancaMovil:false,agente:false,cuotealo:false}
+  });
+  Culqi.open();
+}
+async function chargeAndFinalizeGift(culqiToken){
+  if(!_pendingGift)return;
+  var pg=_pendingGift;
+  busy=true;busyMsg='Procesando pago...';render();
+  try{
+    var resp=await fetch(CREDIT_CHARGE_FN_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:culqiToken,amountSoles:pg.amount,email:pg.email,ref:pg.ref})
+    });
+    var data=await resp.json().catch(function(){return{};});
+    if(!resp.ok||!data.success){
+      busy=false;gcMsg=data.error||'El pago fue rechazado. Intenta con otra tarjeta.';_pendingGift=null;render();
+      return;
+    }
+    var res;
+    try{
+      res=await api('confirm-credit-purchase',{token:token,chargeId:data.chargeId,ref:pg.ref});
+    }catch(e){
+      busy=false;
+      gcMsg=(e.message||'No se pudo confirmar tu compra.')+' Ya se realizó el cobro — contáctanos con tu referencia '+pg.ref+' para confirmar el crédito manualmente. No vuelvas a intentar pagar.';
+      _pendingGift=null;render();
+      return;
+    }
+    busy=false;
+    gcPhone='';gcAmt='';gcNote='';gcEmail='';
+    _pendingGift=null;
+    showToast('¡Regalaste crédito a '+(res.toName||pg.toName)+'!');
+    sc='p_profile';render();
+  }catch(e){
+    busy=false;gcMsg='Error de conexión al procesar el pago. Intenta de nuevo.';_pendingGift=null;render();
+  }
 }
 async function doClaimChallenge(){
   try{
@@ -2561,6 +2673,7 @@ function render(){
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
+    case'gift_card':   h=sGiftCard();break;
     case'p_addresses': h=sPAddresses();break;
     case'admin_home':  h=sAdminHome();break;
     case'admin_gen':   h=sAdminGen();break;

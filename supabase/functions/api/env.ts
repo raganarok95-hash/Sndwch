@@ -108,6 +108,12 @@ export function limaMonthStartIso(d: Date): string {
   const f = limaFields(d);
   return new Date(Date.UTC(f.year, f.month - 1, 1, 5, 0, 0)).toISOString();
 }
+// Igual que limaMonthStartIso pero para el inicio del día actual (hora Lima) — usado por
+// el recordatorio de hora pico para no volver a avisarle a quien ya pidió hoy.
+export function limaDayStartIso(d: Date): string {
+  const f = limaFields(d);
+  return new Date(Date.UTC(f.year, f.month - 1, f.day, 5, 0, 0)).toISOString();
+}
 
 // Igual que loadCatalogPrices (catalog.ts) — una tabla (store_hours) sobreescribe estos
 // valores hardcodeados EN EL MISMO ARRAY (nunca reasignando el binding `const`), así que
