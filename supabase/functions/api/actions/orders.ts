@@ -58,7 +58,7 @@ async function restockBestEffort(codes: string[], qtys: number[], context: strin
 // mayoría de esos blips sin debilitar el chequeo: un 4xx real de Culqi ("este chargeId
 // no existe/no coincide") sigue rechazando sin reintentar, solo se reintenta ante un
 // fallo de red o un 5xx del propio Culqi.
-async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number): Promise<boolean> {
+export async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number): Promise<boolean> {
   if (!CULQI_SECRET_KEY) return false;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -1070,16 +1070,27 @@ export async function actReconcileCulqiCharges(b: any) {
   let orphaned = 0;
   for (const charge of candidates) {
     const orderRef = charge.metadata?.order_ref;
-    if (!orderRef) continue;
+    // Las tarjetas de regalo (create-credit-charge) cobran contra pending_credit_purchases
+    // en vez de pending_charges/orders — mismo hueco potencial (cobro real sin nada creado
+    // del lado nuestro), así que este mismo barrido cubre ambos tipos de cargo por su
+    // metadata (order_ref vs credit_ref) en vez de necesitar un cron de conciliación aparte.
+    const creditRef = charge.metadata?.credit_ref;
+    const ref = orderRef || creditRef;
+    if (!ref) continue;
     try {
-      const orders = await sbGet("orders", `payment_id=eq.${encodeURIComponent(charge.id)}&select=id`);
-      if (orders.length) continue;
+      if (orderRef) {
+        const orders = await sbGet("orders", `payment_id=eq.${encodeURIComponent(charge.id)}&select=id`);
+        if (orders.length) continue;
+      } else {
+        const purchases = await sbGet("pending_credit_purchases", `ref=eq.${encodeURIComponent(creditRef)}&status=eq.consumed&select=id`);
+        if (purchases.length) continue;
+      }
       const withinLimit = await rpc("check_rate_limit", { p_key: `orphan-charge:${charge.id}`, p_limit: 1, p_window_minutes: 60 * 24 * 7 });
       if (!withinLimit) continue;
       orphaned++;
       await sendPushToAdmins({
         title: "⚠️ Cobro sin pedido — revisar",
-        body: `Se cobró S/${(charge.amount / 100).toFixed(2)} (ref ${orderRef}) pero no existe ningún pedido con ese cargo. Verifica en Culqi y contacta al cliente.`,
+        body: `Se cobró S/${(charge.amount / 100).toFixed(2)} (ref ${ref}) pero no existe ningún ${orderRef ? "pedido" : "regalo de crédito"} con ese cargo. Verifica en Culqi y contacta al cliente.`,
         url: "./index.html",
         tag: "sndwch-orphan-charge-" + charge.id,
       });
