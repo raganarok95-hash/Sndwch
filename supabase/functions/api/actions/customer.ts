@@ -3,9 +3,10 @@
 // favoritos, calificaciones, el reto mensual, regalar crédito, y suscripciones push.
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { requireSession, safeCustomer } from "../session.ts";
+import { requireSession, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso } from "../env.ts";
+import { sendPushToPhone } from "../push.ts";
 
 // Antes actAddressesAdd y actFavoritesAdd repetían el mismo patrón de "cuenta las filas
 // existentes, rechaza si ya llegó al máximo" cada uno con su propio mensaje casi idéntico
@@ -184,4 +185,48 @@ export async function actPushUnsubscribe(b: any) {
   if (!endpoint) throw new ApiError("Falta el endpoint.");
   await sbDelete("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}&customer_phone=eq.${encodeURIComponent(s.phone)}`);
   return { success: true };
+}
+
+// Recuerda a los clientes que ya completaron el reto mensual (3+ pedidos pagados este
+// mes) pero todavía no lo reclaman — antes, si alguien alcanzaba el objetivo sin volver a
+// abrir la app antes de fin de mes, perdía el bono de 50 puntos en silencio, sin ningún
+// aviso de que ya lo tenía ganado (hallazgo de la re-auditoría de automatización). Es solo
+// un recordatorio: no otorga puntos por sí solo, el cliente sigue teniendo que tocar
+// "RECLAMAR RECOMPENSA" en su perfil — así que no hay riesgo de inventar o duplicar saldo.
+// check_rate_limit (misma RPC que usa reconcile-culqi-charges para "avisar una sola vez")
+// evita reenviar el mismo recordatorio más de una vez por cliente en el mes, sin necesitar
+// una columna nueva en customers.
+export async function actRemindUnclaimedChallenge(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const now = new Date();
+  const thisMonth = limaMonthKey(now);
+  const monthStart = limaMonthStartIso(now);
+  const orders = await sbGet(
+    "orders",
+    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&customer_phone=not.is.null&select=customer_phone`,
+  );
+  const counts = new Map<string, number>();
+  for (const o of orders) counts.set(o.customer_phone, (counts.get(o.customer_phone) || 0) + 1);
+  const qualifyingPhones = [...counts.entries()].filter(([, n]) => n >= CHALLENGE_TARGET_ORDERS).map(([phone]) => phone);
+  if (!qualifyingPhones.length) return { success: true, reminded: 0 };
+  const phonesList = qualifyingPhones.map((p) => `"${p}"`).join(",");
+  const customers = await sbGet("customers", `phone=in.(${phonesList})&select=phone,challenge_claimed_month`);
+  let reminded = 0;
+  for (const c of customers) {
+    if (c.challenge_claimed_month === thisMonth) continue;
+    try {
+      const withinLimit = await rpc("check_rate_limit", { p_key: `challenge-reminder:${c.phone}:${thisMonth}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
+      if (!withinLimit) continue;
+      await sendPushToPhone(c.phone, {
+        title: "¡Ya ganaste tu reto mensual! 🏆",
+        body: `Hiciste ${CHALLENGE_TARGET_ORDERS} pedidos este mes — entra a tu perfil y toca "Reclamar recompensa" para sumar tus ${CHALLENGE_BONUS_POINTS} puntos antes de que termine el mes.`,
+        url: "./index.html",
+        tag: "sndwch-challenge-reminder-" + thisMonth,
+      });
+      reminded++;
+    } catch (e) {
+      console.error("remind-unclaimed-challenge failed for", c.phone, e);
+    }
+  }
+  return { success: true, reminded };
 }
