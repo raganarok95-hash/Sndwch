@@ -27,7 +27,7 @@ import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
   actSubmitRating, actClaimChallenge, actCreditGift, actCreditLookup,
-  actPushSubscribe, actPushUnsubscribe,
+  actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -113,6 +113,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,
   "alert-complaint-deadlines": actAlertComplaintDeadlines,
+  "remind-unclaimed-challenge": actRemindUnclaimedChallenge,
 };
 
 Deno.serve(async (req: Request) => {
