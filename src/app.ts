@@ -1457,7 +1457,7 @@ function sPHome(){
     +'<div style="margin-bottom:8px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div>'
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+GOLD+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+GOLD+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['PEDIDOS',cust.total_orders||0],['CANJEADOS',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+x[1]+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:'+GOLD+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()'],['MIS','DIRECCIONES','loadAddresses()'],['MIS','FAVORITOS','loadFavorites()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':GOLD)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(isAdm?'#a08010':'#555')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['CANJEAR','RECOMPENSA','sc=\'p_rewards\';render()'],['MIS','PEDIDOS','sc=\'p_orders\';loadMyOrders()'],['HISTORIAL','PUNTOS','loadHist()'],['MI','PERFIL','sc=\'p_profile\';render()'],['MIS','DIRECCIONES','loadAddresses()'],['MIS','FAVORITOS','loadFavorites()']].concat(isAdmin?[['PANEL','ADMIN','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){var isAdm=x[0]==='PANEL';return'<div onclick="'+x[2]+'" style="background:'+(isAdm?'#1a1200':'#0d0d0d')+';border:1px solid '+(isAdm?'rgba(245,197,24,.3)':'#1c1c1c')+';border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:'+(isAdm?'#F5C518':'#fff')+';letter-spacing:.06em">'+x[0]+'<span style="color:'+(isAdm?'#F5C518':GOLD)+'"> //</span></div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+(isAdm?'#E0C060':'#A8C8B0')+';letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
     +(unlocked.length?'<div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">LISTAS PARA USAR //</div>'+unlocked.map(function(r){return'<div style="background:#1A3028;border:1px solid '+GOLD+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+GOLD+'"> // </span>'+r.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">se usa al pedir</span></div>';}).join('')+'</div>':'')
     +'</div>'+NAV();
 }
@@ -1751,7 +1751,7 @@ function sPComplaints(){
     +'</div>'
     +'<div id="cq-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
     +BTN(cmplBusy?'ENVIANDO...':'ENVIAR '+(cmplKind==='queja'?'QUEJA':'RECLAMO')+' //',cmplBusy?'':'doSubmitComplaint()')
-    +'<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#555;line-height:1.5;margin-top:14px">Tenemos hasta 30 días calendario para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
+    +'<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-top:14px">Tenemos hasta 30 días calendario para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
     +'</div>';
 }
 function sComplaintsSuccess(bk){
@@ -2833,9 +2833,9 @@ function sAdminCustomer(){
       +'<div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:'+GOLD+'">CRÉDITO</div><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">'+SOLES+(c.credit_balance||0)+'</div></div>'
       +'</div></div>';
     h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">PEDIDOS RECIENTES // '+custDetail.orders.length+'</div>';
-    h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(o.ref)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">'+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin pedidos //</div>';
+    h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(o.ref)+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">'+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0">Sin pedidos //</div>';
     h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">HISTORIAL DE PUNTOS // '+custDetail.transactions.length+'</div>';
-    h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0">'+esc(t.description)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:12px;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin movimientos //</div>';
+    h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0">'+esc(t.description)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:12px;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0">Sin movimientos //</div>';
     if(custDetail.ratings&&custDetail.ratings.length){
       h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">CALIFICACIONES // '+custDetail.ratings.length+'</div>';
       h+=custDetail.ratings.map(function(r){return'<div style="padding:8px 0;border-bottom:1px solid #1E3932"><span style="color:#F5C518">'+'★'.repeat(r.stars)+'</span>'+(r.comment?'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">'+esc(r.comment)+'</div>':'')+'</div>';}).join('');
@@ -2876,7 +2876,7 @@ function sAdminSearch(){
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+esc(o.customer_name||'Invitado')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">'+esc(o.ref)+' · '+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>'
         +((o.contact_phone||o.customer_phone)?'<button onclick="waSearchResult('+i+')" style="all:unset;cursor:pointer;font-family:Barlow Condensed,sans-serif;font-size:11px;color:'+GOLD+'">💬 WhatsApp</button>':'')
         +'</div>';
-    }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin resultados //</div>';
+    }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin resultados //</div>';
   }
   h+='</div>';
   return h;
@@ -2898,9 +2898,9 @@ function sAdminAudit(){
     return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between"><span style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+esc(l.action)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">'+esc(l.actor_phone)+'</span></div>'
       +(l.target?'<div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:4px;word-break:break-all">'+esc(String(l.target))+'</div>':'')
-      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:4px">'+esc(new Date(l.created_at).toLocaleString('es-PE'))+'</div>'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:4px">'+esc(new Date(l.created_at).toLocaleString('es-PE'))+'</div>'
       +'</div>';
-  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin registros aún //</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin registros aún //</div>';
   h+='</div>';
   return h;
 }
@@ -2986,9 +2986,9 @@ function sAdminReport(){
       +'</div>';
     if(d.truncated)h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;margin-bottom:12px">⚠ Hay más pedidos en este rango de los que se muestran aquí.</div>';
     h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">POR MÉTODO DE PAGO //</div>';
-    h+=Object.keys(d.byMethod).length?Object.keys(d.byMethod).map(function(m){var v=d.byMethod[m];return DBAR(m.toUpperCase(),v.count,d.count);}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin datos //</div>';
+    h+=Object.keys(d.byMethod).length?Object.keys(d.byMethod).map(function(m){var v=d.byMethod[m];return DBAR(m.toUpperCase(),v.count,d.count);}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0">Sin datos //</div>';
     h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">PRODUCTOS TOP //</div>';
-    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(p.name)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+p.revenue+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555">Sin datos //</div>';
+    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">'+esc(p.name)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+p.revenue+'</span></div>';}).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0">Sin datos //</div>';
     h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">POR DÍA //</div>';
     h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:#A8C8B0">'+esc(day.date)+'</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">'+day.count+' · '+SOLES+day.revenue+'</span></div>';}).join(''):'';
   }
@@ -3024,9 +3024,9 @@ function sAdminRatings(){
     return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px;margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between"><span style="color:#F5C518;font-size:14px">'+'★'.repeat(r.stars)+'<span style="color:#3A6B58">'+'★'.repeat(5-r.stars)+'</span></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">'+esc(r.order_ref||'')+'</span></div>'
       +(r.comment?'<div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB;margin-top:6px">'+esc(r.comment)+'</div>':'')
-      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE'))+'</div>'
       +'</div>';
-  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin calificaciones //</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin calificaciones //</div>';
   h+='</div>';
   return h;
 }
@@ -3059,13 +3059,13 @@ function sAdminComplaints(){
       +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;margin-top:8px;line-height:1.5"><b>Detalle:</b> '+esc(c.detail)+'</div>'
       +'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px;line-height:1.5"><b>Pide:</b> '+esc(c.consumer_request)+'</div>'
       +(c.order_ref?'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:6px">Pedido: '+esc(c.order_ref)+'</div>':'')
-      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#555;margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE'))+'</div>'
       +(c.provider_response?'<div style="background:#1A3028;border-radius:8px;padding:10px 12px;margin-top:10px;font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0"><b style="color:'+GOLD+'">Respuesta:</b> '+esc(c.provider_response)+'</div>'
         :(openId
           ?'<div style="margin-top:10px"><textarea id="cq-resp-'+c.id+'" placeholder="Escribe tu respuesta al consumidor" style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:10px 12px;color:#FFFFFF;width:100%;font-size:12px;font-family:Barlow,sans-serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint(\''+c.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">GUARDAR RESPUESTA //</button></div>'
           :'<button onclick="cmplRespondingId=\''+c.id+'\';render()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-top:10px">RESPONDER //</button>'))
       +'</div>';
-  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#555;text-align:center;padding:20px 0">Sin reclamaciones //</div>';
+  }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin reclamaciones //</div>';
   h+='</div>';
   return h;
 }
