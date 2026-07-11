@@ -2,9 +2,13 @@
   "name": "sndwch",
   "private": true,
   "scripts": {
-    "test": "playwright test"
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "verify": "npm run typecheck && npm run build && npm test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.47.0"
+    "@playwright/test": "^1.47.0",
+    "typescript": "^7.0.2"
   }
 }
