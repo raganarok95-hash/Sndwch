@@ -31,12 +31,13 @@ import {
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback,
+  actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
   actAdminInventoryToggle, actAdminInventorySetStock, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
-  actAdminRangeReport, actAdminRatingsList,
+  actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
@@ -114,6 +115,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-audit-log": actAdminAuditLog,
   "admin-range-report": actAdminRangeReport,
   "admin-ratings-list": actAdminRatingsList,
+  "admin-at-risk-customers": actAdminAtRiskCustomers,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,
@@ -130,6 +132,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "remind-abandoned-cart": actRemindAbandonedCart,
   "remind-second-order": actRemindSecondOrder,
   "remind-high-rank-winback": actRemindHighRankWinback,
+  "prepare-weekly-plan": actPrepareWeeklyPlan,
+  "confirm-weekly-plan": actConfirmWeeklyPlan,
+  "expire-pending-weekly-plans": actExpirePendingWeeklyPlans,
   "create-group-order": actCreateGroupOrder,
   "get-group-order": actGetGroupOrder,
   "add-group-item": actAddGroupItem,

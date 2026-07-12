@@ -154,6 +154,10 @@ var SIGS = [
     { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'PREMIUM', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03', 'S08'], p15: 21, p30: 26,
         pitch: 'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
     { id: 'SIG04', n: 'THE FRESH', s: 'BUILD', badge: 'LIGERO', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 20,
+        // chef:true — el que más margen real deja (decisión del dueño, no calculada: no hay
+        // costo de insumo por receta en el sistema, solo precio de venta). Se destaca aparte
+        // del badge normal para no perder la etiqueta descriptiva (LIGERO) que ya tenía.
+        chef: true,
         pitch: 'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
     // Menú secreto — nunca aparece para invitados ni para quien no llegó a CÍRCULO INTERNO
     // (ver sOSig/rankName). DEBE coincidir con SIG05 en supabase/functions/api/catalog.ts —
@@ -163,6 +167,15 @@ var SIGS = [
         secret: true, minOrders: 15,
         pitch: 'Solo para el Círculo Interno. Una combinación que no está en ningún menú — te la ganaste a pedidos, no con puntos.' }
 ];
+// "SIGNATURE"/"RESERVE" (curado por la casa) se distingue tipográficamente de "BUILD"
+// (armado por el cliente) — cursiva y más grande, como una firma, en vez de la misma
+// letra recta para ambos. Refuerza con tipografía la diferencia que ya existe en la
+// receta: uno lo curó el chef, el otro lo arma cada cliente a su gusto.
+function sigTypeTag(tag) {
+    if (tag === 'SIGNATURE' || tag === 'RESERVE')
+        return '<i style="font-style:italic;font-size:1.15em">' + tag + '</i>';
+    return tag;
+}
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
 var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg' };
@@ -222,6 +235,22 @@ var NEARBY_RADIUS_KM = 3;
 // cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
 var COMBO_DISCOUNT_PER_PAIR = 3;
+// Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima — DEBE coincidir con
+// OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
+// quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
+// antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[14, 18]];
+var OFFPEAK_DRINK_PROMO_CAP = 4;
+function isOffPeakDrinkPromoActiveNow() {
+    var limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+    return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(function (r) { return limaHour >= r[0] && limaHour < r[1]; });
+}
+// Plan Semanal — recarga de saldo propio con bono. Monto fijo (no hay input de monto como
+// en la tarjeta de regalo) porque el bono está calculado para un solo punto de precio;
+// DEBE coincidir con WEEKLY_PLAN_PRICE/WEEKLY_PLAN_CREDIT en
+// supabase/functions/api/actions/customer.ts, el servidor es quien de verdad cobra y acredita.
+var WEEKLY_PLAN_PRICE = 90;
+var WEEKLY_PLAN_CREDIT = 100;
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
 // DEBE coincidir con RANKS en supabase/functions/api/env.ts.
@@ -284,6 +313,7 @@ function cacheCust(c, adminFlag) {
 }
 var invStock = {};
 var dashStats = null;
+var atRiskCustomers = null;
 // Panel admin — ficha de cliente, búsqueda de pedidos, auditoría, horario, reportes,
 // calificaciones y selección múltiple para acciones en lote (ver #94-99/#113).
 var custDetailPhone = '', custDetail = null, custDetailErr = '';
@@ -846,6 +876,18 @@ function cartComboCount() {
     return Math.min(sw, sd);
 }
 function cartComboDiscount() { return cartComboCount() * COMBO_DISCOUNT_PER_PAIR; }
+function cartOffPeakDrinkDiscount() {
+    if (!isOffPeakDrinkPromoActiveNow())
+        return 0;
+    var sidePrices = [];
+    cart.forEach(function (it) { if (it.type === 'side') {
+        for (var i = 0; i < it.qty; i++)
+            sidePrices.push(itemUnitPrice(it));
+    } });
+    if (!sidePrices.length)
+        return 0;
+    return Math.min(Math.min.apply(null, sidePrices), OFFPEAK_DRINK_PROMO_CAP);
+}
 // Busca el primer producto del carrito elegible para una recompensa — R04 necesita
 // una línea con doble proteína activada, R06 necesita una línea 15CM. El resto de
 // recompensas no tiene requisito propio (basta con que el carrito no esté vacío).
@@ -886,7 +928,7 @@ function rewardWaiverAmount(rewardId, targetIdx) {
     return 0;
 }
 function cartFinalTotal() {
-    var base = cartBaseTotal() - cartComboDiscount();
+    var base = cartBaseTotal() - cartComboDiscount() - cartOffPeakDrinkDiscount();
     if (!appliedReward)
         return Math.max(0, base);
     var idx = findRewardTargetIndex(appliedReward);
@@ -1231,7 +1273,7 @@ function sGroupOrder() {
         h += '<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '15' ? GOLD : '#1A3028') + ';color:' + (groupSize === '15' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '30' ? GOLD : '#1A3028') + ';color:' + (groupSize === '30' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">30CM</div></div>';
         h += SIGS.filter(function (s) { return !s.secret; }).map(function (s) {
             var price = groupSize === '15' ? s.p15 : s.p30;
-            return '<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + s.s + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:' + GOLD + '">' + SOLES + price + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
+            return '<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:' + GOLD + '">' + SOLES + price + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
         }).join('');
         h += '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:8px;min-height:14px">' + esc(groupMsg) + '</div>';
     }
@@ -1255,16 +1297,16 @@ function sOSig() {
             var myTotal = cust.total_orders || 0;
             if (myTotal < s.minOrders) {
                 var missing = s.minOrders - myTotal;
-                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">🔒 ' + s.n + '<span style="color:#A8C8B0"> // </span>' + s.s + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">Se desbloquea en CÍRCULO INTERNO — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
+                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">🔒 ' + s.n + '<span style="color:#A8C8B0"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">Se desbloquea en CÍRCULO INTERNO — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
             }
         }
         var sel = sigId === s.id, pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });
         var av = isAvail(s.base) && isAvail(s.prot);
         var priceTag = size ? SOLES + sigPrice(s) : '—';
         if (!av)
-            return '<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.4"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">' + s.n + '<span style="color:#A8C8B0"> // </span>' + s.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div></div>';
+            return '<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.4"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">' + s.n + '<span style="color:#A8C8B0"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div></div>';
         var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '';
-        return '<div onclick="sigId=\'' + s.id + '\';render()" style="background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + s.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (sel ? GOLD : '#444') + ';margin-left:12px">' + priceTag + '</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">' + s.badge + '</span>' + lowStockNote(s.prot) + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div><div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">📷 VER FOTO →</div></div></div></div>';
+        return '<div onclick="sigId=\'' + s.id + '\';render()" style="background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (sel ? GOLD : '#444') + ';margin-left:12px">' + priceTag + '</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">' + s.badge + '</span>' + (s.chef ? '<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:' + GOLD + ';border-radius:4px;padding:2px 7px;margin-left:6px">👨‍🍳 FAVORITO DEL CHEF</span>' : '') + lowStockNote(s.prot) + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div><div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">📷 VER FOTO →</div></div></div></div>';
     }).join('');
     var sig = SIGS.find(function (x) { return x.id === sigId; });
     return h + '</div>' + (previewSigId ? sigPreviewOverlayHTML() : '') + AB(size && sig ? sigPrice(sig) : null, !!(size && sigId), 'go(\'o_home\')', 'enterConfirm()');
@@ -1282,11 +1324,11 @@ function sigPreviewOverlayHTML() {
     var saucesLbl = s.sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ');
     var photo = SIG_IMG[s.id];
     var hero = photo
-        ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + s.s + '</div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + s.badge + '</span></div></div>'
+        ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + s.badge + '</span></div></div>'
         : '<div style="background:linear-gradient(160deg,#2D5246,#1A3028);border-radius:14px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
             + '<div style="position:absolute;top:10px;right:14px;font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(242,240,235,.5);letter-spacing:.15em">IMAGEN REFERENCIAL</div>'
             + '<div style="font-size:64px;line-height:1;margin-bottom:10px">🥪</div>'
-            + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + s.s + '</div>'
+            + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div>'
             + '<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">' + s.badge + '</span>'
             + '</div>';
     return '<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
@@ -1381,7 +1423,7 @@ function sOItemConfirm() {
         var act = (k === 'doubleProt' ? 'doubleProt=!doubleProt' : 'extraSauce=!extraSauce') + (quickPayEligible ? ';cart[0]=currentBuiltItem()' : '');
         return '<div onclick="' + act + ';' + (quickPayEligible ? 'confirmRerender()' : 'render()') + '" style="background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">' + e + '</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + l + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">' + d + '</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:' + (sel ? GOLD : '#A8C8B0') + ';flex-shrink:0;margin-left:8px">' + (sel ? '✓ ' : '+') + SOLES + p + '</span></div>';
     }
-    var sigNameHTML = (mode === 'sig' && sig) ? '<div style="margin:2px 0 14px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;letter-spacing:.03em;line-height:1.15">' + sig.n + '<span style="color:' + GOLD + '"> // </span>' + sig.s + '</div></div>' : '';
+    var sigNameHTML = (mode === 'sig' && sig) ? '<div style="margin:2px 0 14px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;letter-spacing:.03em;line-height:1.15">' + sig.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(sig.s) + '</div></div>' : '';
     return H('CONFIRMAR SÁNDWICH', (quickPayEligible ? 'backFromConfirm()' : 'go(\'' + bk + '\')'), true) + '<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
         + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:14px;font-weight:700">' + (mode === 'sig' ? 'TU SIGNATURE //' : 'TU BUILD //') + '</div>' + rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';min-width:72px">' + r.k + '</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">' + r.v + '</span>' + (r.p ? '<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + SOLES + r.p + '</span>' : '') + '</div>'; }).join('') + sigNameHTML + '<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span></div></div>'
         + (recU ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>' + uBtn(recU.k, recU.e, recU.l, recU.d, recU.p, uSel(recU.k)) + '</div>' : '')
@@ -1554,6 +1596,7 @@ function paymentMethodPickerHTML(t) {
         + (culqiConfigured ? payMethodBtn('culqi', 'TARJETA', true) : '')
         + payMethodBtn('yape', 'YAPE / PLIN', true)
         + '</div>'
+        + (culqiConfigured ? '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:' + GOLD + ';margin-top:6px">✨ Paga con Yape/Plin y gana +10% de puntos extra</div>' : '')
         + (manualPayMethod ? manualPayInstructionsHTML(t) : '')
         + '</div>';
 }
@@ -1599,6 +1642,7 @@ function sOCart() {
     var t = cartFinalTotal();
     var empty = !cart.length;
     var comboDiscount = cartComboDiscount();
+    var offPeakDiscount = cartOffPeakDrinkDiscount();
     var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
     var rewardDiscount = appliedReward ? rewardWaiverAmount(appliedReward, rewardIdx) : 0;
     // Sándwich sin bebida en el carrito — el combo (sándwich+bebida, S/3 menos) todavía no
@@ -1606,8 +1650,8 @@ function sOCart() {
     var hasSandwichNoDrink = cart.some(function (it) { return it.type !== 'side'; }) && cartComboCount() < cart.reduce(function (s, it) { return s + (it.type !== 'side' ? it.qty : 0); }, 0);
     return H('TU CARRITO', "syncConfirmFields();sc='o_home';render()") + '<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
         + cartItemsHTML()
-        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span>' + (comboDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">🥤 combo aplicado: ahorras ' + SOLES + comboDiscount + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + rewardDiscount + '</div>' : '') + '</div></div>' : '')
-        + (hasSandwichNoDrink ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:12px">🥤 Agrega una bebida y ahorra ' + SOLES + COMBO_DISCOUNT_PER_PAIR + ' (combo)</div>' : '')
+        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span>' + (comboDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">🥤 combo aplicado: ahorras ' + SOLES + comboDiscount + '</div>' : '') + (offPeakDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">🍹 bebida gratis (hora valle): ahorras ' + SOLES + offPeakDiscount + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + rewardDiscount + '</div>' : '') + '</div></div>' : '')
+        + (hasSandwichNoDrink && isOffPeakDrinkPromoActiveNow() ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:12px">🍹 Es hora valle — agrega una bebida y te sale GRATIS (hasta ' + SOLES + OFFPEAK_DRINK_PROMO_CAP + ')</div>' : (hasSandwichNoDrink ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:12px">🥤 Agrega una bebida y ahorra ' + SOLES + COMBO_DISCOUNT_PER_PAIR + ' (combo)</div>' : ''))
         // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
         // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
         // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
@@ -1844,6 +1888,17 @@ window.culqi = function () {
         else {
             gcMsg = (Culqi.error && (Culqi.error.user_message || Culqi.error.merchant_message)) || 'No se pudo procesar el pago. Intenta con otra tarjeta.';
             _pendingGift = null;
+            render();
+        }
+        return;
+    }
+    if (_pendingWeeklyPlan) {
+        if (Culqi.token) {
+            chargeAndFinalizeWeeklyPlan(Culqi.token.id);
+        }
+        else {
+            wpMsg = (Culqi.error && (Culqi.error.user_message || Culqi.error.merchant_message)) || 'No se pudo procesar el pago. Intenta con otra tarjeta.';
+            _pendingWeeklyPlan = null;
             render();
         }
         return;
@@ -2369,12 +2424,13 @@ function sPProfile() {
     var referralHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💌 PROGRAMA<span style="color:' + GOLD + '"> // </span>REFERIDOS</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
     var creditHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💳 CRÉDITO<span style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'TELÉFONO DEL AMIGO // 9XXXXXXXX', 'tel', wPhone) + INP('cg-amt', 'MONTO A REGALAR // S/', 'number', wAmt) + '<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('REGALAR CRÉDITO //', 'doCreditGift()') + '</div></div>';
     var giftCardHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🎁 TARJETA<span style="color:' + GOLD + '"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('COMPRAR Y REGALAR //', "sc='gift_card';render()") + '</div>';
+    var weeklyPlanHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">📅 PLAN<span style="color:' + GOLD + '"> // </span>SEMANAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + (WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('ACTIVAR PLAN SEMANAL //', "sc='weekly_plan';render()") + '</div>';
     var challengeHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🏆 RETO<span style="color:' + GOLD + '"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimChallenge()') + '</div>';
     var discoveryHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🧭 RETO<span style="color:' + GOLD + '"> // </span>DESCUBRIMIENTO</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimDiscoveryChallenge()') + '</div>';
     var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (pushSubscribed ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:' + GOLD + '"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
     return H('MI PERFIL', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">' + heroHTML
         + badgesHTML(cust)
-        + pushHTML + referralHTML + creditHTML + giftCardHTML + challengeHTML + discoveryHTML
+        + pushHTML + referralHTML + creditHTML + weeklyPlanHTML + giftCardHTML + challengeHTML + discoveryHTML
         + '<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
 }
 function shareReferral() {
@@ -2578,6 +2634,128 @@ async function chargeAndFinalizeGift(culqiToken) {
         busy = false;
         gcMsg = 'Error de conexión al procesar el pago. Intenta de nuevo.';
         _pendingGift = null;
+        render();
+    }
+}
+// Plan Semanal — mismo esqueleto de dos pasos que la tarjeta de regalo (prepare +
+// Culqi + confirm), pero acredita al PROPIO comprador en vez de a otro cliente, y con
+// monto fijo (sin inputs de teléfono/monto que llenar).
+var wpMsg = '', wpEmail = '';
+var _pendingWeeklyPlan = null;
+function sWeeklyPlan() {
+    return H('PLAN SEMANAL', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+        + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">PLAN<span style="color:' + GOLD + '"> // </span>SEMANAL</div>'
+        + '<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy con tu tarjeta y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
+        + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#F2F0EB">PAGAS HOY</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">' + SOLES + WEEKLY_PLAN_PRICE + '</span></div>'
+        + '<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#F2F0EB">RECIBES EN SALDO</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#25D366">' + SOLES + WEEKLY_PLAN_CREDIT + '</span></div>'
+        + INP('wp-email', 'TU CORREO (para el comprobante)', 'email', wpEmail || (cust && cust.email) || '')
+        + '<div id="wp-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px;margin:8px 0 12px">' + esc(wpMsg) + '</div>'
+        + BTN('ACTIVAR PLAN SEMANAL //', 'doWeeklyPlanBuy()')
+        + '</div>' + NAV();
+}
+async function doWeeklyPlanBuy() {
+    var emailEl = document.getElementById('wp-email');
+    var email = emailEl ? emailEl.value.trim() : '';
+    wpEmail = email;
+    if (!email) {
+        wpMsg = 'Ingresa tu correo para el comprobante de pago.';
+        render();
+        return;
+    }
+    if (!(await showConfirm('¿Pagar ' + SOLES + WEEKLY_PLAN_PRICE + ' y recibir ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo?')))
+        return;
+    busy = true;
+    busyMsg = 'Verificando...';
+    render();
+    var prep;
+    try {
+        prep = await api('prepare-weekly-plan', { token: token });
+    }
+    catch (e) {
+        busy = false;
+        wpMsg = e.message;
+        render();
+        return;
+    }
+    busy = false;
+    render();
+    _pendingWeeklyPlan = { ref: prep.ref, amount: prep.amountPaid, creditAmount: prep.creditAmount, email: email };
+    payWeeklyPlanWithCulqi(prep.amountPaid, email, prep.ref);
+}
+function payWeeklyPlanWithCulqi(amountSoles, email, ref) {
+    if (typeof Culqi === 'undefined') {
+        wpMsg = 'No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';
+        _pendingWeeklyPlan = null;
+        render();
+        return;
+    }
+    if (!CULQI_PUBLIC_KEY || CULQI_PUBLIC_KEY.indexOf('REEMPLAZA') >= 0) {
+        wpMsg = 'La pasarela de pago aún no está configurada. Contacta al administrador.';
+        _pendingWeeklyPlan = null;
+        render();
+        return;
+    }
+    Culqi.publicKey = CULQI_PUBLIC_KEY;
+    Culqi.settings({
+        title: 'SND//WCH',
+        currency: 'PEN',
+        amount: Math.round(amountSoles * 100),
+        description: 'Plan Semanal ' + ref
+    });
+    Culqi.options({
+        lang: 'auto',
+        installments: false,
+        paymentMethods: { tarjeta: true, yape: false, billetera: false, bancaMovil: false, agente: false, cuotealo: false }
+    });
+    Culqi.open();
+}
+async function chargeAndFinalizeWeeklyPlan(culqiToken) {
+    if (!_pendingWeeklyPlan)
+        return;
+    var pw = _pendingWeeklyPlan;
+    busy = true;
+    busyMsg = 'Procesando pago...';
+    render();
+    try {
+        var resp = await fetch(CREDIT_CHARGE_FN_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: culqiToken, amountSoles: pw.amount, email: pw.email, ref: pw.ref })
+        });
+        var data = await resp.json().catch(function () { return {}; });
+        if (!resp.ok || !data.success) {
+            busy = false;
+            wpMsg = data.error || 'El pago fue rechazado. Intenta con otra tarjeta.';
+            _pendingWeeklyPlan = null;
+            render();
+            return;
+        }
+        try {
+            await api('confirm-weekly-plan', { token: token, chargeId: data.chargeId, ref: pw.ref });
+        }
+        catch (e) {
+            busy = false;
+            wpMsg = (e.message || 'No se pudo confirmar tu Plan Semanal.') + ' Ya se realizó el cobro — contáctanos con tu referencia ' + pw.ref + ' para confirmar el saldo manualmente. No vuelvas a intentar pagar.';
+            _pendingWeeklyPlan = null;
+            render();
+            return;
+        }
+        var r = await api('session-check', { token: token });
+        if (r.valid) {
+            cust = r.customer;
+            cacheCust(cust, isAdmin);
+        }
+        busy = false;
+        wpEmail = '';
+        _pendingWeeklyPlan = null;
+        showToast('¡Listo! Recibiste ' + SOLES + pw.creditAmount + ' en saldo.');
+        sc = 'p_profile';
+        render();
+    }
+    catch (e) {
+        busy = false;
+        wpMsg = 'Error de conexión al procesar el pago. Intenta de nuevo.';
+        _pendingWeeklyPlan = null;
         render();
     }
 }
@@ -3352,13 +3530,20 @@ async function loadDashboard() {
     busyMsg = 'Calculando métricas...';
     render();
     try {
-        dashStats = await api('dashboard-stats', { token: token });
+        var results = await Promise.all([api('dashboard-stats', { token: token }), api('admin-at-risk-customers', { token: token })]);
+        dashStats = results[0];
+        atRiskCustomers = results[1].customers;
     }
     catch (e) {
         dashStats = null;
+        atRiskCustomers = null;
     }
     busy = false;
     render();
+}
+function waRiskContact(phone, name) {
+    var msg = 'Hola ' + name + '! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
+    window.open('https://wa.me/51' + String(phone).replace(/\D/g, '').replace(/^51/, '') + '?text=' + encodeURIComponent(msg), '_blank');
 }
 function DTILE(label, big, sub) {
     return '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px"><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">' + label + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;line-height:1">' + big + '</div>' + (sub ? '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:4px">' + sub + '</div>' : '') + '</div>';
@@ -3461,6 +3646,21 @@ function sAdminDashboard() {
     // así que ya no tiene sentido mostrarlo como un bucket aparte en este gráfico.
     var tMax = Math.max(tiers.FREQUENT || 0, tiers.REGULAR || 0, tiers.MEMBER || 0, 1);
     h += DBAR('FREQUENT', tiers.FREQUENT || 0, tMax, '#F5C518') + DBAR('REGULAR', tiers.REGULAR || 0, tMax, GOLD) + DBAR('MEMBER', tiers.MEMBER || 0, tMax, '#A8C8B0');
+    h += '<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
+    // Clientes en riesgo de fuga — priorizados por días sin pedir Y rango (perder a alguien
+    // de MESA FUNDADORA pesa más que perder a alguien NUEVO). No reemplaza los recordatorios
+    // automáticos (remind-second-order/remind-high-rank-winback), es para que el dueño
+    // decida a quién más vale la pena escribirle personalmente.
+    h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px;font-weight:700">CLIENTES EN RIESGO //</div>';
+    if (atRiskCustomers && atRiskCustomers.length) {
+        h += atRiskCustomers.slice(0, 10).map(function (c) {
+            var daysTxt = c.daysSinceLastOrder == null ? 'nunca pagó un pedido' : 'hace ' + c.daysSinceLastOrder + ' días';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">' + esc(c.name || c.phone) + '</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:2px">' + esc(c.rank) + ' · último pedido ' + daysTxt + '</div></div><button onclick="waRiskContact(\'' + esc(c.phone) + '\',\'' + esc(c.name || '') + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:8px;flex-shrink:0">💬</button></div>';
+        }).join('');
+    }
+    else {
+        h += '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:14px">Sin clientes en riesgo por ahora.</div>';
+    }
     h += '<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
     // Puntos
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PUNTOS //</div>';
@@ -3764,6 +3964,9 @@ function render() {
             break;
         case 'gift_card':
             h = sGiftCard();
+            break;
+        case 'weekly_plan':
+            h = sWeeklyPlan();
             break;
         case 'group_order':
             h = sGroupOrder();
