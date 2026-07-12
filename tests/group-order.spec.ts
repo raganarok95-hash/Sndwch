@@ -27,6 +27,38 @@ test('alguien sin cuenta se une por link y agrega su pedido', async ({ page }) =
   expect(addCall!.body.item.size).toBe('15');
 });
 
+test('el organizador también puede agregar su propio sándwich al pedido grupal', async ({ page }) => {
+  const calls = await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
+    'create-group-order': { success: true, code: 'ABC123', expiresAt: new Date(Date.now() + 3600000).toISOString() },
+    'get-group-order': { code: 'ABC123', status: 'open', organizerName: 'Ana Cliente', expiresAt: new Date(Date.now() + 3600000).toISOString(), items: [], total: 0, isOrganizer: true },
+    'add-group-item': { success: true },
+  });
+
+  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.getByRole('button', { name: 'INGRESAR' }).click();
+  await page.locator('#l-phone').fill('900000001');
+  await page.locator('#l-pin').fill('1234');
+  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+
+  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('[onclick*="doCreateGroupOrder"]').click();
+  await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
+
+  // Antes esta sección (agregar mi pedido) solo aparecía para quien NO organizaba —
+  // el organizador solo veía CERRAR Y PAGAR / CANCELAR y nunca podía sumar su propio
+  // sándwich. El nombre viene pre-rellenado con el de su cuenta.
+  await expect(page.locator('#grp-name')).toHaveValue('Ana Cliente');
+  await expect(page.getByRole('button', { name: 'CERRAR Y PAGAR //' })).toBeVisible();
+  await page.getByRole('button', { name: 'AGREGAR' }).first().click();
+
+  await expect(page.locator('text=¡Listo! Tu pedido se agregó.')).toBeVisible({ timeout: 10000 });
+
+  const addCall = calls.find((c) => c.action === 'add-group-item');
+  expect(addCall).toBeTruthy();
+  expect(addCall!.body.contributorName).toBe('Ana Cliente');
+});
+
 test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', async ({ page }) => {
   const groupItems = [
     { type: 'sig', sigId: 'SIG01', size: '15', doubleProt: false, extraSauce: false, qty: 1 },
