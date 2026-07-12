@@ -329,6 +329,48 @@ export async function actRemindPeakHour(b: any) {
   return { success: true, reminded };
 }
 
+// Aniversario de cuenta — puro cariño, sin puntos de por medio (a diferencia de
+// birthday-bonus, que sí regala puntos): un push el día que se cumplen años desde que el
+// cliente se registró. created_at es el único dato de "cuándo empezó todo esto" que
+// existe hoy (no hay una columna de "fecha del primer pedido" separada), así que se usa
+// como proxy — para la enorme mayoría de clientes coincide con su primer pedido de todas
+// formas, ya que la cuenta se crea al comprar.
+export async function actAnniversaryGreeting(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const now = new Date();
+  // Misma conversión simple a hora Lima que usa birthday-bonus (UTC-5 sin horario de
+  // verano) — no hace falta la precisión de limaFields (env.ts) para comparar solo mes/día.
+  const limaNow = new Date(now.getTime() - 5 * 3600000);
+  const mm = String(limaNow.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(limaNow.getUTCDate()).padStart(2, "0");
+  const year = limaNow.getUTCFullYear();
+  const customers = await sbGet("customers", "select=phone,name,created_at");
+  let greeted = 0;
+  for (const c of customers) {
+    if (!c.created_at) continue;
+    const created = new Date(c.created_at);
+    const createdMM = String(created.getUTCMonth() + 1).padStart(2, "0");
+    const createdDD = String(created.getUTCDate()).padStart(2, "0");
+    if (createdMM !== mm || createdDD !== dd) continue;
+    const years = year - created.getUTCFullYear();
+    if (years < 1) continue;
+    try {
+      const withinLimit = await rpc("check_rate_limit", { p_key: `anniversary:${c.phone}:${year}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
+      if (!withinLimit) continue;
+      await sendPushToPhone(c.phone, {
+        title: "🎉 ¡Feliz aniversario!",
+        body: `Hace ${years} año${years === 1 ? "" : "s"} te uniste a SND//WCH. Gracias por seguir con nosotros.`,
+        url: "./index.html",
+        tag: "sndwch-anniversary-" + year,
+      });
+      greeted++;
+    } catch (e) {
+      console.error("anniversary-greeting failed for", c.phone, e);
+    }
+  }
+  return { success: true, greeted };
+}
+
 // Tarjeta de regalo digital: comprar crédito con un cobro real (Culqi) para acreditárselo
 // a OTRO cliente — distinto de actCreditGift (que transfiere saldo YA PROPIO, sin cobro
 // nuevo de por medio). Sigue el mismo patrón de dos pasos que el pago de pedidos

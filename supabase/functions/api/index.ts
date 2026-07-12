@@ -29,6 +29,7 @@ import {
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
+  actAnniversaryGreeting,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -120,6 +121,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "prepare-credit-purchase": actPrepareCreditPurchase,
   "confirm-credit-purchase": actConfirmCreditPurchase,
   "expire-pending-credit-purchases": actExpirePendingCreditPurchases,
+  "anniversary-greeting": actAnniversaryGreeting,
 };
 
 Deno.serve(async (req: Request) => {

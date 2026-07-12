@@ -4,12 +4,12 @@
 // la expiración automática de pagos manuales nunca confirmados.
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
-  isWithinStoreHours,
+  isWithinStoreHours, computeRankName,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS } from "../catalog.ts";
+import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendOrderConfirmationEmail } from "../email.ts";
 import { logAdminAction } from "../logging.ts";
@@ -132,6 +132,11 @@ async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void
 }
 
 async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
+  // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
+  // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
+  // relevante es "quién es este cliente ahora", no una consulta aparte cada vez que se
+  // reimprime. null para invitados (sin cuenta no hay rango que mostrar).
+  let customerRank: string | null = null;
   async function insertOrder() {
     return sbInsert("orders", {
       ref: p.ref,
@@ -154,6 +159,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       items: p.items,
       delivery_time: p.scheduledFor,
       redeemed_reward: p.reward ? p.reward.label : null,
+      customer_rank: customerRank,
     });
   }
 
@@ -188,6 +194,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
     });
     const customer = safeCustomer(updated);
+    customerRank = computeRankName(updated.total_orders || 0);
     const orderRows = await insertOrder();
 
     // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
@@ -283,9 +290,10 @@ export async function actPrepareOrder(b: any) {
   }
 
   let phone: string | null = null;
+  let totalOrders = 0;
   if (b.token) {
     const active = await verifyActiveSession(b.token);
-    if (active) phone = active.payload.phone;
+    if (active) { phone = active.payload.phone; totalOrders = active.row.total_orders || 0; }
     if (rewardId) {
       if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
       const reward = REWARDS[rewardId];
@@ -295,6 +303,7 @@ export async function actPrepareOrder(b: any) {
   } else if (rewardId) {
     throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
   }
+  assertCartGatesAllowed(b.items, totalOrders);
 
   // Bloquea una segunda reserva concurrente del mismo número de contacto (dos
   // pestañas/dispositivos pagando el mismo carrito a la vez, o un reintento tras un fallo
@@ -544,6 +553,7 @@ export async function actPlaceOrder(b: any) {
       phone = active.payload.phone;
       custRow = active.row;
     }
+    assertCartGatesAllowed(b.items, custRow?.total_orders || 0);
 
     let reward: { pts: number; label: string } | null = null;
     if (rewardId) {
