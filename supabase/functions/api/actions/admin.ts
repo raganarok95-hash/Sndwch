@@ -6,6 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, buildTopProducts } from "../catalog.ts";
+import { computeRankName } from "../env.ts";
 
 export async function actAdminManualPoints(b: any) {
   const s = await requireAdmin(b.token);
@@ -248,6 +249,53 @@ export async function actAdminCustomerDetail(b: any) {
   ]);
   if (!custRows.length) throw new ApiError("Cliente no encontrado.", 404);
   return { customer: safeCustomer(custRows[0]), orders, transactions, ratings, creditLedger };
+}
+
+// Puntaje de riesgo de fuga: no es solo "días sin pedir" — pondera por rango, porque
+// perder a alguien de MESA FUNDADORA (30+ pedidos) importa mucho más que perder a
+// alguien NUEVO que recién probó una vez. remind-second-order y remind-high-rank-winback
+// (customer.ts) ya cubren 2 casos puntuales con un corte fijo de días; esto le da al
+// dueño una lista priorizada de TODOS los clientes para decidir a quién contactar
+// personalmente primero, no solo esos 2 casos automáticos.
+const AT_RISK_MIN_DAYS = 14;
+const AT_RISK_LIMIT = 30;
+const RANK_RISK_WEIGHT: Record<string, number> = {
+  "NUEVO": 1,
+  "REGULAR": 1.5,
+  "DE LA CASA": 2,
+  "CÍRCULO INTERNO": 3,
+  "MESA FUNDADORA": 4,
+};
+export async function actAdminAtRiskCustomers(b: any) {
+  await requireAdmin(b.token);
+  const [customers, orders] = await Promise.all([
+    sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders"),
+    sbGet("orders", "payment_status=eq.paid&select=customer_phone,created_at&limit=5000"),
+  ]);
+
+  const lastOrderMs = new Map<string, number>();
+  for (const o of orders) {
+    if (!o.customer_phone) continue;
+    const t = new Date(o.created_at).getTime();
+    const prev = lastOrderMs.get(o.customer_phone);
+    if (prev == null || t > prev) lastOrderMs.set(o.customer_phone, t);
+  }
+
+  const now = Date.now();
+  const scored = customers
+    .map((c: any) => {
+      const last = lastOrderMs.get(c.phone);
+      const daysSinceLastOrder = last != null ? Math.floor((now - last) / 86400000) : null;
+      const rank = computeRankName(c.total_orders || 0);
+      const weight = RANK_RISK_WEIGHT[rank] || 1;
+      const riskScore = Math.round((daysSinceLastOrder ?? 999) * weight);
+      return { phone: c.phone, name: c.name, rank, totalOrders: c.total_orders || 0, daysSinceLastOrder, riskScore };
+    })
+    .filter((c) => c.daysSinceLastOrder == null || c.daysSinceLastOrder >= AT_RISK_MIN_DAYS)
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, AT_RISK_LIMIT);
+
+  return { customers: scored };
 }
 
 // Búsqueda libre de pedidos — antes la cola admin solo mostraba los últimos pedidos

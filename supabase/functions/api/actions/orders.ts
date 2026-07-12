@@ -175,7 +175,13 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
     // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
     const basePoints = p.total;
-    let pointsDelta = basePoints;
+    // Yape/Plin no paga la comisión de Culqi (~3.99% + S/0.30) que sí paga tarjeta — este
+    // bono de puntos se financia con esa comisión que el negocio se ahorra, así que no le
+    // resta margen a nada: en tarjeta el negocio se queda con menos, en Yape/Plin se queda
+    // con más y comparte una parte de esa diferencia como puntos en vez de guardársela toda.
+    const isYapePlin = p.paymentMethod === "yape" || p.paymentMethod === "plin";
+    const yapePlinBonus = isYapePlin ? Math.round(basePoints * 0.1) : 0;
+    let pointsDelta = basePoints + yapePlinBonus;
     if (p.reward) pointsDelta -= p.reward.pts;
 
     // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
@@ -239,6 +245,16 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
         type: "redeem",
         points: -p.reward.pts,
         description: p.reward.label + " canjeado en pedido " + p.ref,
+        order_ref: p.ref,
+        confirmed: true,
+      }));
+    }
+    if (yapePlinBonus > 0) {
+      auditInserts.push(sbInsert("transactions", {
+        customer_phone: p.phone,
+        type: "earn_confirmed",
+        points: yapePlinBonus,
+        description: "Bono +10% por pagar con " + (p.paymentMethod === "yape" ? "Yape" : "Plin"),
         order_ref: p.ref,
         confirmed: true,
       }));

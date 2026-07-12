@@ -641,3 +641,90 @@ export async function actExpirePendingCreditPurchases(b: any) {
   }
   return { success: true, expired };
 }
+
+// PLAN SEMANAL — recarga de saldo propio con bono (a diferencia de actPrepareCreditPurchase,
+// que es para REGALAR crédito a otro cliente, esto es un top-up del propio saldo). Paga
+// S/90 hoy, recibe S/100 en saldo — ~11% de bono, calculado para que incluso con el costo
+// de insumos más alto reportado por el dueño (~50% del precio de venta) siga quedando
+// margen real, a cambio de meter caja hoy por consumo que de todas formas iba a pasar
+// después. Usa su propia tabla (no pending_credit_purchases) porque no hay destinatario
+// ni mensaje que guardar — mismo patrón de reserva atómica que el resto de cobros Culqi.
+const WEEKLY_PLAN_PRICE = 90;
+const WEEKLY_PLAN_CREDIT = 100;
+const WEEKLY_PLAN_TTL_MINUTES = 15;
+
+export async function actPrepareWeeklyPlan(b: any) {
+  const active = await verifyActiveSession(b.token);
+  if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
+
+  const nowIso = new Date().toISOString();
+  const existing = await sbGet(
+    "pending_weekly_plans",
+    `buyer_phone=eq.${encodeURIComponent(active.payload.phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
+  );
+  if (existing.length) {
+    throw new ApiError("Ya tienes un Plan Semanal en proceso. Espera un momento antes de intentar de nuevo.", 409);
+  }
+
+  const ref = "PLAN-" + crypto.randomUUID().slice(0, 8).toUpperCase();
+  const expiresAt = new Date(Date.now() + WEEKLY_PLAN_TTL_MINUTES * 60000).toISOString();
+  await sbInsert("pending_weekly_plans", {
+    ref,
+    buyer_phone: active.payload.phone,
+    buyer_name: active.row.name || "",
+    amount_paid: WEEKLY_PLAN_PRICE,
+    credit_amount: WEEKLY_PLAN_CREDIT,
+    expires_at: expiresAt,
+  });
+  return { success: true, ref, expiresAt, amountPaid: WEEKLY_PLAN_PRICE, creditAmount: WEEKLY_PLAN_CREDIT };
+}
+
+export async function actConfirmWeeklyPlan(b: any) {
+  const s = await requireSession(b.token);
+  const ref = String(b.ref || "").trim();
+  const chargeId = String(b.chargeId || "").trim();
+  if (!ref || !chargeId) throw new ApiError("Faltan datos de la compra.");
+  const rows = await sbGet("pending_weekly_plans", `ref=eq.${encodeURIComponent(ref)}&select=*`);
+  const pp = rows[0];
+  if (!pp) throw new ApiError("No encontramos tu Plan Semanal. Vuelve a intentarlo.", 410);
+  if (pp.buyer_phone !== s.phone) throw new ApiError("No autorizado.", 403);
+  if (pp.status !== "pending") throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
+  if (new Date(pp.expires_at).getTime() < Date.now()) {
+    throw new ApiError("Tu Plan Semanal expiró. Vuelve a intentarlo.", 410);
+  }
+
+  const amountCents = Math.round(Number(pp.amount_paid) * 100);
+  const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
+  if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
+
+  const claim = await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.pending`, { status: "consumed" });
+  if (!claim.length) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
+
+  await rpc("add_gifted_credit", { p_to_phone: pp.buyer_phone, p_amount: Number(pp.credit_amount) });
+  await sbInsert("credit_ledger", {
+    customer_phone: pp.buyer_phone,
+    delta: Number(pp.credit_amount),
+    reason: "Plan Semanal (pagó S/" + pp.amount_paid + ")",
+  });
+  return { success: true, creditAmount: pp.credit_amount };
+}
+
+// Igual que actExpirePendingCreditPurchases pero para la tabla del Plan Semanal.
+export async function actExpirePendingWeeklyPlans(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const nowIso = new Date().toISOString();
+  const stale = await sbGet(
+    "pending_weekly_plans",
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status`,
+  );
+  let expired = 0;
+  for (const pp of stale) {
+    try {
+      await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.${pp.status}`, { status: "expired" });
+      expired++;
+    } catch (e) {
+      console.error("expire-pending-weekly-plans failed for", pp.id, e);
+    }
+  }
+  return { success: true, expired };
+}

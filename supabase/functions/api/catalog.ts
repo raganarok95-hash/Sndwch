@@ -322,6 +322,21 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
 // cliente antes de pagar; este es el que de verdad determina cuánto se cobra).
 const COMBO_DISCOUNT_PER_PAIR = 3;
 
+// Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima, la ventana de menor demanda entre el
+// almuerzo y la cena (ver PEAK_HOURS_LIMA en orders.ts: [12,14] y [19,21]) — el costo
+// marginal de atender un pedido en esa franja es prácticamente el mismo con o sin este
+// descuento (cocina ya está montada), así que regalar la bebida más barata del carrito es
+// casi puro margen incremental si convierte un pedido que hoy no existe. El tope de S/4
+// evita que alguien elija la bebida más cara (S/6) y aun así se la regalemos completa.
+// DEBE coincidir con OFFPEAK_DRINK_PROMO_HOURS_LIMA en src/app.ts (ese lado solo informa
+// al cliente antes de pagar; este es el que de verdad aplica el descuento).
+const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[14, 18]];
+const OFFPEAK_DRINK_PROMO_CAP = 4;
+function isOffPeakDrinkPromoActiveNowLima(): boolean {
+  const limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+  return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
+}
+
 export function deriveCart(rawItems: any, rewardId: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
   if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
   if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
@@ -340,6 +355,15 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
   const sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
   const comboCount = Math.min(sandwichQty, sideQty);
   total = Math.max(0, total - comboCount * COMBO_DISCOUNT_PER_PAIR);
+
+  let offPeakDrinkDiscount = 0;
+  if (isOffPeakDrinkPromoActiveNowLima()) {
+    const sidePrices = priced.filter((p) => p.item.type === "side").flatMap((p) => Array(p.qty).fill(p.unitPrice));
+    if (sidePrices.length) {
+      offPeakDrinkDiscount = Math.min(Math.min(...sidePrices), OFFPEAK_DRINK_PROMO_CAP);
+      total = Math.max(0, total - offPeakDrinkDiscount);
+    }
+  }
 
   if (rewardId) {
     const reward = REWARDS[rewardId];
