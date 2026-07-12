@@ -195,6 +195,22 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     });
     const customer = safeCustomer(updated);
     customerRank = computeRankName(updated.total_orders || 0);
+    // Aviso de "subiste de rango" — compara el rango ANTES de este pedido (con `c`, la fila
+    // leída antes del incremento) contra el de después; si cruzó un umbral, se lo dice de
+    // inmediato en vez de dejar que se entere la próxima vez que abra su perfil.
+    const previousRank = computeRankName(c.total_orders || 0);
+    if (previousRank !== customerRank) {
+      try {
+        await sendPushToPhone(p.phone, {
+          title: "🎖️ ¡Subiste de rango!",
+          body: `Ahora eres ${customerRank} en SND//WCH.` + (customerRank === "CÍRCULO INTERNO" ? " Ya puedes ver el menú secreto 👀" : ""),
+          url: "./index.html",
+          tag: "sndwch-rank-up-" + customerRank,
+        });
+      } catch {
+        // un push fallido no debe bloquear la creación del pedido
+      }
+    }
     const orderRows = await insertOrder();
 
     // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
@@ -946,15 +962,25 @@ export async function actExpireStaleManualPayments(b: any) {
   return { success: true, cancelled };
 }
 
-// Avisa al dueño cuando un pedido lleva demasiado tiempo sin que cocina lo tome — mismo
-// umbral de 10 min que ya usa el badge visual "hace X min" del panel admin (ver isStale
-// en index.html). alerted_stuck evita reenviar la misma alerta cada vez que corre este
-// cron (cada 5 min) mientras el pedido sigue sin atenderse; una vez que avanza de estado
-// o se cancela, deja de aparecer en el filtro status=eq.RECIBIDO y nunca se vuelve a tocar.
-const STUCK_ORDER_MINUTES = 10;
+// Avisa al dueño cuando un pedido lleva demasiado tiempo sin que cocina lo tome. El badge
+// visual "hace X min" del panel admin (ver isStale en index.html) sigue con su propio
+// umbral fijo de 10 min — es solo una señal a simple vista de la cola, no necesita
+// variar. Esta alerta SÍ varía según la hora: en hora pico (almuerzo/cena, ver
+// actRemindPeakHour) 10 min de espera es normal con cocina llena, así que avisar tan
+// rápido generaba ruido; fuera de hora pico, 10 min sin que nadie tome un pedido suele
+// ser señal real de que algo se atoró, así que ahí conviene avisar más rápido
+// (hallazgo de la re-auditoría de automatización).
+const STUCK_ORDER_MINUTES_PEAK = 15;
+const STUCK_ORDER_MINUTES_OFFPEAK = 6;
+const PEAK_HOURS_LIMA: [number, number][] = [[12, 14], [19, 21]];
+function isPeakHourNowLima(): boolean {
+  const limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+  return PEAK_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
+}
 export async function actAlertStuckOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const cutoff = new Date(Date.now() - STUCK_ORDER_MINUTES * 60000).toISOString();
+  const stuckMinutes = isPeakHourNowLima() ? STUCK_ORDER_MINUTES_PEAK : STUCK_ORDER_MINUTES_OFFPEAK;
+  const cutoff = new Date(Date.now() - stuckMinutes * 60000).toISOString();
   const stuck = await sbGet(
     "orders",
     `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}&select=id,ref,customer_name,payment_method,payment_status`,
@@ -965,7 +991,7 @@ export async function actAlertStuckOrders(b: any) {
       const manualPending = (order.payment_method === "yape" || order.payment_method === "plin") && order.payment_status !== "paid";
       await sendPushToAdmins({
         title: "Pedido estancado ⏰",
-        body: order.ref + " (" + (order.customer_name || "cliente") + ") lleva más de " + STUCK_ORDER_MINUTES + " min en RECIBIDO"
+        body: order.ref + " (" + (order.customer_name || "cliente") + ") lleva más de " + stuckMinutes + " min en RECIBIDO"
           + (manualPending ? " — pago sin confirmar" : "") + ".",
         url: "./index.html",
         tag: "sndwch-stuck-" + order.id,

@@ -24,3 +24,6 @@ jobs:
       - run: supabase functions deploy create-credit-charge --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase functions deploy weekly-summary --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

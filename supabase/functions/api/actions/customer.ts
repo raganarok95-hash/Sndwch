@@ -329,6 +329,67 @@ export async function actRemindPeakHour(b: any) {
   return { success: true, reminded };
 }
 
+// Sincroniza el carrito del cliente al servidor (debounced desde el cliente, ver
+// scheduleCartSync/saveCart en app.ts) — solo para que remind-abandoned-cart sepa qué
+// hay en un carrito sin terminar de pagar. No es la fuente de verdad del carrito (esa
+// sigue siendo localStorage/el propio cliente); si el upsert falla, no bloquea nada más
+// que el recordatorio.
+export async function actSyncCart(b: any) {
+  const s = await requireSession(b.token);
+  const items = Array.isArray(b.items) ? b.items : [];
+  const existing = await sbGet("cart_snapshots", `customer_phone=eq.${encodeURIComponent(s.phone)}&select=customer_phone`);
+  const payload = { items, updated_at: new Date().toISOString(), reminded_at: null };
+  if (existing.length) {
+    await sbUpdate("cart_snapshots", `customer_phone=eq.${encodeURIComponent(s.phone)}`, payload);
+  } else {
+    await sbInsert("cart_snapshots", { customer_phone: s.phone, ...payload });
+  }
+  return { success: true };
+}
+
+// Recordatorio de carrito abandonado — si un carrito sincronizado (ver actSyncCart) lleva
+// entre 20 min y 3h sin cambios, un solo push. Menos de 20 min es normal (sigue armando el
+// pedido); más de 3h ya no vale la pena recordar (probablemente ni se acuerda de qué
+// armó). reminded_at evita reenviar el mismo aviso en cada corrida de este cron mientras
+// el carrito sigue sin tocarse.
+const ABANDONED_CART_MIN_MINUTES = 20;
+const ABANDONED_CART_MAX_MINUTES = 180;
+export async function actRemindAbandonedCart(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const now = Date.now();
+  const minCutoff = new Date(now - ABANDONED_CART_MIN_MINUTES * 60000).toISOString();
+  const maxCutoff = new Date(now - ABANDONED_CART_MAX_MINUTES * 60000).toISOString();
+  const rows = await sbGet(
+    "cart_snapshots",
+    `updated_at=lte.${encodeURIComponent(minCutoff)}&updated_at=gt.${encodeURIComponent(maxCutoff)}&reminded_at=is.null&select=customer_phone,items`,
+  );
+  let reminded = 0;
+  for (const row of rows) {
+    const items = Array.isArray(row.items) ? row.items : [];
+    if (!items.length) continue;
+    try {
+      await sendPushToPhone(row.customer_phone, {
+        title: "🛒 Tu carrito te espera",
+        body: "Dejaste productos en tu carrito — termina tu pedido antes de que se te antoje otra cosa 😉",
+        url: "./index.html",
+        tag: "sndwch-cart-abandoned",
+      });
+      await sbUpdate("cart_snapshots", `customer_phone=eq.${encodeURIComponent(row.customer_phone)}`, { reminded_at: new Date().toISOString() });
+      reminded++;
+    } catch (e) {
+      console.error("remind-abandoned-cart failed for", row.customer_phone, e);
+    }
+  }
+  // Sin esto la tabla crece sin límite — nadie necesita un snapshot de hace más de un día,
+  // se haya avisado o no.
+  try {
+    await sbDelete("cart_snapshots", `updated_at=lt.${encodeURIComponent(new Date(now - 24 * 3600000).toISOString())}`);
+  } catch (e) {
+    console.error("remind-abandoned-cart cleanup failed:", e);
+  }
+  return { success: true, reminded };
+}
+
 // Aniversario de cuenta — puro cariño, sin puntos de por medio (a diferencia de
 // birthday-bonus, que sí regala puntos): un push el día que se cumplen años desde que el
 // cliente se registró. created_at es el único dato de "cuándo empezó todo esto" que

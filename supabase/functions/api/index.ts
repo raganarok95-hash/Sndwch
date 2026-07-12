@@ -29,7 +29,7 @@ import {
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
-  actAnniversaryGreeting,
+  actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -41,6 +41,9 @@ import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
   actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
 } from "./actions/complaints.ts";
+import {
+  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
+} from "./actions/group.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 
@@ -122,6 +125,13 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "confirm-credit-purchase": actConfirmCreditPurchase,
   "expire-pending-credit-purchases": actExpirePendingCreditPurchases,
   "anniversary-greeting": actAnniversaryGreeting,
+  "sync-cart": actSyncCart,
+  "remind-abandoned-cart": actRemindAbandonedCart,
+  "create-group-order": actCreateGroupOrder,
+  "get-group-order": actGetGroupOrder,
+  "add-group-item": actAddGroupItem,
+  "cancel-group-order": actCancelGroupOrder,
+  "close-group-order": actCloseGroupOrder,
 };
 
 Deno.serve(async (req: Request) => {

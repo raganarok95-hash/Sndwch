@@ -247,7 +247,13 @@ var appliedReward=null;
 var previewSigId=null;
 var newAddrMsg='',favMsg='';
 var cart=[];
-(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();}catch(e){}})();
+var groupCodeFromUrl=null;
+(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();}catch(e){}})();
+// Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
+// sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).
+var groupCode=null,groupData=null,groupJoinName='',groupMsg='',groupSize='15';
+try{groupJoinName=localStorage.getItem('sw_group_name')||'';}catch(e){}
+var _groupPollTimer=null;
 
 // TOAST / CONFIRM / PROMPT — reemplazan alert()/confirm()/prompt() nativos del navegador,
 // que rompían la identidad visual de la marca (aparecían como cuadros de diálogo genéricos
@@ -709,6 +715,21 @@ function saveCart(){
     if(cart.length)localStorage.setItem('sw_cart',JSON.stringify({items:cart,reward:appliedReward,ts:Date.now()}));
     else localStorage.removeItem('sw_cart');
   }catch(e){}
+  scheduleCartSync();
+}
+var _cartSyncTimer=null;
+// El recordatorio de carrito abandonado (remind-abandoned-cart, cron) necesita que el
+// servidor sepa qué hay en el carrito de un cliente logueado — debounced para no mandar
+// una llamada por cada tap mientras arma el pedido, solo cuando se queda quieto ~4s. Solo
+// tiene sentido si puede recibir el push (pushSubscribed) y tiene cuenta (token) — un
+// invitado o alguien sin notificaciones activas nunca podría recibir el aviso de todos
+// modos, así que ni vale la pena sincronizar su carrito al servidor.
+function scheduleCartSync(){
+  if(!cust||!pushSubscribed||!token)return;
+  if(_cartSyncTimer)clearTimeout(_cartSyncTimer);
+  _cartSyncTimer=setTimeout(function(){
+    api('sync-cart',{token:token,items:cart}).catch(function(){});
+  },4000);
 }
 // Se llama una sola vez al abrir la app (ver INIT), después de resolver la sesión —
 // así, si el cliente tiene cuenta, initCheckoutFields() prellena nombre/correo/
@@ -824,10 +845,112 @@ function sOHome(){
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">BUILD<span style="color:'+GOLD+'"> // </span>YOUR OWN</div>'
     +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;line-height:1.5">Elige base, proteína, toppings y salsas.</p>'
     +'</div>'
+    +(cust?'<div onclick="doCreateGroupOrder()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">👥 PEDIDO<span style="color:'+GOLD+'"> // </span>GRUPAL</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">ORGANIZAR →</span></div>':'')
     +(cust&&myFavorites.length?'<div onclick="sc=\'p_favorites\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">☆ MIS<span style="color:'+GOLD+'"> // </span>FAVORITOS</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">VER \u2192</span></div>':'')
     +pc
     +contactFooterHTML()
     +'</div>'+NAV();
+}
+
+// PEDIDO GRUPAL / DE OFICINA
+// Cualquiera con el link agrega su propio Signature bajo su nombre, sin necesitar cuenta
+// (solo quien organiza necesita sesión, para poder cerrar y pagar todo junto). Al cerrar,
+// el servidor solo devuelve los items ya agregados — se cargan con loadCart() y de ahí en
+// adelante es EXACTAMENTE el mismo carrito/checkout de siempre (combo, menú secreto, todo
+// se valida igual), sin duplicar nada de esa lógica acá.
+function shareGroupOrder(){
+  var link=location.origin+location.pathname+'?group='+encodeURIComponent(groupCode);
+  var text='Únete a mi pedido grupal en SND//WCH y agrega tu sándwich: '+link;
+  if(navigator.share){navigator.share({title:'SND//WCH',text:text,url:link}).catch(function(){});}
+  else{window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');}
+}
+async function doCreateGroupOrder(){
+  if(!cust){showToast('Inicia sesión para organizar un pedido grupal.');return;}
+  busy=true;busyMsg='Creando pedido grupal...';render();
+  var res;
+  try{res=await api('create-group-order',{token:token});}
+  catch(e){busy=false;render();showToast(e.message);return;}
+  groupCode=res.code;groupData=null;groupMsg='';
+  busy=false;sc='group_order';render();
+  loadGroupOrder();
+  startGroupPoll();
+}
+async function loadGroupOrder(){
+  if(!groupCode)return;
+  try{
+    var res=await api('get-group-order',{token:token,code:groupCode});
+    groupData=res;
+    render();
+  }catch(e){stopGroupPoll();showToast(e.message);sc='o_home';render();}
+}
+function startGroupPoll(){
+  stopGroupPoll();
+  _groupPollTimer=setInterval(function(){if(sc==='group_order')loadGroupOrder();else stopGroupPoll();},5000);
+}
+function stopGroupPoll(){if(_groupPollTimer){clearInterval(_groupPollTimer);_groupPollTimer=null;}}
+async function doAddGroupItem(sigId){
+  var nameEl=(document.getElementById('grp-name') as HTMLInputElement | null);
+  var name=nameEl?nameEl.value.trim():groupJoinName;
+  if(!name){groupMsg='Ingresa tu nombre antes de agregar tu pedido.';render();return;}
+  groupJoinName=name;
+  try{localStorage.setItem('sw_group_name',name);}catch(e){}
+  try{
+    await api('add-group-item',{code:groupCode,contributorName:name,item:{type:'sig',sigId:sigId,size:groupSize,doubleProt:false,extraSauce:false,qty:1}});
+    groupMsg='¡Listo! Tu pedido se agregó.';
+    loadGroupOrder();
+  }catch(e){groupMsg=e.message;render();}
+}
+async function doCloseGroupOrder(){
+  if(!(await showConfirm('¿Cerrar el pedido grupal y continuar a pagar todo junto?')))return;
+  busy=true;busyMsg='Cerrando pedido grupal...';render();
+  var res;
+  try{res=await api('close-group-order',{token:token,code:groupCode});}
+  catch(e){busy=false;render();showToast(e.message);return;}
+  stopGroupPoll();
+  busy=false;
+  loadCart(res.items); // ya navega a o_cart y renderiza
+}
+async function doCancelGroupOrder(){
+  if(!(await showConfirm('¿Cancelar este pedido grupal? Se perderá todo lo agregado.')))return;
+  try{await api('cancel-group-order',{token:token,code:groupCode});}
+  catch(e){showToast(e.message);return;}
+  stopGroupPoll();
+  sc='o_home';render();
+}
+function sGroupOrder(){
+  var g=groupData;
+  var bk="stopGroupPoll();sc='o_home';render()";
+  if(!g){
+    return H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px;display:flex;align-items:center;justify-content:center" class="fi"><div style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0">Cargando...</div></div>'+NAV();
+  }
+  var h=H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+  h+='<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:4px">PEDIDO<span style="color:'+GOLD+'"> // </span>GRUPAL</div>';
+  h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Organiza '+esc(g.organizerName)+' · código '+esc(g.code)+'</div>';
+  if(g.isOrganizer&&g.status==='open'){
+    h+=BTN('COMPARTIR LINK //','shareGroupOrder()');
+  }
+  h+=(g.items.length?g.items.map(function(it){
+    return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+esc(it.label)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">'+esc(it.contributorName)+'</div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+GOLD+'">'+SOLES+it.unitPrice+'</div></div>';
+  }).join(''):'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:14px">Nadie agregó su pedido todavía.</div>');
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:'+GOLD+'">'+SOLES+g.total+'</span></div>';
+  if(g.status!=='open'){
+    h+='<div style="text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0;letter-spacing:.1em">'+(g.status==='cancelled'?'ESTE PEDIDO GRUPAL FUE CANCELADO':'ESTE PEDIDO GRUPAL YA SE CERRÓ')+'</div>';
+  }else if(g.isOrganizer){
+    h+=BTN('CERRAR Y PAGAR //','doCloseGroupOrder()');
+    h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">CANCELAR PEDIDO GRUPAL</div>';
+  }else{
+    h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:12px">AGREGAR MI PEDIDO //</div>';
+    h+=INP('grp-name','TU NOMBRE','text',groupJoinName);
+    h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#1A3028')+';color:'+(groupSize==='15'?'#0d0d0d':'#A8C8B0')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#1A3028')+';color:'+(groupSize==='30'?'#0d0d0d':'#A8C8B0')+';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">30CM</div></div>';
+    h+=SIGS.filter(function(s){return!s.secret;}).map(function(s){
+      var price=groupSize==='15'?s.p15:s.p30;
+      return'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:'+GOLD+'">'+SOLES+price+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
+    }).join('');
+    h+='<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:8px;min-height:14px">'+esc(groupMsg)+'</div>';
+  }
+  h+='</div>'+NAV();
+  return h;
 }
 
 function sOSig(){
@@ -2783,6 +2906,7 @@ function render(){
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
     case'gift_card':   h=sGiftCard();break;
+    case'group_order': h=sGroupOrder();break;
     case'p_addresses': h=sPAddresses();break;
     case'admin_home':  h=sAdminHome();break;
     case'admin_gen':   h=sAdminGen();break;
@@ -3476,4 +3600,11 @@ async function togglePushNotifications(){
   if(cust)loadUserExtras();
   checkPushSubscription();
   checkNearbyStore();
+  // ?group=CODE (link compartido de un pedido grupal) — no exige cuenta para entrar y
+  // contribuir, solo para organizar/cerrar, así que se abre para cualquiera.
+  if(groupCodeFromUrl){
+    groupCode=groupCodeFromUrl;sc='group_order';render();
+    loadGroupOrder();
+    startGroupPoll();
+  }
 })();
