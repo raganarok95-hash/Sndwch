@@ -2316,8 +2316,12 @@ async function cancelOrder(ordId){
     ?'¿Cancelar este pedido? YA FUE PAGADO — tendrás que coordinar el reembolso tú mismo (Culqi/Yape/Plin/crédito), esto solo libera el stock reservado.'
     :'¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.';
   if(!(await showConfirm(msg)))return;
+  // Motivo opcional — no bloquea la cancelación si se deja vacío, solo alimenta el
+  // resumen semanal ("3 cancelaciones esta semana por falta de stock") en vez de dejarlo
+  // como un número suelto sin explicación.
+  var reason=await showPrompt('¿Por qué se cancela? (opcional, ayuda al resumen semanal)','');
   try{
-    var r=await api('admin-cancel-order',{token:token,orderId:ordId,acknowledgeRefund:true});
+    var r=await api('admin-cancel-order',{token:token,orderId:ordId,acknowledgeRefund:true,reason:reason||''});
     adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     render();
   }catch(e){showToast(e.message);}

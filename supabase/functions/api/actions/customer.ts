@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso } from "../env.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName } from "../env.ts";
 import { sendPushToPhone } from "../push.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
@@ -386,6 +386,95 @@ export async function actRemindAbandonedCart(b: any) {
     await sbDelete("cart_snapshots", `updated_at=lt.${encodeURIComponent(new Date(now - 24 * 3600000).toISOString())}`);
   } catch (e) {
     console.error("remind-abandoned-cart cleanup failed:", e);
+  }
+  return { success: true, reminded };
+}
+
+// Nudge de "segundo pedido" — el momento de mayor apalancamiento en retención es
+// conseguir que un cliente nuevo vuelva una segunda vez (distinto del win-back genérico
+// de la función winback-campaign, que solo mira inactividad de 30+ días sin importar
+// cuántos pedidos tenga). No hay una columna "fecha del primer pedido" separada, así que
+// se reconstruye el primer pedido pagado real desde `orders` para los clientes que hoy
+// siguen en total_orders=1 — más preciso que usar customers.created_at como proxy.
+const SECOND_ORDER_MIN_DAYS = 3;
+const SECOND_ORDER_MAX_DAYS = 5;
+export async function actRemindSecondOrder(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1");
+  if (!customers.length) return { success: true, reminded: 0 };
+  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const firstOrderByPhone = new Map<string, number>();
+  for (const o of orders) {
+    const t = new Date(o.created_at).getTime();
+    const prev = firstOrderByPhone.get(o.customer_phone);
+    if (prev === undefined || t < prev) firstOrderByPhone.set(o.customer_phone, t);
+  }
+  const now = Date.now();
+  let reminded = 0;
+  for (const c of customers) {
+    const firstOrderAt = firstOrderByPhone.get(c.phone);
+    if (firstOrderAt === undefined) continue;
+    const daysSince = (now - firstOrderAt) / 86400000;
+    if (daysSince < SECOND_ORDER_MIN_DAYS || daysSince > SECOND_ORDER_MAX_DAYS) continue;
+    try {
+      // Ventana amplia (60 días) porque este aviso solo tiene sentido UNA vez en la vida
+      // del cliente para este momento específico, no algo que deba repetirse.
+      const withinLimit = await rpc("check_rate_limit", { p_key: `second-order:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 60 });
+      if (!withinLimit) continue;
+      await sendPushToPhone(c.phone, {
+        title: "¿Qué tal tu primer sándwich? 🥪",
+        body: "Vuelve a pedir tu favorito — o prueba otro Signature esta vez.",
+        url: "./index.html",
+        tag: "sndwch-second-order",
+      });
+      reminded++;
+    } catch (e) {
+      console.error("remind-second-order failed for", c.phone, e);
+    }
+  }
+  return { success: true, reminded };
+}
+
+// Re-enganche prioritario para rango alto — a diferencia de winback-campaign (trata a
+// todos los inactivos igual), perder a un cliente CÍRCULO INTERNO o MESA FUNDADORA cuesta
+// más que perder uno nuevo, así que se avisa antes (15 días vs. 30) y de forma recurrente
+// mientras siga inactivo (no es un momento único como el nudge de segundo pedido).
+const HIGH_RANK_INACTIVE_DAYS = 15;
+export async function actRemindHighRankWinback(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  // total_orders>=15 ya implica rango CÍRCULO INTERNO o MESA FUNDADORA (ver RANKS/env.ts)
+  // — no hace falta filtrar de nuevo con computeRankName, solo usarlo para el texto.
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15");
+  if (!customers.length) return { success: true, reminded: 0 };
+  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const lastOrderByPhone = new Map<string, number>();
+  for (const o of orders) {
+    const t = new Date(o.created_at).getTime();
+    const prev = lastOrderByPhone.get(o.customer_phone);
+    if (prev === undefined || t > prev) lastOrderByPhone.set(o.customer_phone, t);
+  }
+  const now = Date.now();
+  let reminded = 0;
+  for (const c of customers) {
+    const lastOrderAt = lastOrderByPhone.get(c.phone);
+    if (lastOrderAt === undefined) continue;
+    const daysSince = (now - lastOrderAt) / 86400000;
+    if (daysSince < HIGH_RANK_INACTIVE_DAYS) continue;
+    try {
+      const withinLimit = await rpc("check_rate_limit", { p_key: `high-rank-winback:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 20 });
+      if (!withinLimit) continue;
+      await sendPushToPhone(c.phone, {
+        title: "Te extrañamos por acá 🎖️",
+        body: `Como cliente ${computeRankName(c.total_orders || 0)}, tu próximo pedido te está esperando.`,
+        url: "./index.html",
+        tag: "sndwch-high-rank-winback",
+      });
+      reminded++;
+    } catch (e) {
+      console.error("remind-high-rank-winback failed for", c.phone, e);
+    }
   }
   return { success: true, reminded };
 }
