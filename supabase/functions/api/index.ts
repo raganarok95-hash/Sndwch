@@ -26,7 +26,7 @@ import {
 import {
   actAddressesList, actAddressesAdd, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
-  actSubmitRating, actClaimChallenge, actCreditGift, actCreditLookup,
+  actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
 } from "./actions/customer.ts";
@@ -77,6 +77,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "favorites-delete": actFavoritesDelete,
   "submit-rating": actSubmitRating,
   "claim-challenge": actClaimChallenge,
+  "claim-discovery-challenge": actClaimDiscoveryChallenge,
   "credit-gift": actCreditGift,
   "credit-lookup": actCreditLookup,
   "admin-orders": actAdminOrders,
