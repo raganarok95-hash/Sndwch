@@ -4,7 +4,7 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder } from "../catalog.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName } from "../env.ts";
 import { sendPushToPhone } from "../push.ts";
 import { verifyCulqiCharge } from "./orders.ts";
@@ -727,4 +727,22 @@ export async function actExpirePendingWeeklyPlans(b: any) {
     }
   }
   return { success: true, expired };
+}
+
+// "Avísame cuando vuelva" para un Signature agotado (por base o proteína sin stock) — hoy
+// la tarjeta AGOTADO ni siquiera deja intentar pedirlo, así que esa demanda se perdía en
+// silencio sin ningún registro de quién lo quería. Ver notifyRestockedSignatures en
+// admin.ts para el otro lado: qué pasa cuando el ingrediente vuelve a stock.
+export async function actRequestRestockNotify(b: any) {
+  const s = await requireSession(b.token);
+  const sigId = String(b.sigId || "").trim();
+  if (!SIG_DATA[sigId]) throw new ApiError("Signature inválida.");
+  try {
+    await sbInsert("restock_notify_requests", { customer_phone: s.phone, sig_id: sigId });
+  } catch (e) {
+    // Ya lo había pedido antes (unique customer_phone+sig_id) — no es un error real,
+    // solo confirma que ya está anotado.
+    if (!(e instanceof Error && e.message.includes("23505"))) throw e;
+  }
+  return { success: true };
 }

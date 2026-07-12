@@ -32,12 +32,14 @@ import {
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback,
   actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
+  actRequestRestockNotify,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
   actAdminInventoryToggle, actAdminInventorySetStock, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
+  actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
@@ -116,6 +118,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-range-report": actAdminRangeReport,
   "admin-ratings-list": actAdminRatingsList,
   "admin-at-risk-customers": actAdminAtRiskCustomers,
+  "admin-prep-list": actAdminPrepList,
+  "admin-time-window-report": actAdminTimeWindowReport,
+  "admin-problem-addresses": actAdminProblemAddresses,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,
@@ -130,6 +135,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "anniversary-greeting": actAnniversaryGreeting,
   "sync-cart": actSyncCart,
   "remind-abandoned-cart": actRemindAbandonedCart,
+  "request-restock-notify": actRequestRestockNotify,
   "remind-second-order": actRemindSecondOrder,
   "remind-high-rank-winback": actRemindHighRankWinback,
   "prepare-weekly-plan": actPrepareWeeklyPlan,
