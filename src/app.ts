@@ -142,6 +142,11 @@ var ESTIMATED_DELIVERY_RANGE=[25,40];
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
 var STORE_LAT=-8.139599,STORE_LON=-79.039458;
 var NEARBY_RADIUS_KM=3;
+// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
+// separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
+// cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
+// supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
+var COMBO_DISCOUNT_PER_PAIR=3;
 
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
@@ -202,7 +207,7 @@ var myAddresses=[],myFavorites=[],pickedAddrId=null;
 var wPhone='',wAmt='',wMsg='';
 var gcPhone='',gcAmt='',gcNote='',gcMsg='',gcName=null,gcEmail='';
 var _pendingGift=null;
-var rtStars=0,rtMsg='',chalMsg='';
+var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
 var addrText='',scheduleMode='now';
@@ -627,6 +632,14 @@ function itemExtrasLabel(item){
   return parts.join(' · ');
 }
 function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
+// Un combo = 1 sándwich + 1 bebida en el carrito — si hay más sándwiches que bebidas (o
+// viceversa), solo se descuenta por la cantidad de pares completos, no por cada unidad.
+function cartComboCount(){
+  var sw=0,sd=0;
+  cart.forEach(function(it){if(it.type==='side')sd+=it.qty;else sw+=it.qty;});
+  return Math.min(sw,sd);
+}
+function cartComboDiscount(){return cartComboCount()*COMBO_DISCOUNT_PER_PAIR;}
 // Busca el primer producto del carrito elegible para una recompensa — R04 necesita
 // una línea con doble proteína activada, R06 necesita una línea 15CM. El resto de
 // recompensas no tiene requisito propio (basta con que el carrito no esté vacío).
@@ -651,8 +664,8 @@ function rewardWaiverAmount(rewardId,targetIdx){
   return 0;
 }
 function cartFinalTotal(){
-  var base=cartBaseTotal();
-  if(!appliedReward)return base;
+  var base=cartBaseTotal()-cartComboDiscount();
+  if(!appliedReward)return Math.max(0,base);
   var idx=findRewardTargetIndex(appliedReward);
   return Math.max(0,base-rewardWaiverAmount(appliedReward,idx));
 }
@@ -1091,9 +1104,16 @@ function sOCart(){
   var baseTotal=cartBaseTotal();
   var t=cartFinalTotal();
   var empty=!cart.length;
+  var comboDiscount=cartComboDiscount();
+  var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
+  var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
+  // Sándwich sin bebida en el carrito — el combo (sándwich+bebida, S/3 menos) todavía no
+  // se está aprovechando, así que lo sugerimos justo donde se agrega una bebida.
+  var hasSandwichNoDrink=cart.some(function(it){return it.type!=='side';})&&cartComboCount()<cart.reduce(function(s,it){return s+(it.type!=='side'?it.qty:0);},0);
   return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
-    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span>'+(t!==baseTotal?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+(baseTotal-t)+'</div>':'')+'</div></div>':'')
+    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span>'+(comboDiscount>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">🥤 combo aplicado: ahorras '+SOLES+comboDiscount+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+rewardDiscount+'</div>':'')+'</div></div>':'')
+    +(hasSandwichNoDrink?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:12px">🥤 Agrega una bebida y ahorra '+SOLES+COMBO_DISCOUNT_PER_PAIR+' (combo)</div>':'')
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
     // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
@@ -1633,6 +1653,26 @@ function sPRewards(){
 
 
 
+// Insignias de hitos — puramente derivadas de datos que ya viven en `cust` (sin pedir
+// nada nuevo al servidor): marcan progreso acumulado (no solo del mes en curso, a
+// diferencia de los retos de arriba) para darle al perfil una sensación de colección sin
+// reintroducir un multiplicador de puntos por nivel (retirado a propósito del proyecto).
+function computeBadges(c){
+  return[
+    {icon:'🥪',label:'Primer pedido',unlocked:(c.total_orders||0)>=1},
+    {icon:'🔥',label:'Frecuente',sub:'10+ pedidos',unlocked:(c.total_orders||0)>=10},
+    {icon:'👑',label:'Leyenda',sub:'25+ pedidos',unlocked:(c.total_orders||0)>=25},
+    {icon:'🧭',label:'Explorador',sub:'reto descubrimiento',unlocked:!!c.discovery_claimed_month},
+    {icon:'🏆',label:'Recurrente',sub:'reto mensual',unlocked:!!c.challenge_claimed_month},
+    {icon:'💌',label:'Embajador',sub:'3+ referidos',unlocked:(c.total_referrals||0)>=3},
+  ];
+}
+function badgesHTML(c){
+  var badges=computeBadges(c),unlockedCount=badges.filter(function(b){return b.unlocked;}).length;
+  return'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:12px">🎖️ INSIGNIAS<span style="color:'+GOLD+'"> // </span>'+unlockedCount+'/'+badges.length+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+badges.map(function(b){
+    return'<div style="background:'+(b.unlocked?'#1E4A38':'#0d1a15')+';border:1px solid '+(b.unlocked?GOLD:'#2a2a2a')+';border-radius:10px;padding:10px;text-align:center;opacity:'+(b.unlocked?1:.4)+'"><div style="font-size:22px">'+b.icon+'</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;color:'+(b.unlocked?'#FFFFFF':'#A8C8B0')+';margin-top:4px">'+b.label+'</div>'+(b.sub?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;margin-top:2px">'+b.sub+'</div>':'')+'</div>';
+  }).join('')+'</div></div>';
+}
 function sPProfile(){
   var initial=esc((cust.name||'?').trim().charAt(0).toUpperCase());
   var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">'+esc(cust.phone)+'</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
@@ -1640,9 +1680,11 @@ function sPProfile(){
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💳 CRÉDITO<span style="color:'+GOLD+'"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+SOLES+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
   var giftCardHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🎁 TARJETA<span style="color:'+GOLD+'"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('COMPRAR Y REGALAR //',"sc='gift_card';render()")+'</div>';
   var challengeHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🏆 RETO<span style="color:'+GOLD+'"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimChallenge()')+'</div>';
+  var discoveryHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🧭 RETO<span style="color:'+GOLD+'"> // </span>DESCUBRIMIENTO</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+discChalMsg+'</div>'+BTN('RECLAMAR RECOMPENSA //','doClaimDiscoveryChallenge()')+'</div>';
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'#1E4A38':'#1A3028')+';border:1px solid '+(pushSubscribed?GOLD:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🔔 NOTIFICACIONES<span style="color:'+GOLD+'"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(pushSubscribed?GOLD:'#A8C8B0')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
   return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'+heroHTML
-    +pushHTML+referralHTML+creditHTML+giftCardHTML+challengeHTML
+    +badgesHTML(cust)
+    +pushHTML+referralHTML+creditHTML+giftCardHTML+challengeHTML+discoveryHTML
     +'<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
@@ -1785,6 +1827,14 @@ async function doClaimChallenge(){
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
+  render();
+}
+async function doClaimDiscoveryChallenge(){
+  try{
+    var res=await api('claim-discovery-challenge',{token:token});
+    if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
+    discChalMsg='¡Reto completado! +50 pts';
+  }catch(e){discChalMsg=e.message;}
   render();
 }
 function doLogout(){cust=null;isAdmin=false;savedPh='';token='';aErr='';localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');cacheCust(null);sc='p_auth';render();}

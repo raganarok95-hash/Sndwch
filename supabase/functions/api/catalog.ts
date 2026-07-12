@@ -285,6 +285,12 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
   return priced.length ? 0 : -1;
 }
 
+// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
+// separado, una vez por cada par sándwich+bebida en el carrito — DEBE coincidir con
+// COMBO_DISCOUNT_PER_PAIR en src/app.ts (ese lado solo calcula el estimado que ve el
+// cliente antes de pagar; este es el que de verdad determina cuánto se cobra).
+const COMBO_DISCOUNT_PER_PAIR = 3;
+
 export function deriveCart(rawItems: any, rewardId: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
   if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
   if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
@@ -298,6 +304,11 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
   priced.forEach((p) => {
     for (let i = 0; i < p.qty; i++) ingredients.push(...p.ingredientsPerUnit);
   });
+
+  const sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
+  const sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
+  const comboCount = Math.min(sandwichQty, sideQty);
+  total = Math.max(0, total - comboCount * COMBO_DISCOUNT_PER_PAIR);
 
   if (rewardId) {
     const reward = REWARDS[rewardId];

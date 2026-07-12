@@ -123,6 +123,49 @@ export async function actClaimChallenge(b: any) {
   return { success: true, customer: safeCustomer(finalRow) };
 }
 
+// Reto de descubrimiento: probar DISCOVERY_TARGET_FLAVORS Signatures DISTINTOS en el mes
+// (no repetir siempre el mismo) — a diferencia de actClaimChallenge (que solo cuenta
+// CUÁNTOS pedidos hiciste), este empuja a explorar el menú en vez de fijarse en un solo
+// sabor. Solo cuenta Signatures (sigId): un Build Your Own no tiene un "sabor" discreto
+// que contar, lo arma el propio cliente. Mismo patrón atómico que claim_monthly_challenge
+// (columna dedicada + RPC que marca el mes reclamado y suma el bono en un solo paso).
+const DISCOVERY_TARGET_FLAVORS = 3;
+const DISCOVERY_BONUS_POINTS = 50;
+export async function actClaimDiscoveryChallenge(b: any) {
+  const s = await requireSession(b.token);
+  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
+  if (!rows.length) throw new ApiError("Cliente no encontrado.", 404);
+  const c = rows[0];
+  const now = new Date();
+  const thisMonth = limaMonthKey(now);
+  if (c.discovery_claimed_month === thisMonth) throw new ApiError("Ya reclamaste este reto este mes.", 409);
+  const monthStart = limaMonthStartIso(now);
+  const orders = await sbGet(
+    "orders",
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
+  );
+  const flavors = new Set<string>();
+  for (const o of orders) {
+    const items = Array.isArray(o.items) ? o.items : [];
+    for (const it of items as any[]) {
+      if (it && it.type === "sig" && it.sigId) flavors.add(String(it.sigId));
+    }
+  }
+  if (flavors.size < DISCOVERY_TARGET_FLAVORS) {
+    throw new ApiError(`Todavía te faltan sabores nuevos este mes (${flavors.size}/${DISCOVERY_TARGET_FLAVORS}).`, 400);
+  }
+  const claimed = await rpc("claim_discovery_challenge", { p_phone: s.phone, p_month: thisMonth, p_bonus: DISCOVERY_BONUS_POINTS });
+  const finalRow = Array.isArray(claimed) ? claimed[0] : claimed;
+  await sbInsert("transactions", {
+    customer_phone: s.phone,
+    type: "earn_confirmed",
+    points: DISCOVERY_BONUS_POINTS,
+    description: `Reto de descubrimiento completado (${DISCOVERY_TARGET_FLAVORS} sabores distintos)`,
+    confirmed: true,
+  });
+  return { success: true, customer: safeCustomer(finalRow) };
+}
+
 // Antes actCreditGift transfería crédito con un solo tap y sin mostrarle al cliente el
 // nombre del destinatario — un typo en el teléfono mandaba dinero real a un desconocido
 // sin ninguna forma de verificar antes de confirmar (hallazgo de la auditoría de flujo de
