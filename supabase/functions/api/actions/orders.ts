@@ -724,6 +724,10 @@ const VALID_ORDER_STATUSES = new Set(STATUS_SEQUENCE);
 async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
   const upd: Record<string, unknown> = { status };
+  // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
+  // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
+  // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
+  if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
   if (etaMinutes) {
     const eta = Number(etaMinutes);
     if (!Number.isFinite(eta) || eta < 0 || eta > 240) throw new ApiError("ETA inválida.", 400);
@@ -894,8 +898,12 @@ export async function actAdminCancelOrder(b: any) {
 
   await restockOrderItems(order.items);
 
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, { status: "CANCELADO" });
-  await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid" });
+  // Motivo opcional (libre, lo escribe el operador) — sin esto, el resumen semanal solo
+  // podía contar CUÁNTOS pedidos se cancelaron, nunca POR QUÉ (hallazgo de la
+  // re-auditoría de automatización).
+  const reason = b.reason ? String(b.reason).trim().slice(0, 200) : "Sin especificar";
+  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, { status: "CANCELADO", cancel_reason: reason });
+  await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
   return { success: true, order: rows[0] };
 }
 
@@ -930,7 +938,7 @@ export async function actCancelMyOrder(b: any) {
   }
 
   await restockOrderItems(order.items);
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO" });
+  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Cliente canceló" });
   return { success: true, order: rows[0] };
 }
 
@@ -953,7 +961,7 @@ export async function actExpireStaleManualPayments(b: any) {
   for (const order of stale) {
     try {
       await restockOrderItems(order.items);
-      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO" });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Pago manual no confirmado a tiempo" });
       cancelled++;
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);

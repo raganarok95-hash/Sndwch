@@ -30,6 +30,7 @@ import {
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
+  actRemindSecondOrder, actRemindHighRankWinback,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -127,6 +128,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "anniversary-greeting": actAnniversaryGreeting,
   "sync-cart": actSyncCart,
   "remind-abandoned-cart": actRemindAbandonedCart,
+  "remind-second-order": actRemindSecondOrder,
+  "remind-high-rank-winback": actRemindHighRankWinback,
   "create-group-order": actCreateGroupOrder,
   "get-group-order": actGetGroupOrder,
   "add-group-item": actAddGroupItem,
