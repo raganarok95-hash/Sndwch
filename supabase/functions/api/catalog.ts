@@ -31,7 +31,37 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG02: { base: "B02", prot: "P06", tops: ["T04", "T03", "T01"], sauces: ["S02", "S07"], p15: 19, p30: 24 },
   SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
   SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 20 },
+  // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
+  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
+  SIG05: { base: "B02", prot: "P05", tops: ["T04", "T06", "T02"], sauces: ["S09", "S12"], p15: 24, p30: 30 },
 };
+// Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
+// campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
+// recién después a todos (poner una fecha ISO ahí en vez de dejarlo indefinido). Se
+// compara contra customers.total_orders de la SESIÓN que hace el pedido — un invitado
+// (sin sesión) nunca puede pedirlos, sin importar qué diga el carrito.
+export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
+  SIG05: { minOrders: 15 },
+};
+export function sigGateError(sigId: string, totalOrders: number): string | null {
+  const gate = SIG_GATES[sigId];
+  if (!gate) return null;
+  if (gate.earlyAccessUntil && Date.now() >= new Date(gate.earlyAccessUntil).getTime()) return null;
+  if (totalOrders >= gate.minOrders) return null;
+  return "Ese sabor es exclusivo del Círculo Interno — sigue pidiendo para desbloquearlo.";
+}
+// Usado por actPrepareOrder/actPlaceOrder ANTES de reservar inventario o cobrar — un
+// carrito con un sabor restringido para quien lo manda se rechaza igual que un producto
+// agotado, nunca solo se "ignora" el ítem en silencio.
+export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void {
+  if (!Array.isArray(rawItems)) return;
+  for (const it of rawItems) {
+    if (it && it.type === "sig" && typeof it.sigId === "string") {
+      const err = sigGateError(it.sigId, totalOrders);
+      if (err) throw new ApiError(err, 403);
+    }
+  }
+}
 // D01-D05 (chicha morada, inca kola, agua, papas, galleta) se retiraron del catálogo a
 // pedido del dueño — solo era reventa de botellas/paquetes sin nada distinto a lo que
 // vende cualquier otro local. Pedidos viejos que ya tenían estos códigos en su
@@ -52,6 +82,7 @@ export const SIG_LABEL: Record<string, string> = {
   SIG02: "THE FIRE // BUILD",
   SIG03: "THE SMOKE // BUILD",
   SIG04: "THE FRESH // BUILD",
+  SIG05: "THE VAULT // RESERVE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto

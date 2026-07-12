@@ -87,7 +87,14 @@ var SIGS=[
   {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'PREMIUM',   base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03','S08'],p15:21,p30:26,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   {id:'SIG04',n:'THE FRESH',   s:'BUILD',    badge:'LIGERO',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:20,
-    pitch:'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'}
+    pitch:'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
+  // Menú secreto — nunca aparece para invitados ni para quien no llegó a CÍRCULO INTERNO
+  // (ver sOSig/rankName). DEBE coincidir con SIG05 en supabase/functions/api/catalog.ts —
+  // el servidor es quien de verdad rechaza el pedido si no calificas, esto solo evita
+  // mostrarlo/dejarlo elegir en la UI antes de intentarlo.
+  {id:'SIG05',n:'THE VAULT',   s:'RESERVE',  badge:'SECRETO',   base:'B02',prot:'P05',tops:['T04','T06','T02'],sauces:['S09','S12'],p15:24,p30:30,
+    secret:true,minOrders:15,
+    pitch:'Solo para el Círculo Interno. Una combinación que no está en ningún menú — te la ganaste a pedidos, no con puntos.'}
 ];
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
@@ -147,6 +154,29 @@ var NEARBY_RADIUS_KM=3;
 // cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
 var COMBO_DISCOUNT_PER_PAIR=3;
+// Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
+// multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
+// DEBE coincidir con RANKS en supabase/functions/api/env.ts.
+var RANKS=[
+  {name:'NUEVO',minOrders:0},
+  {name:'REGULAR',minOrders:1},
+  {name:'DE LA CASA',minOrders:5},
+  {name:'CÍRCULO INTERNO',minOrders:15},
+  {name:'MESA FUNDADORA',minOrders:30}
+];
+function rankName(totalOrders){
+  var name=RANKS[0].name;
+  RANKS.forEach(function(r){if((totalOrders||0)>=r.minOrders)name=r.name;});
+  return name;
+}
+// Urgencia real (no un timer inventado): invQty ya se carga para todos, no solo para el
+// panel admin (ver loadInvBackground) — solo faltaba mostrárselo al cliente en vez de
+// guardarlo solo para uso interno.
+function lowStockNote(code){
+  var q=invQty[code];
+  if(q==null||q<=0||q>5)return'';
+  return'<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#ffa500;margin-left:6px;white-space:nowrap">¡QUEDAN '+q+'!</span>';
+}
 
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
@@ -801,13 +831,30 @@ function sOHome(){
 }
 
 function sOSig(){
-  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'+SZTOG()+ST('01','ELIGE TU BUILD','Tres salsas incluidas.')+SIGS.map(function(s){
+  // "Tu de siempre" — mismo repetir-último-pedido que ya existe en el home, pero
+  // visible también aquí (donde el cliente ya está decidiendo qué pedir) para el que
+  // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
+  var lastOrdSig=cust?lastPaidOrder():null;
+  var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
+  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ TU DE SIEMPRE //</div><div style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#F2F0EB">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
+  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'+SZTOG()+recoCardSig+ST('01','ELIGE TU BUILD','Tres salsas incluidas.')+SIGS.map(function(s){
+    // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
+    // cliente logueado que todavía no llega al rango exigido se muestra como una
+    // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.
+    if(s.secret){
+      if(!cust)return'';
+      var myTotal=cust.total_orders||0;
+      if(myTotal<s.minOrders){
+        var missing=s.minOrders-myTotal;
+        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">🔒 '+s.n+'<span style="color:#A8C8B0"> // </span>'+s.s+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">Se desbloquea en CÍRCULO INTERNO — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+      }
+    }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
     var av=isAvail(s.base)&&isAvail(s.prot);
     var priceTag=size?SOLES+sigPrice(s):'—';
     if(!av)return'<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.4"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">'+s.n+'<span style="color:#A8C8B0"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div></div>';
     var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';
-    return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+GOLD+'"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">📷 VER FOTO →</div></div></div></div>';
+    return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+GOLD+'"> // </span>'+s.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span>'+lowStockNote(s.prot)+'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">📷 VER FOTO →</div></div></div></div>';
   }).join('');
   var sig=SIGS.find(function(x){return x.id===sigId;});
   return h+'</div>'+(previewSigId?sigPreviewOverlayHTML():'')+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','enterConfirm()');
@@ -857,7 +904,7 @@ function sOBuild(){
   h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
   h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('02','PROTEÍNA','');
-  h+=PROTS.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?GOLD:'#444')+'">'+priceTag+'</span>',thumb):CARDOFF(p);}).join('');
+  h+=PROTS.map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?GOLD:'#444')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
   h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
   h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
   h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
@@ -1675,7 +1722,7 @@ function badgesHTML(c){
 }
 function sPProfile(){
   var initial=esc((cust.name||'?').trim().charAt(0).toUpperCase());
-  var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">'+esc(cust.phone)+'</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
+  var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-top:6px">'+rankName(cust.total_orders)+' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
   var referralHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💌 PROGRAMA<span style="color:'+GOLD+'"> // </span>REFERIDOS</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
   var creditHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">💳 CRÉDITO<span style="color:'+GOLD+'"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">'+SOLES+(cust.credit_balance||0)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','TELÉFONO DEL AMIGO // 9XXXXXXXX','tel',wPhone)+INP('cg-amt','MONTO A REGALAR // S/','number',wAmt)+'<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px">'+wMsg+'</div>'+BTN('REGALAR CRÉDITO //','doCreditGift()')+'</div></div>';
   var giftCardHTML='<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">🎁 TARJETA<span style="color:'+GOLD+'"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('COMPRAR Y REGALAR //',"sc='gift_card';render()")+'</div>';
@@ -2215,6 +2262,10 @@ function printTicket(ordId){
     +'<h1>SND//WCH — COCINA</h1><div>REF: '+esc(o.ref)+'</div><div>'+esc(o.date||'')+'</div><div class="hr"></div>'
     +items
     +'<div class="hr"></div>'+(o.notes?'<div><b>NOTA:</b> '+esc(o.notes)+'</div>':'')
+    // customer_rank se guarda en el pedido al momento de crearse (ver finalizeAndInsertOrder/
+    // orders.ts) — solo para los 2 rangos más altos vale la pena un toque especial en
+    // cocina; para el resto no aporta nada que el operador necesite ver.
+    +((o.customer_rank==='CÍRCULO INTERNO'||o.customer_rank==='MESA FUNDADORA')?'<div class="hr"></div><div>🌟 Cliente '+esc(o.customer_rank)+' — '+esc(o.customer_name||'')+'. ¡Gracias por su preferencia!</div>':'')
     +'<script>window.onload=function(){window.print();}<\/script></body></html>';
   var w=window.open('','_blank','width=340,height=600');
   if(!w){showToast('El navegador bloqueó la ventana de impresión.');return;}

@@ -24,6 +24,24 @@ export const REFERRAL_BONUS_POINTS = 50;
 export const WELCOME_BONUS_POINTS = 20;
 export const STALE_MANUAL_PAYMENT_HOURS = 3;
 
+// Rangos por antigüedad (total_orders) — puramente de reconocimiento/pertenencia, NUNCA
+// un multiplicador de puntos ni un precio distinto (VIP se retiró como tier justamente
+// por eso). DEBE coincidir con RANKS en src/app.ts (ese lado solo lo usa para mostrar el
+// chip en el perfil; este es el que de verdad queda guardado en cada pedido —
+// customer_rank— y el que exige sigGateError/catalog.ts para el menú secreto).
+export const RANKS: { name: string; minOrders: number }[] = [
+  { name: "NUEVO", minOrders: 0 },
+  { name: "REGULAR", minOrders: 1 },
+  { name: "DE LA CASA", minOrders: 5 },
+  { name: "CÍRCULO INTERNO", minOrders: 15 },
+  { name: "MESA FUNDADORA", minOrders: 30 },
+];
+export function computeRankName(totalOrders: number): string {
+  let name = RANKS[0].name;
+  for (const r of RANKS) if (totalOrders >= r.minOrders) name = r.name;
+  return name;
+}
+
 // Par de llaves VAPID para Web Push. La pública NO es secreta — vive tal cual en el
 // cliente (index.html) para pushManager.subscribe(); debe ser SIEMPRE el mismo par que
 // la privada de abajo. La privada sí es un secreto real y se lee de una variable de
