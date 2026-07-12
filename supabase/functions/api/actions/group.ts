@@ -9,8 +9,12 @@ import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, priceCartItem, assertCartGatesAllowed } from "../catalog.ts";
+import { sendPushToPhone } from "../push.ts";
 
-const GROUP_ORDER_WINDOW_HOURS = 3;
+// Ventana corta a propósito (pedido rápido de oficina, no algo para dejar abierto todo
+// el día) — ver GROUP_ORDER_WINDOW_MINUTES en src/app.ts para el countdown que ve el
+// cliente; ese lado es solo informativo, este es el que de verdad cierra el grupo.
+const GROUP_ORDER_WINDOW_MINUTES = 15;
 const MAX_GROUP_ITEMS = 60;
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sin 0/O ni 1/I/L — se confunden al compartirlo de palabra
 
@@ -24,7 +28,7 @@ export async function actCreateGroupOrder(b: any) {
   const s = await requireSession(b.token);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}&select=name`);
   const organizerName = rows[0]?.name || "Alguien";
-  const expiresAt = new Date(Date.now() + GROUP_ORDER_WINDOW_HOURS * 3600000).toISOString();
+  const expiresAt = new Date(Date.now() + GROUP_ORDER_WINDOW_MINUTES * 60000).toISOString();
   // Colisión de código (6 chars de un alfabeto de 32 = ~1 mil millones de combinaciones)
   // es prácticamente imposible, pero el reintento es gratis y evita un 500 feo en el
   // caso extremo.
@@ -101,6 +105,28 @@ export async function actAddGroupItem(b: any) {
   assertCartGatesAllowed([b.item], 0);
   const priced = priceCartItem(b.item); // valida el ítem — lanza ApiError si es inválido
   await sbInsert("group_order_items", { group_order_id: g.id, contributor_name: contributorName, item: priced.item });
+
+  // Avisa a quien organizó que alguien más se sumó — antes tenía que quedarse mirando la
+  // pantalla (o refrescar) para saber cuándo ya podía cerrar y pagar. Si quien organiza es
+  // quien está agregando su propio pedido, no tiene sentido notificarse a sí mismo.
+  let isOrganizerAdding = false;
+  if (b.token) {
+    const active = await verifyActiveSession(b.token);
+    if (active && active.payload.phone === g.organizer_phone) isOrganizerAdding = true;
+  }
+  if (!isOrganizerAdding) {
+    try {
+      await sendPushToPhone(g.organizer_phone, {
+        title: "Nuevo pedido en tu grupo",
+        body: `${contributorName} agregó su pedido a tu pedido grupal.`,
+        url: "./index.html?group=" + code,
+        tag: "sndwch-group-add-" + code,
+        renotify: true,
+      });
+    } catch {
+      // un push fallido no debe bloquear que el pedido se agregue
+    }
+  }
   return { success: true };
 }
 

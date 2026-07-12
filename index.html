@@ -1200,7 +1200,9 @@ async function doAddGroupItem(sigId) {
     }
     catch (e) { }
     try {
-        await api('add-group-item', { code: groupCode, contributorName: name, item: { type: 'sig', sigId: sigId, size: groupSize, doubleProt: false, extraSauce: false, qty: 1 } });
+        // Manda token (vacío si es invitado) para que el servidor sepa si quien agrega es
+        // quien organizó, y así no le mande una notificación push a sí mismo.
+        await api('add-group-item', { code: groupCode, contributorName: name, token: token, item: { type: 'sig', sigId: sigId, size: groupSize, doubleProt: false, extraSauce: false, qty: 1 } });
         groupMsg = '¡Listo! Tu pedido se agregó.';
         loadGroupOrder();
     }
@@ -1252,6 +1254,14 @@ function sGroupOrder() {
     var h = H('PEDIDO GRUPAL', bk) + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
     h += '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:4px">PEDIDO<span style="color:' + GOLD + '"> // </span>GRUPAL</div>';
     h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:16px">Organiza ' + esc(g.organizerName) + ' · código ' + esc(g.code) + '</div>';
+    if (g.status === 'open') {
+        var msLeft = new Date(g.expiresAt).getTime() - Date.now();
+        if (msLeft > 0) {
+            var minsLeft = Math.floor(msLeft / 60000), secsLeft = Math.floor((msLeft % 60000) / 1000);
+            var urgent = msLeft < 120000;
+            h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + (urgent ? '#ff8888' : '#A8C8B0') + ';letter-spacing:.1em;margin-bottom:14px">CIERRA EN ' + minsLeft + ':' + String(secsLeft).padStart(2, '0') + '</div>';
+        }
+    }
     if (g.isOrganizer && g.status === 'open') {
         h += BTN('COMPARTIR LINK //', 'shareGroupOrder()');
     }
