@@ -13,6 +13,9 @@ test('alguien sin cuenta se une por link y agrega su pedido', async ({ page }) =
   await page.goto(APP_FILE + '?group=ABC123');
   await page.waitForSelector('text=PEDIDO GRUPAL');
   await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
+  // Countdown de 15 min (ventana corta a propósito, ver GROUP_ORDER_WINDOW_MINUTES) —
+  // el mock expira en 1h así que alcanza a mostrar minutos de sobra sin acercarse a 0.
+  await expect(page.locator('text=CIERRA EN')).toBeVisible();
 
   await page.locator('#grp-name').fill('Beto');
   await page.getByRole('button', { name: 'AGREGAR' }).first().click();
@@ -25,6 +28,9 @@ test('alguien sin cuenta se une por link y agrega su pedido', async ({ page }) =
   expect(addCall!.body.contributorName).toBe('Beto');
   expect(addCall!.body.item.type).toBe('sig');
   expect(addCall!.body.item.size).toBe('15');
+  // Invitado sin cuenta manda token vacío — el servidor lo usa solo para distinguir si
+  // quien agrega es quien organizó (y así no notificarle su propio pedido a sí mismo).
+  expect(addCall!.body.token).toBe('');
 });
 
 test('el organizador también puede agregar su propio sándwich al pedido grupal', async ({ page }) => {
