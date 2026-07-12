@@ -479,6 +479,40 @@ export async function actRemindHighRankWinback(b: any) {
   return { success: true, reminded };
 }
 
+// Cuenta creada pero nunca un pedido pagado — distinto del carrito abandonado (que exige
+// que haya un carrito con productos): esto es demanda "casi capturada" que hoy no tenía
+// ningún seguimiento. Un solo aviso, no algo recurrente (a diferencia del re-enganche de
+// rango alto) — si en NEVER_ORDERED_MAX_DAYS no hizo su primer pedido, insistir más no
+// tiene mucho sentido y se deja de avisar.
+const NEVER_ORDERED_MIN_HOURS = 24;
+const NEVER_ORDERED_MAX_DAYS = 14;
+export async function actRemindNeverOrdered(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const minCreatedIso = new Date(Date.now() - NEVER_ORDERED_MAX_DAYS * 86400000).toISOString();
+  const maxCreatedIso = new Date(Date.now() - NEVER_ORDERED_MIN_HOURS * 3600000).toISOString();
+  const customers = await sbGet(
+    "customers",
+    `total_orders=eq.0&created_at=gte.${encodeURIComponent(minCreatedIso)}&created_at=lte.${encodeURIComponent(maxCreatedIso)}&select=phone,name`,
+  );
+  let reminded = 0;
+  for (const c of customers) {
+    try {
+      const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
+      if (!withinLimit) continue;
+      await sendPushToPhone(c.phone, {
+        title: "Tu cuenta SND//WCH ya está lista",
+        body: "Arma tu primer Signature — el registro es lo único que te faltaba.",
+        url: "./index.html",
+        tag: "sndwch-never-ordered",
+      });
+      reminded++;
+    } catch (e) {
+      console.error("remind-never-ordered failed for", c.phone, e);
+    }
+  }
+  return { success: true, reminded };
+}
+
 // Aniversario de cuenta — puro cariño, sin puntos de por medio (a diferencia de
 // birthday-bonus, que sí regala puntos): un push el día que se cumplen años desde que el
 // cliente se registró. created_at es el único dato de "cuándo empezó todo esto" que
