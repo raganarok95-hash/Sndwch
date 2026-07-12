@@ -3637,6 +3637,18 @@ function sAdminDashboard() {
         + DTILE('MES', SOLES + d.revenue.month.revenue, d.revenue.month.count + ' pedidos · tkt ' + SOLES + d.revenue.month.avgTicket + deltaTxt(d.deltas && d.deltas.monthRevenuePct))
         + DTILE('TOTAL', SOLES + d.revenue.allTime.revenue, d.revenue.allTime.count + ' pedidos · tkt ' + SOLES + d.revenue.allTime.avgTicket)
         + '</div>';
+    // Ganancia estimada = ingresos × (1 - costo de insumos ~40-50%, ver COGS_LOW/HIGH en
+    // admin.ts) — siempre como rango, nunca como cifra exacta, porque no hay costo real
+    // por receta en el sistema (solo precio de venta).
+    if (d.estimatedProfit) {
+        h += '<div style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px">'
+            + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#25D366;letter-spacing:.15em;margin-bottom:8px">GANANCIA ESTIMADA (rango, no exacta) //</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+            + [['HOY', d.estimatedProfit.today], ['SEMANA', d.estimatedProfit.week], ['MES', d.estimatedProfit.month], ['TOTAL', d.estimatedProfit.allTime]].map(function (x) {
+                return '<div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em">' + x[0] + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:900;color:#25D366">' + SOLES + x[1].low + '–' + SOLES + x[1].high + '</div></div>';
+            }).join('')
+            + '</div></div>';
+    }
     if (d.codPending && d.codPending.count > 0) {
         h += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ffa500;letter-spacing:.15em">POR COBRAR · CONTRA ENTREGA //</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">' + d.codPending.count + ' pedido(s) sin cobrar todavía</div></div><div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:900;color:#ffa500">' + SOLES + d.codPending.total + '</div></div>';
     }
@@ -4670,10 +4682,16 @@ function sAdminPrepList() {
         return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>' + BTN('REINTENTAR //', 'loadPrepList()') + '</div>';
     }
     var d = prepListData;
+    var shortfalls = d.ingredients.filter(function (i) { return i.shortfall; });
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:16px">Próximas ' + d.windowHours + 'h · ' + d.orders.length + ' pedido' + (d.orders.length === 1 ? '' : 's') + ' programado' + (d.orders.length === 1 ? '' : 's') + '</div>';
+    if (shortfalls.length) {
+        h += '<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#ff8888;letter-spacing:.1em;margin-bottom:6px">⚠ NO VA A ALCANZAR //</div>'
+            + shortfalls.map(function (i) { return '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;margin-bottom:4px">' + esc(i.label) + ' — necesitas ' + i.qty + (i.stockQty != null ? ', tienes ' + i.stockQty : ', sin stock') + '</div>'; }).join('')
+            + '</div>';
+    }
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px;font-weight:700">INGREDIENTES A PREPARAR //</div>';
     h += d.ingredients.length ? d.ingredients.map(function (i) {
-        return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px"><span style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">' + esc(i.label) + '</span><span style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:' + GOLD + '">×' + i.qty + '</span></div>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid ' + (i.shortfall ? 'rgba(255,85,85,.4)' : '#3A6B58') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px"><span style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">' + esc(i.label) + '</span><span style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:' + (i.shortfall ? '#ff8888' : GOLD) + '">×' + i.qty + '</span></div>';
     }).join('') : '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin pedidos programados en esta ventana.</div>';
     if (d.orders.length) {
         h += '<div style="height:1px;background:#1E3932;margin:18px 0"></div>';

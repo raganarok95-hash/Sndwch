@@ -147,6 +147,20 @@ export async function actAdminExportCustomers(b: any) {
   return { customers: rows.slice(0, EXPORT_LIMIT), truncated: rows.length > EXPORT_LIMIT };
 }
 
+// Ganancia estimada = ingresos × (1 - costo de insumos). El % viene de lo que el dueño
+// reportó (~40-50% del precio de venta) — no hay costo real por receta en el sistema
+// (ver env.ts/catalog.ts: solo precios de venta, ningún costo de ingrediente), así que
+// esto SIEMPRE se muestra como rango, nunca como cifra exacta, para no aparentar una
+// precisión que no existe.
+const COGS_LOW = 0.4;
+const COGS_HIGH = 0.5;
+function estimatedProfitRange(revenue: number): { low: number; high: number } {
+  return {
+    low: Math.round(revenue * (1 - COGS_HIGH)),
+    high: Math.round(revenue * (1 - COGS_LOW)),
+  };
+}
+
 const DASHBOARD_WINDOW_LIMIT = 5000;
 export async function actDashboardStats(b: any) {
   await requireAdmin(b.token);
@@ -247,6 +261,12 @@ export async function actDashboardStats(b: any) {
   // apertura del dashboard (hallazgo de la re-auditoría de rendimiento).
   return {
     revenue: { today: todayStats, week: weekStats, month: monthStats, allTime: allTimeStats },
+    estimatedProfit: {
+      today: estimatedProfitRange(todayStats.revenue),
+      week: estimatedProfitRange(weekStats.revenue),
+      month: estimatedProfitRange(monthStats.revenue),
+      allTime: estimatedProfitRange(allTimeStats.revenue),
+    },
     trend,
     ordersByStatus: statusCounts,
     pendingPayment,
@@ -483,13 +503,24 @@ export async function actAdminPrepList(b: any) {
     }
   }
   const codes = [...ingredientCounts.keys()];
-  const nameRows = codes.length
-    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name`)
+  // stock_qty/in_stock también, para poder avisar ANTES de que llegue la hora si lo que
+  // hay no va a alcanzar para los pedidos ya programados — antes esto solo se descubría
+  // cuando ya era tarde para comprar más.
+  const invRows = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty`)
     : [];
-  const nameMap = new Map(nameRows.map((r: any) => [r.product_code, r.product_name]));
+  const invMap = new Map(invRows.map((r: any) => [r.product_code, r]));
   const ingredients = codes
-    .map((code) => ({ code, label: nameMap.get(code) || code, qty: ingredientCounts.get(code)! }))
-    .sort((a, b) => b.qty - a.qty);
+    .map((code) => {
+      const inv = invMap.get(code);
+      const qty = ingredientCounts.get(code)!;
+      const stockQty = inv?.stock_qty ?? null;
+      // Sin fila en inventory = nunca se marcó agotado ni se le puso cantidad — no hay
+      // forma de saber si alcanza, así que no se marca como faltante.
+      const shortfall = inv?.in_stock === false || (stockQty != null && stockQty < qty);
+      return { code, label: inv?.product_name || code, qty, stockQty, shortfall };
+    })
+    .sort((a, b) => (a.shortfall === b.shortfall ? b.qty - a.qty : a.shortfall ? -1 : 1));
   return { orders, ingredients, windowHours: PREP_LIST_WINDOW_HOURS };
 }
 

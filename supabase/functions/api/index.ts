@@ -30,7 +30,7 @@ import {
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actPrepareCreditPurchase, actConfirmCreditPurchase, actExpirePendingCreditPurchases,
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
-  actRemindSecondOrder, actRemindHighRankWinback,
+  actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
   actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
   actRequestRestockNotify,
 } from "./actions/customer.ts";
@@ -138,6 +138,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "request-restock-notify": actRequestRestockNotify,
   "remind-second-order": actRemindSecondOrder,
   "remind-high-rank-winback": actRemindHighRankWinback,
+  "remind-never-ordered": actRemindNeverOrdered,
   "prepare-weekly-plan": actPrepareWeeklyPlan,
   "confirm-weekly-plan": actConfirmWeeklyPlan,
   "expire-pending-weekly-plans": actExpirePendingWeeklyPlans,
