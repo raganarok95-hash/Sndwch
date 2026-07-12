@@ -246,6 +246,7 @@ var auditLog=null;
 var storeHoursForm=null,storeHoursMsg='';
 var reportFrom='',reportTo='',reportData=null,reportErr='';
 var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false;
+var prepListData=null,timeReportData=null,problemAddressesData=null;
 var bulkSelected={};
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
@@ -281,6 +282,10 @@ var groupCodeFromUrl=null;
 // Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
 // sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).
 var groupCode=null,groupData=null,groupJoinName='',groupMsg='',groupSize='15';
+// Signatures para los que ya se pidió "avísame cuando vuelva" en esta sesión — solo
+// para no dejar tocar el botón dos veces mientras se está en la app; el servidor ya
+// deduplica con un unique (customer_phone, sig_id) si igual llega a repetirse.
+var restockNotified=[];
 try{groupJoinName=localStorage.getItem('sw_group_name')||'';}catch(e){}
 var _groupPollTimer=null;
 
@@ -1027,7 +1032,12 @@ function sOSig(){
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
     var av=isAvail(s.base)&&isAvail(s.prot);
     var priceTag=size?SOLES+sigPrice(s):'—';
-    if(!av)return'<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.4"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">'+s.n+'<span style="color:#A8C8B0"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div></div>';
+    if(!av){
+      var notifyRequested=restockNotified.indexOf(s.id)>=0;
+      return'<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">'+s.n+'<span style="color:#A8C8B0"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
+        +(cust?'<button onclick="doRequestRestockNotify(\''+s.id+'\')" '+(notifyRequested?'disabled':'')+' style="all:unset;cursor:'+(notifyRequested?'default':'pointer')+';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(notifyRequested?'#25D366':GOLD)+';letter-spacing:.08em">'+(notifyRequested?'✓ TE AVISAMOS CUANDO VUELVA':'AVÍSAME CUANDO VUELVA →')+'</button>':'')
+        +'</div>';
+    }
     var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';
     return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span>'+(s.chef?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:'+GOLD+';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>':'')+lowStockNote(s.prot)+'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-block;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">📷 VER FOTO →</div></div></div></div>';
   }).join('');
@@ -2139,6 +2149,15 @@ async function chargeAndFinalizeWeeklyPlan(culqiToken){
     busy=false;wpMsg='Error de conexión al procesar el pago. Intenta de nuevo.';_pendingWeeklyPlan=null;render();
   }
 }
+async function doRequestRestockNotify(sigId){
+  if(restockNotified.indexOf(sigId)>=0)return;
+  try{
+    await api('request-restock-notify',{token:token,sigId:sigId});
+    restockNotified.push(sigId);
+    render();
+    showToast('Te avisamos apenas vuelva.','success');
+  }catch(e){showToast(e.message);}
+}
 async function doClaimChallenge(){
   try{
     var res=await api('claim-challenge',{token:token});
@@ -2598,6 +2617,9 @@ var ADMIN_ICONS={
   auditoria:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
   sonido:'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/>',
   notif:'<path d="M12 3a5 5 0 0 0-5 5v3.5L5 15h14l-2-3.5V8a5 5 0 0 0-5-5z"/><path d="M9.5 18a2.5 2.5 0 0 0 5 0"/>',
+  prep:'<rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><path d="M9 12h6M9 16h4"/>',
+  franjas:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16v-7M16 16v-2"/>',
+  direccion:'<path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/>',
 };
 function adminIcon(name){return'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+GOLD+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ADMIN_ICONS[name]||'')+'</svg>';}
 function minutesAgo(iso){
@@ -2738,6 +2760,11 @@ function sAdminHome(){
         ['puntos','PUNTOS MANUALES','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],
         ['admins','ADMINISTRADORES','loadAdminMgr()'],
         ['auditoria','AUDITORÍA','loadAuditLog()'],
+      ]],
+      ['COCINA Y OPERACIÓN //',[
+        ['prep','PREPARACIÓN','loadPrepList()'],
+        ['franjas','FRANJAS HORARIAS','loadTimeWindowReport()'],
+        ['direccion','DIRECCIONES','loadProblemAddresses()'],
       ]],
     ].map(function(section: any){
       return'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">'+section[0]+'</div>'
@@ -3094,6 +3121,9 @@ function render(){
     case'admin_report':h=sAdminReport();break;
     case'admin_ratings':h=sAdminRatings();break;
     case'admin_complaints':h=sAdminComplaints();break;
+    case'admin_prep':h=sAdminPrepList();break;
+    case'admin_time_report':h=sAdminTimeReport();break;
+    case'admin_problem_addresses':h=sAdminProblemAddresses();break;
     default:           h=sOHome();
   }
   var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
@@ -3546,6 +3576,88 @@ function sAdminRatings(){
       +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE'))+'</div>'
       +'</div>';
   }).join(''):'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin calificaciones //</div>';
+  h+='</div>';
+  return h;
+}
+
+// PREPARACIÓN ANTICIPADA — agrega los ingredientes de todos los pedidos programados de
+// las próximas 24h en un solo resumen, para que la cocina prepare antes de que entren
+// en cola (antes cada pedido programado se preparaba recién cuando llegaba su hora).
+async function loadPrepList(){
+  sc='admin_prep';busy=true;busyMsg='Calculando preparación...';render();
+  try{prepListData=await api('admin-prep-list',{token:token});}
+  catch(e){prepListData=null;}
+  busy=false;render();
+}
+function sAdminPrepList(){
+  var h=H('PREPARACIÓN',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!prepListData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>'+BTN('REINTENTAR //','loadPrepList()')+'</div>';
+  }
+  var d=prepListData;
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Próximas '+d.windowHours+'h · '+d.orders.length+' pedido'+(d.orders.length===1?'':'s')+' programado'+(d.orders.length===1?'':'s')+'</div>';
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">INGREDIENTES A PREPARAR //</div>';
+  h+=d.ingredients.length?d.ingredients.map(function(i){
+    return'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px"><span style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+esc(i.label)+'</span><span style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:'+GOLD+'">×'+i.qty+'</span></div>';
+  }).join(''):'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin pedidos programados en esta ventana.</div>';
+  if(d.orders.length){
+    h+='<div style="height:1px;background:#1E3932;margin:18px 0"></div>';
+    h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PEDIDOS INCLUIDOS //</div>';
+    h+=d.orders.map(function(o){
+      return'<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:#A8C8B0;margin-bottom:6px">'+esc(o.ref)+' · '+esc(o.customerName)+' · '+esc(new Date(o.deliveryTime).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</div>';
+    }).join('');
+  }
+  h+=BTN('ACTUALIZAR //','loadPrepList()',true);
+  h+='</div>';
+  return h;
+}
+
+// FRANJAS HORARIAS — no hay turnos de cocina distintos (una sola persona atiende), así
+// que esto no mide personal: agrupa pedidos por hora del día para ver si hay una franja
+// con más cancelaciones o entregas más lentas que el resto.
+async function loadTimeWindowReport(){
+  sc='admin_time_report';busy=true;busyMsg='Calculando franjas horarias...';render();
+  try{timeReportData=await api('admin-time-window-report',{token:token});}
+  catch(e){timeReportData=null;}
+  busy=false;render();
+}
+function sAdminTimeReport(){
+  var h=H('FRANJAS HORARIAS',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!timeReportData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>'+BTN('REINTENTAR //','loadTimeWindowReport()')+'</div>';
+  }
+  var d=timeReportData;
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Últimos '+d.windowDays+' días · ordenado por % de cancelación</div>';
+  h+=d.hours.length?d.hours.map(function(hr){
+    var urgent=hr.cancelRatePct>=20;
+    return'<div style="background:#2D5246;border:1px solid '+(urgent?'rgba(255,85,85,.4)':'#3A6B58')+';border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+String(hr.hour).padStart(2,'0')+':00–'+String((hr.hour+1)%24).padStart(2,'0')+':00</span><span style="font-family:Share Tech Mono,monospace;font-size:13px;color:'+(urgent?'#ff8888':GOLD)+'">'+hr.cancelRatePct+'% cancelado</span></div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;margin-top:4px">'+hr.total+' pedido'+(hr.total===1?'':'s')+' · '+hr.cancelled+' cancelado'+(hr.cancelled===1?'':'s')+(hr.avgDeliveryMin!=null?' · entrega prom. '+hr.avgDeliveryMin+' min':'')+'</div></div>';
+  }).join(''):'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin pedidos en este período.</div>';
+  h+=BTN('ACTUALIZAR //','loadTimeWindowReport()',true);
+  h+='</div>';
+  return h;
+}
+
+// DIRECCIONES CON ENTREGAS FALLIDAS REPETIDAS — si una dirección acumula 2+
+// cancelaciones vale la pena revisarla antes del próximo pedido a ese mismo lugar.
+async function loadProblemAddresses(){
+  sc='admin_problem_addresses';busy=true;busyMsg='Buscando direcciones...';render();
+  try{problemAddressesData=await api('admin-problem-addresses',{token:token});}
+  catch(e){problemAddressesData=null;}
+  busy=false;render();
+}
+function sAdminProblemAddresses(){
+  var h=H('DIRECCIONES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!problemAddressesData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>'+BTN('REINTENTAR //','loadProblemAddresses()')+'</div>';
+  }
+  var addrs=problemAddressesData.addresses||[];
+  h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Direcciones con 2+ cancelaciones</div>';
+  h+=addrs.length?addrs.map(function(a){
+    return'<div style="background:#2D5246;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><span style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB;flex:1">'+esc(a.address)+'</span><span style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:#ff8888;flex-shrink:0;margin-left:10px">'+a.cancelCount+'</span></div>'
+      +(a.reasons&&a.reasons.length?'<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;margin-top:6px">'+a.reasons.map(function(r){return esc(r);}).join(' · ')+'</div>':'')
+      +'</div>';
+  }).join(''):'<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin direcciones con cancelaciones repetidas.</div>';
+  h+=BTN('ACTUALIZAR //','loadProblemAddresses()',true);
   h+='</div>';
   return h;
 }

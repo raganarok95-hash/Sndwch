@@ -5,8 +5,49 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, buildTopProducts } from "../catalog.ts";
+import { loadCatalogPrices, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL } from "../catalog.ts";
 import { computeRankName } from "../env.ts";
+import { sendPushToPhone } from "../push.ts";
+
+// Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
+// Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
+// avisa a quienes pidieron "avísame cuando vuelva" (ver actRequestRestockNotify,
+// customer.ts) — sin esto, esa demanda quedaba perdida en silencio: la tarjeta AGOTADO
+// ni siquiera dejaba intentar pedirlo.
+async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
+  const affectedSigIds = Object.entries(SIG_DATA)
+    .filter(([, sig]) => sig.base === restockedCode || sig.prot === restockedCode)
+    .map(([id]) => id);
+  if (!affectedSigIds.length) return;
+  for (const sigId of affectedSigIds) {
+    const sig = SIG_DATA[sigId];
+    const rows = await sbGet(
+      "inventory",
+      `product_code=in.(${encodeURIComponent(sig.base)},${encodeURIComponent(sig.prot)})&select=product_code,in_stock`,
+    );
+    const baseRow = rows.find((r: any) => r.product_code === sig.base);
+    const protRow = rows.find((r: any) => r.product_code === sig.prot);
+    // Sin fila en inventory = nunca se marcó agotado, así que cuenta como disponible.
+    const baseOk = !baseRow || baseRow.in_stock !== false;
+    const protOk = !protRow || protRow.in_stock !== false;
+    if (!baseOk || !protOk) continue;
+    const requests = await sbGet("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}&select=id,customer_phone`);
+    if (!requests.length) continue;
+    for (const r of requests) {
+      try {
+        await sendPushToPhone(r.customer_phone, {
+          title: "¡Ya volvió!",
+          body: (SIG_LABEL[sigId] || "El sabor que pediste") + " ya está disponible de nuevo.",
+          url: "./index.html",
+          tag: "sndwch-restock-" + sigId,
+        });
+      } catch {
+        // un push fallido no debe bloquear el resto de los avisos
+      }
+    }
+    await sbDelete("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}`);
+  }
+}
 
 export async function actAdminManualPoints(b: any) {
   const s = await requireAdmin(b.token);
@@ -66,6 +107,7 @@ export async function actAdminInventoryToggle(b: any) {
   } else {
     await sbInsert("inventory", { product_code: code, product_name: name, in_stock: inStock });
   }
+  if (inStock) await notifyRestockedSignatures(code);
   return { success: true };
 }
 
@@ -83,6 +125,7 @@ export async function actAdminInventorySetStock(b: any) {
   } else {
     await sbInsert("inventory", { product_code: code, product_name: name, in_stock: qty == null || qty > 0, ...upd });
   }
+  if (qty == null || qty > 0) await notifyRestockedSignatures(code);
   return { success: true };
 }
 
@@ -405,4 +448,111 @@ export async function actAdminRatingsList(b: any) {
   if (onlyWithComments) parts.push("comment=not.is.null");
   parts.push(`order=created_at.desc&limit=${limit}`);
   return { ratings: await sbGet("ratings", parts.join("&")) };
+}
+
+// Lista de preparación anticipada — agrega en un solo resumen los ingredientes de TODOS
+// los pedidos programados ("para más tarde") de las próximas horas, para que la cocina
+// prepare antes de que entren en cola. Antes cada pedido programado se preparaba recién
+// cuando llegaba su hora, sin ninguna vista agregada de cuánto se viene.
+const PREP_LIST_WINDOW_HOURS = 24;
+export async function actAdminPrepList(b: any) {
+  await requireAdmin(b.token);
+  await loadCatalogPrices();
+  const nowIso = new Date().toISOString();
+  const windowEndIso = new Date(Date.now() + PREP_LIST_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "orders",
+    `delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEndIso)}` +
+      `&status=neq.CANCELADO&status=neq.ENTREGADO&select=ref,customer_name,delivery_time,items&order=delivery_time.asc&limit=500`,
+  );
+  const ingredientCounts = new Map<string, number>();
+  const orders: { ref: string; customerName: string; deliveryTime: string }[] = [];
+  for (const o of rows) {
+    orders.push({ ref: o.ref, customerName: o.customer_name, deliveryTime: o.delivery_time });
+    if (!Array.isArray(o.items)) continue;
+    for (const it of o.items) {
+      try {
+        const priced = priceCartItem(it);
+        for (const code of priced.ingredientsPerUnit) {
+          ingredientCounts.set(code, (ingredientCounts.get(code) || 0) + priced.qty);
+        }
+      } catch {
+        // Ítem legado que ya no encaja en el catálogo actual — se omite solo ese ítem,
+        // el resto de la lista de preparación sigue siendo útil.
+      }
+    }
+  }
+  const codes = [...ingredientCounts.keys()];
+  const nameRows = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name`)
+    : [];
+  const nameMap = new Map(nameRows.map((r: any) => [r.product_code, r.product_name]));
+  const ingredients = codes
+    .map((code) => ({ code, label: nameMap.get(code) || code, qty: ingredientCounts.get(code)! }))
+    .sort((a, b) => b.qty - a.qty);
+  return { orders, ingredients, windowHours: PREP_LIST_WINDOW_HOURS };
+}
+
+// Rendimiento por franja horaria — no hay turnos de cocina distintos (una sola persona
+// atiende), así que esto no mide personal: agrupa pedidos por hora del día (hora Lima)
+// para detectar si hay una franja con más cancelaciones o entregas más lentas que otras,
+// sin importar quién esté atendiendo.
+const TIME_WINDOW_REPORT_DAYS = 30;
+export async function actAdminTimeWindowReport(b: any) {
+  await requireAdmin(b.token);
+  const sinceIso = new Date(Date.now() - TIME_WINDOW_REPORT_DAYS * 86400000).toISOString();
+  const rows = await sbGet("orders", `created_at=gte.${encodeURIComponent(sinceIso)}&select=created_at,status,delivered_at&limit=5000`);
+  const buckets: Record<number, { total: number; cancelled: number; deliveredCount: number; deliveryMinutesSum: number }> = {};
+  for (let h = 0; h < 24; h++) buckets[h] = { total: 0, cancelled: 0, deliveredCount: 0, deliveryMinutesSum: 0 };
+  for (const o of rows) {
+    const limaHour = new Date(new Date(o.created_at).getTime() - 5 * 3600000).getUTCHours();
+    const bucket = buckets[limaHour];
+    bucket.total++;
+    if (o.status === "CANCELADO") bucket.cancelled++;
+    if (o.delivered_at) {
+      const mins = (new Date(o.delivered_at).getTime() - new Date(o.created_at).getTime()) / 60000;
+      if (mins > 0 && mins < 240) {
+        bucket.deliveredCount++;
+        bucket.deliveryMinutesSum += mins;
+      }
+    }
+  }
+  const hours = Object.entries(buckets)
+    .map(([h, v]) => ({
+      hour: Number(h),
+      total: v.total,
+      cancelled: v.cancelled,
+      cancelRatePct: v.total ? Math.round((v.cancelled / v.total) * 1000) / 10 : 0,
+      avgDeliveryMin: v.deliveredCount ? Math.round(v.deliveryMinutesSum / v.deliveredCount) : null,
+    }))
+    .filter((h) => h.total > 0)
+    .sort((a, b) => b.cancelRatePct - a.cancelRatePct);
+  return { hours, windowDays: TIME_WINDOW_REPORT_DAYS };
+}
+
+// Direcciones con entregas fallidas repetidas — si una dirección acumula 2+
+// cancelaciones (cualquier motivo), vale la pena que el dueño la revise antes del
+// próximo pedido a ese mismo lugar en vez de descubrir el patrón recién a la tercera vez.
+const PROBLEM_ADDRESS_MIN_CANCELS = 2;
+const PROBLEM_ADDRESS_SCAN_LIMIT = 2000;
+export async function actAdminProblemAddresses(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet(
+    "orders",
+    `status=eq.CANCELADO&customer_address=not.is.null&select=customer_address,cancel_reason,created_at&order=created_at.desc&limit=${PROBLEM_ADDRESS_SCAN_LIMIT}`,
+  );
+  const map = new Map<string, { count: number; reasons: string[]; lastAt: string }>();
+  for (const o of rows) {
+    const addr = String(o.customer_address || "").trim();
+    if (!addr) continue;
+    const entry = map.get(addr) || { count: 0, reasons: [], lastAt: o.created_at };
+    entry.count++;
+    if (o.cancel_reason && entry.reasons.length < 5) entry.reasons.push(o.cancel_reason);
+    map.set(addr, entry);
+  }
+  const addresses = [...map.entries()]
+    .filter(([, v]) => v.count >= PROBLEM_ADDRESS_MIN_CANCELS)
+    .map(([address, v]) => ({ address, cancelCount: v.count, reasons: v.reasons, lastAt: v.lastAt }))
+    .sort((a, b) => b.cancelCount - a.cancelCount);
+  return { addresses };
 }
