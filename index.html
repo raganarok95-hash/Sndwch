@@ -60,12 +60,6 @@ body.no-fi .fi{animation:none}
 [style*="cursor:pointer"]{transition:transform .08s ease}
 [style*="cursor:pointer"]:active{transform:scale(.97)}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
-/* Casi todo botón real de la app usa style="all:unset;..." (ver BTN()/H()/etc en
-   app.ts) — "all:unset" resetea outline-style a "none", así que sin esto NINGÚN
-   botón mostraba indicador de foco al navegar con teclado. !important es necesario
-   porque un estilo inline (all:unset) le gana a cualquier regla externa sin él —
-   mismo patrón que ya usa input:focus más arriba. */
-:focus-visible{outline:2px solid #CBA258 !important;outline-offset:2px !important}
 </style>
 <style>
 #mmap{display:none;position:fixed;inset:0;background:#1E3932;z-index:9999;flex-direction:column}
@@ -86,11 +80,8 @@ var API_FN_URL = SB_URL + '/functions/v1/api';
 // ACCENT2 — segundo acento (ya se usaba suelto en PREPARANDO/ETA/programado antes de
 // tener nombre propio) para diferenciar jerarquía: dorado = acción primaria, azul =
 // acción secundaria/informativa. Sin esto, un botón "outline" y uno "filled" solo se
-// distinguían por el relleno, ambos en el mismo dorado. El tono original (#3A86FF)
-// no llegaba a 4.5:1 de contraste sobre los fondos oscuros de la app (auditoría de
-// accesibilidad) — este es más claro para pasar WCAG AA en texto normal manteniendo
-// el mismo azul.
-var WA = '51930957640', GOLD = '#CBA258', ACCENT2 = '#9BC4FF';
+// distinguían por el relleno, ambos en el mismo dorado.
+var WA = '51930957640', GOLD = '#CBA258', ACCENT2 = '#3A86FF';
 // Identidad legal del negocio — mostrada en el pie de página, en Términos, y como
 // identificación del proveedor en el Libro de Reclamaciones (exigido por el Código de
 // Protección y Defensa del Consumidor). Debe coincidir EXACTAMENTE con lo que el backend
@@ -119,7 +110,7 @@ var CREDIT_CHARGE_FN_URL = SB_URL + '/functions/v1/create-credit-charge';
 var EMAIL_FN_URL = SB_URL + '/functions/v1/send-order-email';
 var STATUSES = {
     'RECIBIDO': { c: '#ffa500', next: 'PREPARANDO', icon: 'reclamo' },
-    'PREPARANDO': { c: ACCENT2, next: 'EN CAMINO', icon: '' },
+    'PREPARANDO': { c: '#3A86FF', next: 'EN CAMINO', icon: '' },
     'EN CAMINO': { c: '#9b6fff', next: 'ENTREGADO', icon: 'moto' },
     'ENTREGADO': { c: '#25D366', next: null, icon: 'check' },
     'CANCELADO': { c: '#8B8B8B', next: null, icon: '✕' }
@@ -455,7 +446,7 @@ function renderOverlays() {
         html += '<div style="position:fixed;left:16px;right:16px;bottom:20px;z-index:400;display:flex;justify-content:center" class="fi">'
             + '<div style="max-width:420px;width:100%;background:' + (isErr ? '#3a1414' : '#1A3028') + ';border:1px solid ' + (isErr ? 'rgba(255,85,85,.5)' : 'rgba(203,162,88,.4)') + ';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
             + '<div style="flex:1;font-family:\'Barlow\',sans-serif;font-size:13px;color:' + (isErr ? '#ffb3b3' : '#F2F0EB') + ';line-height:1.4">' + esc(toastMsg) + '</div>'
-            + '<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#A8C8B0') + ';font-size:16px;line-height:1;padding:10px">&#10005;</button>'
+            + '<button onclick="dismissToast()" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#A8C8B0') + ';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
             + '</div></div>';
     }
     if (confirmState) {
@@ -651,12 +642,12 @@ function WORDMARK(size, hero) {
     return '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:' + size + 'px;font-weight:900;color:#fff;letter-spacing:.02em;line-height:1' + (hero ? ';text-shadow:0 2px 14px rgba(0,0,0,.35)' : '') + '">SND<span style="color:' + GOLD + ';letter-spacing:.14em;padding:0 1px">//</span>WCH</span>';
 }
 function H(sub, bk, showCart) {
-    var b = bk ? '<button onclick="' + bk + '" aria-label="Volver" style="all:unset;cursor:pointer;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:12px 14px 12px 0;flex-shrink:0">←</button>' : '';
+    var b = bk ? '<button onclick="' + bk + '" style="all:unset;cursor:pointer;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 14px 0 0;flex-shrink:0">←</button>' : '';
     var sz = sub ? 26 : 40;
     var s2 = sub ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1c1c1c;letter-spacing:.35em;margin-top:4px">BUILD // YOUR // BITE</div>';
     // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
     // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
-    var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:13px 15px;background:#2D5246;border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
+    var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:#2D5246;border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
     return '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + '</div>';
 }
 function NAV() {
@@ -1122,8 +1113,8 @@ function sOHome() {
     var recoItems = lastOrd ? (lastOrd.items && lastOrd.items.length ? lastOrd.items : (lastOrd.build ? [buildToCartItem(lastOrd.build)] : null)) : null;
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">' + esc(lastOrd.summary || '') + '</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
     var cartCard = cart.length ? '<div onclick="go(\'o_cart\')" style="background:#2D5246;border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + icon('cart', 16, '#FFFFFF') + 'CARRITO<span style="color:' + GOLD + '"> // </span>' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + ' items</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + GOLD + '">VER \u2192</span></div>' : '';
-    var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('device', 15, GOLD) + 'INSTALAR<span style="color:' + GOLD + '"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Descartar" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:12px">&#10005;</button></div>' : '';
-    var nearbyCard = (nearStore && ss.open) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('direccion', 15, GOLD) + '¡ESTÁS CERCA<span style="color:' + GOLD + '"> // </span>DEL LOCAL!</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Descartar" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:12px">&#10005;</button></div>' : '';
+    var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('device', 15, GOLD) + 'INSTALAR<span style="color:' + GOLD + '"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
+    var nearbyCard = (nearStore && ss.open) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('direccion', 15, GOLD) + '¡ESTÁS CERCA<span style="color:' + GOLD + '"> // </span>DEL LOCAL!</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
     return H()
         + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
         + hoursBadge
@@ -1613,7 +1604,7 @@ function checkoutExtrasHTML() {
     return pBox
         + (manualPayMethod ? '' : rewardsPickerHTML())
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom) + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone) + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail) + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText) + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación GPS" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom) + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone) + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail) + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText) + '<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:#FFFFFF">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + '<div style="margin-top:10px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('moto', 13, '#A8C8B0') + '<span>El costo de delivery se paga <b style="color:#FFFFFF">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</span></div></div>'
         + '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>' + (scheduleMode === 'later' ? '<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:4px">Debe caer dentro de nuestro horario de atención.</div>' : '') + '</div>'
@@ -3494,8 +3485,8 @@ function sAdminHome() {
         + '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
         + '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span style="color:' + GOLD + '"> // </span>OPERADOR</div>'
         + (badge > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● ' + badge + ' ACCIÓN REQUERIDA</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:3px">todo en orden //</div>')
-        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;padding:12px">🔄</button>'
-        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;padding:12px">' + (adminLightMode ? '🌙' : '☀️') + '</button>'
+        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">🔄</button>'
+        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px">' + (adminLightMode ? '🌙' : '☀️') + '</button>'
         + '<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:' + GOLD + '">← salir</button></div>'
         + (adminOrdersTruncated ? '<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500">⚠ Hay más pedidos activos de los que se muestran aquí (solo los ' + ao.length + ' más recientes).</div>' : '')
         // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
@@ -3535,13 +3526,13 @@ function sAdminHome() {
                 + '<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">' + esc(o.customer_name) + '</div>'
                 + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">' + esc(o.customer_address) + '</div>'
                 + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (isStale ? '#ff8888' : '#A8C8B0') + ';margin-top:4px">' + esc(o.ref) + ' · ' + SOLES + o.total + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</div>'
-                + (isScheduledAhead ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + ACCENT2 + ';margin-top:2px">🕒 programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</div>' : '')
+                + (isScheduledAhead ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🕒 programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</div>' : '')
                 // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
                 // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
                 // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
                 // panel admin: el operador no tenía forma de recordar qué ETA le prometió a cada
                 // cliente sin abrir el detalle del pedido).
-                + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + ACCENT2 + ';margin-top:2px">🛵 ETA ~' + o.eta_minutes + ' min</div>' : '') + '</div></div>'
+                + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px">🛵 ETA ~' + o.eta_minutes + ' min</div>' : '') + '</div></div>'
                 + stBadge(o.status) + '</div>'
                 + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">' + esc(o.summary) + '</div>'
                 + (o.redeemed_reward ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-bottom:10px">🎁 ' + esc(o.redeemed_reward) + '</div>' : '')
@@ -3981,7 +3972,7 @@ function confirmMap() {
     var el = document.getElementById('o-addr');
     if (el) {
         el.value = a;
-        el.style.borderColor = ACCENT2;
+        el.style.borderColor = '#3A86FF';
         el.focus();
     }
     var h = document.getElementById('gps-hint');
@@ -4134,48 +4125,10 @@ function render() {
     // reescribir cada color hardcodeado (ver comentario en la declaración de adminLightMode).
     var adminLight = sc.indexOf('admin') === 0 && adminLightMode;
     document.getElementById('app').innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932' + (adminLight ? ';filter:invert(1) hue-rotate(180deg)' : '') + '">' + offlineBanner + h + '</div>';
-    enhanceA11y();
     window.scrollTo(0, sameScreen ? scrollY : 0);
     _lastRenderedSc = sc;
     renderOverlays();
 }
-// Accesibilidad: casi todas las "tarjetas" clicables de la app (elegir proteína,
-// topping, dirección guardada, favorito para pedir de nuevo, etc.) son <div
-// onclick=...> en vez de <button> — se ven y funcionan igual con mouse/touch, pero
-// un lector de pantalla no las anuncia como interactivas y un usuario que solo usa
-// teclado no puede llegar a ellas con Tab. Reescribir cientos de plantillas para usar
-// <button> es un cambio enorme; en vez de eso, se enriquece el DOM ya renderizado en
-// cada render(): todo elemento con onclick que no sea ya nativamente enfocable recibe
-// tabIndex=0 + role="button", y un listener delegado traduce Enter/Espacio en un
-// click real. Cubre pantallas nuevas automáticamente sin tocar cada función sN().
-function enhanceA11y() {
-    var root = document.getElementById('app');
-    if (!root)
-        return;
-    var els = root.querySelectorAll('[onclick]');
-    for (var i = 0; i < els.length; i++) {
-        var el = els[i];
-        var tag = el.tagName;
-        if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA')
-            continue;
-        if (!el.hasAttribute('tabindex'))
-            el.setAttribute('tabindex', '0');
-        if (!el.hasAttribute('role'))
-            el.setAttribute('role', 'button');
-    }
-}
-document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter' && e.key !== ' ')
-        return;
-    var t = e.target;
-    if (!t || !t.hasAttribute || !t.hasAttribute('onclick'))
-        return;
-    var tag = t.tagName;
-    if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA')
-        return;
-    e.preventDefault();
-    t.click();
-});
 // INVENTORY
 var INV_CATS = [
     { t: 'PANES', arr: BASES },
@@ -5167,6 +5120,6 @@ async function togglePushNotifications() {
 })();
 
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" aria-label="Cerrar mapa" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:11px 14px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#9BC4FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:Barlow,sans-serif;font-size:11px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#F2F0EB;opacity:.8;letter-spacing:.15em;margin-bottom:6px">ESCRIBE TU DIRECCIÓN //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:.1em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
 </body>
 </html>
