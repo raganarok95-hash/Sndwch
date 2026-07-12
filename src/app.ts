@@ -137,6 +137,11 @@ function isWithinStoreHours(d){
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
 // real de tu zona de reparto.
 var ESTIMATED_DELIVERY_RANGE=[25,40];
+// Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
+// Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
+// (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
+var STORE_LAT=-8.139599,STORE_LON=-79.039458;
+var NEARBY_RADIUS_KM=3;
 
 // STATE
 var sc='o_home',tab='order',busy=false,busyMsg='';
@@ -155,6 +160,7 @@ var agPhone='',agPts='',agMsg='';
 var pollTimer=null,lastPollCount=0,pollFailing=false;
 var isOffline=!navigator.onLine;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
+var nearStore=false,_nearCheckDone=false;
 var pushSubscribed=false,pushMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
@@ -756,9 +762,11 @@ function sOHome(){
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">'+esc(lastOrd.summary||'')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
   var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:#2D5246;border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">🛒 CARRITO<span style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:'+GOLD+'">VER \u2192</span></div>':'';
   var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">📲 INSTALAR<span style="color:'+GOLD+'"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>':'';
+  var nearbyCard=(nearStore&&ss.open)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">📍 ¡ESTÁS CERCA<span style="color:'+GOLD+'"> // </span>DEL LOCAL!</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide ahora y recíbelo en '+ESTIMATED_DELIVERY_RANGE[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
     +hoursBadge
+    +nearbyCard
     +pwaCard
     +cartCard
     +recoCard
@@ -3264,6 +3272,32 @@ function dismissPwaBanner(){
   render();
 }
 
+function haversineKm(lat1,lon1,lat2,lon2){
+  var R=6371;
+  var dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+// Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
+// cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
+// muestra nada — nunca insiste ni vuelve a pedir permiso en la misma sesión.
+function checkNearbyStore(){
+  if(_nearCheckDone)return;
+  _nearCheckDone=true;
+  var today=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('sw_near_dismissed')===today)return;
+  if(!('geolocation' in navigator))return;
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var d=haversineKm(pos.coords.latitude,pos.coords.longitude,STORE_LAT,STORE_LON);
+    if(d<=NEARBY_RADIUS_KM){nearStore=true;render();}
+  },function(){/* permiso denegado o ubicación no disponible — sin banner, sin insistir */},{maximumAge:600000,timeout:8000});
+}
+function dismissNearbyBanner(){
+  nearStore=false;
+  localStorage.setItem('sw_near_dismissed',new Date().toISOString().slice(0,10));
+  render();
+}
+
 // NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
 // incluso con la app cerrada. Solo disponibles para clientes con cuenta (la suscripción
 // se guarda ligada a tu teléfono) y requieren HTTPS (o localhost) + un navegador
@@ -3340,4 +3374,5 @@ async function togglePushNotifications(){
   loadStoreHoursBackground().then(function(){render();}); // load real store hours in background, re-render when ready
   if(cust)loadUserExtras();
   checkPushSubscription();
+  checkNearbyStore();
 })();
