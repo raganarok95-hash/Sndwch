@@ -1111,7 +1111,7 @@ function sOHome() {
         + '<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">BUILD<span style="color:' + GOLD + '"> // </span>YOUR OWN</div>'
         + '<p style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;line-height:1.5">Elige base, proteína, toppings y salsas.</p>'
         + '</div>'
-        + (cust ? '<div onclick="doCreateGroupOrder()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">👥 PEDIDO<span style="color:' + GOLD + '"> // </span>GRUPAL</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + GOLD + '">ORGANIZAR →</span></div>' : '')
+        + (cust ? '<div onclick="doCreateGroupOrder()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">PEDIDO<span style="color:' + GOLD + '"> // </span>GRUPAL</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + GOLD + '">ORGANIZAR →</span></div>' : '')
         + (cust && myFavorites.length ? '<div onclick="sc=\'p_favorites\';render()" style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">☆ MIS<span style="color:' + GOLD + '"> // </span>FAVORITOS</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + GOLD + '">VER \u2192</span></div>' : '')
         + pc
         + contactFooterHTML()
@@ -1262,20 +1262,25 @@ function sGroupOrder() {
     if (g.status !== 'open') {
         h += '<div style="text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0;letter-spacing:.1em">' + (g.status === 'cancelled' ? 'ESTE PEDIDO GRUPAL FUE CANCELADO' : 'ESTE PEDIDO GRUPAL YA SE CERRÓ') + '</div>';
     }
-    else if (g.isOrganizer) {
-        h += BTN('CERRAR Y PAGAR //', 'doCloseGroupOrder()');
-        h += '<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">CANCELAR PEDIDO GRUPAL</div>';
-    }
     else {
+        // Antes esta sección solo se mostraba a quien NO organizaba — quien creó el pedido
+        // grupal podía compartir el link y cerrar/cobrar, pero nunca agregar su propio
+        // sándwich (hallazgo reportado en vivo). Ahora se muestra siempre que el pedido
+        // siga abierto, sin importar quién sea.
         h += '<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
         h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:12px">AGREGAR MI PEDIDO //</div>';
-        h += INP('grp-name', 'TU NOMBRE', 'text', groupJoinName);
+        h += INP('grp-name', 'TU NOMBRE', 'text', groupJoinName || (g.isOrganizer && cust ? cust.name : ''));
         h += '<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '15' ? GOLD : '#1A3028') + ';color:' + (groupSize === '15' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '30' ? GOLD : '#1A3028') + ';color:' + (groupSize === '30' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700">30CM</div></div>';
         h += SIGS.filter(function (s) { return !s.secret; }).map(function (s) {
             var price = groupSize === '15' ? s.p15 : s.p30;
             return '<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + s.n + '<span style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:' + GOLD + '">' + SOLES + price + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
         }).join('');
         h += '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:8px;min-height:14px">' + esc(groupMsg) + '</div>';
+        if (g.isOrganizer) {
+            h += '<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
+            h += BTN('CERRAR Y PAGAR //', 'doCloseGroupOrder()');
+            h += '<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;letter-spacing:.1em">CANCELAR PEDIDO GRUPAL</div>';
+        }
     }
     h += '</div>' + NAV();
     return h;
