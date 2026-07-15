@@ -11,13 +11,15 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
     'request-restock-notify': { success: true },
   });
 
-  // P01 (Asado de Res, la proteína de SIG01 "THE ORIGINAL") sin stock — registrada
-  // DESPUÉS de mockBackend (que deja inventario vacío = todo disponible) y ANTES de
-  // navegar, porque Playwright resuelve rutas que hacen match en orden LIFO: la última
-  // registrada gana. Si se registrara después de goto(), loadInvBackground() ya habría
-  // corrido con el mock por defecto.
+  // P02 (Pollo Teriyaki, la proteína de SIG06 "THE TERIYAKI" — la única signature
+  // pública que la usa) sin stock — registrada DESPUÉS de mockBackend (que deja
+  // inventario vacío = todo disponible) y ANTES de navegar, porque Playwright resuelve
+  // rutas que hacen match en orden LIFO: la última registrada gana. Si se registrara
+  // después de goto(), loadInvBackground() ya habría corrido con el mock por defecto.
+  // No se usa P01 (Asado de Res) porque desde CHICAGO ITALIAN BEEF (SIG07) también
+  // usa esa proteína, y marcarla sin stock mostraría dos tarjetas AGOTADO a la vez.
   await page.route('**/rest/v1/inventory*', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ product_code: 'P01', in_stock: false, stock_qty: 0 }]) }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ product_code: 'P02', in_stock: false, stock_qty: 0 }]) }),
   );
   await stubWindowOpen(page);
   await page.goto(APP_FILE);
@@ -41,5 +43,5 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
 
   const call = calls.find((c) => c.action === 'request-restock-notify');
   expect(call).toBeTruthy();
-  expect(call!.body.sigId).toBe('SIG01');
+  expect(call!.body.sigId).toBe('SIG06');
 });

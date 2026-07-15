@@ -15,25 +15,27 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 };
 
 export const VALID_BASES = new Set(["B01", "B02", "B03"]);
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06"]);
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12"]);
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12", "S13"]);
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
   P01: { p15: 14, p30: 22, pDbl: 6 },
   P02: { p15: 13, p30: 21, pDbl: 6 },
-  P03: { p15: 12, p30: 20, pDbl: 4 },
-  P04: { p15: 12, p30: 20, pDbl: 5 },
+  P03: { p15: 13, p30: 21, pDbl: 6 },
+  P04: { p15: 14, p30: 22, pDbl: 5 },
   P05: { p15: 16, p30: 26, pDbl: 9 },
   P06: { p15: 14, p30: 24, pDbl: 7 },
 };
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
-  SIG02: { base: "B02", prot: "P06", tops: ["T04", "T03", "T01"], sauces: ["S02", "S07"], p15: 19, p30: 24 },
+  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06", "S07"], p15: 19, p30: 24 },
   SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
   SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 20 },
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 22 },
+  SIG07: { base: "B01", prot: "P01", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
-  SIG05: { base: "B02", prot: "P05", tops: ["T04", "T06", "T02"], sauces: ["S09", "S12"], p15: 24, p30: 30 },
+  SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
@@ -79,10 +81,12 @@ export const SIDE_LABEL: Record<string, string> = {
 };
 export const SIG_LABEL: Record<string, string> = {
   SIG01: "THE ORIGINAL // SIGNATURE",
-  SIG02: "THE FIRE // BUILD",
+  SIG02: "THE MEATBALL // BUILD",
   SIG03: "THE SMOKE // BUILD",
   SIG04: "THE FRESH // BUILD",
   SIG05: "THE VAULT // RESERVE",
+  SIG06: "THE TERIYAKI // BUILD",
+  SIG07: "CHICAGO ITALIAN BEEF // RESERVE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
