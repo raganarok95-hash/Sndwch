@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName } from "../env.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS } from "../env.ts";
 import { sendPushToPhone } from "../push.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
@@ -480,34 +480,44 @@ export async function actRemindHighRankWinback(b: any) {
 }
 
 // Cuenta creada pero nunca un pedido pagado — distinto del carrito abandonado (que exige
-// que haya un carrito con productos): esto es demanda "casi capturada" que hoy no tenía
-// ningún seguimiento. Un solo aviso, no algo recurrente (a diferencia del re-enganche de
-// rango alto) — si en NEVER_ORDERED_MAX_DAYS no hizo su primer pedido, insistir más no
-// tiene mucho sentido y se deja de avisar.
-const NEVER_ORDERED_MIN_HOURS = 24;
+// que haya un carrito con productos): esto es demanda "casi capturada" que antes no tenía
+// ningún seguimiento más que un único aviso genérico. Inspirado en el patrón de onboarding
+// de Grubhub Campus (secuencia de varios toques con UN objetivo concreto cada uno, no un
+// solo mensaje de bienvenida y silencio después): 3 etapas a distintos días, cada una con
+// un gancho distinto (el bono ya ganado, la insignia que se está perdiendo, el último
+// aviso). Cada etapa corre en la misma llamada diaria del cron; la ventana de un día por
+// etapa hace que alcance a cada cliente una sola vez de forma natural, y el rate limit
+// (con su propia llave por etapa) es solo la red de seguridad si el cron se reintenta.
 const NEVER_ORDERED_MAX_DAYS = 14;
+const NEVER_ORDERED_STAGES = [
+  { key: "1", minDays: 2, maxDays: 3, title: "Tus " + WELCOME_BONUS_POINTS + " puntos de bienvenida te esperan", body: "Ya los ganaste al registrarte — solo falta tu primer pedido para poder usarlos.", tag: "sndwch-never-ordered-1" },
+  { key: "2", minDays: 5, maxDays: 6, title: "Te falta una insignia por desbloquear", body: "Tu primer pedido en SND//WCH te da tu primera insignia de perfil. Fácil de conseguir, fácil de armar.", tag: "sndwch-never-ordered-2" },
+  { key: "3", minDays: 10, maxDays: 11, title: "Último aviso — tu cuenta SND//WCH sigue lista", body: "Arma tu primer Signature en menos de un minuto. No te lo volvemos a recordar.", tag: "sndwch-never-ordered-3" },
+];
 export async function actRemindNeverOrdered(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const minCreatedIso = new Date(Date.now() - NEVER_ORDERED_MAX_DAYS * 86400000).toISOString();
-  const maxCreatedIso = new Date(Date.now() - NEVER_ORDERED_MIN_HOURS * 3600000).toISOString();
-  const customers = await sbGet(
-    "customers",
-    `total_orders=eq.0&created_at=gte.${encodeURIComponent(minCreatedIso)}&created_at=lte.${encodeURIComponent(maxCreatedIso)}&select=phone,name`,
-  );
   let reminded = 0;
-  for (const c of customers) {
-    try {
-      const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
-      if (!withinLimit) continue;
-      await sendPushToPhone(c.phone, {
-        title: "Tu cuenta SND//WCH ya está lista",
-        body: "Arma tu primer Signature — el registro es lo único que te faltaba.",
-        url: "./index.html",
-        tag: "sndwch-never-ordered",
-      });
-      reminded++;
-    } catch (e) {
-      console.error("remind-never-ordered failed for", c.phone, e);
+  for (const stage of NEVER_ORDERED_STAGES) {
+    const minCreatedIso = new Date(Date.now() - stage.maxDays * 86400000).toISOString();
+    const maxCreatedIso = new Date(Date.now() - stage.minDays * 86400000).toISOString();
+    const customers = await sbGet(
+      "customers",
+      `total_orders=eq.0&created_at=gte.${encodeURIComponent(minCreatedIso)}&created_at=lte.${encodeURIComponent(maxCreatedIso)}&select=phone,name`,
+    );
+    for (const c of customers) {
+      try {
+        const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
+        if (!withinLimit) continue;
+        await sendPushToPhone(c.phone, {
+          title: stage.title,
+          body: stage.body,
+          url: "./index.html",
+          tag: stage.tag,
+        });
+        reminded++;
+      } catch (e) {
+        console.error("remind-never-ordered stage " + stage.key + " failed for", c.phone, e);
+      }
     }
   }
   return { success: true, reminded };
