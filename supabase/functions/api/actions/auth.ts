@@ -18,6 +18,11 @@ export async function actRegister(b: any) {
   const dni = String(b.dni || "").trim();
   const bday = b.bday ? String(b.bday).trim() : null;
   const referredBy = b.referredBy ? String(b.referredBy).trim() : null;
+  // Origen de campaña paga (?src=... en el link del anuncio, ver captura en el cliente) —
+  // distinto de referredBy (referido entre clientes). Se acota a 60 caracteres porque es
+  // texto que viene de un query param, nunca algo que el negocio necesite validar contra
+  // una lista fija de canales.
+  const acquisitionSource = b.acquisitionSource ? String(b.acquisitionSource).trim().slice(0, 60) : null;
 
   if (!name || !phone || pin.length < 4) throw new ApiError("Completa nombre, teléfono y PIN (mínimo 4 dígitos).");
   if (!/^\d{8}$/.test(dni)) throw new ApiError("DNI es obligatorio y debe tener 8 dígitos.");
@@ -52,6 +57,7 @@ export async function actRegister(b: any) {
     total_redeemed: 0,
     referral_code: phone,
     referred_by: referredByValid,
+    acquisition_source: acquisitionSource,
   });
   let customer = safeCustomer(rows[0]);
   // Bono de bienvenida para TODO registro nuevo (antes solo quien llegaba con un código de
