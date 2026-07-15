@@ -51,8 +51,8 @@ var BASES=[
 var PROTS=[
   {id:'P01',l:'ASADO',  s:'RES',        d:'Res asada mechada, cocción lenta',p15:14,p30:22,pDbl:6},
   {id:'P02',l:'POLLO',  s:'TERIYAKI',   d:'Tiras marinadas en teriyaki',p15:13,p30:21,pDbl:6},
-  {id:'P03',l:'POLLO',  s:'CAJUN',      d:'Pechuga deshilachada, condimento cajún',p15:12,p30:20,pDbl:4},
-  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:12,p30:20,pDbl:5},
+  {id:'P03',l:'POLLO',  s:'CAJUN',      d:'Pechuga deshilachada, condimento cajún',p15:13,p30:21,pDbl:6},
+  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:14,p30:22,pDbl:5},
   {id:'P05',l:'THE ITALIAN',s:'DELI',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16,p30:26,pDbl:9},
   {id:'P06',l:'MEATBALL',s:'MARINARA',  d:'Albóndigas caseras en salsa marinara',p15:14,p30:24,pDbl:7}
 ];
@@ -62,7 +62,8 @@ var TOPS=[
   {id:'T03',l:'CEBOLLA',  s:'MORADA JULIANA'},
   {id:'T04',l:'JALAPEÑO', s:'ENCURTIDO'},
   {id:'T05',l:'ACEITUNA', s:'NEGRA EN RODAJAS'},
-  {id:'T06',l:'PIMIENTO', s:'CURADO'}
+  {id:'T06',l:'PIMIENTO', s:'CURADO'},
+  {id:'T07',l:'GIARDINIERA',s:'ENCURTIDO PICANTE'}
 ];
 var CHEESE=[
   {id:'C01',l:'AMERICANO',s:''},
@@ -81,28 +82,34 @@ var SAUCES=[
   {id:'S09',l:'CHIMICHURRI',s:'ARGENTINO',d:'Herbal, ajo, ácido'},
   {id:'S10',l:'PEANUT',  s:'SATAY',    d:'Maní, soya, jengibre'},
   {id:'S11',l:'MOSTAZA', s:'DIJON',    d:'Intensa, clásica, con carácter'},
-  {id:'S12',l:'MIEL',    s:'PICANTE',  d:'Dulce con golpe de picor'}
+  {id:'S12',l:'MIEL',    s:'PICANTE',  d:'Dulce con golpe de picor'},
+  {id:'S13',l:'AU JUS',  s:'PARA MOJAR',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado'}
 ];
 var SIGS=[
-  {id:'SIG01',n:'THE ORIGINAL',s:'SIGNATURE',badge:'MÁS PEDIDO',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
-    pitch:'Nuestro más pedido: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. El sándwich que enamora desde el primer bocado.'},
-  {id:'SIG02',n:'THE FIRE',    s:'BUILD',    badge:'SPICY',     base:'B02',prot:'P06',tops:['T04','T03','T01'],sauces:['S02','S07'],p15:19,p30:24,
-    pitch:'Albóndigas caseras en salsa marinara con el picor justo del jalapeño encurtido. Para los que piden que su sándwich también les devuelva el golpe.'},
-  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'PREMIUM',   base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03','S08'],p15:21,p30:26,
+  {id:'SIG01',n:'THE ORIGINAL',s:'SIGNATURE',badge:'PREMIUM',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
+    pitch:'Res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. El sándwich que enamora desde el primer bocado.'},
+  {id:'SIG02',n:'THE MEATBALL',s:'BUILD',    badge:'CLÁSICO',   base:'B02',prot:'P06',tops:['T01','T03','T05'],sauces:['S06','S07'],p15:19,p30:24,
+    pitch:'Albóndigas caseras en salsa marinara, aceituna negra y una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
+  // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
+  // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
+  // SIG04 por decisión del dueño sin ese cálculo — se movió acá cuando se verificó el
+  // costo real de cada producto.
+  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'MÁS PEDIDO',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03','S08'],p15:21,p30:26,
+    chef:true,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   {id:'SIG04',n:'THE FRESH',   s:'BUILD',    badge:'LIGERO',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:20,
-    // chef:true — el que más margen real deja (decisión del dueño, no calculada: no hay
-    // costo de insumo por receta en el sistema, solo precio de venta). Se destaca aparte
-    // del badge normal para no perder la etiqueta descriptiva (LIGERO) que ya tenía.
-    chef:true,
     pitch:'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
+  {id:'SIG06',n:'THE TERIYAKI',s:'BUILD',    badge:'NUEVO',     base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:22,
+    pitch:'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.'},
+  {id:'SIG07',n:'CHICAGO ITALIAN BEEF',s:'RESERVE',badge:'EDICIÓN LIMITADA',base:'B01',prot:'P01',tops:['T07'],sauces:['S13'],p15:25,p30:25,
+    pitch:'Res mechada sobre pan italiano con giardiniera picante, y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó a CÍRCULO INTERNO
   // (ver sOSig/rankName). DEBE coincidir con SIG05 en supabase/functions/api/catalog.ts —
   // el servidor es quien de verdad rechaza el pedido si no calificas, esto solo evita
   // mostrarlo/dejarlo elegir en la UI antes de intentarlo.
-  {id:'SIG05',n:'THE VAULT',   s:'RESERVE',  badge:'SECRETO',   base:'B02',prot:'P05',tops:['T04','T06','T02'],sauces:['S09','S12'],p15:24,p30:30,
+  {id:'SIG05',n:'THE VAULT',   s:'RESERVE',  badge:'SECRETO',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24,p30:30,
     secret:true,minOrders:15,
-    pitch:'Solo para el Círculo Interno. Una combinación que no está en ningún menú — te la ganaste a pedidos, no con puntos.'}
+    pitch:'Solo para el Círculo Interno. Pollo cajún, picante y con un golpe de miel — una combinación que no está en ningún menú, te la ganaste a pedidos.'}
 ];
 // "SIGNATURE"/"RESERVE" (curado por la casa) se distingue tipográficamente de "BUILD"
 // (armado por el cliente) — cursiva y más grande, como una firma, en vez de la misma
