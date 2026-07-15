@@ -3,11 +3,11 @@
 // del panel de negocio.
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { requireAdmin, safeCustomer } from "../session.ts";
+import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL } from "../catalog.ts";
 import { computeRankName } from "../env.ts";
-import { sendPushToPhone } from "../push.ts";
+import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
@@ -181,7 +181,7 @@ export async function actDashboardStats(b: any) {
   // quedaría corto silenciosamente al crecer el negocio.
   const fetchSince = new Date(Math.min(monthStart, todayStart - 13 * DAY)).toISOString();
 
-  const [agg, ordersRaw, outOfStock, allInventory] = await Promise.all([
+  const [agg, ordersRaw, outOfStock, allInventory, sourceRows] = await Promise.all([
     rpc("dashboard_aggregates", { p_week_start: new Date(weekStart).toISOString(), p_month_start: new Date(monthStart).toISOString() }),
     // Antes traía select=* (hasta 5000 filas x todas las columnas) cuando lo único que se
     // usa más abajo son estas 6 — total/payment_status/created_at para las métricas de
@@ -192,6 +192,10 @@ export async function actDashboardStats(b: any) {
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
+    // Para medir si una campaña paga (?src=... en el link del anuncio) se está pagando
+    // sola — agrupado en JS en vez de SQL porque el volumen de clientes de un negocio así
+    // nunca justifica una función RPC nueva solo para este conteo.
+    sbGet("customers", "select=acquisition_source,total_orders&acquisition_source=not.is.null"),
   ]);
   // trend/topProducts se calculan sobre esta ventana reciente (no toda la tabla, ver
   // comentario arriba) — si algún día hay más de DASHBOARD_WINDOW_LIMIT pedidos en los
@@ -245,6 +249,22 @@ export async function actDashboardStats(b: any) {
   // la lógica de precio/etiqueta por ítem (statItemLabel/statUnitPrice) en SQL.
   const topProducts = buildTopProducts(paidOrders, 6);
 
+  // Por fuente: cuántos se registraron y cuántos de esos llegaron a pagar al menos un
+  // pedido — la diferencia entre ambos números es lo que separa un anuncio que solo trae
+  // curiosos de uno que trae clientes reales.
+  const sourceMap = new Map<string, { signups: number; converted: number }>();
+  for (const c of sourceRows as any[]) {
+    const key = c.acquisition_source;
+    const entry = sourceMap.get(key) || { signups: 0, converted: 0 };
+    entry.signups++;
+    if ((c.total_orders || 0) > 0) entry.converted++;
+    sourceMap.set(key, entry);
+  }
+  const bySource = Array.from(sourceMap.entries())
+    .map(([source, v]) => ({ source, signups: v.signups, converted: v.converted }))
+    .sort((a, b) => b.signups - a.signups)
+    .slice(0, 8);
+
   // % de cambio vs. el período anterior de igual duración — el dato de "antes" ya viene
   // calculado en SQL (dashboard_aggregates), acá solo se arma el porcentaje; null cuando el
   // período anterior fue 0 (evita un Infinity/NaN sin sentido en vez de "+100%").
@@ -292,6 +312,7 @@ export async function actDashboardStats(b: any) {
     },
     peakHours: agg.peakHours,
     peakDays: agg.peakDays,
+    bySource,
   };
 }
 
@@ -586,4 +607,87 @@ export async function actAdminProblemAddresses(b: any) {
     .map(([address, v]) => ({ address, cancelCount: v.count, reasons: v.reasons, lastAt: v.lastAt }))
     .sort((a, b) => b.cancelCount - a.cancelCount);
   return { addresses };
+}
+
+// Contenido de marketing listo para copiar y pegar — no publicamos nada por el dueño (no
+// hay ninguna cuenta de redes sociales conectada a este sistema), pero le ahorramos la
+// parte de redactar: un texto corto para WhatsApp/historia, un caption más largo para
+// feed, y una idea de foto, uno distinto cada semana. Las primeras 4 semanas siguen la
+// secuencia real de lanzamiento (recién abre → prueba social → referidos → menú secreto);
+// de ahí en adelante rota entre las promociones que ya existen en la app.
+const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; photoIdea: string }[] = [
+  {
+    theme: "LANZAMIENTO",
+    whatsapp: "🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Tu primer pedido te regala 20 puntos.",
+    caption: "Ya abrimos // SND//WCH llega a tu zona. Sandwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — tu primer pedido te regala 20 puntos para canjear después.",
+    photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
+  },
+  {
+    theme: "PRUEBA SOCIAL",
+    whatsapp: "¿Ya probaste SND//WCH? Calificar tu pedido te toma 10 segundos y nos ayuda un montón 🙏",
+    caption: "La mejor publicidad la hacen ustedes // Si ya pediste con nosotros, califica tu experiencia desde la app (PUNTOS → MIS PEDIDOS). Cada reseña le muestra a más gente por qué vale la pena.",
+    photoIdea: "Captura de una calificación de 5 estrellas (con permiso del cliente), o foto de alguien recibiendo su pedido.",
+  },
+  {
+    theme: "REFERIDOS",
+    whatsapp: "Invita a un amigo a SND//WCH y ambos ganan 50 puntos en su primer pedido. Tu código está en tu perfil de la app.",
+    caption: "Comparte y gana // Cada amigo que invitas con tu código les da 50 puntos a ambos en su primer pedido. Entre más compartes, más rápido subes de rango.",
+    photoIdea: "Gráfico simple '50 + 50 puntos' sobre el verde/dorado de la marca, o dos sandwiches juntos.",
+  },
+  {
+    theme: "MENÚ SECRETO",
+    whatsapp: "Hay un Signature que no está en el menú público. Solo lo desbloqueas siendo Círculo Interno 👀",
+    caption: "Lo que no ves en el menú // Después de cierta cantidad de pedidos se desbloquea un Signature que no aparece para nadie más. No decimos cuál — te lo tienes que ganar.",
+    photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
+  },
+  {
+    theme: "COMBO / HORA VALLE",
+    whatsapp: "En hora valle tu bebida sale gratis con cualquier sándwich. Se aplica solo, sin código.",
+    caption: "Combo inteligente // Agrega una bebida a tu sándwich y ahorra automático — en hora valle, hasta gratis. Válido solo desde la app.",
+    photoIdea: "Sándwich + bebida juntos, estilo flat lay.",
+  },
+  {
+    theme: "PEDIDOS GRUPALES",
+    whatsapp: "¿Pedido de oficina? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo, se paga todo junto.",
+    caption: "Para la oficina o la reunión // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Perfecto para el almuerzo de equipo.",
+    photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
+  },
+  {
+    theme: "PLAN SEMANAL",
+    whatsapp: "Paga S/90 hoy, recibe S/100 en saldo para pedir cuando quieras esta semana. El saldo no vence.",
+    caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
+    photoIdea: "Gráfico 'S/90 → S/100', o varios pedidos de la semana juntos.",
+  },
+  {
+    theme: "RECORDATORIO",
+    whatsapp: "SND//WCH — pedidos todos los días. Arma el tuyo o elige un Signature curado por nosotros.",
+    caption: "Por si se te olvidó que existimos // Seguimos aquí, armando sandwiches todos los días. Pide por la app cuando se te antoje.",
+    photoIdea: "Cualquier foto de producto que no hayas usado en semanas anteriores.",
+  },
+];
+function marketingWeekIndex(offset = 0): number {
+  const daysSinceEpoch = Math.floor(Date.now() / 86400000);
+  const weekNumber = Math.floor(daysSinceEpoch / 7) + offset;
+  return ((weekNumber % MARKETING_CONTENT.length) + MARKETING_CONTENT.length) % MARKETING_CONTENT.length;
+}
+export async function actAdminMarketingContent(b: any) {
+  await requireAdmin(b.token);
+  return {
+    current: MARKETING_CONTENT[marketingWeekIndex()],
+    next: MARKETING_CONTENT[marketingWeekIndex(1)],
+  };
+}
+// Cron semanal — no publica nada (ninguna red social está conectada a este sistema), solo
+// avisa que el contenido de la semana ya está listo para copiar en el panel admin.
+export async function actRemindMarketingContent(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const theme = MARKETING_CONTENT[marketingWeekIndex()].theme;
+  await sendPushToAdmins({
+    title: "Contenido de esta semana listo 📣",
+    body: "Tema: " + theme + ". Copia el texto listo desde el panel admin → MARKETING.",
+    url: "./index.html",
+    tag: "sndwch-weekly-marketing",
+    renotify: true,
+  });
+  return { success: true, theme };
 }

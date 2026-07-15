@@ -332,7 +332,7 @@ var auditLog = null;
 var storeHoursForm = null, storeHoursMsg = '';
 var reportFrom = '', reportTo = '', reportData = null, reportErr = '';
 var ratingsList = null, ratingsMinStars = 0, ratingsOnlyComments = false;
-var prepListData = null, timeReportData = null, problemAddressesData = null;
+var prepListData = null, timeReportData = null, problemAddressesData = null, marketingContentData = null;
 var bulkSelected = {};
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
@@ -364,16 +364,24 @@ var previewSigId = null;
 var newAddrMsg = '', favMsg = '';
 var cart = [];
 var groupCodeFromUrl = null;
-(function () { try {
-    var qp = new URLSearchParams(location.search);
-    var rc = qp.get('ref');
-    if (rc)
-        refCode = rc.trim();
-    var gc = qp.get('group');
-    if (gc)
-        groupCodeFromUrl = gc.trim().toUpperCase();
-}
-catch (e) { } })();
+(function () {
+    try {
+        var qp = new URLSearchParams(location.search);
+        var rc = qp.get('ref');
+        if (rc)
+            refCode = rc.trim();
+        var gc = qp.get('group');
+        if (gc)
+            groupCodeFromUrl = gc.trim().toUpperCase();
+        // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
+        // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
+        // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
+        var sc2 = qp.get('src');
+        if (sc2)
+            localStorage.setItem('sw_src', sc2.trim().slice(0, 60));
+    }
+    catch (e) { }
+})();
 // Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
 // sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).
 var groupCode = null, groupData = null, groupJoinName = '', groupMsg = '', groupSize = '15';
@@ -2153,7 +2161,8 @@ async function doReg() {
         // que en my-orders/submit-rating de invitado) — el servidor solo lo vincula si sigue
         // sin dueño, así que mandarlo siempre aquí es seguro aunque no venga de ese flujo.
         var claimRef = localStorage.getItem('sw_last_ref') || null;
-        var r = await api('register', { name: name, phone: phone, pin: pin, email: email || null, dni: dni, bday: bday, referredBy: referredBy || null, claimOrderRef: claimRef });
+        var acqSrc = localStorage.getItem('sw_src') || null;
+        var r = await api('register', { name: name, phone: phone, pin: pin, email: email || null, dni: dni, bday: bday, referredBy: referredBy || null, claimOrderRef: claimRef, acquisitionSource: acqSrc });
         cust = r.customer;
         isAdmin = r.isAdmin;
         token = r.token;
@@ -3455,6 +3464,7 @@ var ICONS = {
     lock: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
     moto: '<circle cx="6.5" cy="18" r="2.3"/><circle cx="17" cy="18" r="2.3"/><path d="M8.5 18h6l2-5.5h3M14 12.5l-2-4H8l-1 3"/><path d="M6.5 15.5h3"/>',
     check: '<path d="M4 12.5l5 5L20 6"/>',
+    megaphone: '<path d="M3 10v4h3l7 4V6l-7 4H3z"/><path d="M13 8.5a4 4 0 0 1 0 7"/><path d="M16 6a7 7 0 0 1 0 12"/>',
 };
 function icon(name, size, color) { return '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="' + (color || GOLD) + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' + (ICONS[name] || '') + '</svg>'; }
 function minutesAgo(iso) {
@@ -3588,6 +3598,9 @@ function sAdminHome() {
                     ['reportes', 'REPORTES', 'sc=\'admin_report\';reportData=null;render()'],
                     ['estrella', 'CALIFICACIONES', 'loadRatingsList()'],
                     ['reclamo', 'RECLAMACIONES', 'loadAdminComplaints()'],
+                ]],
+            ['MARKETING //', [
+                    ['megaphone', 'CONTENIDO SEMANAL', 'loadMarketingContent()'],
                 ]],
             ['CATÁLOGO //', [
                     ['inventario', 'INVENTARIO', 'loadInventory()'],
@@ -3749,6 +3762,14 @@ function sAdminDashboard() {
         var peakDayNames = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
         var peakDayTop = d.peakDays && d.peakDays.length ? d.peakDays.slice().sort(function (a, b) { return b.count - a.count; })[0] : null;
         h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-bottom:14px">📈 Hora pico (últimos 90 días): <b style="color:#FFFFFF">' + peakTop.hour + ':00-' + (peakTop.hour + 1) + ':00</b>' + (peakDayTop ? ' · Día pico: <b style="color:#FFFFFF">' + peakDayNames[peakDayTop.dow] + '</b>' : '') + '</div>';
+    }
+    // Origen de campaña (?src=... en el link del anuncio) — sin esto no hay forma de saber
+    // si una campaña paga se está pagando sola. "convertidos" cuenta solo a quien ya hizo al
+    // menos un pedido, no solo se registró.
+    if (d.bySource && d.bySource.length) {
+        h += '<div style="margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">ORIGEN DE CLIENTES //</div>'
+            + d.bySource.map(function (s) { return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 12px;margin-bottom:6px"><span style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB">' + esc(s.source) + '</span><span style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0">' + s.signups + ' registrados · <span style="color:' + GOLD + '">' + s.converted + ' pidieron</span></span></div>'; }).join('')
+            + '</div>';
     }
     var tiers = d.customers.tiers || {};
     // VIP se retiró como tier — ya no hay un multiplicador de puntos distinto por nivel,
@@ -4130,6 +4151,9 @@ function render() {
             break;
         case 'admin_problem_addresses':
             h = sAdminProblemAddresses();
+            break;
+        case 'admin_marketing':
+            h = sAdminMarketing();
             break;
         default: h = sOHome();
     }
@@ -4753,6 +4777,59 @@ function sAdminPrepList() {
         }).join('');
     }
     h += BTN('ACTUALIZAR //', 'loadPrepList()', true);
+    h += '</div>';
+    return h;
+}
+// MARKETING — contenido listo para copiar y pegar, uno distinto cada semana (ver
+// MARKETING_CONTENT en el backend). No publica nada solo: ninguna red social está
+// conectada a este sistema, así que el dueño sigue siendo quien pega y publica —
+// esto solo le ahorra la parte de redactar cada semana.
+async function loadMarketingContent() {
+    sc = 'admin_marketing';
+    busy = true;
+    busyMsg = 'Cargando contenido...';
+    render();
+    try {
+        marketingContentData = await api('admin-marketing-content', { token: token });
+    }
+    catch (e) {
+        marketingContentData = null;
+    }
+    busy = false;
+    render();
+}
+function copyMktText(week, field) {
+    var d = marketingContentData;
+    if (!d)
+        return;
+    var text = (week === 'current' ? d.current : d.next)[field];
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { showToast('Copiado ✓', 'info'); });
+    }
+}
+function mktBlock(pkg, week) {
+    return '<div style="background:#2D5246;border:1px solid #1c1c1c;border-radius:10px;padding:16px;margin-bottom:14px">'
+        + '<div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF;margin-bottom:12px">' + esc(pkg.theme) + '</div>'
+        + '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">WHATSAPP / HISTORIA //</div>'
+        + '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;line-height:1.5;margin-bottom:6px">' + esc(pkg.whatsapp) + '</div>'
+        + '<button onclick="copyMktText(\'' + week + '\',\'whatsapp\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">COPIAR</button>'
+        + '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">CAPTION (INSTAGRAM/FACEBOOK) //</div>'
+        + '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#F2F0EB;line-height:1.5;margin-bottom:6px">' + esc(pkg.caption) + '</div>'
+        + '<button onclick="copyMktText(\'' + week + '\',\'caption\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">COPIAR</button>'
+        + '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">IDEA DE FOTO //</div>'
+        + '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;line-height:1.5">' + esc(pkg.photoIdea) + '</div>'
+        + '</div>';
+}
+function sAdminMarketing() {
+    var h = H('MARKETING', "sc='admin_home';render()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    var d = marketingContentData;
+    if (!d)
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#ff8888;letter-spacing:.2em">NO SE PUDO CARGAR //</div></div>' + BTN('REINTENTAR //', 'loadMarketingContent()') + '</div>';
+    h += '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px;line-height:1.5">Contenido listo para copiar y pegar — cambia cada semana. Nada se publica solo, tú decides cuándo y dónde.</div>';
+    h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">ESTA SEMANA //</div>';
+    h += mktBlock(d.current, 'current');
+    h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;letter-spacing:.2em;margin-bottom:8px">PRÓXIMA SEMANA //</div>';
+    h += mktBlock(d.next, 'next');
     h += '</div>';
     return h;
 }
