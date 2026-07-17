@@ -124,7 +124,10 @@ var BASES = [
 var PROTS = [
     { id: 'P01', l: 'ASADO', s: 'RES', d: 'Res asada mechada, cocción lenta', p15: 14, p30: 22, pDbl: 6 },
     { id: 'P02', l: 'POLLO', s: 'TERIYAKI', d: 'Tiras marinadas en teriyaki', p15: 13, p30: 21, pDbl: 6 },
-    { id: 'P03', l: 'POLLO', s: 'CAJUN', d: 'Pechuga deshilachada, condimento cajún', p15: 13, p30: 21, pDbl: 6 },
+    // vaultOnly: exclusiva de THE VAULT (SIG05, menú secreto) — no seleccionable en BUILD
+    // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
+    // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
+    { id: 'P03', l: 'POLLO', s: 'CAJUN', d: 'Pechuga deshilachada, condimento cajún', p15: 13, p30: 21, pDbl: 6, vaultOnly: true },
     { id: 'P04', l: 'ATÚN', s: 'HOUSE', d: 'Atún premium con mayonesa clásica', p15: 14, p30: 22, pDbl: 5 },
     { id: 'P05', l: 'THE ITALIAN', s: 'DELI', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16, p30: 26, pDbl: 9 },
     { id: 'P06', l: 'MEATBALL', s: 'MARINARA', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 7 }
@@ -1412,7 +1415,7 @@ function sOBuild() {
     h += BASES.map(function (b) { var av = isAvail(b.id); return av ? CARD(b, base === b.id, 'base=\'' + b.id + '\';render()') : CARDOFF(b); }).join('');
     h += '<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
     h += ST('02', 'PROTEÍNA', '');
-    h += PROTS.map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + protPrice(p) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (prot === p.id ? GOLD : '#444') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
+    h += PROTS.filter(function (p) { return !p.vaultOnly; }).map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + protPrice(p) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (prot === p.id ? GOLD : '#444') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
     h += '<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
     h += ST('03', 'TOPPINGS', 'Sin límite, elige los que quieras.');
     h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';

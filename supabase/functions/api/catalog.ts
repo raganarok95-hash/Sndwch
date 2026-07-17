@@ -26,6 +26,11 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   P05: { p15: 16, p30: 26, pDbl: 9 },
   P06: { p15: 14, p30: 24, pDbl: 7 },
 };
+// Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
+// se pueden pedir por BUILD YOUR OWN aunque sigan en PROT_PRICE (deriveCart/deriveOrder
+// las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
+// justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
+export const VAULT_ONLY_PROTS = new Set(["P03"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
   SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06", "S07"], p15: 19, p30: 24 },
@@ -171,7 +176,7 @@ function priceByoBuild(
 ): PricedBuild {
   if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.");
   const protInfo = PROT_PRICE[prot];
-  if (!protInfo) throw new ApiError("Proteína inválida.");
+  if (!protInfo || VAULT_ONLY_PROTS.has(prot)) throw new ApiError("Proteína inválida.");
   if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
   if (tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
   if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
