@@ -16,6 +16,7 @@ import { actPing } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice } from "./actions/catalog.ts";
 import {
   actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
+  actGoogleAuth,
 } from "./actions/auth.ts";
 import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
@@ -70,6 +71,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "get-catalog": actGetCatalog,
   register: actRegister,
   login: actLogin,
+  "google-auth": actGoogleAuth,
   "session-check": actSessionCheck,
   recover: actRecover,
   "logout-everywhere": actLogoutEverywhere,

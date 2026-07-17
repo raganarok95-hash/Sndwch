@@ -18,6 +18,9 @@
      en el checkout — nunca en el primer render, así que no hace falta bloquear el
      parseo/pintado inicial de la página esperando este script de terceros. -->
 <script src="https://checkout.culqi.com/js/v4" defer></script>
+<!-- async+defer: Google Identity Services solo se usa dentro de sPAuth() cuando
+     googleConfigured() es true — nunca bloquea el primer render, igual que Culqi arriba. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}

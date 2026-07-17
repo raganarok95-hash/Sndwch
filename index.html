@@ -18,6 +18,9 @@
      en el checkout — nunca en el primer render, así que no hace falta bloquear el
      parseo/pintado inicial de la página esperando este script de terceros. -->
 <script src="https://checkout.culqi.com/js/v4" defer></script>
+<!-- async+defer: Google Identity Services solo se usa dentro de sPAuth() cuando
+     googleConfigured() es true — nunca bloquea el primer render, igual que Culqi arriba. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
@@ -105,6 +108,14 @@ var YAPE_PLIN_NAME = 'SND//WCH';
 // Llave pública VAPID para notificaciones push — DEBE ser el mismo par que
 // VAPID_PRIVATE_KEY en el servidor (api/index.ts). La pública no es secreta.
 var VAPID_PUBLIC_KEY = 'BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3BDMSItRVHlan23RQZA6dF3wpbU1rA0';
+// "CONTINUAR CON GOOGLE" — Google Identity Services
+// El Client ID NO es secreto (viaja al cliente por diseño, igual que CULQI_PUBLIC_KEY) —
+// pero es un dato real de la Google Cloud Console del negocio, que hoy no existe, así que
+// esto sigue el mismo criterio que CULQI_PUBLIC_KEY/REEMPLAZA: mientras no se reemplace,
+// el botón de Google queda deshabilitado y el registro/login por teléfono+PIN de siempre
+// sigue funcionando igual (ver googleConfigured() y sPAuth()).
+var GOOGLE_CLIENT_ID = 'REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+function googleConfigured() { return GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.indexOf('REEMPLAZA') < 0; }
 var CHARGE_FN_URL = SB_URL + '/functions/v1/create-charge';
 var CREDIT_CHARGE_FN_URL = SB_URL + '/functions/v1/create-credit-charge';
 var EMAIL_FN_URL = SB_URL + '/functions/v1/send-order-email';
@@ -308,6 +319,10 @@ var tops = [], sauces = [], size = null, doubleProt = false, extraSauce = false;
 var useCredit = false;
 var manualPayMethod = null;
 var cust = null, isAdmin = false, atab = 'reg', aErr = '', refCode = '';
+// Credential (JWT) de Google Identity Services en espera de que el cliente complete el
+// registro normal (nombre/teléfono/PIN/DNI) — ver onGoogleCredential()/doReg(). Nunca se
+// usa por sí solo para crear una cuenta: el servidor lo vuelve a verificar en actRegister.
+var _googleIdToken = null;
 var adminOrders = [], myOrders = [], adminOrdersTruncated = false;
 var agPhone = '', agPts = '', agMsg = '';
 var pollTimer = null, lastPollCount = 0, pollFailing = false;
@@ -2132,7 +2147,7 @@ function sOSent() {
 }
 // AUTH
 function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh) + INP('l-pin', 'PIN PERSONAL', 'password') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+    return H() + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:#2D5246"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:#2D5246"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh) + INP('l-pin', 'PIN PERSONAL', 'password') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
 }
 async function doReg() {
     var name = gv('r-name').trim(), phone = gv('r-phone').trim(), pin = gv('r-pin').trim(), email = gv('r-email').trim(), dni = gv('r-dni').trim(), bdayRaw = gv('r-bday').trim(), refEl = document.getElementById('r-ref'), referredBy = refEl ? refEl.value.trim() : '';
@@ -2172,7 +2187,7 @@ async function doReg() {
         // sin dueño, así que mandarlo siempre aquí es seguro aunque no venga de ese flujo.
         var claimRef = localStorage.getItem('sw_last_ref') || null;
         var acqSrc = localStorage.getItem('sw_src') || null;
-        var r = await api('register', { name: name, phone: phone, pin: pin, email: email || null, dni: dni, bday: bday, referredBy: referredBy || null, claimOrderRef: claimRef, acquisitionSource: acqSrc });
+        var r = await api('register', { name: name, phone: phone, pin: pin, email: email || null, dni: dni, bday: bday, referredBy: referredBy || null, claimOrderRef: claimRef, acquisitionSource: acqSrc, googleIdToken: _googleIdToken || null });
         cust = r.customer;
         isAdmin = r.isAdmin;
         token = r.token;
@@ -2184,6 +2199,7 @@ async function doReg() {
         render();
         return;
     }
+    _googleIdToken = null;
     localStorage.setItem('sw_ph', phone);
     localStorage.setItem('sw_tok', token);
     savedPh = phone;
@@ -2224,6 +2240,63 @@ async function doLogin() {
     sc = 'p_home';
     render();
     loadUserExtras();
+}
+// Callback global de Google Identity Services (google.accounts.id.initialize) — recibe un
+// credential (id_token JWT) que NUNCA se usa para iniciar sesión directamente acá: se manda
+// al servidor (acción google-auth), que decide si ya existe una cuenta vinculada (login) o
+// si falta completar el registro normal con DNI/teléfono/PIN (ver actGoogleAuth).
+async function onGoogleCredential(resp) {
+    if (!resp || !resp.credential)
+        return;
+    busy = true;
+    busyMsg = 'Verificando con Google...';
+    render();
+    try {
+        var r = await api('google-auth', { idToken: resp.credential });
+        if (r.needsRegistration) {
+            _googleIdToken = resp.credential;
+            window._lastGuestName = (r.prefill && r.prefill.name) || '';
+            window._lastGuestEmail = (r.prefill && r.prefill.email) || '';
+            atab = 'reg';
+            aErr = '';
+            busy = false;
+            render();
+            showToast('Ya verificamos tu cuenta de Google — completa DNI y teléfono para terminar tu registro.');
+            return;
+        }
+        cust = r.customer;
+        isAdmin = r.isAdmin;
+        token = r.token;
+        cacheCust(cust, isAdmin);
+        localStorage.setItem('sw_ph', cust.phone);
+        localStorage.setItem('sw_tok', token);
+        savedPh = cust.phone;
+        busy = false;
+        sc = 'p_home';
+        render();
+        loadUserExtras();
+    }
+    catch (e) {
+        aErr = e.message;
+        busy = false;
+        render();
+    }
+}
+// Monta el botón oficial de Google (renderButton — no un <button> propio, GIS exige su
+// propio marcado dentro del contenedor) cada vez que p_auth se pinta — render() reemplaza
+// todo el innerHTML en cada ciclo, así que el mount anterior siempre queda destruido y
+// hay que rehacerlo. Sin ruido si el script de Google todavía no cargó (red lenta,
+// bloqueador de contenido) o si GOOGLE_CLIENT_ID no está configurado.
+function mountGoogleButton() {
+    if (!googleConfigured())
+        return;
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.id)
+        return;
+    var el = document.getElementById('google-btn-mount');
+    if (!el)
+        return;
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+    google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', width: 280, text: 'continue_with', locale: 'es' });
 }
 // POINTS HOME
 function sWelcome() {
@@ -4178,6 +4251,8 @@ function render() {
     document.getElementById('app').innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932' + (adminLight ? ';filter:invert(1) hue-rotate(180deg)' : '') + '">' + offlineBanner + h + '</div>';
     window.scrollTo(0, sameScreen ? scrollY : 0);
     _lastRenderedSc = sc;
+    if (sc === 'p_auth')
+        mountGoogleButton();
     renderOverlays();
 }
 // INVENTORY

@@ -5,6 +5,13 @@
 export const SB_URL = Deno.env.get("SUPABASE_URL")!;
 export const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 export const CULQI_SECRET_KEY = Deno.env.get("CULQI_SECRET_KEY");
+// Client ID de Google Cloud Console (OAuth 2.0), usado para verificar que un id_token de
+// Google Identity Services fue emitido para ESTA app (campo `aud`) y no para otra. NO es
+// secreto (viaja también al cliente, ver GOOGLE_CLIENT_ID en shell.html) — configúralo
+// con: supabase secrets set GOOGLE_CLIENT_ID=... Sin él, "Continuar con Google" queda
+// deshabilitado (ver actGoogleAuth) y el resto de la app sigue funcionando con normalidad,
+// igual que el resto de integraciones opcionales de este archivo.
+export const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
 // Firma HMAC de las sesiones (clientes y admin) — DEBE venir de una variable de entorno,
 // nunca vivir en el código fuente: quien lea este archivo (repo, backup, historial git)
 // podría forjar un token válido para cualquier cuenta si estuviera hardcodeada aquí.

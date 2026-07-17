@@ -3,7 +3,7 @@
 // había forma de detectar una caída total (como los incidentes de SESSION_SECRET/v32 de esta
 // sesión) salvo esperar el reclamo de un cliente o revisar logs a mano. No requiere sesión;
 // solo confirma que los secretos críticos están configurados y que la DB responde.
-import { SESSION_SECRET, RESEND_API_KEY, CULQI_SECRET_KEY, VAPID_PRIVATE_KEY } from "../env.ts";
+import { SESSION_SECRET, RESEND_API_KEY, CULQI_SECRET_KEY, VAPID_PRIVATE_KEY, GOOGLE_CLIENT_ID } from "../env.ts";
 import { sbGet } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { debugLog } from "../logging.ts";
@@ -15,6 +15,7 @@ export async function actPing(_b: any) {
     resendKey: !!RESEND_API_KEY,
     culqiKey: !!CULQI_SECRET_KEY,
     vapidKey: !!VAPID_PRIVATE_KEY,
+    googleClientId: !!GOOGLE_CLIENT_ID,
   };
   try {
     await sbGet("customers", "select=phone&limit=1");

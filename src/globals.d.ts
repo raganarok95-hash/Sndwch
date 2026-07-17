@@ -6,6 +6,7 @@
 
 declare var Culqi: any;
 declare var L: any;
+declare var google: any;
 
 interface Window {
   webkitAudioContext?: typeof AudioContext;
