@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/auth
 // Registro, login, verificación de sesión, cierre de sesión en todos los dispositivos,
 // borrado de cuenta y recuperación de PIN.
-import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS } from "../env.ts";
+import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
@@ -9,6 +9,46 @@ import {
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
 } from "../session.ts";
 import { sendRecoveryEmail, maskEmail } from "../email.ts";
+
+// Verifica un id_token de Google Identity Services contra el propio endpoint de Google
+// (tokeninfo) en vez de validar la firma RS256/JWKS localmente — mismo criterio que
+// verifyCulqiCharge (orders.ts): confiar en que el proveedor ya validó su propio token es
+// más simple y no menos seguro que reimplementar la verificación de firma acá. El `aud`
+// debe coincidir con GOOGLE_CLIENT_ID para asegurar que el token fue emitido para ESTA
+// app y no para otra que también use Sign in with Google.
+async function verifyGoogleIdToken(idToken: string): Promise<{ sub: string; email: string | null; name: string | null } | null> {
+  if (!GOOGLE_CLIENT_ID || !idToken) return null;
+  try {
+    const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    if (data.aud !== GOOGLE_CLIENT_ID || !data.sub) return null;
+    return { sub: String(data.sub), email: data.email ? String(data.email) : null, name: data.name ? String(data.name) : null };
+  } catch {
+    return null;
+  }
+}
+
+// Entrada de "Continuar con Google": si el sub de Google ya está vinculado a una cuenta,
+// inicia sesión directo; si no, NO crea cuenta acá — devuelve needsRegistration para que
+// el cliente complete nombre/teléfono/PIN/DNI en el formulario normal (ver actRegister),
+// que es donde de verdad se exige el DNI. Google nunca reemplaza ese registro, solo lo
+// pre-llena con nombre/correo.
+export async function actGoogleAuth(b: any) {
+  const idToken = String(b.idToken || "").trim();
+  if (!idToken) throw new ApiError("Falta el token de Google.");
+  const info = await verifyGoogleIdToken(idToken);
+  if (!info) throw new ApiError("No se pudo verificar tu cuenta de Google. Intenta de nuevo.", 401);
+
+  const rows = await sbGet("customers", `google_id=eq.${encodeURIComponent(info.sub)}`);
+  if (rows.length) {
+    const row = rows[0];
+    const isAdmin = await fetchIsAdmin(row.phone);
+    const token = await signToken({ phone: row.phone, isAdmin, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
+    return { customer: safeCustomer(row), isAdmin, token };
+  }
+  return { needsRegistration: true, prefill: { name: info.name || "", email: info.email || "" } };
+}
 
 export async function actRegister(b: any) {
   const name = String(b.name || "").trim();
@@ -18,6 +58,17 @@ export async function actRegister(b: any) {
   const dni = String(b.dni || "").trim();
   const bday = b.bday ? String(b.bday).trim() : null;
   const referredBy = b.referredBy ? String(b.referredBy).trim() : null;
+  // Si el registro viene de "Continuar con Google" (ver actGoogleAuth), el cliente manda
+  // de vuelta el MISMO id_token que ya se verificó ahí — se vuelve a verificar acá (nunca
+  // se confía en un google_id que mande el cliente directamente) para no depender de que
+  // ambas llamadas ocurran en la misma sesión de servidor. DNI/teléfono/PIN se validan
+  // exactamente igual que cualquier otro registro; esto solo añade el vínculo de cuenta.
+  let googleId: string | null = null;
+  if (b.googleIdToken) {
+    const info = await verifyGoogleIdToken(String(b.googleIdToken).trim());
+    if (!info) throw new ApiError("Tu sesión de Google expiró. Vuelve a intentar con el botón de Google.", 401);
+    googleId = info.sub;
+  }
   // Origen de campaña paga (?src=... en el link del anuncio, ver captura en el cliente) —
   // distinto de referredBy (referido entre clientes). Se acota a 60 caracteres porque es
   // texto que viene de un query param, nunca algo que el negocio necesite validar contra
@@ -31,14 +82,18 @@ export async function actRegister(b: any) {
   // Antes eran 2 consultas secuenciales a la misma tabla — un solo `or=()` cubre ambos
   // chequeos de duplicado en un round-trip. El lookup de referido no depende de este
   // resultado, así que corre en paralelo en vez de después.
+  const dupeFilter = googleId
+    ? `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)},google_id.eq.${encodeURIComponent(googleId)})&select=phone,dni,google_id`
+    : `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone,dni,google_id`;
   const [dupes, referrerRows] = await Promise.all([
-    sbGet("customers", `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone,dni`),
+    sbGet("customers", dupeFilter),
     referredBy && referredBy !== phone
       ? sbGet("customers", `referral_code=eq.${encodeURIComponent(referredBy)}&select=phone`)
       : Promise.resolve([]),
   ]);
   if (dupes.some((c: any) => c.phone === phone)) throw new ApiError("Ya existe una cuenta con ese teléfono.", 409);
   if (dupes.some((c: any) => c.dni === dni)) throw new ApiError("Ya existe una cuenta con ese DNI.", 409);
+  if (googleId && dupes.some((c: any) => c.google_id === googleId)) throw new ApiError("Esa cuenta de Google ya está vinculada a otro cliente.", 409);
 
   let referredByValid: string | null = null;
   if (referrerRows.length) referredByValid = referrerRows[0].phone;
@@ -58,6 +113,7 @@ export async function actRegister(b: any) {
     referral_code: phone,
     referred_by: referredByValid,
     acquisition_source: acquisitionSource,
+    google_id: googleId,
   });
   let customer = safeCustomer(rows[0]);
   // Bono de bienvenida para TODO registro nuevo (antes solo quien llegaba con un código de

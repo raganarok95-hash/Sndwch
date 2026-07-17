@@ -27,4 +27,27 @@ reales, que no tengo):
 
 No toqué estos precios — es una decisión tuya, no algo que decida mientras duermes.
 
-## 2. (los agentes irán agregando ítems aquí si aparecen)
+## 2. Activar "Continuar con Google" (implementado, apagado hasta que configures el Client ID)
+
+Se implementó el botón de registro/login directo con Google (backend: acción `google-auth`
++ `actRegister` extendido; cliente: botón en la pantalla PUNTOS // REWARDS). El DNI sigue
+siendo obligatorio SIEMPRE — Google solo pre-llena nombre/correo, nunca crea la cuenta por
+sí solo; el cliente igual debe completar teléfono/PIN/DNI antes de que exista una cuenta.
+
+Para activarlo (no puedo hacer esto por ti — son credenciales reales de tu propia cuenta):
+
+1. Crea un proyecto (o usa uno existente) en [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Crea un "OAuth 2.0 Client ID" tipo "Web application". En "Authorized JavaScript origins"
+   agrega el dominio real donde vive la app (ej. `https://sndwch.app`, o el que uses).
+3. Copia el Client ID (termina en `.apps.googleusercontent.com`) y reemplázalo en
+   `src/app.ts`, línea con `var GOOGLE_CLIENT_ID='REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID...'`.
+4. En Supabase → Edge Functions → Secrets, corre (o pídeme que lo corra):
+   `supabase secrets set GOOGLE_CLIENT_ID=tu-client-id.apps.googleusercontent.com`
+   (el backend necesita el mismo valor para validar el token — ver `GOOGLE_CLIENT_ID` en
+   `supabase/functions/api/env.ts`).
+5. `npm run build` + el ritual de despliegue normal.
+
+Mientras no hagas esto, el botón simplemente no aparece — el registro/login por
+teléfono+PIN de siempre sigue funcionando exactamente igual.
+
+## 3. (los agentes irán agregando ítems aquí si aparecen)
