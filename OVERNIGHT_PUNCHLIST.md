@@ -4,28 +4,18 @@ Generado durante la sesión de mejoras autónomas overnight. Nada aquí se imple
 solo — son cosas que requieren tu criterio de negocio, no algo que un agente deba
 decidir por ti. Bórralo cuando lo hayas revisado.
 
-## 1. Premio de curación 30CM en signatures (pendiente desde antes del loop)
+## 1. Premio de curación 30CM en signatures — RESUELTO
 
-Hallazgo: THE ORIGINAL, THE MEATBALL, THE SMOKE y THE FRESH cobran S/0 (o menos,
+Hallazgo: THE ORIGINAL, THE MEATBALL, THE SMOKE y THE FRESH cobraban S/0 (o menos,
 en el caso de THE FRESH) de premio sobre armar el mismo sándwich en BUILD YOUR OWN
-cuando el tamaño es 30CM — el "premio" de curación solo existe en 15CM.
+cuando el tamaño es 30CM — el "premio" de curación solo existía en 15CM.
 
-Ya resuelto en esta sesión (ver commit "POLLO CAJÚN pasa a ser exclusiva de THE VAULT"):
-el problema del menú secreto (VAULT costaba más que armarlo en BYO) — arreglado
-haciendo la proteína exclusiva, no tocando precio.
-
-Todavía sin resolver — pediste "dame más detalle antes de decidir" y no llegamos a
-cerrarlo antes de pedirme correr el loop. Datos ya reunidos (sin inventar costos
-reales, que no tengo):
-
-| Signature | 30CM hoy | Sugerido | Ganancia/unidad |
-|---|---|---|---|
-| THE ORIGINAL | S/22 | S/26 | +S/4 |
-| THE MEATBALL | S/24 | S/29 | +S/5 |
-| THE SMOKE | S/26 | S/31 | +S/5 |
-| THE FRESH | S/20 | S/22-24 | +S/2-4 |
-
-No toqué estos precios — es una decisión tuya, no algo que decida mientras duermes.
+Decisión tomada: aceptaste premio S/0 a 30CM para THE ORIGINAL/THE MEATBALL/THE SMOKE
+(quedan igualados a BYO, sin cambios). Para THE FRESH, que era el único caso donde el
+signature costaba MENOS que su propia proteína suelta en BYO (S/20 vs S/22 — pérdida
+real, no solo premio cero), subiste el precio del signature a S/22 para igualarlo a BYO.
+Aplicado en `supabase/functions/api/catalog.ts` (SIG04.p30) y `src/app.ts` (SIGS, mismo
+campo) — desplegado.
 
 ## 2. Activar "Continuar con Google" (implementado, apagado hasta que configures el Client ID)
 
