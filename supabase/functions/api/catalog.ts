@@ -35,7 +35,11 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
   SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06", "S07"], p15: 19, p30: 24 },
   SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 20 },
+  // p30 subido de 20 a 22 (decisión del dueño) — antes THE FRESH costaba MENOS armado que
+  // su propia proteína (P04) sola en BUILD YOUR OWN a 30CM (S/20 vs S/22), una pérdida real
+  // de margen. Ahora queda igualado a BYO (premio S/0), mismo criterio ya aceptado para
+  // THE ORIGINAL/THE MEATBALL/THE SMOKE a 30CM.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 22 },
   SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 22 },
   SIG07: { base: "B01", prot: "P01", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
