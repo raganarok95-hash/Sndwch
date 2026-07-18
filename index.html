@@ -295,8 +295,27 @@ var R03_FLAT_WAIVER = 8;
 // antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
 var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[14, 18]];
 var OFFPEAK_DRINK_PROMO_CAP = 4;
+// Hora efectiva para el descuento de hora valle: si el pedido está programado para más
+// tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
+// el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
+// 8pm (hora pico) mientras se arma el carrito a las 3pm (hora valle) regalaba la bebida
+// igual, aunque la cocina la fuera a preparar en hora pico (hallazgo de auditoría de
+// rentabilidad) — DEBE coincidir con deriveCart en supabase/functions/api/catalog.ts,
+// que es quien de verdad cobra.
+function effectiveOrderDate() {
+    if (scheduleMode === 'later') {
+        var schedEl = document.getElementById('o-sched');
+        var v = schedEl ? schedEl.value : '';
+        if (v) {
+            var d = new Date(v);
+            if (!isNaN(d.getTime()))
+                return d;
+        }
+    }
+    return new Date();
+}
 function isOffPeakDrinkPromoActiveNow() {
-    var limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+    var limaHour = new Date(effectiveOrderDate().getTime() - 5 * 3600000).getUTCHours();
     return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(function (r) { return limaHour >= r[0] && limaHour < r[1]; });
 }
 // Plan Semanal — recarga de saldo propio con bono. Monto fijo (no hay input de monto como
@@ -408,7 +427,7 @@ var recNewPin = null;
 var recEmailMasked = null;
 var myAddresses = [], myFavorites = [], pickedAddrId = null;
 var wPhone = '', wAmt = '', wMsg = '';
-var gcPhone = '', gcAmt = '', gcNote = '', gcMsg = '', gcName = null, gcEmail = '';
+var gcPhone = '', gcAmt = '', gcNote = '', gcMsg = '', gcEmail = '';
 // true solo para el aviso "ya se realizó el cobro, no vuelvas a intentar pagar" — el
 // resto de mensajes (validación, pago rechazado) se muestran neutros como siempre. Ver
 // el mismo tratamiento (caja roja con borde) que lockedMsg en el checkout normal —
@@ -1796,12 +1815,6 @@ function paymentMethodPickerHTML(t) {
         + (culqiConfigured ? payMethodBtn('culqi', 'TARJETA', true) : '')
         + payMethodBtn('yape', 'YAPE / PLIN', true)
         + '</div>'
-        // El bono +10% solo se financia con la comisión de Culqi que el negocio se ahorra en
-        // la transferencia manual (ver actPlaceOrder) — pagar Yape automático por el botón de
-        // arriba SÍ pasa por Culqi como una tarjeta, así que ese bono no aplica ahí. El texto
-        // vive pegado al botón de transferencia, no como línea general debajo de ambos, para
-        // no prometer puntos que el pago con Yape automático no da.
-        + (manualPayMethod ? '' : '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:6px">Transferencia por Yape/Plin: gana +10% de puntos extra</div>')
         + (manualPayMethod ? manualPayInstructionsHTML(t) : '')
         + '</div>';
 }
@@ -2205,7 +2218,6 @@ function finalizeOrderSuccess(res, po, chargeId) {
     window.open('https://wa.me/' + WA + '?text=' + encodeURIComponent(window._lWaText), '_blank');
     localStorage.setItem('sw_last_ref', po.ref);
     window._lTot = po.total;
-    window._lRef = po.ref;
     window._lChargeId = chargeId;
     window._lRewardLabel = res.order && res.order.redeemed_reward ? res.order.redeemed_reward : null;
     window._lPendingPayment = !!(res.order && res.order.payment_status !== 'paid');
@@ -4239,7 +4251,6 @@ function revGeo(lat, lon) {
         if (nb && nb !== road)
             parts.push(nb);
         var hint = parts.length ? parts.join(', ') : '';
-        window._mHint = hint;
         var h = document.getElementById('maddr-hint');
         if (h)
             h.innerHTML = hint ? '<span style="color:' + GOLD + '">&#8599; Referencia: </span>' + esc(hint) : '';
@@ -4248,9 +4259,7 @@ function revGeo(lat, lon) {
         if (inp && !inp.value && hint)
             inp.value = hint;
     })
-        .catch(function () {
-        window._mHint = '';
-    });
+        .catch(function () { });
 }
 function closeMap() { document.getElementById('mmap').style.display = 'none'; }
 function confirmMap() {

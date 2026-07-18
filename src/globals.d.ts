@@ -16,12 +16,10 @@ interface Window {
   _lastGuestEmail?: string;
   _lWaText?: string;
   _lTot?: number;
-  _lRef?: string;
   _lChargeId?: string | null;
   _lRewardLabel?: string | null;
   _lPendingPayment?: boolean;
   _lPayMethod?: string;
-  _mHint?: string;
   _mLat?: number;
   _mLon?: number;
 }
