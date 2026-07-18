@@ -40,6 +40,36 @@ function de Supabase.
 4. Cualquier migración de base de datos nueva (`mcp__Supabase__apply_migration`) va
    antes del deploy si el código nuevo depende de ella (columnas, RPCs, cron jobs).
 
+## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
+
+- **El negocio aún NO ha abierto** — el plan del dueño es lanzar en ~2 meses desde julio
+  2026 (aprox. septiembre 2026). Todo lo que hay hoy en `orders`/`customers` en Supabase
+  es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales. Cualquier
+  proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
+  referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
+  datos reales apenas el negocio esté operando y haya volumen real que medir.
+- **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
+  de venta — deliberadamente conservador/alto a propósito. Un cálculo directo con precios
+  reales de Perú investigados dio ~26-36% según el producto; el dueño pidió trabajar con
+  45% dejando margen extra reservado para mejorar el empaque más adelante. Mano de obra =
+  S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
+  volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
+  para necesitar contratar).
+- **Precios de insumos investigados (Perú, julio 2026)**: res ~S/20/kg, pollo ~S/17/kg,
+  atún en lata ~S/38/kg, embutido premium (jamón/paté/cabanossi) ~S/38/kg, carne molida
+  ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según tipo. Las bebidas caseras (infusiones)
+  tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
+  gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
+  diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
+- **Comisión de pago (Culqi/tarjeta)**: nunca se restaba del margen antes de esta sesión
+  de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
+  rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo
+  preferencia operativa.
+- **Programa de puntos**: recompensas (R02-R06 en `catalog.ts`) recalibradas para que el
+  costo real de honrar cada canje sea consistente con el 45% de insumos de arriba — si
+  ese % cambia de nuevo (ej. con datos reales de proveedor), estos puntos deberían
+  revisarse también.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
