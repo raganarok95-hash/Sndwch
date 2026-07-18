@@ -5,12 +5,24 @@
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
 
+// Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
+// proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
+// valor real a cambio (hallazgo de auditoría): R01 (topping extra) ya es gratis e
+// ilimitado para todos desde hace tiempo, sin nada que "desbloquear"; R02 (4ta salsa)
+// nunca tuvo implementado el descuento; R05 (bebida gratis) tampoco. R01 se retira (no
+// hay ningún topping premium real que ofrecer sin inventar un ingrediente/costo que no
+// existe). El resto queda repreciado contra el "tipo de cambio" real que ya usaban R04/
+// R06 (~20-30 pts por cada sol de valor entregado, ver waiver real en deriveCart):
+// R02 ahora perdona el cargo real de "SALSA EXTRA" (S/2) — antes de esto la recompensa
+// no tenía ningún efecto en el precio. R03 (antes "SAUCE // SET", sin precio ni
+// implementación en ningún lado) se reemplaza por "sube a 30CM gratis" — perdona la
+// diferencia real p30-p15 del sándwich elegido. R05 ahora perdona el precio real de una
+// bebida (S/3-6) en vez de no hacer nada.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
-  R01: { pts: 40, label: "TOPPING // EXTRA" },
-  R02: { pts: 80, label: "4TA // SALSA" },
-  R03: { pts: 140, label: "SAUCE // SET" },
+  R02: { pts: 40, label: "4TA // SALSA" },
+  R03: { pts: 150, label: "SUBE A 30CM // GRATIS" },
   R04: { pts: 180, label: "DOBLE // PROTEÍNA" },
-  R05: { pts: 250, label: "BEBIDA // GRATIS" },
+  R05: { pts: 120, label: "BEBIDA // GRATIS" },
   R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
 };
 
@@ -156,6 +168,11 @@ type PricedBuild = {
   basePrice: number;
   dblSurcharge: number;
   sauceSurcharge: number;
+  // Diferencia real p30-p15 de este mismo producto — solo tiene sentido cuando size es
+  // "15" (¿cuánto costaría subir ESTE sándwich a 30CM?) y cuando esa diferencia es
+  // positiva; queda en 0 si ya es 30CM o si el producto cobra lo mismo en ambos tamaños
+  // (ej. SIG07, precio único). Usado por R03 ("SUBE A 30CM // GRATIS", ver deriveCart).
+  sizeUpgradeDiff: number;
   ingredientsPerUnit: string[];
   label: string;
 };
@@ -170,9 +187,10 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+  const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
+  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
   base: string, prot: string, cheese: string | null, tops: string[], sauces: string[],
@@ -186,9 +204,10 @@ function priceByoBuild(
   if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+  const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
+  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
 // Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,
@@ -244,9 +263,14 @@ export type PricedItem = {
   unitPrice: number;
   basePrice: number;
   dblSurcharge: number;
+  sauceSurcharge: number;
+  sizeUpgradeDiff: number;
   ingredientsPerUnit: string[];
   label: string;
+  eligibleR02: boolean;
+  eligibleR03: boolean;
   eligibleR04: boolean;
+  eligibleR05: boolean;
   eligibleR06: boolean;
 };
 
@@ -266,9 +290,16 @@ export function priceCartItem(raw: any): PricedItem {
       unitPrice: price,
       basePrice: price,
       dblSurcharge: 0,
+      sauceSurcharge: 0,
+      sizeUpgradeDiff: 0,
       ingredientsPerUnit: [code],
       label: SIDE_LABEL[code] || code,
+      eligibleR02: false,
+      eligibleR03: false,
       eligibleR04: false,
+      // Una bebida/side es lo único elegible para R05 ("BEBIDA // GRATIS") — un
+      // sándwich nunca lo es, sin importar tamaño o proteína.
+      eligibleR05: true,
       eligibleR06: false,
     };
   }
@@ -289,9 +320,18 @@ export function priceCartItem(raw: any): PricedItem {
       unitPrice: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
       basePrice: priced.basePrice,
       dblSurcharge: priced.dblSurcharge,
+      sauceSurcharge: priced.sauceSurcharge,
+      sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
+      // R02 ("4TA // SALSA") perdona el cargo real de SALSA EXTRA — solo elegible si
+      // el cliente ya activó ese extra pagado en esta línea (mismo criterio que R04
+      // exige doubleProt activado: la recompensa perdona un cargo que el cliente ya
+      // pidió, no lo agrega de la nada).
+      eligibleR02: extraSauce,
+      eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
+      eligibleR05: false,
       eligibleR06: size === "15",
     };
   }
@@ -309,9 +349,14 @@ export function priceCartItem(raw: any): PricedItem {
       unitPrice: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
       basePrice: priced.basePrice,
       dblSurcharge: priced.dblSurcharge,
+      sauceSurcharge: priced.sauceSurcharge,
+      sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
+      eligibleR02: extraSauce,
+      eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
+      eligibleR05: false,
       eligibleR06: size === "15",
     };
   }
@@ -319,12 +364,16 @@ export function priceCartItem(raw: any): PricedItem {
   throw new ApiError("Tipo de producto inválido.");
 }
 
-// R04 (doble proteína gratis) solo aplica a la primera línea con doble proteína activada;
-// R06 (15CM gratis) solo a la primera línea 15CM. El resto de recompensas no exige nada
-// del carrito aparte de que no esté vacío — el servidor recalcula esto de forma
-// independiente al índice que el cliente crea haber elegido.
+// R02 (perdona SALSA EXTRA) solo aplica a una línea que ya activó ese extra pagado; R03
+// (sube a 30CM gratis) solo a una línea 15CM cuya versión 30CM cueste más; R04 (doble
+// proteína gratis) solo a una línea con doble proteína activada; R05 (bebida gratis)
+// solo a una línea de bebida/side; R06 (15CM gratis) solo a una línea 15CM. El servidor
+// recalcula esto de forma independiente al índice que el cliente crea haber elegido.
 export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): number {
+  if (rewardId === "R02") return priced.findIndex((p) => p.eligibleR02);
+  if (rewardId === "R03") return priced.findIndex((p) => p.eligibleR03);
   if (rewardId === "R04") return priced.findIndex((p) => p.eligibleR04);
+  if (rewardId === "R05") return priced.findIndex((p) => p.eligibleR05);
   if (rewardId === "R06") return priced.findIndex((p) => p.eligibleR06);
   return priced.length ? 0 : -1;
 }
@@ -384,7 +433,12 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
     const targetIdx = findRewardTargetIndex(priced, rewardId);
     if (targetIdx < 0) throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
     const target = priced[targetIdx];
-    const waiver = rewardId === "R04" ? target.dblSurcharge : rewardId === "R06" ? target.basePrice : 0;
+    const waiver = rewardId === "R02" ? target.sauceSurcharge
+      : rewardId === "R03" ? target.sizeUpgradeDiff
+      : rewardId === "R04" ? target.dblSurcharge
+      : rewardId === "R05" ? target.basePrice
+      : rewardId === "R06" ? target.basePrice
+      : 0;
     total = Math.max(0, total - waiver);
   }
 

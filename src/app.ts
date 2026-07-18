@@ -137,12 +137,15 @@ var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',S
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
 var PROT_IMG={};
+// Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
+// porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
+// que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
+// ya usaban R04/R06.
 var RWDS=[
-  {id:'R01',pts:40, n:'TOPPING',  s:'EXTRA',  d:'Un topping adicional gratis'},
-  {id:'R02',pts:80, n:'4TA',      s:'SALSA',  d:'Cuarta salsa gratis'},
-  {id:'R03',pts:140,n:'SAUCE',    s:'SET',    d:'3 salsas mini para llevar'},
+  {id:'R02',pts:40, n:'4TA',      s:'SALSA',  d:'Perdona el cargo de salsa extra (S/2)'},
+  {id:'R03',pts:150,n:'SUBE A',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R04',pts:180,n:'DOBLE',    s:'PROTEÍNA',d:'Doble proteína gratis'},
-  {id:'R05',pts:250,n:'BEBIDA',   s:'GRATIS', d:'Bebida a elección'},
+  {id:'R05',pts:120,n:'BEBIDA',   s:'GRATIS', d:'Bebida a elección'},
   {id:'R06',pts:400,n:'SÁNDWICH', s:'GRATIS', d:'Sándwich 15CM gratis — cualquier proteína',sizeOnly:'15'}
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -764,22 +767,38 @@ function cartOffPeakDrinkDiscount(){
   if(!sidePrices.length)return 0;
   return Math.min(Math.min.apply(null,sidePrices),OFFPEAK_DRINK_PROMO_CAP);
 }
-// Busca el primer producto del carrito elegible para una recompensa — R04 necesita
-// una línea con doble proteína activada, R06 necesita una línea 15CM. El resto de
-// recompensas no tiene requisito propio (basta con que el carrito no esté vacío).
+// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM — 0 si ya es 30CM o si el
+// producto cobra lo mismo en ambos tamaños (ej. SIG07, precio único). Usado por R03.
+function itemSizeUpgradeDiff(it){
+  if(it.type==='side'||it.size!=='15')return 0;
+  if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?Math.max(0,sig.p30-sig.p15):0;}
+  var pr=PROTS.find(function(x){return x.id===it.prot;});
+  return pr?Math.max(0,pr.p30-pr.p15):0;
+}
+// Busca el primer producto del carrito elegible para una recompensa — R02 necesita una
+// línea con SALSA EXTRA activada, R03 una línea 15CM cuya versión 30CM cueste más, R04
+// una línea con doble proteína activada, R05 una línea de bebida/side, R06 una línea
+// 15CM. El resto de recompensas no tiene requisito propio (basta con que el carrito no
+// esté vacío).
 function findRewardTargetIndex(rewardId){
-  if(rewardId==='R04'){for(var i=0;i<cart.length;i++){if(cart[i].type!=='side'&&cart[i].doubleProt)return i;}return -1;}
-  if(rewardId==='R06'){for(var j=0;j<cart.length;j++){if(cart[j].type!=='side'&&cart[j].size==='15')return j;}return -1;}
+  if(rewardId==='R02'){for(var i=0;i<cart.length;i++){if(cart[i].type!=='side'&&cart[i].extraSauce)return i;}return -1;}
+  if(rewardId==='R03'){for(var j=0;j<cart.length;j++){if(itemSizeUpgradeDiff(cart[j])>0)return j;}return -1;}
+  if(rewardId==='R04'){for(var k=0;k<cart.length;k++){if(cart[k].type!=='side'&&cart[k].doubleProt)return k;}return -1;}
+  if(rewardId==='R05'){for(var m=0;m<cart.length;m++){if(cart[m].type==='side')return m;}return -1;}
+  if(rewardId==='R06'){for(var n=0;n<cart.length;n++){if(cart[n].type!=='side'&&cart[n].size==='15')return n;}return -1;}
   return cart.length?0:-1;
 }
 function rewardWaiverAmount(rewardId,targetIdx){
   if(targetIdx<0)return 0;
   var it=cart[targetIdx];
+  if(rewardId==='R02')return it.extraSauce?2:0;
+  if(rewardId==='R03')return itemSizeUpgradeDiff(it);
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
     var pr=PROTS.find(function(x){return x.id===protCode;});
     return pr?pr.pDbl:0;
   }
+  if(rewardId==='R05')return it.type==='side'?itemUnitPrice(it):0;
   if(rewardId==='R06'){
     if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?(it.size==='15'?sig.p15:sig.p30):0;}
     var pr2=PROTS.find(function(x){return x.id===it.prot;});
@@ -1268,10 +1287,9 @@ async function editItemNote(idx){
   render();
 }
 // Recompensas aplicables directamente al pedido en curso — reemplaza el viejo flujo
-// de "canjear ahora y mostrar un código al repartidor". R04 y R06 descuentan el
-// precio de la línea del carrito a la que apliquen; el resto no tiene mecánica de
-// precio en el menú actual — quedan registradas en el pedido (recibo, ticket de
-// cocina, WhatsApp) para que el local las prepare junto con él.
+// de "canjear ahora y mostrar un código al repartidor". Todas descuentan el precio real
+// de la línea del carrito a la que apliquen (ver rewardWaiverAmount) — quedan además
+// registradas en el pedido (recibo, ticket de cocina, WhatsApp).
 function rewardsPickerHTML(){
   if(!cust)return'';
   var unlocked=RWDS.filter(function(r){return(cust.points||0)>=r.pts;});
@@ -1282,7 +1300,12 @@ function rewardsPickerHTML(){
     var eligible=targetIdx>=0;
     var savings=selected?rewardWaiverAmount(r.id,targetIdx):0;
     var targetLabel=selected&&targetIdx>=0?itemLabel(cart[targetIdx]):'';
-    var reqText=r.id==='R06'?' · agrega un sándwich 15CM para usarla':r.id==='R04'?' · agrega un sándwich con doble proteína para usarla':' · agrega algo a tu carrito para usarla';
+    var reqText=r.id==='R06'?' · agrega un sándwich 15CM para usarla'
+      :r.id==='R04'?' · agrega un sándwich con doble proteína para usarla'
+      :r.id==='R02'?' · agrega salsa extra a un sándwich para usarla'
+      :r.id==='R03'?' · agrega un sándwich 15CM para usarla'
+      :r.id==='R05'?' · agrega una bebida para usarla'
+      :' · agrega algo a tu carrito para usarla';
     var sub=r.d+(!eligible?reqText:'')+(selected&&savings>0?' · ahorras '+SOLES+savings+' en '+targetLabel:(selected?' · se incluye con tu pedido':''));
     return'<div onclick="'+(eligible?'toggleReward(\''+r.id+'\')':'')+'" style="background:'+(selected?'#1E4A38':'#1A3028')+';border:1px solid '+(selected?GOLD:'#3A6B58')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:'+(eligible?'pointer':'not-allowed')+';opacity:'+(eligible?1:.4)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;padding-right:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">'+r.n+'<span style="color:'+GOLD+'"> // </span>'+r.s+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">'+esc(sub)+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(selected?GOLD:'#A8C8B0')+';flex-shrink:0">'+(selected?'✓':'○')+'</span></div></div>';
   }).join('');
@@ -1371,7 +1394,14 @@ function payMethodBtn(id,label,enabled){
 }
 function selectPayMethod(m){
   manualPayMethod=(m==='culqi'?null:m);
-  if(manualPayMethod)appliedReward=null;
+  // Antes elegir Yape/Plin borraba en silencio cualquier recompensa ya aplicada — el
+  // servidor (deriveCart) no tiene ninguna restricción que ate una recompensa a un
+  // método de pago en particular, así que esto era un descuido, no una regla de
+  // negocio: un cliente que canjeaba BEBIDA GRATIS y luego elegía Yape perdía el
+  // descuento sin ningún aviso (hallazgo al probar la reestructura de recompensas de
+  // esta sesión). checkoutExtrasHTML ya oculta el selector de recompensas cuando hay
+  // un método manual elegido (para no dejar cambiarla a medio pago) — eso basta, no
+  // hace falta además descartar la que ya estaba aplicada.
   confirmRerender();
 }
 function manualPayInstructionsHTML(t){
