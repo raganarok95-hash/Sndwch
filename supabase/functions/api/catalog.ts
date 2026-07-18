@@ -52,7 +52,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // de margen. Ahora queda igualado a BYO (premio S/0), mismo criterio ya aceptado para
   // THE ORIGINAL/THE MEATBALL/THE SMOKE a 30CM.
   SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 22 },
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 22 },
+  // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
+  // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
+  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 21 },
   SIG07: { base: "B01", prot: "P01", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
