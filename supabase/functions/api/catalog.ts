@@ -31,12 +31,17 @@ export const VALID_BASES = new Set(["B01", "B02", "B03"]);
 export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12", "S13"]);
+// P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
+// por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
+// el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
+// real bastante más de lo que el precio fijo alcanzaba a cubrir (hallazgo de costeo real
+// con precios de insumos de Perú). DEBE coincidir con PROTS en src/app.ts.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
   P01: { p15: 14, p30: 22, pDbl: 6 },
   P02: { p15: 13, p30: 21, pDbl: 6 },
   P03: { p15: 13, p30: 21, pDbl: 6 },
-  P04: { p15: 14, p30: 22, pDbl: 5 },
-  P05: { p15: 16, p30: 26, pDbl: 9 },
+  P04: { p15: 14, p30: 25, pDbl: 5 },
+  P05: { p15: 16, p30: 30, pDbl: 9 },
   P06: { p15: 14, p30: 24, pDbl: 7 },
 };
 // Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
@@ -51,12 +56,15 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24 },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 26 },
-  // p30 subido de 20 a 22 (decisión del dueño) — antes THE FRESH costaba MENOS armado que
-  // su propia proteína (P04) sola en BUILD YOUR OWN a 30CM (S/20 vs S/22), una pérdida real
-  // de margen. Ahora queda igualado a BYO (premio S/0), mismo criterio ya aceptado para
-  // THE ORIGINAL/THE MEATBALL/THE SMOKE a 30CM.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 22 },
+  // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
+  // italiano cuesta casi el doble por kilo que pollo/res, duplicar su porción a 30CM
+  // costaba más de lo que el precio fijo anterior cubría) — mantiene el criterio de
+  // premio S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 30 },
+  // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
+  // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
+  // THE ORIGINAL/THE MEATBALL/THE SMOKE.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 25 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.

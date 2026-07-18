@@ -139,8 +139,13 @@ var PROTS = [
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
     // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
     { id: 'P03', l: 'POLLO', s: 'CAJUN', d: 'Pechuga deshilachada, condimento cajún', p15: 13, p30: 21, pDbl: 6, vaultOnly: true },
-    { id: 'P04', l: 'ATÚN', s: 'HOUSE', d: 'Atún premium con mayonesa clásica', p15: 14, p30: 22, pDbl: 5 },
-    { id: 'P05', l: 'THE ITALIAN', s: 'DELI', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16, p30: 26, pDbl: 9 },
+    // p30 subido de 22 a 25 — el atún cuesta casi el doble por kilo que pollo/res, duplicar
+    // su porción a 30CM costaba más de lo que el precio fijo anterior cubría (hallazgo de
+    // costeo real) — DEBE coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
+    { id: 'P04', l: 'ATÚN', s: 'HOUSE', d: 'Atún premium con mayonesa clásica', p15: 14, p30: 25, pDbl: 5 },
+    // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
+    // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
+    { id: 'P05', l: 'THE ITALIAN', s: 'DELI', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16, p30: 30, pDbl: 9 },
     { id: 'P06', l: 'MEATBALL', s: 'MARINARA', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 7 }
 ];
 var TOPS = [
@@ -192,10 +197,14 @@ var SIGS = [
     // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
     // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
     // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
-    { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'MÁS PEDIDO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 26,
+    // p30 subido de 26 a 30 (mismo motivo que P05 arriba) — mantiene el criterio de premio
+    // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
+    { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'MÁS PEDIDO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 30,
         chef: true,
         pitch: 'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
-    { id: 'SIG04', n: 'THE FRESH', s: 'BUILD', badge: 'LIGERO', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 22,
+    // p30 subido de 22 a 25 (mismo motivo que P04 arriba) — mantiene el criterio de premio
+    // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
+    { id: 'SIG04', n: 'THE FRESH', s: 'BUILD', badge: 'LIGERO', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 25,
         // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
         // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
         pitch: 'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
