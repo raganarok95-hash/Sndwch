@@ -334,7 +334,8 @@ function isOffPeakDrinkPromoActiveNow() {
 // en la tarjeta de regalo) porque el bono está calculado para un solo punto de precio;
 // DEBE coincidir con WEEKLY_PLAN_PRICE/WEEKLY_PLAN_CREDIT en
 // supabase/functions/api/actions/customer.ts, el servidor es quien de verdad cobra y acredita.
-var WEEKLY_PLAN_PRICE = 90;
+// Precio subido de S/90 a S/95 para cubrir la comisión de Culqi (~4%) sobre el cobro.
+var WEEKLY_PLAN_PRICE = 95;
 var WEEKLY_PLAN_CREDIT = 100;
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
@@ -1113,8 +1114,12 @@ function rewardWaiverAmount(rewardId, targetIdx) {
     }
     return 0;
 }
+// Combo y hora valle ya no se suman — antes sándwich+bebida en la ventana de hora valle
+// perdía S/3+S/4=S/7 sin usar ningún punto. Solo se aplica el mayor de los dos (espejo
+// exacto del fix en deriveCart, supabase/functions/api/catalog.ts).
+function cartStackedDiscount() { return Math.max(cartComboDiscount(), cartOffPeakDrinkDiscount()); }
 function cartFinalTotal() {
-    var base = cartBaseTotal() - cartComboDiscount() - cartOffPeakDrinkDiscount();
+    var base = cartBaseTotal() - cartStackedDiscount();
     if (!appliedReward)
         return Math.max(0, base);
     var idx = findRewardTargetIndex(appliedReward);
@@ -1879,6 +1884,10 @@ function sOCart() {
     var empty = !cart.length;
     var comboDiscount = cartComboDiscount();
     var offPeakDiscount = cartOffPeakDrinkDiscount();
+    // Ya no se suman (ver cartStackedDiscount) — se muestra solo el que de verdad se
+    // aplicó, nunca los dos a la vez.
+    var showCombo = comboDiscount > 0 && comboDiscount >= offPeakDiscount;
+    var showOffPeak = offPeakDiscount > 0 && offPeakDiscount > comboDiscount;
     var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
     var rewardDiscount = appliedReward ? rewardWaiverAmount(appliedReward, rewardIdx) : 0;
     // Sándwich sin bebida en el carrito — el combo (sándwich+bebida, S/3 menos) todavía no
@@ -1886,7 +1895,7 @@ function sOCart() {
     var hasSandwichNoDrink = cart.some(function (it) { return it.type !== 'side'; }) && cartComboCount() < cart.reduce(function (s, it) { return s + (it.type !== 'side' ? it.qty : 0); }, 0);
     return H('TU CARRITO', "syncConfirmFields();sc='o_home';render()") + '<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
         + cartItemsHTML()
-        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span>' + (comboDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">combo aplicado: ahorras ' + SOLES + comboDiscount + '</div>' : '') + (offPeakDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras ' + SOLES + offPeakDiscount + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + rewardDiscount + '</div>' : '') + '</div></div>' : '')
+        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span>' + (showCombo ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">combo aplicado: ahorras ' + SOLES + comboDiscount + '</div>' : '') + (showOffPeak ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras ' + SOLES + offPeakDiscount + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + rewardDiscount + '</div>' : '') + '</div></div>' : '')
         + (hasSandwichNoDrink && isOffPeakDrinkPromoActiveNow() ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:12px">Es hora valle — agrega una bebida y te sale GRATIS (hasta ' + SOLES + OFFPEAK_DRINK_PROMO_CAP + ')</div>' : (hasSandwichNoDrink ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:12px">Agrega una bebida y ahorra ' + SOLES + COMBO_DISCOUNT_PER_PAIR + ' (combo)</div>' : ''))
         // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
         // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común

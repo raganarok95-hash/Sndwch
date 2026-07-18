@@ -30,7 +30,7 @@ test('cliente activa el Plan Semanal y recibe saldo con bono', async ({ page }) 
       success: true,
       ref: 'PLAN-TEST01',
       expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
-      amountPaid: 90,
+      amountPaid: 95,
       creditAmount: 100,
     },
     'confirm-weekly-plan': { success: true, creditAmount: 100 },

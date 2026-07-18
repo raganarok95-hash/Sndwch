@@ -691,12 +691,17 @@ export async function actExpirePendingCreditPurchases(b: any) {
 
 // PLAN SEMANAL — recarga de saldo propio con bono (a diferencia de actPrepareCreditPurchase,
 // que es para REGALAR crédito a otro cliente, esto es un top-up del propio saldo). Paga
-// S/90 hoy, recibe S/100 en saldo — ~11% de bono, calculado para que incluso con el costo
-// de insumos más alto reportado por el dueño (~50% del precio de venta) siga quedando
-// margen real, a cambio de meter caja hoy por consumo que de todas formas iba a pasar
-// después. Usa su propia tabla (no pending_credit_purchases) porque no hay destinatario
-// ni mensaje que guardar — mismo patrón de reserva atómica que el resto de cobros Culqi.
-const WEEKLY_PLAN_PRICE = 90;
+// S/95 hoy, recibe S/100 en saldo — a cambio de meter caja hoy por consumo que de todas
+// formas iba a pasar después. Usa su propia tabla (no pending_credit_purchases) porque no
+// hay destinatario ni mensaje que guardar — mismo patrón de reserva atómica que el resto
+// de cobros Culqi.
+//
+// Precio subido de S/90 a S/95 — la comisión de Culqi (~4% efectivo) sobre el cobro de
+// S/90 dejaba al negocio recibiendo en realidad ~S/86.4, no los S/90 que el diseño
+// original asumía como caja recibida. A S/95, incluso después de la comisión el negocio
+// sigue recibiendo al menos los S/90 reales que se buscaban desde el inicio (hallazgo de
+// auditoría financiera).
+const WEEKLY_PLAN_PRICE = 95;
 const WEEKLY_PLAN_CREDIT = 100;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
