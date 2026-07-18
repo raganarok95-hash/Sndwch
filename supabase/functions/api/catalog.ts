@@ -488,7 +488,7 @@ export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?
   if (fullyWaivedSandwich) sandwichQty -= 1;
   if (fullyWaivedSide) sideQty -= 1;
   const comboCount = Math.min(sandwichQty, sideQty);
-  total = Math.max(0, total - comboCount * COMBO_DISCOUNT_PER_PAIR);
+  const comboDiscount = comboCount * COMBO_DISCOUNT_PER_PAIR;
 
   let offPeakDrinkDiscount = 0;
   const refDate = scheduledFor ? new Date(scheduledFor) : new Date();
@@ -500,9 +500,18 @@ export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?
     });
     if (sidePrices.length) {
       offPeakDrinkDiscount = Math.min(Math.min(...sidePrices), OFFPEAK_DRINK_PROMO_CAP);
-      total = Math.max(0, total - offPeakDrinkDiscount);
     }
   }
+
+  // Antes combo y hora valle se aplicaban los DOS a la vez sobre el mismo pedido
+  // (sándwich+bebida en la ventana de hora valle podía perder S/3+S/4=S/7 sin usar
+  // ningún punto) — con el margen real de insumos confirmado (~45-52%), apilar ambos
+  // llegaba a comerse una fracción grande de la utilidad de ese pedido. Ninguno de los
+  // dos deja de existir, pero ya no se suman: solo se aplica el mayor de los dos
+  // (hallazgo de auditoría de rentabilidad, decisión del dueño) — DEBE coincidir con el
+  // mismo criterio en src/app.ts.
+  const stackedDiscount = Math.max(comboDiscount, offPeakDrinkDiscount);
+  total = Math.max(0, total - stackedDiscount);
 
   if (rewardId && reward) {
     const target = priced[rewardTargetIdx];
