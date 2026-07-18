@@ -97,23 +97,40 @@ var SAUCES=[
   {id:'S13',l:'AU JUS',  s:'PARA MOJAR',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado'}
 ];
 var SIGS=[
-  {id:'SIG01',n:'THE ORIGINAL',s:'SIGNATURE',badge:'PREMIUM',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
+  // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
+  // estaba en el signature más barato de los tres comparables (18/22) mientras el más
+  // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
+  // real. THE ORIGINAL pasa a CLÁSICO (encaja mejor: el asado mechado de siempre).
+  {id:'SIG01',n:'THE ORIGINAL',s:'SIGNATURE',badge:'CLÁSICO',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
     pitch:'Res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. El sándwich que enamora desde el primer bocado.'},
-  {id:'SIG02',n:'THE MEATBALL',s:'BUILD',    badge:'CLÁSICO',   base:'B02',prot:'P06',tops:['T01','T03','T05'],sauces:['S06','S07'],p15:19,p30:24,
-    pitch:'Albóndigas caseras en salsa marinara, aceituna negra y una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
+  // Se retiró RANCH (S07) — no encajaba con el encuadre 100% italiano del pitch (ni el
+  // propio pitch la mencionaba) y quedaba fuera de lugar sobre albóndigas en marinara.
+  // Queda con una sola salsa, tal como pide el pitch. Badge PREMIUM (antes en SIG01, el
+  // más barato de los tres) pasa acá, que sí es el de precio intermedio entre los tres.
+  {id:'SIG02',n:'THE MEATBALL',s:'BUILD',    badge:'PREMIUM',   base:'B02',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,
+    pitch:'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
   // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
   // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
   // SIG04 por decisión del dueño sin ese cálculo — se movió acá cuando se verificó el
   // costo real de cada producto.
-  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'MÁS PEDIDO',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03','S08'],p15:21,p30:26,
+  // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
+  // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
+  // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
+  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'MÁS PEDIDO',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:26,
     chef:true,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   {id:'SIG04',n:'THE FRESH',   s:'BUILD',    badge:'LIGERO',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:22,
-    pitch:'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
+    // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
+    // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
+    pitch:'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
   {id:'SIG06',n:'THE TERIYAKI',s:'BUILD',    badge:'NUEVO',     base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:21,
     pitch:'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.'},
+  // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
+  // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
+  // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
+  // auditoría de producción).
   {id:'SIG07',n:'CHICAGO ITALIAN BEEF',s:'RESERVE',badge:'EDICIÓN LIMITADA',base:'B01',prot:'P01',tops:['T07'],sauces:['S13'],p15:25,p30:25,
-    pitch:'Res mechada sobre pan italiano con giardiniera picante, y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
+    pitch:'Res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó a CÍRCULO INTERNO
   // (ver sOSig/rankName). DEBE coincidir con SIG05 en supabase/functions/api/catalog.ts —
   // el servidor es quien de verdad rechaza el pedido si no calificas, esto solo evita
@@ -191,6 +208,9 @@ var NEARBY_RADIUS_KM=3;
 // cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
 var COMBO_DISCOUNT_PER_PAIR=3;
+// Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
+// que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
+var R03_FLAT_WAIVER=8;
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima — DEBE coincidir con
 // OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
 // quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
@@ -819,7 +839,7 @@ function rewardWaiverAmount(rewardId,targetIdx){
   if(targetIdx<0)return 0;
   var it=cart[targetIdx];
   if(rewardId==='R02')return it.extraSauce?2:0;
-  if(rewardId==='R03')return itemSizeUpgradeDiff(it);
+  if(rewardId==='R03')return Math.min(itemSizeUpgradeDiff(it),R03_FLAT_WAIVER);
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
     var pr=PROTS.find(function(x){return x.id===protCode;});
@@ -944,6 +964,12 @@ async function loadUserExtras(){
   if(!cust)return;
   try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
   try{myFavorites=(await api('favorites-list',{token:token})).favorites||[];}catch(e){}
+  // Antes myOrders solo se llenaba al visitar MIS PEDIDOS/HISTORIAL — un cliente
+  // recurrente que recién abre la app nunca veía la tarjeta "↻ REPETIR PEDIDO //" en el
+  // home (lastPaidOrder() lee de acá) hasta visitar esa pantalla primero, y refrescar la
+  // página a medio pedido perdía todo rastro de que tenía uno en curso (hallazgo de
+  // auditoría UX). Se pide aquí también, en segundo plano, igual que direcciones/favoritos.
+  try{myOrders=(await api('my-orders',{token:token})).orders||[];}catch(e){}
   render();
 }
 // ORDER SIGNATURE
@@ -1244,7 +1270,7 @@ function sOItemConfirm(){
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">'+(mode==='sig'?'TU SIGNATURE //':'TU BUILD //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span></div></div>'
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce',icon('chili',18,GOLD),'SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
-    +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px">☆ GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" placeholder="Nombre // opcional" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
+    +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px">☆ GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
         ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">+ CARRITO</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
         :'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>')
@@ -1832,7 +1858,10 @@ async function onGoogleCredential(resp){
       window._lastGuestName=(r.prefill&&r.prefill.name)||'';
       window._lastGuestEmail=(r.prefill&&r.prefill.email)||'';
       atab='reg';aErr='';busy=false;render();
-      showToast('Ya verificamos tu cuenta de Google — completa DNI y teléfono para terminar tu registro.');
+      // Antes decía solo "DNI y teléfono" — el formulario también exige un PIN nuevo
+      // (mínimo 4 dígitos) para poder crear la cuenta, y quien viene de Google se
+      // enteraba de eso recién al tocar CREAR CUENTA (hallazgo de auditoría UX).
+      showToast('Ya verificamos tu cuenta de Google — completa DNI, teléfono y crea un PIN para terminar tu registro.');
       return;
     }
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
@@ -2498,7 +2527,10 @@ function sPFavorites(){
     h+='<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('heart',32,'#A8C8B0')+'</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:'+GOLD+';letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
   }else{
     h+=myFavorites.map(function(f){
-      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
+      // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
+      // criterio que ya usa la fila de direcciones) — antes un nombre largo sin tope
+      // podía tapar o empujar el botón de eliminar en pantallas angostas.
+      return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0">ELIMINAR</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#fff;font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">PEDIR ESTE //</button></div>';
     }).join('');
   }
   h+='</div>'+NAV();
@@ -3504,7 +3536,12 @@ async function addAdmin(){
 }
 async function delAdmin(ph){
   if(!(await showConfirm('¿Eliminar admin '+ph+'?')))return;
-  try{await api('admin-accounts-delete',{token:token,phone:ph});await loadAdminMgr();}catch(e){showToast('Error: '+e.message);}
+  // Misma fricción que borrar la propia cuenta de cliente (pedir el PIN de nuevo, no
+  // solo el token de sesión) — antes esta acción, más irreversible/de mayor impacto
+  // operativo, pedía MENOS confirmación que esa (hallazgo de auditoría UX).
+  var pin=await showPrompt('Ingresa tu PIN para confirmar:','','tel');
+  if(!pin)return;
+  try{await api('admin-accounts-delete',{token:token,phone:ph,pin:pin});await loadAdminMgr();}catch(e){showToast('Error: '+e.message);}
 }
 function sAdminMgr(){
   return H('ADMINISTRADORES',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
@@ -3535,7 +3572,11 @@ function cpNumField(id,label,val){
 function cpRow(label,inputsHtml,fn){
   return'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:10px">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">'+esc(label)+'</div>'
-    +'<div style="display:flex;gap:8px;align-items:flex-end">'+inputsHtml
+    // flex-wrap: en pantallas angostas (~320px) los inputs numéricos + el botón GUARDAR
+    // no caben en una sola fila — antes se comprimían/cortaban en vez de acomodarse en
+    // una segunda línea (hallazgo de auditoría UX, especialmente visible en la fila de
+    // 3 campos de PROTEÍNAS).
+    +'<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'+inputsHtml
     +'<button onclick="'+fn+'" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 14px;border-radius:8px;white-space:nowrap">GUARDAR</button></div></div>';
 }
 function sAdminCatalog(){
