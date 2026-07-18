@@ -110,7 +110,7 @@ var SIGS=[
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   {id:'SIG04',n:'THE FRESH',   s:'BUILD',    badge:'LIGERO',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:22,
     pitch:'Atún premium, vegetales frescos y un toque cítrico de mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
-  {id:'SIG06',n:'THE TERIYAKI',s:'BUILD',    badge:'NUEVO',     base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:22,
+  {id:'SIG06',n:'THE TERIYAKI',s:'BUILD',    badge:'NUEVO',     base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:21,
     pitch:'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.'},
   {id:'SIG07',n:'CHICAGO ITALIAN BEEF',s:'RESERVE',badge:'EDICIÓN LIMITADA',base:'B01',prot:'P01',tops:['T07'],sauces:['S13'],p15:25,p30:25,
     pitch:'Res mechada sobre pan italiano con giardiniera picante, y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
