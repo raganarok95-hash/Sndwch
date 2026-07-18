@@ -19,12 +19,20 @@ import { computeRankName } from "./env.ts";
 // implementación en ningún lado) se reemplaza por "sube a 30CM gratis" — perdona la
 // diferencia real p30-p15 del sándwich elegido. R05 ahora perdona el precio real de una
 // bebida (S/3-6) en vez de no hacer nada.
+//
+// Puntos de R03/R04/R05/R06 subidos ~1.8x (R02 queda igual, ya estaba bien calibrada) —
+// la "tasa de cambio" de arriba se fijó asumiendo un costo real de insumo de ~20-30% del
+// valor perdonado. Con precios reales de Perú investigados después, el costo real de
+// honrar cada canje resultó ser ~45% del valor perdonado (el insumo se gasta igual al
+// preparar el producto "gratis", sin importar el margen nominal) — sin subir los puntos,
+// cada canje le costaba al negocio bastante más de lo que su propio diseño asumía
+// (hallazgo de auditoría financiera, ronda de recalibración de márgenes).
 export const REWARDS: Record<string, { pts: number; label: string }> = {
   R02: { pts: 40, label: "4TA // SALSA" },
-  R03: { pts: 150, label: "SUBE A 30CM // GRATIS" },
-  R04: { pts: 180, label: "DOBLE // PROTEÍNA" },
-  R05: { pts: 120, label: "BEBIDA // GRATIS" },
-  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
+  R03: { pts: 270, label: "SUBE A 30CM // GRATIS" },
+  R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
+  R05: { pts: 220, label: "BEBIDA // GRATIS" },
+  R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
 };
 
 export const VALID_BASES = new Set(["B01", "B02", "B03"]);

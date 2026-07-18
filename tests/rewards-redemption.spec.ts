@@ -1,15 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
-// Cubre la reestructura de recompensas de esta sesión: R05 ("BEBIDA // GRATIS", 120 pts)
-// antes no descontaba nada del total — canjearla costaba puntos reales sin entregar
-// ningún valor. Este test confirma que hoy sí perdona el precio real de la bebida
-// elegida (D06 THE BLOOM, S/4) y que el rewardId viaja hasta place-order.
+// Cubre la reestructura de recompensas de esta sesión: R05 ("BEBIDA // GRATIS", 220 pts
+// tras la recalibración de puntos contra el costo real de insumos) antes no descontaba
+// nada del total — canjearla costaba puntos reales sin entregar ningún valor. Este test
+// confirma que hoy sí perdona el precio real de la bebida elegida (D06 THE BLOOM, S/4) y
+// que el rewardId viaja hasta place-order.
 
 test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento real', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: {
-      customer: { phone: '900000002', name: 'Bruno Cliente', email: 'bruno@test.com', points: 200, credit_balance: 0 },
+      customer: { phone: '900000002', name: 'Bruno Cliente', email: 'bruno@test.com', points: 250, credit_balance: 0 },
       isAdmin: false,
       token: 'tok-bruno',
     },
@@ -78,7 +79,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
 test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: {
-      customer: { phone: '900000003', name: 'Carla Cliente', email: 'carla@test.com', points: 500, credit_balance: 0 },
+      customer: { phone: '900000003', name: 'Carla Cliente', email: 'carla@test.com', points: 750, credit_balance: 0 },
       isAdmin: false,
       token: 'tok-carla',
     },
