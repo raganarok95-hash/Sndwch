@@ -305,7 +305,7 @@ export async function actPrepareOrder(b: any) {
   }
 
   await loadCatalogPrices();
-  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId);
+  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -525,7 +525,7 @@ export async function actPlaceOrder(b: any) {
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
-  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId);
+  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -984,6 +984,32 @@ export async function actCancelMyOrder(b: any) {
       }));
     }
     await Promise.all(refundAudits);
+  }
+
+  // Dinero real ya cobrado que este endpoint NO puede devolver solo (tarjeta vía Culqi,
+  // o Yape/Plin ya confirmado manualmente por un admin) — a diferencia del crédito
+  // interno de arriba, acá no hay ningún saldo propio que ajustar, el reembolso implica
+  // tocar Culqi o hacer una transferencia real. Antes esta autocancelación quedaba en
+  // silencio total para el negocio: el pedido pasaba a CANCELADO sin ningún rastro de
+  // que se le debe plata al cliente, a diferencia de actAdminCancelOrder (que si exige
+  // acknowledgeRefund y deja auditoría) — contradecía en silencio la promesa de
+  // "cancela sin costo" del texto legal (hallazgo de auditoría de QA).
+  const needsManualRefund = order.payment_status === "paid" && order.payment_method !== "credit" && order.total > 0;
+  if (needsManualRefund) {
+    await logAdminAction("cliente:" + (order.customer_phone || "invitado"), "self-cancel-needs-refund", order.ref, {
+      total: order.total,
+      paymentMethod: order.payment_method,
+    });
+    try {
+      await sendPushToAdmins({
+        title: "Cliente canceló un pedido ya pagado 💸",
+        body: order.ref + " — S/" + order.total.toFixed(2) + " (" + order.payment_method.toUpperCase() + ") necesita reembolso manual.",
+        url: "./index.html",
+        tag: "sndwch-self-cancel-refund-" + order.ref,
+      });
+    } catch {
+      // un push fallido no debe bloquear la cancelación
+    }
   }
 
   const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Cliente canceló" });

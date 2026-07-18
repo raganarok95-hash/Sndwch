@@ -207,7 +207,14 @@ function priceByoBuild(
   const protInfo = PROT_PRICE[prot];
   if (!protInfo || VAULT_ONLY_PROTS.has(prot)) throw new ApiError("Proteína inválida.");
   if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
-  if (tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
+  // A diferencia de sauces (tope de 3), toppings no tiene tope de negocio ("Sin límite,
+  // elige los que quieras" en el builder) — el tope real es "cada topping válido, como
+  // máximo una vez", igual que hace el toggle del cliente (nunca push-duplicado). Sin
+  // este chequeo, un cliente podía mandar el mismo topping miles de veces y cada
+  // repetición se sumaba a ingredientsPerUnit, multiplicado por qty (hasta 20), sin tope
+  // — una sola línea de carrito reservaba/descontaba miles de unidades de inventario de
+  // ese topping por el precio de un sándwich normal (hallazgo de auditoría de QA).
+  if (tops.length > VALID_TOPS.size || new Set(tops).size !== tops.length || tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
   if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
@@ -410,12 +417,18 @@ const R03_FLAT_WAIVER = 8;
 // al cliente antes de pagar; este es el que de verdad aplica el descuento).
 const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[14, 18]];
 const OFFPEAK_DRINK_PROMO_CAP = 4;
-function isOffPeakDrinkPromoActiveNowLima(): boolean {
-  const limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+// Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
+// pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
+// pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en
+// orders.ts) igual regalaba la bebida, aunque la cocina la fuera a preparar en hora
+// pico, que es la justificación completa de este descuento (hallazgo de auditoría de
+// rentabilidad). Ahora evalúa la hora en la que de verdad se va a preparar el pedido.
+function isOffPeakDrinkPromoActiveLima(refDate: Date): boolean {
+  const limaHour = new Date(refDate.getTime() - 5 * 3600000).getUTCHours();
   return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
 }
 
-export function deriveCart(rawItems: any, rewardId: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
+export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
   if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
   if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
 
@@ -456,7 +469,8 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
   total = Math.max(0, total - comboCount * COMBO_DISCOUNT_PER_PAIR);
 
   let offPeakDrinkDiscount = 0;
-  if (isOffPeakDrinkPromoActiveNowLima()) {
+  const refDate = scheduledFor ? new Date(scheduledFor) : new Date();
+  if (isOffPeakDrinkPromoActiveLima(isNaN(refDate.getTime()) ? new Date() : refDate)) {
     const sidePrices = priced.flatMap((p, idx) => {
       if (p.item.type !== "side") return [];
       const qty = fullyWaivedSide && idx === rewardTargetIdx ? p.qty - 1 : p.qty;
