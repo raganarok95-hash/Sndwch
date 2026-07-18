@@ -337,6 +337,11 @@ function isOffPeakDrinkPromoActiveNow() {
 // Precio subido de S/90 a S/95 para cubrir la comisión de Culqi (~4%) sobre el cobro.
 var WEEKLY_PLAN_PRICE = 95;
 var WEEKLY_PLAN_CREDIT = 100;
+// Tarjeta de regalo: se paga con puntos propios, sin ningún cobro real (rediseño de esta
+// sesión — antes cobraba por Culqi). DEBE coincidir con GIFT_CARD_POINTS_PER_SOL en
+// supabase/functions/api/actions/customer.ts, el servidor es quien de verdad debita los
+// puntos y acredita el saldo.
+var GIFT_CARD_POINTS_PER_SOL = 40;
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
 // DEBE coincidir con RANKS en supabase/functions/api/env.ts.
@@ -440,17 +445,11 @@ var recNewPin = null;
 var recEmailMasked = null;
 var myAddresses = [], myFavorites = [], pickedAddrId = null;
 var wPhone = '', wAmt = '', wMsg = '';
-var gcPhone = '', gcAmt = '', gcNote = '', gcMsg = '', gcEmail = '';
-// true solo para el aviso "ya se realizó el cobro, no vuelvas a intentar pagar" — el
-// resto de mensajes (validación, pago rechazado) se muestran neutros como siempre. Ver
-// el mismo tratamiento (caja roja con borde) que lockedMsg en el checkout normal —
-// antes este aviso crítico se veía igual de neutro que un hint cualquiera.
-var gcCritical = false;
+var gcPhone = '', gcAmt = '', gcMsg = '';
 // Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
 // _payingInProgress en doOrder) — antes esta pantalla no tenía ningún guard contra
 // doble-submit, a diferencia del checkout normal.
 var _giftBuyInProgress = false;
-var _pendingGift = null;
 var rtStars = 0, rtMsg = '', chalMsg = '', discChalMsg = '';
 var cmplStep = 'form', cmplKind = 'reclamo', cmplMinor = false, cmplErr = '', cmplCode = null, cmplBusy = false;
 var adminComplaints = [], cmplFilterStatus = '', cmplRespondingId = null;
@@ -2130,17 +2129,6 @@ function payWithCulqi(amountSoles, email) {
 }
 // Callback global requerido por Culqi Checkout V4 — se ejecuta tras el intento de pago
 window.culqi = function () {
-    if (_pendingGift) {
-        if (Culqi.token) {
-            chargeAndFinalizeGift(Culqi.token.id);
-        }
-        else {
-            gcMsg = (Culqi.error && (Culqi.error.user_message || Culqi.error.merchant_message)) || 'No se pudo procesar el pago. Intenta de nuevo o con otro método.';
-            _pendingGift = null;
-            render();
-        }
-        return;
-    }
     if (_pendingWeeklyPlan) {
         if (Culqi.token) {
             chargeAndFinalizeWeeklyPlan(Culqi.token.id);
@@ -2813,24 +2801,26 @@ async function doCreditGift() {
     }
     render();
 }
-// Tarjeta de regalo digital: comprar crédito con un cobro real (Culqi) para acreditárselo
-// a OTRO cliente — distinta de doCreditGift (que transfiere saldo YA PROPIO, sin cobro
-// nuevo). Sigue el mismo esqueleto de dos pasos que el pago de pedidos (prepare-order +
-// Culqi + place-order): primero se valida y reserva la compra (prepare-credit-purchase),
-// solo si eso tuvo éxito se abre el widget de Culqi, y recién con el cobro confirmado se
-// acredita el saldo (confirm-credit-purchase).
+// Tarjeta de regalo digital: se paga con puntos PROPIOS y acredita saldo a OTRO cliente
+// — distinta de doCreditGift (que transfiere saldo ya propio, sin gastar puntos).
+// Rediseño de esta sesión: antes cobraba de verdad por Culqi (dos pasos, prepare +
+// widget + confirm) porque Culqi no soporta "cobrar con puntos" — el dueño pidió
+// corregirlo a la intención original. Ahora es una sola llamada atómica al servidor
+// (redeem_points_for_gift_credit), sin cobro, reserva, ni ventana de expiración.
 function sGiftCard() {
+    var amt = parseFloat(gcAmt) || 0;
+    var ptsCost = amt > 0 ? Math.round(amt * GIFT_CARD_POINTS_PER_SOL) : 0;
     return H('TARJETA DE REGALO', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">TARJETA<span style="color:' + GOLD + '"> // </span>DE REGALO</div>'
-        + '<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Compra crédito SND//WCH con tu tarjeta y regálaselo a otro cliente al instante. Monto entre S/10 y S/500.</p>'
+        + '<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:6px;line-height:1.5">Usa tus puntos para regalarle crédito SND//WCH a otro cliente al instante. Monto entre S/10 y S/500.</p>'
+        + '<p style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.05em;margin-bottom:18px">TIENES ' + (cust.points || 0) + ' PTS // ' + GIFT_CARD_POINTS_PER_SOL + ' PTS = S/1</p>'
         + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px">'
         + INP('gc-phone', 'TELÉFONO DEL DESTINATARIO // 9XXXXXXXX', 'tel', gcPhone)
         + INP('gc-amt', 'MONTO // S/', 'number', gcAmt)
-        + INP('gc-email', 'TU CORREO (para el comprobante)', 'email', gcEmail || (cust && cust.email) || '')
-        + INP('gc-note', 'MENSAJE PARA EL DESTINATARIO (opcional)', 'text', gcNote)
         + '</div>'
-        + '<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;min-height:14px;margin:8px 0 12px' + (gcCritical ? ';color:#ff5555;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px' : ';color:' + GOLD) + '">' + esc(gcMsg) + '</div>'
-        + BTN('COMPRAR Y REGALAR //', 'doGiftCardBuy()')
+        + (ptsCost > 0 ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:6px">Costará <b style="color:' + GOLD + '">' + ptsCost + ' puntos</b>.</div>' : '')
+        + '<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px;margin:8px 0 12px">' + esc(gcMsg) + '</div>'
+        + BTN('REGALAR CON PUNTOS //', 'doGiftCardBuy()')
         + '</div>' + NAV();
 }
 async function doGiftCardBuy() {
@@ -2838,24 +2828,18 @@ async function doGiftCardBuy() {
         return;
     var phoneEl = document.getElementById('gc-phone');
     var amtEl = document.getElementById('gc-amt');
-    var emailEl = document.getElementById('gc-email');
-    var noteEl = document.getElementById('gc-note');
     var phone = phoneEl ? phoneEl.value.trim() : '';
     var amt = amtEl ? parseFloat(amtEl.value) : NaN;
-    var email = emailEl ? emailEl.value.trim() : '';
-    var note = noteEl ? noteEl.value.trim() : '';
     gcPhone = phone;
     gcAmt = amtEl ? amtEl.value : '';
-    gcEmail = email;
-    gcNote = note;
-    gcCritical = false;
     if (!phone || !amt || amt < 10 || amt > 500) {
         gcMsg = 'Ingresa un teléfono y un monto entre S/10 y S/500.';
         render();
         return;
     }
-    if (!email) {
-        gcMsg = 'Ingresa tu correo para el comprobante de pago.';
+    var ptsCost = Math.round(amt * GIFT_CARD_POINTS_PER_SOL);
+    if (ptsCost > (cust.points || 0)) {
+        gcMsg = 'No tienes puntos suficientes para este monto.';
         render();
         return;
     }
@@ -2869,113 +2853,31 @@ async function doGiftCardBuy() {
         render();
         return;
     }
-    if (!(await showConfirm('¿Comprar ' + SOLES + amt + ' de crédito para ' + name + ' (' + phone + ')?')))
+    if (!(await showConfirm('¿Regalar ' + SOLES + amt + ' de crédito a ' + name + ' (' + phone + ') por ' + ptsCost + ' puntos?')))
         return;
     _giftBuyInProgress = true;
     busy = true;
-    busyMsg = 'Verificando...';
-    render();
-    var prep;
-    try {
-        prep = await api('prepare-credit-purchase', { token: token, toPhone: phone, amount: amt, message: note });
-    }
-    catch (e) {
-        busy = false;
-        _giftBuyInProgress = false;
-        gcMsg = e.message;
-        render();
-        return;
-    }
-    busy = false;
-    render();
-    _pendingGift = { ref: prep.ref, toPhone: phone, toName: prep.toName || name, amount: amt, email: email };
-    payGiftWithCulqi(amt, email, prep.ref);
-}
-function payGiftWithCulqi(amountSoles, email, ref) {
-    if (typeof Culqi === 'undefined') {
-        _giftBuyInProgress = false;
-        gcMsg = 'No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';
-        _pendingGift = null;
-        render();
-        return;
-    }
-    if (!CULQI_PUBLIC_KEY || CULQI_PUBLIC_KEY.indexOf('REEMPLAZA') >= 0) {
-        _giftBuyInProgress = false;
-        gcMsg = 'La pasarela de pago aún no está configurada. Contacta al administrador.';
-        _pendingGift = null;
-        render();
-        return;
-    }
-    Culqi.publicKey = CULQI_PUBLIC_KEY;
-    Culqi.settings({
-        title: 'SND//WCH',
-        currency: 'PEN',
-        amount: Math.round(amountSoles * 100),
-        description: 'Tarjeta de regalo ' + ref
-    });
-    Culqi.options({
-        lang: 'auto',
-        installments: false,
-        paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false }
-    });
-    Culqi.open();
-}
-async function chargeAndFinalizeGift(culqiToken) {
-    if (!_pendingGift)
-        return;
-    var pg = _pendingGift;
-    busy = true;
-    busyMsg = 'Procesando pago...';
+    busyMsg = 'Procesando...';
     render();
     try {
-        var resp = await fetch(CREDIT_CHARGE_FN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: culqiToken, amountSoles: pg.amount, email: pg.email, ref: pg.ref })
-        });
-        var data = await resp.json().catch(function () { return {}; });
-        if (!resp.ok || !data.success) {
-            busy = false;
-            _giftBuyInProgress = false;
-            gcMsg = data.error || 'El pago fue rechazado. Intenta de nuevo o con otro método.';
-            _pendingGift = null;
-            render();
-            return;
-        }
-        var res;
-        try {
-            res = await api('confirm-credit-purchase', { token: token, chargeId: data.chargeId, ref: pg.ref });
-        }
-        catch (e) {
-            busy = false;
-            _giftBuyInProgress = false;
-            gcCritical = true;
-            gcMsg = (e.message || 'No se pudo confirmar tu compra.') + ' Ya se realizó el cobro — contáctanos con tu referencia ' + pg.ref + ' para confirmar el crédito manualmente. No vuelvas a intentar pagar.';
-            _pendingGift = null;
-            render();
-            return;
+        var res = await api('gift-card-purchase', { token: token, toPhone: phone, amount: amt });
+        var r = await api('session-check', { token: token });
+        if (r.valid) {
+            cust = r.customer;
+            cacheCust(cust, isAdmin);
         }
         busy = false;
         _giftBuyInProgress = false;
         gcPhone = '';
         gcAmt = '';
-        gcNote = '';
-        gcEmail = '';
-        _pendingGift = null;
-        showToast('¡Regalaste crédito a ' + (res.toName || pg.toName) + '!');
+        showToast('¡Regalaste crédito a ' + (res.toName || name) + '!');
         sc = 'p_profile';
         render();
     }
     catch (e) {
-        // No sabemos si el cargo llegó a ejecutarse del lado de Culqi antes de que se
-        // cortara la conexión — mismo riesgo que el catch de arriba (confirm-credit-purchase
-        // falló), así que se trata con la misma seriedad: referencia + no reintentar a
-        // ciegas, en vez de un "intenta de nuevo" que podría llevar a un cobro duplicado.
         busy = false;
         _giftBuyInProgress = false;
-        gcCritical = true;
-        gcMsg = 'No pudimos confirmar si el pago se procesó (falló la conexión). Antes de reintentar, contáctanos con tu referencia ' + pg.ref + ' para verificar si ya se hizo el cobro.';
-        _pendingGift = null;
+        gcMsg = e.message;
         render();
     }
 }

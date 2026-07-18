@@ -89,6 +89,13 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
       customer: null,
     }),
   });
+  // Fija la hora fuera de la ventana 2pm-6pm Lima de "bebida gratis hora valle" — sin esto,
+  // si el test corre de verdad dentro de esa ventana (hora real del entorno), la bebida
+  // también sale gratis por esa promo y el total cae a S/0, saltándose el paso de elegir
+  // método de pago que este test sí necesita. Puntual a este test (no en gotoApp) porque
+  // otros tests construyen timestamps mock con la hora real y se romperían si se fija
+  // globalmente.
+  await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
 
   await page.getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();

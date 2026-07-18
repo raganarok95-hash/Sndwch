@@ -568,125 +568,76 @@ export async function actAnniversaryGreeting(b: any) {
   return { success: true, greeted };
 }
 
-// Tarjeta de regalo digital: comprar crédito con un cobro real (Culqi) para acreditárselo
-// a OTRO cliente — distinto de actCreditGift (que transfiere saldo YA PROPIO, sin cobro
-// nuevo de por medio). Sigue el mismo patrón de dos pasos que el pago de pedidos
-// (actPrepareOrder/actConfirmCulqiOrder, ver orders.ts): primero se valida y reserva TODO
-// en pending_credit_purchases, y solo si eso tuvo éxito el cliente abre el widget de
-// Culqi — así nunca se cobra a alguien cuyo destinatario/monto de todas formas iba a ser
-// rechazado. Usa su propia tabla (no pending_charges) porque ese cargo no reserva
-// inventario ni crea un pedido — mezclar ambos casos en la misma tabla hubiera obligado a
-// rellenar columnas de pedido (dirección, items) que aquí no aplican.
-const CREDIT_PURCHASE_MIN = 10;
-const CREDIT_PURCHASE_MAX = 500;
-const CREDIT_PURCHASE_TTL_MINUTES = 15;
+// Tarjeta de regalo digital: regalar crédito a OTRO cliente gastando PUNTOS propios —
+// distinto de actCreditGift (que transfiere saldo YA PROPIO, sin puntos de por medio).
+// Se pensó para funcionar con puntos desde el diseño original, antes de que Culqi
+// existiera en el proyecto — Culqi no tiene forma de "cobrar con puntos", así que por
+// pragmatismo terminó implementada con un cobro real (dos pasos: reservar en
+// pending_credit_purchases, luego cobrar por Culqi). El dueño pidió corregirlo: ahora es
+// una sola operación atómica (mismo patrón que gift_credit), sin ningún cobro real,
+// reserva, ni ventana de expiración — el crédito sale directo de los puntos del
+// comprador.
+const GIFT_CARD_AMOUNT_MIN = 10;
+const GIFT_CARD_AMOUNT_MAX = 500;
+// Tasa de canje: mismo criterio que las recompensas (REWARDS en catalog.ts) tras la
+// recalibración contra el costo real de insumos (~45% del valor, no ~20-30% asumido
+// originalmente) — 40 pts por sol de crédito regalado, cercano a la tasa real de R06
+// (720 pts por un sándwich de ~S/18 ≈ 40 pts/sol). DEBE coincidir con
+// GIFT_CARD_POINTS_PER_SOL en src/app.ts.
+export const GIFT_CARD_POINTS_PER_SOL = 40;
 
-export async function actPrepareCreditPurchase(b: any) {
+export async function actGiftCardPurchase(b: any) {
   const active = await verifyActiveSession(b.token);
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
+  const s = active.payload;
   const toPhone = String(b.toPhone || "").trim();
   const amount = Number(b.amount || 0);
-  const message = b.message ? String(b.message).trim().slice(0, 200) : null;
   if (!toPhone) throw new ApiError("Ingresa el teléfono del destinatario.");
-  if (toPhone === active.payload.phone) throw new ApiError("No puedes comprarte una tarjeta de regalo a ti mismo.");
-  if (!amount || amount < CREDIT_PURCHASE_MIN || amount > CREDIT_PURCHASE_MAX) {
-    throw new ApiError(`El monto debe estar entre S/${CREDIT_PURCHASE_MIN} y S/${CREDIT_PURCHASE_MAX}.`);
+  if (toPhone === s.phone) throw new ApiError("No puedes regalarte una tarjeta de regalo a ti mismo.");
+  if (!amount || amount < GIFT_CARD_AMOUNT_MIN || amount > GIFT_CARD_AMOUNT_MAX) {
+    throw new ApiError(`El monto debe estar entre S/${GIFT_CARD_AMOUNT_MIN} y S/${GIFT_CARD_AMOUNT_MAX}.`);
   }
   const receiverRows = await sbGet("customers", `phone=eq.${encodeURIComponent(toPhone)}&select=phone,name`);
   if (!receiverRows.length) throw new ApiError("No encontramos una cuenta con ese teléfono.", 404);
 
-  // Mismo bloqueo por concurrencia que actPrepareOrder: evita que el mismo comprador
-  // dispare dos compras de crédito en simultáneo (dos pestañas, doble tap, reintento tras
-  // un fallo de red ambiguo) generando dos cargos reales.
-  const nowIso = new Date().toISOString();
-  const existing = await sbGet(
-    "pending_credit_purchases",
-    `buyer_phone=eq.${encodeURIComponent(active.payload.phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
-  );
-  if (existing.length) {
-    throw new ApiError("Ya tienes una compra de tarjeta de regalo en proceso. Espera un momento antes de intentar de nuevo.", 409);
-  }
-
-  const ref = "GIFT-" + crypto.randomUUID().slice(0, 8).toUpperCase();
-  const expiresAt = new Date(Date.now() + CREDIT_PURCHASE_TTL_MINUTES * 60000).toISOString();
-  await sbInsert("pending_credit_purchases", {
-    ref,
-    buyer_phone: active.payload.phone,
-    buyer_name: active.row.name || "",
-    to_phone: toPhone,
-    to_name: receiverRows[0].name,
-    amount,
-    message,
-    expires_at: expiresAt,
-  });
-  return { success: true, ref, expiresAt, toName: receiverRows[0].name };
-}
-
-// Confirma un cobro de Culqi ya realizado contra la reserva creada por
-// actPrepareCreditPurchase — mismo reclamo atómico pending -> consumed que
-// actConfirmCulqiOrder para que un reintento del cliente no acredite el saldo dos veces.
-export async function actConfirmCreditPurchase(b: any) {
-  const s = await requireSession(b.token);
-  const ref = String(b.ref || "").trim();
-  const chargeId = String(b.chargeId || "").trim();
-  if (!ref || !chargeId) throw new ApiError("Faltan datos de la compra.");
-  const rows = await sbGet("pending_credit_purchases", `ref=eq.${encodeURIComponent(ref)}&select=*`);
-  const pc = rows[0];
-  if (!pc) throw new ApiError("No encontramos tu compra. Vuelve a intentarlo.", 410);
-  if (pc.buyer_phone !== s.phone) throw new ApiError("No autorizado.", 403);
-  if (pc.status !== "pending") throw new ApiError("Esta compra ya fue procesada.", 409);
-  if (new Date(pc.expires_at).getTime() < Date.now()) {
-    throw new ApiError("Tu compra expiró. Vuelve a intentarlo.", 410);
-  }
-
-  const amountCents = Math.round(Number(pc.amount) * 100);
-  const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
-  if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
-
-  const claim = await sbUpdate("pending_credit_purchases", `id=eq.${pc.id}&status=eq.pending`, { status: "consumed" });
-  if (!claim.length) throw new ApiError("Esta compra ya fue procesada.", 409);
-
-  await rpc("add_gifted_credit", { p_to_phone: pc.to_phone, p_amount: Number(pc.amount) });
-  await sbInsert("credit_ledger", {
-    customer_phone: pc.to_phone,
-    delta: Number(pc.amount),
-    reason: "Tarjeta de regalo recibida",
-    related_phone: pc.buyer_phone,
-  });
+  const pointsNeeded = Math.round(amount * GIFT_CARD_POINTS_PER_SOL);
+  // redeem_points_for_gift_credit (misma migración que esta redacción) debita los puntos
+  // del comprador y acredita el saldo del destinatario en UNA sola transacción de
+  // Postgres — si algo falla a la mitad, ambas mitades se revierten juntas.
   try {
-    await sendPushToPhone(pc.to_phone, {
+    await rpc("redeem_points_for_gift_credit", { p_from: s.phone, p_to: toPhone, p_points: pointsNeeded, p_credit_amount: amount });
+  } catch (e) {
+    if (String((e as Error).message || e).includes("insufficient_points")) {
+      throw new ApiError("No tienes puntos suficientes para este monto.", 402);
+    }
+    throw e;
+  }
+  await Promise.all([
+    sbInsert("transactions", {
+      customer_phone: s.phone,
+      type: "redeem",
+      points: -pointsNeeded,
+      description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
+      confirmed: true,
+    }),
+    sbInsert("credit_ledger", {
+      customer_phone: toPhone,
+      delta: amount,
+      reason: "Tarjeta de regalo recibida",
+      related_phone: s.phone,
+    }),
+  ]);
+  try {
+    await sendPushToPhone(toPhone, {
       title: "¡Recibiste una tarjeta de regalo! 🎁",
-      body: `${pc.buyer_name || "Alguien"} te regaló S/${Number(pc.amount).toFixed(2)} de crédito SND//WCH.`,
+      body: `${active.row.name || "Alguien"} te regaló S/${amount.toFixed(2)} de crédito SND//WCH.`,
       url: "./index.html",
-      tag: "sndwch-gift-received-" + pc.ref,
+      tag: "sndwch-gift-received-" + Date.now(),
     });
   } catch {
-    // un push fallido no debe bloquear la confirmación de la compra
+    // un push fallido no debe bloquear la confirmación del regalo
   }
-  return { success: true, toName: pc.to_name };
-}
-
-// Igual que actExpirePendingCharges (orders.ts) pero para reservas de tarjeta de regalo
-// nunca cobradas (cliente cerró la pestaña, se arrepintió, o Culqi rechazó el pago antes
-// de que actConfirmCreditPurchase llegara a correr) — no hay inventario que devolver, solo
-// marcar la fila 'expired' para no bloquear una nueva compra del mismo comprador.
-export async function actExpirePendingCreditPurchases(b: any) {
-  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const nowIso = new Date().toISOString();
-  const stale = await sbGet(
-    "pending_credit_purchases",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status`,
-  );
-  let expired = 0;
-  for (const pc of stale) {
-    try {
-      await sbUpdate("pending_credit_purchases", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
-      expired++;
-    } catch (e) {
-      console.error("expire-pending-credit-purchases failed for", pc.id, e);
-    }
-  }
-  return { success: true, expired };
+  return { success: true, toName: receiverRows[0].name };
 }
 
 // PLAN SEMANAL — recarga de saldo propio con bono (a diferencia de actPrepareCreditPurchase,
