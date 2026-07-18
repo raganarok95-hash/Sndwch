@@ -207,13 +207,14 @@ var SIGS = [
     // auditoría de producción).
     { id: 'SIG07', n: 'CHICAGO ITALIAN BEEF', s: 'RESERVE', badge: 'EDICIÓN LIMITADA', base: 'B01', prot: 'P01', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
         pitch: 'Res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
-    // Menú secreto — nunca aparece para invitados ni para quien no llegó a CÍRCULO INTERNO
-    // (ver sOSig/rankName). DEBE coincidir con SIG05 en supabase/functions/api/catalog.ts —
-    // el servidor es quien de verdad rechaza el pedido si no calificas, esto solo evita
-    // mostrarlo/dejarlo elegir en la UI antes de intentarlo.
+    // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
+    // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
+    // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
+    // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
+    // elegir en la UI antes de intentarlo.
     { id: 'SIG05', n: 'THE VAULT', s: 'RESERVE', badge: 'SECRETO', base: 'B03', prot: 'P03', tops: ['T04', 'T06', 'T03'], sauces: ['S02', 'S12'], p15: 24, p30: 30,
-        secret: true, minOrders: 15,
-        pitch: 'Solo para el Círculo Interno. Pollo cajún, picante y con un golpe de miel — una combinación que no está en ningún menú, te la ganaste a pedidos.' }
+        secret: true, minOrders: 5,
+        pitch: 'Solo para clientes DE LA CASA. Pollo cajún, picante y con un golpe de miel — una combinación que no está en ningún menú, te la ganaste a pedidos.' }
 ];
 // "SIGNATURE"/"RESERVE" (curado por la casa) se distingue tipográficamente de "BUILD"
 // (armado por el cliente) — cursiva y más grande, como una firma, en vez de la misma
@@ -1495,7 +1496,7 @@ function sOSig() {
             var myTotal = cust.total_orders || 0;
             if (myTotal < s.minOrders) {
                 var missing = s.minOrders - myTotal;
-                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0;display:flex;align-items:center;gap:8px">' + icon('lock', 15, '#A8C8B0') + s.n + '<span style="color:#A8C8B0"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">Se desbloquea en CÍRCULO INTERNO — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
+                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0;display:flex;align-items:center;gap:8px">' + icon('lock', 15, '#A8C8B0') + s.n + '<span style="color:#A8C8B0"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">Se desbloquea en ' + esc(rankName(s.minOrders)) + ' — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
             }
         }
         var sel = sigId === s.id, pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });

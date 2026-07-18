@@ -9,7 +9,7 @@ import {
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed } from "../catalog.ts";
+import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendOrderConfirmationEmail } from "../email.ts";
 import { logAdminAction } from "../logging.ts";
@@ -205,10 +205,14 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // inmediato en vez de dejar que se entere la próxima vez que abra su perfil.
     const previousRank = computeRankName(c.total_orders || 0);
     if (previousRank !== customerRank) {
+      // El rango exacto que desbloquea THE VAULT se deriva de SIG_GATES (hoy 5 pedidos,
+      // antes 15) en vez de estar escrito a mano acá — así este aviso no se desincroniza
+      // si el umbral de negocio vuelve a cambiar.
+      const vaultRank = computeRankName(SIG_GATES.SIG05.minOrders);
       try {
         await sendPushToPhone(p.phone, {
           title: "🎖️ ¡Subiste de rango!",
-          body: `Ahora eres ${customerRank} en SND//WCH.` + (customerRank === "CÍRCULO INTERNO" ? " Ya puedes ver el menú secreto 👀" : ""),
+          body: `Ahora eres ${customerRank} en SND//WCH.` + (customerRank === vaultRank ? " Ya puedes ver el menú secreto 👀" : ""),
           url: "./index.html",
           tag: "sndwch-rank-up-" + customerRank,
         });
