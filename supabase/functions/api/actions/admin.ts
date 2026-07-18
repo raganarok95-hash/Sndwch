@@ -86,8 +86,17 @@ export async function actAdminAccountsAdd(b: any) {
   await logAdminAction(s.phone, "accounts-add", phone, { name });
   return { success: true };
 }
+// Quitarle el acceso a otro administrador es irreversible y de mayor impacto
+// operativo que borrar la cuenta de un cliente cualquiera (deja a alguien fuera del
+// panel a media jornada) — antes esta acción pedía MENOS fricción que borrar la propia
+// cuenta de cliente (esa sí exige reingresar el PIN, ver actDeleteAccount). Ahora exige
+// el PIN de quien ejecuta la acción, igual criterio que ahí (hallazgo de auditoría UX).
 export async function actAdminAccountsDelete(b: any) {
   const s = await requireAdmin(b.token);
+  const pin = String(b.pin || "").trim();
+  if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
+  const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
+  if (!ok) throw new ApiError("PIN incorrecto.", 401);
   const phone = String(b.phone || "").trim();
   const rows = await sbGet("admin_accounts", `phone=eq.${encodeURIComponent(phone)}`);
   if (rows.length && rows[0].role === "superadmin") throw new ApiError("No se puede eliminar al superadmin.", 403);

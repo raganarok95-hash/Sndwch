@@ -45,8 +45,12 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
-  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06", "S07"], p15: 19, p30: 24 },
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03", "S08"], p15: 21, p30: 26 },
+  // RANCH (S07) retirada esta sesión — no encajaba con el resto (ver mismo cambio en
+  // src/app.ts, DEBE coincidir).
+  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24 },
+  // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
+  // (ver mismo cambio en src/app.ts, DEBE coincidir).
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 26 },
   // p30 subido de 20 a 22 (decisión del dueño) — antes THE FRESH costaba MENOS armado que
   // su propia proteína (P04) sola en BUILD YOUR OWN a 30CM (S/20 vs S/22), una pérdida real
   // de margen. Ahora queda igualado a BYO (premio S/0), mismo criterio ya aceptado para
@@ -387,6 +391,15 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
 // cliente antes de pagar; este es el que de verdad determina cuánto se cobra).
 const COMBO_DISCOUNT_PER_PAIR = 3;
 
+// Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
+// EXACTA de la proteína elegida (S/8 en P01/P02/P04, pero S/10 en P05/P06), lo que
+// dejaba al cliente elegir la proteína más cara para maximizar el valor de la
+// recompensa muy por encima de lo que sus mismos puntos (150) valen en el resto del
+// programa (hallazgo de auditoría de rentabilidad). Ahora siempre perdona como máximo
+// el valor de "un pan de 15CM" estándar (S/8, el caso mayoritario) sin importar qué
+// proteína se elija — DEBE coincidir con R03_FLAT_WAIVER en src/app.ts.
+const R03_FLAT_WAIVER = 8;
+
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima, la ventana de menor demanda entre el
 // almuerzo y la cena (ver PEAK_HOURS_LIMA en orders.ts: [12,14] y [19,21]) — el costo
 // marginal de atender un pedido en esa franja es prácticamente el mismo con o sin este
@@ -458,7 +471,7 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
   if (rewardId && reward) {
     const target = priced[rewardTargetIdx];
     const waiver = rewardId === "R02" ? target.sauceSurcharge
-      : rewardId === "R03" ? target.sizeUpgradeDiff
+      : rewardId === "R03" ? Math.min(target.sizeUpgradeDiff, R03_FLAT_WAIVER)
       : rewardId === "R04" ? target.dblSurcharge
       : rewardId === "R05" ? target.basePrice
       : rewardId === "R06" ? target.basePrice

@@ -52,7 +52,10 @@ export async function actFavoritesList(b: any) {
 }
 export async function actFavoritesAdd(b: any) {
   const s = await requireSession(b.token);
-  const name = String(b.name || "").trim();
+  // Antes sin tope de largo — un nombre muy largo podía tapar el botón ELIMINAR en la
+  // lista de favoritos (hallazgo de auditoría UX). Mismo tope que otros campos de texto
+  // libre del cliente (ej. nota de pedido).
+  const name = String(b.name || "").trim().slice(0, 40);
   if (!name) throw new ApiError("Ponle un nombre a tu favorito.");
   await assertUnderLimit("favorites", s.phone, MAX_FAVORITES, "favoritos guardados");
   await loadCatalogPrices();
