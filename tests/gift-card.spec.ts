@@ -1,51 +1,25 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
-// Flujo de dinero real nuevo: comprar una tarjeta de regalo digital (cobro Culqi propio,
-// crédito acreditado a OTRO cliente). Culqi Checkout es un widget externo que no carga en
-// este entorno de test (por eso checkout.spec.ts lo evita por completo pagando con
-// Yape/Plin) — acá lo stubbeamos manualmente (window.Culqi.open() dispara de inmediato el
-// callback window.culqi() que expone app.ts) para poder cubrir el flujo de punta a punta
-// sin depender del widget real.
+// Tarjeta de regalo digital — rediseñada esta sesión de un cobro real por Culqi a un
+// canje de PUNTOS PROPIOS (sin ningún cobro ni pasarela de pago de por medio): el
+// comprador gasta puntos y el crédito se acredita a OTRO cliente en una sola llamada
+// atómica (gift-card-purchase). Ya no hay widget de Culqi que stubbear.
 
-test('cliente compra una tarjeta de regalo para otro cliente', async ({ page }) => {
-  await page.addInitScript(() => {
-    (window as any).Culqi = {
-      publicKey: null,
-      settings: () => {},
-      options: () => {},
-      token: null,
-      error: null,
-      open: function () {
-        (window as any).Culqi.token = { id: 'tkn-gift-test' };
-        (window as any).culqi();
-      },
-    };
-  });
-
+test('cliente regala una tarjeta de regalo con puntos a otro cliente', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: {
-      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 0, credit_balance: 0 },
+      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 2500, credit_balance: 0 },
       isAdmin: false,
       token: 'tok-ana',
     },
     'credit-lookup': { name: 'Beto Amigo' },
-    'prepare-credit-purchase': (body: any) => ({
-      success: true,
-      ref: 'GIFT-TEST01',
-      expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
-      toName: 'Beto Amigo',
-    }),
-    'confirm-credit-purchase': (body: any) => ({ success: true, toName: 'Beto Amigo' }),
+    'gift-card-purchase': (body: any) => ({ success: true, toName: 'Beto Amigo' }),
+    'session-check': {
+      valid: true,
+      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 500, credit_balance: 0 },
+    },
   });
-
-  await page.route('**/functions/v1/create-credit-charge', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, chargeId: 'chr-gift-test', outcome: 'venta_exitosa', ref: 'GIFT-TEST01' }),
-    }),
-  );
 
   await page.getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
@@ -55,13 +29,12 @@ test('cliente compra una tarjeta de regalo para otro cliente', async ({ page }) 
 
   await page.locator('[onclick*="sc=\'p_profile\'"]').click();
   await page.locator('[onclick*="sc=\'gift_card\'"]').click();
-  await expect(page.getByRole('button', { name: 'COMPRAR Y REGALAR //' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'REGALAR CON PUNTOS //' })).toBeVisible();
 
   await page.locator('#gc-phone').fill('911111111');
   await page.locator('#gc-amt').fill('50');
-  await page.locator('#gc-email').fill('ana@test.com');
 
-  await page.getByRole('button', { name: 'COMPRAR Y REGALAR //' }).click();
+  await page.getByRole('button', { name: 'REGALAR CON PUNTOS //' }).click();
 
   // Modal de confirmación propio de la app (no window.confirm) mostrando el destinatario.
   await expect(page.locator('text=Beto Amigo')).toBeVisible();
@@ -73,16 +46,46 @@ test('cliente compra una tarjeta de regalo para otro cliente', async ({ page }) 
   expect(lookupCall).toBeTruthy();
   expect(lookupCall!.body.toPhone).toBe('911111111');
 
-  const prepareCall = calls.find((c) => c.action === 'prepare-credit-purchase');
-  expect(prepareCall).toBeTruthy();
-  expect(prepareCall!.body.toPhone).toBe('911111111');
-  expect(prepareCall!.body.amount).toBe(50);
-
-  const confirmCall = calls.find((c) => c.action === 'confirm-credit-purchase');
-  expect(confirmCall).toBeTruthy();
-  expect(confirmCall!.body.ref).toBe('GIFT-TEST01');
-  expect(confirmCall!.body.chargeId).toBe('chr-gift-test');
+  const purchaseCall = calls.find((c) => c.action === 'gift-card-purchase');
+  expect(purchaseCall).toBeTruthy();
+  expect(purchaseCall!.body.toPhone).toBe('911111111');
+  expect(purchaseCall!.body.amount).toBe(50);
 
   // Vuelve al perfil tras confirmar, no se queda en la pantalla de compra.
   await expect(page.locator('text=MI PERFIL')).toBeVisible();
+});
+
+// Hallazgo de esta misma sesión: antes de la recompensa de puntos costaba lo mismo sin
+// importar cuántos puntos tenía el cliente — con la tarjeta de regalo pagándose en
+// puntos, un cliente sin puntos suficientes debe ver el error ANTES de gastar tiempo
+// llenando el modal de confirmación (client-side, sin ni siquiera llamar a credit-lookup).
+test('cliente sin puntos suficientes ve el error sin llegar a confirmar', async ({ page }) => {
+  const calls = await gotoApp(page, {
+    login: {
+      customer: { phone: '900000004', name: 'Deco Cliente', email: 'deco@test.com', points: 100, credit_balance: 0 },
+      isAdmin: false,
+      token: 'tok-deco',
+    },
+    'credit-lookup': { name: 'Beto Amigo' },
+  });
+
+  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.getByRole('button', { name: 'INGRESAR' }).click();
+  await page.locator('#l-phone').fill('900000004');
+  await page.locator('#l-pin').fill('1234');
+  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+
+  await page.locator('[onclick*="sc=\'p_profile\'"]').click();
+  await page.locator('[onclick*="sc=\'gift_card\'"]').click();
+
+  await page.locator('#gc-phone').fill('911111111');
+  await page.locator('#gc-amt').fill('50');
+  await page.getByRole('button', { name: 'REGALAR CON PUNTOS //' }).click();
+
+  await expect(page.locator('text=No tienes puntos suficientes para este monto.')).toBeVisible();
+
+  const lookupCall = calls.find((c) => c.action === 'credit-lookup');
+  expect(lookupCall).toBeFalsy();
+  const purchaseCall = calls.find((c) => c.action === 'gift-card-purchase');
+  expect(purchaseCall).toBeFalsy();
 });

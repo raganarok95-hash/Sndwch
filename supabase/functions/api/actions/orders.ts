@@ -1192,10 +1192,12 @@ export async function actReconcileCulqiCharges(b: any) {
   let orphaned = 0;
   for (const charge of candidates) {
     const orderRef = charge.metadata?.order_ref;
-    // Las tarjetas de regalo (create-credit-charge) cobran contra pending_credit_purchases
-    // en vez de pending_charges/orders — mismo hueco potencial (cobro real sin nada creado
-    // del lado nuestro), así que este mismo barrido cubre ambos tipos de cargo por su
-    // metadata (order_ref vs credit_ref) en vez de necesitar un cron de conciliación aparte.
+    // El Plan Semanal (create-credit-charge) cobra contra pending_weekly_plans en vez de
+    // pending_charges/orders — mismo hueco potencial (cobro real sin nada creado del lado
+    // nuestro), así que este mismo barrido cubre ambos tipos de cargo por su metadata
+    // (order_ref vs credit_ref) en vez de necesitar un cron de conciliación aparte. (La
+    // tarjeta de regalo dejó de usar Culqi tras su rediseño a puntos — credit_ref hoy solo
+    // lo genera el Plan Semanal, ver create-credit-charge.)
     const creditRef = charge.metadata?.credit_ref;
     const ref = orderRef || creditRef;
     if (!ref) continue;
@@ -1204,7 +1206,7 @@ export async function actReconcileCulqiCharges(b: any) {
         const orders = await sbGet("orders", `payment_id=eq.${encodeURIComponent(charge.id)}&select=id`);
         if (orders.length) continue;
       } else {
-        const purchases = await sbGet("pending_credit_purchases", `ref=eq.${encodeURIComponent(creditRef)}&status=eq.consumed&select=id`);
+        const purchases = await sbGet("pending_weekly_plans", `ref=eq.${encodeURIComponent(creditRef)}&status=eq.consumed&select=id`);
         if (purchases.length) continue;
       }
       const withinLimit = await rpc("check_rate_limit", { p_key: `orphan-charge:${charge.id}`, p_limit: 1, p_window_minutes: 60 * 24 * 7 });
@@ -1212,7 +1214,7 @@ export async function actReconcileCulqiCharges(b: any) {
       orphaned++;
       await sendPushToAdmins({
         title: "⚠️ Cobro sin pedido — revisar",
-        body: `Se cobró S/${(charge.amount / 100).toFixed(2)} (ref ${ref}) pero no existe ningún ${orderRef ? "pedido" : "regalo de crédito"} con ese cargo. Verifica en Culqi y contacta al cliente.`,
+        body: `Se cobró S/${(charge.amount / 100).toFixed(2)} (ref ${ref}) pero no existe ningún ${orderRef ? "pedido" : "Plan Semanal"} con ese cargo. Verifica en Culqi y contacta al cliente.`,
         url: "./index.html",
         tag: "sndwch-orphan-charge-" + charge.id,
       });

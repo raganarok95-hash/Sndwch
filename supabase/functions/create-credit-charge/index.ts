@@ -1,16 +1,23 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // SND//WCH — create-credit-charge
-// Cobra una tarjeta de regalo digital: el comprador paga con su tarjeta (vía Culqi) y el
-// crédito se acredita a OTRO cliente. Deliberadamente una función aparte de create-charge
-// (no comparten tabla): create-charge reclama contra pending_charges (reserva de un
-// PEDIDO — dirección, items, inventario reservado); esta reclama contra
-// pending_credit_purchases (reserva de una COMPRA DE CRÉDITO — sin inventario ni pedido de
-// por medio). Mismo patrón de seguridad que create-charge: la reserva real y vigente
-// (creada por actPrepareCreditPurchase en la función api) debe coincidir en monto, y se
-// reclama atómicamente (pending -> charging) ANTES de llamar a Culqi — una segunda llamada
-// para la misma referencia mientras la primera sigue en vuelo encuentra la fila ya en
-// 'charging' y se rechaza antes de generar un segundo cobro real.
+// Cobra el Plan Semanal: el comprador paga con su tarjeta (vía Culqi) y recibe saldo
+// propio al instante. Deliberadamente una función aparte de create-charge (no comparten
+// tabla): create-charge reclama contra pending_charges (reserva de un PEDIDO — dirección,
+// items, inventario reservado); esta reclama contra pending_weekly_plans (reserva de una
+// RECARGA DE SALDO — sin inventario ni destinatario de por medio). Mismo patrón de
+// seguridad que create-charge: la reserva real y vigente (creada por actPrepareWeeklyPlan
+// en la función api) debe coincidir en monto, y se reclama atómicamente (pending ->
+// charging) ANTES de llamar a Culqi — una segunda llamada para la misma referencia
+// mientras la primera sigue en vuelo encuentra la fila ya en 'charging' y se rechaza antes
+// de generar un segundo cobro real.
+//
+// Antes esta función reclamaba contra pending_credit_purchases (la tarjeta de regalo, que
+// SÍ pagaba con Culqi). El rediseño de la tarjeta de regalo a puntos (sin ningún cobro
+// real) eliminó esa tabla — Plan Semanal queda como el único consumidor, así que esta
+// función ahora reclama contra su tabla (pending_weekly_plans), que es la que de verdad
+// usa desde que existe (nunca compartió pending_credit_purchases pese a lo que decía este
+// comentario antes — ver actPrepareWeeklyPlan en customer.ts).
 
 const CULQI_SECRET_KEY = Deno.env.get("CULQI_SECRET_KEY");
 const SB_URL = Deno.env.get("SUPABASE_URL");
@@ -61,7 +68,7 @@ Deno.serve(async (req: Request) => {
   const sbHeaders = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" };
 
   const pcResp = await fetch(
-    `${SB_URL}/rest/v1/pending_credit_purchases?ref=eq.${encodeURIComponent(ref)}&status=eq.pending&select=id,amount,expires_at`,
+    `${SB_URL}/rest/v1/pending_weekly_plans?ref=eq.${encodeURIComponent(ref)}&status=eq.pending&select=id,amount_paid,expires_at`,
     { headers: sbHeaders },
   );
   if (!pcResp.ok) return json({ error: "No se pudo verificar la reserva de tu compra." }, 500);
@@ -71,12 +78,12 @@ Deno.serve(async (req: Request) => {
   if (new Date(pc.expires_at).getTime() < Date.now()) {
     return json({ error: "Tu reserva expiró. Vuelve a intentarlo." }, 410);
   }
-  if (Math.round(Number(pc.amount) * 100) !== amountCents) {
+  if (Math.round(Number(pc.amount_paid) * 100) !== amountCents) {
     return json({ error: "El monto no coincide con tu compra." }, 400);
   }
 
   const claimResp = await fetch(
-    `${SB_URL}/rest/v1/pending_credit_purchases?id=eq.${pc.id}&status=eq.pending`,
+    `${SB_URL}/rest/v1/pending_weekly_plans?id=eq.${pc.id}&status=eq.pending`,
     { method: "PATCH", headers: { ...sbHeaders, Prefer: "return=representation" }, body: JSON.stringify({ status: "charging" }) },
   );
   const claimed = claimResp.ok ? await claimResp.json() : [];
@@ -86,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   async function releaseClaim() {
     try {
-      await fetch(`${SB_URL}/rest/v1/pending_credit_purchases?id=eq.${pc.id}&status=eq.charging`, {
+      await fetch(`${SB_URL}/rest/v1/pending_weekly_plans?id=eq.${pc.id}&status=eq.charging`, {
         method: "PATCH",
         headers: sbHeaders,
         body: JSON.stringify({ status: "pending" }),
@@ -107,7 +114,7 @@ Deno.serve(async (req: Request) => {
         currency_code: "PEN",
         email: email,
         source_id: token,
-        description: `SND//WCH tarjeta de regalo ${ref}`,
+        description: `SND//WCH Plan Semanal ${ref}`,
         metadata: { credit_ref: ref },
       }),
     });
@@ -125,7 +132,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Cobro real ya realizado — se libera la reserva de vuelta a 'pending' (no antes) para
-  // que actConfirmCreditPurchase (función api) pueda hacer su propio reclamo atómico
+  // que actConfirmWeeklyPlan (función api) pueda hacer su propio reclamo atómico
   // pending -> consumed al acreditar el saldo, exactamente igual que create-charge.
   await releaseClaim();
 
