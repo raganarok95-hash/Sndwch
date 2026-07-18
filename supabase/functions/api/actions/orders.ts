@@ -159,6 +159,11 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       items: p.items,
       delivery_time: p.scheduledFor,
       redeemed_reward: p.reward ? p.reward.label : null,
+      // Puntos exactos que costó la recompensa canjeada (si hubo una) — guardado aparte
+      // de la etiqueta para que actCancelMyOrder pueda devolverlos con exactitud sin
+      // depender de volver a buscar el precio en puntos actual de esa recompensa (que
+      // puede repreciarse con el tiempo, como ya pasó esta sesión con R02/R03/R05).
+      redeemed_reward_pts: p.reward ? p.reward.pts : null,
       customer_rank: customerRank,
     });
   }
@@ -175,13 +180,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
     // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
     const basePoints = p.total;
-    // Yape/Plin no paga la comisión de Culqi (~3.99% + S/0.30) que sí paga tarjeta — este
-    // bono de puntos se financia con esa comisión que el negocio se ahorra, así que no le
-    // resta margen a nada: en tarjeta el negocio se queda con menos, en Yape/Plin se queda
-    // con más y comparte una parte de esa diferencia como puntos en vez de guardársela toda.
-    const isYapePlin = p.paymentMethod === "yape" || p.paymentMethod === "plin";
-    const yapePlinBonus = isYapePlin ? Math.round(basePoints * 0.1) : 0;
-    let pointsDelta = basePoints + yapePlinBonus;
+    let pointsDelta = basePoints;
     if (p.reward) pointsDelta -= p.reward.pts;
 
     // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
@@ -245,16 +244,6 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
         type: "redeem",
         points: -p.reward.pts,
         description: p.reward.label + " canjeado en pedido " + p.ref,
-        order_ref: p.ref,
-        confirmed: true,
-      }));
-    }
-    if (yapePlinBonus > 0) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "earn_confirmed",
-        points: yapePlinBonus,
-        description: "Bono +10% por pagar con " + (p.paymentMethod === "yape" ? "Yape" : "Plin"),
         order_ref: p.ref,
         confirmed: true,
       }));
@@ -937,15 +926,16 @@ export async function actCancelMyOrder(b: any) {
   if (!orderId && !ref) throw new ApiError("Falta el pedido.");
 
   let order: any;
+  const SELECT_FIELDS = "id,status,payment_status,payment_method,total,ref,customer_phone,redeemed_reward_pts,items";
   if (b.token) {
     const s = await requireSession(b.token);
     const query = orderId
       ? `id=eq.${encodeURIComponent(orderId)}&customer_phone=eq.${encodeURIComponent(s.phone)}`
       : `ref=eq.${encodeURIComponent(ref as string)}&customer_phone=eq.${encodeURIComponent(s.phone)}`;
-    const rows = await sbGet("orders", `${query}&select=id,status,payment_status,items`);
+    const rows = await sbGet("orders", `${query}&select=${SELECT_FIELDS}`);
     order = rows[0];
   } else if (ref) {
-    const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,status,payment_status,items`);
+    const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=${SELECT_FIELDS}`);
     order = rows[0];
   }
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
@@ -954,6 +944,48 @@ export async function actCancelMyOrder(b: any) {
   }
 
   await restockOrderItems(order.items);
+
+  // Devuelve lo que el cliente ya gastó para pagar este pedido — crédito interno usado,
+  // y/o los puntos de una recompensa canjeada — antes esto se perdía para siempre al
+  // autocancelar (hallazgo de auditoría). Solo aplica si el pedido llegó a debitar algo
+  // de verdad: payment_status debe ser "paid" (un Yape/Plin todavía "pending" nunca pasó
+  // por finalize_order_customer_update, así que no hay nada que revertir ahí). No se
+  // tocan los puntos GANADOS por la compra ni el conteo de total_orders — es una
+  // devolución de lo gastado, no un "deshacer" completo del pedido.
+  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) : 0;
+  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund > 0)) {
+    await rpc("finalize_order_customer_update", {
+      p_phone: order.customer_phone,
+      p_points_delta: pointsToRefund,
+      p_credit_delta: creditToRefund,
+      p_total_orders_delta: 0,
+      p_last_address: null,
+      p_total_redeemed_delta: 0,
+      p_referrer_phone: null,
+      p_referral_bonus: 0,
+    });
+    const refundAudits: Promise<unknown>[] = [];
+    if (pointsToRefund > 0) {
+      refundAudits.push(sbInsert("transactions", {
+        customer_phone: order.customer_phone,
+        type: "earn_confirmed",
+        points: pointsToRefund,
+        description: "Puntos de recompensa devueltos por cancelación (" + order.ref + ")",
+        order_ref: order.ref,
+        confirmed: true,
+      }));
+    }
+    if (creditToRefund > 0) {
+      refundAudits.push(sbInsert("credit_ledger", {
+        customer_phone: order.customer_phone,
+        delta: creditToRefund,
+        reason: "Reembolso por cancelación (" + order.ref + ")",
+      }));
+    }
+    await Promise.all(refundAudits);
+  }
+
   const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Cliente canceló" });
   return { success: true, order: rows[0] };
 }
