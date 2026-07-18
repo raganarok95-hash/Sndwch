@@ -244,13 +244,15 @@ var PROT_IMG = {};
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
-// ya usaban R04/R06.
+// ya usaban R04/R06. Puntos de R03/R04/R05/R06 subidos ~1.8x después (costo real de
+// insumo resultó ser ~45% del valor perdonado, no ~20-30% asumido) — DEBE coincidir con
+// REWARDS en supabase/functions/api/catalog.ts.
 var RWDS = [
     { id: 'R02', pts: 40, n: '4TA', s: 'SALSA', d: 'Perdona el cargo de salsa extra (S/2)' },
-    { id: 'R03', pts: 150, n: 'SUBE A', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
-    { id: 'R04', pts: 180, n: 'DOBLE', s: 'PROTEÍNA', d: 'Doble proteína gratis' },
-    { id: 'R05', pts: 120, n: 'BEBIDA', s: 'GRATIS', d: 'Bebida a elección' },
-    { id: 'R06', pts: 400, n: 'SÁNDWICH', s: 'GRATIS', d: 'Sándwich 15CM gratis — cualquier proteína', sizeOnly: '15' }
+    { id: 'R03', pts: 270, n: 'SUBE A', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
+    { id: 'R04', pts: 320, n: 'DOBLE', s: 'PROTEÍNA', d: 'Doble proteína gratis' },
+    { id: 'R05', pts: 220, n: 'BEBIDA', s: 'GRATIS', d: 'Bebida a elección' },
+    { id: 'R06', pts: 720, n: 'SÁNDWICH', s: 'GRATIS', d: 'Sándwich 15CM gratis — cualquier proteína', sizeOnly: '15' }
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
