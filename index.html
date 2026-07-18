@@ -943,23 +943,41 @@ function itemExtrasLabel(item) {
 function cartBaseTotal() { return cart.reduce(function (s, it) { return s + itemLineTotal(it); }, 0); }
 // Un combo = 1 sándwich + 1 bebida en el carrito — si hay más sándwiches que bebidas (o
 // viceversa), solo se descuenta por la cantidad de pares completos, no por cada unidad.
+// R05/R06 regalan una unidad COMPLETA (bebida o sándwich 15CM entero) — esa unidad no
+// debe contar para el combo, o el combo termina regalando TAMBIÉN la otra mitad del par
+// sobre algo que ya es gratis (espejo exacto del fix de deriveCart en el servidor, ver
+// ese comentario para el caso concreto que esto corrige).
 function cartComboCount() {
     var sw = 0, sd = 0;
     cart.forEach(function (it) { if (it.type === 'side')
         sd += it.qty;
     else
         sw += it.qty; });
+    if (appliedReward) {
+        var idx = findRewardTargetIndex(appliedReward);
+        if (idx >= 0) {
+            var target = cart[idx];
+            if (appliedReward === 'R06' && target.type !== 'side')
+                sw -= 1;
+            if (appliedReward === 'R05' && target.type === 'side')
+                sd -= 1;
+        }
+    }
     return Math.min(sw, sd);
 }
 function cartComboDiscount() { return cartComboCount() * COMBO_DISCOUNT_PER_PAIR; }
 function cartOffPeakDrinkDiscount() {
     if (!isOffPeakDrinkPromoActiveNow())
         return 0;
+    var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
     var sidePrices = [];
-    cart.forEach(function (it) { if (it.type === 'side') {
-        for (var i = 0; i < it.qty; i++)
-            sidePrices.push(itemUnitPrice(it));
-    } });
+    cart.forEach(function (it, idx) {
+        if (it.type === 'side') {
+            var qty = (appliedReward === 'R05' && idx === rewardIdx) ? it.qty - 1 : it.qty;
+            for (var i = 0; i < qty; i++)
+                sidePrices.push(itemUnitPrice(it));
+        }
+    });
     if (!sidePrices.length)
         return 0;
     return Math.min(Math.min.apply(null, sidePrices), OFFPEAK_DRINK_PROMO_CAP);

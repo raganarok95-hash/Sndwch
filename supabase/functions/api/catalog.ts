@@ -416,26 +416,47 @@ export function deriveCart(rawItems: any, rewardId: string | null): { ingredient
     for (let i = 0; i < p.qty; i++) ingredients.push(...p.ingredientsPerUnit);
   });
 
-  const sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
-  const sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
+  // La recompensa se resuelve ANTES de combo/hora valle (no después, como antes) — R05
+  // y R06 regalan una unidad COMPLETA (una bebida entera o un sándwich 15CM entero), a
+  // diferencia de R02/R03/R04 que solo perdonan un extra parcial sobre un producto que
+  // se sigue cobrando. Si esa unidad completa sigue contando para combo/hora valle,
+  // esos dos mecanismos terminan regalando TAMBIÉN la otra mitad del par sobre algo que
+  // ya es gratis — ej. sándwich 15CM (S/25) + bebida (S/3): combo -S/3, reward -S/25,
+  // total S/0 — la bebida quedaba gratis de rebote. Hallazgo de auditoría de
+  // rentabilidad, confirmado en vivo justo el día que se reestructuraron R02-R06.
+  let rewardTargetIdx = -1;
+  let reward: { pts: number; label: string } | null = null;
+  if (rewardId) {
+    reward = REWARDS[rewardId];
+    if (!reward) throw new ApiError("Recompensa inválida.");
+    rewardTargetIdx = findRewardTargetIndex(priced, rewardId);
+    if (rewardTargetIdx < 0) throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
+  }
+  const fullyWaivedSandwich = rewardId === "R06" && rewardTargetIdx >= 0 && priced[rewardTargetIdx].item.type !== "side";
+  const fullyWaivedSide = rewardId === "R05" && rewardTargetIdx >= 0 && priced[rewardTargetIdx].item.type === "side";
+
+  let sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
+  let sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
+  if (fullyWaivedSandwich) sandwichQty -= 1;
+  if (fullyWaivedSide) sideQty -= 1;
   const comboCount = Math.min(sandwichQty, sideQty);
   total = Math.max(0, total - comboCount * COMBO_DISCOUNT_PER_PAIR);
 
   let offPeakDrinkDiscount = 0;
   if (isOffPeakDrinkPromoActiveNowLima()) {
-    const sidePrices = priced.filter((p) => p.item.type === "side").flatMap((p) => Array(p.qty).fill(p.unitPrice));
+    const sidePrices = priced.flatMap((p, idx) => {
+      if (p.item.type !== "side") return [];
+      const qty = fullyWaivedSide && idx === rewardTargetIdx ? p.qty - 1 : p.qty;
+      return Array(Math.max(0, qty)).fill(p.unitPrice);
+    });
     if (sidePrices.length) {
       offPeakDrinkDiscount = Math.min(Math.min(...sidePrices), OFFPEAK_DRINK_PROMO_CAP);
       total = Math.max(0, total - offPeakDrinkDiscount);
     }
   }
 
-  if (rewardId) {
-    const reward = REWARDS[rewardId];
-    if (!reward) throw new ApiError("Recompensa inválida.");
-    const targetIdx = findRewardTargetIndex(priced, rewardId);
-    if (targetIdx < 0) throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
-    const target = priced[targetIdx];
+  if (rewardId && reward) {
+    const target = priced[rewardTargetIdx];
     const waiver = rewardId === "R02" ? target.sauceSurcharge
       : rewardId === "R03" ? target.sizeUpgradeDiff
       : rewardId === "R04" ? target.dblSurcharge
