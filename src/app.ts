@@ -304,6 +304,15 @@ var recEmailMasked=null;
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
 var wPhone='',wAmt='',wMsg='';
 var gcPhone='',gcAmt='',gcNote='',gcMsg='',gcName=null,gcEmail='';
+// true solo para el aviso "ya se realizó el cobro, no vuelvas a intentar pagar" — el
+// resto de mensajes (validación, pago rechazado) se muestran neutros como siempre. Ver
+// el mismo tratamiento (caja roja con borde) que lockedMsg en el checkout normal —
+// antes este aviso crítico se veía igual de neutro que un hint cualquiera.
+var gcCritical=false;
+// Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
+// _payingInProgress en doOrder) — antes esta pantalla no tenía ningún guard contra
+// doble-submit, a diferencia del checkout normal.
+var _giftBuyInProgress=false;
 var _pendingGift=null;
 var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
@@ -1300,10 +1309,15 @@ function rewardsPickerHTML(){
     var eligible=targetIdx>=0;
     var savings=selected?rewardWaiverAmount(r.id,targetIdx):0;
     var targetLabel=selected&&targetIdx>=0?itemLabel(cart[targetIdx]):'';
+    // R03 en una línea 15CM cuyo precio no cambia en 30CM (ej. SIG07, precio único)
+    // antes mostraba el mismo mensaje genérico que "no tienes ningún 15CM" — confuso
+    // cuando el cliente SÍ tiene uno en el carrito, solo que ese producto no tiene nada
+    // que perdonar (hallazgo de auditoría UX).
+    var r03FlatPriceItem=cart.some(function(it){return it.type!=='side'&&it.size==='15'&&itemSizeUpgradeDiff(it)===0;});
     var reqText=r.id==='R06'?' · agrega un sándwich 15CM para usarla'
       :r.id==='R04'?' · agrega un sándwich con doble proteína para usarla'
       :r.id==='R02'?' · agrega salsa extra a un sándwich para usarla'
-      :r.id==='R03'?' · agrega un sándwich 15CM para usarla'
+      :r.id==='R03'?(r03FlatPriceItem?' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar':' · agrega un sándwich 15CM para usarla')
       :r.id==='R05'?' · agrega una bebida para usarla'
       :' · agrega algo a tu carrito para usarla';
     var sub=r.d+(!eligible?reqText:'')+(selected&&savings>0?' · ahorras '+SOLES+savings+' en '+targetLabel:(selected?' · se incluye con tu pedido':''));
@@ -2129,11 +2143,12 @@ function sGiftCard(){
     +INP('gc-email','TU CORREO (para el comprobante)','email',gcEmail||(cust&&cust.email)||'')
     +INP('gc-note','MENSAJE PARA EL DESTINATARIO (opcional)','text',gcNote)
     +'</div>'
-    +'<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px;margin:8px 0 12px">'+esc(gcMsg)+'</div>'
+    +'<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;min-height:14px;margin:8px 0 12px'+(gcCritical?';color:#ff5555;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px':';color:'+GOLD)+'">'+esc(gcMsg)+'</div>'
     +BTN('COMPRAR Y REGALAR //','doGiftCardBuy()')
     +'</div>'+NAV();
 }
 async function doGiftCardBuy(){
+  if(_giftBuyInProgress)return;
   var phoneEl=(document.getElementById('gc-phone') as HTMLInputElement | null);
   var amtEl=(document.getElementById('gc-amt') as HTMLInputElement | null);
   var emailEl=(document.getElementById('gc-email') as HTMLInputElement | null);
@@ -2143,6 +2158,7 @@ async function doGiftCardBuy(){
   var email=emailEl?emailEl.value.trim():'';
   var note=noteEl?noteEl.value.trim():'';
   gcPhone=phone;gcAmt=amtEl?amtEl.value:'';gcEmail=email;gcNote=note;
+  gcCritical=false;
   if(!phone||!amt||amt<10||amt>500){gcMsg='Ingresa un teléfono y un monto entre S/10 y S/500.';render();return;}
   if(!email){gcMsg='Ingresa tu correo para el comprobante de pago.';render();return;}
   var name;
@@ -2151,20 +2167,21 @@ async function doGiftCardBuy(){
     name=lookup.name;
   }catch(e){gcMsg=e.message;render();return;}
   if(!(await showConfirm('¿Comprar '+SOLES+amt+' de crédito para '+name+' ('+phone+')?')))return;
+  _giftBuyInProgress=true;
   busy=true;busyMsg='Verificando...';render();
   var prep;
   try{
     prep=await api('prepare-credit-purchase',{token:token,toPhone:phone,amount:amt,message:note});
   }catch(e){
-    busy=false;gcMsg=e.message;render();return;
+    busy=false;_giftBuyInProgress=false;gcMsg=e.message;render();return;
   }
   busy=false;render();
   _pendingGift={ref:prep.ref,toPhone:phone,toName:prep.toName||name,amount:amt,email:email};
   payGiftWithCulqi(amt,email,prep.ref);
 }
 function payGiftWithCulqi(amountSoles,email,ref){
-  if(typeof Culqi==='undefined'){gcMsg='No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';_pendingGift=null;render();return;}
-  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){gcMsg='La pasarela de pago aún no está configurada. Contacta al administrador.';_pendingGift=null;render();return;}
+  if(typeof Culqi==='undefined'){_giftBuyInProgress=false;gcMsg='No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';_pendingGift=null;render();return;}
+  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){_giftBuyInProgress=false;gcMsg='La pasarela de pago aún no está configurada. Contacta al administrador.';_pendingGift=null;render();return;}
   Culqi.publicKey=CULQI_PUBLIC_KEY;
   Culqi.settings({
     title:'SND//WCH',
@@ -2191,31 +2208,41 @@ async function chargeAndFinalizeGift(culqiToken){
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){
-      busy=false;gcMsg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';_pendingGift=null;render();
+      busy=false;_giftBuyInProgress=false;gcMsg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';_pendingGift=null;render();
       return;
     }
     var res;
     try{
       res=await api('confirm-credit-purchase',{token:token,chargeId:data.chargeId,ref:pg.ref});
     }catch(e){
-      busy=false;
+      busy=false;_giftBuyInProgress=false;
+      gcCritical=true;
       gcMsg=(e.message||'No se pudo confirmar tu compra.')+' Ya se realizó el cobro — contáctanos con tu referencia '+pg.ref+' para confirmar el crédito manualmente. No vuelvas a intentar pagar.';
       _pendingGift=null;render();
       return;
     }
-    busy=false;
+    busy=false;_giftBuyInProgress=false;
     gcPhone='';gcAmt='';gcNote='';gcEmail='';
     _pendingGift=null;
     showToast('¡Regalaste crédito a '+(res.toName||pg.toName)+'!');
     sc='p_profile';render();
   }catch(e){
-    busy=false;gcMsg='Error de conexión al procesar el pago. Intenta de nuevo.';_pendingGift=null;render();
+    // No sabemos si el cargo llegó a ejecutarse del lado de Culqi antes de que se
+    // cortara la conexión — mismo riesgo que el catch de arriba (confirm-credit-purchase
+    // falló), así que se trata con la misma seriedad: referencia + no reintentar a
+    // ciegas, en vez de un "intenta de nuevo" que podría llevar a un cobro duplicado.
+    busy=false;_giftBuyInProgress=false;
+    gcCritical=true;
+    gcMsg='No pudimos confirmar si el pago se procesó (falló la conexión). Antes de reintentar, contáctanos con tu referencia '+pg.ref+' para verificar si ya se hizo el cobro.';
+    _pendingGift=null;render();
   }
 }
 // Plan Semanal — mismo esqueleto de dos pasos que la tarjeta de regalo (prepare +
 // Culqi + confirm), pero acredita al PROPIO comprador en vez de a otro cliente, y con
 // monto fijo (sin inputs de teléfono/monto que llenar).
 var wpMsg='',wpEmail='';
+var wpCritical=false;
+var _weeklyPlanBuyInProgress=false;
 var _pendingWeeklyPlan=null;
 function sWeeklyPlan(){
   return H('PLAN SEMANAL','sc=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
@@ -2224,30 +2251,33 @@ function sWeeklyPlan(){
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#F2F0EB">PAGAS HOY</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">'+SOLES+WEEKLY_PLAN_PRICE+'</span></div>'
     +'<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#F2F0EB">RECIBES EN SALDO</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#25D366">'+SOLES+WEEKLY_PLAN_CREDIT+'</span></div>'
     +INP('wp-email','TU CORREO (para el comprobante)','email',wpEmail||(cust&&cust.email)||'')
-    +'<div id="wp-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';min-height:14px;margin:8px 0 12px">'+esc(wpMsg)+'</div>'
+    +'<div id="wp-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;min-height:14px;margin:8px 0 12px'+(wpCritical?';color:#ff5555;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px':';color:'+GOLD)+'">'+esc(wpMsg)+'</div>'
     +BTN('ACTIVAR PLAN SEMANAL //','doWeeklyPlanBuy()')
     +'</div>'+NAV();
 }
 async function doWeeklyPlanBuy(){
+  if(_weeklyPlanBuyInProgress)return;
   var emailEl=(document.getElementById('wp-email') as HTMLInputElement | null);
   var email=emailEl?emailEl.value.trim():'';
   wpEmail=email;
+  wpCritical=false;
   if(!email){wpMsg='Ingresa tu correo para el comprobante de pago.';render();return;}
   if(!(await showConfirm('¿Pagar '+SOLES+WEEKLY_PLAN_PRICE+' y recibir '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo?')))return;
+  _weeklyPlanBuyInProgress=true;
   busy=true;busyMsg='Verificando...';render();
   var prep;
   try{
     prep=await api('prepare-weekly-plan',{token:token});
   }catch(e){
-    busy=false;wpMsg=e.message;render();return;
+    busy=false;_weeklyPlanBuyInProgress=false;wpMsg=e.message;render();return;
   }
   busy=false;render();
   _pendingWeeklyPlan={ref:prep.ref,amount:prep.amountPaid,creditAmount:prep.creditAmount,email:email};
   payWeeklyPlanWithCulqi(prep.amountPaid,email,prep.ref);
 }
 function payWeeklyPlanWithCulqi(amountSoles,email,ref){
-  if(typeof Culqi==='undefined'){wpMsg='No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';_pendingWeeklyPlan=null;render();return;}
-  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){wpMsg='La pasarela de pago aún no está configurada. Contacta al administrador.';_pendingWeeklyPlan=null;render();return;}
+  if(typeof Culqi==='undefined'){_weeklyPlanBuyInProgress=false;wpMsg='No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';_pendingWeeklyPlan=null;render();return;}
+  if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){_weeklyPlanBuyInProgress=false;wpMsg='La pasarela de pago aún no está configurada. Contacta al administrador.';_pendingWeeklyPlan=null;render();return;}
   Culqi.publicKey=CULQI_PUBLIC_KEY;
   Culqi.settings({
     title:'SND//WCH',
@@ -2274,26 +2304,32 @@ async function chargeAndFinalizeWeeklyPlan(culqiToken){
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){
-      busy=false;wpMsg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';_pendingWeeklyPlan=null;render();
+      busy=false;_weeklyPlanBuyInProgress=false;wpMsg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';_pendingWeeklyPlan=null;render();
       return;
     }
     try{
       await api('confirm-weekly-plan',{token:token,chargeId:data.chargeId,ref:pw.ref});
     }catch(e){
-      busy=false;
+      busy=false;_weeklyPlanBuyInProgress=false;
+      wpCritical=true;
       wpMsg=(e.message||'No se pudo confirmar tu Plan Semanal.')+' Ya se realizó el cobro — contáctanos con tu referencia '+pw.ref+' para confirmar el saldo manualmente. No vuelvas a intentar pagar.';
       _pendingWeeklyPlan=null;render();
       return;
     }
     var r=await api('session-check',{token:token});
     if(r.valid){cust=r.customer;cacheCust(cust,isAdmin);}
-    busy=false;
+    busy=false;_weeklyPlanBuyInProgress=false;
     wpEmail='';
     _pendingWeeklyPlan=null;
     showToast('¡Listo! Recibiste '+SOLES+pw.creditAmount+' en saldo.');
     sc='p_profile';render();
   }catch(e){
-    busy=false;wpMsg='Error de conexión al procesar el pago. Intenta de nuevo.';_pendingWeeklyPlan=null;render();
+    // Mismo riesgo que el catch de arriba (confirm-weekly-plan falló): no sabemos si el
+    // cargo llegó a ejecutarse antes de que se cortara la conexión.
+    busy=false;_weeklyPlanBuyInProgress=false;
+    wpCritical=true;
+    wpMsg='No pudimos confirmar si el pago se procesó (falló la conexión). Antes de reintentar, contáctanos con tu referencia '+pw.ref+' para verificar si ya se hizo el cobro.';
+    _pendingWeeklyPlan=null;render();
   }
 }
 async function doRequestRestockNotify(sigId){
