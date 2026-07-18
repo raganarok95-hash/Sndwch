@@ -645,7 +645,7 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "MENÚ SECRETO",
-    whatsapp: "Hay un Signature que no está en el menú público. Solo lo desbloqueas siendo Círculo Interno 👀",
+    whatsapp: "Hay un Signature que no está en el menú público. Se desbloquea desde tu 5to pedido 👀",
     caption: "Lo que no ves en el menú // Después de cierta cantidad de pedidos se desbloquea un Signature que no aparece para nadie más. No decimos cuál — te lo tienes que ganar.",
     photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
   },

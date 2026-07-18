@@ -4,6 +4,7 @@
 // reporte el cliente, todo se recalcula aquí a partir de estos datos.
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
+import { computeRankName } from "./env.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -70,15 +71,20 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
 // recién después a todos (poner una fecha ISO ahí en vez de dejarlo indefinido). Se
 // compara contra customers.total_orders de la SESIÓN que hace el pedido — un invitado
 // (sin sesión) nunca puede pedirlos, sin importar qué diga el carrito.
+// Bajado de 15 a 5 pedidos (decisión de negocio) para que el menú secreto se desbloquee
+// mucho antes en la vida del cliente — DEBE coincidir con SIG05.minOrders en src/app.ts.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
-  SIG05: { minOrders: 15 },
+  SIG05: { minOrders: 5 },
 };
 export function sigGateError(sigId: string, totalOrders: number): string | null {
   const gate = SIG_GATES[sigId];
   if (!gate) return null;
   if (gate.earlyAccessUntil && Date.now() >= new Date(gate.earlyAccessUntil).getTime()) return null;
   if (totalOrders >= gate.minOrders) return null;
-  return "Ese sabor es exclusivo del Círculo Interno — sigue pidiendo para desbloquearlo.";
+  // El nombre de rango se deriva de RANKS (computeRankName) en vez de estar escrito a
+  // mano acá — antes decía "Círculo Interno" fijo, que dejó de ser cierto en cuanto el
+  // umbral bajó a 5 pedidos (ese número corresponde a "DE LA CASA", no a Círculo Interno).
+  return `Ese sabor es exclusivo de ${computeRankName(gate.minOrders)} — sigue pidiendo para desbloquearlo.`;
 }
 // Usado por actPrepareOrder/actPlaceOrder ANTES de reservar inventario o cobrar — un
 // carrito con un sabor restringido para quien lo manda se rechaza igual que un producto
