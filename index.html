@@ -279,7 +279,10 @@ function sigTypeTag(tag) {
 }
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
-var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg' };
+// SIG07 (CHICAGO ITALIAN BEEF) usa una foto de stock real (Adobe Stock, licenciada,
+// categoría gratuita) recortada para no mostrar las papas del plato original — no
+// vendemos papas, así que mostrarlas confundiría al cliente sobre qué incluye el pedido.
+var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG07: 'img/sig07.jpg' };
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -913,7 +916,13 @@ function ST(n, t, s) { return '<div style="margin-bottom:20px"><h2 style="font-f
 // font-size:16px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
 // la mayoría de teléfonos de los clientes.
-function INP(id, ph, type, val) { return '<input id="' + id + '" type="' + (type || 'text') + '" placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:16px;caret-color:' + GOLD + '">'; }
+function INP(id, ph, type, val, iconName) {
+    var padLeft = iconName ? '44px' : '16px';
+    return '<div style="position:relative">'
+        + (iconName ? '<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">' + icon(iconName, 16, '#A8C8B0') + '</div>' : '')
+        + '<input id="' + id + '" type="' + (type || 'text') + '" placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:' + surfaceGrad('#2D5246', '#213e33') + ';border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px 14px ' + padLeft + ';color:#FFFFFF;width:100%;font-size:16px;caret-color:' + GOLD + ';box-shadow:' + SHADOW_SM + ';box-sizing:border-box">'
+        + '</div>';
+}
 // box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
 // que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
 // padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
@@ -1990,7 +1999,7 @@ function checkoutExtrasHTML() {
         + comboDrinkNudgeHTML()
         + (manualPayMethod ? '' : rewardsPickerHTML())
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom) + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone) + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail) + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText) + '<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:#FFFFFF">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + '<div style="margin-top:10px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('moto', 13, '#A8C8B0') + '<span>El costo de delivery se paga <b style="color:#FFFFFF">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</span></div></div>'
         + '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>' + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
@@ -4422,6 +4431,8 @@ var ICONS = {
     moto: '<circle cx="6.5" cy="18" r="2.3"/><circle cx="17" cy="18" r="2.3"/><path d="M8.5 18h6l2-5.5h3M14 12.5l-2-4H8l-1 3"/><path d="M6.5 15.5h3"/>',
     check: '<path d="M4 12.5l5 5L20 6"/>',
     megaphone: '<path d="M3 10v4h3l7 4V6l-7 4H3z"/><path d="M13 8.5a4 4 0 0 1 0 7"/><path d="M16 6a7 7 0 0 1 0 12"/>',
+    phone: '<path d="M6 4h3l1.5 4-2 1.6a11.5 11.5 0 0 0 5.4 5.4l1.6-2 4 1.5v3a2 2 0 0 1-2.2 2C10.4 18.9 5.1 13.6 4 8.2A2 2 0 0 1 6 4z"/>',
+    gps: '<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
 };
 function icon(name, size, color) { return '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="' + (color || GOLD) + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' + (ICONS[name] || '') + '</svg>'; }
 function minutesAgo(iso) {
