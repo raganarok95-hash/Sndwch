@@ -4024,6 +4024,14 @@ function sAdminDashboard() {
         var peakDayTop = d.peakDays && d.peakDays.length ? d.peakDays.slice().sort(function (a, b) { return b.count - a.count; })[0] : null;
         h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-bottom:14px">📈 Hora pico (últimos 90 días): <b style="color:#FFFFFF">' + peakTop.hour + ':00-' + (peakTop.hour + 1) + ':00</b>' + (peakDayTop ? ' · Día pico: <b style="color:#FFFFFF">' + peakDayNames[peakDayTop.dow] + '</b>' : '') + '</div>';
     }
+    // Confirmados vs. abandonados por Yape/Plin — antes no había forma de ver de un
+    // vistazo qué tan seguido un pedido con este método SÍ termina transfiriéndose vs.
+    // cuántos se cancelan por no confirmarse a tiempo (mismo cron de 3h que expira un
+    // pago manual sin confirmar).
+    if (d.yapePlin && d.yapePlin.total > 0) {
+        var ypRate = Math.round((d.yapePlin.confirmed / d.yapePlin.total) * 100);
+        h += '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:14px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">YAPE/PLIN — CONFIRMADOS VS. ABANDONADOS //</div><div style="display:flex;gap:8px"><div style="flex:1;text-align:center;background:#1A3028;border-radius:8px;padding:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#25D366">' + d.yapePlin.confirmed + '</div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.05em">CONFIRMADOS</div></div><div style="flex:1;text-align:center;background:#1A3028;border-radius:8px;padding:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#ff5555">' + d.yapePlin.abandoned + '</div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.05em">ABANDONADOS</div></div><div style="flex:1;text-align:center;background:#1A3028;border-radius:8px;padding:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:' + GOLD + '">' + ypRate + '%</div><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.05em">TASA CONFIRM.</div></div></div></div>';
+    }
     // Origen de campaña (?src=... en el link del anuncio) — sin esto no hay forma de saber
     // si una campaña paga se está pagando sola. "convertidos" cuenta solo a quien ya hizo al
     // menos un pedido, no solo se registró.

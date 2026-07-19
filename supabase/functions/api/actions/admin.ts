@@ -193,11 +193,12 @@ export async function actDashboardStats(b: any) {
   const [agg, ordersRaw, outOfStock, allInventory, sourceRows] = await Promise.all([
     rpc("dashboard_aggregates", { p_week_start: new Date(weekStart).toISOString(), p_month_start: new Date(monthStart).toISOString() }),
     // Antes traía select=* (hasta 5000 filas x todas las columnas) cuando lo único que se
-    // usa más abajo son estas 6 — total/payment_status/created_at para las métricas de
-    // período y tendencia, items/product_key/summary para el ranking de productos.
+    // usa más abajo son estas — total/payment_status/created_at para las métricas de
+    // período y tendencia, items/product_key/summary para el ranking de productos,
+    // payment_method/status para el desglose Yape/Plin confirmados vs. abandonados.
     sbGet(
       "orders",
-      `select=total,payment_status,created_at,items,product_key,summary&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
+      `select=total,payment_status,created_at,items,product_key,summary,payment_method,status&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
@@ -274,6 +275,18 @@ export async function actDashboardStats(b: any) {
     .sort((a, b) => b.signups - a.signups)
     .slice(0, 8);
 
+  // Confirmados vs. abandonados por Yape/Plin (misma ventana reciente que topProducts,
+  // no toda la tabla) — antes no había ninguna forma de ver, de un vistazo, qué tan
+  // seguido un cliente que elige Yape/Plin de verdad termina transfiriendo vs. cuántos
+  // pedidos terminan cancelándose por falta de confirmación a tiempo (hallazgo de esta
+  // ronda de mejoras de fricción Yape/Plin).
+  const manualOrders = orders.filter((o: any) => o.payment_method === "yape" || o.payment_method === "plin");
+  const yapePlin = {
+    confirmed: manualOrders.filter((o: any) => o.payment_status === "paid").length,
+    abandoned: manualOrders.filter((o: any) => o.status === "CANCELADO").length,
+    total: manualOrders.length,
+  };
+
   // % de cambio vs. el período anterior de igual duración — el dato de "antes" ya viene
   // calculado en SQL (dashboard_aggregates), acá solo se arma el porcentaje; null cuando el
   // período anterior fue 0 (evita un Infinity/NaN sin sentido en vez de "+100%").
@@ -322,6 +335,7 @@ export async function actDashboardStats(b: any) {
     peakHours: agg.peakHours,
     peakDays: agg.peakDays,
     bySource,
+    yapePlin,
   };
 }
 
