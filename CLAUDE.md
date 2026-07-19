@@ -10,7 +10,12 @@ function de Supabase.
   raíz — ese archivo es el único artefacto servido; nunca lo edites a mano, siempre
   edita `src/app.ts`/`src/shell.html` y recompila.
 - **Backend**: `supabase/functions/api/*.ts` — un solo edge function (`api`), un action
-  por operación. Se despliega con `mcp__Supabase__deploy_edge_function`.
+  por operación. **Se despliega solo con el push a `main`** — `.github/workflows/deploy-api.yml`
+  corre en cada push a `main` que toque `supabase/functions/**` y ejecuta
+  `supabase functions deploy` (vía CI, gratis en tokens) para `api`, `create-charge`,
+  `create-credit-charge` y `weekly-summary`. Nunca llames a
+  `mcp__Supabase__deploy_edge_function` a mano para desplegar un cambio normal — ver el
+  checklist de abajo.
 - **Tests**: `tests/*.spec.ts` (Playwright) — mockean el endpoint `api` por `action` en
   vez de depender de red real.
 
@@ -24,21 +29,36 @@ function de Supabase.
    antes de asumir que "pasa" = "funciona".
 5. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
 
-## Checklist antes de desplegar el backend (`api`)
+## Cómo desplegar el backend (`api`, `create-charge`, `create-credit-charge`, `weekly-summary`)
 
-1. `mcp__Supabase__deploy_edge_function` exige **los 17 archivos completos** de
-   `supabase/functions/api/` en cada llamada — el bundler de Deno resuelve el grafo de
-   imports completo y falla con `Module not found` si falta uno. No hay despliegue
-   incremental.
-2. Usa el contenido **tal cual está en disco** (léelo de nuevo si no estás seguro de que
-   sigue igual) — nunca reconstruyas un archivo de memoria o abreviado. Ya pasó dos
-   veces en esta sesión que un despliegue terminó con comentarios recortados/contenido
-   divergente del repo por reconstruir un archivo en vez de leerlo fresco.
-3. Después de desplegar, si tienes dudas, compara con
-   `mcp__Supabase__get_edge_function` contra el contenido real de git antes de confiar
-   en que coinciden.
-4. Cualquier migración de base de datos nueva (`mcp__Supabase__apply_migration`) va
-   antes del deploy si el código nuevo depende de ella (columnas, RPCs, cron jobs).
+**El despliegue es automático vía CI — NUNCA lo hagas llamando a
+`mcp__Supabase__deploy_edge_function` a mano.** `.github/workflows/deploy-api.yml` corre
+en cada push a `main` que toque `supabase/functions/**` y ejecuta `supabase functions
+deploy` para las 4 funciones directo desde el checkout del repo, sin costo de tokens.
+
+Esto quedó documentado aquí después de que una sesión entera (2026-07-18/19) se gastó el
+límite de varias sesiones intentando desplegar `api` a mano — leyendo y reincrustando
+sus ~18 archivos completos en cada intento — sin darse cuenta de que el push a `main` ya
+había disparado el CI y el deploy YA estaba hecho, con éxito, minutos después del push.
+`mcp__Supabase__deploy_edge_function` requiere el contenido completo de TODOS los
+archivos de la función en una sola llamada (el bundler de Deno resuelve el grafo de
+imports completo y falla con `Module not found` si falta uno) — eso es lo que hace que
+un intento manual sea carísimo en tokens y fácil de arruinar a medias.
+
+1. Después de pushear `main`, simplemente **verifica** con
+   `mcp__Supabase__list_edge_functions` (barato) que `version`/`updated_at` de la función
+   que tocaste avanzó. Si tienes dudas de que el CI corrió, revisa
+   `mcp__github__actions_list` (`list_workflow_runs`, workflow `deploy-api.yml`) contra el
+   SHA del merge commit — no releas ni reintentes el deploy solo porque el número "se ve
+   igual" al que viste antes de pushear; puede que ya sea el post-CI y estés comparándolo
+   contra sí mismo.
+2. Solo usa `mcp__Supabase__deploy_edge_function` manualmente si el CI está roto/no
+   disponible. En ese caso sí exige los archivos completos de la función tal cual están
+   en disco (nunca reconstruidos de memoria) y compara después con
+   `mcp__Supabase__get_edge_function` contra git antes de confiar en que coinciden.
+3. Cualquier migración de base de datos nueva (`mcp__Supabase__apply_migration`) va
+   antes del push si el código nuevo depende de ella (columnas, RPCs, cron jobs) — las
+   migraciones nunca pasan por este CI, se aplican aparte.
 
 ## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
 
