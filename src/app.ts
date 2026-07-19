@@ -1290,7 +1290,6 @@ var BYO_STEP_LABELS=['PAN','PROTEÍNA','TOPPINGS','QUESO','SALSAS'];
 function byoStepCanContinue(){
   if(byoStep===0)return!!(size&&base);
   if(byoStep===1)return!!prot;
-  if(byoStep===4)return sauces.length>0;
   return true;
 }
 function byoStepBack(){
@@ -1333,7 +1332,7 @@ function sOBuild(){
     }).join('');
     h+='</div>';
   }else{
-    h+=ST('05','SALSAS','Hasta 3, incluidas sin costo — elige al menos 1.');
+    h+=ST('05','SALSAS','Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
     h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
     h+=SAUCES.map(function(s){
       var av=isAvail(s.id);
