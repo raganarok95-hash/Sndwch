@@ -12,6 +12,10 @@ test('POLLO CAJÚN (proteína exclusiva de THE VAULT) no aparece en BUILD YOUR O
   await page.locator('[onclick*="startOrder(\'byo\')"]').click();
   await expect(page.locator('text=BUILD YOUR OWN')).toBeVisible();
   await page.locator('[onclick*="size=\'15\'"]').click();
+  // BUILD YOUR OWN es un asistente de 5 pasos (tamaño+pan, proteína, toppings, queso,
+  // salsas) — hay que elegir un pan y avanzar antes de llegar al paso de proteína.
+  await page.locator('[onclick^="base="]').first().click();
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
 
   // Otras proteínas del catálogo siguen disponibles normalmente.
   await expect(page.locator('text=TERIYAKI').first()).toBeVisible();
