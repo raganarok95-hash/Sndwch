@@ -39,7 +39,10 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Tu pedido tiene una actualización.',
     icon: 'icon-192.png',
     badge: 'icon-192.png',
-    vibrate: [200, 100, 200],
+    // Patrón de vibración configurable por el servidor (ej. un pulso más largo/distinto
+    // para "tu pago fue confirmado" que para un cambio de estado normal) — antes era
+    // siempre el mismo patrón sin importar qué tan importante fuera el aviso.
+    vibrate: data.vibrate || [200, 100, 200],
     // tag+renotify: una actualización de estado (RECIBIDO→PREPARANDO→EN CAMINO→ENTREGADO)
     // del MISMO pedido reemplaza la notificación anterior en vez de apilarse — así el
     // cliente ve una sola tarjeta de seguimiento que se actualiza, como en las apps de

@@ -718,6 +718,25 @@ async function confirmManualPayment(order: any) {
       confirmed: true,
     });
   }
+
+  // Antes esta función nunca avisaba al cliente que su pago Yape/Plin/COD ya se había
+  // confirmado — se enteraba recién cuando el pedido avanzara a PREPARANDO (si el admin
+  // hacía ese segundo paso por separado) o revisando MIS PEDIDOS a mano (hallazgo de
+  // esta ronda de mejoras de fricción Yape/Plin). urgency:'high' + un patrón de
+  // vibración propio (más largo que el de un cambio de estado normal) para que se
+  // distinga al tacto de una notificación cualquiera.
+  try {
+    await sendPushToPhone(order.customer_phone, {
+      title: "✅ ¡Tu pago fue confirmado!",
+      body: "Verificamos tu pago por " + methodLabel + " — tu pedido " + order.ref + " ya pasa a preparación.",
+      url: "./index.html",
+      tag: "sndwch-payment-confirmed-" + order.ref,
+      urgency: "high",
+      vibrate: [120, 60, 120, 60, 250],
+    });
+  } catch {
+    // un push fallido no debe bloquear la confirmación del pago
+  }
 }
 
 // CANCELADO deliberadamente NO está aquí: solo se llega a ese estado a través de

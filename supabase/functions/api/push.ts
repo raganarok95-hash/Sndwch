@@ -33,13 +33,19 @@ export function etaWindowText(etaMinutes: number): string {
   return `${fmt(from)} - ${fmt(to)}`;
 }
 
-async function sendPushToSubs(subs: any[], payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean }) {
+type PushPayload = { title: string; body: string; url?: string; tag?: string; renotify?: boolean; vibrate?: number[]; urgency?: "very-low" | "low" | "normal" | "high" };
+
+async function sendPushToSubs(subs: any[], payload: PushPayload) {
   if (!VAPID_PRIVATE_KEY) return;
+  // urgency es un header del protocolo Web Push (RFC 8030), no va dentro del cuerpo
+  // cifrado que arma el service worker — se separa acá para no reenviarlo dos veces.
+  const { urgency, ...notification } = payload;
   for (const sub of subs) {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload),
+        JSON.stringify(notification),
+        urgency ? { urgency } : undefined,
       );
     } catch (e: any) {
       // Suscripción caducada/inválida (el navegador la revocó) — la limpiamos.
@@ -55,7 +61,7 @@ async function sendPushToSubs(subs: any[], payload: { title: string; body: strin
 
 export async function sendPushToPhone(
   phone: string,
-  payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean },
+  payload: PushPayload,
 ) {
   if (!VAPID_PRIVATE_KEY) return;
   const subs = await sbGet("push_subscriptions", `customer_phone=eq.${encodeURIComponent(phone)}`);
@@ -66,7 +72,7 @@ export async function sendPushToPhone(
 // cuenta cuyo teléfono también aparece en admin_accounts, así que para avisarle buscamos sus
 // suscripciones cruzando ambas tablas en vez de necesitar una columna/flag nueva.
 export async function sendPushToAdmins(
-  payload: { title: string; body: string; url?: string; tag?: string; renotify?: boolean },
+  payload: PushPayload,
 ) {
   if (!VAPID_PRIVATE_KEY) return;
   const admins = await sbGet("admin_accounts", "select=phone");
