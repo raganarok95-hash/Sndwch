@@ -286,3 +286,14 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   con `subway.com`, `subway.com/en-US`, y hasta `web.archive.org` — 403 o "unable to
   fetch"). `WebSearch` sí funciona y debe usarse para cualquier investigación externa,
   citando fuentes.
+- **`docs.culqi.com`/`apidocs.culqi.com` bloqueados también por `curl`** (igual que por
+  `WebFetch`) — timeout total, sin respuesta HTTP. **`github.com` y `api.github.com`
+  también están bloqueados por `curl`/`WebFetch` para repos fuera del scope de esta
+  sesión** (devuelven 403 con el mismo mensaje de scoping que el MCP de GitHub: "sessions
+  are bound to their configured repositories") — no es un bloqueo de red genérico, es el
+  mismo mecanismo de scope del MCP interceptando tráfico HTTP normal a esos dos dominios.
+  **Pero `raw.githubusercontent.com` NO está bloqueado** y sirve contenido real (probado
+  con el README de un repo público arbitrario) — útil para leer el código fuente de un
+  SDK/librería pública cuando ya se conoce la ruta exacta del archivo (no sirve para
+  *descubrir* qué repos existen, solo para leer uno ya identificado por otra vía como
+  `WebSearch`).
