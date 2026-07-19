@@ -1317,6 +1317,11 @@ function sOItemConfirm(){
   if(doubleProt&&dbl)rows.push({k:'DOBLE',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl});
   if(extraSauce)rows.push({k:'SALSA EXTRA',v:'Salsa adicional a tu elección',p:2});
   var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'DOBLE PROTEÍNA',d:'El doble de tu proteína elegida',p:dbl.pDbl}:!extraSauce?{k:'sauce',e:icon('chili',18,GOLD),l:'SALSA EXTRA',d:'Salsa adicional a tu elección',p:2}:null;
+  // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
+  // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
+  // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (ej. SIG07, precio único) —
+  // no tiene sentido "sugerir" un upgrade que no mueve el ticket.
+  var sizeUpsellDelta=size==='15'?(mode==='sig'?(sig?sig.p30-sig.p15:0):(pr?pr.p30-pr.p15:0)):0;
   function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:false;}
   function uBtn(k,e,l,d,p,sel){
     var act=(k==='doubleProt'?'doubleProt=!doubleProt':'extraSauce=!extraSauce')+(quickPayEligible?';cart[0]=currentBuiltItem()':'');
@@ -1325,6 +1330,7 @@ function sOItemConfirm(){
   var sigNameHTML=(mode==='sig'&&sig)?'<div style="margin:2px 0 14px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;letter-spacing:.03em;line-height:1.15">'+sig.n+'<span style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)+'</div></div>':'';
   return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">'+(mode==='sig'?'TU SIGNATURE //':'TU BUILD //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span></div></div>'
+    +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CON MÁS HAMBRE? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">SUBE A 30CM</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">El doble de sándwich por un poco más</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;font-weight:700;color:'+GOLD+'">+'+SOLES+sizeUpsellDelta+'</span></div></div>':'')
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce',icon('chili',18,GOLD),'SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
     +(cust?'<div style="margin-top:16px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px">☆ GUARDAR COMO FAVORITO //</div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:#2D5246;border:1px solid #0d0d0d;border-radius:8px;padding:10px 12px;color:#FFFFFF;font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
@@ -1444,6 +1450,18 @@ function pickAddr(id){
 // nombre/correo/dirección/notas, horario, crédito, banner de notificaciones push) —
 // se usa tanto en TU CARRITO (multi-producto) como en la confirmación de un solo
 // sándwich cuando se elige pago directo. Asume que `cart` ya tiene al menos 1 producto.
+// Sándwich sin bebida en el carrito — el combo (sándwich+bebida, S/3 menos) todavía no
+// se está aprovechando, así que lo sugerimos justo donde se agrega una bebida. Antes vivía
+// solo dentro de sOCart, así que un cliente que pasa por el pago directo de UN sándwich
+// (enterConfirm/quickPayEligible, sin pisar nunca TU CARRITO — el camino más común) nunca
+// lo veía; movido a checkoutExtrasHTML (compartida por ambos flujos) para que ambos lo vean.
+function comboDrinkNudgeHTML(){
+  var hasSandwichNoDrink=cart.some(function(it){return it.type!=='side';})&&cartComboCount()<cart.reduce(function(s,it){return s+(it.type!=='side'?it.qty:0);},0);
+  if(!hasSandwichNoDrink)return'';
+  return isOffPeakDrinkPromoActiveNow()
+    ?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:14px">Es hora valle — agrega una bebida y te sale GRATIS (hasta '+SOLES+OFFPEAK_DRINK_PROMO_CAP+')</div>'
+    :'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:14px">Agrega una bebida y ahorra '+SOLES+COMBO_DISCOUNT_PER_PAIR+' (combo)</div>';
+}
 function checkoutExtrasHTML(){
   var t=cartFinalTotal();
   var pBox=cust
@@ -1451,6 +1469,7 @@ function checkoutExtrasHTML(){
     :'<div onclick="swTab(\'points\')" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px;margin-top:14px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+'">↗ Regístrate en PUNTOS para ganar +'+t+' pts</div></div>';
   var payingWithCreditFully=useCredit&&cust&&(cust.credit_balance||0)>=t;
   return pBox
+    +comboDrinkNudgeHTML()
     +(manualPayMethod?'':rewardsPickerHTML())
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-phone','TELÉFONO // 9XXXXXXXX','tel',confPhone)+INP('o-email','CORREO // Opcional, para tu comprobante','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
@@ -1937,13 +1956,9 @@ function sOCart(){
   var showOffPeak=offPeakDiscount>0&&offPeakDiscount>comboDiscount;
   var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
   var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
-  // Sándwich sin bebida en el carrito — el combo (sándwich+bebida, S/3 menos) todavía no
-  // se está aprovechando, así que lo sugerimos justo donde se agrega una bebida.
-  var hasSandwichNoDrink=cart.some(function(it){return it.type!=='side';})&&cartComboCount()<cart.reduce(function(s,it){return s+(it.type!=='side'?it.qty:0);},0);
   return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
     +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span>'+(showCombo?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">combo aplicado: ahorras '+SOLES+comboDiscount+'</div>':'')+(showOffPeak?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras '+SOLES+offPeakDiscount+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+rewardDiscount+'</div>':'')+'</div></div>':'')
-    +(hasSandwichNoDrink&&isOffPeakDrinkPromoActiveNow()?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:12px">Es hora valle — agrega una bebida y te sale GRATIS (hasta '+SOLES+OFFPEAK_DRINK_PROMO_CAP+')</div>':(hasSandwichNoDrink?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-bottom:12px">Agrega una bebida y ahorra '+SOLES+COMBO_DISCOUNT_PER_PAIR+' (combo)</div>':''))
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
     // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
