@@ -6,7 +6,7 @@ import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName,
 } from "../env.ts";
-import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
@@ -880,6 +880,80 @@ export async function actAdminConfirmPayment(b: any) {
   if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado.", 409);
   await confirmManualPayment(order);
   return { success: true, order: claim[0] };
+}
+
+// Captura de pantalla del comprobante de transferencia (item 12 de la lista de fricción
+// Yape/Plin) — puramente informativo para el admin, NO reemplaza la confirmación manual
+// de actAdminConfirmPayment (el pedido sigue 'pending' hasta que el admin la confirme;
+// una imagen no es prueba suficiente sin mirar el estado de cuenta real del negocio).
+// Igual que actCancelMyOrder con `ref` sin token: el ref en sí funciona como la prueba de
+// propiedad para un invitado sin cuenta (es un identificador no adivinable que solo el
+// cliente tiene, mostrado recién al colocar su pedido).
+const RECEIPT_UPLOAD_RATE_LIMIT = 6;
+const RECEIPT_UPLOAD_RATE_WINDOW_MINUTES = 60;
+const RECEIPT_MAX_BYTES = 2 * 1024 * 1024;
+const RECEIPT_MIME_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+export async function actUploadReceipt(b: any) {
+  const ref = String(b.ref || "").trim().slice(0, 40);
+  const mime = String(b.mime || "");
+  const imageBase64 = String(b.imageBase64 || "");
+  if (!ref || !imageBase64) throw new ApiError("Faltan datos del comprobante.");
+  const ext = RECEIPT_MIME_EXT[mime];
+  if (!ext) throw new ApiError("Formato de imagen no soportado — usa JPG, PNG o WEBP.", 400);
+
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `receipt-upload:${ref}`,
+    p_limit: RECEIPT_UPLOAD_RATE_LIMIT,
+    p_window_minutes: RECEIPT_UPLOAD_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Ya subiste varios comprobantes para este pedido. Espera un momento e intenta de nuevo.", 429);
+
+  const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,ref,payment_method,payment_status`);
+  const order = rows[0];
+  if (!order) throw new ApiError("Pedido no encontrado.", 404);
+  if (order.payment_method !== "yape" && order.payment_method !== "plin") {
+    throw new ApiError("Este pedido no usa pago manual por Yape/Plin.", 400);
+  }
+
+  let bytes: Uint8Array;
+  try {
+    const bin = atob(imageBase64);
+    bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  } catch {
+    throw new ApiError("Imagen inválida.", 400);
+  }
+  if (!bytes.length || bytes.length > RECEIPT_MAX_BYTES) throw new ApiError("La imagen debe pesar menos de 2MB.", 400);
+
+  const path = `${ref}.${ext}`;
+  await storageUpload("payment-receipts", path, bytes, mime);
+  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path });
+
+  // Aviso opcional al admin — no bloquea la respuesta al cliente si el push falla, mismo
+  // criterio que el resto de notificaciones best-effort de este archivo.
+  try {
+    await sendPushToAdmins({
+      title: "📎 Comprobante subido",
+      body: `El pedido ${ref} tiene un comprobante de Yape/Plin listo para revisar.`,
+      url: "./index.html",
+      tag: `sndwch-receipt-${ref}`,
+    });
+  } catch {
+    // silencioso a propósito
+  }
+  return { success: true };
+}
+
+// URL firmada de corta duración para que el admin vea el comprobante — nunca se expone
+// una URL pública/permanente (el bucket es privado a propósito).
+export async function actAdminReceiptUrl(b: any) {
+  await requireAdmin(b.token);
+  const orderId = String(b.orderId || "");
+  if (!orderId) throw new ApiError("Falta el pedido.");
+  const rows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=receipt_path`);
+  const order = rows[0];
+  if (!order || !order.receipt_path) throw new ApiError("Este pedido no tiene comprobante.", 404);
+  const url = await storageSignedUrl("payment-receipts", order.receipt_path, 300);
+  return { url };
 }
 
 // Cancela un pedido que nunca se pagó (típicamente Yape/Plin donde el cliente nunca

@@ -70,6 +70,30 @@ export async function sbDelete(table: string, query: string) {
   });
   if (!r.ok) throw new Error(`Error eliminando en ${table}: ${await r.text()}`);
 }
+// Storage (comprobantes de pago Yape/Plin) — a diferencia de sbGet/sbInsert/etc, que
+// hablan con PostgREST (/rest/v1/...), esto habla con la API de Storage
+// (/storage/v1/...). Mismo criterio de siempre: SERVICE_ROLE key, nunca expuesta al
+// cliente, bucket privado sin políticas RLS para anon.
+export async function storageUpload(bucket: string, path: string, bytes: Uint8Array, contentType: string) {
+  const r = await fetch(`${SB_URL}/storage/v1/object/${bucket}/${path}`, {
+    method: "POST",
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": contentType, "x-upsert": "true" },
+    body: bytes,
+  });
+  if (!r.ok) throw new Error(`Error subiendo a storage ${bucket}/${path}: ${await r.text()}`);
+}
+// URL firmada de corta duración — el bucket es privado, así que el admin nunca ve una
+// URL pública/permanente del comprobante, solo un link que expira.
+export async function storageSignedUrl(bucket: string, path: string, expiresInSeconds: number): Promise<string> {
+  const r = await fetch(`${SB_URL}/storage/v1/object/sign/${bucket}/${path}`, {
+    method: "POST",
+    headers: sbHeaders(),
+    body: JSON.stringify({ expiresIn: expiresInSeconds }),
+  });
+  if (!r.ok) throw new Error(`Error firmando URL de storage ${bucket}/${path}: ${await r.text()}`);
+  const data = await r.json();
+  return `${SB_URL}/storage/v1${data.signedURL}`;
+}
 // A diferencia de las funciones de arriba, rpc() sí traduce ciertas excepciones de
 // negocio (lanzadas por nuestras funciones atómicas de saldo — ver migración
 // atomic_balance_functions) a un ApiError claro para el cliente; cualquier otro
