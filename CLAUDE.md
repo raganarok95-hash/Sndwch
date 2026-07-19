@@ -193,3 +193,87 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Operaciones git destructivas** (force-push, reset --hard, eliminar ramas) requieren
   confirmación explícita del usuario, incluso si el resto del flujo se hace "de manera
   directa".
+
+1. **Responde siempre en español**, salvo que el usuario pida explícitamente lo
+   contrario. Esto cubre TODO texto visible: el mensaje de cierre, pero también
+   descripciones de tool calls, captions de archivos, nombres de tareas del checklist,
+   preguntas de `AskUserQuestion`. Revisar cada uno antes de enviarlo, no solo el mensaje
+   principal.
+2. **"Primero muéstrame/hagamos X antes de Y" es un punto de parada real para avanzar de
+   verdad** (comitear, pushear, mergear, expandir el cambio a otras pantallas, gastar algo
+   real) — eso espera confirmación explícita antes de tocar Y. Verificación interna sin
+   efecto visible para el usuario (typecheck, build, capturas tomadas para revisión
+   propia) NO requiere esperar — no confundir diligencia propia con avanzar de verdad. Si
+   se queda sin ningún paso productivo posible dentro de lo pedido (esperando una
+   decisión que no llega), pedir permiso explícito para continuar en vez de asumirlo o
+   quedarse detenido sin decir nada.
+3. **Separa la fase de concepto de la fase de implementación.** Mientras se define una
+   dirección (diseño, arquitectura, alcance de una feature), esa conversación se cierra
+   explícitamente (el usuario elige) ANTES de escribir o modificar código de producción.
+   No adelantar código de una opción todavía no elegida.
+4. **No generes Artifacts (`Artifact` tool) salvo que el usuario los pida
+   explícitamente.** Para mostrar resultados (capturas, comparaciones, propuestas
+   visuales) usar `SendUserFile` en vez de publicar una página interactiva, salvo pedido
+   explícito de algo interactivo/navegable.
+5. **Antes de decir "no se puede" o "no tengo esa herramienta", revisa si ya se hizo
+   antes** en este proyecto/sesión y busca la vía real (otras herramientas, `ToolSearch`,
+   alternativas) antes de concluir que es imposible. No rendirse en el primer intento
+   fallido.
+6. **Mantén el checklist de tareas actualizado y honesto** (`TaskCreate`/`TaskUpdate`) —
+   que refleje el estado real de lo pendiente; no marcar "completado" lo que quedó a
+   medias esperando aprobación.
+7. **Busca y usa proactivamente TODAS las herramientas disponibles, incluidas las
+   diferidas** (vía `ToolSearch`) antes de asumir que algo no se puede o conformarse con
+   una solución de segunda — muchas herramientas (búsqueda de stock, edición de imágenes,
+   generación de diseño) no aparecen en la lista visible por defecto, solo se cargan si
+   se buscan.
+8. **Gastos reales (licencias, upgrades de plan, cualquier costo) requieren confirmación
+   explícita previa**, incluso si parecen gratuitos o de bajo costo — confirmar el
+   costo/tier antes de ejecutar la acción, no después.
+9. **Documentar en este archivo las capacidades/limitaciones técnicas reales que se vayan
+   descubriendo** (qué modelo de generación de imágenes funciona en este plan y cuál no,
+   qué dominios bloquea el proxy de red, qué vías sí funcionan para descargar assets) para
+   que la siguiente sesión no tenga que redescubrirlas desde cero. Ver "Capacidades y
+   limitaciones técnicas descubiertas" más abajo.
+10. **El "//" es la identidad de marca permanente — pero solo como concepto/ícono, no
+    atado a ninguna estética específica.** Se mantiene siempre como símbolo de marca, pero
+    NO está ligado a la paleta actual, a la tipografía actual, ni a ninguna connotación
+    "tech/terminal" — esas son libres de cambiar y proponer. Las decisiones de identidad
+    visual (paleta, tipografía, tratamiento del ícono) siguen la regla del punto 3
+    ("concepto antes que código"): mostrar una propuesta concreta y esperar que se cierre
+    la dirección explícitamente antes de tocar código — lo único no negociable es que el
+    "//" en sí siga existiendo como marca.
+
+## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
+
+- **Generación de imágenes AI**: no hay una herramienta directa de texto-a-imagen
+  disponible. La única vía encontrada es a través de `mcp__Gamma__generate` (genera un
+  documento/presentación completo, no solo una foto) — y en el plan actual de la cuenta,
+  todo modelo fotorrealista (`imagen-4-ultra`, `gpt-image-1-high`, `flux-2-pro`,
+  `dall-e-3`, `recraft-v4-pro`) está bloqueado por tier ("not available on plan"). Omitir
+  el campo `model` deja que Gamma elija su propio default, que cayó en `flux-2-klein` con
+  `stylePreset:"illustration"` — NO fotorrealista, ignorando el `stylePreset` pedido.
+  Tampoco respeta pedidos de "una sola tarjeta full-bleed sin texto" (usa su template
+  normal de imagen+cuerpo). Conclusión: generación de fotos ultra-realistas de producto
+  NO es viable hoy con las herramientas de esta cuenta.
+- **Fotos de stock reales (alternativa que sí funciona)**: `asset_search` con
+  `entityScope:"StockAsset"` + `asset_license_and_download_stock` (Adobe Stock) sí
+  funciona para conseguir fotografía real de comida cuando hay un match razonable para el
+  plato — licenciar primero, no usar la URL de preview/rendition directo. Recortar con
+  `image_crop_and_resize`/`image_crop_to_bounds` para ajustar composición (ej. quitar
+  elementos que no correspondan al menú, como papas fritas que no vendemos).
+- **Descarga de archivos vía `curl`**: el proxy de red de este entorno bloquea (403)
+  varios dominios usados por herramientas Adobe/Gamma —
+  `*.private.adobe.io`, `t3/t4.ftcdn.net` (thumbnails de Stock), `photoshop-api.adobe.io`
+  (salida de herramientas de edición de imagen), `assets.api.gamma.app` — pero SÍ permite
+  `*.s3.*.amazonaws.com` (la URL de descarga que da `asset_license_and_download_stock`
+  tras licenciar). Cuando una herramienta de edición Adobe (crop, resize, etc.) devuelve
+  un `outputUrl` en un dominio bloqueado, usar `asset_inline_preview` sobre esa URL para
+  verla (ese sí funciona, corre server-side), pero para GUARDAR el archivo localmente hay
+  que replicar la edición con una librería local (`PIL`/Pillow en Python ya está
+  disponible) sobre el archivo original ya descargado, en vez de intentar descargar el
+  `outputUrl` directo.
+- **`WebFetch` sigue bloqueado** para dominios externos arbitrarios (confirmado de nuevo
+  con `subway.com`, `subway.com/en-US`, y hasta `web.archive.org` — 403 o "unable to
+  fetch"). `WebSearch` sí funciona y debe usarse para cualquier investigación externa,
+  citando fuentes.
