@@ -59,6 +59,8 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 
@@ -131,6 +133,8 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 

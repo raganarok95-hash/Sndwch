@@ -33,6 +33,8 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 
@@ -82,6 +84,8 @@ test('invitado pide el Chicago Italian Beef (SIG07, precio único 15CM=30CM) y p
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 

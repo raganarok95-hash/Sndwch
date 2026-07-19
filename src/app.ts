@@ -1490,13 +1490,30 @@ function selectPayMethod(m){
 function manualPayInstructionsHTML(t){
   // Antes distinguía 'Yape'/'Plin' según manualPayMethod — desde que se fusionaron los
   // botones de arriba en uno solo, el valor siempre es 'yape' así que ya no hace falta.
-  return'<div style="margin-top:10px;background:#1A3028;border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.5">Transfiere <b style="color:'+GOLD+'">'+SOLES+t+'</b> por Yape o Plin a:</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;background:#2D5246;border-radius:8px;padding:10px 12px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">'+esc(YAPE_PLIN_NAME)+'</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR</button></div><div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';margin-top:6px;min-height:12px"></div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:8px;line-height:1.4">Envía el pago desde tu app y confirma abajo con "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando verifiquemos que llegó.</div></div>';
+  // Reescrito como pasos numerados (antes un párrafo corrido) y con botón para copiar
+  // el MONTO además del número (antes solo se podía copiar el número — el monto había
+  // que teclearlo a mano en la app de Yape/Plin) — ronda de mejoras de fricción de
+  // Yape/Plin de esta sesión.
+  return'<div style="margin-top:10px;background:#1A3028;border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px">'
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">1. TRANSFIERE // 2. CONFIRMA AQUÍ</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:10px 12px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">'+esc(YAPE_PLIN_NAME)+' · Yape o Plin</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR</button></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;background:#2D5246;border-radius:8px;padding:10px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</div><button onclick="copyYapePlinAmount(\''+t+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR MONTO</button></div>'
+    +'<div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';margin-top:6px;min-height:12px"></div>'
+    +'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:8px;line-height:1.4">Envía el pago desde tu app, luego confirma abajo con "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>'
+    +'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:8px;opacity:.85">🔒 Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</div>'
+    +'</div>';
 }
 function copyYapePlinPhone(){
   var m=(document.getElementById('ypc-msg') as HTMLInputElement | null);
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Número copiado';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
   }else if(m){m.textContent=YAPE_PLIN_PHONE;}
+}
+function copyYapePlinAmount(amt){
+  var m=(document.getElementById('ypc-msg') as HTMLInputElement | null);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(amt).then(function(){if(m)m.textContent='✓ Monto copiado';}).catch(function(){if(m)m.textContent=amt;});
+  }else if(m){m.textContent=amt;}
 }
 // Etiqueta del botón de pago principal — compartida entre TU CARRITO y el pago directo
 // de un solo sándwich, ya que ambos ofrecen los mismos métodos de pago.
@@ -1536,7 +1553,7 @@ function sOCart(){
 }
 
 var _pendingOrder=null;
-function doOrder(){
+async function doOrder(){
   if(_payingInProgress)return;
   if(!cart.length)return;
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
@@ -1607,6 +1624,13 @@ function doOrder(){
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
     payWithCredit();
   }else if(manualPayMethod){
+    // Antes un solo tap en "YA REALICÉ EL PAGO" creaba el pedido de inmediato — sin
+    // ningún cobro real detrás que lo confirme (a diferencia de Culqi), un tap
+    // accidental generaba un pedido 'pending' real que el admin tenía que revisar y
+    // descartar a mano sin que el cliente hubiera transferido nada todavía.
+    if(!(await showConfirm('¿Ya transferiste '+SOLES+t+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
+      _payingInProgress=false;render();return;
+    }
     payWithManualMethod();
   }else{
     prepareThenPayWithCulqi(t,email);
