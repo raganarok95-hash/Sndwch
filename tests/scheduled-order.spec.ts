@@ -4,12 +4,12 @@ import { gotoApp } from './helpers';
 // Flujo prioritario #2: "pedir para más tarde" — el cliente programa una hora en vez de
 // pedir "AHORA". get-store-hours se mockea abierto 24/7 (ver helpers.ts) para que la
 // validación de horario del cliente nunca sea la causa de un fallo del test.
-
-function isoInTwoHours(): string {
-  const d = new Date(Date.now() + 2 * 60 * 60000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+//
+// El picker ya NO es un <input type="datetime-local"> nativo (se rendía como una caja
+// vacía y enorme en varios navegadores/webviews móviles — ver app.ts, scheduleTimePickerHTML)
+// sino franjas horarias propias (HOY/MAÑANA + cada 30 min). Al tocar "PROGRAMAR" ya queda
+// seleccionada automáticamente la primera franja disponible (initSchedDefault en app.ts),
+// así que basta con confirmar que #o-sched (input oculto) trae un valor futuro válido.
 
 test('invitado programa un pedido para más tarde', async ({ page }) => {
   const calls = await gotoApp(page, {
@@ -37,9 +37,8 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
 
   await page.locator('[onclick*="scheduleMode=\'later\'"]').click();
-  const schedInput = page.locator('#o-sched');
-  await expect(schedInput).toBeVisible();
-  await schedInput.fill(isoInTwoHours());
+  const schedValue = await page.locator('#o-sched').inputValue();
+  expect(schedValue).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();

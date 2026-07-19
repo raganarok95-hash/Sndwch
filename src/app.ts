@@ -245,6 +245,57 @@ function isWithinStoreHours(d){
   var h=d.getHours()+d.getMinutes()/60;
   return h>=range[0]&&h<range[1];
 }
+// Picker de "pedir para más tarde" — antes era un <input type="datetime-local"> nativo,
+// que en varios navegadores/webviews móviles (ej. el navegador embebido de YouTube)
+// se renderiza como una caja vacía enorme sin nuestros estilos (el sistema operativo
+// dibuja su propio widget de fecha/hora, ignorando el CSS) — un bug que Playwright
+// nunca puede detectar porque corre sobre Chromium de escritorio, que sí respeta el
+// CSS del input. Reemplazado por franjas horarias propias (HOY/MAÑANA + cada 30 min
+// dentro del horario real) para que el control se vea y funcione igual en cualquier
+// dispositivo. #o-sched sigue existiendo como input oculto con el mismo formato
+// "YYYY-MM-DDTHH:mm" que antes, así el resto del flujo (effectiveOrderDate, doOrder)
+// no tuvo que cambiar.
+var SCHED_LEAD_MINUTES=20;
+function schedDateForDay(dayKey){var d=new Date();if(dayKey==='tomorrow')d.setDate(d.getDate()+1);return d;}
+function schedSlots(dayKey){
+  var d=schedDateForDay(dayKey),range=STORE_HOURS[d.getDay()];
+  if(!range)return[];
+  var out=[],now=new Date(),isToday=dayKey==='today';
+  for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
+    var slotDate=new Date(d);slotDate.setHours(0,0,0,0);slotDate.setMinutes(totalMin);
+    if(isToday&&slotDate.getTime()<now.getTime()+SCHED_LEAD_MINUTES*60000)continue;
+    out.push(String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'));
+  }
+  return out;
+}
+function schedInputValue(){
+  if(!schedSlot)return'';
+  var d=schedDateForDay(schedDay),parts=schedSlot.split(':');
+  d.setHours(parseInt(parts[0],10),parseInt(parts[1],10),0,0);
+  var pad=function(n){return String(n).padStart(2,'0');};
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function initSchedDefault(){
+  if(schedSlot)return;
+  var slots=schedSlots(schedDay);
+  if(!slots.length&&schedDay==='today'){schedDay='tomorrow';slots=schedSlots('tomorrow');}
+  schedSlot=slots.length?slots[0]:null;
+}
+function pickSchedDay(dayKey){schedDay=dayKey;var slots=schedSlots(dayKey);schedSlot=slots.length?slots[0]:null;confirmRerender();}
+function pickSchedSlot(hhmm){schedSlot=hhmm;confirmRerender();}
+function scheduleTimePickerHTML(){
+  var days=[{key:'today',l:'HOY'},{key:'tomorrow',l:'MAÑANA'}];
+  var dayChips=days.map(function(dd){
+    var d=schedDateForDay(dd.key),closed=!STORE_HOURS[d.getDay()],sel=schedDay===dd.key;
+    var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
+    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922')))+';border:1px solid '+(sel&&!closed?GOLD:'#3A6B58')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">'+dd.l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:9px;color:#A8C8B0;text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
+  }).join('');
+  var slots=schedSlots(schedDay);
+  var slotsHTML=slots.length
+    ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){var sel=schedSlot===s;return'<div onclick="pickSchedSlot(\''+s+'\')" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:12px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s+'</div>';}).join('')+'</div>'
+    :'<div style="margin-top:10px;font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">No hay horarios disponibles ese día.</div>';
+  return'<div style="display:flex;gap:8px">'+dayChips+'</div>'+slotsHTML+'<input type="hidden" id="o-sched" value="'+esc(schedInputValue())+'">';
+}
 // Rango orientativo de preparación + entrega mostrado ANTES de pagar (reduce la
 // incertidumbre justo en el momento de decidir) — no es el ETA real del pedido, que
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
@@ -407,7 +458,7 @@ var _giftBuyInProgress=false;
 var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
-var addrText='',scheduleMode='now';
+var addrText='',scheduleMode='now',schedDay='today',schedSlot=null;
 var confNom='',confPhone='',confEmail='',confNotes='';
 var checkoutLocked=false,lockedMsg='',_payingInProgress=false;
 var appliedReward=null;
@@ -802,7 +853,7 @@ function initCheckoutFields(){
   confNotes='';
   addrText=cust&&cust.last_address?cust.last_address:'';
   pickedAddrId=null;
-  scheduleMode='now';
+  scheduleMode='now';schedDay='today';schedSlot=null;
   useCredit=false;
   manualPayMethod=null;
   checkoutLocked=false;lockedMsg='';
@@ -1546,7 +1597,7 @@ function checkoutExtrasHTML(){
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom)+INP('o-phone','TELÉFONO // 9XXXXXXXX','tel',confPhone)+INP('o-email','CORREO // Opcional, para tu comprobante','email',confEmail)+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText)+'<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0;font-family:Barlow,sans-serif;font-size:11px;font-weight:700">&#128205;</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:#FFFFFF">'+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</b> desde que confirmamos tu pedido.</span></div></div>':'')
     +'<div style="margin-top:10px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('moto',13,'#A8C8B0')+'<span>El costo de delivery se paga <b style="color:#FFFFFF">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</span></div></div>'
-    +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='now'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='later'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?'<input id="o-sched" type="datetime-local" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:4px">Debe caer dentro de nuestro horario de atención.</div>':'')+'</div>'
+    +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='now'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='later'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
     +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
     // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
     // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
@@ -2283,7 +2334,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   receiptUploadState=null;
   cart=[];
   resetBuilder();mode=null;
-  useCredit=false;manualPayMethod=null;scheduleMode='now';pickedAddrId=null;addrText='';
+  useCredit=false;manualPayMethod=null;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
   saveCart();
