@@ -42,6 +42,8 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
   await schedInput.fill(isoInTwoHours());
 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 
