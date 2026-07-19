@@ -16,6 +16,10 @@ var BIZ_NAME='Ezra Kemish Vertiz Labarrera',BIZ_RUC='10736044523',BIZ_CITY='Truj
 // El prefijo de moneda "S/" se muestra más chico que el monto — a tamaño completo
 // se confundía visualmente con un "5" pegado al número (ej. "S/22" leído como "5/22").
 var SOLES='<span style="font-size:.6em">S/</span>';
+// Versión sin HTML de SOLES, para textos que NO se pintan con innerHTML (showConfirm/
+// showPrompt escapan su mensaje a propósito por seguridad — ver esc() en renderOverlays
+// — así que el <span> de arriba salía literal, como texto crudo, en vez de dar formato).
+var SOLES_TXT='S/';
 // PASARELA DE PAGO — CULQI (LIVE — los cargos son reales)
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
 // solo en Supabase → Edge Functions → Secrets (CULQI_SECRET_KEY), nunca aquí.
@@ -1328,7 +1332,7 @@ function sOItemConfirm(){
     return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?GOLD:'#A8C8B0')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+SOLES+p+'</span></div>';
   }
   var sigNameHTML=(mode==='sig'&&sig)?'<div style="margin:2px 0 14px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;letter-spacing:.03em;line-height:1.15">'+sig.n+'<span style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)+'</div></div>':'';
-  return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
+  return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +'<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">'+(mode==='sig'?'TU SIGNATURE //':'TU BUILD //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid #3A6B58;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span></div></div>'
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CON MÁS HAMBRE? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">SUBE A 30CM</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0">El doble de sándwich por un poco más</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;font-weight:700;color:'+GOLD+'">+'+SOLES+sizeUpsellDelta+'</span></div></div>':'')
     +(recU?'<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
@@ -1834,13 +1838,16 @@ function paymentMethodPickerHTML(t){
 // Monogramas simples (no los logos oficiales — reproducir la marca exacta de Yape/Plin
 // aquí sería un riesgo de marca registrada sin permiso del negocio) en los colores que
 // cada app usa en su propia identidad, para que el ojo reconozca "esto es Yape/Plin" de
-// un vistazo en vez de solo leer texto.
-function payMonogram(bg,letter){
-  return'<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:'+bg+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:900;margin-right:5px;flex-shrink:0">'+letter+'</span>';
+// un vistazo en vez de solo leer texto. Cuadrado redondeado (squircle) en vez de círculo
+// — se acerca más al lenguaje visual real de un ícono de app — con degradado y sombra
+// sutiles para que no se vea plano/de baja calidad (versión anterior: círculo chico,
+// color sólido, sin ninguna profundidad).
+function payMonogram(g1,g2,letter){
+  return'<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,'+g1+','+g2+');color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:900;margin-right:6px;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)">'+letter+'</span>';
 }
 function payMethodBtn(id,label,enabled,badge){
   var sel=id==='culqi'?!manualPayMethod:manualPayMethod===id;
-  var monogram=id==='yape'?payMonogram('#8A05BE','Y')+payMonogram('#00C4B3','P'):'';
+  var monogram=id==='yape'?payMonogram('#A020D8','#6B0FA0','Y')+payMonogram('#00E0C6','#00998A','P'):'';
   return'<div onclick="'+(enabled?'selectPayMethod(\''+id+'\')':'')+'" style="flex:1;text-align:center;background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 6px;cursor:'+(enabled?'pointer':'not-allowed')+';opacity:'+(enabled?1:.4)+'">'
     +(badge?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:'+GOLD+';letter-spacing:.08em;margin-bottom:3px">'+badge+'</div>':'')
     +'<div style="display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">'+monogram+label+'</div>'
@@ -1864,23 +1871,25 @@ function payStep(n,label,body){
 function manualPayInstructionsHTML(t){
   // Antes distinguía 'Yape'/'Plin' según manualPayMethod — desde que se fusionaron los
   // botones de arriba en uno solo, el valor siempre es 'yape' así que ya no hace falta.
-  // Reescrito con el monto grande arriba de todo (antes el número de teléfono aparecía
-  // primero) y como 3 pasos numerados reales (antes 2 pasos genéricos en una sola
-  // línea) — ronda de mejoras de fricción de Yape/Plin de esta sesión.
+  // Bajado a 2 pasos reales (antes 3): "copia el monto" se quitó — el monto ya se ve
+  // grande arriba de todo, copiarlo aparte no ahorraba nada (transferir 2-4 dígitos a
+  // mano es más rápido que cambiar de app y pegar) y solo sumaba un tap sin valor real
+  // (hallazgo directo del dueño probando el flujo). En el mismo espíritu se dejó UN solo
+  // botón principal por plataforma en el paso de "transfiere" (antes había 2 botones que
+  // hacían casi lo mismo: COPIAR NÚMERO y ABRIR YAPE, uno al lado del otro).
   var recurring=(function(){try{return localStorage.getItem('sw_yp_used')==='1';}catch(e){return false;}})();
   var mobile=isMobileUA();
   return'<div style="margin-top:10px;background:#1A3028;border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px">'
     +'<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;letter-spacing:.2em;margin-bottom:2px">MONTO A TRANSFERIR //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</div></div>'
-    +payStep(1,'COPIA EL MONTO','<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:900;color:#fff">'+SOLES+t+'</div><button onclick="copyYapePlinAmount(\''+t+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;padding:7px 10px;border-radius:6px">COPIAR MONTO</button></div>')
-    +payStep(2,'TRANSFIERE POR YAPE O PLIN A','<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0">'+esc(YAPE_PLIN_NAME)+(recurring?' · ya usaste este número antes ✓':'')+'</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;padding:7px 10px;border-radius:6px">COPIAR NÚMERO</button></div>'
-      // Un solo botón que copia el número Y de paso intenta abrir la app de Yape — solo
-      // tiene sentido en un celular (en desktop no hay app que abrir). "Comprimir taps":
-      // antes hacían falta 2 pasos manuales (copiar, luego cambiar de app a mano).
-      +(mobile?'<button onclick="copyYapePlinPhone();openYapeApp()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:6px;background:#2D5246;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:9px;border-radius:6px">📲 ABRIR YAPE</button>':'')
+    +payStep(1,'TRANSFIERE POR YAPE O PLIN A','<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:900;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0">'+esc(YAPE_PLIN_NAME)+(recurring?' · ya usaste este número antes ✓':'')+'</div></div></div>'
+      // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
+      // paso copia el número); en desktop no hay app que abrir, así que el único botón
+      // útil es copiar.
+      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:11px;border-radius:8px">'+(mobile?'📲 ABRIR YAPE':'COPIAR NÚMERO')+'</button>'
       +'<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;text-decoration:underline;letter-spacing:.05em">'+(showYapeQR?'ocultar código QR':'o escanea el código QR con tu número guardado')+'</span></div>'
       +(showYapeQR?'<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px">'+qrSvgHTML('MECARD:N:'+YAPE_PLIN_NAME+';TEL:'+YAPE_PLIN_PHONE+';;',148)+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:9px;color:#A8C8B0;margin-top:6px;text-align:center;max-width:220px">Guarda nuestro número en tus contactos escaneando — no reemplaza la transferencia, solo evita escribirlo a mano.</div></div>':'')
       +'<div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-top:6px;min-height:12px"></div>')
-    +payStep(3,'CONFIRMA AQUÍ ABAJO','<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4">Toca "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
+    +payStep(2,'CONFIRMA AQUÍ ABAJO','<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4">Toca "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
     +'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:12px;opacity:.85">🔒 Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</div>'
     +'</div>';
 }
@@ -1889,12 +1898,6 @@ function copyYapePlinPhone(){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Número copiado';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
   }else if(m){m.textContent=YAPE_PLIN_PHONE;}
-}
-function copyYapePlinAmount(amt){
-  var m=(document.getElementById('ypc-msg') as HTMLInputElement | null);
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(amt).then(function(){if(m)m.textContent='✓ Monto copiado';}).catch(function(){if(m)m.textContent=amt;});
-  }else if(m){m.textContent=amt;}
 }
 // Subir captura del comprobante (item 12, opcional) — se comprime en el propio celular
 // antes de mandarla (canvas, máx. 1000px de lado, JPEG calidad .7) para no depender de
@@ -1956,7 +1959,7 @@ function sOCart(){
   var showOffPeak=offPeakDiscount>0&&offPeakDiscount>comboDiscount;
   var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
   var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
-  return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'
+  return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
     +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#F2F0EB">TOTAL</span><div style="text-align:right"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span>'+(showCombo?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">combo aplicado: ahorras '+SOLES+comboDiscount+'</div>':'')+(showOffPeak?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras '+SOLES+offPeakDiscount+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+rewardDiscount+'</div>':'')+'</div></div>':'')
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
@@ -2045,7 +2048,7 @@ async function doOrder(){
     // ningún cobro real detrás que lo confirme (a diferencia de Culqi), un tap
     // accidental generaba un pedido 'pending' real que el admin tenía que revisar y
     // descartar a mano sin que el cliente hubiera transferido nada todavía.
-    if(!(await showConfirm('¿Ya transferiste '+SOLES+t+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
+    if(!(await showConfirm('¿Ya transferiste '+SOLES_TXT+t+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
       _payingInProgress=false;render();return;
     }
     payWithManualMethod();
@@ -2653,7 +2656,7 @@ async function doCreditGift(){
     var lookup=await api('credit-lookup',{token:token,toPhone:phone});
     name=lookup.name;
   }catch(e){wMsg=e.message;render();return;}
-  if(!(await showConfirm('¿Enviar '+SOLES+amt+' de crédito a '+name+' ('+phone+')?')))return;
+  if(!(await showConfirm('¿Enviar '+SOLES_TXT+amt+' de crédito a '+name+' ('+phone+')?')))return;
   try{
     await api('credit-gift',{token:token,toPhone:phone,amount:amt});
     var r=await api('session-check',{token:token});
@@ -2699,7 +2702,7 @@ async function doGiftCardBuy(){
     var lookup=await api('credit-lookup',{token:token,toPhone:phone});
     name=lookup.name;
   }catch(e){gcMsg=e.message;render();return;}
-  if(!(await showConfirm('¿Regalar '+SOLES+amt+' de crédito a '+name+' ('+phone+') por '+ptsCost+' puntos?')))return;
+  if(!(await showConfirm('¿Regalar '+SOLES_TXT+amt+' de crédito a '+name+' ('+phone+') por '+ptsCost+' puntos?')))return;
   _giftBuyInProgress=true;
   busy=true;busyMsg='Procesando...';render();
   try{
@@ -2739,7 +2742,7 @@ async function doWeeklyPlanBuy(){
   wpEmail=email;
   wpCritical=false;
   if(!email){wpMsg='Ingresa tu correo para el comprobante de pago.';render();return;}
-  if(!(await showConfirm('¿Pagar '+SOLES+WEEKLY_PLAN_PRICE+' y recibir '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo?')))return;
+  if(!(await showConfirm('¿Pagar '+SOLES_TXT+WEEKLY_PLAN_PRICE+' y recibir '+SOLES_TXT+WEEKLY_PLAN_CREDIT+' en saldo?')))return;
   _weeklyPlanBuyInProgress=true;
   busy=true;busyMsg='Verificando...';render();
   var prep;
