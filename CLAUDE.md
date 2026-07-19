@@ -95,6 +95,13 @@ Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 7 Sign
 exclusiva del VAULT, no se puede armar por BYO), 4 bebidas de la casa (sin gaseosas de
 reventa, decisión de marca), tamaños 15CM/30CM, doble proteína, salsa extra.
 
+**Formato de pan (fotografía/generación de producto):** el sándwich SIEMPRE es un pan
+tipo sub/hoagie alargado (formato "Subway"), sin importar el nombre del `BASES` elegido
+(`CLASSIC // WHITE`, `HERBS // CHEESE`, o `FOCACCIA // ARTESANAL`) — esos nombres
+describen sabor/textura de la masa, no la forma física del pan. Nunca usar pan de molde
+en rebanadas ni ninguna otra forma al buscar/generar fotos de producto para cualquier
+Signature o build.
+
 - **Pedido normal**: build-your-own o Signature → carrito multi-ítem → checkout
   (nombre/dirección/teléfono, opcional cuenta) → pago Culqi (tarjeta, reserva atómica
   `prepare-order`+cobro+`place-order`), Yape/Plin (manual, queda `pending` hasta que un
@@ -227,9 +234,11 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
    una solución de segunda — muchas herramientas (búsqueda de stock, edición de imágenes,
    generación de diseño) no aparecen en la lista visible por defecto, solo se cargan si
    se buscan.
-8. **Gastos reales (licencias, upgrades de plan, cualquier costo) requieren confirmación
-   explícita previa**, incluso si parecen gratuitos o de bajo costo — confirmar el
-   costo/tier antes de ejecutar la acción, no después.
+8. **Gastos reales (upgrades de plan, cualquier costo efectivo) requieren confirmación
+   explícita previa** — confirmar el costo/tier antes de ejecutar. Excepción ya aclarada
+   por el usuario: licencias de Adobe Stock en la categoría gratuita (`pricing:"free"`)
+   se pueden aprobar directamente sin pedir permiso cada vez, siempre que se confirme que
+   son gratuitas antes de licenciar.
 9. **Documentar en este archivo las capacidades/limitaciones técnicas reales que se vayan
    descubriendo** (qué modelo de generación de imágenes funciona en este plan y cuál no,
    qué dominios bloquea el proxy de red, qué vías sí funcionan para descargar assets) para
