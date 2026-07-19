@@ -20,6 +20,7 @@ interface Window {
   _lRewardLabel?: string | null;
   _lPendingPayment?: boolean;
   _lPayMethod?: string;
+  _lOrderCreatedAt?: number;
   _mLat?: number;
   _mLon?: number;
 }

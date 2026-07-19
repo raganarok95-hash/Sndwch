@@ -105,6 +105,10 @@ var CULQI_PUBLIC_KEY = 'pk_live_q82LnGIDlmQ0bpUC';
 // Yape y Plin confirmados activos en este número (el mismo de WhatsApp).
 var YAPE_PLIN_PHONE = '930957640';
 var YAPE_PLIN_NAME = 'SND//WCH';
+// Ventana real antes de que el cron cancele solo un pedido Yape/Plin sin confirmar —
+// DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
+// para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
+var STALE_MANUAL_PAYMENT_HOURS_CLIENT = 3;
 // Llave pública VAPID para notificaciones push — DEBE ser el mismo par que
 // VAPID_PRIVATE_KEY en el servidor (api/index.ts). La pública no es secreta.
 var VAPID_PUBLIC_KEY = 'BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3BDMSItRVHlan23RQZA6dF3wpbU1rA0';
@@ -1827,16 +1831,32 @@ function paymentMethodPickerHTML(t) {
     // mandando 'yape' al servidor (el backend solo distingue "pago manual pendiente de
     // confirmar" de todo lo demás, nunca trató Yape y Plin como cosas distintas más allá
     // de esa etiqueta).
+    //
+    // Yape/Plin va PRIMERO (antes Tarjeta aparecía antes) y con la etiqueta "RECOMENDADO"
+    // — es el único método que hoy no paga la comisión de Culqi (~4-5.5%), así que
+    // empujarlo primero es una decisión de negocio real, no solo de layout (ver Contexto
+    // de negocio en CLAUDE.md).
     return '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CÓMO PAGAS? //</div><div style="display:flex;gap:8px">'
-        + (culqiConfigured ? payMethodBtn('culqi', 'TARJETA', true) : '')
-        + payMethodBtn('yape', 'YAPE / PLIN', true)
+        + payMethodBtn('yape', 'YAPE / PLIN', true, 'RECOMENDADO')
+        + (culqiConfigured ? payMethodBtn('culqi', 'TARJETA', true, null) : '')
         + '</div>'
         + (manualPayMethod ? manualPayInstructionsHTML(t) : '')
         + '</div>';
 }
-function payMethodBtn(id, label, enabled) {
+// Monogramas simples (no los logos oficiales — reproducir la marca exacta de Yape/Plin
+// aquí sería un riesgo de marca registrada sin permiso del negocio) en los colores que
+// cada app usa en su propia identidad, para que el ojo reconozca "esto es Yape/Plin" de
+// un vistazo en vez de solo leer texto.
+function payMonogram(bg, letter) {
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:' + bg + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:900;margin-right:5px;flex-shrink:0">' + letter + '</span>';
+}
+function payMethodBtn(id, label, enabled, badge) {
     var sel = id === 'culqi' ? !manualPayMethod : manualPayMethod === id;
-    return '<div onclick="' + (enabled ? 'selectPayMethod(\'' + id + '\')' : '') + '" style="flex:1;text-align:center;background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 6px;cursor:' + (enabled ? 'pointer' : 'not-allowed') + ';opacity:' + (enabled ? 1 : .4) + '"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">' + label + '</div>' + (enabled ? '' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#A8C8B0;margin-top:2px;letter-spacing:.05em">PRONTO</div>') + '</div>';
+    var monogram = id === 'yape' ? payMonogram('#8A05BE', 'Y') + payMonogram('#00C4B3', 'P') : '';
+    return '<div onclick="' + (enabled ? 'selectPayMethod(\'' + id + '\')' : '') + '" style="flex:1;text-align:center;background:' + (sel ? '#1E4A38' : '#1A3028') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 6px;cursor:' + (enabled ? 'pointer' : 'not-allowed') + ';opacity:' + (enabled ? 1 : .4) + '">'
+        + (badge ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:' + GOLD + ';letter-spacing:.08em;margin-bottom:3px">' + badge + '</div>' : '')
+        + '<div style="display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">' + monogram + label + '</div>'
+        + (enabled ? '' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#A8C8B0;margin-top:2px;letter-spacing:.05em">PRONTO</div>') + '</div>';
 }
 function selectPayMethod(m) {
     manualPayMethod = (m === 'culqi' ? null : m);
@@ -1850,20 +1870,22 @@ function selectPayMethod(m) {
     // hace falta además descartar la que ya estaba aplicada.
     confirmRerender();
 }
+function payStep(n, label, body) {
+    return '<div style="display:flex;gap:10px;margin-top:' + (n === 1 ? '0' : '10px') + '"><div style="flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center">' + n + '</div><div style="flex:1;min-width:0"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:4px">' + label + '</div>' + body + '</div></div>';
+}
 function manualPayInstructionsHTML(t) {
     // Antes distinguía 'Yape'/'Plin' según manualPayMethod — desde que se fusionaron los
     // botones de arriba en uno solo, el valor siempre es 'yape' así que ya no hace falta.
-    // Reescrito como pasos numerados (antes un párrafo corrido) y con botón para copiar
-    // el MONTO además del número (antes solo se podía copiar el número — el monto había
-    // que teclearlo a mano en la app de Yape/Plin) — ronda de mejoras de fricción de
-    // Yape/Plin de esta sesión.
+    // Reescrito con el monto grande arriba de todo (antes el número de teléfono aparecía
+    // primero) y como 3 pasos numerados reales (antes 2 pasos genéricos en una sola
+    // línea) — ronda de mejoras de fricción de Yape/Plin de esta sesión.
     return '<div style="margin-top:10px;background:#1A3028;border:1px solid ' + GOLD + ';border-radius:10px;padding:14px 16px">'
-        + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">1. TRANSFIERE // 2. CONFIRMA AQUÍ</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:10px 12px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:#fff">' + YAPE_PLIN_PHONE + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0">' + esc(YAPE_PLIN_NAME) + ' · Yape o Plin</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR</button></div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;background:#2D5246;border-radius:8px;padding:10px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</div><button onclick="copyYapePlinAmount(\'' + t + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:6px">COPIAR MONTO</button></div>'
-        + '<div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';margin-top:6px;min-height:12px"></div>'
-        + '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:8px;line-height:1.4">Envía el pago desde tu app, luego confirma abajo con "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>'
-        + '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:8px;opacity:.85">🔒 Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</div>'
+        + '<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;letter-spacing:.2em;margin-bottom:2px">MONTO A TRANSFERIR //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:38px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</div></div>'
+        + payStep(1, 'COPIA EL MONTO', '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 10px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:900;color:#fff">' + SOLES + t + '</div><button onclick="copyYapePlinAmount(\'' + t + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;padding:7px 10px;border-radius:6px">COPIAR MONTO</button></div>')
+        + payStep(2, 'TRANSFIERE POR YAPE O PLIN A', '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:900;color:#fff">' + YAPE_PLIN_PHONE + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0">' + esc(YAPE_PLIN_NAME) + '</div></div><button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:10px;font-weight:700;padding:7px 10px;border-radius:6px">COPIAR NÚMERO</button></div>')
+        + '<div id="ypc-msg" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;margin-top:6px;margin-left:30px;min-height:12px"></div>'
+        + payStep(3, 'CONFIRMA AQUÍ ABAJO', '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4">Toca "YA REALICÉ EL PAGO". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
+        + '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:12px;opacity:.85">🔒 Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</div>'
         + '</div>';
 }
 function copyYapePlinPhone() {
@@ -2262,6 +2284,9 @@ function finalizeOrderSuccess(res, po, chargeId) {
     window._lRewardLabel = res.order && res.order.redeemed_reward ? res.order.redeemed_reward : null;
     window._lPendingPayment = !!(res.order && res.order.payment_status !== 'paid');
     window._lPayMethod = res.order && res.order.payment_method;
+    // Momento real de creación — usado para mostrar un plazo real (no inventado) antes de
+    // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
+    window._lOrderCreatedAt = Date.now();
     cart = [];
     resetBuilder();
     mode = null;
@@ -2293,6 +2318,12 @@ function reopenWhatsAppConfirm() {
 function sOSent() {
     var pending = window._lPendingPayment;
     var methodLabel = window._lPayMethod === 'yape' ? 'Yape' : window._lPayMethod === 'plin' ? 'Plin' : '';
+    // Plazo real (no inventado) para que confirmemos el pago manual — coincide con el cron
+    // que cancela solo un Yape/Plin sin confirmar tras STALE_MANUAL_PAYMENT_HOURS_CLIENT.
+    var manualWaiting = pending && !!methodLabel;
+    var deadlineLabel = manualWaiting && window._lOrderCreatedAt
+        ? new Date(window._lOrderCreatedAt + STALE_MANUAL_PAYMENT_HOURS_CLIENT * 3600000).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+        : null;
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#1E3932" class="fi">'
         + '<div style="margin-bottom:12px">' + WORDMARK(52, true) + '</div>'
         + (pending ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO REGISTRADO //</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>')
@@ -2300,6 +2331,8 @@ function sOSent() {
         + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
         + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
         + stBadge('RECIBIDO')
+        + (manualWaiting ? '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px"><span class="pulse" style="width:7px;height:7px;border-radius:50%;background:' + GOLD + ';display:inline-block"></span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em">ESPERANDO CONFIRMACIÓN DE PAGO</span></div>' : '')
+        + (deadlineLabel ? '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:6px">Confirmamos manualmente — si no lo hacemos antes de las ' + deadlineLabel + ', el pedido se cancela solo.</div>' : '')
         + '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:10px;line-height:1.5">Sigue el estado en PUNTOS → MIS PEDIDOS</div></div>'
         + '<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'MONTO A PAGAR //' : 'MONTO COBRADO //') + '</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">' + SOLES + (window._lTot || 0) + '</div>' + (window._lChargeId ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;margin-top:4px">Ref. pago: ' + window._lChargeId + '</div>' : '') + '</div>'
         + (cust ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'PUNTOS //' : 'PUNTOS GANADOS //') + '</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:' + (pending ? '12px' : '32px') + ';font-weight:900;color:' + GOLD + '">' + (pending ? '+' + (window._lTot || 0) + ' pts pendientes hasta confirmar tu pago' : '+' + (window._lTot || 0) + '<span style="font-size:14px"> pts</span>') + '</div></div>' : '')
