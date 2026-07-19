@@ -323,6 +323,9 @@ var sc='o_home',tab='order',busy=false,busyMsg='';
 var bkTo=null;
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
+// Paso actual del asistente de BUILD YOUR OWN (0=pan,1=proteína,2=toppings,3=queso,
+// 4=salsas) — ver sOBuild/byoStepBack/byoStepNext.
+var byoStep=0;
 var useCredit=false;
 var manualPayMethod=null;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
@@ -718,6 +721,10 @@ function loadBuild(bld){
   mode=bld.mode;sigId=bld.sigId||null;base=bld.base||null;prot=bld.prot||null;
   cheese=bld.cheese||null;tops=(bld.tops||[]).slice();sauces=(bld.sauces||[]).slice();
   size=bld.size||null;doubleProt=!!bld.doubleProt;extraSauce=!!bld.extraSauce;
+  // Si el cliente vuelve "ATRÁS" desde confirmar, que caiga en el último paso (salsas)
+  // en vez de tener que reavanzar los 5 pasos para reajustar un build ya completo
+  // (favorito/repetir pedido).
+  byoStep=4;
   enterConfirm();
 }
 // Convierte el "build" legado (un pedido/favorito de antes del carrito) al formato
@@ -734,6 +741,7 @@ function buildToCartItem(bld){
 // precargado en un pedido sin relación.
 function resetBuilder(){
   sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
+  byoStep=0;
 }
 function startOrder(m){
   resetBuilder();
@@ -1218,7 +1226,15 @@ function sOSig(){
         +(cust?'<button onclick="doRequestRestockNotify(\''+s.id+'\')" '+(notifyRequested?'disabled':'')+' style="all:unset;cursor:'+(notifyRequested?'default':'pointer')+';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+(notifyRequested?'#25D366':GOLD)+';letter-spacing:.08em">'+(notifyRequested?'✓ TE AVISAMOS CUANDO VUELVA':'AVÍSAME CUANDO VUELVA →')+'</button>':'')
         +'</div>';
     }
-    var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';
+    // Antes, sin foto real (ver SIG_IMG — 4 de 6 signatures la tienen hoy), la tarjeta
+    // simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al borde
+    // en esas filas mientras las demás tenían una miniatura, dando una lista "parchada"
+    // (hallazgo del dueño). Mismo bloque de reserva que ya usa sigPreviewOverlayHTML
+    // cuando no hay foto, a la misma escala que la miniatura real — nunca se inventa
+    // una foto, solo se pareja el espacio que ocupa.
+    var thumb=SIG_IMG[s.id]
+      ?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
+      :'<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">'+icon('sandwich',26,GOLD)+'</div>';
     return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#FFFFFF">'+s.n+'<span style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span>'+(s.chef?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:'+GOLD+';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>':'')+lowStockNote(s.prot)+'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">'+icon('camera',11,GOLD)+'VER FOTO →</div></div></div></div>';
   }).join('');
   var sig=SIGS.find(function(x){return x.id===sigId;});
@@ -1262,42 +1278,71 @@ function sigPreviewOverlayHTML(){
 }
 
 // ORDER BUILD
+// Antes las 5 categorías (pan, proteína, toppings, queso, salsas — 13 salsas en total)
+// vivían en un solo scroll continuo de ~3 pantallas de largo, todas con la misma
+// tarjeta idéntica sin ninguna jerarquía visual entre categorías — el "muro de texto"
+// que más distancia a esta pantalla de una experiencia de armado premium (ver Subway:
+// un paso a la vez, con progreso claro). Convertido a un asistente de 5 pasos —
+// mismos datos/validaciones de siempre (base/prot/tops/cheese/sauces), solo cambia
+// cómo se presentan. BYO_STEP_LABELS/byoStep* viven junto al resto del estado del
+// builder (ver resetBuilder/loadBuild).
+var BYO_STEP_LABELS=['PAN','PROTEÍNA','TOPPINGS','QUESO','SALSAS'];
+function byoStepCanContinue(){
+  if(byoStep===0)return!!(size&&base);
+  if(byoStep===1)return!!prot;
+  if(byoStep===4)return sauces.length>0;
+  return true;
+}
+function byoStepBack(){
+  if(byoStep>0){byoStep--;render();}else go('o_home');
+}
+function byoStepNext(){
+  if(!byoStepCanContinue())return;
+  if(byoStep<4){byoStep++;render();}else enterConfirm();
+}
 function sOBuild(){
   var tL=tops.length,sL=sauces.length;
-  var h=H('BUILD YOUR OWN','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 110px;overflow-y:auto" class="fi">'+SZTOG();
-  h+=ST('01','PAN','');
-  h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
-  h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('02','PROTEÍNA','');
-  h+=PROTS.filter(function(p){return !p.vaultOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?GOLD:'#444')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
-  h+='<div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
-  h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  h+=TOPS.map(function(t: any){
-    var av=isAvail(t.id);
-    if(!av)return TOPOFF(t);
-    var sel=tops.indexOf(t.id)>=0;
-    return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+GOLD+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
-  }).join('');
-  h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('04','QUESO','Incluido sin costo, elige 1.');
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-  h+=CHEESE.map(function(c){
-    var av=isAvail(c.id);
-    if(!av)return TOPOFF(c);
-    var sel=cheese===c.id;
-    return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
-  }).join('');
-  h+='</div><div style="height:1px;background:#1E3932;margin:20px 0"></div>';
-  h+=ST('05','SALSAS','Hasta 3, incluidas sin costo.');
-  h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
-  h+=SAUCES.map(function(s){
-    var av=isAvail(s.id);
-    if(!av)return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#A8C8B0">'+s.l+'<span style="color:#A8C8B0"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
-    var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-    return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+GOLD+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
-  }).join('');
-  h+=AB(size&&prot&&sL>0?total():null,!!(size&&base&&prot&&sL>0),'go(\'o_home\')','enterConfirm()');
+  var progressBar='<div style="display:flex;gap:3px;margin-bottom:8px">'+BYO_STEP_LABELS.map(function(_,i){var dn=i<=byoStep;return'<div style="flex:1;height:3px;background:'+(dn?GOLD:'#3A6B58')+';border-radius:3px"></div>';}).join('')+'</div>';
+  var stepLabel='<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:18px">PASO '+(byoStep+1)+' // 5</div>';
+  var h=H('BUILD YOUR OWN','byoStepBack()',true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'+progressBar+stepLabel;
+  if(byoStep===0){
+    h+=SZTOG();
+    h+=ST('01','PAN','');
+    h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
+  }else if(byoStep===1){
+    h+=ST('02','PROTEÍNA','');
+    h+=PROTS.filter(function(p){return !p.vaultOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(prot===p.id?GOLD:'#444')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
+  }else if(byoStep===2){
+    h+=ST('03','TOPPINGS','Sin límite, elige los que quieras.');
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=TOPS.map(function(t: any){
+      var av=isAvail(t.id);
+      if(!av)return TOPOFF(t);
+      var sel=tops.indexOf(t.id)>=0;
+      return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+t.l+'<span style="color:'+GOLD+'"> // </span>'+t.s+'</div>'+(t.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;margin-top:3px">'+t.d+'</div>':'')+'</div>';
+    }).join('');
+    h+='</div>';
+  }else if(byoStep===3){
+    h+=ST('04','QUESO','Incluido sin costo, elige 1.');
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=CHEESE.map(function(c){
+      var av=isAvail(c.id);
+      if(!av)return TOPOFF(c);
+      var sel=cheese===c.id;
+      return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">'+c.l+'</div></div>';
+    }).join('');
+    h+='</div>';
+  }else{
+    h+=ST('05','SALSAS','Hasta 3, incluidas sin costo — elige al menos 1.');
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
+    h+=SAUCES.map(function(s){
+      var av=isAvail(s.id);
+      if(!av)return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#A8C8B0">'+s.l+'<span style="color:#A8C8B0"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
+      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#FFFFFF">'+s.l+'<span style="color:'+GOLD+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:4px">'+s.d+'</p></div>';
+    }).join('');
+  }
+  h+=AB(size?total():null,byoStepCanContinue(),'byoStepBack()','byoStepNext()',byoStep<4?'SIGUIENTE →':'CONTINUAR //');
   return h;
 }
 function CARDOFF(item){return'<div style="background:#1A3028;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:#A8C8B0">'+item.l+'<span style="color:#A8C8B0"> // </span>'+item.s+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div></div>';}
@@ -1835,22 +1880,17 @@ function paymentMethodPickerHTML(t){
     +(manualPayMethod?manualPayInstructionsHTML(t):'')
     +'</div>';
 }
-// Monogramas simples (no los logos oficiales — reproducir la marca exacta de Yape/Plin
-// aquí sería un riesgo de marca registrada sin permiso del negocio) en los colores que
-// cada app usa en su propia identidad, para que el ojo reconozca "esto es Yape/Plin" de
-// un vistazo en vez de solo leer texto. Cuadrado redondeado (squircle) en vez de círculo
-// — se acerca más al lenguaje visual real de un ícono de app — con degradado y sombra
-// sutiles para que no se vea plano/de baja calidad (versión anterior: círculo chico,
-// color sólido, sin ninguna profundidad).
-function payMonogram(g1,g2,letter){
-  return'<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,'+g1+','+g2+');color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:900;margin-right:6px;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)">'+letter+'</span>';
-}
+// Antes cada botón llevaba un monograma Y/P morado/turquesa (los colores propios de esas
+// apps) — quedaba fuera de lugar frente al resto de la app (monocromo + dorado, ver
+// icon()/ICONS) y se veía de baja calidad a ese tamaño chico (hallazgo directo del dueño).
+// TARJETA nunca tuvo ícono al lado del texto — por consistencia, YAPE/PLIN tampoco lo
+// necesita: el texto ya identifica el método, sin arriesgar además un uso no autorizado
+// de la marca de Yape/Plin.
 function payMethodBtn(id,label,enabled,badge){
   var sel=id==='culqi'?!manualPayMethod:manualPayMethod===id;
-  var monogram=id==='yape'?payMonogram('#A020D8','#6B0FA0','Y')+payMonogram('#00E0C6','#00998A','P'):'';
   return'<div onclick="'+(enabled?'selectPayMethod(\''+id+'\')':'')+'" style="flex:1;text-align:center;background:'+(sel?'#1E4A38':'#1A3028')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 6px;cursor:'+(enabled?'pointer':'not-allowed')+';opacity:'+(enabled?1:.4)+'">'
     +(badge?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:'+GOLD+';letter-spacing:.08em;margin-bottom:3px">'+badge+'</div>':'')
-    +'<div style="display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">'+monogram+label+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">'+label+'</div>'
     +(enabled?'':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:#A8C8B0;margin-top:2px;letter-spacing:.05em">PRONTO</div>')+'</div>';
 }
 function selectPayMethod(m){
