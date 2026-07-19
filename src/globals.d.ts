@@ -21,6 +21,7 @@ interface Window {
   _lPendingPayment?: boolean;
   _lPayMethod?: string;
   _lOrderCreatedAt?: number;
+  _lRef?: string;
   _mLat?: number;
   _mLon?: number;
 }
