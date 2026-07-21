@@ -73,6 +73,36 @@ export async function actAdminManualPoints(b: any) {
   return { success: true, name: rows[0].name, newPoints };
 }
 
+// Corrección de saldo de crédito interno a mano — no existía ninguna herramienta
+// equivalente a actAdminManualPoints para credit_balance (hallazgo de auditoría de
+// código, ALTO). Acepta delta positivo o negativo (a diferencia de los puntos
+// manuales, que solo suman) porque también sirve para corregir un exceso otorgado por
+// error, no solo para dar de más.
+export async function actAdminManualCredit(b: any) {
+  const s = await requireAdmin(b.token);
+  const phone = String(b.phone || "").trim();
+  const delta = Number(b.delta);
+  if (!phone || !delta || !isFinite(delta)) throw new ApiError("Ingresa teléfono y un monto válido (puede ser negativo).");
+  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=name`);
+  if (!rows.length) throw new ApiError("Cliente no encontrado: " + phone, 404);
+  let updated: any;
+  try {
+    updated = await rpc("admin_adjust_credit", { p_phone: phone, p_delta: delta });
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("insufficient_balance")) {
+      throw new ApiError("Ese descuento dejaría el saldo del cliente en negativo.", 409);
+    }
+    throw e;
+  }
+  await sbInsert("credit_ledger", {
+    customer_phone: phone,
+    delta,
+    reason: "Ajuste manual (admin)",
+  });
+  await logAdminAction(s.phone, "manual-credit", phone, { delta });
+  return { success: true, name: rows[0].name, newBalance: updated.credit_balance };
+}
+
 export async function actAdminAccountsList(b: any) {
   await requireAdmin(b.token);
   return { accounts: await sbGet("admin_accounts", "order=created_at.asc") };
@@ -106,7 +136,7 @@ export async function actAdminAccountsDelete(b: any) {
 }
 
 export async function actAdminInventoryToggle(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   const name = String(b.name || "").trim();
   const inStock = !!b.inStock;
@@ -117,11 +147,15 @@ export async function actAdminInventoryToggle(b: any) {
     await sbInsert("inventory", { product_code: code, product_name: name, in_stock: inStock });
   }
   if (inStock) await notifyRestockedSignatures(code);
+  // Acciones de config comparable (catalog-set-price, set-store-hours) ya se auditan —
+  // esta quedaba afuera por inconsistencia, no por menor sensibilidad real (hallazgo de
+  // auditoría de código, BAJO).
+  await logAdminAction(s.phone, "inventory-toggle", code, { inStock });
   return { success: true };
 }
 
 export async function actAdminInventorySetStock(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   const name = String(b.name || "").trim();
   if (!code) throw new ApiError("Falta el producto.");
@@ -135,24 +169,30 @@ export async function actAdminInventorySetStock(b: any) {
     await sbInsert("inventory", { product_code: code, product_name: name, in_stock: qty == null || qty > 0, ...upd });
   }
   if (qty == null || qty > 0) await notifyRestockedSignatures(code);
+  await logAdminAction(s.phone, "inventory-set-stock", code, { qty });
   return { success: true };
 }
 
 const EXPORT_LIMIT = 5000;
 export async function actAdminExportOrders(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "orders",
     `select=ref,date,customer_name,customer_phone,contact_phone,customer_address,customer_email,summary,total,status,payment_status,payment_method,mode,size,eta_minutes,redeemed_reward,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
   );
+  // Exporta teléfono/dirección/correo de TODOS los pedidos — tan sensible como cualquier
+  // otra acción admin que ya se audita, y no quedaba ningún rastro de quién lo descargó
+  // (hallazgo de auditoría de código, ALTO).
+  await logAdminAction(s.phone, "export-orders", undefined, { count: Math.min(rows.length, EXPORT_LIMIT) });
   return { orders: rows.slice(0, EXPORT_LIMIT), truncated: rows.length > EXPORT_LIMIT };
 }
 export async function actAdminExportCustomers(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "customers",
     `select=phone,name,email,points,pending_points,total_orders,total_redeemed,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
   );
+  await logAdminAction(s.phone, "export-customers", undefined, { count: Math.min(rows.length, EXPORT_LIMIT) });
   return { customers: rows.slice(0, EXPORT_LIMIT), truncated: rows.length > EXPORT_LIMIT };
 }
 

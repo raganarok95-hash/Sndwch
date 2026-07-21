@@ -37,7 +37,7 @@ import {
   actRequestRestockNotify,
 } from "./actions/customer.ts";
 import {
-  actAdminManualPoints, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
+  actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
   actAdminInventoryToggle, actAdminInventorySetStock, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
@@ -107,6 +107,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "reconcile-culqi-charges": actReconcileCulqiCharges,
   "remind-low-stock": actRemindLowStock,
   "admin-manual-points": actAdminManualPoints,
+  "admin-manual-credit": actAdminManualCredit,
   "admin-accounts-list": actAdminAccountsList,
   "admin-accounts-add": actAdminAccountsAdd,
   "admin-accounts-delete": actAdminAccountsDelete,

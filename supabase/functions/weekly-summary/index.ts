@@ -8,35 +8,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // registro histórico de consumo por ingrediente (solo el stock_qty actual), así que la
 // lista es de estado actual, no una proyección — evita inventar una analítica que no existe.
 
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
+import { emailShell } from "../_shared/email-shell.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
 const OWNER_EMAIL = Deno.env.get("OWNER_EMAIL") ?? "raganarok95@gmail.com";
-
-function sbHeaders() {
-  return { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" };
-}
-async function sbGet(table: string, query: string) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders() });
-  if (!r.ok) throw new Error(`Error leyendo ${table}: ${await r.text()}`);
-  return r.json();
-}
-async function debugLog(detail: unknown) {
-  try {
-    await fetch(`${SB_URL}/rest/v1/debug_logs`, { method: "POST", headers: { ...sbHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ source: "weekly-summary", detail }) });
-  } catch (_e) {}
-}
-async function verifyCronSecret(provided: unknown): Promise<boolean> {
-  if (typeof provided !== "string" || !provided) return false;
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/verify_cron_secret`, { method: "POST", headers: sbHeaders(), body: JSON.stringify({ p_secret: provided }) });
-    if (!r.ok) return false;
-    return await r.json();
-  } catch {
-    return false;
-  }
-}
+const SOURCE = "weekly-summary";
 
 function pctDelta(current: number, previous: number): string {
   if (!previous) return current ? "+100%" : "0%";
@@ -60,7 +38,7 @@ Deno.serve(async (req: Request) => {
   if (!(await verifyCronSecret(req.headers.get("x-cron-secret")))) return new Response("No autorizado", { status: 401 });
 
   if (!RESEND_API_KEY) {
-    await debugLog({ stage: "skipped", reason: "RESEND_API_KEY no configurado" });
+    await debugLog(SOURCE, { stage: "skipped", reason: "RESEND_API_KEY no configurado" });
     return new Response(JSON.stringify({ error: "RESEND_API_KEY no configurado" }), { status: 500 });
   }
 
@@ -113,47 +91,41 @@ Deno.serve(async (req: Request) => {
     const row = (label: string, value: string) =>
       `<tr><td style="padding:6px 0;color:#A8C8B0;font-size:13px">${label}</td><td style="padding:6px 0;color:#fff;font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
 
-    const html = `
-      <div style="font-family:Arial,sans-serif;background:#1E3932;padding:32px;color:#fff">
-        <div style="max-width:420px;margin:0 auto;background:#2D5246;border-radius:14px;padding:28px">
-          <div style="font-size:26px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:#CBA258">//</span>WCH</div>
-          <div style="font-size:11px;color:#CBA258;letter-spacing:.2em;margin-bottom:20px">RESUMEN // SEMANAL</div>
-          <table style="width:100%;border-collapse:collapse">
-            ${row("Ventas esta semana", "S/" + revenueThisWeek + " (" + pctDelta(revenueThisWeek, revenuePrevWeek) + ")")}
-            ${row("Pedidos pagados", String(paidThisWeek.length) + " (" + pctDelta(paidThisWeek.length, paidPrevWeek.length) + ")")}
-            ${row("Ticket promedio", "S/" + avgTicketThisWeek)}
-            ${row("Clientes nuevos", String(customersThisWeek.length))}
-          </table>
-          ${needsRestock.length
-            ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
-                <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">PARA COMPRAR ESTA SEMANA //</div>
-                ${needsRestock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${i.in_stock === false ? "⛔" : "⚠"} ${i.product_name || i.product_code}${i.stock_qty != null ? " — quedan " + i.stock_qty : ""}</div>`).join("")}
-              </div>`
-            : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Inventario sin alertas.</div>`}
-          ${possibleOverstock.length
-            ? `<div style="margin-top:14px;padding:14px;background:rgba(58,134,255,.1);border:1px solid rgba(58,134,255,.3);border-radius:8px">
-                <div style="font-size:11px;color:#3A86FF;letter-spacing:.1em;margin-bottom:6px">POSIBLE SOBRE-STOCK (revisa vencimiento) //</div>
-                ${possibleOverstock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">📦 ${i.product_name || i.product_code} — ${i.stock_qty} unidades</div>`).join("")}
-                <div style="font-size:10px;color:#8BAF9A;margin-top:6px">Basado en nivel de stock, no en velocidad de venta real.</div>
-              </div>`
-            : ""}
-          ${avgDeliveryMin != null
-            ? `<div style="margin-top:14px;padding:14px;background:${deliveryOffPromise ? "rgba(255,71,87,.12)" : "rgba(37,211,102,.1)"};border:1px solid ${deliveryOffPromise ? "rgba(255,71,87,.3)" : "rgba(37,211,102,.3)"};border-radius:8px">
-                <div style="font-size:11px;color:${deliveryOffPromise ? "#ff4757" : "#25D366"};letter-spacing:.1em;margin-bottom:4px">TIEMPO REAL DE ENTREGA //</div>
-                <div style="font-size:13px;color:#F2F0EB">Promedio: <b>${avgDeliveryMin} min</b> (prometemos ${ESTIMATED_DELIVERY_RANGE[0]}-${ESTIMATED_DELIVERY_RANGE[1]} min)</div>
-                ${deliveryOffPromise ? `<div style="font-size:11px;color:#ff4757;margin-top:4px">⚠ Se está desviando de lo prometido — considera ajustar el rango o el proceso.</div>` : ""}
-              </div>`
-            : ""}
-          ${cancelReasonRows.length
-            ? `<div style="margin-top:14px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
-                <div style="font-size:11px;color:#A8C8B0;letter-spacing:.1em;margin-bottom:6px">MOTIVOS DE CANCELACIÓN ESTA SEMANA //</div>
-                ${cancelReasonRows.map(([reason, count]) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${reason} — <b>${count}</b></div>`).join("")}
-              </div>`
-            : ""}
-          <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
-        </div>
-      </div>
-    `;
+    const html = emailShell("RESUMEN // SEMANAL", `
+      <table style="width:100%;border-collapse:collapse">
+        ${row("Ventas esta semana", "S/" + revenueThisWeek + " (" + pctDelta(revenueThisWeek, revenuePrevWeek) + ")")}
+        ${row("Pedidos pagados", String(paidThisWeek.length) + " (" + pctDelta(paidThisWeek.length, paidPrevWeek.length) + ")")}
+        ${row("Ticket promedio", "S/" + avgTicketThisWeek)}
+        ${row("Clientes nuevos", String(customersThisWeek.length))}
+      </table>
+      ${needsRestock.length
+        ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
+            <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">PARA COMPRAR ESTA SEMANA //</div>
+            ${needsRestock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${i.in_stock === false ? "⛔" : "⚠"} ${i.product_name || i.product_code}${i.stock_qty != null ? " — quedan " + i.stock_qty : ""}</div>`).join("")}
+          </div>`
+        : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Inventario sin alertas.</div>`}
+      ${possibleOverstock.length
+        ? `<div style="margin-top:14px;padding:14px;background:rgba(58,134,255,.1);border:1px solid rgba(58,134,255,.3);border-radius:8px">
+            <div style="font-size:11px;color:#3A86FF;letter-spacing:.1em;margin-bottom:6px">POSIBLE SOBRE-STOCK (revisa vencimiento) //</div>
+            ${possibleOverstock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">📦 ${i.product_name || i.product_code} — ${i.stock_qty} unidades</div>`).join("")}
+            <div style="font-size:10px;color:#8BAF9A;margin-top:6px">Basado en nivel de stock, no en velocidad de venta real.</div>
+          </div>`
+        : ""}
+      ${avgDeliveryMin != null
+        ? `<div style="margin-top:14px;padding:14px;background:${deliveryOffPromise ? "rgba(255,71,87,.12)" : "rgba(37,211,102,.1)"};border:1px solid ${deliveryOffPromise ? "rgba(255,71,87,.3)" : "rgba(37,211,102,.3)"};border-radius:8px">
+            <div style="font-size:11px;color:${deliveryOffPromise ? "#ff4757" : "#25D366"};letter-spacing:.1em;margin-bottom:4px">TIEMPO REAL DE ENTREGA //</div>
+            <div style="font-size:13px;color:#F2F0EB">Promedio: <b>${avgDeliveryMin} min</b> (prometemos ${ESTIMATED_DELIVERY_RANGE[0]}-${ESTIMATED_DELIVERY_RANGE[1]} min)</div>
+            ${deliveryOffPromise ? `<div style="font-size:11px;color:#ff4757;margin-top:4px">⚠ Se está desviando de lo prometido — considera ajustar el rango o el proceso.</div>` : ""}
+          </div>`
+        : ""}
+      ${cancelReasonRows.length
+        ? `<div style="margin-top:14px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
+            <div style="font-size:11px;color:#A8C8B0;letter-spacing:.1em;margin-bottom:6px">MOTIVOS DE CANCELACIÓN ESTA SEMANA //</div>
+            ${cancelReasonRows.map(([reason, count]) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${reason} — <b>${count}</b></div>`).join("")}
+          </div>`
+        : ""}
+      <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
+    `);
 
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -166,7 +138,7 @@ Deno.serve(async (req: Request) => {
       }),
     });
     const data = await r.json().catch(() => ({}));
-    await debugLog({
+    await debugLog(SOURCE, {
       stage: "resend_response", ok: r.ok, statusCode: r.status, data, revenueThisWeek, paidCount: paidThisWeek.length,
       avgDeliveryMin, deliveryOffPromise, overstockCount: possibleOverstock.length, cancelledCount: cancelledThisWeek.length,
     });
@@ -178,7 +150,7 @@ Deno.serve(async (req: Request) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    await debugLog({ stage: "exception", error: String(e) });
+    await debugLog(SOURCE, { stage: "exception", error: String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
   }
 });
