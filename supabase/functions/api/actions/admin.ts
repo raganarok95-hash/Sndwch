@@ -677,9 +677,9 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "PLAN SEMANAL",
-    whatsapp: "Paga S/90 hoy, recibe S/100 en saldo para pedir cuando quieras esta semana. El saldo no vence.",
+    whatsapp: "Paga S/95 hoy, recibe S/100 en saldo para pedir cuando quieras esta semana. El saldo no vence.",
     caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
-    photoIdea: "Gráfico 'S/90 → S/100', o varios pedidos de la semana juntos.",
+    photoIdea: "Gráfico 'S/95 → S/100', o varios pedidos de la semana juntos.",
   },
   {
     theme: "RECORDATORIO",

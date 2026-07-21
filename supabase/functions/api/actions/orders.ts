@@ -4,7 +4,7 @@
 // la expiración automática de pagos manuales nunca confirmados.
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
-  isWithinStoreHours, computeRankName,
+  isWithinStoreHours, computeRankName, loadStoreHours,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
@@ -298,6 +298,12 @@ export async function actPrepareOrder(b: any) {
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
 
+  // Recarga el horario real configurado por el admin (igual que loadCatalogPrices()
+  // abajo para precios) — sin esto, una instancia fría de la función validaría contra
+  // STORE_HOURS de respaldo hardcodeado en vez del horario que el dueño configuró, y
+  // podría aceptar un pedido con el negocio cerrado o rechazar uno válido en horario
+  // extendido (hallazgo de auditoría de código).
+  await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   if (scheduledFor) {
     const schedDate = new Date(scheduledFor);
@@ -513,6 +519,10 @@ export async function actPlaceOrder(b: any) {
     if (!withinLimit) throw new ApiError("Ya tienes varios pedidos con pago pendiente de confirmar. Espera a que se confirmen antes de hacer otro.", 429);
   }
 
+  // Recarga el horario real configurado por el admin — sin esto, una instancia fría de
+  // la función validaría contra STORE_HOURS de respaldo hardcodeado (hallazgo de
+  // auditoría de código, mismo motivo que en actPrepareOrder arriba).
+  await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   if (scheduledFor) {
     const schedDate = new Date(scheduledFor);
@@ -1042,33 +1052,44 @@ export async function actCancelMyOrder(b: any) {
 
   await restockOrderItems(order.items);
 
-  // Devuelve lo que el cliente ya gastó para pagar este pedido — crédito interno usado,
-  // y/o los puntos de una recompensa canjeada — antes esto se perdía para siempre al
-  // autocancelar (hallazgo de auditoría). Solo aplica si el pedido llegó a debitar algo
-  // de verdad: payment_status debe ser "paid" (un Yape/Plin todavía "pending" nunca pasó
-  // por finalize_order_customer_update, así que no hay nada que revertir ahí). No se
-  // tocan los puntos GANADOS por la compra ni el conteo de total_orders — es una
-  // devolución de lo gastado, no un "deshacer" completo del pedido.
+  // Devuelve lo que el cliente ya gastó para pagar este pedido (crédito interno usado)
+  // Y revierte lo que había GANADO por la compra (puntos 1:1 sobre el total, el conteo
+  // de total_orders, y el contador de recompensas canjeadas) — antes solo se devolvían
+  // los puntos de una recompensa canjeada, dejando los puntos GANADOS como un premio
+  // permanente aunque el pedido se cancelara y el stock se restituyera. Eso permitía
+  // "pedir con crédito propio → cancelar → repetir" para farmear puntos infinitos sin
+  // costo real, e inflar total_orders para desbloquear rangos/THE VAULT sin comprar de
+  // verdad (hallazgo de auditoría de código — CRÍTICO). Ahora se revierte exactamente
+  // el mismo delta neto que finalizeAndInsertOrder/confirmManualPayment aplicaron al
+  // pagar: total ganado menos puntos de recompensa ya restados en ese momento. Solo
+  // aplica si el pedido llegó a debitar/acreditar algo de verdad: payment_status debe
+  // ser "paid" (un Yape/Plin todavía "pending" nunca pasó por finalize_order_customer_
+  // update, así que no hay nada que revertir ahí). El propio RPC bloquea la reversión
+  // (y por tanto la cancelación) si el cliente ya gastó esos puntos en otra parte antes
+  // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
+  // insuficiente" en vez de perder la cuenta en silencio.
   const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) : 0;
-  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund > 0)) {
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
+  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
+  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
     await rpc("finalize_order_customer_update", {
       p_phone: order.customer_phone,
       p_points_delta: pointsToRefund,
       p_credit_delta: creditToRefund,
-      p_total_orders_delta: 0,
+      p_total_orders_delta: totalOrdersDelta,
       p_last_address: null,
-      p_total_redeemed_delta: 0,
+      p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
-    if (pointsToRefund > 0) {
+    if (pointsToRefund !== 0) {
       refundAudits.push(sbInsert("transactions", {
         customer_phone: order.customer_phone,
-        type: "earn_confirmed",
+        type: "cancel_reversal",
         points: pointsToRefund,
-        description: "Puntos de recompensa devueltos por cancelación (" + order.ref + ")",
+        description: "Ajuste de puntos por cancelación de pedido (" + order.ref + ")",
         order_ref: order.ref,
         confirmed: true,
       }));
