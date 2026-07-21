@@ -541,7 +541,11 @@ export async function actAnniversaryGreeting(b: any) {
   const mm = String(limaNow.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(limaNow.getUTCDate()).padStart(2, "0");
   const year = limaNow.getUTCFullYear();
-  const customers = await sbGet("customers", "select=phone,name,created_at");
+  // Cap de seguridad — este cron necesita revisar a todos los clientes (cualquiera podría
+  // cumplir años hoy), pero sin ningún límite era una query totalmente sin techo a medida
+  // que crece la base (hallazgo de auditoría de arquitectura backend). 20000 es muy por
+  // encima de cualquier volumen realista de esta sandwichería para no perder cobertura real.
+  const customers = await sbGet("customers", "select=phone,name,created_at&limit=20000");
   let greeted = 0;
   for (const c of customers) {
     if (!c.created_at) continue;

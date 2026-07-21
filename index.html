@@ -81,11 +81,7 @@ body.no-fi .fi{animation:none}
 var SB_URL = 'https://rjosezuoyngiadunfzyn.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb3NlenVveW5naWFkdW5menluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODA0MTgsImV4cCI6MjA5MjE1NjQxOH0.fl4gayRXQvplNPzhf4TEzyWqrZXxXYBYHV0tMdJw1fs';
 var API_FN_URL = SB_URL + '/functions/v1/api';
-// ACCENT2 — segundo acento (ya se usaba suelto en PREPARANDO/ETA/programado antes de
-// tener nombre propio) para diferenciar jerarquía: dorado = acción primaria, azul =
-// acción secundaria/informativa. Sin esto, un botón "outline" y uno "filled" solo se
-// distinguían por el relleno, ambos en el mismo dorado.
-var WA = '51930957640', GOLD = '#CBA258', ACCENT2 = '#3A86FF';
+var WA = '51930957640', GOLD = '#CBA258';
 // Sistema de profundidad compartido — antes tarjetas, botones y la barra inferior eran
 // puro relleno plano sin ninguna sombra ni degradado, lo que leía más chato de lo que el
 // resto del sistema visual (tipografía condensada, motivo "//", monospace, textura de
@@ -168,7 +164,7 @@ var STATUSES = {
     'PREPARANDO': { c: '#3A86FF', next: 'EN CAMINO', icon: '' },
     'EN CAMINO': { c: '#9b6fff', next: 'ENTREGADO', icon: 'moto' },
     'ENTREGADO': { c: '#25D366', next: null, icon: 'check' },
-    'CANCELADO': { c: '#8B8B8B', next: null, icon: 'close' }
+    'CANCELADO': { c: '#A5A5A5', next: null, icon: 'close' }
 };
 var STEPS = ['RECIBIDO', 'PREPARANDO', 'EN CAMINO', 'ENTREGADO'];
 var BASES = [
@@ -287,7 +283,7 @@ var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig0
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
-var PROT_IMG = {};
+var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/prot_p04.jpg', P05: 'img/prot_p05.jpg', P06: 'img/prot_p06.jpg' };
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -504,6 +500,12 @@ var cust = null, isAdmin = false, atab = 'reg', aErr = '', refCode = '';
 var _googleIdToken = null, _googleLinkedEmail = null;
 function clearGoogleLink() { _googleIdToken = null; _googleLinkedEmail = null; }
 var adminOrders = [], myOrders = [], adminOrdersTruncated = false;
+// Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
+// updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
+// diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
+// hora pico podían disparar dos actualizaciones de estado seguidas (hallazgo de
+// auditoría de UX).
+var _adminOrderActionInProgress = false;
 var agPhone = '', agPts = '', agMsg = '';
 var pollTimer = null, lastPollCount = 0, pollFailing = false;
 var isOffline = !navigator.onLine;
@@ -554,6 +556,11 @@ var notifSoundPreset = localStorage.getItem('sw_notif_sound') || 'campana';
 var adminLightMode = localStorage.getItem('sw_admin_light') === '1';
 var recNewPin = null;
 var recEmailMasked = null;
+// El PIN nuevo se mostraba siempre visible en texto plano y grande apenas se generaba —
+// riesgo real de shoulder-surfing en un dispositivo compartido (hallazgo de auditoría de
+// UX). Ahora arranca oculto (blur) y el cliente decide cuándo revelarlo con un tap.
+var recPinRevealed = false;
+function togglePinReveal() { recPinRevealed = !recPinRevealed; render(); }
 var myAddresses = [], myFavorites = [], pickedAddrId = null;
 var wPhone = '', wAmt = '', wMsg = '';
 var gcPhone = '', gcAmt = '', gcMsg = '';
@@ -662,7 +669,7 @@ function renderOverlays() {
         html += '<div style="position:fixed;left:16px;right:16px;bottom:20px;z-index:400;display:flex;justify-content:center" class="fi">'
             + '<div style="max-width:420px;width:100%;background:' + (isErr ? '#3a1414' : '#1A3028') + ';border:1px solid ' + (isErr ? 'rgba(255,85,85,.5)' : 'rgba(203,162,88,.4)') + ';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
             + '<div style="flex:1;font-family:\'Barlow\',sans-serif;font-size:13px;color:' + (isErr ? '#ffb3b3' : '#F2F0EB') + ';line-height:1.4">' + esc(toastMsg) + '</div>'
-            + '<button onclick="dismissToast()" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#A8C8B0') + ';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
+            + '<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#A8C8B0') + ';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
             + '</div></div>';
     }
     if (confirmState) {
@@ -811,6 +818,21 @@ async function sbG(t, q) { var r = await fetch(SB_URL + '/rest/v1/' + t + '?' + 
 // UTILS
 function fn(arr, id) { var i = arr.find(function (x) { return x.id === id; }); return i ? i.l + ' // ' + i.s : ''; }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+// Valida DD/MM/AAAA y que la fecha exista de verdad en el calendario (antes solo se
+// validaba el formato con regex — "31/02/2026" pasaba igual aunque febrero no tenga 31
+// días, hallazgo de auditoría de UX). new Date hace roll-over silencioso de fechas
+// imposibles (31/02 se vuelve 03/03), así que comparamos los 3 campos contra lo que
+// realmente quedó construido para detectar ese roll-over.
+function parseBdayDDMMYYYY(raw) {
+    var m = String(raw || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m)
+        return null;
+    var d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d)
+        return null;
+    return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
 // Bloque de texto legal titulado — usado por sPLegal() y sPReturns() (antes cada una
 // tenía su propia copia idéntica de este helper).
 function sec(t, b) { return '<div style="margin-bottom:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px">' + t + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;line-height:1.6">' + b + '</p></div>'; }
@@ -863,7 +885,7 @@ function H(sub, bk, showCart) {
     var s2 = sub ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#1c1c1c;letter-spacing:.35em;margin-top:4px">BUILD // YOUR // BITE</div>';
     // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
     // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
-    var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:#2D5246;border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
+    var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:#2D5246;border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
     return '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + '</div>';
 }
 function NAV() {
@@ -928,7 +950,7 @@ function INP(id, ph, type, val, iconName) {
 // que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
 // padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
 // angostos (ej. GUARDAR HORARIO en el panel admin). Hallazgo de la auditoría visual.
-function BTN(l, fn, out) { return '<button onclick="' + fn + '" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:' + (out ? 'transparent' : surfaceGrad('#E0BC7A', GOLD)) + ';border:' + (out ? '1px solid ' + ACCENT2 : 'none') + ';box-shadow:' + (out ? 'none' : '0 3px 10px rgba(203,162,88,.3)') + ';color:' + (out ? ACCENT2 : '#241a08') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">' + l + '</button>'; }
+function BTN(l, fn, out) { return '<button onclick="' + fn + '" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:' + (out ? 'transparent' : surfaceGrad('#E0BC7A', GOLD)) + ';border:' + (out ? '1px solid #A8C8B0' : 'none') + ';box-shadow:' + (out ? 'none' : '0 3px 10px rgba(203,162,88,.3)') + ';color:' + (out ? '#A8C8B0' : '#241a08') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">' + l + '</button>'; }
 function LOAD(msg) { return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1E3932"><div style="margin-bottom:16px">' + WORDMARK(38, true) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.25em">' + (msg || 'CARGANDO //') + '</div></div>'; }
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
 // mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
@@ -1418,10 +1440,10 @@ function sOHome() {
     var recoItems = lastOrd ? (lastOrd.items && lastOrd.items.length ? lastOrd.items : (lastOrd.build ? [buildToCartItem(lastOrd.build)] : null)) : null;
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ REPETIR PEDIDO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB">' + esc(lastOrd.summary || '') + '</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
     var cartCard = cart.length ? '<div onclick="go(\'o_cart\')" style="background:#2D5246;border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + icon('cart', 16, '#FFFFFF') + 'CARRITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + ' items</span><span style="font-family:Share Tech Mono,monospace;font-size:11px;color:' + GOLD + '">VER \u2192</span></div>' : '';
-    var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('device', 15, GOLD) + 'INSTALAR<span class="cut-sep" style="color:' + GOLD + '"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
-    var nearbyCard = (nearStore && ss.open) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('direccion', 15, GOLD) + '¡ESTÁS CERCA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DEL LOCAL!</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
+    var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('device', 15, GOLD) + 'INSTALAR<span class="cut-sep" style="color:' + GOLD + '"> // </span>APP</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
+    var nearbyCard = (nearStore && ss.open) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + icon('direccion', 15, GOLD) + '¡ESTÁS CERCA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DEL LOCAL!</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:#A8C8B0;font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
     return H()
-        + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+        + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + hoursBadge
         + nearbyCard
         + pwaCard
@@ -1582,7 +1604,7 @@ function sGroupOrder() {
     if (!g) {
         return H('PEDIDO GRUPAL', bk) + '<div style="flex:1;padding:20px" class="fi">' + skeletonCards(3, 64) + '</div>' + NAV();
     }
-    var h = H('PEDIDO GRUPAL', bk) + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+    var h = H('PEDIDO GRUPAL', bk) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     h += '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:4px">PEDIDO<span class="cut-sep" style="color:' + GOLD + '"> // </span>GRUPAL</div>';
     h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:16px">Organiza ' + esc(g.organizerName) + ' · código ' + esc(g.code) + '</div>';
     if (g.status === 'open') {
@@ -1633,7 +1655,7 @@ function sOSig() {
     var lastOrdSig = cust ? lastPaidOrder() : null;
     var recoItemsSig = lastOrdSig ? (lastOrdSig.items && lastOrdSig.items.length ? lastOrdSig.items : (lastOrdSig.build ? [buildToCartItem(lastOrdSig.build)] : null)) : null;
     var recoCardSig = recoItemsSig ? '<div onclick="loadCart(' + JSON.stringify(recoItemsSig).replace(/"/g, '&quot;') + ')" style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ TU DE SIEMPRE //</div><div style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#F2F0EB">' + esc(lastOrdSig.summary || '') + '</div></div>' : '';
-    var h = H('SIGNATURE BUILDS', 'go(\'o_home\')', true) + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">' + SZTOG() + recoCardSig + ST('01', 'ELIGE TU BUILD', 'Tres salsas incluidas.') + SIGS.map(function (s) {
+    var h = H('SIGNATURE BUILDS', 'go(\'o_home\')', true) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">' + SZTOG() + recoCardSig + ST('01', 'ELIGE TU BUILD', 'Tres salsas incluidas.') + SIGS.map(function (s) {
         // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
         // cliente logueado que todavía no llega al rango exigido se muestra como una
         // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.
@@ -1871,7 +1893,7 @@ async function doSaveFavorite() {
 }
 // SIDES/BEBIDAS
 function sOSides() {
-    var h = H('BEBIDAS Y SIDES', "sc='o_cart';render()", true) + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">' + ST('01', 'ELIGE', 'Se agregan a tu carrito.');
+    var h = H('BEBIDAS Y SIDES', "sc='o_cart';render()", true) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">' + ST('01', 'ELIGE', 'Se agregan a tu carrito.');
     h += SIDES.map(function (d) {
         var inCart = cart.find(function (it) { return it.type === 'side' && it.code === d.id; });
         var qty = inCart ? inCart.qty : 0;
@@ -2000,7 +2022,7 @@ function checkoutExtrasHTML() {
         + comboDrinkNudgeHTML()
         + (manualPayMethod ? '' : rewardsPickerHTML())
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:#A8C8B0">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:#FFFFFF">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + '<div style="margin-top:10px;background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('moto', 13, '#A8C8B0') + '<span>El costo de delivery se paga <b style="color:#FFFFFF">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</span></div></div>'
         + '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>' + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
@@ -3050,7 +3072,7 @@ function sOSent() {
 }
 // AUTH
 function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:#2D5246"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:#2D5246"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:#2D5246"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:#2D5246"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
 }
 async function doReg() {
     var name = gv('r-name').trim(), phone = gv('r-phone').trim(), pin = gv('r-pin').trim(), email = gv('r-email').trim(), dni = gv('r-dni').trim(), bdayRaw = gv('r-bday').trim(), refEl = document.getElementById('r-ref'), referredBy = refEl ? refEl.value.trim() : '';
@@ -3072,13 +3094,12 @@ async function doReg() {
     }
     var bday = null;
     if (bdayRaw) {
-        var m = bdayRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (!m) {
+        bday = parseBdayDDMMYYYY(bdayRaw);
+        if (!bday) {
             if (err)
-                err.textContent = 'Fecha de nacimiento debe ser DD/MM/AAAA.';
+                err.textContent = 'Fecha de nacimiento inválida — debe ser DD/MM/AAAA y existir de verdad.';
             return;
         }
-        bday = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
     }
     busy = true;
     busyMsg = 'Creando cuenta...';
@@ -3268,7 +3289,7 @@ function sPHome() {
         prev = r; });
     var pct = next ? ((pts - (prev ? prev.pts : 0)) / (next.pts - (prev ? prev.pts : 0))) * 100 : 100;
     var unlocked = RWDS.filter(function (r) { return r.pts <= pts; });
-    return H() + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">'
+    return H() + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:14px">HOLA, ' + esc(cust.name.split(' ')[0].toUpperCase()) + ' //</div>'
         + '<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
         + '<div style="margin-bottom:8px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:58px;font-weight:900;color:#fff;line-height:1">' + pts.toLocaleString() + '</div></div>'
@@ -3320,10 +3341,10 @@ function sPOrders() {
             + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:2px">' + esc(o.ref) + ' · ' + esc(o.date) + '</div></div>'
             + '<div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:900;color:' + GOLD + ';flex-shrink:0">' + SOLES + o.total + '</div></div>'
             + '<div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:8px">' + esc(o.summary) + '</div>'
-            + '<div style="display:flex;gap:2px;margin-bottom:6px">' + STEPS.map(function (st, i) { var dn = i <= ci, c2 = STATUSES[st]; return '<div style="flex:1;height:3px;background:' + (dn ? c2.c : '#3A6B58') + ';border-radius:3px"></div>'; }).join('') + '</div>'
+            + '<div style="display:flex;gap:2px;margin-bottom:6px">' + STEPS.map(function (st, i) { var dn = i <= ci; return '<div style="flex:1;height:3px;background:' + (dn ? GOLD : '#3A6B58') + ';border-radius:3px"></div>'; }).join('') + '</div>'
             + stBadge(o.status) + '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';text-align:right;margin-top:4px">ver detalle ›</div></div>';
     }
-    var h = H('MIS PEDIDOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+    var h = H('MIS PEDIDOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (listLoading) {
         h += skeletonCards(3, 132);
     }
@@ -3364,7 +3385,7 @@ function sOrdDetail() {
         + '</div>'
         + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px;margin-bottom:12px">'
         + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-bottom:10px">ESTADO //</div>'
-        + '<div style="display:flex;gap:4px;margin-bottom:12px">' + STEPS.map(function (st, i) { var dn = i <= ci, c2 = STATUSES[st]; return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:' + (dn ? c2.c : '#3A6B58') + ';border-radius:4px"></div><div style="font-family:Share Tech Mono,monospace;font-size:7px;color:' + (dn ? c2.c : '#4A7A68') + ';text-align:center;line-height:1.3">' + st.replace(' ', '<br>') + '</div></div>'; }).join('') + '</div>'
+        + '<div style="display:flex;gap:4px;margin-bottom:12px">' + STEPS.map(function (st, i) { var dn = i <= ci; return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:' + (dn ? GOLD : '#3A6B58') + ';border-radius:4px"></div><div style="font-family:Share Tech Mono,monospace;font-size:7px;color:' + (dn ? GOLD : '#4A7A68') + ';text-align:center;line-height:1.3">' + st.replace(' ', '<br>') + '</div></div>'; }).join('') + '</div>'
         + stBadge(o.status)
         + '</div>'
         // Antes la página de Cambios y Devoluciones prometía "puedes cancelar sin costo antes
@@ -3449,7 +3470,7 @@ async function loadHist() {
 }
 function sPHistory() {
     var txns = (cust && cust._txns) || [];
-    var h = H('HISTORIAL DE PUNTOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+    var h = H('HISTORIAL DE PUNTOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (listLoading) {
         h += skeletonCards(5, 48);
     }
@@ -3467,7 +3488,7 @@ function sPHistory() {
 }
 function sPRewards() {
     var pts = cust.points || 0;
-    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : '#0d0d0d') + ';border:1px solid ' + (ok ? GOLD : '#1a1a1a') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:' + (ok ? '#fff' : '#666') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : '#2a2a2a') + '"> // </span>' + r.s + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:' + (ok ? '#888' : '#555') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:' + (ok ? GOLD : '#444') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:' + GOLD + '">PTS</div></div></div>' + (!ok ? '<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('HACER UN PEDIDO //', 'swTab(\'order\')') + '</div>' + NAV();
+    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : '#0d0d0d') + ';border:1px solid ' + (ok ? GOLD : '#1a1a1a') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:' + (ok ? '#fff' : '#666') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : '#2a2a2a') + '"> // </span>' + r.s + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:' + (ok ? '#888' : '#555') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:' + (ok ? GOLD : '#444') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:' + GOLD + '">PTS</div></div></div>' + (!ok ? '<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('HACER UN PEDIDO //', 'swTab(\'order\')') + '</div>' + NAV();
 }
 // Insignias de hitos — puramente derivadas de datos que ya viven en `cust` (sin pedir
 // nada nuevo al servidor): marcan progreso acumulado (no solo del mes en curso, a
@@ -3493,13 +3514,13 @@ function sPProfile() {
     var initial = esc((cust.name || '?').trim().charAt(0).toUpperCase());
     var heroHTML = '<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">' + initial + '</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cust.name) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">' + esc(cust.phone) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-top:6px">' + rankName(cust.total_orders) + ' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:' + GOLD + ';line-height:1">' + (cust.points || 0) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
     var referralHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">PROGRAMA<span class="cut-sep" style="color:' + GOLD + '"> // </span>REFERIDOS</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
-    var creditHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">CRÉDITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'TELÉFONO DEL AMIGO // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'MONTO A REGALAR // S/', 'number', wAmt) + '<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('REGALAR CRÉDITO //', 'doCreditGift()') + '</div></div>';
+    var creditHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">CRÉDITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'TELÉFONO DEL AMIGO // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'MONTO A REGALAR // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('REGALAR CRÉDITO //', 'doCreditGift()') + '</div></div>';
     var giftCardHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">TARJETA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('COMPRAR Y REGALAR //', "sc='gift_card';render()") + '</div>';
     var weeklyPlanHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">PLAN<span class="cut-sep" style="color:' + GOLD + '"> // </span>SEMANAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + (WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('ACTIVAR PLAN SEMANAL //', "sc='weekly_plan';render()") + '</div>';
     var challengeHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimChallenge()') + '</div>';
     var discoveryHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>DESCUBRIMIENTO</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimDiscoveryChallenge()') + '</div>';
     var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (pushSubscribed ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (pushSubscribed ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">NOTIFICACIONES<span class="cut-sep" style="color:' + GOLD + '"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
-    return H('MI PERFIL', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">' + heroHTML
+    return H('MI PERFIL', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">' + heroHTML
         + badgesHTML(cust)
         + pushHTML + referralHTML + creditHTML + weeklyPlanHTML + giftCardHTML + challengeHTML + discoveryHTML
         + '<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
@@ -3568,13 +3589,13 @@ async function doCreditGift() {
 function sGiftCard() {
     var amt = parseFloat(gcAmt) || 0;
     var ptsCost = amt > 0 ? Math.round(amt * GIFT_CARD_POINTS_PER_SOL) : 0;
-    return H('TARJETA DE REGALO', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+    return H('TARJETA DE REGALO', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">TARJETA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DE REGALO</div>'
         + '<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:6px;line-height:1.5">Usa tus puntos para regalarle crédito SND//WCH a otro cliente al instante. Monto entre S/10 y S/500.</p>'
         + '<p style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.05em;margin-bottom:18px">TIENES ' + (cust.points || 0) + ' PTS // ' + GIFT_CARD_POINTS_PER_SOL + ' PTS = S/1</p>'
         + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px">'
         + INP('gc-phone', 'TELÉFONO DEL DESTINATARIO // 9XXXXXXXX', 'tel', gcPhone, 'phone')
-        + INP('gc-amt', 'MONTO // S/', 'number', gcAmt)
+        + INP('gc-amt', 'MONTO // S/', 'number', gcAmt, 'coin')
         + '</div>'
         + (ptsCost > 0 ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:6px">Costará <b style="color:' + GOLD + '">' + ptsCost + ' puntos</b>.</div>' : '')
         + '<div id="gc-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px;margin:8px 0 12px">' + esc(gcMsg) + '</div>'
@@ -3647,7 +3668,7 @@ var wpCritical = false;
 var _weeklyPlanBuyInProgress = false;
 var _pendingWeeklyPlan = null;
 function sWeeklyPlan() {
-    return H('PLAN SEMANAL', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 100px;overflow-y:auto" class="fi">'
+    return H('PLAN SEMANAL', 'sc=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">PLAN<span class="cut-sep" style="color:' + GOLD + '"> // </span>SEMANAL</div>'
         + '<p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:20px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy con tu tarjeta y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
         + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#F2F0EB">PAGAS HOY</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">' + SOLES + WEEKLY_PLAN_PRICE + '</span></div>'
@@ -3925,7 +3946,7 @@ function sPComplaints() {
         + '<div style="display:flex;flex-direction:column;gap:10px">'
         + ST('01', 'TUS DATOS', '')
         + INP('cq-name', 'NOMBRES Y APELLIDOS', 'text', undefined, 'clientes')
-        + INP('cq-dni', 'DNI / CARNET DE EXTRANJERÍA', 'text')
+        + INP('cq-dni', 'DNI / CARNET DE EXTRANJERÍA', 'text', undefined, 'card')
         + INP('cq-addr', 'DOMICILIO', 'text', undefined, 'direccion')
         + INP('cq-phone', 'TELÉFONO', 'tel', undefined, 'phone')
         + INP('cq-email', 'CORREO ELECTRÓNICO', 'email', undefined, 'mail')
@@ -4005,7 +4026,7 @@ async function loadFavorites() {
     render();
 }
 function sPFavorites() {
-    var h = H('MIS FAVORITOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+    var h = H('MIS FAVORITOS', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (!myFavorites.length) {
         h += '<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">' + icon('heart', 32, '#A8C8B0') + '</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.2em">SIN FAVORITOS //</div><p style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
     }
@@ -4055,7 +4076,7 @@ async function loadAddresses() {
     render();
 }
 function sPAddresses() {
-    var h = H('MIS DIRECCIONES', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 100px;overflow-y:auto" class="fi">';
+    var h = H('MIS DIRECCIONES', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (myAddresses.length) {
         h += myAddresses.map(function (a) {
             return '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">' + esc(a.label) + '</div><div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">' + esc(a.address) + '</div></div><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:Share Tech Mono,monospace;font-size:10px;flex-shrink:0;margin-left:10px">ELIMINAR</button></div>';
@@ -4064,7 +4085,7 @@ function sPAddresses() {
     else {
         h += '<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">' + icon('direccion', 32, '#A8C8B0') + '</div><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.2em">SIN DIRECCIONES GUARDADAS //</div></div>';
     }
-    h += '<div style="margin-top:20px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">AGREGAR DIRECCIÓN //</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'NOMBRE // Casa, Trabajo...') + INP('na-addr', 'DIRECCIÓN COMPLETA', 'text', undefined, 'direccion') + '<div id="na-msg" style="font-family:Barlow,sans-serif;font-size:11px;color:#ff5555;min-height:14px">' + newAddrMsg + '</div>' + BTN('GUARDAR DIRECCIÓN //', 'doAddAddress()') + '</div></div>';
+    h += '<div style="margin-top:20px;background:#1A3028;border:1px solid #3A6B58;border-radius:10px;padding:16px"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">AGREGAR DIRECCIÓN //</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'NOMBRE // Casa, Trabajo...', 'text', undefined, 'clientes') + INP('na-addr', 'DIRECCIÓN COMPLETA', 'text', undefined, 'direccion') + '<div id="na-msg" style="font-family:Barlow,sans-serif;font-size:11px;color:#ff5555;min-height:14px">' + newAddrMsg + '</div>' + BTN('GUARDAR DIRECCIÓN //', 'doAddAddress()') + '</div></div>';
     h += '</div>' + NAV();
     return h;
 }
@@ -4198,6 +4219,8 @@ async function viewReceipt(ordId) {
     }
 }
 async function updateStatus(ordId, newSt) {
+    if (_adminOrderActionInProgress)
+        return;
     var ord = (adminOrders || []).find(function (o) { return o.id === ordId; });
     var eta = null;
     if (newSt === 'EN CAMINO') {
@@ -4208,14 +4231,17 @@ async function updateStatus(ordId, newSt) {
         if (!eta || eta <= 0)
             eta = 20;
     }
+    _adminOrderActionInProgress = true;
     try {
         var r = await api('admin-update-status', { token: token, orderId: ordId, status: newSt, etaMinutes: eta });
         adminOrders = adminOrders.map(function (o) { return o.id === ordId ? r.order : o; });
         if (newSt === 'ENTREGADO')
             adminOrders = adminOrders.filter(function (o) { return o.id !== ordId; });
+        _adminOrderActionInProgress = false;
         render();
     }
     catch (e) {
+        _adminOrderActionInProgress = false;
         console.warn(e);
         return;
     }
@@ -4226,12 +4252,17 @@ async function updateStatus(ordId, newSt) {
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó —
 // recién entonces el pedido puede avanzar de RECIBIDO (el servidor también lo exige).
 async function confirmOrderPayment(ordId) {
+    if (_adminOrderActionInProgress)
+        return;
+    _adminOrderActionInProgress = true;
     try {
         var r = await api('admin-confirm-payment', { token: token, orderId: ordId });
         adminOrders = adminOrders.map(function (o) { return o.id === ordId ? r.order : o; });
+        _adminOrderActionInProgress = false;
         render();
     }
     catch (e) {
+        _adminOrderActionInProgress = false;
         showToast(e.message);
     }
 }
@@ -4241,13 +4272,18 @@ async function confirmOrderPayment(ordId) {
 // re-auditoría del panel admin). confirmOrderPayment sigue disponible aparte para el
 // caso raro en que quiera confirmar el pago sin arrancar cocina todavía.
 async function confirmAndAdvance(ordId) {
+    if (_adminOrderActionInProgress)
+        return;
+    _adminOrderActionInProgress = true;
     try {
         await api('admin-confirm-payment', { token: token, orderId: ordId });
         var r = await api('admin-update-status', { token: token, orderId: ordId, status: 'PREPARANDO' });
         adminOrders = adminOrders.map(function (o) { return o.id === ordId ? r.order : o; });
+        _adminOrderActionInProgress = false;
         render();
     }
     catch (e) {
+        _adminOrderActionInProgress = false;
         showToast(e.message);
     }
 }
@@ -4413,7 +4449,7 @@ function bulkBar() {
         + '<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:' + STATUSES.PREPARANDO.c + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">PREPARANDO</button>'
         + '<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:' + STATUSES['EN CAMINO'].c + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">EN CAMINO</button>'
         + '<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:' + STATUSES.ENTREGADO.c + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:15px 4px;border-radius:8px">ENTREGADO</button>'
-        + '<button onclick="bulkSelected={};render()" style="all:unset;box-sizing:border-box;cursor:pointer;color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('close', 16, '#ff8888') + '</button>'
+        + '<button onclick="bulkSelected={};render()" aria-label="Cancelar selección" style="all:unset;box-sizing:border-box;cursor:pointer;color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('close', 16, '#ff8888') + '</button>'
         + '</div>';
 }
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
@@ -4468,6 +4504,7 @@ var ICONS = {
     printer: '<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="7" y="14" width="10" height="6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     warning: '<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17v.01"/>',
+    calendar: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
 };
 function icon(name, size, color) { return '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="' + (color || GOLD) + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' + (ICONS[name] || '') + '</svg>'; }
 function iconTxt(name, label, color) { return '<span style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle">' + icon(name, 13, color) + '<span>' + label + '</span></span>'; }
@@ -4529,8 +4566,8 @@ function sAdminHome() {
         + '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
         + '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span class="cut-sep" style="color:' + GOLD + '"> // </span>OPERADOR</div>'
         + (badge > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● ' + badge + ' ACCIÓN REQUERIDA</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:3px">todo en orden //</div>')
-        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon('refresh', 16) + '</button>'
-        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>'
+        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon('refresh', 16) + '</button>'
+        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>'
         + '<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:' + GOLD + '">← salir</button></div>'
         + (adminOrdersTruncated ? '<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;display:flex;align-items:center;gap:5px">' + icon('warning', 12, '#ffa500') + '<span>Hay más pedidos activos de los que se muestran aquí (solo los ' + ao.length + ' más recientes).</span></div>' : '')
         // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
@@ -4585,7 +4622,7 @@ function sAdminHome() {
                 + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#8BAF9A;margin-bottom:10px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
                 // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
                 // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
-                + (o.receipt_path ? '<button onclick="viewReceipt(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(58,134,255,.12);border:1px solid rgba(58,134,255,.4);color:' + ACCENT2 + ';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;letter-spacing:.04em;padding:9px 4px;border-radius:8px;margin-bottom:8px">' + iconTxt('clip', 'VER COMPROBANTE', ACCENT2) + '</button>' : '')
+                + (o.receipt_path ? '<button onclick="viewReceipt(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;letter-spacing:.04em;padding:9px 4px;border-radius:8px;margin-bottom:8px">' + iconTxt('clip', 'VER COMPROBANTE', '#A8C8B0') + '</button>' : '')
                 // Imprimir/WhatsApp son acciones secundarias (se usan, pero no en cada pedido) —
                 // antes ocupaban una fila completa cada una, alargando la tarjeta innecesariamente.
                 // Una fila de 2 columnas compactas deja la acción principal (avanzar estado) como
@@ -4813,7 +4850,7 @@ function sAdminDashboard() {
     if (atRiskCustomers && atRiskCustomers.length) {
         h += atRiskCustomers.slice(0, 10).map(function (c) {
             var daysTxt = c.daysSinceLastOrder == null ? 'nunca pagó un pedido' : 'hace ' + c.daysSinceLastOrder + ' días';
-            return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">' + esc(c.name || c.phone) + '</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:2px">' + esc(c.rank) + ' · último pedido ' + daysTxt + '</div></div><button onclick="waRiskContact(\'' + esc(c.phone) + '\',\'' + esc(c.name || '') + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">' + icon('chat', 14, GOLD) + '</button></div>';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#FFFFFF">' + esc(c.name || c.phone) + '</div><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:2px">' + esc(c.rank) + ' · último pedido ' + daysTxt + '</div></div><button onclick="waRiskContact(\'' + esc(c.phone) + '\',\'' + esc(c.name || '') + '\')" aria-label="Contactar por WhatsApp" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Barlow Condensed\',sans-serif;font-size:11px;font-weight:700;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">' + icon('chat', 14, GOLD) + '</button></div>';
         }).join('');
     }
     else {
@@ -5324,8 +5361,8 @@ function sAdminInventory() {
                 + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + (av ? '#25D366' : '#ff8888') + ';margin-top:2px;letter-spacing:.1em">' + (av ? '● DISPONIBLE' : '● SIN STOCK') + (tracked ? ' · ' + qty + ' unid.' : '') + '</div></div>'
                 + '<button onclick="toggleStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:' + (av ? 'rgba(255,85,85,.12)' : 'rgba(37,211,102,.15)') + ';border:1px solid ' + (av ? 'rgba(255,85,85,.4)' : 'rgba(37,211,102,.4)') + ';color:' + (av ? '#ff8888' : '#25D366') + ';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 14px;border-radius:8px;text-align:center;flex-shrink:0">' + (av ? 'MARCAR AGOTADO' : 'REACTIVAR') + '</button>'
                 + '</div>'
-                + '<div style="display:flex;gap:8px;margin-top:10px;align-items:center">'
-                + '<input id="qty-' + item.id + '" type="number" min="0" placeholder="Sin rastreo de cantidad" value="' + (tracked ? qty : '') + '" style="flex:1;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-size:16px;font-family:Share Tech Mono,monospace">'
+                + '<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">'
+                + '<input id="qty-' + item.id + '" type="number" min="0" placeholder="Sin rastreo de cantidad" value="' + (tracked ? qty : '') + '" style="flex:1;min-width:120px;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:9px 12px;color:#FFFFFF;font-size:16px;font-family:Share Tech Mono,monospace">'
                 + '<button onclick="setStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;padding:9px 14px;border-radius:8px;flex-shrink:0">GUARDAR STOCK</button>'
                 + '</div>'
                 + '</div>';
@@ -5996,7 +6033,7 @@ async function doRespondComplaint(id) {
     }
 }
 function sPRecover() {
-    var pinBox = recNewPin ? '<div style="background:#1A3028;border:2px solid ' + GOLD + ';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div style="font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:' + GOLD + '">' + recNewPin + '</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono.</div></div>'
+    var pinBox = recNewPin ? '<div style="background:#1A3028;border:2px solid ' + GOLD + ';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:' + GOLD + (recPinRevealed ? '' : ';filter:blur(9px);user-select:none') + '">' + recNewPin + '</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">' + icon(recPinRevealed ? 'lock' : 'camera', 11, GOLD) + (recPinRevealed ? 'OCULTAR' : 'TOCA PARA VER') + '</div><div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
         : (recEmailMasked ? '<div style="background:#1A3028;border:2px solid ' + GOLD + ';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB;line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:' + GOLD + '">' + esc(recEmailMasked) + '</b></div></div>' : '');
     return H('RECUPERAR CUENTA', "sc='p_auth';render()")
         + '<div style="flex:1;padding:24px 20px 40px" class="fi">'
@@ -6005,8 +6042,8 @@ function sPRecover() {
         + pinBox
         + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
         + INP('rec-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', undefined, 'phone')
-        + INP('rec-dni', 'DNI // Tu número de 8 dígitos', 'text')
-        + INP('rec-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text')
+        + INP('rec-dni', 'DNI // Tu número de 8 dígitos', 'text', undefined, 'card')
+        + INP('rec-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar')
         + '</div>'
         + '<div id="rec-msg" style="font-family:Barlow,sans-serif;font-size:12px;color:#ff5555;min-height:16px;margin-bottom:12px;text-align:center"></div>'
         + BTN('RECUPERAR MI PIN //', 'doRecover()')
@@ -6022,13 +6059,12 @@ async function doRecover() {
             msg.textContent = 'Completa teléfono, DNI y fecha de nacimiento.';
         return;
     }
-    var m = bdayRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!m) {
+    var bday = parseBdayDDMMYYYY(bdayRaw);
+    if (!bday) {
         if (msg)
-            msg.textContent = 'Fecha debe ser DD/MM/AAAA.';
+            msg.textContent = 'Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';
         return;
     }
-    var bday = m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
     busy = true;
     busyMsg = 'Verificando...';
     render();
@@ -6041,6 +6077,7 @@ async function doRecover() {
         else {
             recNewPin = r.newPin;
             recEmailMasked = null;
+            recPinRevealed = false;
         }
         busy = false;
         sc = 'p_recover';

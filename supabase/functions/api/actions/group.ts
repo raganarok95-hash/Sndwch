@@ -145,8 +145,16 @@ export async function actCloseGroupOrder(b: any) {
   const g = await fetchGroupOrder(code);
   if (g.organizer_phone !== s.phone) throw new ApiError("Solo quien organizó el pedido puede cerrarlo y pagar.", 403);
   if (g.status === "cancelled") throw new ApiError("Este pedido grupal fue cancelado.", 409);
+  const precheck = await sbGet("group_order_items", `group_order_id=eq.${g.id}&select=id&limit=1`);
+  if (!precheck.length) throw new ApiError("Nadie agregó productos todavía.", 400);
+  // Cierra con guard status=eq.open ANTES de leer la lista final de items (antes se leía
+  // primero y se cerraba después, dejando una ventana en la que actAddGroupItem podía colar
+  // un producto entre el SELECT y el UPDATE que nunca terminaba en el pedido que se cobra —
+  // hallazgo de auditoría de arquitectura backend). El guard también evita reprocesar un
+  // cierre doble-tap concurrente. Se relee después del UPDATE para cobrar exactamente lo que
+  // quedó en la base al momento de cerrar, no la foto de arriba.
+  const updated = await sbUpdate("group_orders", `id=eq.${g.id}&status=eq.open`, { status: "closed" });
+  if (!updated.length) throw new ApiError("Este pedido grupal ya se cerró.", 409);
   const rows = await sbGet("group_order_items", `group_order_id=eq.${g.id}&order=created_at.asc`);
-  if (!rows.length) throw new ApiError("Nadie agregó productos todavía.", 400);
-  await sbUpdate("group_orders", `id=eq.${g.id}`, { status: "closed" });
   return { success: true, items: rows.map((row: any) => row.item) };
 }
