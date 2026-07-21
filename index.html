@@ -3819,7 +3819,44 @@ async function doClaimDiscoveryChallenge() {
     }
     render();
 }
-function doLogout() { cust = null; isAdmin = false; savedPh = ''; token = ''; aErr = ''; clearGoogleLink(); localStorage.removeItem('sw_ph'); localStorage.removeItem('sw_tok'); cacheCust(null); sc = 'p_auth'; render(); }
+// Limpia todo el estado en memoria específico del cliente/admin que acaba de cerrar
+// sesión — antes solo se limpiaba `cust`/`token`, así que en un dispositivo compartido
+// (logout de A, login de B sin recargar la página) myOrders/myAddresses/myFavorites (y
+// del lado admin: custDetail/dashStats/searchResults/auditLog) seguían en memoria y se
+// alcanzaban a mostrar brevemente bajo la sesión de B hasta que loadUserExtras() (u
+// homólogo admin) resolvía de nuevo (hallazgo de auditoría de código).
+function doLogout() {
+    cust = null;
+    isAdmin = false;
+    savedPh = '';
+    token = '';
+    aErr = '';
+    clearGoogleLink();
+    localStorage.removeItem('sw_ph');
+    localStorage.removeItem('sw_tok');
+    cacheCust(null);
+    myOrders = [];
+    myAddresses = [];
+    myFavorites = [];
+    pickedAddrId = null;
+    custDetail = null;
+    custDetailPhone = '';
+    custDetailErr = '';
+    dashStats = null;
+    atRiskCustomers = null;
+    searchResults = null;
+    searchTruncated = false;
+    auditLog = null;
+    ratingsList = null;
+    prepListData = null;
+    timeReportData = null;
+    problemAddressesData = null;
+    marketingContentData = null;
+    adminOrders = [];
+    bulkSelected = {};
+    sc = 'p_auth';
+    render();
+}
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
 // de operar de cara al público — esto es un punto de partida razonable, no asesoría legal.
