@@ -5,60 +5,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // (y a quienes nunca se les mandó nada, o hace más de 30 días desde el último
 // mensaje) para reactivarlos. No manda más de un correo cada 30 días por cliente.
 
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+import { sbGet, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
+import { emailShell } from "../_shared/email-shell.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
 const INACTIVE_DAYS = 30;
 const DAY_MS = 86400000;
+const SOURCE = "winback-campaign";
 
-function sbHeaders(extra?: Record<string, string>) {
-  return { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", ...extra };
-}
-async function sbGet(table: string, query: string) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders() });
-  if (!r.ok) throw new Error(`Error leyendo ${table}: ${await r.text()}`);
-  return r.json();
-}
-async function sbUpdate(table: string, query: string, data: unknown) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { method: "PATCH", headers: sbHeaders({ Prefer: "return=representation" }), body: JSON.stringify(data) });
-  if (!r.ok) throw new Error(`Error actualizando ${table}: ${await r.text()}`);
-  return r.json();
-}
-async function debugLog(detail: unknown) {
-  try {
-    await fetch(`${SB_URL}/rest/v1/debug_logs`, { method: "POST", headers: sbHeaders({ Prefer: "return=minimal" }), body: JSON.stringify({ source: "winback-campaign", detail }) });
-  } catch (_e) {}
-}
-// El secreto compartido con pg_cron ya no vive como literal aquí — se valida contra
-// Supabase Vault vía la misma RPC verify_cron_secret que usa la función api principal.
-async function verifyCronSecret(provided: unknown): Promise<boolean> {
-  if (typeof provided !== "string" || !provided) return false;
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/verify_cron_secret`, {
-      method: "POST",
-      headers: sbHeaders(),
-      body: JSON.stringify({ p_secret: provided }),
-    });
-    if (!r.ok) return false;
-    return await r.json();
-  } catch {
-    return false;
-  }
-}
 async function sendWinbackEmail(to: string, name: string, points: number) {
   if (!RESEND_API_KEY) return { ok: false, data: { skipped: true } };
-  const html = `
-    <div style="font-family:Arial,sans-serif;background:#1E3932;padding:32px;color:#fff">
-      <div style="max-width:420px;margin:0 auto;background:#2D5246;border-radius:14px;padding:28px">
-        <div style="font-size:26px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:#CBA258">//</span>WCH</div>
-        <div style="font-size:11px;color:#CBA258;letter-spacing:.2em;margin-bottom:20px">TE EXTRAÑAMOS //</div>
-        <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${name},</p>
-        <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Hace tiempo no te vemos por SND//WCH. Todavía tienes <b style="color:#CBA258">${points} puntos</b> esperando ser canjeados, y seguimos con las mismas builds de siempre.</p>
-        <p style="font-size:12px;color:#8BAF9A;margin-top:16px">Pide de nuevo en sndwch.app 🥪</p>
-      </div>
-    </div>
-  `;
+  const html = emailShell("TE EXTRAÑAMOS //", `
+    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${name},</p>
+    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Hace tiempo no te vemos por SND//WCH. Todavía tienes <b style="color:#CBA258">${points} puntos</b> esperando ser canjeados, y seguimos con las mismas builds de siempre.</p>
+    <p style="font-size:12px;color:#8BAF9A;margin-top:16px">Pide de nuevo en sndwch.app 🥪</p>
+  `);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
@@ -97,16 +59,16 @@ Deno.serve(async (req: Request) => {
         const res = await sendWinbackEmail(c.email, c.name, c.points || 0);
         await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { last_winback_sent: new Date().toISOString() });
         sent++;
-        await debugLog({ stage: "email_sent", phone: c.phone, ok: res.ok });
+        await debugLog(SOURCE, { stage: "email_sent", phone: c.phone, ok: res.ok });
       } catch (e) {
-        await debugLog({ stage: "email_failed", phone: c.phone, error: String(e) });
+        await debugLog(SOURCE, { stage: "email_failed", phone: c.phone, error: String(e) });
       }
     }
 
-    await debugLog({ stage: "done", checked: customers.length, sent });
+    await debugLog(SOURCE, { stage: "done", checked: customers.length, sent });
     return new Response(JSON.stringify({ success: true, sent }), { headers: { "Content-Type": "application/json" } });
   } catch (e) {
-    await debugLog({ stage: "exception", error: String(e) });
+    await debugLog(SOURCE, { stage: "exception", error: String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
   }
 });

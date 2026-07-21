@@ -50,7 +50,11 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la
   // bebida (S/4) — antes de esta sesión este número siempre era S/0 (recompensa rota).
   await page.locator("[onclick*=\"toggleReward('R05')\"]").click();
-  await expect(page.locator('text=ahorras S/4')).toBeVisible();
+  // El bug de auditoría (HTML crudo visible al aplicar cualquier recompensa con
+  // ahorro) hacía que este texto SOLO apareciera bien renderizado en el resumen de
+  // TOTAL, nunca en la fila de la recompensa misma — ahora aparece en ambos lugares
+  // (arreglado), así que el locator debe apuntar específicamente a la fila del picker.
+  await expect(page.locator("[onclick*=\"toggleReward('R05')\"] >> text=ahorras S/4")).toBeVisible();
 
   await page.locator('#o-nom').fill('Bruno Cliente');
   await page.locator('#o-phone').fill('987654323');

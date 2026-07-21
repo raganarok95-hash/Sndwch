@@ -5,56 +5,20 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // un correo de cierre de día: ventas, pedidos abiertos, alertas de stock.
 // No requiere sesión de usuario — solo un secreto compartido con el cron job.
 
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
+import { emailShell } from "../_shared/email-shell.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
 const OWNER_EMAIL = Deno.env.get("OWNER_EMAIL") ?? "raganarok95@gmail.com";
-
-function sbHeaders() {
-  return {
-    apikey: SERVICE_KEY,
-    Authorization: `Bearer ${SERVICE_KEY}`,
-    "Content-Type": "application/json",
-  };
-}
-async function sbGet(table: string, query: string) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders() });
-  if (!r.ok) throw new Error(`Error leyendo ${table}: ${await r.text()}`);
-  return r.json();
-}
-async function debugLog(detail: unknown) {
-  try {
-    await fetch(`${SB_URL}/rest/v1/debug_logs`, {
-      method: "POST",
-      headers: { ...sbHeaders(), Prefer: "return=minimal" },
-      body: JSON.stringify({ source: "daily-summary", detail }),
-    });
-  } catch (_e) {}
-}
-// El secreto compartido con pg_cron ya no vive como literal aquí — se valida contra
-// Supabase Vault vía la misma RPC verify_cron_secret que usa la función api principal.
-async function verifyCronSecret(provided: unknown): Promise<boolean> {
-  if (typeof provided !== "string" || !provided) return false;
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/verify_cron_secret`, {
-      method: "POST",
-      headers: sbHeaders(),
-      body: JSON.stringify({ p_secret: provided }),
-    });
-    if (!r.ok) return false;
-    return await r.json();
-  } catch {
-    return false;
-  }
-}
+const SOURCE = "daily-summary";
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("Método no permitido", { status: 405 });
   if (!(await verifyCronSecret(req.headers.get("x-cron-secret")))) return new Response("No autorizado", { status: 401 });
 
   if (!RESEND_API_KEY) {
-    await debugLog({ stage: "skipped", reason: "RESEND_API_KEY no configurado" });
+    await debugLog(SOURCE, { stage: "skipped", reason: "RESEND_API_KEY no configurado" });
     return new Response(JSON.stringify({ error: "RESEND_API_KEY no configurado" }), { status: 500 });
   }
 
@@ -103,28 +67,22 @@ Deno.serve(async (req: Request) => {
       alerts.push(`${recentErrorRows.length} error(es) técnico(s) en las últimas 24h: ${parts.join(", ")}`);
     }
 
-    const html = `
-      <div style="font-family:Arial,sans-serif;background:#1E3932;padding:32px;color:#fff">
-        <div style="max-width:420px;margin:0 auto;background:#2D5246;border-radius:14px;padding:28px">
-          <div style="font-size:26px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:#CBA258">//</span>WCH</div>
-          <div style="font-size:11px;color:#CBA258;letter-spacing:.2em;margin-bottom:20px">CIERRE // DEL DÍA — ${todayKey}</div>
-          <table style="width:100%;border-collapse:collapse">
-            ${row("Ventas confirmadas hoy", "S/" + revenue)}
-            ${row("Pedidos pagados hoy", String(paidToday.length))}
-            ${row("Ticket promedio", "S/" + avgTicket)}
-            ${row("Clientes nuevos hoy", String(newCustomersToday))}
-            ${row("Pedidos activos (sin cerrar)", String(stillOpen.length))}
-          </table>
-          ${alerts.length
-            ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
-                <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">ALERTAS //</div>
-                ${alerts.map((a) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">⚠ ${a}</div>`).join("")}
-              </div>`
-            : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Sin pendientes ni alertas.</div>`}
-          <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
-        </div>
-      </div>
-    `;
+    const html = emailShell(`CIERRE // DEL DÍA — ${todayKey}`, `
+      <table style="width:100%;border-collapse:collapse">
+        ${row("Ventas confirmadas hoy", "S/" + revenue)}
+        ${row("Pedidos pagados hoy", String(paidToday.length))}
+        ${row("Ticket promedio", "S/" + avgTicket)}
+        ${row("Clientes nuevos hoy", String(newCustomersToday))}
+        ${row("Pedidos activos (sin cerrar)", String(stillOpen.length))}
+      </table>
+      ${alerts.length
+        ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
+            <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">ALERTAS //</div>
+            ${alerts.map((a) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">⚠ ${a}</div>`).join("")}
+          </div>`
+        : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Sin pendientes ni alertas.</div>`}
+      <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
+    `);
 
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -137,13 +95,13 @@ Deno.serve(async (req: Request) => {
       }),
     });
     const data = await r.json().catch(() => ({}));
-    await debugLog({ stage: "resend_response", ok: r.ok, statusCode: r.status, data, revenue, paidCount: paidToday.length });
+    await debugLog(SOURCE, { stage: "resend_response", ok: r.ok, statusCode: r.status, data, revenue, paidCount: paidToday.length });
     if (!r.ok) return new Response(JSON.stringify({ error: data?.message || "Resend rechazó el envío" }), { status: 502 });
     return new Response(JSON.stringify({ success: true, revenue, paidCount: paidToday.length }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
-    await debugLog({ stage: "exception", error: String(e) });
+    await debugLog(SOURCE, { stage: "exception", error: String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
   }
 });

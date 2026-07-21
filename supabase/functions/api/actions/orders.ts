@@ -12,7 +12,7 @@ import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verify
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendOrderConfirmationEmail } from "../email.ts";
-import { logAdminAction } from "../logging.ts";
+import { logAdminAction, debugLog } from "../logging.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -175,8 +175,15 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     if (p.reward && (c.points || 0) < p.reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
     if (p.useCredit && (c.credit_balance || 0) < p.total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
 
-    const isFirstOrder = (c.total_orders || 0) === 0;
-    const isReferral = isFirstOrder && !!c.referred_by;
+    // El gate real vive en la RPC (referral_bonus_granted, con lock de fila) — este check
+    // acá es solo para decidir si insertar las transacciones de auditoría "Bono por
+    // referido" más abajo. Antes usaba total_orders===0 como proxy de "primer pedido",
+    // pero total_orders puede volver a 0 tras una autocancelación (actCancelMyOrder resta
+    // 1) sin que referred_by se limpie nunca, así que el bono se podía volver a otorgar
+    // indefinidamente con "pedir con crédito → cancelar → repetir" (hallazgo de auditoría
+    // de código, CRÍTICO). referral_bonus_granted es monotónico: se otorga una sola vez en
+    // la vida del cliente sin importar cuántas veces total_orders suba o baje después.
+    const isReferral = !!c.referred_by && !c.referral_bonus_granted;
     // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
     // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
     const basePoints = p.total;
@@ -682,11 +689,12 @@ async function confirmManualPayment(order: any) {
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
   if (!rows.length) return;
   const c = rows[0];
-  const isFirstOrder = (c.total_orders || 0) === 0;
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
 
+  // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
+  // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
   let referrerPhone: string | null = null;
-  if (isFirstOrder && c.referred_by) {
+  if (c.referred_by && !c.referral_bonus_granted) {
     const referrerRows = await sbGet("customers", `phone=eq.${encodeURIComponent(c.referred_by)}&select=phone`);
     if (referrerRows.length) referrerPhone = c.referred_by;
   }
@@ -831,11 +839,15 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
 }
 
 export async function actAdminUpdateStatus(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   const status = String(b.status || "");
   if (!orderId || !status) throw new ApiError("Faltan datos.");
   const order = await applyOrderStatusUpdate(orderId, status, b.etaMinutes);
+  // Antes solo su hermana actAdminBulkUpdateStatus quedaba registrada acá — la acción
+  // admin más usada del día a día (avanzar UN pedido de estado) no dejaba ningún rastro
+  // en admin_action_log (hallazgo de auditoría de código, ALTO).
+  await logAdminAction(s.phone, "update-status", orderId, { status });
   return { success: true, order };
 }
 
@@ -872,7 +884,7 @@ export async function actAdminBulkUpdateStatus(b: any) {
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó
 // antes de que el pedido pueda avanzar a cocina. Solo entonces se otorgan los puntos.
 export async function actAdminConfirmPayment(b: any) {
-  await requireAdmin(b.token);
+  const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
   const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,customer_phone,customer_name,customer_address,payment_method,payment_status`);
@@ -889,6 +901,10 @@ export async function actAdminConfirmPayment(b: any) {
   const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid`, { payment_status: "paid" });
   if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado.", 409);
   await confirmManualPayment(order);
+  // Confirmar que un Yape/Plin de verdad llegó es tan sensible como cancelar un pedido o
+  // dar puntos manuales (ambos ya se auditan) — no quedaba ningún rastro de quién lo
+  // confirmó ni cuándo (hallazgo de auditoría de código, ALTO).
+  await logAdminAction(s.phone, "confirm-payment", orderId, { paymentMethod: order.payment_method, total: order.total });
   return { success: true, order: claim[0] };
 }
 
@@ -993,7 +1009,10 @@ export async function actAdminCancelOrder(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=id,status,payment_status,items`);
+  const orderRows = await sbGet(
+    "orders",
+    `id=eq.${encodeURIComponent(orderId)}&select=id,status,payment_status,payment_method,total,items,customer_phone,redeemed_reward_pts`,
+  );
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (order.status === "ENTREGADO") throw new ApiError("Un pedido ya entregado no se puede cancelar.", 400);
@@ -1002,13 +1021,55 @@ export async function actAdminCancelOrder(b: any) {
   // ninguna forma de cancelar en la app un pedido pagado con tarjeta/crédito si, por ejemplo,
   // se acabó un ingrediente a media preparación (hallazgo de la auditoría de flujo de
   // pedidos). Ahora sí se puede, pero exige que el cliente mande `acknowledgeRefund:true`
-  // (el panel admin muestra una confirmación aparte explicando que el reembolso, si
-  // corresponde, se coordina manualmente — esta función no toca Culqi ni el saldo de crédito).
+  // (el panel admin muestra una confirmación aparte explicando que el reembolso de dinero
+  // real, si corresponde, se coordina manualmente — esta función no toca Culqi).
   if (order.payment_status === "paid" && !b.acknowledgeRefund) {
     throw new ApiError("Este pedido ya fue pagado. Confirma que coordinarás el reembolso manualmente para cancelarlo.", 409);
   }
 
   await restockOrderItems(order.items);
+
+  // A diferencia de actCancelMyOrder, esta función NUNCA revertía puntos/crédito/
+  // total_orders al cancelar un pedido pagado (hallazgo de auditoría de código, ALTO) —
+  // dos consecuencias reales: (1) si se pagó con crédito interno, ese saldo quedaba
+  // debitado para siempre sin ninguna herramienta para corregirlo; (2) si se pagó con
+  // tarjeta/Yape/Plin y se reembolsó por fuera de la app, el cliente igual conservaba
+  // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
+  // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
+  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
+  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
+  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
+    await rpc("finalize_order_customer_update", {
+      p_phone: order.customer_phone,
+      p_points_delta: pointsToRefund,
+      p_credit_delta: creditToRefund,
+      p_total_orders_delta: totalOrdersDelta,
+      p_last_address: null,
+      p_total_redeemed_delta: totalRedeemedDelta,
+      p_referrer_phone: null,
+      p_referral_bonus: 0,
+    });
+    const refundAudits: Promise<unknown>[] = [];
+    if (pointsToRefund !== 0) {
+      refundAudits.push(sbInsert("transactions", {
+        customer_phone: order.customer_phone,
+        type: "cancel_reversal",
+        points: pointsToRefund,
+        description: "Ajuste de puntos por cancelación admin (" + order.id + ")",
+        confirmed: true,
+      }));
+    }
+    if (creditToRefund > 0) {
+      refundAudits.push(sbInsert("credit_ledger", {
+        customer_phone: order.customer_phone,
+        delta: creditToRefund,
+        reason: "Reembolso por cancelación admin (" + order.id + ")",
+      }));
+    }
+    await Promise.all(refundAudits);
+  }
 
   // Motivo opcional (libre, lo escribe el operador) — sin esto, el resumen semanal solo
   // podía contar CUÁNTOS pedidos se cancelaron, nunca POR QUÉ (hallazgo de la
@@ -1169,6 +1230,10 @@ export async function actExpireStaleManualPayments(b: any) {
       }
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);
+      // Fallos dentro de loops de cron solo iban a console.error (visible solo desde el
+      // panel de logs de Supabase) — para los 3 crons que mueven dinero real esto contradice
+      // la razón de ser de debug_logs (hallazgo de auditoría de código, MEDIO).
+      await debugLog({ stage: "expire-stale-manual-payments", orderId: order.id, error: String(e) });
     }
   }
   return { success: true, cancelled };
@@ -1245,6 +1310,7 @@ export async function actExpirePendingCharges(b: any) {
       expired++;
     } catch (e) {
       console.error("expire-pending-charges failed for", pc.id, e);
+      await debugLog({ stage: "expire-pending-charges", pendingChargeId: pc.id, error: String(e) });
     }
   }
   return { success: true, expired };

@@ -507,6 +507,7 @@ var adminOrders = [], myOrders = [], adminOrdersTruncated = false;
 // auditoría de UX).
 var _adminOrderActionInProgress = false;
 var agPhone = '', agPts = '', agMsg = '';
+var acPhone = '', acDelta = '', acMsg = '';
 var pollTimer = null, lastPollCount = 0, pollFailing = false;
 var isOffline = !navigator.onLine;
 var deferredInstallPrompt = null, pwaDismissed = localStorage.getItem('sw_pwa_dismissed') === '1';
@@ -556,6 +557,11 @@ var notifSoundPreset = localStorage.getItem('sw_notif_sound') || 'campana';
 var adminLightMode = localStorage.getItem('sw_admin_light') === '1';
 var recNewPin = null;
 var recEmailMasked = null;
+// Antes cualquier error del servidor (o incluso el splash de "Verificando...") borraba
+// los 3 campos enteros — el peor momento posible para pedirle a un cliente ya frustrado
+// (no puede entrar a su cuenta) que vuelva a teclear todo, en vez de solo corregir el
+// campo que falló (ej. la fecha con formato equivocado) (hallazgo de auditoría UX, MEDIO).
+var recPhone = '', recDni = '', recBday = '';
 // El PIN nuevo se mostraba siempre visible en texto plano y grande apenas se generaba —
 // riesgo real de shoulder-surfing en un dispositivo compartido (hallazgo de auditoría de
 // UX). Ahora arranca oculto (blur) y el cliente decide cuándo revelarlo con un tap.
@@ -691,7 +697,11 @@ function renderOverlays() {
     }
     // Botón flotante de soporte por WhatsApp — visible desde cualquier pantalla del
     // cliente (no en el panel admin, que ya tiene su propio WhatsApp con cada cliente).
-    if (sc.indexOf('admin') !== 0) {
+    // Tampoco en las 2 pantallas de checkout (o_item_confirm/o_cart): al ser fixed en la
+    // misma posición de pantalla sin importar el scroll, ahí se superponía físicamente al
+    // campo TELÉFONO del formulario — un tap accidental (zona natural del pulgar) sacaba
+    // al cliente de la app hacia WhatsApp a mitad de pago (hallazgo de auditoría UX, ALTO).
+    if (sc.indexOf('admin') !== 0 && sc !== 'o_item_confirm' && sc !== 'o_cart') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, '#0d0d0d') + '</a>';
     }
@@ -1408,23 +1418,26 @@ function markRated(ref) { var r = ratedRefs(); if (r.indexOf(ref) < 0) {
 async function loadUserExtras() {
     if (!cust)
         return;
-    try {
-        myAddresses = (await api('addresses-list', { token: token })).addresses || [];
-    }
-    catch (e) { }
-    try {
-        myFavorites = (await api('favorites-list', { token: token })).favorites || [];
-    }
-    catch (e) { }
     // Antes myOrders solo se llenaba al visitar MIS PEDIDOS/HISTORIAL — un cliente
     // recurrente que recién abre la app nunca veía la tarjeta "↻ REPETIR PEDIDO //" en el
     // home (lastPaidOrder() lee de acá) hasta visitar esa pantalla primero, y refrescar la
     // página a medio pedido perdía todo rastro de que tenía uno en curso (hallazgo de
     // auditoría UX). Se pide aquí también, en segundo plano, igual que direcciones/favoritos.
-    try {
-        myOrders = (await api('my-orders', { token: token })).orders || [];
-    }
-    catch (e) { }
+    // Las 3 llamadas son independientes entre sí — antes corrían una tras otra en serie sin
+    // motivo (el backend ya usa Promise.all para este mismo patrón en varios lados); ahora
+    // en paralelo, conservando el mismo swallow-de-error individual por llamada (hallazgo
+    // de auditoría de código, MEDIO).
+    var results = await Promise.allSettled([
+        api('addresses-list', { token: token }),
+        api('favorites-list', { token: token }),
+        api('my-orders', { token: token }),
+    ]);
+    if (results[0].status === 'fulfilled')
+        myAddresses = results[0].value.addresses || [];
+    if (results[1].status === 'fulfilled')
+        myFavorites = results[1].value.favorites || [];
+    if (results[2].status === 'fulfilled')
+        myOrders = results[2].value.orders || [];
     render();
 }
 // ORDER SIGNATURE
@@ -1674,7 +1687,10 @@ function sOSig() {
         if (!av) {
             var notifyRequested = restockNotified.indexOf(s.id) >= 0;
             return '<div style="background:#1A2420;border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:#A8C8B0">' + s.n + '<span style="color:#A8C8B0"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888">AGOTADO</span></div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>'
-                + (cust ? '<button onclick="doRequestRestockNotify(\'' + s.id + '\')" ' + (notifyRequested ? 'disabled' : '') + ' style="all:unset;cursor:' + (notifyRequested ? 'default' : 'pointer') + ';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (notifyRequested ? '#25D366' : GOLD) + ';letter-spacing:.08em">' + (notifyRequested ? '✓ TE AVISAMOS CUANDO VUELVA' : 'AVÍSAME CUANDO VUELVA →') + '</button>' : '')
+                // Antes esto desaparecía sin dejar rastro para un invitado sin cuenta — parecía un
+                // callejón sin salida en vez de una invitación a registrarse (hallazgo de auditoría
+                // UX, MEDIO).
+                + (cust ? '<button onclick="doRequestRestockNotify(\'' + s.id + '\')" ' + (notifyRequested ? 'disabled' : '') + ' style="all:unset;cursor:' + (notifyRequested ? 'default' : 'pointer') + ';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (notifyRequested ? '#25D366' : GOLD) + ';letter-spacing:.08em">' + (notifyRequested ? '✓ TE AVISAMOS CUANDO VUELVA' : 'AVÍSAME CUANDO VUELVA →') + '</button>' : '<div onclick="swTab(\'points\')" style="cursor:pointer;display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.08em">INICIA SESIÓN PARA QUE TE AVISEMOS →</div>')
                 + '</div>';
         }
         // Antes, sin foto real (ver SIG_IMG — 4 de 6 signatures la tienen hoy), la tarjeta
@@ -1967,7 +1983,12 @@ function rewardsPickerHTML() {
                     : r.id === 'R03' ? (r03FlatPriceItem ? ' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar' : ' · agrega un sándwich 15CM para usarla')
                         : r.id === 'R05' ? ' · agrega una bebida para usarla'
                             : ' · agrega algo a tu carrito para usarla';
-        var sub = r.d + (!eligible ? reqText : '') + (selected && savings > 0 ? ' · ahorras ' + SOLES + savings + ' en ' + targetLabel : (selected ? ' · se incluye con tu pedido' : ''));
+        // SOLES (con <span>) es HTML pensado para insertarse crudo — pero `sub` entero pasa
+        // por esc() más abajo, así que había que usar SOLES_TXT (texto plano) acá, no SOLES.
+        // Antes se veía literalmente "<span style=...>S/</span>4" en pantalla al aplicar
+        // cualquier recompensa con ahorro (hallazgo de auditoría UX, ALTO, confirmado por
+        // 2 agentes independientes).
+        var sub = r.d + (!eligible ? reqText : '') + (selected && savings > 0 ? ' · ahorras ' + SOLES_TXT + savings + ' en ' + targetLabel : (selected ? ' · se incluye con tu pedido' : ''));
         return '<div onclick="' + (eligible ? 'toggleReward(\'' + r.id + '\')' : '') + '" style="background:' + (selected ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (selected ? GOLD : '#3A6B58') + ';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:' + (eligible ? 'pointer' : 'not-allowed') + ';opacity:' + (eligible ? 1 : .4) + ';box-shadow:' + (selected ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;padding-right:8px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + r.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + r.s + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">' + esc(sub) + '</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:' + (selected ? GOLD : '#A8C8B0') + ';flex-shrink:0">' + (selected ? '✓' : '○') + '</span></div></div>';
     }).join('');
     return '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">USA TUS PUNTOS //</div>' + rows + '</div>';
@@ -3034,7 +3055,9 @@ function sOSent() {
         : null;
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:#1E3932" class="fi">'
         + '<div style="margin-bottom:12px">' + WORDMARK(52, true) + '</div>'
-        + (pending ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO REGISTRADO //</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>')
+        // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
+        // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
+        + (pending ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO REGISTRADO //</div>' : (window._lTot === 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO CONFIRMADO //</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>'))
         + '<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;max-width:260px;line-height:1.6;margin-bottom:16px">' + (pending ? 'Verificaremos tu pago por ' + methodLabel + ' y tu pedido pasará a preparación en cuanto lo confirmemos.' : 'Tu pago fue procesado y tu pedido ya está en preparación.') + '</p>'
         + '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
         + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
@@ -3050,7 +3073,7 @@ function sOSent() {
             + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#ff8888;margin-top:4px">' + esc(receiptUploadState.slice(6)) + '</div>' : '')
             + '</div>' : '')
         + '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:10px;line-height:1.5">Sigue el estado en PUNTOS → MIS PEDIDOS</div></div>'
-        + '<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'MONTO A PAGAR //' : 'MONTO COBRADO //') + '</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">' + SOLES + (window._lTot || 0) + '</div>' + (window._lChargeId ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;margin-top:4px">Ref. pago: ' + window._lChargeId + '</div>' : '') + '</div>'
+        + '<div style="background:#1A3028;border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'MONTO A PAGAR //' : (window._lTot === 0 ? 'CUBIERTO POR RECOMPENSA //' : 'MONTO COBRADO //')) + '</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:32px;font-weight:900;color:#FFFFFF">' + SOLES + (window._lTot || 0) + '</div>' + (window._lChargeId ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;margin-top:4px">Ref. pago: ' + window._lChargeId + '</div>' : '') + '</div>'
         + (cust ? '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'PUNTOS //' : 'PUNTOS GANADOS //') + '</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:' + (pending ? '12px' : '32px') + ';font-weight:900;color:' + GOLD + '">' + (pending ? '+' + (window._lTot || 0) + ' pts pendientes hasta confirmar tu pago' : '+' + (window._lTot || 0) + '<span style="font-size:14px"> pts</span>') + '</div></div>' : '')
         + (window._lRewardLabel ? '<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('gift', 12, '#25D366') + 'RECOMPENSA APLICADA //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF">' + esc(window._lRewardLabel) + '</div></div>' : '')
         // Respaldo tappable del window.open automático de arriba — muchos navegadores
@@ -3072,7 +3095,7 @@ function sOSent() {
 }
 // AUTH
 function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:#2D5246"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:#2D5246"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:#2D5246"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:#2D5246"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#F2F0EB;line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#A8C8B0;line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid #0B0B0B;padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#A8C8B0">' + r.n + '<span style="color:#A8C8B0"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#A8C8B0">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
 }
 async function doReg() {
     var name = gv('r-name').trim(), phone = gv('r-phone').trim(), pin = gv('r-pin').trim(), email = gv('r-email').trim(), dni = gv('r-dni').trim(), bdayRaw = gv('r-bday').trim(), refEl = document.getElementById('r-ref'), referredBy = refEl ? refEl.value.trim() : '';
@@ -3488,7 +3511,7 @@ function sPHistory() {
 }
 function sPRewards() {
     var pts = cust.points || 0;
-    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : '#0d0d0d') + ';border:1px solid ' + (ok ? GOLD : '#1a1a1a') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:' + (ok ? '#fff' : '#666') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : '#2a2a2a') + '"> // </span>' + r.s + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:' + (ok ? '#888' : '#555') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:' + (ok ? GOLD : '#444') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:' + GOLD + '">PTS</div></div></div>' + (!ok ? '<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('HACER UN PEDIDO //', 'swTab(\'order\')') + '</div>' + NAV();
+    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">TU BALANCE //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:48px;font-weight:900;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : '#141C19') + ';border:1px solid ' + (ok ? GOLD : '#1a1a1a') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:' + (ok ? '#fff' : '#666') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : '#2a2a2a') + '"> // </span>' + r.s + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:' + (ok ? '#888' : '#555') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:' + (ok ? GOLD : '#444') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:' + GOLD + '">PTS</div></div></div>' + (!ok ? '<div style="background:#2D5246;border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('HACER UN PEDIDO //', 'swTab(\'order\')') + '</div>' + NAV();
 }
 // Insignias de hitos — puramente derivadas de datos que ya viven en `cust` (sin pedir
 // nada nuevo al servidor): marcan progreso acumulado (no solo del mes en curso, a
@@ -3514,15 +3537,24 @@ function sPProfile() {
     var initial = esc((cust.name || '?').trim().charAt(0).toUpperCase());
     var heroHTML = '<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid #3A6B58;border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#12241D">' + initial + '</div><div style="flex:1;min-width:0"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cust.name) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;margin-top:4px">' + esc(cust.phone) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-top:6px">' + rankName(cust.total_orders) + ' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:' + GOLD + ';line-height:1">' + (cust.points || 0) + '</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-top:2px">PTS</div></div></div>';
     var referralHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">PROGRAMA<span class="cut-sep" style="color:' + GOLD + '"> // </span>REFERIDOS</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">COMPARTIR POR WHATSAPP //</button></div>';
-    var creditHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">CRÉDITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'TELÉFONO DEL AMIGO // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'MONTO A REGALAR // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('REGALAR CRÉDITO //', 'doCreditGift()') + '</div></div>';
-    var giftCardHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">TARJETA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Compra crédito nuevo con tu tarjeta y regálalo a otro cliente — sin gastar tu propio saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('COMPRAR Y REGALAR //', "sc='gift_card';render()") + '</div>';
+    // Antes las 3 tarjetas de abajo (crédito/tarjeta de regalo/Plan Semanal) no tenían
+    // ningún elemento que las diferencie, pese a tener lógicas de negocio muy distintas
+    // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo
+    // para MÍ pagando con tarjeta real) — hallazgo de auditoría UX, MEDIO.
+    var balanceCompareHTML = '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:#8BAF9A;margin:4px 0 12px;line-height:1.5">Con tu saldo actual → <b style="color:#A8C8B0">crédito</b>. Con tus puntos → <b style="color:#A8C8B0">tarjeta de regalo</b>. Con tarjeta hoy → <b style="color:#A8C8B0">Plan Semanal</b>.</div>';
+    var creditHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">CRÉDITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:34px;font-weight:900;color:#FFFFFF;margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'TELÉFONO DEL AMIGO // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'MONTO A REGALAR // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('REGALAR CRÉDITO //', 'doCreditGift()', true) + '</div></div>';
+    // "con tu tarjeta" contradecía el mecanismo real desde que se rediseñó a puntos (sin
+    // ningún cobro) — quedó con la copy vieja de antes de ese rediseño (hallazgo de
+    // auditoría UX, ALTO — confirmado en vivo, la pantalla de compra en sí ya decía bien
+    // "REGALAR CON PUNTOS", solo este teaser quedó desactualizado).
+    var giftCardHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">TARJETA<span class="cut-sep" style="color:' + GOLD + '"> // </span>DE REGALO</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('COMPRAR Y REGALAR //', "sc='gift_card';render()", true) + '</div>';
     var weeklyPlanHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">PLAN<span class="cut-sep" style="color:' + GOLD + '"> // </span>SEMANAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-bottom:14px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + (WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('ACTIVAR PLAN SEMANAL //', "sc='weekly_plan';render()") + '</div>';
-    var challengeHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimChallenge()') + '</div>';
-    var discoveryHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>DESCUBRIMIENTO</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimDiscoveryChallenge()') + '</div>';
+    var challengeHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>MENSUAL</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimChallenge()', true) + '</div>';
+    var discoveryHTML = '<div style="background:#1A3028;border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;margin-bottom:10px">RETO<span class="cut-sep" style="color:' + GOLD + '"> // </span>DESCUBRIMIENTO</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('RECLAMAR RECOMPENSA //', 'doClaimDiscoveryChallenge()', true) + '</div>';
     var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (pushSubscribed ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (pushSubscribed ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:#FFFFFF">NOTIFICACIONES<span class="cut-sep" style="color:' + GOLD + '"> // </span>PUSH</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
     return H('MI PERFIL', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">' + heroHTML
         + badgesHTML(cust)
-        + pushHTML + referralHTML + creditHTML + weeklyPlanHTML + giftCardHTML + challengeHTML + discoveryHTML
+        + pushHTML + referralHTML + balanceCompareHTML + creditHTML + weeklyPlanHTML + giftCardHTML + challengeHTML + discoveryHTML
         + '<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#A8C8B0;letter-spacing:.1em;padding:10px;margin-bottom:6px">TÉRMINOS Y PRIVACIDAD //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid #3A6B58;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">CERRAR SESIÓN EN TODOS LOS DISPOSITIVOS //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'Barlow\',sans-serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
 }
 function shareReferral() {
@@ -3935,7 +3967,10 @@ function sPComplaints() {
         return sComplaintsSuccess(bk);
     var kindToggle = '<div style="display:flex;background:#2D5246;border-radius:10px;padding:4px;margin-bottom:20px">' + [['reclamo', 'RECLAMO'], ['queja', 'QUEJA']].map(function (x) { return '<button onclick="cmplKind=\'' + x[0] + '\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (cmplKind === x[0] ? GOLD : 'transparent') + ';color:' + (cmplKind === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>';
     var kindHint = '<p style="font-family:\'Barlow\',sans-serif;font-size:11px;color:#A8C8B0;line-height:1.5;margin-bottom:20px">' + (cmplKind === 'queja' ? 'Queja: malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).' : 'Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.') + '</p>';
-    var minorBlock = '<label style="display:flex;align-items:center;gap:8px;font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin:6px 0 10px"><input type="checkbox" id="cq-minor" onchange="cmplMinor=this.checked;render()" ' + (cmplMinor ? 'checked' : '') + ' style="accent-color:' + GOLD + '">Soy menor de edad (o reclamo en representación de uno)</label>'
+    // Checkbox nativo del navegador — único control de toda la app que rompía con el
+    // lenguaje 100% custom del resto (accent-color solo tiñe el estado marcado, el
+    // desmarcado seguía siendo el default del SO) (hallazgo de auditoría de diseño, MEDIO).
+    var minorBlock = '<div onclick="cmplMinor=!cmplMinor;render()" style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:' + (cmplMinor ? GOLD : 'transparent') + ';border:1px solid ' + (cmplMinor ? GOLD : '#3A6B58') + ';display:flex;align-items:center;justify-content:center">' + (cmplMinor ? icon('check', 13, '#0d0d0d') : '') + '</div><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0">Soy menor de edad (o reclamo en representación de uno)</span></div>'
         + (cmplMinor ? INP('cq-guardian', 'NOMBRE DEL PADRE, MADRE O APODERADO', 'text', undefined, 'clientes') : '');
     var ta = function (id, ph) { return '<textarea id="' + id + '" placeholder="' + ph + '" style="background:#2D5246;border:1px solid #0d0d0d;border-radius:10px;padding:14px 16px;color:#FFFFFF;width:100%;font-size:14px;font-family:Barlow,sans-serif;min-height:90px;box-sizing:border-box"></textarea>'; };
     return H('LIBRO DE RECLAMACIONES', "sc='" + bk + "';render()") + '<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
@@ -3945,11 +3980,15 @@ function sPComplaints() {
         + kindToggle + kindHint
         + '<div style="display:flex;flex-direction:column;gap:10px">'
         + ST('01', 'TUS DATOS', '')
-        + INP('cq-name', 'NOMBRES Y APELLIDOS', 'text', undefined, 'clientes')
-        + INP('cq-dni', 'DNI / CARNET DE EXTRANJERÍA', 'text', undefined, 'card')
-        + INP('cq-addr', 'DOMICILIO', 'text', undefined, 'direccion')
-        + INP('cq-phone', 'TELÉFONO', 'tel', undefined, 'phone')
-        + INP('cq-email', 'CORREO ELECTRÓNICO', 'email', undefined, 'mail')
+        // Prellenado desde la cuenta si hay sesión — antes un cliente logueado con un
+        // reclamo real (ya frustrado) tenía que re-escribir 5 campos que la app ya conoce, en
+        // vez de solo revisarlos/corregirlos (hallazgo de auditoría UX, MEDIO). Todo sigue
+        // editable, para el caso de reclamar en nombre de otra persona.
+        + INP('cq-name', 'NOMBRES Y APELLIDOS', 'text', cust ? cust.name : undefined, 'clientes')
+        + INP('cq-dni', 'DNI / CARNET DE EXTRANJERÍA', 'text', cust ? cust.dni : undefined, 'card')
+        + INP('cq-addr', 'DOMICILIO', 'text', cust ? cust.last_address : undefined, 'direccion')
+        + INP('cq-phone', 'TELÉFONO', 'tel', cust ? cust.phone : undefined, 'phone')
+        + INP('cq-email', 'CORREO ELECTRÓNICO', 'email', cust ? cust.email : undefined, 'mail')
         + minorBlock
         + '</div>'
         + '<div style="height:1px;background:#1E3932;margin:20px 0"></div>'
@@ -4566,8 +4605,8 @@ function sAdminHome() {
         + '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
         + '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:#FFFFFF">PANEL<span class="cut-sep" style="color:' + GOLD + '"> // </span>OPERADOR</div>'
         + (badge > 0 ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;letter-spacing:.1em;margin-top:3px" class="pulse">● ' + badge + ' ACCIÓN REQUERIDA</div>' : '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#A8C8B0;margin-top:3px">todo en orden //</div>')
-        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon('refresh', 16) + '</button>'
-        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;margin-right:14px;display:inline-flex">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>'
+        + '</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('refresh', 16) + '</button>'
+        + '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>'
         + '<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'Barlow\',sans-serif;font-size:12px;color:' + GOLD + '">← salir</button></div>'
         + (adminOrdersTruncated ? '<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ffa500;display:flex;align-items:center;gap:5px">' + icon('warning', 12, '#ffa500') + '<span>Hay más pedidos activos de los que se muestran aquí (solo los ' + ao.length + ' más recientes).</span></div>' : '')
         // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
@@ -4600,13 +4639,18 @@ function sAdminHome() {
             var minsDue = minutesAgo(orderDueTime(o));
             var isScheduledAhead = o.scheduled_for && new Date(o.scheduled_for).getTime() > Date.now();
             var isStale = (o.status === 'RECIBIDO' || manualPending) && !isScheduledAhead && minsDue !== null && minsDue >= 10;
-            return '<div style="background:#2D5246;border:1px solid ' + (isStale ? '#ff5555' : (o.status === 'RECIBIDO' ? 'rgba(255,165,0,.3)' : '#1c1c1c')) + ';border-radius:10px;padding:16px;margin-bottom:12px' + (isStale ? '" class="pulse' : '') + '">'
+            // Antes toda la tarjeta pulsaba (class="pulse" en el contenedor completo), lo que
+            // atenúa TODO al 35% de opacidad en cada ciclo — incluido el botón de acción, que
+            // se veía deshabilitado justo cuando más urge tocarlo (hallazgo de auditoría de
+            // diseño admin, ALTO). Ahora el pulso vive solo en un punto de acento junto al
+            // "hace X min" — la tarjeta y su botón quedan siempre legibles.
+            return '<div style="background:#2D5246;border:1px solid ' + (isStale ? '#ff5555' : (o.status === 'RECIBIDO' ? 'rgba(255,165,0,.3)' : '#1c1c1c')) + ';border-radius:10px;padding:16px;margin-bottom:12px">'
                 + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
                 + '<div style="display:flex;gap:10px;flex:1">'
                 + '<input type="checkbox" onchange="toggleBulkSelect(\'' + o.id + '\')" ' + (checked ? 'checked' : '') + ' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:' + GOLD + '">'
                 + '<div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:17px;font-weight:700;color:#FFFFFF">' + esc(o.customer_name) + '</div>'
                 + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#A8C8B0;margin-top:2px">' + esc(o.customer_address) + '</div>'
-                + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (isStale ? '#ff8888' : '#A8C8B0') + ';margin-top:4px">' + esc(o.ref) + ' · ' + SOLES + o.total + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</div>'
+                + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (isStale ? '#ff8888' : '#A8C8B0') + ';margin-top:4px;display:flex;align-items:center;gap:5px">' + (isStale ? '<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:#ff5555;display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + o.total + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
                 + (isScheduledAhead ? '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('horario', 12, '#3A86FF') + '<span>programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
                 // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
                 // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
@@ -4665,7 +4709,7 @@ function sAdminHome() {
                     ['horario', 'HORARIO', 'loadStoreHoursForm()'],
                 ]],
             ['CUENTA //', [
-                    ['puntos', 'PUNTOS MANUALES', 'sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';render()'],
+                    ['puntos', 'PUNTOS MANUALES', 'sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
                     ['admins', 'ADMINISTRADORES', 'loadAdminMgr()'],
                     ['auditoria', 'AUDITORÍA', 'loadAuditLog()'],
                 ]],
@@ -4917,7 +4961,12 @@ async function exportCsv(action, filename) {
     render();
 }
 // ADMIN GEN
-function sAdminGen() { return '<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 12px 0 0">←</button><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>MANUALES</div></div><div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">' + INP('ag-ph', 'TELÉFONO DEL CLIENTE // 9XXXXXXXX', 'tel', agPhone, 'phone') + INP('ag-pts', 'PUNTOS A OTORGAR // Ej: 25', 'number', agPts) + BTN('OTORGAR PUNTOS //', 'doManualPts()') + '</div><div id="ag-msg" style="font-family:\'Barlow\',sans-serif;font-size:13px;color:' + GOLD + ';min-height:20px">' + agMsg + '</div></div></div>'; }
+function sAdminGen() {
+    return '<div style="min-height:100vh;display:flex;flex-direction:column;background:#1E3932"><div style="padding:20px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:#A8C8B0;font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;padding:0 12px 0 0">←</button><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:#FFFFFF">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>MANUALES</div></div><div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">' + INP('ag-ph', 'TELÉFONO DEL CLIENTE // 9XXXXXXXX', 'tel', agPhone, 'phone') + INP('ag-pts', 'PUNTOS A OTORGAR // Ej: 25', 'number', agPts) + BTN('OTORGAR PUNTOS //', 'doManualPts()') + '</div><div id="ag-msg" style="font-family:\'Barlow\',sans-serif;font-size:13px;color:' + GOLD + ';min-height:20px">' + agMsg + '</div>'
+        + '<div style="height:1px;background:#2D5246;margin:28px 0 24px"></div>'
+        + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:900;color:#FFFFFF;margin-bottom:4px">CRÉDITO<span class="cut-sep" style="color:' + GOLD + '"> // </span>AJUSTE MANUAL</div>'
+        + '<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:#A8C8B0;margin:8px 0 20px;line-height:1.6">Corrige el saldo de crédito interno de un cliente (ej. reponer un pedido cancelado que se pagó con crédito). Puede ser negativo para descontar un exceso otorgado por error.</p><div style="display:flex;flex-direction:column;gap:12px">' + INP('ac-ph', 'TELÉFONO DEL CLIENTE // 9XXXXXXXX', 'tel', acPhone, 'phone') + INP('ac-delta', 'MONTO // positivo suma, negativo descuenta', 'number', acDelta, 'coin') + BTN('AJUSTAR CRÉDITO //', 'doManualCredit()') + '</div><div id="ac-msg" style="font-family:\'Barlow\',sans-serif;font-size:13px;color:' + GOLD + ';min-height:20px;margin-top:12px">' + acMsg + '</div></div></div>';
+}
 async function doManualPts() {
     var ph = gv('ag-ph').trim(), pts = parseInt(gv('ag-pts') || '0');
     agPhone = ph;
@@ -4938,6 +4987,30 @@ async function doManualPts() {
     }
     catch (e) {
         agMsg = 'Error: ' + e.message;
+    }
+    busy = false;
+    render();
+}
+async function doManualCredit() {
+    var ph = gv('ac-ph').trim(), delta = parseFloat(gv('ac-delta') || '0');
+    acPhone = ph;
+    acDelta = String(delta);
+    if (!ph || !delta) {
+        acMsg = 'Ingresa teléfono y un monto distinto de cero.';
+        render();
+        return;
+    }
+    busy = true;
+    busyMsg = 'Ajustando crédito...';
+    render();
+    try {
+        var r = await api('admin-manual-credit', { token: token, phone: ph, delta: delta });
+        acMsg = '✓ Nuevo saldo de ' + esc(r.name) + ': ' + SOLES_TXT + r.newBalance.toFixed(2);
+        if (cust && cust.phone === ph)
+            cust.credit_balance = r.newBalance;
+    }
+    catch (e) {
+        acMsg = 'Error: ' + e.message;
     }
     busy = false;
     render();
@@ -5089,7 +5162,17 @@ function confirmMap() {
 var _lastRenderedSc = null;
 function render() {
     if (busy) {
-        document.getElementById('app').innerHTML = LOAD(busyMsg);
+        var appElBusy = document.getElementById('app');
+        // El admin navega decenas de veces por turno — antes cada navegación (cola,
+        // dashboard, inventario, etc.) mostraba el splash de pantalla completa (logo +
+        // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
+        // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
+        if (sc.indexOf('admin') === 0) {
+            appElBusy.innerHTML = '<div style="min-height:100vh;background:#1E3932;padding:20px" class="fi">' + skeletonCards(4, 64) + '</div>';
+        }
+        else {
+            appElBusy.innerHTML = LOAD(busyMsg);
+        }
         return;
     }
     var h;
@@ -5629,13 +5712,26 @@ async function loadAuditLog() {
     busy = false;
     render();
 }
+// Antes mostraba el string técnico crudo (ej. "update-status", "catalog-set-price")
+// directo de la columna `action` — rompía con el resto de la app, que consistentemente
+// usa copy en español llano (hallazgo de auditoría de diseño admin, MEDIO).
+var AUDIT_ACTION_LABEL = {
+    'manual-points': 'Puntos manuales otorgados', 'manual-credit': 'Ajuste manual de crédito',
+    'accounts-add': 'Cuenta admin agregada', 'accounts-delete': 'Cuenta admin eliminada',
+    'export-orders': 'Exportó pedidos (CSV)', 'export-customers': 'Exportó clientes (CSV)',
+    'catalog-set-price': 'Precio de catálogo editado', 'respond-complaint': 'Reclamo respondido',
+    'set-store-hours': 'Horario de atención editado', 'update-status': 'Estado de pedido actualizado',
+    'bulk-update-status': 'Estados actualizados en lote', 'confirm-payment': 'Pago manual confirmado',
+    'cancel-order': 'Pedido cancelado', 'self-cancel-needs-refund': 'Cliente canceló pedido pagado',
+    'inventory-toggle': 'Disponibilidad de producto cambiada', 'inventory-set-stock': 'Stock de producto editado',
+};
 function sAdminAudit() {
     var h = H('REGISTRO DE AUDITORÍA', "sc='admin_home';render()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
     var log = auditLog || [];
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:14px">ÚLTIMAS ' + log.length + ' ACCIONES //</div>';
     h += log.length ? log.map(function (l) {
         return '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;margin-bottom:8px">'
-            + '<div style="display:flex;justify-content:space-between"><span style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + esc(l.action) + '</span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">' + esc(l.actor_phone) + '</span></div>'
+            + '<div style="display:flex;justify-content:space-between"><span style="font-family:Barlow Condensed,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF">' + esc(AUDIT_ACTION_LABEL[l.action] || l.action) + '</span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">' + esc(l.actor_phone) + '</span></div>'
             + (l.target ? '<div style="font-family:Barlow,sans-serif;font-size:11px;color:#A8C8B0;margin-top:4px;word-break:break-all">' + esc(String(l.target)) + '</div>' : '')
             + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:4px">' + esc(new Date(l.created_at).toLocaleString('es-PE')) + '</div>'
             + '</div>';
@@ -5803,6 +5899,11 @@ function sAdminRatings() {
         return '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:10px;padding:14px;margin-bottom:10px">'
             + '<div style="display:flex;justify-content:space-between"><span style="color:#F5C518;font-size:14px">' + '★'.repeat(r.stars) + '<span style="color:#3A6B58">' + '★'.repeat(5 - r.stars) + '</span></span><span style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0">' + esc(r.order_ref || '') + '</span></div>'
             + (r.comment ? '<div style="font-family:Barlow,sans-serif;font-size:13px;color:#F2F0EB;margin-top:6px">' + esc(r.comment) + '</div>' : '')
+            // Antes no mostraba quién dejó la reseña — para agradecer o dar seguimiento el
+            // dueño tenía que cruzarla a mano contra BUSCAR PEDIDOS por el ref (hallazgo de
+            // auditoría de diseño admin, MEDIO). customer_phone puede venir null si la cuenta
+            // ya se borró (anonimización, ver actDeleteAccount) — se omite en ese caso.
+            + (r.customer_phone ? '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';margin-top:6px">' + esc(r.customer_phone) + '</div>' : '')
             + '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:6px">' + esc(new Date(r.created_at).toLocaleDateString('es-PE')) + '</div>'
             + '</div>';
     }).join('') : '<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:#A8C8B0;text-align:center;padding:20px 0">Sin calificaciones //</div>';
@@ -6041,9 +6142,9 @@ function sPRecover() {
         + '<div style="font-family:Barlow,sans-serif;font-size:13px;color:#A8C8B0;margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
         + pinBox
         + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
-        + INP('rec-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', undefined, 'phone')
-        + INP('rec-dni', 'DNI // Tu número de 8 dígitos', 'text', undefined, 'card')
-        + INP('rec-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar')
+        + INP('rec-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', recPhone, 'phone')
+        + INP('rec-dni', 'DNI // Tu número de 8 dígitos', 'text', recDni, 'card')
+        + INP('rec-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', recBday, 'calendar')
         + '</div>'
         + '<div id="rec-msg" style="font-family:Barlow,sans-serif;font-size:12px;color:#ff5555;min-height:16px;margin-bottom:12px;text-align:center"></div>'
         + BTN('RECUPERAR MI PIN //', 'doRecover()')
@@ -6053,6 +6154,9 @@ async function doRecover() {
     var phone = gv('rec-phone').trim();
     var dni = gv('rec-dni').trim();
     var bdayRaw = gv('rec-bday').trim();
+    recPhone = phone;
+    recDni = dni;
+    recBday = bdayRaw;
     var msg = document.getElementById('rec-msg');
     if (!phone || !dni || !bdayRaw) {
         if (msg)

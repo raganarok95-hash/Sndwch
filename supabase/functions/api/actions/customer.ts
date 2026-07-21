@@ -7,6 +7,7 @@ import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } f
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS } from "../env.ts";
 import { sendPushToPhone } from "../push.ts";
+import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
 // Antes actAddressesAdd y actFavoritesAdd repetían el mismo patrón de "cuenta las filas
@@ -200,6 +201,20 @@ export async function actCreditGift(b: any) {
     sbInsert("credit_ledger", { customer_phone: s.phone, delta: -amount, reason: "Regalo enviado", related_phone: toPhone }),
     sbInsert("credit_ledger", { customer_phone: toPhone, delta: amount, reason: "Regalo recibido", related_phone: s.phone }),
   ]);
+  // Antes este flujo no avisaba al receptor de ninguna forma — a diferencia de la
+  // tarjeta de regalo (actGiftCardPurchase, misma acción conceptual: mover saldo a otro
+  // cliente), que sí notifica. El saldo regalado podía quedar sin usarse simplemente
+  // porque el receptor nunca se enteró (hallazgo de auditoría UX, MEDIO).
+  try {
+    await sendPushToPhone(toPhone, {
+      title: "¡Recibiste crédito de un amigo! 🎁",
+      body: `Alguien te regaló S/${amount.toFixed(2)} de crédito SND//WCH.`,
+      url: "./index.html",
+      tag: "sndwch-credit-gift-received-" + Date.now(),
+    });
+  } catch {
+    // un push fallido no debe bloquear la confirmación del regalo
+  }
   return { success: true };
 }
 
@@ -731,6 +746,10 @@ export async function actExpirePendingWeeklyPlans(b: any) {
       expired++;
     } catch (e) {
       console.error("expire-pending-weekly-plans failed for", pp.id, e);
+      // Fallos dentro de loops de cron solo iban a console.error — para los 3 crons que
+      // mueven dinero real esto contradice la razón de ser de debug_logs (hallazgo de
+      // auditoría de código, MEDIO).
+      await debugLog({ stage: "expire-pending-weekly-plans", pendingPlanId: pp.id, error: String(e) });
     }
   }
   return { success: true, expired };
