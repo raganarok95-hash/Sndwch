@@ -36,6 +36,21 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// A diferencia de la función api (ver api/logging.ts), esta función nunca escribía a
+// debug_logs — sus fallos (incluyendo cobros reales rechazados por Culqi) solo vivían en
+// console.error, visible nada más desde el panel de logs de Supabase, pese a ser una de
+// las 2 únicas funciones que mueven dinero real (hallazgo de auditoría de arquitectura
+// backend/observabilidad). best-effort: un fallo al loguear nunca debe tumbar el cobro.
+async function debugLog(detail: unknown) {
+  try {
+    await fetch(`${SB_URL}/rest/v1/debug_logs`, {
+      method: "POST",
+      headers: { apikey: SERVICE_KEY!, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({ source: "create-charge", detail }),
+    });
+  } catch (_e) { /* nunca debe tumbar la respuesta real */ }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -91,6 +106,7 @@ Deno.serve(async (req: Request) => {
   );
   const claimed = claimResp.ok ? await claimResp.json() : [];
   if (!claimed.length) {
+    await debugLog({ event: "claim-conflict", orderRef, pendingChargeId: pc.id });
     return json({ error: "Ya hay un cobro en proceso para este pedido. Espera un momento antes de reintentar." }, 409);
   }
 
@@ -123,6 +139,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (e) {
     await releaseClaim();
+    await debugLog({ event: "culqi-fetch-failed", orderRef, amountCents, error: String(e) });
     return json({ error: "No se pudo conectar con Culqi: " + String(e) }, 502);
   }
 
@@ -131,6 +148,7 @@ Deno.serve(async (req: Request) => {
   if (!culqiResp.ok) {
     await releaseClaim();
     const msg = culqiData?.user_message || culqiData?.merchant_message || "El pago fue rechazado.";
+    await debugLog({ event: "culqi-rejected", orderRef, amountCents, status: culqiResp.status, culqi: culqiData });
     return json({ error: msg, culqi: culqiData }, 402);
   }
 
@@ -138,6 +156,7 @@ Deno.serve(async (req: Request) => {
   // que actConfirmCulqiOrder (función api) pueda hacer su propio reclamo atómico
   // pending -> consumed al crear el pedido, exactamente igual que siempre.
   await releaseClaim();
+  await debugLog({ event: "charge-succeeded", orderRef, amountCents, chargeId: culqiData.id });
 
   return json({
     success: true,

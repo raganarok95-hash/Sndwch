@@ -1152,9 +1152,21 @@ export async function actExpireStaleManualPayments(b: any) {
   let cancelled = 0;
   for (const order of stale) {
     try {
-      await restockOrderItems(order.items);
-      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Pago manual no confirmado a tiempo" });
-      cancelled++;
+      // Guarda status=eq.RECIBIDO&payment_status=neq.paid en el UPDATE mismo (no solo en
+      // el SELECT de arriba) — sin esto, un admin podía confirmar el pago o avanzar el
+      // pedido entre el SELECT y este UPDATE (TOCTOU) y este cron lo cancelaba/restockeaba
+      // igual, contradiciendo lo que el admin acababa de hacer (hallazgo de auditoría de
+      // arquitectura backend). rows.length===0 significa que el pedido ya no calificaba
+      // para expirar, así que tampoco se restockea.
+      const rows = await sbUpdate(
+        "orders",
+        `id=eq.${encodeURIComponent(order.id)}&status=eq.RECIBIDO&payment_status=neq.paid`,
+        { status: "CANCELADO", cancel_reason: "Pago manual no confirmado a tiempo" },
+      );
+      if (rows.length) {
+        await restockOrderItems(order.items);
+        cancelled++;
+      }
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);
     }

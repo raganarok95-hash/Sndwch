@@ -376,7 +376,7 @@ const RANK_RISK_WEIGHT: Record<string, number> = {
 export async function actAdminAtRiskCustomers(b: any) {
   await requireAdmin(b.token);
   const [customers, orders] = await Promise.all([
-    sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders"),
+    sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders&limit=5000"),
     sbGet("orders", "payment_status=eq.paid&select=customer_phone,created_at&limit=5000"),
   ]);
 

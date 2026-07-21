@@ -297,3 +297,10 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   SDK/librería pública cuando ya se conoce la ruta exacta del archivo (no sirve para
   *descubrir* qué repos existen, solo para leer uno ya identificado por otra vía como
   `WebSearch`).
+- **`Read` sobre varias imágenes en una sola llamada puede desalinear los metadatos de
+  dimensión** (`[Image: original WxH]`) entre archivos — visto al leer 5 fotos de
+  proteína seguidas para verificarlas antes de integrarlas a `PROT_IMG`. La imagen en sí
+  se lee bien (el contenido visual mostrado es correcto), pero el WxH reportado junto a
+  cada una puede corresponder al archivo anterior/siguiente del lote, no al que
+  acompaña. Para verificar dimensiones reales de forma confiable, o pedir una imagen por
+  llamada, o no confiar en el WxH del batch y calcularlo aparte (ej. `PIL`/`Image.size`).
