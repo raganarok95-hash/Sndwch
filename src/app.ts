@@ -127,9 +127,14 @@ var CHEESE=[
   {id:'C02',l:'CHEDDAR',  s:''},
   {id:'C03',l:'EDAM',     s:''}
 ];
+// `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
+// progresivo"/"golpe de picor") — no es una clasificación nueva inventada, solo expone
+// visualmente un dato que ya estaba en `d`. Usado por el paso 05 de BUILD YOUR OWN para
+// darle jerarquía visual a la única lista plana de 13 ítems sin agrupar/iconos del flujo
+// (hallazgo de auditoría UX).
 var SAUCES=[
   {id:'S01',l:'AIOLI',   s:'SIGNATURE',d:'Ajo, limón, suave'},
-  {id:'S02',l:'SPICY',   s:'MAYO',     d:'Cremoso, calor progresivo'},
+  {id:'S02',l:'SPICY',   s:'MAYO',     d:'Cremoso, calor progresivo',spicy:true},
   {id:'S03',l:'SMOKE',   s:'BBQ',      d:'Ahumado, miel, pimentón'},
   {id:'S04',l:'HONEY',   s:'MUSTARD',  d:'Dulce, mostaza equilibrado'},
   {id:'S05',l:'SNDWCH',  s:'SPECIAL',  d:'Nuestra salsa de la casa. Receta exclusiva SND//WCH.'},
@@ -139,7 +144,7 @@ var SAUCES=[
   {id:'S09',l:'CHIMICHURRI',s:'ARGENTINO',d:'Herbal, ajo, ácido'},
   {id:'S10',l:'PEANUT',  s:'SATAY',    d:'Maní, soya, jengibre'},
   {id:'S11',l:'MOSTAZA', s:'DIJON',    d:'Intensa, clásica, con carácter'},
-  {id:'S12',l:'MIEL',    s:'PICANTE',  d:'Dulce con golpe de picor'},
+  {id:'S12',l:'MIEL',    s:'PICANTE',  d:'Dulce con golpe de picor',spicy:true},
   {id:'S13',l:'AU JUS',  s:'PARA MOJAR',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado'}
 ];
 var SIGS=[
@@ -1544,12 +1549,23 @@ function sOBuild(){
   }else{
     h+=ST('05','SALSAS','Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
     h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
-    h+=SAUCES.map(function(s){
+    // Antes las 13 salsas eran una sola lista plana sin ningún elemento visual que las
+    // distinguiera entre sí (el único paso de BUILD YOUR OWN sin agrupar/iconos, hallazgo
+    // de auditoría UX). Se agrupan en PICANTES/OTRAS SALSAS y se marca con el ícono de ají
+    // solo a las 2 cuya propia descripción ya declaraba picor — no es una clasificación
+    // nueva, solo hace visible un dato que ya estaba en el texto.
+    var sauceCard=function(s){
       var av=isAvail(s.id);
       if(!av)return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text-muted,#A8C8B0)">'+s.l+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+s.s+'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
       var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
-    }).join('');
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+'</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
+    };
+    var spicySauces=SAUCES.filter(function(s){return s.spicy;});
+    var otherSauces=SAUCES.filter(function(s){return !s.spicy;});
+    h+='<div style="display:flex;align-items:center;gap:6px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">'+icon('chili',11,'#ff8a5c')+'<span>PICANTES //</span></div>';
+    h+=spicySauces.map(sauceCard).join('');
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:16px 0 8px">OTRAS SALSAS //</div>';
+    h+=otherSauces.map(sauceCard).join('');
   }
   h+=AB(size?total():null,byoStepCanContinue(),'byoStepBack()','byoStepNext()',byoStep<4?'SIGUIENTE →':'CONTINUAR //');
   return h;
