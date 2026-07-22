@@ -242,6 +242,11 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
     if (!VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
     ingredientsPerUnit.push(cheese);
   }
+  // Igual que en BUILD YOUR OWN: la salsa extra es una porción doble de una de las
+  // salsas ya incluidas en la receta del Signature (todas tienen al menos una), no una
+  // salsa nueva sin especificar — antes no se descontaba ningún ingrediente real por
+  // este cargo de S/2 (hallazgo de auditoría financiera).
+  if (extraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
   return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
@@ -261,11 +266,20 @@ function priceByoBuild(
   // ese topping por el precio de un sándwich normal (hallazgo de auditoría de QA).
   if (tops.length > VALID_TOPS.size || new Set(tops).size !== tops.length || tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
   if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
+  // "Extra" implica más de una salsa que ya elegiste — sin esto, un cliente podía pedir
+  // SALSA EXTRA con 0 salsas base seleccionadas, lo cual no descontaba ningún ingrediente
+  // real de inventario (el cargo de S/2 no mapeaba a ninguna salsa concreta) y además
+  // dejaba a R02 ("4TA SALSA GRATIS") canjeable sin haber llegado siquiera a una 3ra
+  // salsa (hallazgo de auditoría financiera).
+  if (extraSauce && !sauces.length) throw new ApiError("Selecciona al menos una salsa antes de pedir salsa extra.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
+  // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
+  // especificar) — se descuenta del inventario real de esa misma salsa.
+  if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
   return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
@@ -418,7 +432,12 @@ export function priceCartItem(raw: any): PricedItem {
       sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
-      eligibleR02: extraSauce,
+      // A diferencia de un Signature (salsas fijas de receta, "extra" siempre es de
+      // verdad extra), en BUILD YOUR OWN el cliente elige sus propias salsas (tope 3) —
+      // R02 ("4TA SALSA GRATIS") solo tiene sentido real si ya llegó al tope de 3 antes
+      // de pagar por una 4ta (hallazgo de auditoría financiera: antes calificaba incluso
+      // con 0 salsas base seleccionadas).
+      eligibleR02: extraSauce && sauces.length === 3,
       eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
       eligibleR05: false,
