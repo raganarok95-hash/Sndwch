@@ -168,7 +168,12 @@ var SIGS=[
   // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
   // p30 subido de 26 a 30 (mismo motivo que P05 arriba) — mantiene el criterio de premio
   // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'MÁS PEDIDO',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:30,
+  // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): MÁS PEDIDO
+  // afirmaba un dato de ventas real que no existe — el negocio aún no ha abierto, no hay
+  // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
+  // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
+  // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
+  {id:'SIG03',n:'THE SMOKE',   s:'BUILD',    badge:'AHUMADO',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:30,
     chef:true,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 22 a 25 (mismo motivo que P04 arriba) — mantiene el criterio de premio
@@ -183,7 +188,13 @@ var SIGS=[
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
   // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
   // auditoría de producción).
-  {id:'SIG07',n:'CHICAGO ITALIAN BEEF',s:'RESERVE',badge:'EDICIÓN LIMITADA',base:'B01',prot:'P01',tops:['T07'],sauces:['S13'],p15:25,p30:25,
+  // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): EDICIÓN
+  // LIMITADA implica una escasez real (tanda limitada, stock tope, ventana de tiempo)
+  // que no existe — no hay ningún mecanismo de inventario/tope detrás de este badge, y
+  // el negocio aún no ha abierto (riesgo de publicidad engañosa). AL ESTILO CHICAGO
+  // describe el origen del plato (coincide con el nombre), no una afirmación de
+  // escasez verificable.
+  {id:'SIG07',n:'CHICAGO ITALIAN BEEF',s:'RESERVE',badge:'AL ESTILO CHICAGO',base:'B01',prot:'P01',tops:['T07'],sauces:['S13'],p15:25,p30:25,
     pitch:'Res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
   // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
