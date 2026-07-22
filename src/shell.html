@@ -69,6 +69,13 @@ button{cursor:pointer;border:none}
 .bump{animation:bump .25s ease}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .blink{animation:blink 1.4s infinite}
+/* Celebración de rango en sOSent() — antes rankName() era puramente informativo, sin
+   ningún momento que marcara cruzar un umbral (ej. NUEVO -> REGULAR, o desbloquear THE
+   VAULT en DE LA CASA). Un solo "pop" con leve overshoot, nada más — no hace falta
+   confetti para que se sienta como un logro. */
+@keyframes rankpop{0%{transform:scale(0) rotate(-6deg);opacity:0}60%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0deg)}}
+.rank-pop{animation:rankpop .5s cubic-bezier(.34,1.56,.64,1)}
+@media (prefers-reduced-motion: reduce){.rank-pop{animation:none}}
 
 input,textarea,select{color:#F2F0EB !important}
 input::placeholder,textarea::placeholder{color:#A8C8B0 !important;opacity:1}

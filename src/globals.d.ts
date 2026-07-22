@@ -22,6 +22,7 @@ interface Window {
   _lPayMethod?: string;
   _lOrderCreatedAt?: number;
   _lRef?: string;
+  _lRankUp?: string | null;
   _mLat?: number;
   _mLon?: number;
 }

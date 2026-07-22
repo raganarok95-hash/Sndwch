@@ -1233,7 +1233,7 @@ function startGroupPoll(){
   _groupPollTimer=setInterval(function(){if(sc==='group_order')loadGroupOrder();else stopGroupPoll();},5000);
 }
 function stopGroupPoll(){if(_groupPollTimer){clearInterval(_groupPollTimer);_groupPollTimer=null;}}
-async function doAddGroupItem(sigId){
+async function submitGroupItem(item,okMsg){
   var nameEl=(document.getElementById('grp-name') as HTMLInputElement | null);
   var name=nameEl?nameEl.value.trim():groupJoinName;
   if(!name){groupMsg='Ingresa tu nombre antes de agregar tu pedido.';render();return;}
@@ -1242,10 +1242,20 @@ async function doAddGroupItem(sigId){
   try{
     // Manda token (vacío si es invitado) para que el servidor sepa si quien agrega es
     // quien organizó, y así no le mande una notificación push a sí mismo.
-    await api('add-group-item',{code:groupCode,contributorName:name,token:token,item:{type:'sig',sigId:sigId,size:groupSize,doubleProt:false,extraSauce:false,qty:1}});
-    groupMsg='¡Listo! Tu pedido se agregó.';
+    await api('add-group-item',{code:groupCode,contributorName:name,token:token,item:item});
+    groupMsg=okMsg;
     loadGroupOrder();
   }catch(e){groupMsg=e.message;render();}
+}
+function doAddGroupItem(sigId){
+  submitGroupItem({type:'sig',sigId:sigId,size:groupSize,doubleProt:false,extraSauce:false,qty:1},'¡Listo! Tu pedido se agregó.');
+}
+// Antes solo se podía agregar un Signature al pedido grupal (SIGS.filter en sGroupOrder) —
+// quien solo quería sumar una bebida sin sándwich no tenía forma de hacerlo (hallazgo de
+// auditoría UX). Mismo action del servidor (add-group-item -> priceCartItem ya valida
+// item.type:'side' desde que existen los carritos multi-ítem), solo faltaba la UI.
+function doAddGroupSide(code){
+  submitGroupItem({type:'side',code:code,qty:1},'¡Listo! Tu bebida se agregó.');
 }
 async function doCloseGroupOrder(){
   if(!(await showConfirm('¿Cerrar el pedido grupal y continuar a pagar todo junto?')))return;
@@ -1302,6 +1312,12 @@ function sGroupOrder(){
     h+=SIGS.filter(function(s){return!s.secret;}).map(function(s){
       var price=groupSize==='15'?s.p15:s.p30;
       return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:'+GOLD+'">'+SOLES+price+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
+    }).join('');
+    // Antes solo se podían agregar Signatures — quien solo quería sumar una bebida sin
+    // sándwich (o completar la suya) no tenía forma de hacerlo (hallazgo de auditoría UX).
+    h+='<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin:14px 0 12px">BEBIDAS Y SIDES //</div>';
+    h+=SIDES.map(function(s){
+      return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px;color:'+GOLD+'">'+SOLES+s.p+'</div></div><button onclick="doAddGroupSide(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button></div>';
     }).join('');
     h+='<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:8px;min-height:14px">'+esc(groupMsg)+'</div>';
     if(g.isOrganizer){
@@ -2370,7 +2386,15 @@ async function chargeAndFinalize(culqiToken){
   }
 }
 function finalizeOrderSuccess(res,po,chargeId){
+  // Celebración de rango — antes rankName() era puramente informativo, sin ningún evento
+  // ni aviso al cruzar un umbral (hallazgo de auditoría: cero feedback al pasar de NUEVO a
+  // REGULAR, o al desbloquear THE VAULT en DE LA CASA). Se compara el rango justo antes y
+  // justo después de que el servidor confirme este pedido (fuente real: total_orders que
+  // ya devuelve el propio res.customer, no un cálculo local que podría desincronizarse).
+  var prevRank=cust?rankName(cust.total_orders):null;
   if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
+  var newRank=cust?rankName(cust.total_orders):null;
+  window._lRankUp=(prevRank&&newRank&&prevRank!==newRank)?newRank:null;
   if(!cust){window._lastGuestName=po.nom;window._lastGuestPhone=po.phone;window._lastGuestEmail=po.email;}
   // Guardado aparte de po (que se anula más abajo) para que el botón de respaldo en
   // sOSent pueda reabrir el mismo mensaje si este intento automático no llegó a abrirse
@@ -2412,11 +2436,19 @@ function sOSent(){
   var deadlineLabel=manualWaiting&&window._lOrderCreatedAt
     ?new Date(window._lOrderCreatedAt+STALE_MANUAL_PAYMENT_HOURS_CLIENT*3600000).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})
     :null;
+  // Antes esta pantalla nunca mostraba la referencia del pedido (útil para ubicarlo en
+  // MIS PEDIDOS o mencionarlo si hay que escribir a soporte) y usaba la misma tarjeta
+  // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
+  // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
+  var rankUp=window._lRankUp;
+  var rankPerk=rankUp==='DE LA CASA'?'Ya puedes ver THE VAULT — el menú secreto.':null;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
-    +'<div style="margin-bottom:12px">'+WORDMARK(52,true)+'</div>'
+    +'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>'
     // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
     // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
-    +(pending?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO REGISTRADO //</div>':(window._lTot===0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PEDIDO CONFIRMADO //</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:20px">✓ PAGO CONFIRMADO //</div>'))
+    +(pending?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:6px">✓ PEDIDO REGISTRADO //</div>':(window._lTot===0?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ PEDIDO CONFIRMADO //</div>':'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ PAGO CONFIRMADO //</div>'))
+    +(window._lRef?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-bottom:20px">Pedido '+esc(window._lRef)+'</div>':'<div style="margin-bottom:20px"></div>')
+    +(rankUp?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:14px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡SUBISTE DE RANGO! //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:24px;font-weight:900;color:var(--sw-text,#FFFFFF)">'+esc(rankUp)+'</div>'+(rankPerk?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'+rankPerk+'</div>':'')+'</div>':'')
     +'<p style="font-family:\'Barlow\',sans-serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);max-width:260px;line-height:1.6;margin-bottom:16px">'+(pending?'Verificaremos tu pago por '+methodLabel+' y tu pedido pasará a preparación en cuanto lo confirmemos.':'Tu pago fue procesado y tu pedido ya está en preparación.')+'</p>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">ESTADO DEL PEDIDO //</div>'
@@ -4232,7 +4264,9 @@ async function setStock(code,name){
 function sAdminInventory(){
   var h=H('INVENTARIO',"sc='admin_home';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">CONTROL DE STOCK //</div>';
-  h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
+  h+='<div style="font-family:Barlow,sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
+  h+=SEARCHBOX('inv-search','BUSCAR PRODUCTO','inv-row');
+  h+='<div style="margin-bottom:20px">'+BTN('GUARDAR TODOS LOS CAMBIOS DE STOCK //','saveAllInventoryChanges()',true)+'</div>';
   INV_CATS.forEach(function(cat){
     h+='<div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:900;color:var(--sw-text,#FFFFFF);margin:18px 0 10px">'+cat.t+'<span class="cut-sep" style="color:'+GOLD+'"> //</span></div>';
     h+=cat.arr.map(function(item){
@@ -4240,9 +4274,9 @@ function sAdminInventory(){
       var av=invStock[item.id]!==false;
       var qty=invQty[item.id];
       var tracked=qty!=null;
-      return'<div style="background:'+(av?'#2D5246':'#1A2420')+';border:1px solid '+(av?'#3A6B58':'rgba(255,85,85,.3)')+';border-radius:10px;padding:13px 16px;margin-bottom:8px">'
+      return'<div class="inv-row" data-name="'+esc(name.toLowerCase())+'" style="background:'+(av?'var(--sw-card,#2D5246)':'var(--sw-card-danger,#1A2420)')+';border:1px solid '+(av?'var(--sw-border,#3A6B58)':'rgba(255,85,85,.3)')+';border-radius:10px;padding:13px 16px;margin-bottom:8px">'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
-        +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:'+(av?'#FFFFFF':'#A8C8B0')+'">'+name+'</div>'
+        +'<div><div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;color:'+(av?'var(--sw-text,#FFFFFF)':'var(--sw-text-muted,#A8C8B0)')+'">'+name+'</div>'
         +'<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(av?'#25D366':'#ff8888')+';margin-top:2px;letter-spacing:.1em">'+(av?'● DISPONIBLE':'● SIN STOCK')+(tracked?' · '+qty+' unid.':'')+'</div></div>'
         +'<button onclick="toggleStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:'+(av?'rgba(255,85,85,.12)':'rgba(37,211,102,.15)')+';border:1px solid '+(av?'rgba(255,85,85,.4)':'rgba(37,211,102,.4)')+';color:'+(av?'#ff8888':'#25D366')+';font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;padding:9px 14px;border-radius:8px;text-align:center;flex-shrink:0">'+(av?'MARCAR AGOTADO':'REACTIVAR')+'</button>'
         +'</div>'
@@ -4255,6 +4289,41 @@ function sAdminInventory(){
   });
   h+='</div>';
   return h;
+}
+// Guardado en lote — antes 19+ filas de inventario solo se podían guardar una por una
+// (hallazgo de auditoría admin). Lee TODOS los inputs de cantidad antes de mostrar el
+// estado "busy" (que reemplaza el DOM y borraría esos mismos inputs si se leyeran
+// después), detecta cuáles de verdad cambiaron, y reutiliza admin-inventory-set-stock
+// por cada uno — mismo endpoint que ya usaba el guardado fila por fila.
+async function saveAllInventoryChanges(){
+  var jobs: {code:string;name:string;qty:number|null}[]=[];
+  INV_CATS.forEach(function(cat){
+    cat.arr.forEach(function(item){
+      var el=(document.getElementById('qty-'+item.id) as HTMLInputElement | null);
+      if(!el)return;
+      var raw=el.value.trim();
+      var newQty=raw===''?null:parseInt(raw,10);
+      var curQty=invQty[item.id]==null?null:invQty[item.id];
+      if(newQty!==curQty){
+        jobs.push({code:item.id,name:item.l+(item.s&&item.s!=='//'?' // '+item.s:''),qty:newQty});
+      }
+    });
+  });
+  if(!jobs.length){showToast('No hay cambios de stock sin guardar.');return;}
+  busy=true;busyMsg='Guardando '+jobs.length+' cambio(s) de stock...';render();
+  try{
+    for(var i=0;i<jobs.length;i++){
+      await api('admin-inventory-set-stock',{token:token,code:jobs[i].code,name:jobs[i].name,qty:jobs[i].qty});
+      invQty[jobs[i].code]=jobs[i].qty;
+      if(jobs[i].qty!=null)invStock[jobs[i].code]=(jobs[i].qty as number)>0;
+    }
+  }catch(e){
+    busy=false;render();
+    showToast('Error al guardar: '+e.message);
+    return;
+  }
+  busy=false;render();
+  showToast(jobs.length+' producto(s) actualizado(s).');
 }
 
 var _adminList=[];
@@ -4304,7 +4373,7 @@ function cpNumField(id,label,val){
   return'<div style="flex:1;min-width:64px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">'+label+'</div><input id="'+id+'" type="number" step="0.1" value="'+val+'" style="background:var(--sw-bg,#1E3932);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:8px;padding:8px 10px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;box-sizing:border-box"></div>';
 }
 function cpRow(label,inputsHtml,fn){
-  return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
+  return'<div class="cp-row" data-name="'+esc(label.toLowerCase())+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
     +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF);margin-bottom:10px">'+esc(label)+'</div>'
     // flex-wrap: en pantallas angostas (~320px) los inputs numéricos + el botón GUARDAR
     // no caben en una sola fila — antes se comprimían/cortaban en vez de acomodarse en
@@ -4313,10 +4382,29 @@ function cpRow(label,inputsHtml,fn){
     +'<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'+inputsHtml
     +'<button onclick="'+fn+'" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 14px;border-radius:8px;white-space:nowrap">GUARDAR</button></div></div>';
 }
+// Filtra filas de catálogo/inventario por nombre sin volver a renderizar toda la
+// pantalla (render() reconstruye el innerHTML completo y le haría perder el foco/cursor
+// al propio campo de búsqueda en cada tecla) — solo alterna display en el DOM ya pintado.
+function filterAdminRows(inputId,rowClass){
+  var q=(gv(inputId)||'').toLowerCase().trim();
+  var rows=document.getElementsByClassName(rowClass);
+  for(var i=0;i<rows.length;i++){
+    var name=(rows[i].getAttribute('data-name')||'');
+    (rows[i] as HTMLElement).style.display=(!q||name.indexOf(q)>=0)?'':'none';
+  }
+}
+function SEARCHBOX(id,ph,rowClass){
+  return'<div style="position:relative;margin-bottom:12px">'
+    +'<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">'+icon('buscar',16,'#A8C8B0')+'</div>'
+    +'<input id="'+id+'" type="text" placeholder="'+ph+'" oninput="filterAdminRows(\''+id+'\',\''+rowClass+'\')" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 16px 12px 44px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box">'
+    +'</div>';
+}
 function sAdminCatalog(){
   return H('PRECIOS // CATÁLOGO',"sc='admin_home';render()")
     +'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
     +(catalogMsg?'<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">'+esc(catalogMsg)+'</div>':'')
+    +SEARCHBOX('cat-search','BUSCAR PRODUCTO O RECOMPENSA','cp-row')
+    +'<div style="margin-bottom:16px">'+BTN('GUARDAR TODOS LOS CAMBIOS //','saveAllCatalogChanges()',true)+'</div>'
     +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">PROTEÍNAS //</div>'
     +PROTS.map(function(p){
       return cpRow(p.l+' '+p.s,
@@ -4346,24 +4434,61 @@ function sAdminCatalog(){
     }).join('')
     +'</div>';
 }
+function catalogFormValues(category,code){
+  if(category==='protein')return{p15:Number(gv('cp-protein-'+code+'-p15')),p30:Number(gv('cp-protein-'+code+'-p30')),pDbl:Number(gv('cp-protein-'+code+'-pDbl'))};
+  if(category==='sig')return{p15:Number(gv('cp-sig-'+code+'-p15')),p30:Number(gv('cp-sig-'+code+'-p30'))};
+  if(category==='side')return{price:Number(gv('cp-side-'+code+'-price'))};
+  if(category==='reward')return{pts:Number(gv('cp-reward-'+code+'-pts'))};
+  return null;
+}
 async function saveCatalogPrice(category,code){
-  var values;
-  if(category==='protein'){
-    values={p15:Number(gv('cp-protein-'+code+'-p15')),p30:Number(gv('cp-protein-'+code+'-p30')),pDbl:Number(gv('cp-protein-'+code+'-pDbl'))};
-  }else if(category==='sig'){
-    values={p15:Number(gv('cp-sig-'+code+'-p15')),p30:Number(gv('cp-sig-'+code+'-p30'))};
-  }else if(category==='side'){
-    values={price:Number(gv('cp-side-'+code+'-price'))};
-  }else if(category==='reward'){
-    values={pts:Number(gv('cp-reward-'+code+'-pts'))};
-  }else{
-    return;
-  }
+  var values=catalogFormValues(category,code);
+  if(!values)return;
   busy=true;busyMsg='Guardando precio...';render();
   try{
     await api('admin-catalog-set-price',{token:token,code:code,category:category,values:values});
     await loadCatalogBackground();
     catalogMsg='Precio actualizado.';
+  }catch(e){
+    busy=false;render();
+    showToast('Error: '+e.message);
+    return;
+  }
+  busy=false;render();
+  setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2500);
+}
+// Guardado en lote — antes cada fila (22+ entre proteínas/signatures/bebidas/
+// recompensas) solo se podía guardar una por una, sin indicador de qué quedó sin
+// guardar (hallazgo de auditoría admin). Reutiliza el mismo action de a una fila
+// (admin-catalog-set-price) por cada cambio real detectado, sin tocar el backend —
+// lee TODOS los inputs antes de mostrar el estado "busy" (que reemplaza el DOM y
+// borraría esos mismos inputs si se leyeran después).
+async function saveAllCatalogChanges(){
+  var jobs: {category:string;code:string;values:any}[]=[];
+  PROTS.forEach(function(p){
+    var v=catalogFormValues('protein',p.id);
+    if(v.p15!==p.p15||v.p30!==p.p30||v.pDbl!==p.pDbl)jobs.push({category:'protein',code:p.id,values:v});
+  });
+  SIGS.forEach(function(s){
+    var v=catalogFormValues('sig',s.id);
+    if(v.p15!==s.p15||v.p30!==s.p30)jobs.push({category:'sig',code:s.id,values:v});
+  });
+  SIDES.forEach(function(d){
+    var v=catalogFormValues('side',d.id);
+    if(v.price!==d.p)jobs.push({category:'side',code:d.id,values:v});
+  });
+  RWDS.forEach(function(rw){
+    var v=catalogFormValues('reward',rw.id);
+    if(v.pts!==rw.pts)jobs.push({category:'reward',code:rw.id,values:v});
+  });
+  if(!jobs.length){catalogMsg='No hay cambios sin guardar.';render();setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2000);return;}
+  busy=true;busyMsg='Guardando '+jobs.length+' cambio(s)...';render();
+  try{
+    for(var i=0;i<jobs.length;i++){
+      await api('admin-catalog-set-price',{token:token,code:jobs[i].code,category:jobs[i].category,values:jobs[i].values});
+    }
+    await loadCatalogBackground();
+    catalogMsg=jobs.length+' precio(s) actualizado(s).';
   }catch(e){
     busy=false;render();
     showToast('Error: '+e.message);
