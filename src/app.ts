@@ -235,12 +235,15 @@ var RWDS=[
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
 // otro local — el catálogo ahora se queda solo con las bebidas propias sin jugos.
+// `icon` distingue visualmente las 4 infusiones en BEBIDAS Y SIDES — antes eran
+// idénticas salvo el texto (hallazgo de auditoría UX), sin nada que distinguirlas de un
+// vistazo en una lista donde se comparan una junto a otra.
 var SIDES=[
   // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
-  {id:'D06',l:'THE BLOOM',    s:'HIBISCUS',p:4,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.'},
-  {id:'D07',l:'THE MIDNIGHT', s:'BREW',    p:3,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.'},
-  {id:'D08',l:'THE COOL',     s:'MINT',    p:4,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.'},
-  {id:'D09',l:'THE SPICE',    s:'CHAI',    p:6,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.'}
+  {id:'D06',l:'THE BLOOM',    s:'HIBISCUS',p:4,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
+  {id:'D07',l:'THE MIDNIGHT', s:'BREW',    p:3,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
+  {id:'D08',l:'THE COOL',     s:'MINT',    p:4,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'},
+  {id:'D09',l:'THE SPICE',    s:'CHAI',    p:6,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.',icon:'vapor'}
 ];
 
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
@@ -1602,7 +1605,7 @@ function sOSides(){
   h+=SIDES.map(function(d){
     var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
     var qty=inCart?inCart.qty:0;
-    return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+d.p+'</div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>')+'</div>';
+    return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1"><div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">'+icon(d.icon,17,GOLD)+'</div><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+d.p+'</div></div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>')+'</div>';
   }).join('');
   h+='</div>'+AB(null,true,null,"sc='o_cart';render()",'VER CARRITO //');
   return h;
@@ -3587,6 +3590,9 @@ var ICONS={
   trophy:'<path d="M8 4h8v3.5a4 4 0 0 1-8 0V4z"/><path d="M8 5H5.2a3 3 0 0 0 3 5.2M16 5h2.8a3 3 0 0 1-3 5.2"/><path d="M12 11.5V15M9 19.5h6l-.6-2.7H9.6L9 19.5z"/>',
   dumbbell:'<rect x="2" y="9.5" width="3" height="5" rx="1"/><rect x="19" y="9.5" width="3" height="5" rx="1"/><path d="M7 12h10"/><rect x="5" y="7.5" width="2" height="9" rx="1"/><rect x="17" y="7.5" width="2" height="9" rx="1"/>',
   chili:'<path d="M8 5.2c3-1.4 5.3.8 5.3 3 0 2-1.3 3-1.3 5 0 4-2.8 6.8-5.5 6.8-2.8 0-4-3-2-6 1-1.4 1.8-2 1.8-4 0-2-1-3.4 1.7-4.8z"/><path d="M8 5.2c-.9-1-1-2.4 0-3.4"/>',
+  flor:'<circle cx="12" cy="12" r="1.6"/><path d="M12 3.5c1.8 1.8 1.8 4.7 0 6.5-1.8-1.8-1.8-4.7 0-6.5z"/><path d="M12 20.5c1.8-1.8 1.8-4.7 0-6.5-1.8 1.8-1.8 4.7 0 6.5z"/><path d="M3.5 12c1.8-1.8 4.7-1.8 6.5 0-1.8 1.8-4.7 1.8-6.5 0z"/><path d="M20.5 12c-1.8-1.8-4.7-1.8-6.5 0 1.8 1.8 4.7 1.8 6.5 0z"/>',
+  hoja:'<path d="M5 19c-1-6 1.5-13 13-14 1 8-4 13-13 14z"/><path d="M6.5 17.5c3-4 6-7 10.5-11.5"/>',
+  vapor:'<path d="M5 10h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M16 11.5h1.3a2 2 0 0 1 0 4H16"/><path d="M8 7c-.5-.9.5-1.4 0-2.3M11.3 7c-.5-.9.5-1.4 0-2.3M14.6 7c-.5-.9.5-1.4 0-2.3"/>',
   queso:'<path d="M3 17 12 4l9 13z"/><circle cx="10" cy="13.5" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="12.5" cy="15.5" r="1"/>',
   camera:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-2.5h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/>',
   lock:'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
