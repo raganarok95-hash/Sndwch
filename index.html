@@ -1817,12 +1817,14 @@ function sOSig() {
                 + (cust ? '<button onclick="doRequestRestockNotify(\'' + s.id + '\')" ' + (notifyRequested ? 'disabled' : '') + ' style="all:unset;cursor:' + (notifyRequested ? 'default' : 'pointer') + ';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (notifyRequested ? '#25D366' : GOLD) + ';letter-spacing:.08em">' + (notifyRequested ? '✓ TE AVISAMOS CUANDO VUELVA' : 'AVÍSAME CUANDO VUELVA →') + '</button>' : '<div onclick="swTab(\'points\')" style="cursor:pointer;display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.08em">INICIA SESIÓN PARA QUE TE AVISEMOS →</div>')
                 + '</div>';
         }
-        // Antes, sin foto real (ver SIG_IMG — 4 de 6 signatures la tienen hoy), la tarjeta
-        // simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al borde
-        // en esas filas mientras las demás tenían una miniatura, dando una lista "parchada"
-        // (hallazgo del dueño). Mismo bloque de reserva que ya usa sigPreviewOverlayHTML
-        // cuando no hay foto, a la misma escala que la miniatura real — nunca se inventa
-        // una foto, solo se pareja el espacio que ocupa.
+        // Antes, sin foto real (ver SIG_IMG — hoy los 7 signatures públicos ya la tienen, así
+        // que esta reserva ya no debería activarse en la práctica, pero se deja como red de
+        // seguridad para el día que se agregue un signature nuevo sin foto todavía), la
+        // tarjeta simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al
+        // borde en esas filas mientras las demás tenían una miniatura, dando una lista
+        // "parchada" (hallazgo del dueño). Mismo bloque de reserva que ya usa
+        // sigPreviewOverlayHTML cuando no hay foto, a la misma escala que la miniatura real —
+        // nunca se inventa una foto, solo se pareja el espacio que ocupa.
         var thumb = SIG_IMG[s.id]
             ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
             : '<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">' + icon('sandwich', 26, GOLD) + '</div>';
