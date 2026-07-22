@@ -68,7 +68,7 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
-// Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 CHICAGO ITALIAN BEEF S/25)
+// Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
 // muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
@@ -152,7 +152,7 @@ export const SIG_LABEL: Record<string, string> = {
   SIG04: "THE FRESH // BUILD",
   SIG05: "THE VAULT // RESERVE",
   SIG06: "THE TERIYAKI // BUILD",
-  SIG07: "CHICAGO ITALIAN BEEF // RESERVE",
+  SIG07: "THE CHICAGO // RESERVE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto

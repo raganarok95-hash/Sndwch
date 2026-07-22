@@ -1005,6 +1005,44 @@ async function restockOrderItems(items: any): Promise<void> {
   await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
 }
 
+// El bono de referido (+50/+50 pts) se otorgaba al pagar pero nunca se revertía al
+// cancelar — permitía "registrarse con código de referido → pedido mínimo pagado →
+// cancelar antes de que cocina empiece → repetir" para farmear el bono sin comprar de
+// verdad (hallazgo de auditoría financiera). No hay columna en `orders` que diga qué
+// pedido exacto disparó el bono, así que se usa `total_orders === 1` (justo antes de
+// que este cancelación lo baje a 0) como el mejor indicador disponible de "este pedido
+// fue el que lo otorgó" — debe leerse ANTES de que finalize_order_customer_update
+// decremente total_orders, nunca después.
+async function referrerPhoneToReverse(phone: string): Promise<string | null> {
+  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=referred_by,referral_bonus_granted,total_orders`);
+  const c = rows[0];
+  if (c && c.referred_by && c.referral_bonus_granted && c.total_orders === 1) return c.referred_by;
+  return null;
+}
+async function reverseReferralBonus(referredPhone: string, referrerPhone: string, contextLabel: string) {
+  await rpc("reverse_referral_bonus", {
+    p_referred_phone: referredPhone,
+    p_referrer_phone: referrerPhone,
+    p_bonus: REFERRAL_BONUS_POINTS,
+  });
+  await Promise.all([
+    sbInsert("transactions", {
+      customer_phone: referredPhone,
+      type: "cancel_reversal",
+      points: -REFERRAL_BONUS_POINTS,
+      description: "Reversión de bono de referido por cancelación " + contextLabel,
+      confirmed: true,
+    }),
+    sbInsert("transactions", {
+      customer_phone: referrerPhone,
+      type: "cancel_reversal",
+      points: -REFERRAL_BONUS_POINTS,
+      description: "Reversión de bono de referido por cancelación " + contextLabel,
+      confirmed: true,
+    }),
+  ]);
+}
+
 export async function actAdminCancelOrder(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
@@ -1040,6 +1078,11 @@ export async function actAdminCancelOrder(b: any) {
   const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
+  // total_orders — ver comentario de referrerPhoneToReverse.
+  const referrerToReverse = order.payment_status === "paid" && order.customer_phone
+    ? await referrerPhoneToReverse(order.customer_phone)
+    : null;
   if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
     await rpc("finalize_order_customer_update", {
       p_phone: order.customer_phone,
@@ -1067,6 +1110,9 @@ export async function actAdminCancelOrder(b: any) {
         delta: creditToRefund,
         reason: "Reembolso por cancelación admin (" + order.id + ")",
       }));
+    }
+    if (referrerToReverse) {
+      refundAudits.push(reverseReferralBonus(order.customer_phone, referrerToReverse, "admin (" + order.id + ")"));
     }
     await Promise.all(refundAudits);
   }
@@ -1133,6 +1179,11 @@ export async function actCancelMyOrder(b: any) {
   const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
+  // total_orders — ver comentario de referrerPhoneToReverse.
+  const referrerToReverse = order.payment_status === "paid" && order.customer_phone
+    ? await referrerPhoneToReverse(order.customer_phone)
+    : null;
   if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
     await rpc("finalize_order_customer_update", {
       p_phone: order.customer_phone,
@@ -1161,6 +1212,9 @@ export async function actCancelMyOrder(b: any) {
         delta: creditToRefund,
         reason: "Reembolso por cancelación (" + order.ref + ")",
       }));
+    }
+    if (referrerToReverse) {
+      refundAudits.push(reverseReferralBonus(order.customer_phone, referrerToReverse, "(" + order.ref + ")"));
     }
     await Promise.all(refundAudits);
   }

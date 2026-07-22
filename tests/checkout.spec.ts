@@ -45,11 +45,11 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
   expect(placeOrderCall!.body.address).toContain('Trujillo');
 });
 
-// SIG07 "CHICAGO ITALIAN BEEF" es el caso más raro del menú: p15===p30 (precio único de
+// SIG07 "THE CHICAGO" es el caso más raro del menú: p15===p30 (precio único de
 // S/25, sin split real de tamaño). El selector 15CM/30CM sigue existiendo en la pantalla
 // (es genérico para todos los Signature) — este test confirma que elegirlo, cambiar de
 // tamaño y completar el pago no rompe nada aunque el precio no cambie entre 15 y 30.
-test('invitado pide el Chicago Italian Beef (SIG07, precio único 15CM=30CM) y paga con Yape/Plin', async ({ page }) => {
+test('invitado pide THE CHICAGO (SIG07, precio único 15CM=30CM) y paga con Yape/Plin', async ({ page }) => {
   const calls = await gotoApp(page, {
     'place-order': (body: any) => ({
       success: true,
