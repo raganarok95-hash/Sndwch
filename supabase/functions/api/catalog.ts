@@ -57,11 +57,13 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 // las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
 // justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
-export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number }> = {
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
   // RANCH (S07) retirada esta sesión — no encajaba con el resto (ver mismo cambio en
   // src/app.ts, DEBE coincidir).
-  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24 },
+  // cheeseOptional: único Signature con queso a elección — DEBE coincidir con SIGS en
+  // src/app.ts (mismo hallazgo/razonamiento ahí).
+  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24, cheeseOptional: true },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
@@ -174,7 +176,7 @@ export const PROT_LABEL: Record<string, string> = {
   P02: "POLLO // TERIYAKI",
   P03: "POLLO // CAJUN",
   P04: "ATÚN // HOUSE",
-  P05: "THE ITALIAN",
+  P05: "EMBUTIDO // ITALIANO",
   P06: "MEATBALL // MARINARA",
 };
 
@@ -210,7 +212,7 @@ type PricedBuild = {
 // carrito — deriveOrder (favoritos, un solo build) y priceCartItem (una línea de
 // carrito) repetían este mismo cálculo carácter por carácter, cada uno con su propia
 // copia (hallazgo de la auditoría de código).
-function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, extraSauce: boolean): PricedBuild {
+function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, extraSauce: boolean, cheese: string | null = null): PricedBuild {
   const sig = SIG_DATA[sigId];
   if (!sig) throw new ApiError("Signature inválida.");
   const protInfo = PROT_PRICE[sig.prot];
@@ -219,6 +221,13 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
+  // Queso opcional y gratis (igual que en BUILD YOUR OWN) — solo en los Signatures que
+  // lo declaran (hoy solo SIG02). Se ignora silenciosamente si un cliente lo manda para
+  // un Signature que no lo permite, en vez de lanzar un error por un campo inofensivo.
+  if (cheese && sig.cheeseOptional) {
+    if (!VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
+    ingredientsPerUnit.push(cheese);
+  }
   return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
@@ -256,7 +265,7 @@ export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: num
   const rewardId = b.rewardId ? String(b.rewardId) : null;
 
   const priced = b.mode === "sig"
-    ? priceSigBuild(String(b.sigId || ""), size, doubleProt, extraSauce)
+    ? priceSigBuild(String(b.sigId || ""), size, doubleProt, extraSauce, b.cheese ? String(b.cheese) : null)
     : priceByoBuild(
       String(b.base || ""), String(b.prot || ""), b.cheese ? String(b.cheese) : null,
       Array.isArray(b.tops) ? b.tops.filter((x: any) => typeof x === "string") : [],
@@ -349,9 +358,13 @@ export function priceCartItem(raw: any): PricedItem {
   const note = raw?.note ? String(raw.note).trim().slice(0, 140) || null : null;
 
   if (raw?.type === "sig") {
-    const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce);
+    // Queso opcional y gratis, solo válido para los Signatures que lo declaran
+    // (SIG_DATA[sigId].cheeseOptional, hoy solo SIG02) — priceSigBuild ya ignora
+    // silenciosamente cheese si el Signature no lo permite.
+    const cheese = raw.cheese ? String(raw.cheese) : null;
+    const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce, cheese);
     return {
-      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, note, qty },
+      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, cheese, note, qty },
       qty,
       unitPrice: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
       basePrice: priced.basePrice,

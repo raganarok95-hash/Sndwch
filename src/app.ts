@@ -105,7 +105,10 @@ var PROTS=[
   {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:14,p30:25,pDbl:5},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
-  {id:'P05',l:'THE ITALIAN',s:'DELI',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16,p30:30,pDbl:9},
+  // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
+  // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, MEATBALL/MARINARA) — hallazgo de auditoría
+  // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
+  {id:'P05',l:'EMBUTIDO',s:'ITALIANO',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16,p30:30,pDbl:9},
   {id:'P06',l:'MEATBALL',s:'MARINARA',  d:'Albóndigas caseras en salsa marinara',p15:14,p30:24,pDbl:7}
 ];
 var TOPS=[
@@ -148,7 +151,11 @@ var SIGS=[
   // propio pitch la mencionaba) y quedaba fuera de lugar sobre albóndigas en marinara.
   // Queda con una sola salsa, tal como pide el pitch. Badge PREMIUM (antes en SIG01, el
   // más barato de los tres) pasa acá, que sí es el de precio intermedio entre los tres.
-  {id:'SIG02',n:'THE MEATBALL',s:'BUILD',    badge:'PREMIUM',   base:'B02',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,
+  // cheeseOptional: único Signature con queso a elección — un meatball sub sin queso
+  // derretido es atípico para el arquetipo (hallazgo de auditoría de receta). En vez de
+  // fijar un queso en la receta curada (cambiaría el pitch/precio sin que el cliente lo
+  // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
+  {id:'SIG02',n:'THE MEATBALL',s:'BUILD',    badge:'PREMIUM',   base:'B02',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,cheeseOptional:true,
     pitch:'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
   // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
   // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
@@ -853,7 +860,7 @@ function startOrder(m){
 }
 function currentBuiltItem(){
   return mode==='sig'
-    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:1}
+    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:1}
     :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:1};
 }
 // Entrada a la pantalla de revisar UN sándwich recién armado. Si el carrito estaba
@@ -945,6 +952,7 @@ function itemExtrasLabel(item){
   var parts=[];
   if(item.doubleProt)parts.push('doble proteína');
   if(item.extraSauce)parts.push('salsa extra');
+  if(item.type==='sig'&&item.cheese)parts.push('con '+fn(CHEESE,item.cheese).toLowerCase());
   if(item.note)parts.push('nota: '+item.note);
   return parts.join(' · ');
 }
@@ -1182,9 +1190,18 @@ function sOHome(){
     // mirar la pantalla, no solo por la etiqueta "RECOMENDADO //" en texto.
     +'<div onclick="startOrder(\'sig\')" style="background:'+surfaceGrad('#20492f','#152b20')+';border:1px solid '+GOLD+';border-radius:14px;padding:24px 20px;cursor:pointer;margin-bottom:12px;position:relative;box-shadow:'+SHADOW_GOLD+'">'
     +'<div style="position:absolute;right:16px;top:16px;font-family:Share Tech Mono,monospace;font-size:9px;color:#0d0d0d;background:'+GOLD+';border-radius:4px;padding:3px 8px;letter-spacing:.1em">RECOMENDADO</div>'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:27px;font-weight:900;color:#fff;margin-bottom:8px;text-wrap:balance">SIGNATURE<span class="cut-sep" style="color:'+GOLD+'"> // </span>BUILDS</div>'
-    +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">6 combinaciones curadas. Rápido, sin decisiones.</p>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">'+SIGS.map(function(s){var nw=s.badge==='NUEVO';return'<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(nw?'#25D366':GOLD)+';background:'+(nw?'rgba(37,211,102,.1)':'rgba(203,162,88,.1)')+';border:1px solid '+(nw?'rgba(37,211,102,.25)':'rgba(203,162,88,.25)')+';border-radius:20px;padding:3px 10px">'+s.n+'</span>';}).join('')+'</div>'
+    +(function(){
+      // Antes esta fila de chips mostraba TODOS los SIGS sin filtrar s.secret — a
+      // diferencia de sOSig(), que sí gatea el menú secreto correctamente. Cualquier
+      // invitado o cliente sin el rango veía el chip "THE VAULT" en la primerísima
+      // pantalla de la app, anulando por completo el efecto de exclusividad/descubrimiento
+      // (hallazgo CRÍTICO de auditoría, verificado leyendo el código). El texto "N
+      // combinaciones curadas" ahora también refleja cuántas se ven de verdad.
+      var visibleSigs=SIGS.filter(function(s){return!s.secret||(cust&&(cust.total_orders||0)>=s.minOrders);});
+      return'<div style="font-family:Barlow Condensed,sans-serif;font-size:27px;font-weight:900;color:#fff;margin-bottom:8px;text-wrap:balance">SIGNATURE<span class="cut-sep" style="color:'+GOLD+'"> // </span>BUILDS</div>'
+      +'<p style="font-family:Barlow,sans-serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">'+visibleSigs.length+' combinaciones curadas. Rápido, sin decisiones.</p>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">'+visibleSigs.map(function(s){var nw=s.badge==='NUEVO';return'<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:'+(nw?'#25D366':GOLD)+';background:'+(nw?'rgba(37,211,102,.1)':'rgba(203,162,88,.1)')+';border:1px solid '+(nw?'rgba(37,211,102,.25)':'rgba(203,162,88,.25)')+';border-radius:20px;padding:3px 10px">'+s.n+'</span>';}).join('')+'</div>';
+    })()
     +'</div>'
     +'<div onclick="startOrder(\'byo\')" style="background:'+surfaceGrad('#2D5246','#213e33')+';border:1px solid var(--sw-border,#3A6B58);border-radius:14px;padding:22px 20px;cursor:pointer;margin-bottom:16px;box-shadow:'+SHADOW_SM+'">'
     +'<div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#fff;margin-bottom:8px">BUILD<span class="cut-sep" style="color:'+GOLD+'"> // </span>YOUR OWN</div>'
@@ -1370,7 +1387,7 @@ function sOSig(){
     var thumb=SIG_IMG[s.id]
       ?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
       :'<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">'+icon('sandwich',26,GOLD)+'</div>';
-    return'<div onclick="sigId=\''+s.id+'\';render()" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span>'+(s.chef?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:'+GOLD+';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>':'')+lowStockNote(s.prot)+'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">'+icon('camera',11,GOLD)+'VER FOTO →</div></div></div></div>';
+    return'<div onclick="sigId=\''+s.id+'\';cheese=null;render()" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+selBar(sel)+'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:'+(sel?GOLD:'#444')+';margin-left:12px">'+priceTag+'</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">'+s.badge+'</span>'+(s.chef?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:'+GOLD+';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>':'')+lowStockNote(s.prot)+'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div><div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer">'+icon('camera',11,GOLD)+'VER FOTO →</div></div></div></div>';
   }).join('');
   var sig=SIGS.find(function(x){return x.id===sigId;});
   return h+'</div>'+(previewSigId?sigPreviewOverlayHTML():'')+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','enterConfirm()');
@@ -1504,23 +1521,29 @@ function sOItemConfirm(){
   if(mode!=='sig'){rows.push({k:'PAN',v:fn(BASES,base)});rows.push({k:'PROTEÍNA',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'TOPPINGS',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'QUESO',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'SALSAS',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
   if(doubleProt&&dbl)rows.push({k:'DOBLE',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl});
   if(extraSauce)rows.push({k:'SALSA EXTRA',v:'Salsa adicional a tu elección',p:2});
-  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'DOBLE PROTEÍNA',d:'El doble de tu proteína elegida',p:dbl.pDbl}:!extraSauce?{k:'sauce',e:icon('chili',18,GOLD),l:'SALSA EXTRA',d:'Salsa adicional a tu elección',p:2}:null;
+  // Queso opcional — único Signature con esta opción (SIG02, ver cheeseOptional en SIGS):
+  // un meatball sub sin queso derretido era atípico para el arquetipo (hallazgo de
+  // auditoría de receta). Gratis, igual que el queso en BUILD YOUR OWN.
+  var cheeseSigAllowed=mode==='sig'&&sig&&sig.cheeseOptional;
+  if(cheeseSigAllowed&&cheese)rows.push({k:'QUESO',v:fn(CHEESE,cheese)+' (opcional, sin costo)'});
+  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'DOBLE PROTEÍNA',d:'El doble de tu proteína elegida',p:dbl.pDbl}:!extraSauce?{k:'sauce',e:icon('chili',18,GOLD),l:'SALSA EXTRA',d:'Salsa adicional a tu elección',p:2}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'QUESO',d:'Cheddar derretido, opcional y gratis',p:0}:null;
   // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
   // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
   // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (ej. SIG07, precio único) —
   // no tiene sentido "sugerir" un upgrade que no mueve el ticket.
   var sizeUpsellDelta=size==='15'?(mode==='sig'?(sig?sig.p30-sig.p15:0):(pr?pr.p30-pr.p15:0)):0;
-  function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:false;}
+  function uSel(k){return k==='doubleProt'?doubleProt:k==='sauce'?extraSauce:k==='cheese'?!!cheese:false;}
   function uBtn(k,e,l,d,p,sel){
-    var act=(k==='doubleProt'?'doubleProt=!doubleProt':'extraSauce=!extraSauce')+(quickPayEligible?';cart[0]=currentBuiltItem()':'');
-    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?GOLD:'#A8C8B0')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+SOLES+p+'</span></div>';
+    var act=(k==='doubleProt'?'doubleProt=!doubleProt':k==='sauce'?'extraSauce=!extraSauce':'cheese=(cheese?null:\'C02\')')+(quickPayEligible?';cart[0]=currentBuiltItem()':'');
+    var priceLabel=p?SOLES+p:'GRATIS';
+    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">'+l+'</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+d+'</div></div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+(sel?GOLD:'#A8C8B0')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+priceLabel+'</span></div>';
   }
   var sigNameHTML=(mode==='sig'&&sig)?'<div style="margin:2px 0 14px"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">'+sig.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)+'</div></div>':'';
   return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +'<div style="background:'+surfaceGrad('#2D5246','#213e33')+';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px;font-weight:700">'+(mode==='sig'?'TU SIGNATURE //':'TU BUILD //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--sw-text-body,#F2F0EB)">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:'+GOLD+'">'+SOLES+t+'</span></div></div>'
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+surfaceGrad('#213e33','#182b23')+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CON MÁS HAMBRE? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">SUBE A 30CM</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;font-weight:700;color:'+GOLD+'">+'+SOLES+sizeUpsellDelta+'</span></div></div>':'')
     +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
-    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce',icon('chili',18,GOLD),'SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+'</div></details>'
+    +'<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'DOBLE PROTEÍNA','El doble de tu proteína elegida',dbl.pDbl,doubleProt):'')+uBtn('sauce',icon('chili',18,GOLD),'SALSA EXTRA','Salsa adicional a tu elección',2,extraSauce)+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'QUESO','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
     +(cust?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('estrella',11,GOLD)+'<span>GUARDAR COMO FAVORITO //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
         ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--sw-text,#FFFFFF)">+ CARRITO</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
@@ -2212,7 +2235,8 @@ async function doOrder(){
     var protCode=it.type==='sig'?sig.prot:it.prot;
     var topsArr=it.type==='sig'?sig.tops:it.tops;
     var saucesArr=it.type==='sig'?sig.sauces:it.sauces;
-    var cheeseCode=it.type==='byo'?it.cheese:null;
+    // Queso opcional (SIG02) manda el mismo campo `cheese` que BUILD YOUR OWN.
+    var cheeseCode=it.cheese||null;
     for(var q=0;q<it.qty;q++){
       ingredients.push(baseCode,protCode);
       ingredients=ingredients.concat(topsArr);
@@ -3535,6 +3559,7 @@ var ICONS={
   trophy:'<path d="M8 4h8v3.5a4 4 0 0 1-8 0V4z"/><path d="M8 5H5.2a3 3 0 0 0 3 5.2M16 5h2.8a3 3 0 0 1-3 5.2"/><path d="M12 11.5V15M9 19.5h6l-.6-2.7H9.6L9 19.5z"/>',
   dumbbell:'<rect x="2" y="9.5" width="3" height="5" rx="1"/><rect x="19" y="9.5" width="3" height="5" rx="1"/><path d="M7 12h10"/><rect x="5" y="7.5" width="2" height="9" rx="1"/><rect x="17" y="7.5" width="2" height="9" rx="1"/>',
   chili:'<path d="M8 5.2c3-1.4 5.3.8 5.3 3 0 2-1.3 3-1.3 5 0 4-2.8 6.8-5.5 6.8-2.8 0-4-3-2-6 1-1.4 1.8-2 1.8-4 0-2-1-3.4 1.7-4.8z"/><path d="M8 5.2c-.9-1-1-2.4 0-3.4"/>',
+  queso:'<path d="M3 17 12 4l9 13z"/><circle cx="10" cy="13.5" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="12.5" cy="15.5" r="1"/>',
   camera:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-2.5h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/>',
   lock:'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   moto:'<circle cx="6.5" cy="18" r="2.3"/><circle cx="17" cy="18" r="2.3"/><path d="M8.5 18h6l2-5.5h3M14 12.5l-2-4H8l-1 3"/><path d="M6.5 15.5h3"/>',
