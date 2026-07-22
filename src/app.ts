@@ -101,8 +101,10 @@ var PROTS=[
   {id:'P03',l:'POLLO',  s:'CAJUN',      d:'Pechuga deshilachada, condimento cajún',p15:13,p30:21,pDbl:6,vaultOnly:true},
   // p30 subido de 22 a 25 — el atún cuesta casi el doble por kilo que pollo/res, duplicar
   // su porción a 30CM costaba más de lo que el precio fijo anterior cubría (hallazgo de
-  // costeo real) — DEBE coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:14,p30:25,pDbl:5},
+  // costeo real). pDbl subido de 5 a 9 — el atún (~S/38/kg) cuesta igual que el embutido
+  // italiano de P05 (pDbl:9) pero cobraba menos que pollo/res, más baratos — DEBE
+  // coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
+  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:14,p30:25,pDbl:9},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -216,12 +218,18 @@ var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jp
 // ya usaban R04/R06. Puntos de R03/R04/R05/R06 subidos ~1.8x después (costo real de
 // insumo resultó ser ~45% del valor perdonado, no ~20-30% asumido) — DEBE coincidir con
 // REWARDS en supabase/functions/api/catalog.ts.
+// Orden ASCENDENTE por puntos real — antes R05 (220) quedaba después de R03 (270) y R04
+// (320), lo que rompía dos cosas que asumen que el array ya viene ordenado: el "próxima
+// recompensa" (RWDS.find busca el PRIMER match, no el más barato) y la barra de progreso
+// en sPHome (el forEach de `prev` toma el último elemento visto que cumple pts<=pts, que
+// solo es el máximo real si el array está ordenado) — hallazgo de auditoría financiera,
+// verificado leyendo ambos usos antes de reordenar en vez de tocar esa lógica.
 var RWDS=[
   {id:'R02',pts:40, n:'4TA',      s:'SALSA',  d:'Perdona el cargo de salsa extra (S/2)'},
+  {id:'R05',pts:220,n:'BEBIDA',   s:'GRATIS', d:'Bebida a elección'},
   {id:'R03',pts:270,n:'SUBE A',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R04',pts:320,n:'DOBLE',    s:'PROTEÍNA',d:'Doble proteína gratis'},
-  {id:'R05',pts:220,n:'BEBIDA',   s:'GRATIS', d:'Bebida a elección'},
-  {id:'R06',pts:720,n:'SÁNDWICH', s:'GRATIS', d:'Sándwich 15CM gratis — cualquier proteína',sizeOnly:'15'}
+  {id:'R06',pts:720,n:'SÁNDWICH', s:'GRATIS', d:'Sándwich 15CM gratis — no aplica a Signatures RESERVE',sizeOnly:'15'}
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
@@ -320,6 +328,15 @@ var COMBO_DISCOUNT_PER_PAIR=3;
 // Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
 // que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
 var R03_FLAT_WAIVER=8;
+// Topes planos de R04/R05 — mismo criterio que R03: evitan que el valor mostrado al
+// cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
+// más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
+var R04_FLAT_WAIVER=6;
+var R05_FLAT_WAIVER=4;
+// Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
+// se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
+// en catalog.ts.
+var RESERVE_SIGS=new Set(['SIG05','SIG07']);
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima — DEBE coincidir con
 // OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
 // quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
@@ -1008,7 +1025,7 @@ function findRewardTargetIndex(rewardId){
   if(rewardId==='R03'){for(var j=0;j<cart.length;j++){if(itemSizeUpgradeDiff(cart[j])>0)return j;}return -1;}
   if(rewardId==='R04'){for(var k=0;k<cart.length;k++){if(cart[k].type!=='side'&&cart[k].doubleProt)return k;}return -1;}
   if(rewardId==='R05'){for(var m=0;m<cart.length;m++){if(cart[m].type==='side')return m;}return -1;}
-  if(rewardId==='R06'){for(var n=0;n<cart.length;n++){if(cart[n].type!=='side'&&cart[n].size==='15')return n;}return -1;}
+  if(rewardId==='R06'){for(var n=0;n<cart.length;n++){if(cart[n].type!=='side'&&cart[n].size==='15'&&!(cart[n].type==='sig'&&RESERVE_SIGS.has(cart[n].sigId)))return n;}return -1;}
   return cart.length?0:-1;
 }
 function rewardWaiverAmount(rewardId,targetIdx){
@@ -1019,9 +1036,9 @@ function rewardWaiverAmount(rewardId,targetIdx){
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
     var pr=PROTS.find(function(x){return x.id===protCode;});
-    return pr?pr.pDbl:0;
+    return pr?Math.min(pr.pDbl,R04_FLAT_WAIVER):0;
   }
-  if(rewardId==='R05')return it.type==='side'?itemUnitPrice(it):0;
+  if(rewardId==='R05')return it.type==='side'?Math.min(itemUnitPrice(it),R05_FLAT_WAIVER):0;
   if(rewardId==='R06'){
     if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?(it.size==='15'?sig.p15:sig.p30):0;}
     var pr2=PROTS.find(function(x){return x.id===it.prot;});
