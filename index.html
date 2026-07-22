@@ -4756,8 +4756,18 @@ function waRiskContact(phone, name) {
     var msg = 'Hola ' + name + '! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
     window.open('https://wa.me/51' + String(phone).replace(/\D/g, '').replace(/^51/, '') + '?text=' + encodeURIComponent(msg), '_blank');
 }
-function DTILE(label, big, sub) {
-    return '<div style="background:#2D5246;border:1px solid #3A6B58;border-radius:12px;padding:14px 16px"><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">' + label + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:26px;font-weight:900;color:#FFFFFF;line-height:1">' + big + '</div>' + (sub ? '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:4px">' + sub + '</div>' : '') + '</div>';
+function DTILE(label, big, sub, muted) {
+    // muted=true reduce el peso visual para data de solo-referencia (ej. puntos en
+    // circulación) que no compite por atención con las métricas que sí piden una acción
+    // (hallazgo de auditoría: todo DTILE pesaba visualmente igual).
+    var bg = muted ? '#24382F' : '#2D5246', bd = muted ? '#2A473B' : '#3A6B58', lc = muted ? '#7FA08D' : GOLD, bc = muted ? '#C8D6CE' : '#FFFFFF', bs = muted ? '20px' : '26px';
+    return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:12px;padding:14px 16px"><div style="font-family:Share Tech Mono,monospace;font-size:8px;color:' + lc + ';letter-spacing:.15em;margin-bottom:6px">' + label + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:' + bs + ';font-weight:900;color:' + bc + ';line-height:1">' + big + '</div>' + (sub ? '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#A8C8B0;margin-top:4px">' + sub + '</div>' : '') + '</div>';
+}
+// Tile "hero" — usado una sola vez por pantalla para la métrica que de verdad manda
+// (ingresos de HOY): el dueño abre el panel para saber "¿cómo voy hoy?", no para
+// comparar HOY contra TOTAL histórico con el mismo peso visual.
+function DHERO(label, big, sub) {
+    return '<div style="background:linear-gradient(135deg,rgba(203,162,88,.16),rgba(203,162,88,.05));border:1px solid rgba(203,162,88,.5);border-radius:14px;padding:20px 18px;box-shadow:0 4px 22px rgba(203,162,88,.14)"><div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px;font-weight:700">' + label + '</div><div style="font-family:Barlow Condensed,sans-serif;font-size:42px;font-weight:900;color:#FFFFFF;line-height:1">' + big + '</div>' + (sub ? '<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:' + GOLD + ';margin-top:6px">' + sub + '</div>' : '') + '</div>';
 }
 function DBAR(label, value, max, color) {
     var pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
@@ -4797,11 +4807,11 @@ function sAdminDashboard() {
         var color = pct > 0 ? '#25D366' : pct < 0 ? '#ff8888' : '#A8C8B0';
         return ' · <span style="color:' + color + '">' + arrow + ' ' + (pct > 0 ? '+' : '') + pct + '% vs. antes</span>';
     }
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">'
-        + DTILE('HOY', SOLES + d.revenue.today.revenue, d.revenue.today.count + ' pedidos · tkt ' + SOLES + d.revenue.today.avgTicket)
-        + DTILE('SEMANA', SOLES + d.revenue.week.revenue, d.revenue.week.count + ' pedidos · tkt ' + SOLES + d.revenue.week.avgTicket + deltaTxt(d.deltas && d.deltas.weekRevenuePct))
-        + DTILE('MES', SOLES + d.revenue.month.revenue, d.revenue.month.count + ' pedidos · tkt ' + SOLES + d.revenue.month.avgTicket + deltaTxt(d.deltas && d.deltas.monthRevenuePct))
-        + DTILE('TOTAL', SOLES + d.revenue.allTime.revenue, d.revenue.allTime.count + ' pedidos · tkt ' + SOLES + d.revenue.allTime.avgTicket)
+    h += '<div style="margin-bottom:10px">' + DHERO('HOY', SOLES + d.revenue.today.revenue, d.revenue.today.count + ' pedidos · tkt ' + SOLES + d.revenue.today.avgTicket) + '</div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">'
+        + DTILE('SEMANA', SOLES + d.revenue.week.revenue, d.revenue.week.count + ' pedidos · tkt ' + SOLES + d.revenue.week.avgTicket + deltaTxt(d.deltas && d.deltas.weekRevenuePct), true)
+        + DTILE('MES', SOLES + d.revenue.month.revenue, d.revenue.month.count + ' pedidos · tkt ' + SOLES + d.revenue.month.avgTicket + deltaTxt(d.deltas && d.deltas.monthRevenuePct), true)
+        + DTILE('TOTAL', SOLES + d.revenue.allTime.revenue, d.revenue.allTime.count + ' pedidos · tkt ' + SOLES + d.revenue.allTime.avgTicket, true)
         + '</div>';
     // Ganancia estimada = ingresos × (1 - costo de insumos ~40-50%, ver COGS_LOW/HIGH en
     // admin.ts) — siempre como rango, nunca como cifra exacta, porque no hay costo real
@@ -4827,9 +4837,30 @@ function sAdminDashboard() {
     }
     // Pedidos por estado
     var stEntries = Object.keys(d.ordersByStatus || {});
-    var stMax = Math.max.apply(null, stEntries.map(function (k) { return d.ordersByStatus[k]; }).concat([1]));
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px;font-weight:700">PEDIDOS POR ESTADO //</div>';
-    h += stEntries.length ? stEntries.map(function (k) { return DBAR(k, d.ordersByStatus[k], stMax, (STATUSES[k] || {}).c); }).join('') : '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin pedidos todavía.</div>';
+    if (!stEntries.length) {
+        h += '<div style="font-family:Barlow,sans-serif;font-size:12px;color:#A8C8B0;margin-bottom:16px">Sin pedidos todavía.</div>';
+    }
+    else {
+        // ordersByStatus cuenta TODA la tabla histórica (ver dashboard_aggregates): ENTREGADO
+        // crece sin límite mientras los estados en vivo — lo que de verdad hay que operar
+        // AHORA — casi siempre son números chicos. Compartir una sola escala los volvía
+        // invisibles junto a ENTREGADO (hallazgo de auditoría) — cada grupo ahora escala
+        // contra su propio máximo.
+        var LIVE_STATUSES = ['RECIBIDO', 'PREPARANDO', 'EN CAMINO'];
+        var liveEntries = LIVE_STATUSES.filter(function (k) { return k in d.ordersByStatus; });
+        var doneEntries = stEntries.filter(function (k) { return LIVE_STATUSES.indexOf(k) === -1; });
+        if (liveEntries.length) {
+            var liveMax = Math.max.apply(null, liveEntries.map(function (k) { return d.ordersByStatus[k]; }).concat([1]));
+            h += '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin-bottom:6px">EN CURSO AHORA //</div>';
+            h += liveEntries.map(function (k) { return DBAR(k, d.ordersByStatus[k], liveMax, (STATUSES[k] || {}).c); }).join('');
+        }
+        if (doneEntries.length) {
+            var doneMax = Math.max.apply(null, doneEntries.map(function (k) { return d.ordersByStatus[k]; }).concat([1]));
+            h += '<div style="font-family:Share Tech Mono,monospace;font-size:8px;color:#A8C8B0;letter-spacing:.1em;margin:10px 0 6px">HISTÓRICO //</div>';
+            h += doneEntries.map(function (k) { return DBAR(k, d.ordersByStatus[k], doneMax, (STATUSES[k] || {}).c); }).join('');
+        }
+    }
     if (d.avgEtaMinutes != null) {
         h += '<div style="margin-top:10px">' + DTILE('TIEMPO ESTIMADO PROMEDIO OFRECIDO', d.avgEtaMinutes + ' min', 'Cuando se marca "EN CAMINO"') + '</div>';
     }
@@ -4906,7 +4937,7 @@ function sAdminDashboard() {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">'
         + DTILE('EMITIDOS', d.points.issued)
         + DTILE('CANJEADOS', d.points.redeemed)
-        + DTILE('EN CIRCULACIÓN', d.points.outstanding)
+        + DTILE('EN CIRCULACIÓN', d.points.outstanding, undefined, true)
         + '</div>';
     h += '<div style="height:1px;background:#1E3932;margin:16px 0"></div>';
     h += '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px;font-weight:700">EXPORTAR //</div>';
