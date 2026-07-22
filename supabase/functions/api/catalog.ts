@@ -462,11 +462,17 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
   return priced.length ? 0 : -1;
 }
 
-// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
-// separado, una vez por cada par sándwich+bebida en el carrito — DEBE coincidir con
-// COMBO_DISCOUNT_PER_PAIR en src/app.ts (ese lado solo calcula el estimado que ve el
-// cliente antes de pagar; este es el que de verdad determina cuánto se cobra).
-const COMBO_DISCOUNT_PER_PAIR = 3;
+// Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
+// separado, una vez por cada par sándwich+bebida en el carrito. Bajado de S/3 a S/2 — a
+// S/3 el combo dejaba THE MIDNIGHT (D07, la bebida más barata, también S/3)
+// completamente GRATIS con cualquier sándwich, a cualquier hora del día — a diferencia
+// de la promo de hora valle (bebida gratis de verdad), que el negocio decidió a
+// propósito limitar a la ventana de baja demanda porque regalar margen fuera de esa
+// ventana no es "casi puro margen incremental" (ver isOffPeakDrinkPromoActiveLima más
+// abajo; hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR
+// en src/app.ts (ese lado solo calcula el estimado que ve el cliente antes de pagar;
+// este es el que de verdad determina cuánto se cobra).
+const COMBO_DISCOUNT_PER_PAIR = 2;
 
 // Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
 // EXACTA de la proteína elegida (S/8 en P01/P02/P04, pero S/10 en P05/P06), lo que

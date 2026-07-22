@@ -448,11 +448,16 @@ var ESTIMATED_DELIVERY_RANGE = [25, 40];
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
 var STORE_LAT = -8.139599, STORE_LON = -79.039458;
 var NEARBY_RADIUS_KM = 3;
-// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
+// Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
-// cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
+// cartComboCount). Bajado de S/3 a S/2 — a S/3 el combo dejaba THE MIDNIGHT (D07, la
+// bebida más barata, también S/3) completamente GRATIS con cualquier sándwich, a
+// cualquier hora del día — a diferencia de la promo de hora valle (bebida gratis de
+// verdad), que el negocio decidió a propósito limitar a la ventana de baja demanda
+// porque regalar margen fuera de esa ventana no es "casi puro margen incremental"
+// (hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
-var COMBO_DISCOUNT_PER_PAIR = 3;
+var COMBO_DISCOUNT_PER_PAIR = 2;
 // Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
 // que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
 var R03_FLAT_WAIVER = 8;
