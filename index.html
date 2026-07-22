@@ -257,7 +257,7 @@ var SAUCES = [
     { id: 'S09', l: 'CHIMICHURRI', s: 'ARGENTINO', d: 'Herbal, ajo, ácido' },
     { id: 'S10', l: 'PEANUT', s: 'SATAY', d: 'Maní, soya, jengibre' },
     { id: 'S11', l: 'MOSTAZA', s: 'DIJON', d: 'Intensa, clásica, con carácter' },
-    { id: 'S12', l: 'MIEL', s: 'PICANTE', d: 'Dulce con golpe de picor', spicy: true },
+    { id: 'S12', l: 'PICANTE', s: 'MIEL', d: 'Dulce con golpe de picor', spicy: true },
     { id: 'S13', l: 'AU JUS', s: 'PARA MOJAR', d: 'Caldo de la cocción de la carne, servido aparte para mojar cada bocado' }
 ];
 var SIGS = [
@@ -312,8 +312,8 @@ var SIGS = [
     // el negocio aún no ha abierto (riesgo de publicidad engañosa). AL ESTILO CHICAGO
     // describe el origen del plato (coincide con el nombre), no una afirmación de
     // escasez verificable.
-    { id: 'SIG07', n: 'CHICAGO ITALIAN BEEF', s: 'RESERVE', badge: 'AL ESTILO CHICAGO', base: 'B01', prot: 'P01', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
-        pitch: 'Res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
+    { id: 'SIG07', n: 'THE CHICAGO', s: 'RESERVE', badge: 'AL ESTILO CHICAGO', base: 'B01', prot: 'P01', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
+        pitch: 'Nuestro Italian Beef al estilo Chicago: res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
     // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
     // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
@@ -334,7 +334,7 @@ function sigTypeTag(tag) {
 }
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
-// SIG07 (CHICAGO ITALIAN BEEF) usa una foto de stock real (Adobe Stock, licenciada,
+// SIG07 (THE CHICAGO) usa una foto de stock real (Adobe Stock, licenciada,
 // categoría gratuita) recortada para no mostrar las papas del plato original — no
 // vendemos papas, así que mostrarlas confundiría al cliente sobre qué incluye el pedido.
 var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG06: 'img/sig06.jpg', SIG07: 'img/sig07.jpg' };
@@ -4394,16 +4394,23 @@ async function loadAdmin() {
 // contact_phone es el teléfono que el cliente escribió en ESTE pedido — antes solo se
 // usaba customer_phone (el de la cuenta), así que un pedido de invitado nunca mostraba
 // este botón, dejando al operador sin forma de escribirle por WhatsApp.
+// Traduce el enum de status a una frase real — antes se inyectaba el enum crudo
+// (ej. "está: PREPARANDO") directo en el mensaje de WhatsApp que lee el cliente.
+function waStatusPhrase(o) {
+    switch (o.status) {
+        case 'RECIBIDO': return 'fue recibido y lo vamos a preparar pronto';
+        case 'PREPARANDO': return 'lo estamos preparando ahora mismo';
+        case 'EN CAMINO': return 'va en camino a tu dirección' + (o.eta_minutes ? ' (ETA ~' + o.eta_minutes + ' min)' : '');
+        case 'ENTREGADO': return 'fue entregado — ¡que lo disfrutes!';
+        case 'CANCELADO': return 'fue cancelado';
+        default: return 'está: ' + o.status;
+    }
+}
 function waAdminOrder(o) {
     var phone = o && (o.contact_phone || o.customer_phone);
     if (!phone)
         return;
-    var msg = 'Hola ' + o.customer_name + '! Tu pedido ' + o.ref + ' de SND//WCH está: ' + o.status + '.';
-    if (o.status === 'PREPARANDO')
-        msg += ' Lo estamos preparando ahora mismo.';
-    if (o.status === 'EN CAMINO')
-        msg += ' Ya va en camino a tu dirección' + (o.eta_minutes ? ' (ETA ~' + o.eta_minutes + ' min)' : '') + '.';
-    msg += ' ¡Gracias por tu pedido!';
+    var msg = 'Hola ' + o.customer_name + '! Tu pedido ' + o.ref + ' de SND//WCH ' + waStatusPhrase(o) + '. ¡Gracias por tu pedido!';
     window.open('https://wa.me/51' + phone.replace(/\D/g, '').replace(/^51/, '') + '?text=' + encodeURIComponent(msg), '_blank');
 }
 function waAdmin(ordId) {

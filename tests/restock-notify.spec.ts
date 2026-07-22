@@ -16,7 +16,7 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   // inventario vacío = todo disponible) y ANTES de navegar, porque Playwright resuelve
   // rutas que hacen match en orden LIFO: la última registrada gana. Si se registrara
   // después de goto(), loadInvBackground() ya habría corrido con el mock por defecto.
-  // No se usa P01 (Asado de Res) porque desde CHICAGO ITALIAN BEEF (SIG07) también
+  // No se usa P01 (Asado de Res) porque desde THE CHICAGO (SIG07) también
   // usa esa proteína, y marcarla sin stock mostraría dos tarjetas AGOTADO a la vez.
   await page.route('**/rest/v1/inventory*', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ product_code: 'P02', in_stock: false, stock_qty: 0 }]) }),
