@@ -27,11 +27,17 @@ import { computeRankName } from "./env.ts";
 // preparar el producto "gratis", sin importar el margen nominal) — sin subir los puntos,
 // cada canje le costaba al negocio bastante más de lo que su propio diseño asumía
 // (hallazgo de auditoría financiera, ronda de recalibración de márgenes).
+//
+// R02 se deja deliberadamente por debajo de la "tasa de cambio" del resto (recalculando
+// bajo el estándar de 45%, cuesta ~1.7-2.5x más por punto que R03-R06) — es una
+// recompensa de bajo umbral a propósito, para dar un primer canje rápido a un cliente
+// recién registrado, no un descuido de la recalibración (hallazgo de auditoría
+// financiera de esta ronda, que pidió documentar la intención en vez de subirla).
 export const REWARDS: Record<string, { pts: number; label: string }> = {
   R02: { pts: 40, label: "4TA // SALSA" },
+  R05: { pts: 220, label: "BEBIDA // GRATIS" },
   R03: { pts: 270, label: "SUBE A 30CM // GRATIS" },
   R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
-  R05: { pts: 220, label: "BEBIDA // GRATIS" },
   R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
 };
 
@@ -43,12 +49,15 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
 // real bastante más de lo que el precio fijo alcanzaba a cubrir (hallazgo de costeo real
-// con precios de insumos de Perú). DEBE coincidir con PROTS en src/app.ts.
+// con precios de insumos de Perú). Mismo criterio en pDbl de P04: atún (~S/38/kg) cuesta
+// igual que el embutido italiano de P05 (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 —
+// menos que P01/P02 (pollo/res, más baratos) — subido a 9 para igualar a P05. DEBE
+// coincidir con PROTS en src/app.ts.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
   P01: { p15: 14, p30: 22, pDbl: 6 },
   P02: { p15: 13, p30: 21, pDbl: 6 },
   P03: { p15: 13, p30: 21, pDbl: 6 },
-  P04: { p15: 14, p30: 25, pDbl: 5 },
+  P04: { p15: 14, p30: 25, pDbl: 9 },
   P05: { p15: 16, p30: 30, pDbl: 9 },
   P06: { p15: 14, p30: 24, pDbl: 7 },
 };
@@ -57,6 +66,11 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 // las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
 // justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
+// Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
+// R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
+// Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 CHICAGO ITALIAN BEEF S/25)
+// muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
+export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
   // RANCH (S07) retirada esta sesión — no encajaba con el resto (ver mismo cambio en
@@ -228,6 +242,11 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
     if (!VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
     ingredientsPerUnit.push(cheese);
   }
+  // Igual que en BUILD YOUR OWN: la salsa extra es una porción doble de una de las
+  // salsas ya incluidas en la receta del Signature (todas tienen al menos una), no una
+  // salsa nueva sin especificar — antes no se descontaba ningún ingrediente real por
+  // este cargo de S/2 (hallazgo de auditoría financiera).
+  if (extraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
   return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
@@ -247,11 +266,20 @@ function priceByoBuild(
   // ese topping por el precio de un sándwich normal (hallazgo de auditoría de QA).
   if (tops.length > VALID_TOPS.size || new Set(tops).size !== tops.length || tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
   if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
+  // "Extra" implica más de una salsa que ya elegiste — sin esto, un cliente podía pedir
+  // SALSA EXTRA con 0 salsas base seleccionadas, lo cual no descontaba ningún ingrediente
+  // real de inventario (el cargo de S/2 no mapeaba a ninguna salsa concreta) y además
+  // dejaba a R02 ("4TA SALSA GRATIS") canjeable sin haber llegado siquiera a una 3ra
+  // salsa (hallazgo de auditoría financiera).
+  if (extraSauce && !sauces.length) throw new ApiError("Selecciona al menos una salsa antes de pedir salsa extra.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
+  // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
+  // especificar) — se descuenta del inventario real de esa misma salsa.
+  if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
   return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
@@ -381,7 +409,9 @@ export function priceCartItem(raw: any): PricedItem {
       eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
       eligibleR05: false,
-      eligibleR06: size === "15",
+      // Excluye Signatures RESERVE (SIG05/SIG07) para que R06 no pueda gamearse eligiendo
+      // el sándwich más caro del catálogo — ver comentario de RESERVE_SIGS arriba.
+      eligibleR06: size === "15" && !RESERVE_SIGS.has(String(raw.sigId || "")),
     };
   }
 
@@ -402,7 +432,12 @@ export function priceCartItem(raw: any): PricedItem {
       sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
-      eligibleR02: extraSauce,
+      // A diferencia de un Signature (salsas fijas de receta, "extra" siempre es de
+      // verdad extra), en BUILD YOUR OWN el cliente elige sus propias salsas (tope 3) —
+      // R02 ("4TA SALSA GRATIS") solo tiene sentido real si ya llegó al tope de 3 antes
+      // de pagar por una 4ta (hallazgo de auditoría financiera: antes calificaba incluso
+      // con 0 salsas base seleccionadas).
+      eligibleR02: extraSauce && sauces.length === 3,
       eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
       eligibleR05: false,
@@ -427,11 +462,17 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
   return priced.length ? 0 : -1;
 }
 
-// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
-// separado, una vez por cada par sándwich+bebida en el carrito — DEBE coincidir con
-// COMBO_DISCOUNT_PER_PAIR en src/app.ts (ese lado solo calcula el estimado que ve el
-// cliente antes de pagar; este es el que de verdad determina cuánto se cobra).
-const COMBO_DISCOUNT_PER_PAIR = 3;
+// Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
+// separado, una vez por cada par sándwich+bebida en el carrito. Bajado de S/3 a S/2 — a
+// S/3 el combo dejaba THE MIDNIGHT (D07, la bebida más barata, también S/3)
+// completamente GRATIS con cualquier sándwich, a cualquier hora del día — a diferencia
+// de la promo de hora valle (bebida gratis de verdad), que el negocio decidió a
+// propósito limitar a la ventana de baja demanda porque regalar margen fuera de esa
+// ventana no es "casi puro margen incremental" (ver isOffPeakDrinkPromoActiveLima más
+// abajo; hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR
+// en src/app.ts (ese lado solo calcula el estimado que ve el cliente antes de pagar;
+// este es el que de verdad determina cuánto se cobra).
+const COMBO_DISCOUNT_PER_PAIR = 2;
 
 // Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
 // EXACTA de la proteína elegida (S/8 en P01/P02/P04, pero S/10 en P05/P06), lo que
@@ -441,6 +482,20 @@ const COMBO_DISCOUNT_PER_PAIR = 3;
 // el valor de "un pan de 15CM" estándar (S/8, el caso mayoritario) sin importar qué
 // proteína se elija — DEBE coincidir con R03_FLAT_WAIVER en src/app.ts.
 const R03_FLAT_WAIVER = 8;
+
+// Mismo criterio que R03_FLAT_WAIVER: R04 ("DOBLE PROTEÍNA // GRATIS") perdonaba antes el
+// pDbl EXACTO de la proteína elegida (S/5-9 según proteína), dejando elegir la más cara
+// (P04/P05, S/9 tras la recalibración de costo real) para maximizar el valor de una
+// recompensa de 320 pts muy por encima del resto. Se topa al valor mayoritario (S/6,
+// P01/P02) — DEBE coincidir con R04_FLAT_WAIVER en src/app.ts.
+const R04_FLAT_WAIVER = 6;
+// R05 ("BEBIDA // GRATIS") perdonaba antes el precio completo de la bebida elegida
+// (S/3-6), permitiendo elegir siempre THE SPICE (S/6, la más cara) para maximizar el
+// valor de la recompensa. Se topa al mismo valor ya establecido para la promo de hora
+// valle (OFFPEAK_DRINK_PROMO_CAP=4) — incluso fuera de esa ventana, una bebida gratis no
+// debería valer más que en la ventana en la que el negocio ya la regala gratis. DEBE
+// coincidir con R05_FLAT_WAIVER en src/app.ts.
+const R05_FLAT_WAIVER = 4;
 
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima, la ventana de menor demanda entre el
 // almuerzo y la cena (ver PEAK_HOURS_LIMA en orders.ts: [12,14] y [19,21]) — el costo
@@ -530,8 +585,8 @@ export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?
     const target = priced[rewardTargetIdx];
     const waiver = rewardId === "R02" ? target.sauceSurcharge
       : rewardId === "R03" ? Math.min(target.sizeUpgradeDiff, R03_FLAT_WAIVER)
-      : rewardId === "R04" ? target.dblSurcharge
-      : rewardId === "R05" ? target.basePrice
+      : rewardId === "R04" ? Math.min(target.dblSurcharge, R04_FLAT_WAIVER)
+      : rewardId === "R05" ? Math.min(target.basePrice, R05_FLAT_WAIVER)
       : rewardId === "R06" ? target.basePrice
       : 0;
     total = Math.max(0, total - waiver);

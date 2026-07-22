@@ -214,8 +214,10 @@ var PROTS = [
     { id: 'P03', l: 'POLLO', s: 'CAJUN', d: 'Pechuga deshilachada, condimento cajún', p15: 13, p30: 21, pDbl: 6, vaultOnly: true },
     // p30 subido de 22 a 25 — el atún cuesta casi el doble por kilo que pollo/res, duplicar
     // su porción a 30CM costaba más de lo que el precio fijo anterior cubría (hallazgo de
-    // costeo real) — DEBE coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
-    { id: 'P04', l: 'ATÚN', s: 'HOUSE', d: 'Atún premium con mayonesa clásica', p15: 14, p30: 25, pDbl: 5 },
+    // costeo real). pDbl subido de 5 a 9 — el atún (~S/38/kg) cuesta igual que el embutido
+    // italiano de P05 (pDbl:9) pero cobraba menos que pollo/res, más baratos — DEBE
+    // coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
+    { id: 'P04', l: 'ATÚN', s: 'HOUSE', d: 'Atún premium con mayonesa clásica', p15: 14, p30: 25, pDbl: 9 },
     // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
     // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -238,9 +240,14 @@ var CHEESE = [
     { id: 'C02', l: 'CHEDDAR', s: '' },
     { id: 'C03', l: 'EDAM', s: '' }
 ];
+// `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
+// progresivo"/"golpe de picor") — no es una clasificación nueva inventada, solo expone
+// visualmente un dato que ya estaba en `d`. Usado por el paso 05 de BUILD YOUR OWN para
+// darle jerarquía visual a la única lista plana de 13 ítems sin agrupar/iconos del flujo
+// (hallazgo de auditoría UX).
 var SAUCES = [
     { id: 'S01', l: 'AIOLI', s: 'SIGNATURE', d: 'Ajo, limón, suave' },
-    { id: 'S02', l: 'SPICY', s: 'MAYO', d: 'Cremoso, calor progresivo' },
+    { id: 'S02', l: 'SPICY', s: 'MAYO', d: 'Cremoso, calor progresivo', spicy: true },
     { id: 'S03', l: 'SMOKE', s: 'BBQ', d: 'Ahumado, miel, pimentón' },
     { id: 'S04', l: 'HONEY', s: 'MUSTARD', d: 'Dulce, mostaza equilibrado' },
     { id: 'S05', l: 'SNDWCH', s: 'SPECIAL', d: 'Nuestra salsa de la casa. Receta exclusiva SND//WCH.' },
@@ -250,7 +257,7 @@ var SAUCES = [
     { id: 'S09', l: 'CHIMICHURRI', s: 'ARGENTINO', d: 'Herbal, ajo, ácido' },
     { id: 'S10', l: 'PEANUT', s: 'SATAY', d: 'Maní, soya, jengibre' },
     { id: 'S11', l: 'MOSTAZA', s: 'DIJON', d: 'Intensa, clásica, con carácter' },
-    { id: 'S12', l: 'MIEL', s: 'PICANTE', d: 'Dulce con golpe de picor' },
+    { id: 'S12', l: 'MIEL', s: 'PICANTE', d: 'Dulce con golpe de picor', spicy: true },
     { id: 'S13', l: 'AU JUS', s: 'PARA MOJAR', d: 'Caldo de la cocción de la carne, servido aparte para mojar cada bocado' }
 ];
 var SIGS = [
@@ -279,7 +286,12 @@ var SIGS = [
     // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
     // p30 subido de 26 a 30 (mismo motivo que P05 arriba) — mantiene el criterio de premio
     // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-    { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'MÁS PEDIDO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 30,
+    // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): MÁS PEDIDO
+    // afirmaba un dato de ventas real que no existe — el negocio aún no ha abierto, no hay
+    // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
+    // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
+    // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
+    { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'AHUMADO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 30,
         chef: true,
         pitch: 'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
     // p30 subido de 22 a 25 (mismo motivo que P04 arriba) — mantiene el criterio de premio
@@ -294,7 +306,13 @@ var SIGS = [
     // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
     // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
     // auditoría de producción).
-    { id: 'SIG07', n: 'CHICAGO ITALIAN BEEF', s: 'RESERVE', badge: 'EDICIÓN LIMITADA', base: 'B01', prot: 'P01', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
+    // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): EDICIÓN
+    // LIMITADA implica una escasez real (tanda limitada, stock tope, ventana de tiempo)
+    // que no existe — no hay ningún mecanismo de inventario/tope detrás de este badge, y
+    // el negocio aún no ha abierto (riesgo de publicidad engañosa). AL ESTILO CHICAGO
+    // describe el origen del plato (coincide con el nombre), no una afirmación de
+    // escasez verificable.
+    { id: 'SIG07', n: 'CHICAGO ITALIAN BEEF', s: 'RESERVE', badge: 'AL ESTILO CHICAGO', base: 'B01', prot: 'P01', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
         pitch: 'Res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
     // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
@@ -330,23 +348,32 @@ var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/pro
 // ya usaban R04/R06. Puntos de R03/R04/R05/R06 subidos ~1.8x después (costo real de
 // insumo resultó ser ~45% del valor perdonado, no ~20-30% asumido) — DEBE coincidir con
 // REWARDS en supabase/functions/api/catalog.ts.
+// Orden ASCENDENTE por puntos real — antes R05 (220) quedaba después de R03 (270) y R04
+// (320), lo que rompía dos cosas que asumen que el array ya viene ordenado: el "próxima
+// recompensa" (RWDS.find busca el PRIMER match, no el más barato) y la barra de progreso
+// en sPHome (el forEach de `prev` toma el último elemento visto que cumple pts<=pts, que
+// solo es el máximo real si el array está ordenado) — hallazgo de auditoría financiera,
+// verificado leyendo ambos usos antes de reordenar en vez de tocar esa lógica.
 var RWDS = [
     { id: 'R02', pts: 40, n: '4TA', s: 'SALSA', d: 'Perdona el cargo de salsa extra (S/2)' },
+    { id: 'R05', pts: 220, n: 'BEBIDA', s: 'GRATIS', d: 'Bebida a elección' },
     { id: 'R03', pts: 270, n: 'SUBE A', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
     { id: 'R04', pts: 320, n: 'DOBLE', s: 'PROTEÍNA', d: 'Doble proteína gratis' },
-    { id: 'R05', pts: 220, n: 'BEBIDA', s: 'GRATIS', d: 'Bebida a elección' },
-    { id: 'R06', pts: 720, n: 'SÁNDWICH', s: 'GRATIS', d: 'Sándwich 15CM gratis — cualquier proteína', sizeOnly: '15' }
+    { id: 'R06', pts: 720, n: 'SÁNDWICH', s: 'GRATIS', d: 'Sándwich 15CM gratis — no aplica a Signatures RESERVE', sizeOnly: '15' }
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
 // otro local — el catálogo ahora se queda solo con las bebidas propias sin jugos.
+// `icon` distingue visualmente las 4 infusiones en BEBIDAS Y SIDES — antes eran
+// idénticas salvo el texto (hallazgo de auditoría UX), sin nada que distinguirlas de un
+// vistazo en una lista donde se comparan una junto a otra.
 var SIDES = [
     // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
-    { id: 'D06', l: 'THE BLOOM', s: 'HIBISCUS', p: 4, d: 'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.' },
-    { id: 'D07', l: 'THE MIDNIGHT', s: 'BREW', p: 3, d: 'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.' },
-    { id: 'D08', l: 'THE COOL', s: 'MINT', p: 4, d: 'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.' },
-    { id: 'D09', l: 'THE SPICE', s: 'CHAI', p: 6, d: 'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.' }
+    { id: 'D06', l: 'THE BLOOM', s: 'HIBISCUS', p: 4, d: 'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.', icon: 'flor' },
+    { id: 'D07', l: 'THE MIDNIGHT', s: 'BREW', p: 3, d: 'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.', icon: 'moon' },
+    { id: 'D08', l: 'THE COOL', s: 'MINT', p: 4, d: 'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.', icon: 'hoja' },
+    { id: 'D09', l: 'THE SPICE', s: 'CHAI', p: 6, d: 'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.', icon: 'vapor' }
 ];
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
 // loadStoreHoursBackground más abajo, que lo sobreescribe con lo que el dueño configuró
@@ -437,14 +464,28 @@ var ESTIMATED_DELIVERY_RANGE = [25, 40];
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
 var STORE_LAT = -8.139599, STORE_LON = -79.039458;
 var NEARBY_RADIUS_KM = 3;
-// Combo sándwich (Signature o Build Your Own) + bebida: S/3 menos que pedir ambos por
+// Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
-// cartComboCount) — DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
+// cartComboCount). Bajado de S/3 a S/2 — a S/3 el combo dejaba THE MIDNIGHT (D07, la
+// bebida más barata, también S/3) completamente GRATIS con cualquier sándwich, a
+// cualquier hora del día — a diferencia de la promo de hora valle (bebida gratis de
+// verdad), que el negocio decidió a propósito limitar a la ventana de baja demanda
+// porque regalar margen fuera de esa ventana no es "casi puro margen incremental"
+// (hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
-var COMBO_DISCOUNT_PER_PAIR = 3;
+var COMBO_DISCOUNT_PER_PAIR = 2;
 // Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
 // que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
 var R03_FLAT_WAIVER = 8;
+// Topes planos de R04/R05 — mismo criterio que R03: evitan que el valor mostrado al
+// cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
+// más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
+var R04_FLAT_WAIVER = 6;
+var R05_FLAT_WAIVER = 4;
+// Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
+// se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
+// en catalog.ts.
+var RESERVE_SIGS = new Set(['SIG05', 'SIG07']);
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima — DEBE coincidir con
 // OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
 // quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
@@ -510,6 +551,16 @@ function lowStockNote(code) {
     if (q == null || q <= 0 || q > 5)
         return '';
     return '<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:#ffa500;margin-left:6px;white-space:nowrap">¡QUEDAN ' + q + '!</span>';
+}
+// Doble proteína consume 2 unidades de esa proteína, no 1 — antes el cliente solo se
+// enteraba de que no alcanzaba stock cuando el servidor rechazaba el pedido al pagar
+// (hallazgo de auditoría UX). invQty ya se carga para todos (ver lowStockNote arriba),
+// solo faltaba advertir específicamente cuando pedir DOBLE consumiría más de lo que queda.
+function dblStockWarn(protId) {
+    var q = invQty[protId];
+    if (q == null || q >= 2)
+        return '';
+    return ' <span style="color:#ffa500">— ' + (q <= 0 ? 'sin stock ahora mismo' : 'solo queda ' + q + ', puede no alcanzar para doble') + '</span>';
 }
 // STATE
 var sc = 'o_home', tab = 'order', busy = false, busyMsg = '';
@@ -1027,7 +1078,10 @@ function loadBuild(bld) {
     sauces = (bld.sauces || []).slice();
     size = bld.size || null;
     doubleProt = !!bld.doubleProt;
-    extraSauce = !!bld.extraSauce;
+    // Salsa extra requiere al menos una salsa base en BUILD YOUR OWN (ver catalog.ts) — un
+    // favorito/pedido repetido guardado antes de este fix podía traer extraSauce:true con
+    // 0 salsas, lo que el servidor ahora rechaza; se sanea acá antes de reconstruir el build.
+    extraSauce = !!bld.extraSauce && (mode === 'sig' || sauces.length > 0);
     // Si el cliente vuelve "ATRÁS" desde confirmar, que caiga en el último paso (salsas)
     // en vez de tener que reavanzar los 5 pasos para reajustar un build ya completo
     // (favorito/repetir pedido).
@@ -1252,9 +1306,13 @@ function itemSizeUpgradeDiff(it) {
 // 15CM. El resto de recompensas no tiene requisito propio (basta con que el carrito no
 // esté vacío).
 function findRewardTargetIndex(rewardId) {
+    // En BUILD YOUR OWN, R02 ("4TA SALSA GRATIS") solo aplica si ya llegó al tope de 3
+    // salsas base antes de pagar por la extra — un Signature no tiene ese tope (sus salsas
+    // son fijas de receta), así que ahí basta con extraSauce activado. DEBE coincidir con
+    // eligibleR02 en supabase/functions/api/catalog.ts.
     if (rewardId === 'R02') {
         for (var i = 0; i < cart.length; i++) {
-            if (cart[i].type !== 'side' && cart[i].extraSauce)
+            if (cart[i].type !== 'side' && cart[i].extraSauce && (cart[i].type === 'sig' || cart[i].sauces.length === 3))
                 return i;
         }
         return -1;
@@ -1282,7 +1340,7 @@ function findRewardTargetIndex(rewardId) {
     }
     if (rewardId === 'R06') {
         for (var n = 0; n < cart.length; n++) {
-            if (cart[n].type !== 'side' && cart[n].size === '15')
+            if (cart[n].type !== 'side' && cart[n].size === '15' && !(cart[n].type === 'sig' && RESERVE_SIGS.has(cart[n].sigId)))
                 return n;
         }
         return -1;
@@ -1300,10 +1358,10 @@ function rewardWaiverAmount(rewardId, targetIdx) {
     if (rewardId === 'R04') {
         var protCode = it.type === 'sig' ? (SIGS.find(function (x) { return x.id === it.sigId; }) || {}).prot : it.prot;
         var pr = PROTS.find(function (x) { return x.id === protCode; });
-        return pr ? pr.pDbl : 0;
+        return pr ? Math.min(pr.pDbl, R04_FLAT_WAIVER) : 0;
     }
     if (rewardId === 'R05')
-        return it.type === 'side' ? itemUnitPrice(it) : 0;
+        return it.type === 'side' ? Math.min(itemUnitPrice(it), R05_FLAT_WAIVER) : 0;
     if (rewardId === 'R06') {
         if (it.type === 'sig') {
             var sig = SIGS.find(function (x) { return x.id === it.sigId; });
@@ -1759,12 +1817,14 @@ function sOSig() {
                 + (cust ? '<button onclick="doRequestRestockNotify(\'' + s.id + '\')" ' + (notifyRequested ? 'disabled' : '') + ' style="all:unset;cursor:' + (notifyRequested ? 'default' : 'pointer') + ';display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + (notifyRequested ? '#25D366' : GOLD) + ';letter-spacing:.08em">' + (notifyRequested ? '✓ TE AVISAMOS CUANDO VUELVA' : 'AVÍSAME CUANDO VUELVA →') + '</button>' : '<div onclick="swTab(\'points\')" style="cursor:pointer;display:block;margin-top:10px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.08em">INICIA SESIÓN PARA QUE TE AVISEMOS →</div>')
                 + '</div>';
         }
-        // Antes, sin foto real (ver SIG_IMG — 4 de 6 signatures la tienen hoy), la tarjeta
-        // simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al borde
-        // en esas filas mientras las demás tenían una miniatura, dando una lista "parchada"
-        // (hallazgo del dueño). Mismo bloque de reserva que ya usa sigPreviewOverlayHTML
-        // cuando no hay foto, a la misma escala que la miniatura real — nunca se inventa
-        // una foto, solo se pareja el espacio que ocupa.
+        // Antes, sin foto real (ver SIG_IMG — hoy los 7 signatures públicos ya la tienen, así
+        // que esta reserva ya no debería activarse en la práctica, pero se deja como red de
+        // seguridad para el día que se agregue un signature nuevo sin foto todavía), la
+        // tarjeta simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al
+        // borde en esas filas mientras las demás tenían una miniatura, dando una lista
+        // "parchada" (hallazgo del dueño). Mismo bloque de reserva que ya usa
+        // sigPreviewOverlayHTML cuando no hay foto, a la misma escala que la miniatura real —
+        // nunca se inventa una foto, solo se pareja el espacio que ocupa.
         var thumb = SIG_IMG[s.id]
             ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
             : '<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">' + icon('sandwich', 26, GOLD) + '</div>';
@@ -1891,13 +1951,24 @@ function sOBuild() {
     else {
         h += ST('05', 'SALSAS', 'Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
         h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + sL + ' // 3</div>';
-        h += SAUCES.map(function (s) {
+        // Antes las 13 salsas eran una sola lista plana sin ningún elemento visual que las
+        // distinguiera entre sí (el único paso de BUILD YOUR OWN sin agrupar/iconos, hallazgo
+        // de auditoría UX). Se agrupan en PICANTES/OTRAS SALSAS y se marca con el ícono de ají
+        // solo a las 2 cuya propia descripción ya declaraba picor — no es una clasificación
+        // nueva, solo hace visible un dato que ya estaba en el texto.
+        var sauceCard = function (s) {
             var av = isAvail(s.id);
             if (!av)
                 return '<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text-muted,#A8C8B0)">' + s.l + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + s.s + '<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#ff8888;margin-left:8px">AGOTADO</span></div></div>';
             var sel = sauces.indexOf(s.id) >= 0, full = !sel && sL >= 3;
-            return '<div onclick="var i=sauces.indexOf(\'' + s.id + '\');if(i>=0)sauces.splice(i,1);else if(sauces.length<3)sauces.push(\'' + s.id + '\');render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (full ? 'not-allowed' : 'pointer') + ';opacity:' + (full ? .3 : 1) + ';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + s.d + '</p></div>';
-        }).join('');
+            return '<div onclick="var i=sauces.indexOf(\'' + s.id + '\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\'' + s.id + '\');render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (full ? 'not-allowed' : 'pointer') + ';opacity:' + (full ? .3 : 1) + ';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</span>' + (s.spicy ? icon('chili', 14, '#ff8a5c') : '') + '</div><p style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + s.d + '</p></div>';
+        };
+        var spicySauces = SAUCES.filter(function (s) { return s.spicy; });
+        var otherSauces = SAUCES.filter(function (s) { return !s.spicy; });
+        h += '<div style="display:flex;align-items:center;gap:6px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">' + icon('chili', 11, '#ff8a5c') + '<span>PICANTES //</span></div>';
+        h += spicySauces.map(sauceCard).join('');
+        h += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:16px 0 8px">OTRAS SALSAS //</div>';
+        h += otherSauces.map(sauceCard).join('');
     }
     h += AB(size ? total() : null, byoStepCanContinue(), 'byoStepBack()', 'byoStepNext()', byoStep < 4 ? 'SIGUIENTE →' : 'CONTINUAR //');
     return h;
@@ -1935,7 +2006,10 @@ function sOItemConfirm() {
     var cheeseSigAllowed = mode === 'sig' && sig && sig.cheeseOptional;
     if (cheeseSigAllowed && cheese)
         rows.push({ k: 'QUESO', v: fn(CHEESE, cheese) + ' (opcional, sin costo)' });
-    var recU = (!doubleProt && dbl) ? { k: 'doubleProt', e: icon('dumbbell', 18, GOLD), l: 'DOBLE PROTEÍNA', d: 'El doble de tu proteína elegida', p: dbl.pDbl } : !extraSauce ? { k: 'sauce', e: icon('chili', 18, GOLD), l: 'SALSA EXTRA', d: 'Salsa adicional a tu elección', p: 2 } : (cheeseSigAllowed && !cheese) ? { k: 'cheese', e: icon('queso', 18, GOLD), l: 'QUESO', d: 'Cheddar derretido, opcional y gratis', p: 0 } : null;
+    // "Extra" es más de una salsa que ya elegiste — en BUILD YOUR OWN no tiene sentido
+    // ofrecerla (ni el servidor la acepta) si el cliente no seleccionó ninguna salsa base.
+    var sauceExtraAllowed = mode === 'sig' || sauces.length > 0;
+    var recU = (!doubleProt && dbl) ? { k: 'doubleProt', e: icon('dumbbell', 18, GOLD), l: 'DOBLE PROTEÍNA', d: 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), p: dbl.pDbl } : (!extraSauce && sauceExtraAllowed) ? { k: 'sauce', e: icon('chili', 18, GOLD), l: 'SALSA EXTRA', d: 'Salsa adicional a tu elección', p: 2 } : (cheeseSigAllowed && !cheese) ? { k: 'cheese', e: icon('queso', 18, GOLD), l: 'QUESO', d: 'Cheddar derretido, opcional y gratis', p: 0 } : null;
     // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
     // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
     // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (ej. SIG07, precio único) —
@@ -1952,7 +2026,7 @@ function sOItemConfirm() {
         + '<div style="background:' + surfaceGrad('#2D5246', '#213e33') + ';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:14px;font-weight:700">' + (mode === 'sig' ? 'TU SIGNATURE //' : 'TU BUILD //') + '</div>' + rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';min-width:72px">' + r.k + '</span><span style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">' + r.v + '</span>' + (r.p ? '<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + SOLES + r.p + '</span>' : '') + '</div>'; }).join('') + sigNameHTML + '<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--sw-text-body,#F2F0EB)">TOTAL</span><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:28px;font-weight:900;color:' + GOLD + '">' + SOLES + t + '</span></div></div>'
         + (sizeUpsellDelta > 0 ? '<div onclick="size=\'30\';' + (quickPayEligible ? 'cart[0]=currentBuiltItem();confirmRerender()' : 'render()') + '" style="background:' + surfaceGrad('#213e33', '#182b23') + ';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CON MÁS HAMBRE? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF)">SUBE A 30CM</div><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;font-weight:700;color:' + GOLD + '">+' + SOLES + sizeUpsellDelta + '</span></div></div>' : '')
         + (recU ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">¿ALGO MÁS? //</div>' + uBtn(recU.k, recU.e, recU.l, recU.d, recU.p, uSel(recU.k)) + '</div>' : '')
-        + '<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'DOBLE PROTEÍNA', 'El doble de tu proteína elegida', dbl.pDbl, doubleProt) : '') + uBtn('sauce', icon('chili', 18, GOLD), 'SALSA EXTRA', 'Salsa adicional a tu elección', 2, extraSauce) + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'QUESO', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
+        + '<details style="margin-bottom:12px"><summary style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;font-weight:700;list-style:none;padding:8px 0">TODOS LOS EXTRAS // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'DOBLE PROTEÍNA', 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), dbl.pDbl, doubleProt) : '') + (sauceExtraAllowed ? uBtn('sauce', icon('chili', 18, GOLD), 'SALSA EXTRA', 'Salsa adicional a tu elección', 2, extraSauce) : '') + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'QUESO', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
         + (cust ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('estrella', 11, GOLD) + '<span>GUARDAR COMO FAVORITO //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:10px 16px;border-radius:8px">GUARDAR</button></div><div id="fav-msg" style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:6px">' + favMsg + '</div></div>' : '')
         + (quickPayEligible
             ? checkoutExtrasHTML() + '<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--sw-text,#FFFFFF)">+ CARRITO</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
@@ -1986,7 +2060,7 @@ function sOSides() {
     h += SIDES.map(function (d) {
         var inCart = cart.find(function (it) { return it.type === 'side' && it.code === d.id; });
         var qty = inCart ? inCart.qty : 0;
-        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + d.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + d.s + '</div>' + (d.d ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">' + esc(d.d) + '</div>' : '') + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';margin-top:4px">' + SOLES + d.p + '</div></div>' + (qty > 0 ? '<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\'' + d.id + '\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">' + qty + '</span><button onclick="sideQtyChange(\'' + d.id + '\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>' : '<button onclick="addSideToCart(\'' + d.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>') + '</div>';
+        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1"><div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">' + icon(d.icon, 17, GOLD) + '</div><div style="flex:1"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + d.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + d.s + '</div>' + (d.d ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">' + esc(d.d) + '</div>' : '') + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:' + GOLD + ';margin-top:4px">' + SOLES + d.p + '</div></div></div>' + (qty > 0 ? '<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\'' + d.id + '\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">−</button><span class="bump" style="display:inline-block;font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">' + qty + '</span><button onclick="sideQtyChange(\'' + d.id + '\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Barlow Condensed\',sans-serif;font-size:16px;font-weight:700">+</button></div>' : '<button onclick="addSideToCart(\'' + d.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px">AGREGAR</button>') + '</div>';
     }).join('');
     h += '</div>' + AB(null, true, null, "sc='o_cart';render()", 'VER CARRITO //');
     return h;
@@ -4616,6 +4690,9 @@ var ICONS = {
     trophy: '<path d="M8 4h8v3.5a4 4 0 0 1-8 0V4z"/><path d="M8 5H5.2a3 3 0 0 0 3 5.2M16 5h2.8a3 3 0 0 1-3 5.2"/><path d="M12 11.5V15M9 19.5h6l-.6-2.7H9.6L9 19.5z"/>',
     dumbbell: '<rect x="2" y="9.5" width="3" height="5" rx="1"/><rect x="19" y="9.5" width="3" height="5" rx="1"/><path d="M7 12h10"/><rect x="5" y="7.5" width="2" height="9" rx="1"/><rect x="17" y="7.5" width="2" height="9" rx="1"/>',
     chili: '<path d="M8 5.2c3-1.4 5.3.8 5.3 3 0 2-1.3 3-1.3 5 0 4-2.8 6.8-5.5 6.8-2.8 0-4-3-2-6 1-1.4 1.8-2 1.8-4 0-2-1-3.4 1.7-4.8z"/><path d="M8 5.2c-.9-1-1-2.4 0-3.4"/>',
+    flor: '<circle cx="12" cy="12" r="1.6"/><path d="M12 3.5c1.8 1.8 1.8 4.7 0 6.5-1.8-1.8-1.8-4.7 0-6.5z"/><path d="M12 20.5c1.8-1.8 1.8-4.7 0-6.5-1.8 1.8-1.8 4.7 0 6.5z"/><path d="M3.5 12c1.8-1.8 4.7-1.8 6.5 0-1.8 1.8-4.7 1.8-6.5 0z"/><path d="M20.5 12c-1.8-1.8-4.7-1.8-6.5 0 1.8 1.8 4.7 1.8 6.5 0z"/>',
+    hoja: '<path d="M5 19c-1-6 1.5-13 13-14 1 8-4 13-13 14z"/><path d="M6.5 17.5c3-4 6-7 10.5-11.5"/>',
+    vapor: '<path d="M5 10h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M16 11.5h1.3a2 2 0 0 1 0 4H16"/><path d="M8 7c-.5-.9.5-1.4 0-2.3M11.3 7c-.5-.9.5-1.4 0-2.3M14.6 7c-.5-.9.5-1.4 0-2.3"/>',
     queso: '<path d="M3 17 12 4l9 13z"/><circle cx="10" cy="13.5" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="12.5" cy="15.5" r="1"/>',
     camera: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-2.5h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/>',
     lock: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
