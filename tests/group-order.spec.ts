@@ -125,3 +125,29 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall!.body.items).toHaveLength(2);
 });
+
+// Antes solo se podían agregar Signatures al pedido grupal (SIGS.filter en sGroupOrder) —
+// quien solo quería sumar una bebida sin sándwich no tenía forma de hacerlo (hallazgo de
+// auditoría UX). Cubre la nueva sección BEBIDAS Y SIDES // y doAddGroupSide().
+test('alguien sin cuenta agrega solo una bebida al pedido grupal, sin sándwich', async ({ page }) => {
+  const calls = await mockBackend(page, {
+    'get-group-order': { code: 'ABC123', status: 'open', organizerName: 'Ana Cliente', expiresAt: new Date(Date.now() + 3600000).toISOString(), items: [], total: 0, isOrganizer: false },
+    'add-group-item': { success: true },
+  });
+  await stubWindowOpen(page);
+  await page.goto(APP_FILE + '?group=ABC123');
+  await page.waitForSelector('text=PEDIDO GRUPAL');
+  await expect(page.locator('text=BEBIDAS Y SIDES //')).toBeVisible();
+
+  await page.locator('#grp-name').fill('Beto');
+  await page.getByRole('button', { name: 'AGREGAR' }).last().click();
+
+  await expect(page.locator('text=¡Listo! Tu bebida se agregó.')).toBeVisible({ timeout: 10000 });
+
+  const addCall = calls.find((c) => c.action === 'add-group-item');
+  expect(addCall).toBeTruthy();
+  expect(addCall!.body.code).toBe('ABC123');
+  expect(addCall!.body.contributorName).toBe('Beto');
+  expect(addCall!.body.item.type).toBe('side');
+  expect(addCall!.body.item.code).toBeTruthy();
+});

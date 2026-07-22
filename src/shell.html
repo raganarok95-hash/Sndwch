@@ -22,6 +22,32 @@
      googleConfigured() es true — nunca bloquea el primer render, igual que Culqi arriba. -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+/* Modo claro del panel admin — antes era filter:invert(1) hue-rotate(180deg) sobre todo
+   el contenedor, lo que invertía matemáticamente el dorado de marca (#CBA258) a un olivo
+   lavado (hallazgo de auditoría visual). Ahora es una paleta clara de verdad: cada
+   superficie/texto neutro del panel admin usa una custom property con el valor oscuro
+   actual como fallback (así cualquier pantalla que NO esté dentro de .admin-light se ve
+   exactamente igual que antes, cero regresión), y .admin-light solo redefine esas
+   properties. Los colores semánticos/de estado (naranja, verde, rojo, azul, morado) se
+   dejan sin cambio entre temas — práctica estándar, ya son legibles sobre fondo claro.
+   El dorado de marca (variable JS GOLD) se reasigna a un tono más oscuro solo mientras se
+   renderiza una pantalla admin en modo claro (ver toggleAdminLight/render en app.ts). */
+.admin-light{
+  --sw-bg:#F3EEE1;
+  --sw-card:#FFFFFF;
+  --sw-card2:#F1EBDA;
+  --sw-card-danger:#FBEAEA;
+  --sw-card-muted:#EAE3D0;
+  --sw-border:#D9D0BA;
+  --sw-border-soft:#DDD5BE;
+  --sw-border-muted:#DCD3BB;
+  --sw-text:#241C10;
+  --sw-text-body:#3A2F1D;
+  --sw-text-muted:#6B6350;
+  --sw-text-muted2:#877D68;
+  --sw-text-muted3:#9C9480;
+  --sw-text-muted4:#4A4230;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'Barlow',sans-serif;color:#fff;position:relative;font-variant-numeric:tabular-nums}
@@ -43,6 +69,13 @@ button{cursor:pointer;border:none}
 .bump{animation:bump .25s ease}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .blink{animation:blink 1.4s infinite}
+/* Celebración de rango en sOSent() — antes rankName() era puramente informativo, sin
+   ningún momento que marcara cruzar un umbral (ej. NUEVO -> REGULAR, o desbloquear THE
+   VAULT en DE LA CASA). Un solo "pop" con leve overshoot, nada más — no hace falta
+   confetti para que se sienta como un logro. */
+@keyframes rankpop{0%{transform:scale(0) rotate(-6deg);opacity:0}60%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0deg)}}
+.rank-pop{animation:rankpop .5s cubic-bezier(.34,1.56,.64,1)}
+@media (prefers-reduced-motion: reduce){.rank-pop{animation:none}}
 
 input,textarea,select{color:#F2F0EB !important}
 input::placeholder,textarea::placeholder{color:#A8C8B0 !important;opacity:1}

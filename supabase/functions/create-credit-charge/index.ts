@@ -18,6 +18,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // función ahora reclama contra su tabla (pending_weekly_plans), que es la que de verdad
 // usa desde que existe (nunca compartió pending_credit_purchases pese a lo que decía este
 // comentario antes — ver actPrepareWeeklyPlan en customer.ts).
+//
+// La reserva/reclamo/cobro/logging en sí viven en _shared/culqi-claim.ts, compartidos
+// byte a byte con create-charge (eran ~95% el mismo archivo — hallazgo de auditoría de
+// arquitectura de código). Este archivo solo valida la forma de la compra y arma la
+// config específica de "Plan Semanal" (tabla, campos, mensajes).
+
+import { claimAndChargeCulqi } from "../_shared/culqi-claim.ts";
 
 const CULQI_SECRET_KEY = Deno.env.get("CULQI_SECRET_KEY");
 const SB_URL = Deno.env.get("SUPABASE_URL");
@@ -34,19 +41,6 @@ function json(body: unknown, status = 200) {
     status,
     headers: { "Content-Type": "application/json", ...CORS },
   });
-}
-
-// Ver el mismo comentario en create-charge/index.ts — esta función tampoco escribía a
-// debug_logs pese a mover dinero real (hallazgo de auditoría de arquitectura backend/
-// observabilidad). best-effort: un fallo al loguear nunca debe tumbar el cobro.
-async function debugLog(detail: unknown) {
-  try {
-    await fetch(`${SB_URL}/rest/v1/debug_logs`, {
-      method: "POST",
-      headers: { apikey: SERVICE_KEY!, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ source: "create-credit-charge", detail }),
-    });
-  } catch (_e) { /* nunca debe tumbar la respuesta real */ }
 }
 
 Deno.serve(async (req: Request) => {
@@ -78,85 +72,37 @@ Deno.serve(async (req: Request) => {
   if (!SB_URL || !SERVICE_KEY) {
     return json({ error: "Configuración incompleta del servidor." }, 500);
   }
-  const sbHeaders = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json" };
 
-  const pcResp = await fetch(
-    `${SB_URL}/rest/v1/pending_weekly_plans?ref=eq.${encodeURIComponent(ref)}&status=eq.pending&select=id,amount_paid,expires_at`,
-    { headers: sbHeaders },
-  );
-  if (!pcResp.ok) return json({ error: "No se pudo verificar la reserva de tu compra." }, 500);
-  const pcRows = await pcResp.json();
-  const pc = pcRows[0];
-  if (!pc) return json({ error: "No encontramos una reserva de compra válida. Vuelve a intentarlo." }, 404);
-  if (new Date(pc.expires_at).getTime() < Date.now()) {
-    return json({ error: "Tu reserva expiró. Vuelve a intentarlo." }, 410);
-  }
-  if (Math.round(Number(pc.amount_paid) * 100) !== amountCents) {
-    return json({ error: "El monto no coincide con tu compra." }, 400);
-  }
+  const result = await claimAndChargeCulqi({
+    sbUrl: SB_URL,
+    serviceKey: SERVICE_KEY,
+    culqiSecretKey: CULQI_SECRET_KEY,
+    table: "pending_weekly_plans",
+    amountField: "amount_paid",
+    refValue: ref,
+    amountCents,
+    email,
+    token,
+    description: `SND//WCH Plan Semanal ${ref}`,
+    metadataKey: "credit_ref",
+    source: "create-credit-charge",
+    notFoundMsg: "No encontramos una reserva de compra válida. Vuelve a intentarlo.",
+    expiredMsg: "Tu reserva expiró. Vuelve a intentarlo.",
+    mismatchMsg: "El monto no coincide con tu compra.",
+    conflictMsg: "Ya hay un cobro en proceso para esta compra. Espera un momento antes de reintentar.",
+  });
 
-  const claimResp = await fetch(
-    `${SB_URL}/rest/v1/pending_weekly_plans?id=eq.${pc.id}&status=eq.pending`,
-    { method: "PATCH", headers: { ...sbHeaders, Prefer: "return=representation" }, body: JSON.stringify({ status: "charging" }) },
-  );
-  const claimed = claimResp.ok ? await claimResp.json() : [];
-  if (!claimed.length) {
-    await debugLog({ event: "claim-conflict", ref, pendingPlanId: pc.id });
-    return json({ error: "Ya hay un cobro en proceso para esta compra. Espera un momento antes de reintentar." }, 409);
+  if (!result.ok) {
+    return json({ error: result.error, ...(result.culqi ? { culqi: result.culqi } : {}) }, result.status);
   }
 
-  async function releaseClaim() {
-    try {
-      await fetch(`${SB_URL}/rest/v1/pending_weekly_plans?id=eq.${pc.id}&status=eq.charging`, {
-        method: "PATCH",
-        headers: sbHeaders,
-        body: JSON.stringify({ status: "pending" }),
-      });
-    } catch (_e) { /* el cron de expiración igual limpia una fila 'charging' atascada */ }
-  }
-
-  let culqiResp: Response;
-  try {
-    culqiResp = await fetch("https://api.culqi.com/v2/charges", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${CULQI_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: amountCents,
-        currency_code: "PEN",
-        email: email,
-        source_id: token,
-        description: `SND//WCH Plan Semanal ${ref}`,
-        metadata: { credit_ref: ref },
-      }),
-    });
-  } catch (e) {
-    await releaseClaim();
-    await debugLog({ event: "culqi-fetch-failed", ref, amountCents, error: String(e) });
-    return json({ error: "No se pudo conectar con Culqi: " + String(e) }, 502);
-  }
-
-  const culqiData = await culqiResp.json().catch(() => ({}));
-
-  if (!culqiResp.ok) {
-    await releaseClaim();
-    const msg = culqiData?.user_message || culqiData?.merchant_message || "El pago fue rechazado.";
-    await debugLog({ event: "culqi-rejected", ref, amountCents, status: culqiResp.status, culqi: culqiData });
-    return json({ error: msg, culqi: culqiData }, 402);
-  }
-
-  // Cobro real ya realizado — se libera la reserva de vuelta a 'pending' (no antes) para
-  // que actConfirmWeeklyPlan (función api) pueda hacer su propio reclamo atómico
+  // Cobro real ya realizado — la reserva quedó liberada de vuelta a 'pending' (no antes)
+  // para que actConfirmWeeklyPlan (función api) pueda hacer su propio reclamo atómico
   // pending -> consumed al acreditar el saldo, exactamente igual que create-charge.
-  await releaseClaim();
-  await debugLog({ event: "charge-succeeded", ref, amountCents, chargeId: culqiData.id });
-
   return json({
     success: true,
-    chargeId: culqiData.id,
-    outcome: culqiData.outcome?.type,
+    chargeId: result.chargeId,
+    outcome: result.outcome,
     ref,
   });
 });
