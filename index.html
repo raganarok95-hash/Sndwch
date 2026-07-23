@@ -200,9 +200,13 @@ var STATUSES = {
     'CANCELADO': { c: '#A5A5A5', next: null, icon: 'close' }
 };
 var STEPS = ['RECIBIDO', 'PREPARANDO', 'EN CAMINO', 'ENTREGADO'];
+// B02 (HERBS//CHEESE, "Masa con orégano y parmesano") retirado por decisión del dueño —
+// solo lo usaba THE MEATBALL (SIG02, movido a B01) y CLASSIC//WHITE/FOCACCIA//ARTESANAL
+// concentran mejor la variedad real de pan mostrada en el menú. Posible reincorporación
+// futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
+// cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
 var BASES = [
     { id: 'B01', l: 'CLASSIC', s: 'WHITE', d: 'Masa suave básica' },
-    { id: 'B02', l: 'HERBS', s: 'CHEESE', d: 'Masa con orégano y parmesano' },
     { id: 'B03', l: 'FOCACCIA', s: 'ARTESANAL', d: 'Masa de focaccia artesanal' }
 ];
 var PROTS = [
@@ -253,9 +257,12 @@ var SAUCES = [
     { id: 'S04', l: 'HONEY', s: 'MUSTARD', d: 'Dulce, mostaza equilibrado' },
     { id: 'S05', l: 'SNDWCH', s: 'SPECIAL', d: 'Nuestra salsa de la casa. Receta exclusiva SND//WCH.' },
     { id: 'S06', l: 'OIL & VINEGAR', s: 'CLASSIC', d: 'Aceite de oliva y vinagre, estilo italiano' },
-    { id: 'S07', l: 'RANCH', s: 'CLASSIC', d: 'Cremoso, hierbas, ajo' },
     { id: 'S08', l: 'TERIYAKI', s: 'GLAZE', d: 'Dulce, soja, jengibre' },
-    { id: 'S09', l: 'CHIMICHURRI', s: 'ARGENTINO', d: 'Herbal, ajo, ácido' },
+    // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
+    // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
+    // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
+    // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
+    { id: 'S09', l: 'CHIMICHURRI', s: 'PIÑA ASADA', d: 'Herbal, ajo, ácido, con piña asada' },
     { id: 'S10', l: 'PEANUT', s: 'SATAY', d: 'Maní, soya, jengibre' },
     { id: 'S11', l: 'MOSTAZA', s: 'DIJON', d: 'Intensa, clásica, con carácter' },
     { id: 'S12', l: 'PICANTE', s: 'MIEL', d: 'Dulce con golpe de picor', spicy: true },
@@ -268,15 +275,18 @@ var SIGS = [
     // real. THE ORIGINAL pasa a CLÁSICO (encaja mejor: el asado mechado de siempre).
     { id: 'SIG01', n: 'THE ORIGINAL', s: 'SIGNATURE', badge: 'CLÁSICO', base: 'B01', prot: 'P01', tops: ['T01', 'T02', 'T03'], sauces: ['S01', 'S04'], p15: 18, p30: 22,
         pitch: 'Res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. El sándwich que enamora desde el primer bocado.' },
-    // Se retiró RANCH (S07) — no encajaba con el encuadre 100% italiano del pitch (ni el
-    // propio pitch la mencionaba) y quedaba fuera de lugar sobre albóndigas en marinara.
-    // Queda con una sola salsa, tal como pide el pitch. Badge PREMIUM (antes en SIG01, el
+    // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
+    // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
+    // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
+    // como pide el pitch. Badge PREMIUM (antes en SIG01, el
     // más barato de los tres) pasa acá, que sí es el de precio intermedio entre los tres.
     // cheeseOptional: único Signature con queso a elección — un meatball sub sin queso
     // derretido es atípico para el arquetipo (hallazgo de auditoría de receta). En vez de
     // fijar un queso en la receta curada (cambiaría el pitch/precio sin que el cliente lo
     // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
-    { id: 'SIG02', n: 'THE MEATBALL', s: 'BUILD', badge: 'PREMIUM', base: 'B02', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
+    // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
+    // hecho más auténtico para un meatball sub que uno con hierbas.
+    { id: 'SIG02', n: 'THE MEATBALL', s: 'BUILD', badge: 'PREMIUM', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
         pitch: 'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.' },
     // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
     // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
