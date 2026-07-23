@@ -41,10 +41,14 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
   R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
 };
 
-export const VALID_BASES = new Set(["B01", "B02", "B03"]);
+// B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
+// ver el mismo cambio (con el detalle completo) en BASES en src/app.ts.
+export const VALID_BASES = new Set(["B01", "B03"]);
 export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11", "S12", "S13"]);
+// S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
+// src/app.ts.
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -78,11 +82,12 @@ export const VAULT_ONLY_PROTS = new Set(["P03"]);
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
-  // RANCH (S07) retirada esta sesión — no encajaba con el resto (ver mismo cambio en
-  // src/app.ts, DEBE coincidir).
+  // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
+  // mismo cambio en src/app.ts, DEBE coincidir).
   // cheeseOptional: único Signature con queso a elección — DEBE coincidir con SIGS en
   // src/app.ts (mismo hallazgo/razonamiento ahí).
-  SIG02: { base: "B02", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24, cheeseOptional: true },
+  // base movida de B02 (retirado) a B01 — DEBE coincidir con SIGS en src/app.ts.
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24, cheeseOptional: true },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
