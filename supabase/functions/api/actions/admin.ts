@@ -409,7 +409,7 @@ const AT_RISK_LIMIT = 30;
 const RANK_RISK_WEIGHT: Record<string, number> = {
   "NUEVO": 1,
   "REGULAR": 1.5,
-  "DE LA CASA": 2,
+  "INICIADO": 2,
   "CÍRCULO INTERNO": 3,
   "MESA FUNDADORA": 4,
 };

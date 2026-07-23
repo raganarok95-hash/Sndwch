@@ -2,19 +2,19 @@ import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
 // Antes rankName() era puramente informativo — cruzar un umbral de rango (ej. de REGULAR
-// a DE LA CASA, que desbloquea THE VAULT) no generaba ningún aviso ni celebración
+// a INICIADO, que desbloquea THE VAULT) no generaba ningún aviso ni celebración
 // (hallazgo de auditoría UX/diseño). Cubre finalizeOrderSuccess() comparando el rango
 // antes/después del pedido y la tarjeta "¡SUBISTE DE RANGO!" en sOSent(), además de que
 // ahora se muestra la referencia del pedido en esa misma pantalla.
 
-test('cliente sube de rango a DE LA CASA al pagar el 5to pedido y ve la celebración', async ({ page }) => {
+test('cliente sube de rango a INICIADO al pagar el 5to pedido y ve la celebración', async ({ page }) => {
   await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0, total_orders: 4 }, isAdmin: false, token: 'tok-ana' },
     'place-order': (body: any) => ({
       success: true,
       order: { id: 'ord-1', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total },
       // El servidor es la fuente real de total_orders tras confirmar este pedido —
-      // pasa de 4 a 5, cruzando el umbral de DE LA CASA (minOrders:5).
+      // pasa de 4 a 5, cruzando el umbral de INICIADO (minOrders:5).
       customer: { phone: '900000001', name: 'Ana Cliente', points: body.total, credit_balance: 0, total_orders: 5 },
     }),
   });
@@ -43,7 +43,7 @@ test('cliente sube de rango a DE LA CASA al pagar el 5to pedido y ve la celebrac
 
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=¡SUBISTE DE RANGO! //')).toBeVisible();
-  await expect(page.locator('text=DE LA CASA')).toBeVisible();
+  await expect(page.locator('text=INICIADO')).toBeVisible();
   await expect(page.locator('text=Ya puedes ver THE VAULT')).toBeVisible();
   // Referencia del pedido visible — antes esta pantalla nunca la mostraba.
   await expect(page.locator('text=Pedido ORD-')).toBeVisible();

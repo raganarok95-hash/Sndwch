@@ -130,7 +130,7 @@ export function sigGateError(sigId: string, totalOrders: number): string | null 
   if (totalOrders >= gate.minOrders) return null;
   // El nombre de rango se deriva de RANKS (computeRankName) en vez de estar escrito a
   // mano acá — antes decía "Círculo Interno" fijo, que dejó de ser cierto en cuanto el
-  // umbral bajó a 5 pedidos (ese número corresponde a "DE LA CASA", no a Círculo Interno).
+  // umbral bajó a 5 pedidos (ese número corresponde a "INICIADO", no a Círculo Interno).
   return `Ese sabor es exclusivo de ${computeRankName(gate.minOrders)} — sigue pidiendo para desbloquearlo.`;
 }
 // Usado por actPrepareOrder/actPlaceOrder ANTES de reservar inventario o cobrar — un

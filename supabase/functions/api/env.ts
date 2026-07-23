@@ -43,7 +43,7 @@ export const STALE_MANUAL_PAYMENT_HOURS = 3;
 export const RANKS: { name: string; minOrders: number }[] = [
   { name: "NUEVO", minOrders: 0 },
   { name: "REGULAR", minOrders: 1 },
-  { name: "DE LA CASA", minOrders: 5 },
+  { name: "INICIADO", minOrders: 5 },
   { name: "CÍRCULO INTERNO", minOrders: 15 },
   { name: "MESA FUNDADORA", minOrders: 30 },
 ];
