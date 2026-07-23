@@ -68,7 +68,10 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   P03: { p15: 13, p30: 21, pDbl: 6 },
   P04: { p15: 16, p30: 30, pDbl: 9 },
   P05: { p15: 16, p30: 30, pDbl: 9 },
-  P06: { p15: 14, p30: 24, pDbl: 7 },
+  // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
+  // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
+  // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
+  P06: { p15: 14, p30: 24, pDbl: 6 },
 };
 // Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
 // se pueden pedir por BUILD YOUR OWN aunque sigan en PROT_PRICE (deriveCart/deriveOrder
@@ -98,7 +101,9 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
   // THE ORIGINAL/THE MEATBALL/THE SMOKE.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 25 },
+  // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
+  // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 30 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
@@ -155,13 +160,15 @@ export const SIDE_LABEL: Record<string, string> = {
   D08: "THE COOL // MINT",
   D09: "THE SPICE // CHAI",
 };
+// "BUILD" se renombró a "SIGNATURE" (hallazgo de auditoría UX, CRÍTICO) — chocaba con el
+// modo "BUILD YOUR OWN" del cliente. DEBE coincidir con el tag `s` de SIGS en src/app.ts.
 export const SIG_LABEL: Record<string, string> = {
   SIG01: "THE ORIGINAL // SIGNATURE",
-  SIG02: "THE MEATBALL // BUILD",
-  SIG03: "THE SMOKE // BUILD",
-  SIG04: "THE FRESH // BUILD",
+  SIG02: "THE MEATBALL // SIGNATURE",
+  SIG03: "THE SMOKE // SIGNATURE",
+  SIG04: "THE FRESH // SIGNATURE",
   SIG05: "THE VAULT // RESERVE",
-  SIG06: "THE TERIYAKI // BUILD",
+  SIG06: "THE TERIYAKI // SIGNATURE",
   SIG07: "THE CHICAGO // RESERVE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y

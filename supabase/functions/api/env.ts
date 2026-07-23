@@ -28,7 +28,11 @@ export const LOCKOUT_MINUTES = 15;
 export const REFERRAL_BONUS_POINTS = 50;
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
-export const WELCOME_BONUS_POINTS = 20;
+// Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
+// recompensa (la más barata, R02, cuesta 40 — ver REWARDS en catalog.ts), así que todo
+// cliente nuevo veía su checkout del primer pedido sin nada canjeable, justo el momento
+// de mayor intención de compra. DEBE coincidir con el texto en sPAuth() en src/app.ts.
+export const WELCOME_BONUS_POINTS = 40;
 export const STALE_MANUAL_PAYMENT_HOURS = 3;
 
 // Rangos por antigüedad (total_orders) — puramente de reconocimiento/pertenencia, NUNCA

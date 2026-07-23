@@ -229,7 +229,10 @@ var PROTS = [
     // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, MEATBALL/MARINARA) — hallazgo de auditoría
     // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
     { id: 'P05', l: 'EMBUTIDO', s: 'ITALIANO', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16, p30: 30, pDbl: 9 },
-    { id: 'P06', l: 'MEATBALL', s: 'MARINARA', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 7 }
+    // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
+    // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
+    // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
+    { id: 'P06', l: 'MEATBALL', s: 'MARINARA', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 6 }
 ];
 var TOPS = [
     { id: 'T01', l: 'TOMATE', s: 'FRESCO' },
@@ -238,7 +241,7 @@ var TOPS = [
     { id: 'T04', l: 'JALAPEÑO', s: 'ENCURTIDO' },
     { id: 'T05', l: 'ACEITUNA', s: 'NEGRA EN RODAJAS' },
     { id: 'T06', l: 'PIMIENTO', s: 'CURADO' },
-    { id: 'T07', l: 'GIARDINIERA', s: 'ENCURTIDO PICANTE' }
+    { id: 'T07', l: 'GIARDINIERA', s: 'ENCURTIDO PICANTE', spicy: true }
 ];
 var CHEESE = [
     { id: 'C01', l: 'AMERICANO', s: '' },
@@ -286,7 +289,7 @@ var SIGS = [
     // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
     // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
     // hecho más auténtico para un meatball sub que uno con hierbas.
-    { id: 'SIG02', n: 'THE MEATBALL', s: 'BUILD', badge: 'PREMIUM', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
+    { id: 'SIG02', n: 'THE MEATBALL', s: 'SIGNATURE', badge: 'PREMIUM', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
         pitch: 'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.' },
     // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
     // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
@@ -302,16 +305,18 @@ var SIGS = [
     // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
     // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
     // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-    { id: 'SIG03', n: 'THE SMOKE', s: 'BUILD', badge: 'AHUMADO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 30,
+    { id: 'SIG03', n: 'THE SMOKE', s: 'SIGNATURE', badge: 'AHUMADO', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 30,
         chef: true,
         pitch: 'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
-    // p30 subido de 22 a 25 (mismo motivo que P04 arriba) — mantiene el criterio de premio
-    // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-    { id: 'SIG04', n: 'THE FRESH', s: 'BUILD', badge: 'LIGERO', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 25,
+    // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
+    // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
+    // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
+    // Ahora sí iguala el criterio de premio S/0 a 30CM que ya tienen los demás Signatures.
+    { id: 'SIG04', n: 'THE FRESH', s: 'SIGNATURE', badge: 'LIGERO', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 30,
         // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
         // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
         pitch: 'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
-    { id: 'SIG06', n: 'THE TERIYAKI', s: 'BUILD', badge: 'NUEVO', base: 'B01', prot: 'P02', tops: ['T01', 'T02', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 21,
+    { id: 'SIG06', n: 'THE TERIYAKI', s: 'SIGNATURE', badge: 'NUEVO', base: 'B01', prot: 'P02', tops: ['T01', 'T02', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 21,
         pitch: 'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.' },
     // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
     // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
@@ -330,14 +335,22 @@ var SIGS = [
     // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
     // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
     // elegir en la UI antes de intentarlo.
+    // Pitch sin ingredientes explícitos (pedido del dueño) — THE VAULT es secreto de
+    // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva.
+    // Se revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
+    // sigPreviewOverlayHTML(), que ocultan el desglose de Pan/Proteína/Toppings/Salsas
+    // específicamente para s.secret.
     { id: 'SIG05', n: 'THE VAULT', s: 'RESERVE', badge: 'SECRETO', base: 'B03', prot: 'P03', tops: ['T04', 'T06', 'T03'], sauces: ['S02', 'S12'], p15: 24, p30: 30,
         secret: true, minOrders: 5,
-        pitch: 'Solo para clientes DE LA CASA. Pollo cajún, picante y con un golpe de miel — una combinación que no está en ningún menú, te la ganaste a pedidos.' }
+        pitch: 'Solo para clientes DE LA CASA. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.' }
 ];
-// "SIGNATURE"/"RESERVE" (curado por la casa) se distingue tipográficamente de "BUILD"
-// (armado por el cliente) — cursiva y más grande, como una firma, en vez de la misma
-// letra recta para ambos. Refuerza con tipografía la diferencia que ya existe en la
-// receta: uno lo curó el chef, el otro lo arma cada cliente a su gusto.
+// Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
+// que el modo "BUILD YOUR OWN" en la pantalla de inicio, confundiendo a un cliente nuevo
+// sobre si estaba viendo un sándwich curado por la casa o el armado libre (hallazgo de
+// auditoría UX, CRÍTICO). Ahora todos los Signatures regulares usan "SIGNATURE" (solo
+// THE VAULT y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
+// distinguen tipográficamente del resto del texto — cursiva y más grande, como una
+// firma — para reforzar que son curados por la casa.
 function sigTypeTag(tag) {
     if (tag === 'SIGNATURE' || tag === 'RESERVE')
         return '<i style="font-style:italic;font-size:1.15em">' + tag + '</i>';
@@ -1006,7 +1019,9 @@ function szLabel(sz) { return sz === '15' ? '15CM' : sz === '30' ? '30CM' : ''; 
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
 function SZTOG() {
     function opt(sz, l, d) { var sel = size === sz; return '<div onclick="size=\'' + sz + '\';render()" style="flex:1;background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:20px;font-weight:900;color:' + (sel ? '#FFFFFF' : '#A8C8B0') + '">' + l + '</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + d + '</div></div>'; }
-    return ST('00', 'TAMAÑO', 'Elige antes de continuar.') + '<div style="display:flex;gap:8px;margin-bottom:6px">' + opt('15', '15CM', 'Individual') + opt('30', '30CM', 'Clásico') + '</div><div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
+    // "Individual"/"Clásico" no comunicaban porción real (hallazgo de auditoría UX, MEDIO)
+    // — un cliente sin contexto de la marca no sabía si "Clásico" alcanzaba para compartir.
+    return ST('00', 'TAMAÑO', 'Elige antes de continuar.') + '<div style="display:flex;gap:8px;margin-bottom:6px">' + opt('15', '15CM', 'Para uno') + opt('30', '30CM', 'Para compartir') + '</div><div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
 }
 function today() { return new Date().toLocaleDateString('es-PE'); }
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que
@@ -1877,7 +1892,19 @@ function sOSig() {
         var thumb = SIG_IMG[s.id]
             ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
             : '<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">' + icon('sandwich', 26, GOLD) + '</div>';
-        return '<div onclick="sigId=\'' + s.id + '\';cheese=null;render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (sel ? GOLD : '#444') + ';margin-left:12px">' + priceTag + '</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">' + s.badge + '</span>' + (s.chef ? '<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:' + GOLD + ';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>' : '') + lowStockNote(s.prot) + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div><div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">' + icon('camera', 11, GOLD) + 'VER FOTO →</div></div></div></div>';
+        // THE VAULT (s.secret), incluso YA desbloqueado, no debe revelar su composición —
+        // el punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas
+        // (pedido explícito del dueño). Antes esta misma línea mostraba pan+proteína en
+        // texto plano para CUALQUIER Signature, incluida THE VAULT una vez desbloqueada.
+        // Antes el pitch (lo que de verdad diferencia sabor/estilo entre Signatures) solo
+        // se veía tras abrir "VER FOTO" — comparar 6 Signatures exigía 6 taps extra solo para
+        // entender en qué se diferencian (hallazgo de auditoría UX, ALTO). Truncado a 1 línea
+        // con -webkit-line-clamp para no alargar la tarjeta.
+        var pitchPreview = s.pitch ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical">' + esc(s.pitch) + '</div>' : '';
+        var ingredientsLine = s.secret
+            ? '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:' + GOLD + ';margin-top:8px;font-style:italic">Ingredientes secretos — se revelan cuando lo pruebas.</div>'
+            : '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>';
+        return '<div onclick="sigId=\'' + s.id + '\';cheese=null;render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:18px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:14px;color:' + (sel ? GOLD : '#444') + ';margin-left:12px">' + priceTag + '</span></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 7px">' + s.badge + '</span>' + (s.chef ? '<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#0d0d0d;background:' + GOLD + ';border-radius:4px;padding:2px 7px;margin-left:6px">FAVORITO DEL CHEF</span>' : '') + lowStockNote(s.prot) + pitchPreview + ingredientsLine + '<div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">' + icon('camera', 11, GOLD) + 'VER FOTO →</div></div></div></div>';
     }).join('');
     var sig = SIGS.find(function (x) { return x.id === sigId; });
     return h + '</div>' + (previewSigId ? sigPreviewOverlayHTML() : '') + AB(size && sig ? sigPrice(sig) : null, !!(size && sigId), 'go(\'o_home\')', 'enterConfirm()');
@@ -1907,13 +1934,18 @@ function sigPreviewOverlayHTML() {
         + hero
         + '<div style="padding:20px">'
         + '<p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.6;margin-bottom:16px">' + esc(s.pitch || '') + '</p>'
-        + '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">INGREDIENTES //</div>'
-        + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
-        + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s : '') + '</div>'
-        + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>'
-        + '<div><span style="color:' + GOLD + '">Toppings · </span>' + toppingsLbl + '</div>'
-        + '<div><span style="color:' + GOLD + '">Salsas · </span>' + saucesLbl + '</div>'
-        + '</div></div>'
+        // THE VAULT (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
+        // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
+        // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
+        + (s.secret
+            ? '<div style="background:var(--sw-card,#2D5246);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">INGREDIENTES //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
+            : '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">INGREDIENTES //</div>'
+                + '<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
+                + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s : '') + '</div>'
+                + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>'
+                + '<div><span style="color:' + GOLD + '">Toppings · </span>' + toppingsLbl + '</div>'
+                + '<div><span style="color:' + GOLD + '">Salsas · </span>' + saucesLbl + '</div>'
+                + '</div></div>')
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--sw-text-muted,#A8C8B0)">15CM // 30CM</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:' + GOLD + '">' + SOLES + s.p15 + ' // ' + SOLES + s.p30 + '</span></div>'
         + '<button onclick="closeSigPreview();sigId=\'' + s.id + '\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#fff;font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">PEDIR ESTE SIGNATURE //</button>'
         + '<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:4px">CERRAR</div>'
@@ -1981,12 +2013,12 @@ function sOBuild() {
             if (!av)
                 return TOPOFF(t);
             var sel = tops.indexOf(t.id) >= 0;
-            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</div>' + (t.d ? '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
+            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
         }).join('');
         h += '</div>';
     }
     else if (byoStep === 3) {
-        h += ST('04', 'QUESO', 'Incluido sin costo, elige 1.');
+        h += ST('04', 'QUESO', 'Opcional — incluido sin costo si eliges 1.');
         h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
         h += CHEESE.map(function (c) {
             var av = isAvail(c.id);
@@ -2160,8 +2192,17 @@ function rewardsPickerHTML() {
     if (!cust)
         return '';
     var unlocked = RWDS.filter(function (r) { return (cust.points || 0) >= r.pts; });
-    if (!unlocked.length)
-        return '';
+    // Antes, sin ninguna recompensa desbloqueada (el caso más común en un primer o segundo
+    // pedido), esta función no mostraba nada — el mismo framing "Te faltan N pts" que ya
+    // existe en el perfil (ver sProfile) nunca se reutilizaba justo donde más empuja a
+    // agregar algo más al carrito: el checkout (hallazgo de auditoría, MEDIO).
+    if (!unlocked.length) {
+        var cheapest = RWDS.slice().sort(function (a, b) { return a.pts - b.pts; })[0];
+        if (!cheapest)
+            return '';
+        var missingPts = cheapest.pts - (cust.points || 0);
+        return '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px 14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">TUS PUNTOS //</div><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">' + missingPts + ' pts</span> para ' + cheapest.n + ' // ' + cheapest.s + '.</div></div>';
+    }
     var rows = unlocked.map(function (r) {
         var selected = appliedReward === r.id;
         var targetIdx = findRewardTargetIndex(r.id);
@@ -3330,8 +3371,12 @@ function sOSent() {
         + '</div>';
 }
 // AUTH
+// Antes el bono de bienvenida se otorgaba en silencio (server-side, sin que este
+// formulario lo mencionara nunca) — un incentivo que no se comunica no convierte
+// (hallazgo de auditoría, BAJO). DEBE coincidir con WELCOME_BONUS_POINTS en
+// supabase/functions/api/env.ts.
 function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#0B0B0B);padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text-muted,#A8C8B0)">' + r.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px">PUNTOS<span class="cut-sep" style="color:' + GOLD + '"> // </span>REWARDS</div><p style="font-family:\'Barlow\',sans-serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +40 pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'CREAR CUENTA'], ['login', 'INGRESAR']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? '#fff' : '#555') + ';font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O CON TU TELÉFONO</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'NOMBRE // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN PERSONAL // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'CORREO // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'FECHA NACIMIENTO // DD/MM/AAAA', 'text', undefined, 'calendar') + INP('r-ref', 'CÓDIGO DE REFERIDO // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('CREAR CUENTA //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN PERSONAL', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;min-height:16px">' + aErr + '</div>' + BTN('INGRESAR //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#0B0B0B);padding-top:20px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">RECOMPENSAS //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700;color:var(--sw-text-muted,#A8C8B0)">' + r.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + r.s + '</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
 }
 async function doReg() {
     var name = gv('r-name').trim(), phone = gv('r-phone').trim(), pin = gv('r-pin').trim(), email = gv('r-email').trim(), dni = gv('r-dni').trim(), bdayRaw = gv('r-bday').trim(), refEl = document.getElementById('r-ref'), referredBy = refEl ? refEl.value.trim() : '';
