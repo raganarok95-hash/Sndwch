@@ -108,7 +108,8 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   // De aquí en adelante es el checkout normal — confirma que el carrito trae los 2 items
   // del grupo, no que reimplemente el pago (eso ya lo cubre checkout.spec.ts).
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
-  await expect(page.locator('text=S/37').first()).toBeVisible();
+  // S/37 de comida (SIG01+SIG02 15CM) + S/8 de delivery por defecto (zona 'media').
+  await expect(page.locator('text=S/45').first()).toBeVisible();
 
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');

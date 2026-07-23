@@ -87,6 +87,18 @@ export const STORE_HOURS: Array<[number, number] | null> = [
 // cliente escriba el nombre del distrito/zona. DEBE coincidir con
 // DELIVERY_EXCLUDED_ZONES en src/app.ts.
 export const DELIVERY_EXCLUDED_ZONES = ["el milagro", "el porvenir"];
+// El delivery se cobra ahora dentro del mismo pago del pedido (antes se coordinaba aparte,
+// pagado directo al motorizado sin ningún monto fijo) — el cliente elige su zona
+// aproximada en el checkout (por defecto "media", sin exigir GPS) y esto se suma al total
+// que de verdad se cobra (Culqi/Yape/Plin/crédito). El dueño sigue pagando al motorizado
+// por fuera de la app, igual que siempre — esto solo asegura que el cliente vea y pague
+// un monto real, no un rango. DEBE coincidir con DELIVERY_PRICE_ZONES en src/app.ts.
+export const DELIVERY_ZONE_FEES: Record<string, number> = {
+  cerca: 6,
+  media: 8,
+  lejos: 12,
+  muy_lejos: 15,
+};
 // d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
 // corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
 // como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro
