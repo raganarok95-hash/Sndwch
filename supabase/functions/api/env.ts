@@ -79,8 +79,14 @@ export const CONTACT_EMAIL = "contacto@sndwch.com";
 // index.html (usado ahí solo para el badge visual; aquí se usa para rechazar pedidos
 // programados fuera de horario, que el cliente podría forzar sin este chequeo).
 export const STORE_HOURS: Array<[number, number] | null> = [
-  [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22], [11, 22],
+  [11, 22], null, [11, 22], [11, 22], [11, 22], [11, 22], [11, 22],
 ];
+// Zonas de Trujillo que hoy NO se cubren con delivery — el checkout las rechaza si el
+// texto de la dirección las menciona (comparación por substring, sin acentos/mayúsculas;
+// ver assertAddressAllowed en orders.ts). No hay geocerca real: depende de que el
+// cliente escriba el nombre del distrito/zona. DEBE coincidir con
+// DELIVERY_EXCLUDED_ZONES en src/app.ts.
+export const DELIVERY_EXCLUDED_ZONES = ["el milagro", "el porvenir"];
 // d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
 // corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
 // como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro

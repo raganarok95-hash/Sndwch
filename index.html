@@ -466,6 +466,33 @@ var ESTIMATED_DELIVERY_RANGE = [25, 40];
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
 var STORE_LAT = -8.139599, STORE_LON = -79.039458;
 var NEARBY_RADIUS_KM = 3;
+// Zonas de Trujillo que hoy NO se cubren con delivery — el checkout las rechaza si el
+// texto de la dirección las menciona (comparación por substring, sin acentos/mayúsculas).
+// No hay geocerca real: depende de que el cliente escriba el nombre del distrito/zona.
+// El servidor vuelve a validar esto mismo (ver assertAddressAllowed en orders.ts) —
+// este chequeo de acá es solo para dar el aviso al toque, sin esperar la respuesta del
+// servidor. DEBE coincidir con DELIVERY_EXCLUDED_ZONES en supabase/functions/api/env.ts.
+var DELIVERY_EXCLUDED_ZONES = ['el milagro', 'el porvenir'];
+function addressInExcludedZone(addr) {
+    var a = (addr || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return DELIVERY_EXCLUDED_ZONES.some(function (z) { return a.indexOf(z) >= 0; });
+}
+// El delivery lo hacen motorizados que el dueño coordina por pedido — el cliente les paga
+// directo, no pasa por la pasarela de pago. Esto es solo el ESTIMADO mostrado en el
+// checkout antes de pagar, en bandas de distancia desde el punto de despacho
+// (STORE_LAT/STORE_LON) — cercano/media/lejos/más lejos, confirmadas por el dueño.
+var DELIVERY_FEE_TIERS = [{ maxKm: 3, fee: 6 }, { maxKm: 6, fee: 8 }, { maxKm: 10, fee: 12 }, { maxKm: Infinity, fee: 15 }];
+// Si ya se usó el mapa/GPS para fijar la dirección (window._mLat/_mLon, ver confirmMap)
+// se puede calcular la banda exacta por distancia real; si el cliente solo escribió la
+// dirección a mano, no hay coordenadas y se muestra el rango completo.
+function deliveryFeeEstimate() {
+    if (typeof window._mLat === 'number' && typeof window._mLon === 'number') {
+        var km = haversineKm(window._mLat, window._mLon, STORE_LAT, STORE_LON);
+        var tier = DELIVERY_FEE_TIERS.find(function (t) { return km <= t.maxKm; });
+        return { exact: true, fee: tier.fee };
+    }
+    return { exact: false, min: DELIVERY_FEE_TIERS[0].fee, max: DELIVERY_FEE_TIERS[DELIVERY_FEE_TIERS.length - 1].fee };
+}
 // Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
 // cartComboCount). Bajado de S/3 a S/2 — a S/3 el combo dejaba THE MIDNIGHT (D07, la
@@ -2182,6 +2209,11 @@ function comboDrinkNudgeHTML() {
         ? '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:14px">Es hora valle — agrega una bebida y te sale GRATIS (hasta ' + SOLES + OFFPEAK_DRINK_PROMO_CAP + ')</div>'
         : '<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:' + GOLD + ';margin-top:14px">Agrega una bebida y ahorra ' + SOLES + COMBO_DISCOUNT_PER_PAIR + ' (combo)</div>';
 }
+function deliveryFeeNoteHTML() {
+    var est = deliveryFeeEstimate();
+    var amountTxt = est.exact ? (SOLES_TXT + est.fee) : (SOLES_TXT + est.min + ' a ' + SOLES_TXT + est.max + ', según distancia');
+    return '<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('moto', 13, '#A8C8B0') + '<span>Delivery estimado: <b style="color:var(--sw-text,#FFFFFF)">' + amountTxt + '</b> — se paga <b style="color:var(--sw-text,#FFFFFF)">directo al motorizado</b>, no está incluido en este total.</span></div></div>';
+}
 function checkoutExtrasHTML() {
     var t = cartFinalTotal();
     var pBox = cust
@@ -2194,7 +2226,7 @@ function checkoutExtrasHTML() {
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
         + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + INP('o-nom', 'NOMBRE // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'TELÉFONO // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'CORREO // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'DIRECCION // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'NOTAS // opcional', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
-        + '<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('moto', 13, '#A8C8B0') + '<span>El costo de delivery se paga <b style="color:var(--sw-text,#FFFFFF)">directo al repartidor</b> al momento de la entrega — no está incluido en este total.</span></div></div>'
+        + deliveryFeeNoteHTML()
         + '<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>' + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
         + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= t; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()' : '') + '" style="margin-top:16px;background:' + (checked ? surfaceGrad('#24543F', '#173327') : surfaceGrad('#1E3A30', '#162922')) + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--sw-text,#FFFFFF)">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + (cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
         // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
@@ -2831,6 +2863,15 @@ async function doOrder() {
     if (!nom || !addr) {
         if (errEl)
             errEl.textContent = 'Ingresa tu nombre y dirección.';
+        return;
+    }
+    // Solo se avisa recién al intentar pagar, no mientras el cliente todavía está
+    // escribiendo la dirección — un aviso en vivo mientras tipea se siente como un
+    // rechazo prematuro antes de que termine de escribir. El servidor vuelve a validar
+    // esto mismo (assertAddressAllowed en orders.ts) por si alguien se salta el cliente.
+    if (addressInExcludedZone(addr)) {
+        if (errEl)
+            errEl.textContent = 'Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.';
         return;
     }
     // Antes no había ningún teléfono en el checkout de invitado — la única forma de

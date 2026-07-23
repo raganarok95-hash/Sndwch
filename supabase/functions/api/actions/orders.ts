@@ -4,7 +4,7 @@
 // la expiración automática de pagos manuales nunca confirmados.
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
-  isWithinStoreHours, computeRankName, loadStoreHours,
+  isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
@@ -285,6 +285,17 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
   return { order: orderRows[0], customer: null };
 }
 
+// El cliente valida esto mismo primero (mejor experiencia, feedback inmediato), pero un
+// pedido de invitado vía API directa se saltaría ese chequeo sin esto — el reparto es
+// por motorizados que el dueño coordina a mano, así que una dirección en una zona que no
+// cubre no debe llegar a cobrarse/reservarse nunca. Comparación por substring, sin
+// acentos/mayúsculas, contra DELIVERY_EXCLUDED_ZONES (env.ts).
+function assertAddressAllowed(address: string): void {
+  const normalized = address.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const hit = DELIVERY_EXCLUDED_ZONES.find((zone) => normalized.includes(zone));
+  if (hit) throw new ApiError("Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.", 400);
+}
+
 // Antes el cobro real con Culqi pasaba en el cliente ANTES de que place-order validara
 // horario/inventario/carrito — cualquier rechazo posterior (el bug de zona horaria que
 // se arregló en vivo, inventario agotado a media compra, un fallo transitorio al
@@ -304,6 +315,7 @@ export async function actPrepareOrder(b: any) {
   const clientTotal = Number(b.total || 0);
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
+  assertAddressAllowed(address);
 
   // Recarga el horario real configurado por el admin (igual que loadCatalogPrices()
   // abajo para precios) — sin esto, una instancia fría de la función validaría contra
@@ -511,6 +523,7 @@ export async function actPlaceOrder(b: any) {
   const manualMethod = b.paymentMethod === "yape" || b.paymentMethod === "plin" ? String(b.paymentMethod) : null;
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   if (!ref || !name || !contactPhone || !address || clientTotal < 0) throw new ApiError("Faltan datos del pedido.");
+  assertAddressAllowed(address);
   if (manualMethod && rewardId) throw new ApiError("Las recompensas no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
   // Yape/Plin no verifica el pago server-side al colocar el pedido (queda 'pending' hasta
   // que un operador lo confirma a mano) — y reserve_inventory más abajo descuenta stock
