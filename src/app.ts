@@ -99,12 +99,13 @@ var PROTS=[
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
   {id:'P03',l:'POLLO',  s:'CAJUN',      d:'Pechuga deshilachada, condimento cajún',p15:13,p30:21,pDbl:6,vaultOnly:true},
-  // p30 subido de 22 a 25 — el atún cuesta casi el doble por kilo que pollo/res, duplicar
-  // su porción a 30CM costaba más de lo que el precio fijo anterior cubría (hallazgo de
-  // costeo real). pDbl subido de 5 a 9 — el atún (~S/38/kg) cuesta igual que el embutido
-  // italiano de P05 (pDbl:9) pero cobraba menos que pollo/res, más baratos — DEBE
-  // coincidir con PROT_PRICE.P04 en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:14,p30:25,pDbl:9},
+  // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
+  // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
+  // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
+  // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
+  // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
+  // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
+  {id:'P04',l:'ATÚN',   s:'HOUSE',      d:'Atún premium con mayonesa clásica',p15:16,p30:30,pDbl:9},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de

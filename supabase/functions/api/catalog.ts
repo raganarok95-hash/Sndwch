@@ -51,13 +51,18 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // real bastante más de lo que el precio fijo alcanzaba a cubrir (hallazgo de costeo real
 // con precios de insumos de Perú). Mismo criterio en pDbl de P04: atún (~S/38/kg) cuesta
 // igual que el embutido italiano de P05 (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 —
-// menos que P01/P02 (pollo/res, más baratos) — subido a 9 para igualar a P05. DEBE
-// coincidir con PROTS en src/app.ts.
+// menos que P01/P02 (pollo/res, más baratos) — subido a 9 para igualar a P05.
+// P04 p15/p30 subidos otra vez (14/25→16/30, análisis financiero de otra sesión) —
+// con el mismo costo real por kilo que P05, el atún BYO rentaba solo 46.4%/44.0% contra
+// el objetivo del negocio (~55% margen), mientras P05 con costo idéntico ya rentaba
+// 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive aparte
+// en SIG_DATA y ya rentaba sano; el problema era solo la proteína suelta en BUILD YOUR
+// OWN. DEBE coincidir con PROTS en src/app.ts.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
   P01: { p15: 14, p30: 22, pDbl: 6 },
   P02: { p15: 13, p30: 21, pDbl: 6 },
   P03: { p15: 13, p30: 21, pDbl: 6 },
-  P04: { p15: 14, p30: 25, pDbl: 9 },
+  P04: { p15: 16, p30: 30, pDbl: 9 },
   P05: { p15: 16, p30: 30, pDbl: 9 },
   P06: { p15: 14, p30: 24, pDbl: 7 },
 };
