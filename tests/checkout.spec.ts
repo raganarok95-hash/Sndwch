@@ -95,6 +95,7 @@ test('invitado pide THE CHICAGO (SIG07, precio único 15CM=30CM) y paga con Yape
   expect(placeOrderCall2!.body.items[0].sigId).toBe('SIG07');
   expect(placeOrderCall2!.body.items[0].size).toBe('15');
   // p15===p30 para SIG07 — el total no depende del tamaño elegido, solo confirma que
-  // llegó el precio único (S/25), no que se haya calculado con la fórmula de split real.
-  expect(placeOrderCall2!.body.total).toBe(25);
+  // llegó el precio único (S/25) + el delivery por defecto (zona 'media', S/8), no que
+  // se haya calculado con la fórmula de split real.
+  expect(placeOrderCall2!.body.total).toBe(33);
 });

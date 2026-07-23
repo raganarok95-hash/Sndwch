@@ -4,7 +4,7 @@
 // la expiración automática de pagos manuales nunca confirmados.
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
-  isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES,
+  isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
@@ -101,6 +101,8 @@ type FinalizeOrderParams = {
   summary: string;
   notes: string | null;
   total: number;
+  deliveryFee: number;
+  deliveryZone: string | null;
   paymentStatus: string;
   paymentId: string | null;
   paymentMethod: string;
@@ -148,6 +150,8 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       summary: p.summary || "",
       notes: p.notes,
       total: p.total,
+      delivery_fee: p.deliveryFee,
+      delivery_zone: p.deliveryZone,
       status: "RECIBIDO",
       payment_status: p.paymentStatus,
       payment_id: p.paymentId,
@@ -186,7 +190,11 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     const isReferral = !!c.referred_by && !c.referral_bonus_granted;
     // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
     // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
-    const basePoints = p.total;
+    // Los puntos se ganan solo sobre la comida, nunca sobre el delivery — el delivery es
+    // un pass-through al motorizado (el negocio no se queda con ese margen), así que
+    // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
+    // que haya ingreso real detrás.
+    const basePoints = p.total - p.deliveryFee;
     let pointsDelta = basePoints;
     if (p.reward) pointsDelta -= p.reward.pts;
 
@@ -296,6 +304,15 @@ function assertAddressAllowed(address: string): void {
   if (hit) throw new ApiError("Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.", 400);
 }
 
+// El cliente elige su zona en el checkout (ver DELIVERY_PRICE_ZONES en src/app.ts) y
+// manda el id — nunca el monto, que siempre se recalcula acá (mismo criterio que el resto
+// del catalogo: nunca confiar en un precio que reporte el cliente).
+function deliveryFeeForZone(zone: string): number {
+  const fee = DELIVERY_ZONE_FEES[zone];
+  if (fee === undefined) throw new ApiError("Elige una zona de entrega valida.", 400);
+  return fee;
+}
+
 // Antes el cobro real con Culqi pasaba en el cliente ANTES de que place-order validara
 // horario/inventario/carrito — cualquier rechazo posterior (el bug de zona horaria que
 // se arregló en vivo, inventario agotado a media compra, un fallo transitorio al
@@ -314,6 +331,8 @@ export async function actPrepareOrder(b: any) {
   const address = String(b.address || "").trim();
   const clientTotal = Number(b.total || 0);
   const rewardId = b.rewardId ? String(b.rewardId) : null;
+  const deliveryZone = String(b.deliveryZone || "");
+  const deliveryFee = deliveryFeeForZone(deliveryZone);
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
   assertAddressAllowed(address);
 
@@ -334,7 +353,8 @@ export async function actPrepareOrder(b: any) {
   }
 
   await loadCatalogPrices();
-  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const expectedTotal = foodExpectedTotal + deliveryFee;
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -403,6 +423,8 @@ export async function actPrepareOrder(b: any) {
       notes: b.notes || null,
       summary: b.summary || "",
       expected_total: expectedTotal,
+      delivery_fee: deliveryFee,
+      delivery_zone: deliveryZone,
       reserved_codes: codes,
       reserved_qtys: qtys,
       sanitized_items: sanitizedItems,
@@ -462,6 +484,8 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
       summary: pc.summary || "",
       notes: pc.notes,
       total,
+      deliveryFee: Number(pc.delivery_fee || 0),
+      deliveryZone: pc.delivery_zone || null,
       paymentStatus: "paid",
       paymentId: chargeId,
       paymentMethod: "culqi",
@@ -556,10 +580,14 @@ export async function actPlaceOrder(b: any) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
 
+  const deliveryZone = String(b.deliveryZone || "");
+  const deliveryFee = deliveryFeeForZone(deliveryZone);
+
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
-  const { ingredients, expectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const expectedTotal = foodExpectedTotal + deliveryFee;
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -636,6 +664,7 @@ export async function actPlaceOrder(b: any) {
     const { order, customer } = await finalizeAndInsertOrder({
       ref, phone, contactPhone, name, email, address,
       summary: b.summary || "", notes: b.notes || null, total,
+      deliveryFee, deliveryZone,
       paymentStatus, paymentId: null, paymentMethod,
       items: sanitizedItems, scheduledFor, reward, useCredit,
     });
@@ -703,6 +732,9 @@ async function confirmManualPayment(order: any) {
   if (!rows.length) return;
   const c = rows[0];
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
+  // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
+  // sobre el delivery (pass-through al motorizado, sin margen real detrás).
+  const earnedPoints = order.total - (order.delivery_fee || 0);
 
   // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
   // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
@@ -716,7 +748,7 @@ async function confirmManualPayment(order: any) {
   // varias secuenciales — mismo motivo que en actPlaceOrder.
   await rpc("finalize_order_customer_update", {
     p_phone: order.customer_phone,
-    p_points_delta: order.total,
+    p_points_delta: earnedPoints,
     p_credit_delta: 0,
     p_total_orders_delta: 1,
     p_last_address: order.customer_address,
@@ -728,7 +760,7 @@ async function confirmManualPayment(order: any) {
   await sbInsert("transactions", {
     customer_phone: order.customer_phone,
     type: "earn_confirmed",
-    points: order.total,
+    points: earnedPoints,
     description: "Pedido SND//WCH (" + methodLabel + ")",
     order_ref: order.ref,
     confirmed: true,
@@ -793,7 +825,7 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,customer_phone,customer_name,customer_address,payment_method,payment_status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
@@ -900,7 +932,7 @@ export async function actAdminConfirmPayment(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,customer_phone,customer_name,customer_address,payment_method,payment_status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (!["yape", "plin", "cod"].includes(order.payment_method)) {
@@ -1062,7 +1094,7 @@ export async function actAdminCancelOrder(b: any) {
   if (!orderId) throw new ApiError("Falta el pedido.");
   const orderRows = await sbGet(
     "orders",
-    `id=eq.${encodeURIComponent(orderId)}&select=id,status,payment_status,payment_method,total,items,customer_phone,redeemed_reward_pts`,
+    `id=eq.${encodeURIComponent(orderId)}&select=id,status,payment_status,payment_method,total,delivery_fee,items,customer_phone,redeemed_reward_pts`,
   );
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
@@ -1088,7 +1120,10 @@ export async function actAdminCancelOrder(b: any) {
   // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
   // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
   const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
+  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
+  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
+  // revertirían de más puntos que los que de verdad se otorgaron.
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
@@ -1153,7 +1188,7 @@ export async function actCancelMyOrder(b: any) {
   if (!orderId && !ref) throw new ApiError("Falta el pedido.");
 
   let order: any;
-  const SELECT_FIELDS = "id,status,payment_status,payment_method,total,ref,customer_phone,redeemed_reward_pts,items";
+  const SELECT_FIELDS = "id,status,payment_status,payment_method,total,delivery_fee,ref,customer_phone,redeemed_reward_pts,items";
   if (b.token) {
     const s = await requireSession(b.token);
     const query = orderId
@@ -1189,7 +1224,10 @@ export async function actCancelMyOrder(b: any) {
   // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
   // insuficiente" en vez de perder la cuenta en silencio.
   const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - order.total : 0;
+  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
+  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
+  // revertirían de más puntos que los que de verdad se otorgaron.
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa

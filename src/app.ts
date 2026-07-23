@@ -362,22 +362,32 @@ function addressInExcludedZone(addr){
   var a=(addr||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return DELIVERY_EXCLUDED_ZONES.some(function(z){return a.indexOf(z)>=0;});
 }
-// El delivery lo hacen motorizados que el dueño coordina por pedido — el cliente les paga
-// directo, no pasa por la pasarela de pago. Esto es solo el ESTIMADO mostrado en el
-// checkout antes de pagar, en bandas de distancia desde el punto de despacho
-// (STORE_LAT/STORE_LON) — cercano/media/lejos/más lejos, confirmadas por el dueño.
-var DELIVERY_FEE_TIERS=[{maxKm:3,fee:6},{maxKm:6,fee:8},{maxKm:10,fee:12},{maxKm:Infinity,fee:15}];
-// Si ya se usó el mapa/GPS para fijar la dirección (window._mLat/_mLon, ver confirmMap)
-// se puede calcular la banda exacta por distancia real; si el cliente solo escribió la
-// dirección a mano, no hay coordenadas y se muestra el rango completo.
-function deliveryFeeEstimate(){
-  if(typeof window._mLat==='number'&&typeof window._mLon==='number'){
-    var km=haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
-    var tier=DELIVERY_FEE_TIERS.find(function(t){return km<=t.maxKm;});
-    return{exact:true,fee:tier.fee};
-  }
-  return{exact:false,min:DELIVERY_FEE_TIERS[0].fee,max:DELIVERY_FEE_TIERS[DELIVERY_FEE_TIERS.length-1].fee};
+// El delivery lo hacen motorizados que el dueño coordina por pedido — antes se pagaba
+// aparte, directo al motorizado, sin ningún monto fijo ("todas las apps indican un
+// monto" fue la razón de negocio para cambiarlo). Ahora el cliente elige su zona
+// aproximada en el checkout (nunca exige GPS — eso sería más fricción, no menos) y ese
+// monto se SUMA al total que de verdad se cobra (Culqi/Yape/Plin/crédito, el que sea).
+// El dueño le sigue pagando al motorizado por fuera de la app, igual que siempre — esto
+// solo asegura que el cliente vea y pague un número real, no un rango. DEBE coincidir
+// con DELIVERY_ZONE_FEES en supabase/functions/api/env.ts.
+var DELIVERY_PRICE_ZONES=[
+  {id:'cerca',l:'Cerca del local',fee:6},
+  {id:'media',l:'Distancia media',fee:8},
+  {id:'lejos',l:'Lejos',fee:12},
+  {id:'muy_lejos',l:'Muy lejos',fee:15}
+];
+// 'media' por defecto — así nadie tiene que pensar en su zona para completar el pedido;
+// solo toca si sabe que está más cerca o más lejos de lo normal.
+var deliveryZone='media';
+function deliveryFeeAmount(){
+  var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
+  return z?z.fee:0;
 }
+// El total que de verdad se cobra — cartFinalTotal() (comida, con descuentos/recompensa)
+// más el delivery. Los puntos ganados siguen calculándose sobre cartFinalTotal() sin
+// delivery (ver checkoutExtrasHTML) — el delivery es un pass-through al motorizado, no
+// premia con puntos igual que la comida.
+function payableTotal(){return cartFinalTotal()+deliveryFeeAmount();}
 // Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
 // cartComboCount). Bajado de S/3 a S/2 — a S/3 el combo dejaba THE MIDNIGHT (D07, la
@@ -1623,7 +1633,7 @@ function sOItemConfirm(){
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dblSurcharge=(doubleProt&&dbl)?dbl.pDbl:0;
   var sauceSurcharge=extraSauce?2:0;
-  var t=quickPayEligible?cartFinalTotal():total();
+  var t=quickPayEligible?payableTotal():total();
   rows.push({k:'TAMAÑO',v:szLabel(size)});
   // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
   // solo repite lo que ya dice el nombre del sándwich. Solo BUILD YOUR OWN (donde el
@@ -1791,30 +1801,38 @@ function comboDrinkNudgeHTML(){
     ?'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:14px">Es hora valle — agrega una bebida y te sale GRATIS (hasta '+SOLES+OFFPEAK_DRINK_PROMO_CAP+')</div>'
     :'<div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:'+GOLD+';margin-top:14px">Agrega una bebida y ahorra '+SOLES+COMBO_DISCOUNT_PER_PAIR+' (combo)</div>';
 }
-function deliveryFeeNoteHTML(){
-  var est=deliveryFeeEstimate();
-  var amountTxt=est.exact?(SOLES_TXT+est.fee):(SOLES_TXT+est.min+' a '+SOLES_TXT+est.max+', según distancia');
-  return'<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('moto',13,'#A8C8B0')+'<span>Delivery estimado: <b style="color:var(--sw-text,#FFFFFF)">'+amountTxt+'</b> — se paga <b style="color:var(--sw-text,#FFFFFF)">directo al motorizado</b>, no está incluido en este total.</span></div></div>';
+// Zona por defecto 'media' — el cliente solo toca esto si sabe que está más cerca o más
+// lejos de lo normal, nunca es un paso obligatorio. El monto ya se suma al total de abajo
+// (ver payableTotal) — no hace falta un aviso aparte de "cuánto cuesta el delivery".
+function deliveryZonePickerHTML(){
+  var h='<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">ZONA DE ENTREGA //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
+  h+=DELIVERY_PRICE_ZONES.map(function(z){
+    var sel=deliveryZone===z.id;
+    return'<div onclick="deliveryZone=\''+z.id+'\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:700;color:'+(sel?'#fff':'#A8C8B0')+'">'+z.l+'</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:'+(sel?GOLD:'#A8C8B0')+';margin-top:2px">'+SOLES_TXT+z.fee+'</div></div>';
+  }).join('');
+  h+='</div><div style="font-family:\'Barlow\',sans-serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
+  return h;
 }
 function checkoutExtrasHTML(){
   var t=cartFinalTotal();
+  var payT=payableTotal();
   var pBox=cust
     ?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:4px">PUNTOS QUE GANARÁS //</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900;color:var(--sw-text,#FFFFFF)">+'+t+' pts <span style="font-size:11px;color:var(--sw-text-muted,#A8C8B0);font-weight:700">pendientes hasta confirmar pago</span></div></div>'
     :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;margin-top:14px;cursor:pointer"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+'">↗ Regístrate en PUNTOS para ganar +'+t+' pts</div></div>';
-  var payingWithCreditFully=useCredit&&cust&&(cust.credit_balance||0)>=t;
+  var payingWithCreditFully=useCredit&&cust&&(cust.credit_balance||0)>=payT;
   return pBox
     +comboDrinkNudgeHTML()
     +(manualPayMethod?'':rewardsPickerHTML())
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom,'clientes')+INP('o-phone','TELÉFONO // 9XXXXXXXX','tel',confPhone,'phone')+INP('o-email','CORREO // Opcional, para tu comprobante','email',confEmail,'mail')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText,'direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'Barlow\',sans-serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</b> desde que confirmamos tu pedido.</span></div></div>':'')
-    +deliveryFeeNoteHTML()
+    +deliveryZonePickerHTML()
     +'<div style="margin-top:16px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿CUÁNDO? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='now'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">AHORA</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(scheduleMode==='later'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;color:#fff">PROGRAMAR</div></div>'+(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
-    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=t;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--sw-text,#FFFFFF)">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?surfaceGrad('#24543F','#173327'):surfaceGrad('#1E3A30','#162922'))+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:14px;font-weight:700;color:var(--sw-text,#FFFFFF)">PAGAR CON MI CRÉDITO</div><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'Share Tech Mono\',monospace;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
     // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
     // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
     // antes) para un pedido que no cuesta nada.
-    +(payingWithCreditFully||t===0?'':paymentMethodPickerHTML(t))
+    +(payingWithCreditFully||payT===0?'':paymentMethodPickerHTML(payT))
     +(checkoutLocked?'<div style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +'<div id="o-err" style="font-family:\'Barlow\',sans-serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>'
     // Los clientes en su primer pedido reciben este mismo ofrecimiento, más prominente,
@@ -2274,7 +2292,7 @@ function payButtonLabel(t,fallback){
 }
 function sOCart(){
   var baseTotal=cartBaseTotal();
-  var t=cartFinalTotal();
+  var t=payableTotal();
   var empty=!cart.length;
   var comboDiscount=cartComboDiscount();
   var offPeakDiscount=cartOffPeakDrinkDiscount();
@@ -2336,7 +2354,7 @@ async function doOrder(){
   }
   if(errEl)errEl.textContent='';
   var ref=oref();
-  var t=cartFinalTotal();
+  var t=payableTotal();
   var rewardObj=appliedReward?RWDS.find(function(x){return x.id===appliedReward;}):null;
   var rewardTargetIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
   var itemSummaries=cart.map(function(it){var extras=itemExtrasLabel(it);return it.qty+'x '+itemLabel(it)+(extras?' ('+extras+')':'');});
@@ -2348,7 +2366,8 @@ async function doOrder(){
     if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
   });
   if(notes)lines.push('','📝 '+notes);
-  lines.push('','*TOTAL: S/'+t+'*');
+  lines.push('','🛵 Delivery ('+(DELIVERY_PRICE_ZONES.find(function(z){return z.id===deliveryZone;})||{}).l+'): S/'+deliveryFeeAmount());
+  lines.push('*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
   var ingredients=[];
   cart.forEach(function(it){
@@ -2369,7 +2388,7 @@ async function doOrder(){
     }
   });
   _payingInProgress=true;
-  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward};
+  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount()};
   if(t===0){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
@@ -2397,7 +2416,7 @@ async function placeOrderDirect(msg,extraFields){
   busy=true;busyMsg=msg;render();
   var res;
   try{
-    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId},extraFields||{}));
+    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone},extraFields||{}));
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
@@ -2434,7 +2453,7 @@ async function prepareThenPayWithCulqi(amountSoles,email){
   if(!po)return;
   busy=true;busyMsg='Verificando tu pedido...';render();
   try{
-    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId});
+    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
