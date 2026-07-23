@@ -266,7 +266,8 @@ var SIDES=[
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
 // loadStoreHoursBackground más abajo, que lo sobreescribe con lo que el dueño configuró
 // en el panel admin). [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
-var STORE_HOURS=[[11,22],[11,22],[11,22],[11,22],[11,22],[11,22],[11,22]];
+// índice 1 (lunes) en null = día de descanso, coincide con store_hours en la base.
+var STORE_HOURS=[[11,22],null,[11,22],[11,22],[11,22],[11,22],[11,22]];
 function storeStatus(){
   var now=new Date(),h=now.getHours()+now.getMinutes()/60,range=STORE_HOURS[now.getDay()];
   if(!range)return{open:false,label:'CERRADO HOY'};
