@@ -51,7 +51,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
-.cut-sep{text-shadow:0 0 10px rgba(203,162,88,.4)}
+.cut-sep{}
 /* Marca "//" del wordmark — dos barras sesgadas con degradado dorado, en vez del simple
    glifo "//" (que en fuentes display de alto contraste como Bodoni Moda casi no se ve a
    tamaños chicos). Solo se usa en WORDMARK(); el "//" suelto dentro de copy en cualquier
@@ -61,12 +61,8 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
 .wm-mark i{display:inline-block;width:.15em;height:.82em;background:linear-gradient(180deg,#E9C98A,#CBA258);transform:skewX(-16deg);border-radius:1px}
 #app{max-width:480px;margin:0 auto;min-height:100vh;background:#1E3932;position:relative;z-index:1}
 ::-webkit-scrollbar{width:0}
-/* Grano sutil sobre el verde oscuro — sin esto el fondo se ve plano en pantallas
-   grandes; con esto se siente como una superficie con textura en vez de un color
-   sólido de CSS. pointer-events:none + z-index bajo para no interferir con nada. */
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
-input::placeholder{color:#A8C8B0;font-size:13px}
+input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
 button{cursor:pointer;border:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .pulse{animation:pulse 1.8s infinite}
