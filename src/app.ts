@@ -1329,7 +1329,11 @@ function sOHome(){
     // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
     // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
     +(function(){
-      var visibleSigs=SIGS.filter(function(s){return!s.secret||(cust&&(cust.total_orders||0)>=s.minOrders);});
+      // THE VAULT nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
+      // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
+      // sección separada, no una fila más entre los Signatures normales). Evita el
+      // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
+      var visibleSigs=SIGS.filter(function(s){return!s.secret;});
       var secretSig=SIGS.find(function(s){return s.secret;});
       var tabBar='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
         +'<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:'+(homeTab==='sig'?GOLD:'transparent')+';color:'+(homeTab==='sig'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
@@ -1360,7 +1364,7 @@ function sOHome(){
           +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:12px">'+(unlocked?SOLES+secretSig.p15:'Te faltan '+missing+' pedido'+(missing===1?'':'s'))+'</div>'
           +'</div></div>';
       })():'';
-      return tabBar+(homeTab==='byo'?byoPanel:sigPanel)+vaultCard;
+      return tabBar+(homeTab==='byo'?byoPanel:sigPanel)+(homeTab==='sig'?vaultCard:'');
     })()
     +(cust?'<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:'+GOLD+'"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Organizar →</span></div>':'')
     +(cust&&myFavorites.length?'<div onclick="sc=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
@@ -1897,8 +1901,13 @@ function checkoutExtrasHTML(){
   return pBox
     +comboDrinkNudgeHTML()
     +(manualPayMethod?'':rewardsPickerHTML())
-    +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom,'clientes')+INP('o-phone','TELÉFONO // 9XXXXXXXX','tel',confPhone,'phone')+INP('o-email','CORREO // Opcional, para tu comprobante','email',confEmail,'mail')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText,'direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
+    // "Contacto y entrega //" — antes este bloque (nombre/teléfono/correo/dirección)
+    // arrancaba sin ningún encabezado propio, pegado directo a la tarjeta de puntos/combo
+    // de arriba — el mockup sí separa cada bloque de propósito distinto con su propio
+    // eyebrow (hallazgo de auditoría de espaciado/densidad, fase 2 de fidelidad al mockup).
+    +'<div style="margin-top:20px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em">Contacto y entrega //</div>'
+    +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'+INP('o-nom','NOMBRE // Tu nombre','text',confNom,'clientes')+INP('o-phone','TELÉFONO // 9XXXXXXXX','tel',confPhone,'phone')+INP('o-email','CORREO // Opcional, para tu comprobante','email',confEmail,'mail')+'<div style="position:relative">'+INP('o-addr','DIRECCION // Calle o usa GPS','text',addrText,'direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','NOTAS // opcional','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</b> desde que confirmamos tu pedido.</span></div></div>':'')
     +deliveryZonePickerHTML()
     +'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(scheduleMode==='now'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(scheduleMode==='later'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'+(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
@@ -2252,7 +2261,7 @@ function paymentMethodPickerHTML(t){
   // de negocio en CLAUDE.md).
   return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
     +payMethodBtn('yape','Yape / Plin',true,'Recomendado')
-    +(culqiConfigured?payMethodBtn('culqi','TARJETA',true,null):'')
+    +(culqiConfigured?payMethodBtn('culqi','Tarjeta',true,null):'')
     +'</div>'
     +(manualPayMethod?manualPayInstructionsHTML(t):'')
     +'</div>';
@@ -2878,10 +2887,28 @@ function sPHome(){
   RWDS.forEach(function(r){if(r.pts<=pts)prev=r;});
   var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
   var unlocked=RWDS.filter(function(r){return r.pts<=pts;});
+  var totalOrders=cust.total_orders||0;
+  var nextRank=RANKS.find(function(r){return r.minOrders>totalOrders;});
+  // Ring circular en vez de la barra lineal de antes — mismo dato (progreso hacia la
+  // próxima recompensa), pero como el elemento visual central del perfil, igual que en
+  // el mockup Prada Caffè (fase 2 de fidelidad). Debajo del ring se agrega el rango
+  // (antes solo vivía en sPProfile, una pantalla aparte) y cuánto falta para el
+  // siguiente — dato que el home del perfil no mostraba en absoluto hasta ahora.
+  var ringR=54,ringC=2*Math.PI*ringR,ringPct=next?Math.min(pct,100):100,ringDash=ringC*(ringPct/100);
+  var ringHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:20px">'
+    +'<div style="position:relative;width:140px;height:140px">'
+    +'<svg width="140" height="140" viewBox="0 0 140 140" style="transform:rotate(-90deg)"><circle cx="70" cy="70" r="'+ringR+'" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/><circle cx="70" cy="70" r="'+ringR+'" fill="none" stroke="'+GOLD+'" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+ringDash+' '+ringC+'"/></svg>'
+    +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:#fff;line-height:1">'+pts.toLocaleString()+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">puntos</span></div>'
+    +'</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:'+GOLD+';margin-top:14px;letter-spacing:.05em">'+esc(rankName(totalOrders))+'</div>'
+    +(nextRank
+      ?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Te faltan <b style="color:var(--sw-text-body,#F2F0EB)">'+(nextRank.minOrders-totalOrders)+' pedido'+(nextRank.minOrders-totalOrders===1?'':'s')+'</b> para '+esc(nextRank.name)+'</div>'
+      :'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Ya alcanzaste el rango máximo</div>')
+    +'</div>';
   return H()+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:14px">Hola, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
     +'<div style="background:linear-gradient(135deg,#0c1d30,#07121e);border:1px solid rgba(203,162,88,.15);border-radius:16px;padding:24px;margin-bottom:20px;overflow:hidden">'
-    +'<div style="margin-bottom:8px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Tus puntos //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:58px;font-weight:640;color:#fff;line-height:1">'+pts.toLocaleString()+'</div></div>'
+    +ringHTML
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+GOLD+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:'+GOLD+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['Pedidos',cust.total_orders||0],['Canjeados',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+x[1]+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['Canjear','Recompensa','sc=\'p_rewards\';render()'],['Mis','Pedidos','sc=\'p_orders\';loadMyOrders()'],['Historial','Puntos','loadHist()'],['Mi','Perfil','sc=\'p_profile\';render()'],['Mis','Direcciones','loadAddresses()'],['Mis','Favoritos','loadFavorites()']].concat(isAdmin?[['Panel','Admin','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){return'<div onclick="'+x[2]+'" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);letter-spacing:.03em">'+x[0]+'<span style="color:'+GOLD+'"> //</span></div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
