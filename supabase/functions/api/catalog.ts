@@ -503,13 +503,22 @@ const COMBO_DISCOUNT_PER_PAIR = 2;
 // programa (hallazgo de auditoría de rentabilidad). Ahora siempre perdona como máximo
 // el valor de "un pan de 15CM" estándar (S/8, el caso mayoritario) sin importar qué
 // proteína se elija — DEBE coincidir con R03_FLAT_WAIVER en src/app.ts.
+//
+// Revisado de nuevo esta sesión (auditoría de menú, tras la subida de precio de Atún/
+// Embutido): el diff real p30-p15 de P04/P05 ahora es S/14 (antes menor), muy por encima
+// de este tope de S/8 — pero mantener el tope SIN subir es justo lo que evita que
+// canjear R03 con la proteína más cara valga más que con la mayoritaria; subirlo a 14
+// deshiría exactamente el anti-abuso documentado arriba. No hay cambio: el tope sigue
+// protegiendo el margen (el cliente sigue pagando la diferencia sobre S/8), no
+// perdiéndolo. Mismo razonamiento en R04_FLAT_WAIVER abajo.
 const R03_FLAT_WAIVER = 8;
 
 // Mismo criterio que R03_FLAT_WAIVER: R04 ("DOBLE PROTEÍNA // GRATIS") perdonaba antes el
 // pDbl EXACTO de la proteína elegida (S/5-9 según proteína), dejando elegir la más cara
 // (P04/P05, S/9 tras la recalibración de costo real) para maximizar el valor de una
 // recompensa de 320 pts muy por encima del resto. Se topa al valor mayoritario (S/6,
-// P01/P02) — DEBE coincidir con R04_FLAT_WAIVER en src/app.ts.
+// P01/P02) — DEBE coincidir con R04_FLAT_WAIVER en src/app.ts. Revisado de nuevo esta
+// sesión junto con R03_FLAT_WAIVER arriba — mismo veredicto, sin cambio.
 const R04_FLAT_WAIVER = 6;
 // R05 ("BEBIDA // GRATIS") perdonaba antes el precio completo de la bebida elegida
 // (S/3-6), permitiendo elegir siempre THE SPICE (S/6, la más cara) para maximizar el

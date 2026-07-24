@@ -79,12 +79,19 @@ var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
 var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
 var EMAIL_FN_URL=SB_URL+'/functions/v1/send-order-email';
 
+// `label` separado de la clave (hallazgo de auditoría de arquitectura): la clave
+// (RECIBIDO/PREPARANDO/...) es el identificador interno — se guarda en orders.status, se
+// compara con === en toda la app, dispara la lógica de crons — y hasta esta sesión
+// también era lo único que se imprimía al usuario (stBadge/DBAR/bulkBar mostraban la
+// clave cruda en ALL-CAPS, la única esquina que el recaseo de esta sesión no había
+// podido tocar sin arriesgar romper esas comparaciones). Ahora `label` es puramente
+// texto para mostrar — cambiarlo no afecta nada guardado ni comparado.
 var STATUSES={
-  'RECIBIDO':  {c:'#ffa500',next:'PREPARANDO', icon:'reclamo'},
-  'PREPARANDO':{c:'#3A86FF',next:'EN CAMINO',  icon:''},
-  'EN CAMINO': {c:'#9b6fff',next:'ENTREGADO',  icon:'moto'},
-  'ENTREGADO': {c:'#25D366',next:null,          icon:'check'},
-  'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close'}
+  'RECIBIDO':  {c:'#ffa500',next:'PREPARANDO', icon:'reclamo',label:'Recibido'},
+  'PREPARANDO':{c:'#3A86FF',next:'EN CAMINO',  icon:'',       label:'Preparando'},
+  'EN CAMINO': {c:'#9b6fff',next:'ENTREGADO',  icon:'moto',   label:'En camino'},
+  'ENTREGADO': {c:'#25D366',next:null,          icon:'check', label:'Entregado'},
+  'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close', label:'Cancelado'}
 };
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
 
@@ -182,12 +189,22 @@ var SIGS=[
   // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
   // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
   // hecho más auténtico para un meatball sub que uno con hierbas.
+  // chef:true (FAVORITO DEL CHEF) — movido acá desde SIG03 esta sesión (auditoría de
+  // menú/margen real). Cálculo: P06 (carne molida, ~S/10/kg) cuesta ~3.8x menos por kilo
+  // que P05 (embutido premium, ~S/38/kg, la proteína de SIG03) — pero SIG02 solo cobra
+  // S/2-6 menos que SIG03 (19/24 vs 21/30), muy por debajo de esa diferencia de costo.
+  // Un cálculo previo ya confirmado en esta sesión (ver PROT_PRICE.P04/P05 en catalog.ts)
+  // fijó el margen real de la proteína de S/38/kg a este mismo precio (16/30 BYO, el piso
+  // sin markup de curación que también usa SIG03 a 30CM) en ~53% — cerca del objetivo del
+  // negocio (~55%). P06 recorta el costo de insumo en ~74% frente a esa misma base con un
+  // recorte de precio muchísimo menor (14/24 BYO vs 16/30), así que su margen real queda
+  // claramente por encima de ambos — el candidato correcto para "favorito del chef" (nudge
+  // hacia el ítem de mejor margen, que es justo el propósito del badge). No se le baja el
+  // precio a P06 — la ganancia extra por unidad es exactamente lo que este badge aprovecha
+  // a propósito, no un descuido de calibración (ver P06/pDbl en PROTS arriba).
   {id:'SIG02',n:'The Meatball',s:'Signature',badge:'Premium',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,cheeseOptional:true,
+    chef:true,
     pitch:'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
-  // chef:true (FAVORITO DEL CHEF) — el de mejor margen real, calculado sobre costos
-  // reales de insumos (ver historial de la sesión que armó el menú). Antes lo tenía
-  // SIG04 por decisión del dueño sin ese cálculo — se movió acá cuando se verificó el
-  // costo real de cada producto.
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
   // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
@@ -199,7 +216,6 @@ var SIGS=[
   // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
   // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
   {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:30,
-    chef:true,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
@@ -850,7 +866,7 @@ function oref(){
   for(var i=0;i<4;i++)rand+=(Math.floor(Math.random()*36)).toString(36);
   return'ORD-'+Date.now().toString(36).toUpperCase().slice(-6)+'-'+rand.toUpperCase();
 }
-function stBadge(st){var s=STATUSES[st]||STATUSES['RECIBIDO'];var ic=s.icon?(ICONS[s.icon]?icon(s.icon,11,s.c):s.icon+' '):'';return'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+s.c+';background:'+s.c+'18;border:1px solid '+s.c+'44;border-radius:4px;padding:3px 9px;letter-spacing:.1em;display:inline-flex;align-items:center;gap:4px">'+ic+st+'</span>';}
+function stBadge(st){var s=STATUSES[st]||STATUSES['RECIBIDO'];var ic=s.icon?(ICONS[s.icon]?icon(s.icon,11,s.c):s.icon+' '):'';return'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+s.c+';background:'+s.c+'18;border:1px solid '+s.c+'44;border-radius:4px;padding:3px 9px;letter-spacing:.1em;display:inline-flex;align-items:center;gap:4px">'+ic+(s.label||st)+'</span>';}
 
 // HTML HELPERS
 // Logotipo — un solo lugar para las 3 versiones que antes vivían duplicadas (header de
@@ -2997,7 +3013,7 @@ function sOrdDetail(){
     +'</div>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px">Estado //</div>'
-    +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?GOLD:'#3A6B58')+';border-radius:4px"></div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:7px;color:'+(dn?GOLD:'#4A7A68')+';text-align:center;line-height:1.3">'+st.replace(' ','<br>')+'</div></div>';}).join('')+'</div>'
+    +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?GOLD:'#3A6B58')+';border-radius:4px"></div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:7px;color:'+(dn?GOLD:'#4A7A68')+';text-align:center;line-height:1.3">'+((STATUSES[st]||{}).label||st).replace(' ','<br>')+'</div></div>';}).join('')+'</div>'
     +stBadge(o.status)
     +'</div>'
     // Antes la página de Cambios y Devoluciones prometía "puedes cancelar sin costo antes
@@ -3807,9 +3823,9 @@ function bulkBar(){
   return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#0B0B0B);padding:12px 16px;display:flex;gap:6px;align-items:center;z-index:110">'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';flex-shrink:0">'+n+' sel.</div>'
     +'<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+iconTxt('check','Pago','#0d0d0d')+'</button>'
-    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">PREPARANDO</button>'
-    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">EN CAMINO</button>'
-    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">ENTREGADO</button>'
+    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.PREPARANDO.label+'</button>'
+    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES['EN CAMINO'].label+'</button>'
+    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.ENTREGADO.label+'</button>'
     +'<button onclick="bulkSelected={};render()" aria-label="Cancelar selección" style="all:unset;box-sizing:border-box;cursor:pointer;color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('close',16,'#ff8888')+'</button>'
     +'</div>';
 }
@@ -3999,7 +4015,7 @@ function sAdminHome(){
         +(manualPending
           ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#0d0d0d')+'</button>'
             +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:10px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
-          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,13,'#fff')+' ':'')+'Marcar como '+s.next+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:#25D366;text-align:center;padding:8px">'+iconTxt('check','Completado','#25D366')+'</div>'))
+          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,13,'#fff')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:#25D366;text-align:center;padding:8px">'+iconTxt('check','Completado','#25D366')+'</div>'))
         // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
         // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
         // (hallazgo de la auditoría de flujo de pedidos: sin esto, si se acaba un
@@ -4162,12 +4178,12 @@ function sAdminDashboard(){
     if(liveEntries.length){
       var liveMax=Math.max.apply(null,liveEntries.map(function(k){return d.ordersByStatus[k];}).concat([1]));
       h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-bottom:6px">En curso ahora //</div>';
-      h+=liveEntries.map(function(k){return DBAR(k,d.ordersByStatus[k],liveMax,(STATUSES[k]||{}).c);}).join('');
+      h+=liveEntries.map(function(k){return DBAR((STATUSES[k]||{}).label||k,d.ordersByStatus[k],liveMax,(STATUSES[k]||{}).c);}).join('');
     }
     if(doneEntries.length){
       var doneMax=Math.max.apply(null,doneEntries.map(function(k){return d.ordersByStatus[k];}).concat([1]));
       h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin:10px 0 6px">Histórico //</div>';
-      h+=doneEntries.map(function(k){return DBAR(k,d.ordersByStatus[k],doneMax,(STATUSES[k]||{}).c);}).join('');
+      h+=doneEntries.map(function(k){return DBAR((STATUSES[k]||{}).label||k,d.ordersByStatus[k],doneMax,(STATUSES[k]||{}).c);}).join('');
     }
   }
   if(d.avgEtaMinutes!=null){
