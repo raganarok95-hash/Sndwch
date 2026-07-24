@@ -27,6 +27,15 @@ export async function sbUpdate(table: string, query: string, data: unknown) {
   if (!r.ok) throw new Error(`Error actualizando ${table}: ${await r.text()}`);
   return r.json();
 }
+// Llama a un RPC de Postgres (ej. increment_customer_points) — para incrementos que
+// deben ser atómicos, nunca un sbGet+cálculo local+sbUpdate (esto último es lectura-luego-
+// escritura: si algo más toca la misma fila entre la lectura y la escritura, ese cambio
+// se pierde en silencio bajo el valor calculado con el dato viejo).
+export async function sbRpc(name: string, args: unknown) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, { method: "POST", headers: sbHeaders(), body: JSON.stringify(args) });
+  if (!r.ok) throw new Error(`Error en RPC ${name}: ${await r.text()}`);
+  return r.json();
+}
 export async function debugLog(source: string, detail: unknown) {
   try {
     await fetch(`${SB_URL}/rest/v1/debug_logs`, { method: "POST", headers: sbHeaders({ Prefer: "return=minimal" }), body: JSON.stringify({ source, detail }) });

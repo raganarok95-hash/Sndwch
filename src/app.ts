@@ -3011,14 +3011,24 @@ function sOrdDetail(){
     +ratingHTML(o)
     +'</div>'+NAV();
 }
+var _cancelMyOrderInProgress=false;
+// Guard contra doble-tap — el servidor ya reclama el pedido de forma atómica
+// (actCancelMyOrder exige status=eq.RECIBIDO en la misma sentencia que lo marca
+// CANCELADO), pero sin este guard dos taps casi simultáneos en "Cancelar pedido" antes
+// de que el primero resuelva mandaban dos solicitudes que el servidor procesaba en
+// paralelo — la primera reclamaba el pedido, la segunda solo veía el error genérico
+// "ya no se puede cancelar" en vez de nunca dispararse (hallazgo de auditoría de
+// funcionamiento).
 async function doCancelMyOrder(ordId,ref){
+  if(_cancelMyOrderInProgress)return;
   if(!(await showConfirm('¿Cancelar este pedido? Como la cocina aún no empezó a prepararlo, no tiene costo.')))return;
+  _cancelMyOrderInProgress=true;
   try{
     var r=await api('cancel-my-order',{token:token||undefined,orderId:ordId,ref:ref});
     myOrders=myOrders.map(function(o){return o.id===ordId?r.order:o;});
     showToast('Pedido cancelado.','success');
-    render();
-  }catch(e){showToast(e.message);}
+    _cancelMyOrderInProgress=false;render();
+  }catch(e){_cancelMyOrderInProgress=false;showToast(e.message);}
 }
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
@@ -3134,7 +3144,9 @@ function shareReferral(){
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   }
 }
+var _creditGiftInProgress=false;
 async function doCreditGift(){
+  if(_creditGiftInProgress)return;
   var phoneEl=(document.getElementById('cg-phone') as HTMLInputElement | null),amtEl=(document.getElementById('cg-amt') as HTMLInputElement | null);
   var phone=phoneEl?phoneEl.value.trim():'';
   var amt=amtEl?parseFloat(amtEl.value):NaN;
@@ -3149,12 +3161,17 @@ async function doCreditGift(){
     name=lookup.name;
   }catch(e){wMsg=e.message;render();return;}
   if(!(await showConfirm('¿Enviar '+SOLES_TXT+amt+' de crédito a '+name+' ('+phone+')?')))return;
+  // Guard de doble-tap — tarjeta de regalo y Plan Semanal ya lo tenían, esta transferencia
+  // de saldo YA propio se había quedado sin él (hallazgo de auditoría de funcionamiento,
+  // MEDIO): un doble-tap tras confirmar el modal regalaba el crédito dos veces.
+  _creditGiftInProgress=true;
   try{
     await api('credit-gift',{token:token,toPhone:phone,amount:amt});
     var r=await api('session-check',{token:token});
     if(r.valid){cust=r.customer;cacheCust(cust,isAdmin);}
     wMsg='¡Crédito enviado a '+name+'!';wPhone='';wAmt='';
   }catch(e){wMsg=e.message;}
+  _creditGiftInProgress=false;
   render();
 }
 // Tarjeta de regalo digital: se paga con puntos PROPIOS y acredita saldo a OTRO cliente
@@ -3669,6 +3686,7 @@ async function confirmAndAdvance(ordId){
 // pedidos) — ahora sí, pero con una advertencia aparte de que el reembolso se coordina
 // manualmente (esta acción no toca Culqi ni el saldo de crédito).
 async function cancelOrder(ordId){
+  if(_adminOrderActionInProgress)return;
   var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
   var wasPaid=ord&&ord.payment_status==='paid';
   var msg=wasPaid
@@ -3679,11 +3697,15 @@ async function cancelOrder(ordId){
   // resumen semanal ("3 cancelaciones esta semana por falta de stock") en vez de dejarlo
   // como un número suelto sin explicación.
   var reason=await showPrompt('¿Por qué se cancela? (opcional, ayuda al resumen semanal)','');
+  // Mismo guard que updateStatus/confirmOrderPayment/confirmAndAdvance — antes esta
+  // acción era la única de la cola admin sin protección contra doble-tap (hallazgo de
+  // auditoría de funcionamiento).
+  _adminOrderActionInProgress=true;
   try{
     var r=await api('admin-cancel-order',{token:token,orderId:ordId,acknowledgeRefund:true,reason:reason||''});
     adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
-    render();
-  }catch(e){showToast(e.message);}
+    _adminOrderActionInProgress=false;render();
+  }catch(e){_adminOrderActionInProgress=false;showToast(e.message);}
 }
 function toggleBulkSelect(ordId){
   if(bulkSelected[ordId])delete bulkSelected[ordId];else bulkSelected[ordId]=true;

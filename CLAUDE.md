@@ -107,7 +107,7 @@ Signature o build.
   `prepare-order`+cobro+`place-order`), Yape/Plin (manual, queda `pending` hasta que un
   admin confirma), crédito propio, o recompensa que cubre el 100%. Puede programarse
   para más tarde (`scheduledFor`, dentro de horario de atención).
-- **Combo + hora valle**: sándwich+bebida = -S/3 (una vez por par). Bebida gratis
+- **Combo + hora valle**: sándwich+bebida = -S/2 (una vez por par). Bebida gratis
   (hasta S/4) de 2pm-6pm hora Lima si el pedido se prepara en esa ventana (usa la hora de
   entrega si es programado, no la hora en que se arma el pedido). **Los dos nunca se
   suman** — solo se aplica el mayor de los dos.
@@ -118,7 +118,7 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → DE LA CASA (5, desbloquea THE VAULT) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5, desbloquea THE VAULT) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).

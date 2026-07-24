@@ -1110,6 +1110,29 @@ export async function actAdminCancelOrder(b: any) {
     throw new ApiError("Este pedido ya fue pagado. Confirma que coordinarás el reembolso manualmente para cancelarlo.", 409);
   }
 
+  // Motivo opcional (libre, lo escribe el operador) — sin esto, el resumen semanal solo
+  // podía contar CUÁNTOS pedidos se cancelaron, nunca POR QUÉ (hallazgo de la
+  // re-auditoría de automatización).
+  const reason = b.reason ? String(b.reason).trim().slice(0, 200) : "Sin especificar";
+  // Reclamo atómico ANTES de restockear/reembolsar — mismo patrón que ya usa
+  // applyOrderStatusUpdate para el pago manual (payment_status=neq.paid en el filtro de
+  // la propia sentencia). Antes esta función leía el pedido, restockeaba y reembolsaba
+  // TODO antes de recién marcarlo CANCELADO sin ningún filtro de estado — dos solicitudes
+  // casi simultáneas (doble clic, reintento de red) pasaban ambas la lectura inicial
+  // antes de que la primera terminara de escribir, y ambas restockeaban/reembolsaban el
+  // mismo pedido (hallazgo de auditoría de funcionamiento, CRÍTICO). El filtro
+  // `status=neq.ENTREGADO&status=neq.CANCELADO` en la MISMA sentencia hace que solo una
+  // de las dos solicitudes encuentre la fila para actualizar — la otra recibe un array
+  // vacío y nunca llega a restockear/reembolsar.
+  const claimRows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(orderId)}&status=neq.ENTREGADO&status=neq.CANCELADO`,
+    { status: "CANCELADO", cancel_reason: reason },
+  );
+  if (!claimRows.length) {
+    throw new ApiError("Este pedido ya no se puede cancelar — puede que ya esté cancelado, entregado, o que otra solicitud ya lo haya cancelado.", 409);
+  }
+
   await restockOrderItems(order.items);
 
   // A diferencia de actCancelMyOrder, esta función NUNCA revertía puntos/crédito/
@@ -1165,13 +1188,8 @@ export async function actAdminCancelOrder(b: any) {
     await Promise.all(refundAudits);
   }
 
-  // Motivo opcional (libre, lo escribe el operador) — sin esto, el resumen semanal solo
-  // podía contar CUÁNTOS pedidos se cancelaron, nunca POR QUÉ (hallazgo de la
-  // re-auditoría de automatización).
-  const reason = b.reason ? String(b.reason).trim().slice(0, 200) : "Sin especificar";
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, { status: "CANCELADO", cancel_reason: reason });
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
-  return { success: true, order: rows[0] };
+  return { success: true, order: claimRows[0] };
 }
 
 // La página de Cambios y Devoluciones promete "puedes cancelar sin costo antes de que la
@@ -1202,6 +1220,21 @@ export async function actCancelMyOrder(b: any) {
   }
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (order.status !== "RECIBIDO") {
+    throw new ApiError("Ya no se puede cancelar — la cocina ya empezó a preparar tu pedido.", 400);
+  }
+
+  // Reclamo atómico ANTES de restockear/reembolsar — mismo motivo y mismo patrón que
+  // actAdminCancelOrder (ver su comentario): sin el filtro `status=eq.RECIBIDO` en esta
+  // MISMA sentencia, un doble-tap en "Cancelar pedido" (sin guard de cliente hasta ahora)
+  // dejaba pasar dos solicitudes casi simultáneas por el chequeo de arriba antes de que
+  // la primera terminara de escribir, y ambas restockeaban/reembolsaban el mismo pedido
+  // (hallazgo de auditoría de funcionamiento, CRÍTICO).
+  const claimRows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(order.id)}&status=eq.RECIBIDO`,
+    { status: "CANCELADO", cancel_reason: "Cliente canceló" },
+  );
+  if (!claimRows.length) {
     throw new ApiError("Ya no se puede cancelar — la cocina ya empezó a preparar tu pedido.", 400);
   }
 
@@ -1296,8 +1329,7 @@ export async function actCancelMyOrder(b: any) {
     }
   }
 
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { status: "CANCELADO", cancel_reason: "Cliente canceló" });
-  return { success: true, order: rows[0] };
+  return { success: true, order: claimRows[0] };
 }
 
 // Un pedido Yape/Plin que el cliente nunca terminó de transferir se quedaba "vivo" para
