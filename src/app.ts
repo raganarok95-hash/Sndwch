@@ -157,7 +157,12 @@ var SAUCES=[
   {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní, soya, jengibre'},
   {id:'S11',l:'Mostaza', s:'Dijon',    d:'Intensa, clásica, con carácter'},
   {id:'S12',l:'Picante', s:'Miel',     d:'Dulce con golpe de picor',spicy:true},
-  {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado'}
+  // sigOnly: exclusiva de THE CHICAGO (SIG07) — mismo criterio que vaultOnly en PROTS
+  // (P03/CAJUN): no seleccionable en BUILD YOUR OWN aunque siga en SAUCES (SIGS/deriveOrder
+  // la siguen necesitando para tasar SIG07). El caldo de cocción de res mechada no tiene
+  // sentido como salsa suelta fuera de ese sándwich — antes se podía elegir en cualquier
+  // build sin relación con el Italian Beef (hallazgo del dueño).
+  {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado',sigOnly:true}
 ];
 var SIGS=[
   // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
@@ -1685,8 +1690,9 @@ function sOBuild(){
       var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
       return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
     };
-    var spicySauces=SAUCES.filter(function(s){return s.spicy;});
-    var otherSauces=SAUCES.filter(function(s){return !s.spicy;});
+    var byoSauces=SAUCES.filter(function(s){return !s.sigOnly;});
+    var spicySauces=byoSauces.filter(function(s){return s.spicy;});
+    var otherSauces=byoSauces.filter(function(s){return !s.spicy;});
     h+='<div style="display:flex;align-items:center;gap:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">'+icon('chili',11,'#ff8a5c')+'<span>Picantes //</span></div>';
     h+=spicySauces.map(sauceCard).join('');
     h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:16px 0 8px">Otras salsas //</div>';
