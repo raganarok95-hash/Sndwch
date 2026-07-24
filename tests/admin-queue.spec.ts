@@ -40,7 +40,7 @@ test('admin confirma un pedido pagado y lo pasa a PREPARANDO', async ({ page }) 
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=RECIBIDO').first()).toBeVisible();
 
-  await page.getByRole('button', { name: /MARCAR COMO PREPARANDO/ }).click();
+  await page.getByRole('button', { name: /marcar como preparando/i }).click();
 
   const updateCall = calls.find((c) => c.action === 'admin-update-status');
   expect(updateCall).toBeTruthy();
