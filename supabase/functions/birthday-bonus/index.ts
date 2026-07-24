@@ -4,7 +4,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // Cron diario: le regala puntos a los clientes que cumplen años hoy.
 // birthday_pts_year evita que se le acredite dos veces el mismo año.
 
-import { sbGet, sbInsert, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
+import { sbGet, sbInsert, sbUpdate, sbRpc, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
     // que usan bancos/tarjetas de crédito para cumpleaños bisiestos).
     const alsoMatchFeb29 = mm === "02" && dd === "28" && !isLeapYear(year);
 
-    const customers = await sbGet("customers", "select=phone,name,email,points,birthday,birthday_pts_year&birthday=not.is.null");
+    const customers = await sbGet("customers", "select=phone,name,email,birthday,birthday_pts_year&birthday=not.is.null");
     const todaysBirthdays = customers.filter((c: any) =>
       typeof c.birthday === "string" &&
       (c.birthday.endsWith(monthDay) || (alsoMatchFeb29 && c.birthday.endsWith("-02-29"))) &&
@@ -56,7 +56,22 @@ Deno.serve(async (req: Request) => {
 
     let granted = 0;
     for (const c of todaysBirthdays) {
-      const newPoints = (c.points || 0) + BIRTHDAY_POINTS;
+      // Antes esto leía `points` de TODOS los cumpleañeros en una sola consulta al
+      // inicio y recién escribía `saldo_leído + 100` uno por uno en este loop (con un
+      // fetch externo a Resend en el medio) — único punto del backend con lectura-luego-
+      // escritura en vez del incremento atómico que usa el resto del sistema
+      // (finalize_order_customer_update, increment_customer_points). Si algo más tocaba
+      // `points` de ese cliente entre la lectura inicial y su turno en el loop (bono de
+      // bienvenida, ajuste manual de un admin, bono de referido, reto reclamado), ese
+      // cambio se perdía en silencio bajo el valor calculado con el dato viejo (hallazgo
+      // de auditoría de funcionamiento, ALTO).
+      let newPoints: number;
+      try {
+        newPoints = await sbRpc("increment_customer_points", { p_phone: c.phone, p_delta: BIRTHDAY_POINTS });
+      } catch (e) {
+        await debugLog(SOURCE, { stage: "increment_failed", phone: c.phone, error: String(e) });
+        continue;
+      }
       await sbInsert("transactions", {
         customer_phone: c.phone,
         type: "earn_confirmed",
@@ -64,7 +79,7 @@ Deno.serve(async (req: Request) => {
         description: "Regalo de cumpleaños",
         confirmed: true,
       });
-      await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { points: newPoints, birthday_pts_year: year });
+      await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { birthday_pts_year: year });
       granted++;
       if (c.email) {
         try {
