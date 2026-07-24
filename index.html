@@ -1681,8 +1681,13 @@ function sOHome() {
                 var missing = Math.max(0, secretSig.minOrders - myTotal);
                 var unlocked = !!cust && missing === 0;
                 return '<div style="margin:20px 0 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Menú secreto //</div>'
-                    + '<div onclick="' + (unlocked ? 'startOrderWithSig(\'' + secretSig.id + '\')' : '') + '" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px dashed rgba(203,162,88,.4);border-radius:14px;padding:22px 20px;text-align:center;' + (unlocked ? 'cursor:pointer' : '') + '">'
-                    + '<span style="display:inline-block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.2em;border:1px solid ' + GOLD + ';border-radius:4px;padding:3px 10px;margin-bottom:12px">Secreto</span>'
+                    // Borde sólido (no dashed) — dashed ya es el lenguaje visual de "opción sin
+                    // seleccionar" en el resto de la app (row-byo-opt/CARDOFF); reusarlo acá leía
+                    // como placeholder incompleto en vez de exclusivo (hallazgo de auditoría visual).
+                    // El chip "Secreto" pasa de rectangular a un sello circular, más cerca del
+                    // medallón del mockup que del badge de precio genérico que usa el resto de tarjetas.
+                    + '<div onclick="' + (unlocked ? 'startOrderWithSig(\'' + secretSig.id + '\')' : '') + '" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px solid rgba(203,162,88,.4);border-radius:14px;padding:24px 20px;text-align:center;' + (unlocked ? 'cursor:pointer' : '') + '">'
+                    + '<span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:1px solid ' + GOLD + ';font-family:\'EB Garamond\',serif;font-style:italic;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.04em;margin:0 auto 14px">Secreto</span>'
                     + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">' + secretSig.n + '</div>'
                     + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea en ' + esc(rankName(secretSig.minOrders)) + '<br>(' + secretSig.minOrders + ' pedidos).</div>'
                     + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + secretSig.p15 : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
