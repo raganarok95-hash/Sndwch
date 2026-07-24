@@ -32,7 +32,7 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
   await page.getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="startOrder(\'sig\')"]').first().click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
 
   await expect(page.locator('text=AGOTADO')).toBeVisible();
   await expect(page.getByRole('button', { name: 'AVÍSAME CUANDO VUELVA →' })).toBeVisible();
