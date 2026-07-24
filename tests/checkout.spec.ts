@@ -13,7 +13,10 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
     }),
   });
 
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  // El home ahora muestra la lista de Signatures directamente (fase 2 de fidelidad al
+  // mockup) — tocar cualquier fila ya entra a SIGNATURE BUILDS con ese Signature
+  // preseleccionado, en vez de una tarjeta genérica "arrancar flujo".
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -58,7 +61,7 @@ test('invitado pide THE CHICAGO (SIG07, precio único 15CM=30CM) y paga con Yape
     }),
   });
 
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();

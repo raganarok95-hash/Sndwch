@@ -26,7 +26,7 @@ test('cliente sube de rango a INICIADO al pagar el 5to pedido y ve la celebraci�
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
   await page.getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -66,7 +66,7 @@ test('cliente que no cruza ningún umbral de rango no ve la celebración', async
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
   await page.getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();

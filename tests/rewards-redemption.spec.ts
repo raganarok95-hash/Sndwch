@@ -33,7 +33,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
 
   // THE ORIGINAL (SIG01) 15CM = S/18 — cualquier signature serviría, se fija uno
   // concreto solo para que el flujo sea determinista.
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
@@ -111,7 +111,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.getByRole('button', { name: 'PEDIDO' }).click();
 
   // THE ORIGINAL (SIG01) 15CM = S/18.
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();

@@ -11,7 +11,11 @@ import { gotoApp } from './helpers';
 test('POLLO CAJÚN (proteína exclusiva de THE VAULT) no aparece en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});
 
-  await page.locator('[onclick*="startOrder(\'byo\')"]').click();
+  // El home ahora muestra Signatures/Arma el tuyo como tabs (fase 2 de fidelidad al
+  // mockup) — Signatures es la tab activa por defecto, hay que cambiar a Arma el tuyo
+  // antes de que el panel BYO (y su botón "Ver el paso a paso completo") exista en el DOM.
+  await page.locator('text=Arma el tuyo').click();
+  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
   await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
   await page.locator('[onclick*="size=\'15\'"]').click();
   // ARMA EL TUYO es un asistente de 5 pasos (tamaño+pan, proteína, toppings, queso,

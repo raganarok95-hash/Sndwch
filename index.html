@@ -630,6 +630,9 @@ function dblStockWarn(protId) {
 }
 // STATE
 var sc = 'o_home', tab = 'order', busy = false, busyMsg = '';
+// Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
+// se persiste ni afecta ningún flujo de pedido real.
+var homeTab = 'sig';
 // A dónde vuelve el botón "←" en pantallas legales que se abren desde más de un lugar
 // (registro, perfil, o el pie de contacto del home) — sin esto, sPLegal() solo podía
 // adivinar el origen mirando si `cust` existe, y desde el pie del home eso mandaba a un
@@ -1187,6 +1190,15 @@ function startOrder(m) {
     mode = m;
     go(m === 'sig' ? 'o_sig' : 'o_build');
 }
+// Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
+// ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
+// completa cuando el cliente ya sabe justo cuál quiere.
+function startOrderWithSig(id) {
+    resetBuilder();
+    mode = 'sig';
+    sigId = id;
+    go('o_sig');
+}
 function currentBuiltItem() {
     return mode === 'sig'
         ? { type: 'sig', sigId: sigId, size: size, doubleProt: doubleProt, extraSauce: extraSauce, cheese: cheese, qty: 1 }
@@ -1631,30 +1643,49 @@ function sOHome() {
         + pwaCard
         + cartCard
         + recoCard
-        + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#F2F0EB);opacity:.8;letter-spacing:.15em;margin-bottom:20px">¿Cómo quieres pedir? //</div>'
-        // SIGNATURE BUILDS es el camino recomendado (rápido, sin decisiones) — se le da un
-        // tratamiento "hero" real (degradado propio + resplandor dorado) en vez de compartir
-        // el mismo relleno plano que BUILD YOUR OWN, para que la jerarquía se sienta con solo
-        // mirar la pantalla, no solo por la etiqueta "RECOMENDADO //" en texto.
-        + '<div onclick="startOrder(\'sig\')" style="background:' + 'var(--sw-card2,#1A3028)' + ';border:1px solid ' + GOLD + ';border-radius:14px;padding:24px 20px;cursor:pointer;margin-bottom:12px;position:relative;box-shadow:' + SHADOW_GOLD + '">'
-        + '<div style="position:absolute;right:16px;top:16px;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#0d0d0d;background:' + GOLD + ';border-radius:4px;padding:3px 8px;letter-spacing:.1em">Recomendado</div>'
+        + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#F2F0EB);opacity:.8;letter-spacing:.15em;margin-bottom:16px">¿Cómo quieres pedir? //</div>'
+        // Rediseño de esta sesión (fase 2 de fidelidad al mockup Prada Caffè): las 2 tarjetas
+        // hero (una por modo) se reemplazan por tabs + lista plana de filas, como en el
+        // mockup — un cliente puede ver los 6-7 Signatures reales (nombre, badge, precio) sin
+        // tener que entrar a otra pantalla primero. sOSig() sigue existiendo tal cual (con
+        // toda su lógica de stock/secreto/preview) — estas filas solo son la "vista previa"
+        // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
+        // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
         + (function () {
-            // Antes esta fila de chips mostraba TODOS los SIGS sin filtrar s.secret — a
-            // diferencia de sOSig(), que sí gatea el menú secreto correctamente. Cualquier
-            // invitado o cliente sin el rango veía el chip "THE VAULT" en la primerísima
-            // pantalla de la app, anulando por completo el efecto de exclusividad/descubrimiento
-            // (hallazgo CRÍTICO de auditoría, verificado leyendo el código). El texto "N
-            // combinaciones curadas" ahora también refleja cuántas se ven de verdad.
             var visibleSigs = SIGS.filter(function (s) { return !s.secret || (cust && (cust.total_orders || 0) >= s.minOrders); });
-            return '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:8px;line-height:1.15;text-wrap:balance">Signature<span class="cut-sep" style="color:' + GOLD + '"> // </span>builds</div>'
-                + '<p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">' + visibleSigs.length + ' combinaciones curadas. Rápido, sin decisiones.</p>'
-                + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">' + visibleSigs.map(function (s) { return '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;letter-spacing:.02em;color:' + GOLD + '">' + s.n + '</span>'; }).join('  ·  ') + '</div>';
+            var secretSig = SIGS.find(function (s) { return s.secret; });
+            var tabBar = '<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
+                + '<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'sig' ? GOLD : 'transparent') + ';color:' + (homeTab === 'sig' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
+                + '<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'byo' ? GOLD : 'transparent') + ';color:' + (homeTab === 'byo' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
+                + '</div>';
+            var sigPanel = '<div style="margin-bottom:8px">' + visibleSigs.map(function (s, i) {
+                var av = isAvail(s.base) && isAvail(s.prot);
+                var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
+                if (!av)
+                    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
+                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + s.badge + (i === 0 ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
+            }).join('') + '</div>';
+            var byoPanel = '<div style="margin-bottom:8px">'
+                + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
+                + BASES.map(function (b) {
+                    var av = isAvail(b.id);
+                    return '<div ' + (av ? 'onclick="startOrder(\'byo\')" style="cursor:pointer;' : 'style="opacity:.4;') + 'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + b.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + b.s + '</span>' + (av ? '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + '">Elegir →</span>' : '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888">Agotado</span>') + '</div>';
+                }).join('')
+                + '<div style="margin-top:14px">' + BTN('Ver el paso a paso completo →', "startOrder('byo')", true) + '</div></div>';
+            var vaultCard = secretSig ? (function () {
+                var myTotal = cust ? (cust.total_orders || 0) : 0;
+                var missing = Math.max(0, secretSig.minOrders - myTotal);
+                var unlocked = !!cust && missing === 0;
+                return '<div style="margin:20px 0 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Menú secreto //</div>'
+                    + '<div onclick="' + (unlocked ? 'startOrderWithSig(\'' + secretSig.id + '\')' : '') + '" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px dashed rgba(203,162,88,.4);border-radius:14px;padding:22px 20px;text-align:center;' + (unlocked ? 'cursor:pointer' : '') + '">'
+                    + '<span style="display:inline-block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.2em;border:1px solid ' + GOLD + ';border-radius:4px;padding:3px 10px;margin-bottom:12px">Secreto</span>'
+                    + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">' + secretSig.n + '</div>'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea en ' + esc(rankName(secretSig.minOrders)) + '<br>(' + secretSig.minOrders + ' pedidos).</div>'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + secretSig.p15 : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
+                    + '</div></div>';
+            })() : '';
+            return tabBar + (homeTab === 'byo' ? byoPanel : sigPanel) + vaultCard;
         })()
-        + '</div>'
-        + '<div onclick="startOrder(\'byo\')" style="background:' + 'var(--sw-card,#2D5246)' + ';border:1px solid var(--sw-border,#3A6B58);border-radius:14px;padding:22px 20px;cursor:pointer;margin-bottom:16px;box-shadow:' + SHADOW_SM + '">'
-        + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:8px;line-height:1.15;text-wrap:balance">Arma<span class="cut-sep" style="color:' + GOLD + '"> // </span>el tuyo</div>'
-        + '<p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Elige base, proteína, toppings y salsas.</p>'
-        + '</div>'
         + (cust ? '<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:' + GOLD + '"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Organizar →</span></div>' : '')
         + (cust && myFavorites.length ? '<div onclick="sc=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">' + icon('estrella', 15, '#FFFFFF') + '<span>Mis<span class="cut-sep" style="color:' + GOLD + '"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>' : '')
         + pc

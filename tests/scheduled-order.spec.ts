@@ -20,7 +20,7 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
     }),
   });
 
-  await page.locator('[onclick*="startOrder(\'sig\')"]').click();
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
