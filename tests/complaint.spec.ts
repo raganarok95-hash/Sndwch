@@ -20,7 +20,7 @@ test('invitado presenta un reclamo desde el Libro de Reclamaciones', async ({ pa
   await page.locator('#cq-detail').fill('El pedido llegó frío y más de una hora tarde.');
   await page.locator('#cq-request').fill('Solicito el reembolso del pedido.');
 
-  await page.getByRole('button', { name: /ENVIAR RECLAMO/ }).click();
+  await page.getByRole('button', { name: /Enviar reclamo/ }).click();
 
   await expect(page.locator('text=REC-2026-000123')).toBeVisible({ timeout: 10000 });
 
@@ -47,7 +47,7 @@ test('invitado presenta una queja (no un reclamo)', async ({ page }) => {
   await page.locator('#cq-detail').fill('La atención en el local fue muy demorada.');
   await page.locator('#cq-request').fill('Solicito una disculpa formal.');
 
-  await page.getByRole('button', { name: /ENVIAR QUEJA/ }).click();
+  await page.getByRole('button', { name: /Enviar queja/ }).click();
   await expect(page.locator('text=REC-2026-000124')).toBeVisible({ timeout: 10000 });
 
   const call = calls.find((c) => c.action === 'submit-complaint');

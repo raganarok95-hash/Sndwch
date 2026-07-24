@@ -42,8 +42,8 @@ test('cliente cancela un pedido RECIBIDO pagado con crédito antes de que cocina
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('text=' + MOCK_ORDER.ref).click();
 
-  await expect(page.getByRole('button', { name: /CANCELAR PEDIDO/ })).toBeVisible();
-  await page.getByRole('button', { name: /CANCELAR PEDIDO/ }).click();
+  await expect(page.getByRole('button', { name: /Cancelar pedido/ })).toBeVisible();
+  await page.getByRole('button', { name: /Cancelar pedido/ }).click();
 
   // Modal de confirmación propio de la app (no window.confirm).
   await expect(page.locator('text=CONFIRMAR //')).toBeVisible();
