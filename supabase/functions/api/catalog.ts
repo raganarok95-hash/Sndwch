@@ -78,6 +78,11 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 // las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
 // justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
+// Salsas exclusivas de un signature (hoy solo S13 "Au Jus" → SIG07 "THE CHICAGO") — mismo
+// criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR OWN aunque sigan en
+// VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para tasar SIG07). El caldo
+// de cocción de res mechada no tiene sentido como salsa suelta fuera de ese sándwich.
+export const SIG_ONLY_SAUCES = new Set(["S13"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
@@ -282,7 +287,7 @@ function priceByoBuild(
   // — una sola línea de carrito reservaba/descontaba miles de unidades de inventario de
   // ese topping por el precio de un sándwich normal (hallazgo de auditoría de QA).
   if (tops.length > VALID_TOPS.size || new Set(tops).size !== tops.length || tops.some((t) => !VALID_TOPS.has(t))) throw new ApiError("Topping inválido.");
-  if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
+  if (sauces.length > 3 || sauces.some((s) => !VALID_SAUCES.has(s) || SIG_ONLY_SAUCES.has(s))) throw new ApiError("Salsa inválida.");
   // "Extra" implica más de una salsa que ya elegiste — sin esto, un cliente podía pedir
   // SALSA EXTRA con 0 salsas base seleccionadas, lo cual no descontaba ningún ingrediente
   // real de inventario (el cargo de S/2 no mapeaba a ninguna salsa concreta) y además
