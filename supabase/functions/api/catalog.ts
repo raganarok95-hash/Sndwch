@@ -33,10 +33,17 @@ import { computeRankName } from "./env.ts";
 // recompensa de bajo umbral a propósito, para dar un primer canje rápido a un cliente
 // recién registrado, no un descuido de la recalibración (hallazgo de auditoría
 // financiera de esta ronda, que pidió documentar la intención en vez de subirla).
+//
+// R03 subido de 270 a 320 pts (auditoría de menú, ronda posterior) — a 270 pts entregaba
+// solo 33.75 pts/sol (270/S/8, el tope real de R03_FLAT_WAIVER más abajo), por debajo de
+// la banda ~36-54 pts/sol que ya tienen R04-R06 tras la recalibración de arriba, sin
+// ninguna razón documentada (a diferencia de R02, que sí está anotada como intencional).
+// A 320 pts queda en 40 pts/sol, dentro de la banda — DEBE coincidir con RWDS.R03 en
+// src/app.ts.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
   R02: { pts: 40, label: "4TA // SALSA" },
   R05: { pts: 220, label: "BEBIDA // GRATIS" },
-  R03: { pts: 270, label: "SUBE A 30CM // GRATIS" },
+  R03: { pts: 320, label: "SUBE A 30CM // GRATIS" },
   R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
   R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
 };
@@ -207,8 +214,11 @@ export async function loadCatalogPrices(): Promise<void> {
     console.error("loadCatalogPrices failed:", e);
   }
 }
+// P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo
+// del resto (Pollo/Cajún, Atún/House, Meatball/Marinara) — DEBE coincidir con PROTS.P01
+// en src/app.ts.
 export const PROT_LABEL: Record<string, string> = {
-  P01: "ASADO // RES",
+  P01: "RES // ASADO",
   P02: "POLLO // TERIYAKI",
   P03: "POLLO // CAJUN",
   P04: "ATÚN // HOUSE",

@@ -56,7 +56,7 @@ export async function actRegister(b: any) {
   const pin = String(b.pin || "").trim();
   const email = b.email ? String(b.email).trim() : null;
   const dni = String(b.dni || "").trim();
-  const bday = b.bday ? String(b.bday).trim() : null;
+  const bday = String(b.bday || "").trim();
   const referredBy = b.referredBy ? String(b.referredBy).trim() : null;
   // Si el registro viene de "Continuar con Google" (ver actGoogleAuth), el cliente manda
   // de vuelta el MISMO id_token que ya se verificó ahí — se vuelve a verificar acá (nunca
@@ -76,7 +76,17 @@ export async function actRegister(b: any) {
   const acquisitionSource = b.acquisitionSource ? String(b.acquisitionSource).trim().slice(0, 60) : null;
 
   if (!name || !phone || pin.length < 4) throw new ApiError("Completa nombre, teléfono y PIN (mínimo 4 dígitos).");
+  // Mismo mínimo que ya exige el teléfono de CONTACTO en el checkout del lado cliente
+  // (src/app.ts, doOrder) — el teléfono de CUENTA (login + código de referido) no
+  // validaba ningún formato en ningún lado, ni cliente ni servidor (hallazgo de auditoría
+  // UX, ALTO).
+  if (phone.replace(/\D/g, "").length < 6) throw new ApiError("Ingresa un teléfono válido.");
   if (!/^\d{8}$/.test(dni)) throw new ApiError("DNI es obligatorio y debe tener 8 dígitos.");
+  // Obligatoria (antes opcional) — ver el mismo cambio en doReg/sPAuth (src/app.ts): sin
+  // esto, actRecover (recuperar PIN) nunca podía coincidir contra una cuenta con
+  // birthday=null, dejándola sin ninguna vía de recuperación (hallazgo de auditoría UX,
+  // CRÍTICO).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(bday)) throw new ApiError("Fecha de nacimiento es obligatoria y debe ser válida.");
   if (email && !isValidEmail(email)) throw new ApiError("Correo inválido.");
 
   // Antes eran 2 consultas secuenciales a la misma tabla — un solo `or=()` cubre ambos
