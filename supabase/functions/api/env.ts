@@ -103,6 +103,18 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
   lejos: 12,
   muy_lejos: 15,
 };
+// El delivery es pass-through puro (arriba): el negocio no gana nada con él, solo lo
+// cobra para pagarle exacto al motorizado. Pero cuando se paga con TARJETA, Culqi
+// descuenta su comisión (~4-5.5%, confirmado por el dueño) del cargo COMPLETO, incluido
+// este monto — el negocio terminaba recibiendo menos de lo que igual le pagaba al
+// motorizado por fuera (hallazgo de auditoría financiera). Se usa el extremo alto del
+// rango confirmado (5.5%) para el "gross-up" en vez del promedio, así el pass-through
+// queda cubierto incluso en el peor caso real de comisión — ver deliveryFeeForZoneCard
+// en actions/orders.ts (SOLO se aplica en el flujo de tarjeta/actPrepareOrder; Yape/Plin/
+// crédito no pagan esta comisión y siguen cobrando el fee real sin ajustar). DEBE
+// coincidir con CULQI_FEE_RATE en src/app.ts (ese lado solo estima el total antes de
+// pagar; este es el que de verdad determina cuánto se cobra).
+export const CULQI_FEE_RATE = 0.055;
 // d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
 // corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
 // como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro

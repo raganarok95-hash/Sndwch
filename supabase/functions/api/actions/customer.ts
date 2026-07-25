@@ -4,7 +4,7 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA } from "../catalog.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS } from "../env.ts";
 import { sendPushToPhone } from "../push.ts";
 import { debugLog } from "../logging.ts";
@@ -52,7 +52,11 @@ export async function actFavoritesList(b: any) {
   return { favorites: await sbGet("favorites", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.desc`) };
 }
 export async function actFavoritesAdd(b: any) {
-  const s = await requireSession(b.token);
+  // verifyActiveSession (no requireSession) porque necesitamos total_orders real de la
+  // fila del cliente para el gate de rango de abajo — el payload del token no lo trae.
+  const active = await verifyActiveSession(b.token);
+  if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
+  const s = active.payload;
   // Antes sin tope de largo — un nombre muy largo podía tapar el botón ELIMINAR en la
   // lista de favoritos (hallazgo de auditoría UX). Mismo tope que otros campos de texto
   // libre del cliente (ej. nota de pedido).
@@ -60,6 +64,16 @@ export async function actFavoritesAdd(b: any) {
   if (!name) throw new ApiError("Ponle un nombre a tu favorito.");
   await assertUnderLimit("favorites", s.phone, MAX_FAVORITES, "favoritos guardados");
   await loadCatalogPrices();
+  // Antes faltaba acá — actPrepareOrder/actPlaceOrder/actAddGroupItem ya validaban el
+  // gate de rango (ej. THE VAULT solo para INICIADO+) antes de tasar, pero
+  // actFavoritesAdd tasaba con deriveOrder() sin pasar por sigGateError primero: un
+  // cliente con 0 pedidos podía GUARDAR THE VAULT como favorito llamando a la API
+  // directo, aunque el checkout normal lo siga rechazando al intentar pedirlo de verdad
+  // (hallazgo de auditoría de composición/exclusividad, ALTO).
+  if (b.mode === "sig") {
+    const gateErr = sigGateError(String(b.sigId || ""), active.row.total_orders || 0);
+    if (gateErr) throw new ApiError(gateErr, 403);
+  }
   deriveOrder(b);
   const rows = await sbInsert("favorites", { customer_phone: s.phone, name, build: buildFromOrder(b) });
   return { success: true, favorite: rows[0] };
@@ -668,9 +682,13 @@ export async function actGiftCardPurchase(b: any) {
 //
 // Precio subido de S/90 a S/95 — la comisión de Culqi (~4% efectivo) sobre el cobro de
 // S/90 dejaba al negocio recibiendo en realidad ~S/86.4, no los S/90 que el diseño
-// original asumía como caja recibida. A S/95, incluso después de la comisión el negocio
-// sigue recibiendo al menos los S/90 reales que se buscaban desde el inicio (hallazgo de
-// auditoría financiera).
+// original asumía como caja recibida. A S/95, el negocio recibe entre S/89.78 (extremo
+// alto del rango de comisión real confirmado, 5.5%) y S/91.2 (extremo bajo, 4%) — cerca
+// de los S/90 reales que se buscaban, pero no garantizado en todo el rango (revisado de
+// nuevo en la ronda de auditoría de menú/negocio; decisión del dueño: dejar el precio en
+// S/95 sin ajustar más — el crédito de S/100 que se entrega a cambio cuesta ~S/45 reales
+// de honrar, así que el negocio sigue siendo rentable en términos absolutos incluso en el
+// peor caso de comisión, solo no llega a cubrir el piso exacto de S/90 en ese extremo).
 const WEEKLY_PLAN_PRICE = 95;
 const WEEKLY_PLAN_CREDIT = 100;
 const WEEKLY_PLAN_TTL_MINUTES = 15;

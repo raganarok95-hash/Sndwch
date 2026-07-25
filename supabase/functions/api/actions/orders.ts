@@ -5,6 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
+  CULQI_FEE_RATE,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError, SessionPayload } from "../types.ts";
@@ -312,6 +313,15 @@ function deliveryFeeForZone(zone: string): number {
   if (fee === undefined) throw new ApiError("Elige una zona de entrega valida.", 400);
   return fee;
 }
+// Solo para el flujo de tarjeta (actPrepareOrder, vía Culqi) — "engorda" el fee real para
+// que, incluso después de que Culqi descuente su comisión, lo que le quede al negocio siga
+// alcanzando para pagarle al motorizado el monto real (DELIVERY_ZONE_FEES). Yape/Plin/
+// crédito (actPlaceOrder) no pagan esta comisión, así que siguen cobrando el fee real sin
+// ajustar — ver CULQI_FEE_RATE en env.ts para el razonamiento completo.
+function deliveryFeeForZoneCard(zone: string): number {
+  const realFee = deliveryFeeForZone(zone);
+  return Math.round((realFee / (1 - CULQI_FEE_RATE)) * 100) / 100;
+}
 
 // Antes el cobro real con Culqi pasaba en el cliente ANTES de que place-order validara
 // horario/inventario/carrito — cualquier rechazo posterior (el bug de zona horaria que
@@ -332,7 +342,7 @@ export async function actPrepareOrder(b: any) {
   const clientTotal = Number(b.total || 0);
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   const deliveryZone = String(b.deliveryZone || "");
-  const deliveryFee = deliveryFeeForZone(deliveryZone);
+  const deliveryFee = deliveryFeeForZoneCard(deliveryZone);
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
   assertAddressAllowed(address);
 
@@ -917,7 +927,12 @@ export async function actAdminBulkUpdateStatus(b: any) {
   const failed: { orderId: string; error: string }[] = [];
   for (const orderId of orderIds) {
     try {
-      updated.push(await applyOrderStatusUpdate(orderId, status));
+      // etaMinutes ahora se pasa también acá (antes solo actAdminUpdateStatus, el flujo de
+      // UN pedido, lo recibía) — sin esto, avanzar un lote a EN CAMINO nunca cargaba ETA y
+      // el cliente recibía el push genérico "va en camino" en vez de la ventana de hora
+      // real que sí ve quien avanza su pedido uno por uno (hallazgo de auditoría operativa,
+      // ALTO).
+      updated.push(await applyOrderStatusUpdate(orderId, status, b.etaMinutes));
     } catch (e) {
       failed.push({ orderId, error: e instanceof ApiError ? e.message : "Error interno." });
     }
