@@ -23,7 +23,7 @@ import {
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock,
-  actUploadReceipt, actAdminReceiptUrl,
+  actUploadReceipt, actAdminReceiptUrl, actValidatePromoCode,
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
@@ -43,6 +43,7 @@ import {
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
   actAdminMarketingContent, actRemindMarketingContent, actAdminCampaignPerformance,
+  actAdminPromoList, actAdminPromoCreate, actAdminPromoToggle,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
@@ -79,6 +80,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "delete-account": actDeleteAccount,
   "prepare-order": actPrepareOrder,
   "place-order": actPlaceOrder,
+  "validate-promo-code": actValidatePromoCode,
   "my-orders": actMyOrders,
   "my-history": actMyHistory,
   "addresses-list": actAddressesList,
@@ -132,6 +134,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-marketing-content": actAdminMarketingContent,
   "remind-marketing-content": actRemindMarketingContent,
   "admin-campaign-performance": actAdminCampaignPerformance,
+  "admin-promo-list": actAdminPromoList,
+  "admin-promo-create": actAdminPromoCreate,
+  "admin-promo-toggle": actAdminPromoToggle,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,

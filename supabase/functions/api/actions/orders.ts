@@ -321,6 +321,83 @@ function assertAddressAllowed(address: string): void {
   if (hit) throw new ApiError("Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.", 400);
 }
 
+// Valida un código promocional y calcula el descuento sobre el total DE COMIDA (nunca
+// sobre el delivery, mismo criterio que las recompensas) — se llama tanto desde el
+// preview del cliente (actValidatePromoCode) como desde actPrepareOrder/actPlaceOrder
+// justo antes de fijar el total real a cobrar, así el descuento nunca se confía del
+// cliente. `phone` es el teléfono de CONTACTO del checkout (funciona también para
+// invitados sin cuenta) — es la misma identidad contra la que se bloquea la reutilización
+// en promo_code_redemptions (redeem_promo_code, ver migración).
+async function computePromoDiscount(
+  codeRaw: string,
+  phone: string,
+  foodTotal: number,
+): Promise<{ promoCodeId: string; code: string; discount: number }> {
+  const code = codeRaw.trim().toUpperCase();
+  if (!code) throw new ApiError("Ingresa un código promocional.", 400);
+  const rows = await sbGet("promo_codes", `code=eq.${encodeURIComponent(code)}&select=*`);
+  const promo = rows[0];
+  if (!promo || !promo.active) throw new ApiError("Ese código promocional no existe o ya no está activo.", 404);
+  const now = Date.now();
+  if (promo.valid_from && new Date(promo.valid_from).getTime() > now) {
+    throw new ApiError("Ese código promocional todavía no está activo.", 400);
+  }
+  if (promo.valid_until && new Date(promo.valid_until).getTime() < now) {
+    throw new ApiError("Ese código promocional ya expiró.", 400);
+  }
+  if (promo.max_uses !== null && promo.uses_count >= promo.max_uses) {
+    throw new ApiError("Ese código promocional ya alcanzó su límite de usos.", 409);
+  }
+  if (foodTotal < Number(promo.min_order_total || 0)) {
+    throw new ApiError(`Ese código requiere un pedido de al menos S/${Number(promo.min_order_total).toFixed(2)}.`, 400);
+  }
+  // Chequeo previo por cortesía (mejor mensaje de error) — redeem_promo_code repite esto
+  // de forma atómica al confirmar el pedido, que es la verificación que de verdad importa
+  // contra una carrera (dos pedidos casi simultáneos con el mismo código+teléfono).
+  const already = await sbGet(
+    "promo_code_redemptions",
+    `promo_code_id=eq.${encodeURIComponent(promo.id)}&phone=eq.${encodeURIComponent(phone)}&select=id`,
+  );
+  if (already.length) throw new ApiError("Ya usaste ese código promocional antes.", 409);
+
+  let raw = promo.discount_type === "percent" ? foodTotal * (Number(promo.value) / 100) : Number(promo.value);
+  if (promo.discount_type === "percent" && promo.max_discount !== null) raw = Math.min(raw, Number(promo.max_discount));
+  const discount = Math.round(Math.min(raw, foodTotal) * 100) / 100;
+  return { promoCodeId: promo.id, code, discount };
+}
+
+// Preview sin efectos secundarios (no reserva ni redime nada) — el cliente lo llama al
+// escribir un código en el checkout para mostrar el descuento antes de pagar, con
+// exactamente el mismo cálculo que usará el pedido real (misma deriveCart).
+export async function actValidatePromoCode(b: any) {
+  const code = String(b.code || "").trim();
+  const phone = String(b.phone || "").trim();
+  if (!code || !phone) throw new ApiError("Faltan datos.", 400);
+  await loadCatalogPrices();
+  const rewardId = b.rewardId ? String(b.rewardId) : null;
+  const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
+  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor);
+  const result = await computePromoDiscount(code, phone, foodTotal);
+  return { valid: true, code: result.code, discount: result.discount };
+}
+
+// Registra el uso real de un código (incrementa uses_count + inserta en
+// promo_code_redemptions, ambos atómicos dentro de la RPC — ver migración) DESPUÉS de que
+// el pedido ya se creó con el descuento correcto. Best-effort a propósito, mismo criterio
+// que logMarketingTouch (customer.ts): si esto falla, el cliente ya pagó el monto correcto
+// (el descuento ya se restó del total real cobrado) — lo único que se pierde es el
+// contador de usos/registro de auditoría, nunca dinero. El índice único
+// (promo_code_id, phone) en la tabla sigue protegiendo contra doble canje aunque este
+// insert se reintente.
+async function redeemPromoBestEffort(promoCodeId: string | null, phone: string, orderRef: string, discount: number): Promise<void> {
+  if (!promoCodeId || !discount) return;
+  try {
+    await rpc("redeem_promo_code", { p_promo_id: promoCodeId, p_phone: phone, p_order_ref: orderRef, p_discount: discount });
+  } catch (e) {
+    console.error("redeemPromoBestEffort failed for", orderRef, e);
+  }
+}
+
 // El cliente elige su zona en el checkout (ver DELIVERY_PRICE_ZONES en src/app.ts) y
 // manda el id — nunca el monto, que siempre se recalcula acá (mismo criterio que el resto
 // del catalogo: nunca confiar en un precio que reporte el cliente).
@@ -380,7 +457,18 @@ export async function actPrepareOrder(b: any) {
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
-  const expectedTotal = foodExpectedTotal + deliveryFee;
+  // Código promocional (opcional) — se valida/calcula ANTES de fijar expectedTotal, nunca
+  // se confía en un descuento que reporte el cliente. contactPhone (no customer_phone) es
+  // la identidad usada tanto acá como en el checkout de invitados.
+  const promoCodeRaw = b.promoCode ? String(b.promoCode).trim() : "";
+  let promoCodeId: string | null = null;
+  let promoDiscount = 0;
+  if (promoCodeRaw) {
+    const promo = await computePromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal);
+    promoCodeId = promo.promoCodeId;
+    promoDiscount = promo.discount;
+  }
+  const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -457,6 +545,8 @@ export async function actPrepareOrder(b: any) {
       reward_id: rewardId,
       scheduled_for: scheduledFor,
       expires_at: expiresAt,
+      promo_code_id: promoCodeId,
+      promo_discount: promoDiscount,
     });
   } catch (e) {
     await restockBestEffort(codes, qtys, "prepare-order");
@@ -522,6 +612,8 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
     });
     orderInserted = true;
 
+    await redeemPromoBestEffort(pc.promo_code_id, pc.contact_phone, pc.ref, Number(pc.promo_discount || 0));
+
     try {
       await sendPushToAdmins({
         title: "Nuevo pedido " + pc.ref + " 🥪",
@@ -575,6 +667,11 @@ export async function actPlaceOrder(b: any) {
   if (!ref || !name || !contactPhone || !address || clientTotal < 0) throw new ApiError("Faltan datos del pedido.");
   assertAddressAllowed(address);
   if (manualMethod && rewardId) throw new ApiError("Las recompensas no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
+  // Mismo criterio que las recompensas justo arriba: Yape/Plin no confirma el pago real
+  // hasta que un admin lo revisa a mano — redimir el código ahora (antes de saber si el
+  // dinero de verdad llegó) dejaría "quemado" un uso de un pedido que podría cancelarse
+  // por falta de pago.
+  if (manualMethod && b.promoCode) throw new ApiError("Los códigos promocionales no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
   // Yape/Plin no verifica el pago server-side al colocar el pedido (queda 'pending' hasta
   // que un operador lo confirma a mano) — y reserve_inventory más abajo descuenta stock
   // REAL de inmediato, con o sin cuenta. Sin límite, cualquiera (invitado incluido) podía
@@ -613,7 +710,15 @@ export async function actPlaceOrder(b: any) {
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
-  const expectedTotal = foodExpectedTotal + deliveryFee;
+  const promoCodeRaw = b.promoCode ? String(b.promoCode).trim() : "";
+  let promoCodeId: string | null = null;
+  let promoDiscount = 0;
+  if (promoCodeRaw) {
+    const promo = await computePromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal);
+    promoCodeId = promo.promoCodeId;
+    promoDiscount = promo.discount;
+  }
+  const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
   if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
     throw new ApiError("El total no coincide con los productos del pedido.", 400);
   }
@@ -695,6 +800,8 @@ export async function actPlaceOrder(b: any) {
       items: sanitizedItems, scheduledFor, reward, useCredit,
     });
     orderInserted = true;
+
+    await redeemPromoBestEffort(promoCodeId, contactPhone, ref, promoDiscount);
 
     try {
       await sendPushToAdmins({
