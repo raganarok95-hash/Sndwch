@@ -294,10 +294,19 @@ function sigTypeTag(tag){
 // SIG07 (THE CHICAGO) usa una foto de stock real (Adobe Stock, licenciada,
 // categoría gratuita) recortada para no mostrar las papas del plato original — no
 // vendemos papas, así que mostrarlas confundiría al cliente sobre qué incluye el pedido.
+// Las 7 fotos se re-recortaron a un mismo tamaño/aspect ratio (640x440) en esta ronda —
+// antes iban de 900x620 a 438x500, con 2 verticales (SIG02/SIG07) en riesgo real de mal
+// recorte por object-fit:cover en el banner horizontal (hallazgo de auditoría V3). SIG04
+// (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
+// juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
+// un segundo plato de fondo) se re-sourcearon/recortaron también.
 var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg'};
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
+// P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
+// P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
+// como el resto del set.
 var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg'};
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
