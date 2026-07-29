@@ -5601,7 +5601,11 @@ function sAdminDashboard() {
     // menos un pedido, no solo se registró.
     if (d.bySource && d.bySource.length) {
         h += '<div style="margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Origen de clientes //</div>'
-            + d.bySource.map(function (s) { return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 12px;margin-bottom:6px"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(s.source) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">' + s.signups + ' registrados · <span style="color:' + GOLD + '">' + s.converted + ' pidieron</span></span></div>'; }).join('')
+            // recentRevenue/recentAvgTicket cubren solo la ventana reciente del dashboard
+            // (~14-31 días, misma que topProducts/trend), no ingresos históricos totales por
+            // fuente — por eso solo se muestran cuando hay algo que mostrar (>0), en vez de
+            // sugerir un $0 que en realidad es "sin pedidos EN ESTA VENTANA".
+            + d.bySource.map(function (s) { return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 12px;margin-bottom:6px"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(s.source) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);text-align:right">' + s.signups + ' registrados · <span style="color:' + GOLD + '">' + s.converted + ' pidieron</span>' + (s.recentRevenue > 0 ? '<br>S/' + s.recentRevenue.toFixed(0) + ' · ticket S/' + s.recentAvgTicket.toFixed(2) + ' (últimos días)' : '') + '</span></div>'; }).join('')
             + '</div>';
     }
     var tiers = d.customers.tiers || {};

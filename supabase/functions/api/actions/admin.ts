@@ -238,14 +238,18 @@ export async function actDashboardStats(b: any) {
     // payment_method/status para el desglose Yape/Plin confirmados vs. abandonados.
     sbGet(
       "orders",
-      `select=total,payment_status,created_at,items,product_key,summary,payment_method,status&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
+      // customer_phone se agregó para poder atribuir ingresos de esta misma ventana a
+      // acquisition_source más abajo (bySource) — antes bySource solo contaba
+      // registros/conversión, nunca cuánto dinero trajo cada canal.
+      `select=total,payment_status,created_at,items,product_key,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
     // Para medir si una campaña paga (?src=... en el link del anuncio) se está pagando
     // sola — agrupado en JS en vez de SQL porque el volumen de clientes de un negocio así
-    // nunca justifica una función RPC nueva solo para este conteo.
-    sbGet("customers", "select=acquisition_source,total_orders&acquisition_source=not.is.null"),
+    // nunca justifica una función RPC nueva solo para este conteo. `phone` se agregó para
+    // poder cruzar contra `orders` y calcular ingresos/ticket promedio por fuente.
+    sbGet("customers", "select=phone,acquisition_source,total_orders&acquisition_source=not.is.null"),
   ]);
   // trend/topProducts se calculan sobre esta ventana reciente (no toda la tabla, ver
   // comentario arriba) — si algún día hay más de DASHBOARD_WINDOW_LIMIT pedidos en los
@@ -303,15 +307,39 @@ export async function actDashboardStats(b: any) {
   // pedido — la diferencia entre ambos números es lo que separa un anuncio que solo trae
   // curiosos de uno que trae clientes reales.
   const sourceMap = new Map<string, { signups: number; converted: number }>();
+  const phoneToSource = new Map<string, string>();
   for (const c of sourceRows as any[]) {
     const key = c.acquisition_source;
     const entry = sourceMap.get(key) || { signups: 0, converted: 0 };
     entry.signups++;
     if ((c.total_orders || 0) > 0) entry.converted++;
     sourceMap.set(key, entry);
+    if (c.phone) phoneToSource.set(c.phone, key);
+  }
+  // Ingresos/ticket promedio por fuente — a diferencia de signups/converted (toda la
+  // historia del cliente), esto solo cubre la MISMA ventana reciente que topProducts/trend
+  // (`paidOrders`, ~14-31 días), no ingresos históricos totales por fuente. Suficiente para
+  // saber si una campaña activa "se paga sola" sin necesitar un agregado SQL nuevo.
+  const revenueBySource = new Map<string, number>();
+  const countBySource = new Map<string, number>();
+  for (const o of paidOrders as any[]) {
+    const source = o.customer_phone ? phoneToSource.get(o.customer_phone) : undefined;
+    if (!source) continue;
+    revenueBySource.set(source, (revenueBySource.get(source) || 0) + (o.total || 0));
+    countBySource.set(source, (countBySource.get(source) || 0) + 1);
   }
   const bySource = Array.from(sourceMap.entries())
-    .map(([source, v]) => ({ source, signups: v.signups, converted: v.converted }))
+    .map(([source, v]) => {
+      const revenue = revenueBySource.get(source) || 0;
+      const count = countBySource.get(source) || 0;
+      return {
+        source,
+        signups: v.signups,
+        converted: v.converted,
+        recentRevenue: revenue,
+        recentAvgTicket: count ? Math.round((revenue / count) * 100) / 100 : 0,
+      };
+    })
     .sort((a, b) => b.signups - a.signups)
     .slice(0, 8);
 
@@ -377,6 +405,71 @@ export async function actDashboardStats(b: any) {
     bySource,
     yapePlin,
   };
+}
+
+// Rendimiento de las campañas de re-enganche automático (marketing_touches, ver
+// logMarketingTouch en customer.ts y los inserts equivalentes en winback-campaign/
+// birthday-bonus) — antes ningún cron dejaba rastro de a quién se le avisó qué, así que
+// era imposible saber si un recordatorio de verdad trae de vuelta al cliente o si es
+// ruido. "Convertido" = pagó al menos un pedido dentro de CONVERSION_WINDOW_DAYS después
+// de CUALQUIER touch de esa campaña — si el mismo cliente recibió varios touches del
+// mismo tipo, la conversión/ingreso solo se cuenta una vez (nunca se le atribuye el mismo
+// pedido dos veces a la misma campaña).
+const CAMPAIGN_CONVERSION_WINDOW_DAYS = 7;
+const CAMPAIGN_LOOKBACK_DAYS = 60;
+export async function actAdminCampaignPerformance(b: any) {
+  await requireAdmin(b.token);
+  const since = new Date(Date.now() - CAMPAIGN_LOOKBACK_DAYS * 86400000).toISOString();
+  const touches = await sbGet(
+    "marketing_touches",
+    `sent_at=gte.${encodeURIComponent(since)}&select=customer_phone,campaign_type,sent_at&order=sent_at.asc`,
+  );
+  if (!touches.length) return { campaigns: [], windowDays: CAMPAIGN_CONVERSION_WINDOW_DAYS, lookbackDays: CAMPAIGN_LOOKBACK_DAYS };
+
+  const phones = [...new Set(touches.map((t: any) => t.customer_phone))];
+  const phonesList = phones.map((p) => `"${p}"`).join(",");
+  const orders = await sbGet(
+    "orders",
+    `customer_phone=in.(${phonesList})&payment_status=eq.paid&created_at=gte.${encodeURIComponent(since)}&select=customer_phone,created_at,total`,
+  );
+  const ordersByPhone = new Map<string, { createdAt: number; total: number }[]>();
+  for (const o of orders as any[]) {
+    const list = ordersByPhone.get(o.customer_phone) || [];
+    list.push({ createdAt: new Date(o.created_at).getTime(), total: o.total || 0 });
+    ordersByPhone.set(o.customer_phone, list);
+  }
+
+  const windowMs = CAMPAIGN_CONVERSION_WINDOW_DAYS * 86400000;
+  const byCampaign = new Map<string, { touches: number; customers: Set<string>; converted: Set<string>; revenue: number }>();
+  for (const t of touches as any[]) {
+    const agg = byCampaign.get(t.campaign_type) || { touches: 0, customers: new Set<string>(), converted: new Set<string>(), revenue: 0 };
+    agg.touches++;
+    agg.customers.add(t.customer_phone);
+    const sentAt = new Date(t.sent_at).getTime();
+    if (!agg.converted.has(t.customer_phone)) {
+      const convertingOrder = (ordersByPhone.get(t.customer_phone) || []).find(
+        (o) => o.createdAt >= sentAt && o.createdAt <= sentAt + windowMs,
+      );
+      if (convertingOrder) {
+        agg.converted.add(t.customer_phone);
+        agg.revenue += convertingOrder.total;
+      }
+    }
+    byCampaign.set(t.campaign_type, agg);
+  }
+
+  const campaigns = Array.from(byCampaign.entries())
+    .map(([campaignType, agg]) => ({
+      campaignType,
+      touches: agg.touches,
+      customersReached: agg.customers.size,
+      converted: agg.converted.size,
+      conversionRate: agg.customers.size ? Math.round((agg.converted.size / agg.customers.size) * 1000) / 10 : 0,
+      revenue: Math.round(agg.revenue * 100) / 100,
+    }))
+    .sort((a, b) => b.touches - a.touches);
+
+  return { campaigns, windowDays: CAMPAIGN_CONVERSION_WINDOW_DAYS, lookbackDays: CAMPAIGN_LOOKBACK_DAYS };
 }
 
 // Antes, ver el historial completo de un cliente exigía cruzar 3 pantallas distintas

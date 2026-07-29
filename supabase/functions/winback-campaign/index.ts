@@ -5,7 +5,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // (y a quienes nunca se les mandó nada, o hace más de 30 días desde el último
 // mensaje) para reactivarlos. No manda más de un correo cada 30 días por cliente.
 
-import { sbGet, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
+import { sbGet, sbInsert, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -58,6 +58,13 @@ Deno.serve(async (req: Request) => {
       try {
         const res = await sendWinbackEmail(c.email, c.name, c.points || 0);
         await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { last_winback_sent: new Date().toISOString() });
+        // Log de marketing_touches (ver admin-campaign-performance en la función api) —
+        // best-effort, un fallo acá nunca debe tumbar el envío ya hecho.
+        try {
+          await sbInsert("marketing_touches", { customer_phone: c.phone, campaign_type: "winback", channel: "email" });
+        } catch (e) {
+          await debugLog(SOURCE, { stage: "touch_log_failed", phone: c.phone, error: String(e) });
+        }
         sent++;
         await debugLog(SOURCE, { stage: "email_sent", phone: c.phone, ok: res.ok });
       } catch (e) {
