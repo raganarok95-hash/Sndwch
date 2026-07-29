@@ -4275,13 +4275,13 @@ function sAdminHome(){
   });
   var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'
-    +'<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;justify-content:space-between;align-items:center">'
+    +'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
     +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>Operador</div>'
-    +(badge>0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+(adminLightMode?'#8A4B00':'#ffa500')+';letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' Acción requerida</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">todo en orden //</div>')
+    +(badge>0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+STATUSES.RECIBIDO.c+';letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' Acción requerida</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">todo en orden //</div>')
     +'</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('refresh',16)+'</button>'
     +'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>'
     +'<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+'">← salir</button></div>'
-    +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ffa500')+'<span>Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</span></div>':'')
+    +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';display:flex;align-items:center;gap:5px">'+icon('warning',12,GOLD)+'<span>Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</span></div>':'')
     // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
     // un estado desactualizado sin ninguna señal de que la actualización automática dejó
     // de funcionar.
@@ -4327,14 +4327,14 @@ function sAdminHome(){
       // se veía deshabilitado justo cuando más urge tocarlo (hallazgo de auditoría de
       // diseño admin, ALTO). Ahora el pulso vive solo en un punto de acento junto al
       // "hace X min" — la tarjeta y su botón quedan siempre legibles.
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(isStale?(adminLightMode?'#B02424':'#ff5555'):(o.status==='RECIBIDO'?'rgba(255,165,0,.3)':'var(--sw-border-soft,#1c1c1c)'))+';border-radius:10px;padding:16px;margin-bottom:12px">'
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(isStale?STATUSES.RECIBIDO.c:(o.status==='RECIBIDO'?STATUSES.RECIBIDO.c:'var(--sw-border-soft,#1c1c1c)'))+';border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
         +'<div style="display:flex;gap:10px;flex:1">'
         +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+GOLD+'">'
         +'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?(adminLightMode?'#B02424':'#ff8888'):'#A8C8B0')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+(adminLightMode?'#B02424':'#ff5555')+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
-        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,'#3A86FF')+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
+        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
         // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
         // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
         // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
@@ -4358,10 +4358,16 @@ function sAdminHome(){
         +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">'+iconTxt('printer','Ticket','#A8C8B0')+'</button>'
         +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
         +'</div>'
+        // Botón principal agrandado (padding/tamaño de fuente) — "zona del pulgar" real
+        // (position:fixed sobre todo el viewport) exigiría antes resolver "modo foco" de
+        // un solo pedido a pantalla completa (con varias tarjetas en la cola, un botón
+        // fijo de viewport no tiene un pedido único al que apuntar); mientras tanto, un
+        // tap target mucho más grande es la mejora de ergonomía que sí se puede aplicar
+        // ya, tarjeta por tarjeta, sin ese rediseño más grande.
         +(manualPending
-          ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#0d0d0d')+'</button>'
+          ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
             +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:10px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
-          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,13,'#fff')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:#25D366;text-align:center;padding:8px">'+iconTxt('check','Completado','#25D366')+'</div>'))
+          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,15,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:#25D366;text-align:center;padding:8px">'+iconTxt('check','Completado','#25D366')+'</div>'))
         // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
         // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
         // (hallazgo de la auditoría de flujo de pedidos: sin esto, si se acaba un
@@ -4764,39 +4770,44 @@ function render(){
     // dashboard, inventario, etc.) mostraba el splash de pantalla completa (logo +
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
-    if(sc.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi'+(adminLightMode?' admin-light':'')+'">'+skeletonCards(4,64)+'</div>';}
+    if(sc.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
   var h;
-  // Modo claro del panel admin: antes invertía el filtro CSS de todo el contenedor
-  // (filter:invert(1) hue-rotate(180deg)), lo que invertía matemáticamente el dorado de
-  // marca a un olivo lavado (hallazgo de auditoría visual). Ahora .admin-light redefine
-  // las custom properties de superficie/texto neutro (ver shell.html), y el dorado en sí
-  // se reasigna aquí a un tono más oscuro SOLO mientras se arma el HTML de una pantalla
-  // admin en claro — GOLD es una variable JS reasignable, así que todo lo que ya
-  // concatena '+GOLD+' en sAdmin*/DTILE/etc. recoge el valor correcto sin tocar cada uno.
-  var adminLight=sc.indexOf('admin')===0&&adminLightMode;
+  // Identidad "Modo cocina de una mano" del panel admin (elegida por el dueño, ver
+  // .admin-dark/.admin-light en shell.html) — antes el admin oscuro (el estado por
+  // defecto) no tenía ninguna clase propia y heredaba el verde+dorado del cliente sin
+  // querer; ahora SIEMPRE es un tema propio (negro puro + ámbar en oscuro, la paleta
+  // clara ya existente en claro), nunca la piel del cliente. GOLD y STATUSES.c son
+  // variables JS reasignables (mismo mecanismo ya usado antes solo para el modo claro),
+  // así que todo lo que ya concatena '+GOLD+'/lee STATUSES[x].c en sAdmin*/DTILE/etc.
+  // recoge el valor correcto sin tocar cada aparición individual.
+  var adminScope=sc.indexOf('admin')===0;
+  var adminLight=adminScope&&adminLightMode;
   var _prevGold=GOLD;
-  if(adminLight)GOLD='#8A6A2E';
-  // Mismo patrón que GOLD arriba — pero para los colores de estado (STATUSES.c), usados
-  // en los badges/alertas más urgentes de la cola (stBadge, DBAR, "atascado", "Acción
-  // requerida"). El comentario de shell.html afirmaba que estos colores "ya son legibles
-  // sobre fondo claro" sin haberlo medido — verificado con la fórmula de contraste WCAG:
-  // naranja 1.70:1, verde 1.67-1.98:1, rojo ~2:1, azul 3.00:1, gris (CANCELADO) 2.13-2.46:1
-  // — todos muy por debajo del mínimo AA (4.5:1 texto, 3:1 componentes UI). Reasigna cada
-  // color de STATUSES a una variante oscurecida (≥4.46:1 en toda superficie clara del
-  // panel) solo mientras se arma el HTML en modo claro (hallazgo de auditoría visual,
-  // CRÍTICO).
+  if(adminScope)GOLD=adminLight?'#8A5000':'#FFB020';
+  // Semáforo de 3 colores (rojo/ámbar/verde) — nada de morado/azul decorativo, a
+  // propósito: en "Modo cocina de una mano" el color se gasta SOLO en decir "qué tan
+  // urgente/avanzado" un pedido, nunca como decoración. En claro se reusan variantes
+  // oscurecidas ya verificadas por contraste WCAG AA (≥4.46:1) de la pasada anterior.
   var _prevStatusColors=null;
-  if(adminLight){
+  if(adminScope){
     _prevStatusColors={};
     Object.keys(STATUSES).forEach(function(k){_prevStatusColors[k]=STATUSES[k].c;});
-    STATUSES.RECIBIDO.c='#8A4B00';
-    STATUSES.PREPARANDO.c='#1A56B0';
-    STATUSES['EN CAMINO'].c='#5E36BA';
-    STATUSES.ENTREGADO.c='#1B6B35';
-    STATUSES.CANCELADO.c='#6B6350';
+    if(adminLight){
+      STATUSES.RECIBIDO.c='#B23A3A';
+      STATUSES.PREPARANDO.c='#8A5000';
+      STATUSES['EN CAMINO'].c='#A85200';
+      STATUSES.ENTREGADO.c='#1B6B35';
+      STATUSES.CANCELADO.c='#6B6350';
+    }else{
+      STATUSES.RECIBIDO.c='#FF4D4D';
+      STATUSES.PREPARANDO.c='#FFB020';
+      STATUSES['EN CAMINO'].c='#FF8A00';
+      STATUSES.ENTREGADO.c='#3DDC84';
+      STATUSES.CANCELADO.c='#8A8A8A';
+    }
   }
   switch(sc){
     case'o_home':      h=sOHome();break;
@@ -4851,7 +4862,7 @@ function render(){
   // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
   // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
   var offlineBanner=isOffline?'<div style="background:#ffa500;color:#1a1200;text-align:center;padding:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:5px">'+icon('warning',12,'#1a1200')+'<span>SIN CONEXIÓN — reconectando…</span></div>':'';
-  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminLight?'admin-light':'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+h+'</div>';
+  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sc;
   if(sc==='p_auth')mountGoogleButton();
