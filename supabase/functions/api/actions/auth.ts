@@ -152,8 +152,19 @@ export async function actRegister(b: any) {
       );
       const order = orderRows[0];
       if (order) {
-        await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { customer_phone: phone });
-        if (order.payment_status === "paid") {
+        // Reclamo atómico (mismo patrón que pending_charges/pending_weekly_plans, ver
+        // culqi-claim.ts): el filtro repite customer_phone=is.null además del id, así que
+        // si dos registros concurrentes (dos teléfonos distintos) apuntan al mismo
+        // claimOrderRef, solo el primer UPDATE afecta una fila — el segundo devuelve 0 filas
+        // y no otorga puntos, evitando duplicar el bono del mismo pedido de invitado en dos
+        // cuentas (hallazgo de auditoría de código, MEDIO — el SELECT+UPDATE anterior no era
+        // atómico).
+        const claim = await sbUpdate(
+          "orders",
+          `id=eq.${encodeURIComponent(order.id)}&customer_phone=is.null`,
+          { customer_phone: phone },
+        );
+        if (claim.length && order.payment_status === "paid") {
           // El pedido de invitado ya estaba pagado (tarjeta) y nunca pasó por
           // finalize_order_customer_update en su momento (no había phone/custRow) — se
           // otorgan los puntos retroactivamente ahora que se sabe a quién pertenece. Si en

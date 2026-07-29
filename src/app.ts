@@ -1121,6 +1121,7 @@ function buildToCartItem(bld){
 function resetBuilder(){
   sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
   byoStep=0;
+  editingItemQty=null;
 }
 function startOrder(m){
   resetBuilder();
@@ -1146,10 +1147,17 @@ function startOrderWithBase(id){
   base=id;
   go('o_build');
 }
+// editingItemQty: cuando se está editando una línea ya en el carrito (ver
+// editCartItem), guarda la cantidad original para que currentBuiltItem() la respete al
+// volver a insertarla — antes se perdía siempre (currentBuiltItem hardcodeaba qty:1), así
+// que editar cualquier detalle de una línea con qty>1 (ej. agregar una nota) la dejaba en
+// 1 unidad sin ningún aviso (hallazgo de auditoría de código, ALTO).
+var editingItemQty=null;
 function currentBuiltItem(){
+  var qty=editingItemQty||1;
   return mode==='sig'
-    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:1}
-    :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:1};
+    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:qty}
+    :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:qty};
 }
 // Entrada a la pantalla de revisar UN sándwich recién armado. Si el carrito estaba
 // vacío (caso mayoritario: un solo sándwich), se habilita el pago directo — el
@@ -1974,6 +1982,7 @@ function editCartItem(idx){
   var bld=Object.assign({},it);
   bld.mode=it.type;
   delete bld.type;
+  editingItemQty=it.qty||1;
   delete bld.qty;
   loadBuild(bld);
 }

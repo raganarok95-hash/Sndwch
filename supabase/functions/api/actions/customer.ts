@@ -755,7 +755,7 @@ export async function actConfirmWeeklyPlan(b: any) {
   }
 
   const amountCents = Math.round(Number(pp.amount_paid) * 100);
-  const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
+  const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
   const claim = await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.pending`, { status: "consumed" });
