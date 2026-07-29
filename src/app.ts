@@ -623,6 +623,7 @@ var pollTimer=null,lastPollCount=0,pollFailing=false;
 var isOffline=!navigator.onLine;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
 var nearStore=false,_nearCheckDone=false;
+var wlPhone='',wlName='',wlMsg='',wlDone=localStorage.getItem('sw_wl_done')==='1';
 var pushSubscribed=false,pushMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
@@ -644,11 +645,14 @@ var searchQ='',searchStatus='',searchResults=null,searchTruncated=false;
 var auditLog=null;
 var storeHoursForm=null,storeHoursMsg='';
 var reportFrom='',reportTo='',reportData=null,reportErr='';
-var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false;
+var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false,ratingsOnlyConsented=false;
 var prepListData=null,timeReportData=null,problemAddressesData=null,marketingContentData=null;
 var promoCodesData=null,pcCode='',pcType='percent',pcValue='',pcMaxUses='',pcMinOrder='',pcValidUntil='',pcCampaignTag='',pcMsg='';
 var campaignPerfData=null;
+var calendarData=null,calDate='',calChannel='instagram',calTitle='',calCaption='',calWhatsapp='',calPhoto='',calTag='',calMsg='';
+var waitlistData=null;
 var bulkSelected={};
+var focusIdx=0;
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
 var NOTIF_SOUND_PRESETS={
@@ -688,6 +692,7 @@ var gcPhone='',gcAmt='',gcMsg='';
 // doble-submit, a diferencia del checkout normal.
 var _giftBuyInProgress=false;
 var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
+var rtConsent=false,justRatedRef=null;
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
 var addrText='',scheduleMode='now',schedDay='today',schedSlot=null;
@@ -1478,6 +1483,32 @@ async function loadUserExtras(){
   render();
 }
 // ORDER SIGNATURE
+// Lista de espera pre-lanzamiento — el negocio real aún no abre (ver CLAUDE.md), así que
+// esto le da a cualquier visitante sin cuenta una forma de decir "avísenme" sin la
+// fricción de un registro completo (DNI, PIN, etc.). Solo se muestra a invitados y
+// desaparece (localStorage) apenas se anota, para no insistir en cada visita.
+async function joinWaitlist(){
+  var phone=gv('wl-phone').trim();
+  var name=gv('wl-name').trim();
+  if(phone.replace(/\D/g,'').length<6){wlMsg='Ingresa un teléfono válido.';render();return;}
+  wlMsg='Enviando...';render();
+  try{
+    await api('waitlist-join',{phone:phone,name:name||null,source:'app_home'});
+    wlDone=true;localStorage.setItem('sw_wl_done','1');wlPhone='';wlName='';wlMsg='';
+    showToast('¡Listo! Te avisamos apenas abramos.','success');
+  }catch(e){wlMsg=e.message||'No se pudo registrar.';}
+  render();
+}
+function waitlistCardHTML(){
+  if(cust||wlDone)return'';
+  return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:12px;padding:16px;margin-bottom:16px">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Avísame<span class="cut-sep" style="color:'+GOLD+'"> // </span>cuando abramos</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te escribimos apenas empecemos a repartir de verdad.</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'+INP('wl-phone','Teléfono','tel',wlPhone)+INP('wl-name','Nombre // opcional','text',wlName)+'</div>'
+    +(wlMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff8888;margin-top:8px">'+esc(wlMsg)+'</div>':'')
+    +'<div style="margin-top:10px">'+BTN('Avísame //','joinWaitlist()')+'</div>'
+    +'</div>';
+}
 function sOHome(){
   var pc=cust
     ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
@@ -1495,6 +1526,7 @@ function sOHome(){
   return H()
     +'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +hoursBadge
+    +waitlistCardHTML()
     +nearbyCard
     +pwaCard
     +cartCard
@@ -3291,18 +3323,32 @@ async function doCancelMyOrder(ordId,ref){
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
   if(ratedRefs().indexOf(o.ref)>=0){
+    // Justo tras calificar (el momento de mayor satisfacción real) se resurfacea el
+    // código de referido en vez del simple "gracias" — antes vivía escondido en el
+    // perfil y nunca se mostraba en el instante en que el cliente está más contento
+    // (hallazgo del checklist de pre-lanzamiento). Solo aparece esta vez (justRatedRef),
+    // no en cada visita futura al historial — y solo si hay cuenta (el código es el
+    // teléfono del cliente, no existe para invitados).
+    if(justRatedRef===o.ref&&cust){
+      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Le compartes SND//WCH a alguien?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos.</div>'+BTN('Compartir por WhatsApp //','shareReferral()')+'</div>';
+    }
     return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
   }
-  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>';
+  // El consentimiento de testimonio NUNCA viene marcado por defecto — el cliente tiene
+  // que elegirlo activamente cada vez (hallazgo del checklist de pre-lanzamiento: la
+  // web/redes van a necesitar reseñas reales para publicar, pero nunca sin permiso
+  // explícito de a quién pertenecen).
+  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><label style="display:flex;align-items:flex-start;gap:8px;font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rt-consent" onchange="rtConsent=this.checked" '+(rtConsent?'checked':'')+' style="accent-color:'+GOLD+';margin-top:2px;flex-shrink:0">Autorizo que SND//WCH use esta reseña como testimonio público (redes sociales, web) — opcional.</label><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>';
 }
 async function doSubmitRating(ref){
   if(!rtStars){rtMsg='Elige de 1 a 5 estrellas.';render();return;}
   var commentEl=(document.getElementById('rt-comment') as HTMLInputElement | null);
   var comment=commentEl?commentEl.value.trim():'';
   try{
-    await api('submit-rating',{ref:ref,stars:rtStars,comment:comment});
+    await api('submit-rating',{ref:ref,stars:rtStars,comment:comment,testimonialConsent:rtConsent});
     markRated(ref);
-    rtStars=0;rtMsg='';
+    justRatedRef=ref;
+    rtStars=0;rtMsg='';rtConsent=false;
   }catch(e){
     if(e.message&&e.message.indexOf('ya fue calificado')>=0)markRated(ref);
     rtMsg=e.message;
@@ -3633,9 +3679,11 @@ function doLogout(){
   custDetail=null;custDetailPhone='';custDetailErr='';
   dashStats=null;atRiskCustomers=null;
   searchResults=null;searchTruncated=false;auditLog=null;
-  ratingsList=null;prepListData=null;timeReportData=null;problemAddressesData=null;marketingContentData=null;
+  ratingsList=null;ratingsOnlyConsented=false;prepListData=null;timeReportData=null;problemAddressesData=null;marketingContentData=null;
+  rtConsent=false;justRatedRef=null;
   promoCodesData=null;pcCode='';pcType='percent';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';pcMsg='';campaignPerfData=null;
-  adminOrders=[];bulkSelected={};
+  calendarData=null;calDate='';calChannel='instagram';calTitle='';calCaption='';calWhatsapp='';calPhoto='';calTag='';calMsg='';waitlistData=null;
+  adminOrders=[];bulkSelected={};focusIdx=0;
   sc='p_auth';render();
 }
 
@@ -4220,6 +4268,15 @@ function orderPriority(o){
 function orderDueTime(o){
   return o.scheduled_for||o.created_at;
 }
+// Extraído para que admin_home y "modo foco" (sAdminFocus) ordenen la cola exactamente
+// igual — antes este sort vivía solo inline dentro de sAdminHome.
+function sortedActiveOrders(){
+  return (adminOrders||[]).slice().sort(function(a,b){
+    var pa=orderPriority(a),pb=orderPriority(b);
+    if(pa!==pb)return pa-pb;
+    return new Date(orderDueTime(a)||0).getTime()-new Date(orderDueTime(b)||0).getTime();
+  });
+}
 // Secciones de accesos rápidos del admin — extraídas a función propia para poder
 // reusarlas tanto en el grid de admin_home como en el drawer de navegación lateral
 // (adminToolsDrawerOpen/toggleAdminToolsDrawer), alcanzable ahora desde cualquiera de
@@ -4234,9 +4291,11 @@ function adminToolsSections(){
       ['reclamo','Reclamaciones','loadAdminComplaints()'],
     ]],
     ['Marketing //',[
+      ['calendar','Calendario de contenido','loadCalendar()'],
       ['megaphone','Contenido semanal','loadMarketingContent()'],
       ['precios','Códigos promo','loadPromoCodes()'],
       ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
+      ['clientes','Lista de espera','loadWaitlist()'],
     ]],
     ['Catálogo //',[
       ['inventario','Inventario','loadInventory()'],
@@ -4266,13 +4325,7 @@ function adminToolsGridHTML(){
   }).join('');
 }
 function sAdminHome(){
-  // Dentro de cada nivel de prioridad, el que antes vence primero (el que lleva más
-  // tiempo esperando, o el programado más próximo).
-  var ao=(adminOrders||[]).slice().sort(function(a,b){
-    var pa=orderPriority(a),pb=orderPriority(b);
-    if(pa!==pb)return pa-pb;
-    return new Date(orderDueTime(a)||0).getTime()-new Date(orderDueTime(b)||0).getTime();
-  });
+  var ao=sortedActiveOrders();
   var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
@@ -4299,6 +4352,11 @@ function sAdminHome(){
     // dueño). Ahora reusa adminToolsGridHTML() (ver arriba), la misma función que
     // alimenta el drawer de navegación lateral desde las 14 pantallas secundarias.
     +adminToolsGridHTML()
+
+    // Modo foco — un solo pedido a pantalla completa con la acción principal anclada al
+    // fondo del viewport (zona real del pulgar, ver comentario en la tarjeta de abajo).
+    // Solo tiene sentido con al menos un pedido activo.
+    +(ao.length?'<div onclick="enterFocusMode()" style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:10px;padding:12px 16px;margin-bottom:18px;cursor:pointer"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+GOLD+'">'+icon('compass',15,GOLD)+'Modo foco — un pedido a la vez</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:'+GOLD+'">Entrar →</span></div>':'')
 
     // Active orders
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Pedidos activos // '+(ao.length||'ninguno')+'</div>'
@@ -4389,6 +4447,75 @@ function sAdminHome(){
     +'</div>'
     +bulkBar()
     +'</div>';
+}
+
+// MODO FOCO — un solo pedido a pantalla completa, con el botón de acción principal
+// anclado con position:fixed al fondo real del viewport (la "zona del pulgar" que el
+// botón agrandado de la tarjeta normal de admin_home no podía lograr — ver comentario en
+// esa tarjeta: con varias tarjetas en la cola, un botón fijo de viewport no tiene un solo
+// pedido al que apuntar; acá sí, porque solo se muestra uno).
+function enterFocusMode(){focusIdx=0;sc='admin_focus';render();}
+function exitFocusMode(){sc='admin_home';render();}
+function focusStep(delta){
+  var ao=sortedActiveOrders();
+  if(!ao.length)return;
+  focusIdx=((focusIdx+delta)%ao.length+ao.length)%ao.length;
+  render();
+}
+function sAdminFocus(){
+  var ao=sortedActiveOrders();
+  var barBg='var(--sw-bg,#1E3932)';
+  var topBar='<div style="padding:16px 20px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
+    +'<button onclick="exitFocusMode()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+'">← Salir de modo foco</button>'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">Modo<span class="cut-sep" style="color:'+GOLD+'"> // </span>foco</span>'
+    +'</div>';
+  if(!ao.length){
+    return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar
+      +'<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px" class="fi">'+icon('check',32,'#25D366')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">Sin pedidos activos — todo en orden //</div></div></div>';
+  }
+  if(focusIdx>=ao.length)focusIdx=0;
+  var o=ao[focusIdx];
+  var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
+  var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
+  var manualLabel='Yape/Plin';
+  var mins=minutesAgo(o.created_at);
+  var minsDue=minutesAgo(orderDueTime(o));
+  var isScheduledAhead=o.scheduled_for&&new Date(o.scheduled_for).getTime()>Date.now();
+  var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
+  var nav='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
+    +'<button onclick="focusStep(-1)" aria-label="Pedido anterior" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:20px;color:'+(ao.length>1?GOLD:'var(--sw-text-muted3,#3A4A44)')+';padding:4px 10px">‹</button>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em">Pedido '+(focusIdx+1)+' de '+ao.length+'</span>'
+    +'<button onclick="focusStep(1)" aria-label="Pedido siguiente" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:20px;color:'+(ao.length>1?GOLD:'var(--sw-text-muted3,#3A4A44)')+';padding:4px 10px">›</button>'
+    +'</div>';
+  var body='<div style="flex:1;padding:24px 20px 180px;overflow-y:auto" class="fi">'
+    +stBadge(o.status)
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-top:12px">'+esc(o.customer_name)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'+esc(o.customer_address)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:8px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
+    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('horario',13,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+    +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',13,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')
+    +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.6">'+esc(o.summary)+'</div>'
+    +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#25D366;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('gift',13,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
+    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('cash',13,'#ffa500')+'<span>Cobrar '+SOLES+o.total+' al entregar</span></div>':'')
+    +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('warning',13,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
+    +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
+    +'<div style="display:flex;gap:10px;margin-top:20px">'
+    +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.04em;padding:16px 4px;border-radius:8px">'+iconTxt('printer','Ticket','#A8C8B0')+'</button>'
+    +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.04em;padding:16px 4px;border-radius:8px">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
+    +'</div>'
+    +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-top:10px">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'#ff8888')+'</button>'
+    +'</div>';
+  // El botón real anclado a la zona del pulgar: position:fixed sobre todo el viewport,
+  // no relativo a la tarjeta. Con env(safe-area-inset-bottom) para no quedar tapado por
+  // la barra de gestos de iOS/Android en el celular real del dueño.
+  var fixedBar='<div style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:'+barBg+';border-top:1px solid var(--sw-border,#3A6B58);box-shadow:0 -6px 20px rgba(0,0,0,.25)">'
+    +(manualPending
+      ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
+        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
+      :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;text-align:center;padding:10px">'+iconTxt('check','Completado','#25D366')+'</div>'))
+    +'</div>';
+  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar+nav+body+fixedBar+'</div>';
 }
 
 // ADMIN DASHBOARD — vista de negocio (ventas, productos, clientes, puntos)
@@ -4605,7 +4732,7 @@ async function exportCsv(action,filename){
   busy=true;busyMsg='Generando CSV...';render();
   try{
     var r=await api(action,{token:token});
-    var rows=r.orders||r.customers||[];
+    var rows=r.orders||r.customers||r.waitlist||[];
     var csv=toCsv(rows);
     if(!csv){busy=false;render();showToast('No hay datos para exportar.','info');return;}
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -4853,6 +4980,9 @@ function render(){
     case'admin_marketing':h=sAdminMarketing();break;
     case'admin_promo':h=sAdminPromo();break;
     case'admin_campaign_perf':h=sAdminCampaignPerf();break;
+    case'admin_calendar':h=sAdminCalendar();break;
+    case'admin_waitlist':h=sAdminWaitlist();break;
+    case'admin_focus':h=sAdminFocus();break;
     default:           h=sOHome();
   }
   GOLD=_prevGold;
@@ -5285,6 +5415,8 @@ var AUDIT_ACTION_LABEL={
   'bulk-update-status':'Estados actualizados en lote','confirm-payment':'Pago manual confirmado',
   'cancel-order':'Pedido cancelado','self-cancel-needs-refund':'Cliente canceló pedido pagado',
   'inventory-toggle':'Disponibilidad de producto cambiada','inventory-set-stock':'Stock de producto editado',
+  'promo-create':'Código promocional creado','promo-toggle':'Código promocional activado/desactivado',
+  'calendar-create':'Entrada de calendario creada','calendar-update':'Entrada de calendario editada','calendar-delete':'Entrada de calendario eliminada',
 };
 function sAdminAudit(){
   var h=H('REGISTRO DE AUDITORÍA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
@@ -5396,14 +5528,15 @@ function sAdminReport(){
 // en el dashboard; esto expone el listado completo con filtros.
 async function loadRatingsList(){
   sc='admin_ratings';busy=true;busyMsg='Cargando calificaciones...';render();
-  try{var r=await api('admin-ratings-list',{token:token,limit:50,minStars:ratingsMinStars||undefined,onlyWithComments:ratingsOnlyComments});ratingsList=r.ratings;}
+  try{var r=await api('admin-ratings-list',{token:token,limit:50,minStars:ratingsMinStars||undefined,onlyWithComments:ratingsOnlyComments,onlyConsented:ratingsOnlyConsented});ratingsList=r.ratings;}
   catch(e){ratingsList=[];}
   busy=false;render();
 }
 function applyRatingsFilter(){
-  var minEl=(document.getElementById('rt-min') as HTMLInputElement | null),cEl=(document.getElementById('rt-comments') as HTMLInputElement | null);
+  var minEl=(document.getElementById('rt-min') as HTMLInputElement | null),cEl=(document.getElementById('rt-comments') as HTMLInputElement | null),tEl=(document.getElementById('rt-consented') as HTMLInputElement | null);
   ratingsMinStars=minEl?Number(minEl.value):0;
   ratingsOnlyComments=cEl?cEl.checked:false;
+  ratingsOnlyConsented=tEl?tEl.checked:false;
   loadRatingsList();
 }
 function sAdminRatings(){
@@ -5413,6 +5546,7 @@ function sAdminRatings(){
     +[0,1,2,3,4,5].map(function(n){return'<option value="'+n+'" '+(ratingsMinStars===n?'selected':'')+'>'+(n===0?'Todas':n+'★ o más')+'</option>';}).join('')
     +'</select>'
     +'<label style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:6px"><input type="checkbox" id="rt-comments" onchange="applyRatingsFilter()" '+(ratingsOnlyComments?'checked':'')+' style="accent-color:'+GOLD+'">Solo con comentario</label>'
+    +'<label style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:6px"><input type="checkbox" id="rt-consented" onchange="applyRatingsFilter()" '+(ratingsOnlyConsented?'checked':'')+' style="accent-color:'+GOLD+'">Solo autorizadas como testimonio</label>'
     +'</div>';
   var list=ratingsList||[];
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">'+list.length+' calificaciones //</div>';
@@ -5420,6 +5554,7 @@ function sAdminRatings(){
     return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px;margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between"><span style="color:#F5C518;font-size:14px">'+'★'.repeat(r.stars)+'<span style="color:#3A6B58">'+'★'.repeat(5-r.stars)+'</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(r.order_ref||'')+'</span></div>'
       +(r.comment?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);margin-top:6px">'+esc(r.comment)+'</div>':'')
+      +(r.testimonial_consent?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:#25D366;margin-top:6px;display:flex;align-items:center;gap:5px">'+icon('check',11,'#25D366')+'<span>Autorizada como testimonio público</span></div>':'')
       // Antes no mostraba quién dejó la reseña — para agradecer o dar seguimiento el
       // dueño tenía que cruzarla a mano contra BUSCAR PEDIDOS por el ref (hallazgo de
       // auditoría de diseño admin, MEDIO). customer_phone puede venir null si la cuenta
@@ -5587,6 +5722,115 @@ function sAdminCampaignPerf(){
   }else{
     h+=d.campaigns.map(function(c){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+esc(c.campaignType)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+c.touches+' envíos · '+c.customersReached+' clientes · <span style="color:'+GOLD+'">'+c.conversionRate+'% convirtió</span> · '+SOLES_TXT+c.revenue+' en ingresos</div></div>';
+    }).join('');
+  }
+  h+='</div>';
+  return h;
+}
+
+// Calendario de contenido real (marketing_calendar) — reemplaza depender solo del
+// "Contenido semanal" rotativo (sAdminMarketing, arriba) para saber qué publicar hoy: acá
+// el dueño planea fechas concretas, por canal, y lleva registro de qué ya publicó de
+// verdad. Nada de esto publica solo — sigue siendo copiar/pegar a mano (mismo límite del
+// resto del sistema de marketing: no hay conector real a Instagram/TikTok/Meta).
+var CAL_CHANNELS=[['instagram','Instagram'],['tiktok','TikTok'],['whatsapp','WhatsApp'],['facebook','Facebook'],['google_business','Google Business'],['otro','Otro']];
+var CAL_CHANNEL_LABEL={};CAL_CHANNELS.forEach(function(c){CAL_CHANNEL_LABEL[c[0]]=c[1];});
+var CAL_STATUS_LABEL={draft:'Borrador',scheduled:'Programado',posted:'Publicado'};
+var CAL_STATUS_COLOR={draft:'#A8C8B0',scheduled:GOLD,posted:'#25D366'};
+async function loadCalendar(){
+  sc='admin_calendar';busy=true;busyMsg='Cargando calendario...';render();
+  try{var res=await api('admin-calendar-list',{token:token});calendarData=res.entries;}
+  catch(e){calendarData=null;}
+  busy=false;render();
+}
+function setCalChannel(c){calChannel=c;render();}
+async function createCalendarEntry(){
+  var date=gv('cal-date').trim();
+  var title=gv('cal-title').trim();
+  var caption=gv('cal-caption').trim();
+  var whatsapp=gv('cal-whatsapp').trim();
+  var photo=gv('cal-photo').trim();
+  var tag=gv('cal-tag').trim();
+  if(!date||!title){calMsg='Completa fecha y tema.';render();return;}
+  calMsg='Creando...';render();
+  try{
+    await api('admin-calendar-create',{token:token,scheduledDate:date,channel:calChannel,title:title,captionText:caption||null,whatsappText:whatsapp||null,photoIdea:photo||null,campaignTag:tag||null});
+    calMsg='';calDate='';calTitle='';calCaption='';calWhatsapp='';calPhoto='';calTag='';
+    await loadCalendar();
+  }catch(e){calMsg=e.message||'No se pudo crear.';render();}
+}
+async function setCalendarStatus(id,status){
+  try{await api('admin-calendar-update',{token:token,id:id,status:status});await loadCalendar();}
+  catch(e){showToast(e.message||'No se pudo actualizar.');}
+}
+async function deleteCalendarEntry(id){
+  if(!(await showConfirm('¿Eliminar esta entrada del calendario?')))return;
+  try{await api('admin-calendar-delete',{token:token,id:id});await loadCalendar();}
+  catch(e){showToast(e.message||'No se pudo eliminar.');}
+}
+function sAdminCalendar(){
+  var h=H('CALENDARIO DE CONTENIDO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Nada se publica solo — sigues copiando el texto a mano, pero ya no dependes de un rotador genérico de 2 semanas.</div>';
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:20px">';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Nueva entrada //</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px">'
+    +INP('cal-date','Fecha','date',calDate)
+    +INP('cal-title','Tema // ej. Lanzamiento THE VAULT','text',calTitle)
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+CAL_CHANNELS.map(function(c){return'<div onclick="setCalChannel(\''+c[0]+'\')" style="text-align:center;background:'+(calChannel===c[0]?'var(--sw-card2,#1A3028)':'transparent')+';border:1px solid '+(calChannel===c[0]?GOLD:'#3A6B58')+';border-radius:8px;padding:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+(calChannel===c[0]?GOLD:'#A8C8B0')+'">'+c[1]+'</div>';}).join('')+'</div>'
+    +INP('cal-caption','Texto para el post // opcional','text',calCaption)
+    +INP('cal-whatsapp','Texto para difusión WhatsApp // opcional','text',calWhatsapp)
+    +INP('cal-photo','Idea de foto // opcional','text',calPhoto)
+    +INP('cal-tag','Etiqueta de campaña // opcional','text',calTag)
+    +'</div>';
+  h+=(calMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff8888;margin-top:8px">'+esc(calMsg)+'</div>':'');
+  h+='<div style="margin-top:12px">'+BTN('Agregar al calendario //','createCalendarEntry()')+'</div>';
+  h+='</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Entradas //</div>';
+  if(!calendarData||!calendarData.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Sin entradas planeadas todavía.</div>';
+  }else{
+    h+=calendarData.map(function(e){
+      var next=e.status==='draft'?'scheduled':(e.status==='scheduled'?'posted':null);
+      var nextLabel=e.status==='draft'?'Programar':(e.status==='scheduled'?'Marcar publicado':null);
+      var texts=[e.caption_text?'Post: '+e.caption_text:'',e.whatsapp_text?'WhatsApp: '+e.whatsapp_text:'',e.photo_idea?'Foto: '+e.photo_idea:''].filter(Boolean);
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div style="min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(e.title)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(e.scheduled_date+' · '+(CAL_CHANNEL_LABEL[e.channel]||e.channel)+(e.campaign_tag?' · '+e.campaign_tag:''))+'</div></div>'
+        +'<div style="flex-shrink:0;text-align:right"><span style="font-family:EB Garamond,serif;font-size:11px;color:'+CAL_STATUS_COLOR[e.status]+'">'+CAL_STATUS_LABEL[e.status]+'</span></div>'
+        +'</div>'
+        +(texts.length?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px;line-height:1.5;white-space:pre-wrap">'+esc(texts.join(' · '))+'</div>':'')
+        +'<div style="display:flex;gap:14px;margin-top:10px">'
+        +(next?'<span onclick="setCalendarStatus(\''+e.id+'\',\''+next+'\')" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+GOLD+'">'+nextLabel+'</span>':'')
+        +'<span onclick="deleteCalendarEntry(\''+e.id+'\')" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#ff8888">Eliminar</span>'
+        +'</div></div>';
+    }).join('');
+  }
+  h+='</div>';
+  return h;
+}
+
+// Lista de espera pre-lanzamiento (waitlist_signups) — ver actWaitlistJoin (público, sin
+// sesión) para el lado del cliente. El negocio aún no abre, así que hoy esta es la única
+// forma de captación real que existe (checklist de lanzamiento, semana 5-6).
+async function loadWaitlist(){
+  sc='admin_waitlist';busy=true;busyMsg='Cargando lista de espera...';render();
+  try{var res=await api('admin-waitlist-list',{token:token});waitlistData=res.waitlist;}
+  catch(e){waitlistData=null;}
+  busy=false;render();
+}
+function sAdminWaitlist(){
+  var h=H('LISTA DE ESPERA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Gente que quiere que le avisemos apenas abramos — captada desde la app sin necesitar cuenta.</div>';
+  if(waitlistData&&waitlistData.length){
+    h+='<div style="margin-bottom:16px">'+BTN('Exportar lista (CSV) //','exportCsv(\'admin-waitlist-list\',\'lista-espera\')',true)+'</div>';
+  }
+  if(!waitlistData||!waitlistData.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Todavía nadie se anotó.</div>';
+  }else{
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">'+waitlistData.length+' anotados //</div>';
+    h+=waitlistData.map(function(w){
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(w.name||w.phone)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(w.phone+(w.source?' · '+w.source:''))+'</div></div>';
     }).join('');
   }
   h+='</div>';

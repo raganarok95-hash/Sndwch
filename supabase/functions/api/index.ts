@@ -34,7 +34,7 @@ import {
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
   actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
-  actRequestRestockNotify,
+  actRequestRestockNotify, actWaitlistJoin,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -44,6 +44,8 @@ import {
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
   actAdminMarketingContent, actRemindMarketingContent, actAdminCampaignPerformance,
   actAdminPromoList, actAdminPromoCreate, actAdminPromoToggle,
+  actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete,
+  actAdminWaitlistList,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
@@ -137,6 +139,12 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-promo-list": actAdminPromoList,
   "admin-promo-create": actAdminPromoCreate,
   "admin-promo-toggle": actAdminPromoToggle,
+  "admin-calendar-list": actAdminCalendarList,
+  "admin-calendar-create": actAdminCalendarCreate,
+  "admin-calendar-update": actAdminCalendarUpdate,
+  "admin-calendar-delete": actAdminCalendarDelete,
+  "waitlist-join": actWaitlistJoin,
+  "admin-waitlist-list": actAdminWaitlistList,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,
