@@ -59,7 +59,22 @@ async function restockBestEffort(codes: string[], qtys: number[], context: strin
 // mayoría de esos blips sin debilitar el chequeo: un 4xx real de Culqi ("este chargeId
 // no existe/no coincide") sigue rechazando sin reintentar, solo se reintenta ante un
 // fallo de red o un 5xx del propio Culqi.
-export async function verifyCulqiCharge(chargeId: string, expectedAmountCents: number): Promise<boolean> {
+//
+// expectedRef/metadataKey (hallazgo de auditoría de código, CRÍTICO): un cargo Culqi
+// exitoso queda en ese estado para siempre — reconsultarlo es idempotente/sin efecto
+// secundario. Antes de este chequeo, un cliente podía pagar un pedido una vez y luego
+// reenviar el MISMO chargeId contra un `ref` nuevo (otra reserva `pending_charges`, o un
+// `pending_weekly_plans` nuevo) del mismo monto: `verifyCulqiCharge` volvía a devolver
+// true porque el cargo real sigue siendo "venta_exitosa" con el monto correcto, sin
+// verificar que ese cargo específico fue creado PARA este pedido/plan. `claimAndChargeCulqi`
+// (_shared/culqi-claim.ts) ya graba `metadata: { order_ref | credit_ref: <ref> }` al crear
+// el cargo — comparar contra eso ata cada cargo real a un único `ref`, cerrando la reutilización.
+export async function verifyCulqiCharge(
+  chargeId: string,
+  expectedAmountCents: number,
+  expectedRef: string,
+  metadataKey: "order_ref" | "credit_ref",
+): Promise<boolean> {
   if (!CULQI_SECRET_KEY) return false;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -73,7 +88,8 @@ export async function verifyCulqiCharge(chargeId: string, expectedAmountCents: n
       const data = await r.json();
       const successful = data?.outcome?.type === "venta_exitosa";
       const amountMatches = Number(data?.amount) === expectedAmountCents;
-      return successful && amountMatches;
+      const refMatches = data?.metadata?.[metadataKey] === expectedRef;
+      return successful && amountMatches && refMatches;
     } catch {
       if (attempt === 0) continue;
       return false;
@@ -468,7 +484,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
 
   const total = Number(pc.expected_total);
   const amountCents = Math.round(total * 100);
-  const paymentOk = await verifyCulqiCharge(chargeId, amountCents);
+  const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "order_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
   // Reclamo atómico pending -> consumed: si el cliente reintenta (ej. su navegador
