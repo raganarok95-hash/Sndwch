@@ -254,14 +254,20 @@ var PROTS = [
     // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
     { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 6 }
 ];
+// vaultOnly (T04) y sigOnly (T07) — mismo criterio que vaultOnly en PROTS y sigOnly en
+// SAUCES: eran seleccionables en ARMA EL TUYO pese a solo aparecer en la receta de un
+// Signature (T04 en THE VAULT, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
+// igual que Au Jus (S13). No se pueden pedir por BUILD YOUR OWN aunque sigan en este array
+// (SIG_DATA/priceSigBuild los siguen necesitando para tasar esos Signatures) — filtro real
+// en byoTops() más abajo. DEBEN coincidir con VAULT_ONLY_TOPS/SIG_ONLY_TOPS en catalog.ts.
 var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco' },
     { id: 'T02', l: 'Pepinillo', s: 'Encurtido' },
     { id: 'T03', l: 'Cebolla', s: 'Morada juliana' },
-    { id: 'T04', l: 'Jalapeño', s: 'Encurtido' },
+    { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
     { id: 'T06', l: 'Pimiento', s: 'Curado' },
-    { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true }
+    { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true, sigOnly: true }
 ];
 var CHEESE = [
     { id: 'C01', l: 'Americano', s: '' },
@@ -275,7 +281,10 @@ var CHEESE = [
 // (hallazgo de auditoría UX).
 var SAUCES = [
     { id: 'S01', l: 'Aioli', s: 'Signature', d: 'Ajo, limón, suave' },
-    { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremoso, calor progresivo', spicy: true },
+    // vaultOnly: exclusiva de THE VAULT (SIG05, junto con S12) — mismo criterio que sigOnly
+    // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
+    // por el dueño para tratarla igual que Au Jus.
+    { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremoso, calor progresivo', spicy: true, vaultOnly: true },
     { id: 'S03', l: 'Smoke', s: 'BBQ', d: 'Ahumado, miel, pimentón' },
     { id: 'S04', l: 'Honey', s: 'Mustard', d: 'Dulce, mostaza equilibrado' },
     { id: 'S05', l: 'SNDWCH', s: 'Special', d: 'Nuestra salsa de la casa. Receta exclusiva SND//WCH.' },
@@ -288,7 +297,7 @@ var SAUCES = [
     { id: 'S09', l: 'Chimichurri', s: 'Piña asada', d: 'Herbal, ajo, ácido, con piña asada' },
     { id: 'S10', l: 'Peanut', s: 'Satay', d: 'Maní, soya, jengibre' },
     { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Intensa, clásica, con carácter' },
-    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true },
+    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true, vaultOnly: true },
     // sigOnly: exclusiva de THE CHICAGO (SIG07) — mismo criterio que vaultOnly en PROTS
     // (P03/CAJUN): no seleccionable en BUILD YOUR OWN aunque siga en SAUCES (SIGS/deriveOrder
     // la siguen necesitando para tasar SIG07). El caldo de cocción de res mechada no tiene
@@ -350,7 +359,14 @@ var SIGS = [
         // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
         // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
         pitch: 'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
-    { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Nuevo', base: 'B01', prot: 'P02', tops: ['T01', 'T02', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 21,
+    // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
+    // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
+    // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
+    // quedado ahí para siempre. newUntil se ancla a la fecha estimada de lanzamiento del
+    // negocio (~septiembre 2026, ver "Contexto de negocio" en CLAUDE.md) + ~60 días de
+    // ventana — AJUSTAR a la fecha real de apertura en cuanto se confirme, esto es un
+    // placeholder documentado, no un dato certero (hallazgo de auditoría de copy, BAJO).
+    { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Asiático', newUntil: '2026-10-31', base: 'B01', prot: 'P02', tops: ['T01', 'T02', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 21,
         pitch: 'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.' },
     // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
     // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
@@ -778,6 +794,13 @@ var notifSoundPreset = localStorage.getItem('sw_notif_sound') || 'campana';
 // shell.html), no un filter:invert(1) hue-rotate(180deg) (ese enfoque invertía
 // matemáticamente el dorado de marca a un olivo lavado — hallazgo de auditoría visual).
 var adminLightMode = localStorage.getItem('sw_admin_light') === '1';
+// Antes la única forma de saltar de una herramienta admin (ej. Inventario) a otra
+// (ej. Reportes) era volver primero a admin_home — ida y vuelta completa por cada
+// cambio de tarea durante un turno. El drawer (H() lo abre desde cualquiera de las 14
+// pantallas secundarias) deja saltar directo — hallazgo de auditoría UX, confirmado por
+// el dueño para implementar junto con el reordenamiento del grid.
+var adminToolsDrawerOpen = false;
+function toggleAdminToolsDrawer() { adminToolsDrawerOpen = !adminToolsDrawerOpen; render(); }
 var recNewPin = null;
 var recEmailMasked = null;
 // Antes cualquier error del servidor (o incluso el splash de "Verificando...") borraba
@@ -930,6 +953,23 @@ function renderOverlays() {
             + '<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Aceptar //</button>'
             + '<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
             + '</div></div>';
+    }
+    // Drawer de navegación lateral entre herramientas admin — ver toolsNav en H() y
+    // adminToolsSections()/adminToolsGridHTML() (definidas junto a sAdminHome). Reusa la
+    // misma lista de secciones que el grid de admin_home, en formato de filas compactas
+    // (mejor lectura vertical que el grid de 2 columnas dentro de un panel angosto).
+    if (adminToolsDrawerOpen) {
+        var drawerRow = function (icn, label, action) { return '<div onclick="adminToolsDrawerOpen=false;' + action + '" style="display:flex;align-items:center;gap:12px;padding:12px 4px;cursor:pointer;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">' + icon(icn, 17) + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + label + '</span></div>'; };
+        html += '<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
+            + '<div style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#1E3932);border-left:1px solid var(--sw-border,#3A6B58);z-index:431;overflow-y:auto;padding:20px" class="fi">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:' + GOLD + '"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:18px;padding:4px">&#10005;</button></div>'
+            + drawerRow('refresh', 'Cola de pedidos', 'loadAdmin()')
+            + drawerRow('reportes', 'Panel de negocio', 'loadDashboard()')
+            + adminToolsSections().map(function (section) {
+                return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 4px">' + section[0] + '</div>'
+                    + section[1].map(function (x) { return drawerRow(x[0], x[1], x[2]); }).join('');
+            }).join('')
+            + '</div>';
     }
     // Botón flotante de soporte por WhatsApp — visible desde cualquier pantalla del
     // cliente (no en el panel admin, que ya tiene su propio WhatsApp con cada cliente).
@@ -1147,7 +1187,13 @@ function H(sub, bk, showCart) {
     // auditoría visual, ALTO). H() es el header compartido de esas 14 pantallas — agregarlo
     // acá, condicionado a estar en una pantalla admin, lo hace alcanzable desde cualquiera.
     var lightToggle = sc.indexOf('admin') === 0 ? '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>' : '';
-    return '<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border-soft,#3A6B58);display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + lightToggle + '</div>';
+    // Mismo criterio que lightToggle arriba: antes saltar de una herramienta admin a otra
+    // (ej. Inventario → Reportes) exigía volver primero a admin_home. No se muestra en
+    // admin_home mismo porque esa pantalla ya tiene el grid completo visible arriba de la
+    // cola (ver adminToolsGridHTML/reordenamiento en sAdminHome) — hallazgo de auditoría
+    // UX, confirmado por el dueño.
+    var toolsNav = (sc.indexOf('admin') === 0 && sc !== 'admin_home') ? '<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('grid', 16) + '</button>' : '';
+    return '<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border-soft,#3A6B58);display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + toolsNav + lightToggle + '</div>';
 }
 function NAV() {
     var oa = tab === 'order';
@@ -1194,6 +1240,10 @@ function AB(t, can, bk, nfn, nl, hint) {
 // Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
 // selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
 function selBar(sel) { return sel ? '<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:' + GOLD + ';border-radius:10px 0 0 10px"></div>' : ''; }
+// Badge visible de un Signature: 'Nuevo' (u otro badge temporal futuro) solo mientras
+// newUntil no haya pasado, si no el badge permanente en s.badge — evita que un badge de
+// novedad se quede pegado para siempre (hallazgo de auditoría de copy, BAJO).
+function sigBadge(s) { return (s.newUntil && Date.now() < new Date(s.newUntil + 'T23:59:59').getTime()) ? 'Nuevo' : s.badge; }
 // `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
 // mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
@@ -1781,7 +1831,7 @@ function sOHome() {
                 var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
                 if (!av)
                     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
-                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + s.badge + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
+                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + sigBadge(s) + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
             }).join('') + '</div>';
             var byoPanel = '<div style="margin-bottom:8px">'
                 + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
@@ -2069,7 +2119,7 @@ function sOSig() {
         // heredaba el cargo sin que el cliente lo hubiera elegido para ese producto nuevo
         // (resetBuilder() solo corre al ENTRAR al flujo, no al cambiar de tarjeta ya adentro —
         // hallazgo de auditoría UX, CRÍTICO: cobro no consentido).
-        return '<div onclick="sigId=\'' + s.id + '\';cheese=null;doubleProt=false;extraSauce=false;render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.04em;color:' + GOLD + '">' + s.badge + '</span><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:2px;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (sel ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + ';margin-left:12px">' + priceTag + '</span></div>' + lowStockNote(s.prot) + pitchPreview + ingredientsLine + '<div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">' + icon('camera', 11, GOLD) + 'Ver foto →</div></div></div></div>';
+        return '<div onclick="sigId=\'' + s.id + '\';cheese=null;doubleProt=false;extraSauce=false;render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '"><div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + selBar(sel) + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.04em;color:' + GOLD + '">' + sigBadge(s) + '</span><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:2px;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (sel ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + ';margin-left:12px">' + priceTag + '</span></div>' + lowStockNote(s.prot) + pitchPreview + ingredientsLine + '<div onclick="event.stopPropagation();openSigPreview(\'' + s.id + '\')" style="margin-top:10px;display:inline-flex;align-items:center;gap:5px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;cursor:pointer">' + icon('camera', 11, GOLD) + 'Ver foto →</div></div></div></div>';
     }).join('');
     var sig = SIGS.find(function (x) { return x.id === sigId; });
     return h + '</div>' + (previewSigId ? sigPreviewOverlayHTML() : '') + AB(size && sig ? sigPrice(sig) : null, !!(size && sigId), 'go(\'o_home\')', 'enterConfirm()');
@@ -2087,12 +2137,12 @@ function sigPreviewOverlayHTML() {
     var saucesLbl = s.sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ');
     var photo = SIG_IMG[s.id];
     var hero = photo
-        ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + s.badge + '</span></div></div>'
+        ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + sigBadge(s) + '</span></div></div>'
         : '<div style="background:linear-gradient(160deg,#2D5246,#1A3028);border-radius:14px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
             + '<div style="position:absolute;top:10px;right:14px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(242,240,235,.5);letter-spacing:.15em">Imagen referencial</div>'
             + '<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">' + icon('sandwich', 56, GOLD) + '</div>'
             + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div>'
-            + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">' + s.badge + '</span>'
+            + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">' + sigBadge(s) + '</span>'
             + '</div>';
     return '<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
         + '<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#1E3932);border-radius:14px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
@@ -2180,7 +2230,7 @@ function sOBuild() {
     else if (byoStep === 2) {
         h += ST('', 'Toppings', 'Sin límite, elige los que quieras.');
         h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        h += TOPS.map(function (t) {
+        h += TOPS.filter(function (t) { return !t.vaultOnly && !t.sigOnly; }).map(function (t) {
             var av = isAvail(t.id);
             if (!av)
                 return TOPOFF(t);
@@ -2216,12 +2266,17 @@ function sOBuild() {
             var sel = sauces.indexOf(s.id) >= 0, full = !sel && sL >= 3;
             return '<div onclick="var i=sauces.indexOf(\'' + s.id + '\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\'' + s.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (full ? 'not-allowed' : 'pointer') + ';opacity:' + (full ? .3 : 1) + ';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</span>' + (s.spicy ? icon('chili', 14, '#ff8a5c') : '') + '</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + s.d + '</p></div>';
         };
-        var byoSauces = SAUCES.filter(function (s) { return !s.sigOnly; });
+        var byoSauces = SAUCES.filter(function (s) { return !s.sigOnly && !s.vaultOnly; });
         var spicySauces = byoSauces.filter(function (s) { return s.spicy; });
         var otherSauces = byoSauces.filter(function (s) { return !s.spicy; });
-        h += '<div style="display:flex;align-items:center;gap:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">' + icon('chili', 11, '#ff8a5c') + '<span>Picantes //</span></div>';
-        h += spicySauces.map(sauceCard).join('');
-        h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:16px 0 8px">Otras salsas //</div>';
+        // Las 2 salsas picantes (Spicy Mayo/Picante Miel) ahora son vaultOnly — sin este
+        // guard, "Picantes //" quedaba como encabezado huérfano sin ninguna tarjeta debajo
+        // (hallazgo propio al agregar la exclusividad T07/T04/S02/S12, no del subagente).
+        if (spicySauces.length) {
+            h += '<div style="display:flex;align-items:center;gap:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">' + icon('chili', 11, '#ff8a5c') + '<span>Picantes //</span></div>';
+            h += spicySauces.map(sauceCard).join('');
+            h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:16px 0 8px">Otras salsas //</div>';
+        }
         h += otherSauces.map(sauceCard).join('');
     }
     h += AB(size ? total() : null, byoStepCanContinue(), 'byoStepBack()', 'byoStepNext()', byoStep < 4 ? 'Siguiente →' : 'Continuar //', byoStepHint());
@@ -5147,6 +5202,7 @@ var ICONS = {
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     warning: '<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17v.01"/>',
     calendar: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+    grid: '<circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/>',
 };
 function icon(name, size, color) { return '<svg width="' + (size || 18) + '" height="' + (size || 18) + '" viewBox="0 0 24 24" fill="none" stroke="' + (color || GOLD) + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">' + (ICONS[name] || '') + '</svg>'; }
 function iconTxt(name, label, color) { return '<span style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle">' + icon(name, 13, color) + '<span>' + label + '</span></span>'; }
@@ -5194,6 +5250,49 @@ function orderPriority(o) {
 function orderDueTime(o) {
     return o.scheduled_for || o.created_at;
 }
+// Secciones de accesos rápidos del admin — extraídas a función propia para poder
+// reusarlas tanto en el grid de admin_home como en el drawer de navegación lateral
+// (adminToolsDrawerOpen/toggleAdminToolsDrawer), alcanzable ahora desde cualquiera de
+// las 14 pantallas secundarias del admin sin tener que volver primero a admin_home.
+function adminToolsSections() {
+    return [
+        ['Clientes y ventas //', [
+                ['clientes', 'Clientes', 'sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
+                ['buscar', 'Buscar pedidos', 'sc=\'admin_search\';searchResults=null;render()'],
+                ['reportes', 'Reportes', 'sc=\'admin_report\';reportData=null;render()'],
+                ['estrella', 'Calificaciones', 'loadRatingsList()'],
+                ['reclamo', 'Reclamaciones', 'loadAdminComplaints()'],
+            ]],
+        ['Marketing //', [
+                ['megaphone', 'Contenido semanal', 'loadMarketingContent()'],
+            ]],
+        ['Catálogo //', [
+                ['inventario', 'Inventario', 'loadInventory()'],
+                ['precios', 'Precios', 'loadAdminCatalog()'],
+                ['horario', 'Horario', 'loadStoreHoursForm()'],
+            ]],
+        ['Cuenta //', [
+                ['puntos', 'Puntos manuales', 'sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
+                ['admins', 'Administradores', 'loadAdminMgr()'],
+                ['auditoria', 'Auditoría', 'loadAuditLog()'],
+            ]],
+        ['Cocina y operación //', [
+                ['prep', 'Preparación', 'loadPrepList()'],
+                ['franjas', 'Franjas horarias', 'loadTimeWindowReport()'],
+                ['direccion', 'Direcciones', 'loadProblemAddresses()'],
+            ]],
+    ];
+}
+// Grid de 2 columnas agrupado por sección — mismo HTML que ya usaba admin_home, ahora
+// también reusado por el drawer de navegación lateral.
+function adminToolsGridHTML() {
+    return adminToolsSections().map(function (section) {
+        return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 10px">' + section[0] + '</div>'
+            + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+            + section[1].map(function (x) { return '<div onclick="' + x[2] + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">' + icon(x[0]) + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + GOLD + ';letter-spacing:.03em">' + x[1] + '</div></div>'; }).join('')
+            + '</div>';
+    }).join('');
+}
 function sAdminHome() {
     // Dentro de cada nivel de prioridad, el que antes vence primero (el que lleva más
     // tiempo esperando, o el programado más próximo).
@@ -5220,6 +5319,13 @@ function sAdminHome() {
         + '<div onclick="loadDashboard()" style="background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:' + SHADOW_SM + '">'
         + '<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:' + GOLD + '"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
         + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">Ver →</span></div>'
+        + '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:16px 0"></div>'
+        // Grid de accesos rápidos movido ARRIBA de "Pedidos activos" — antes quedaba
+        // debajo de toda la cola, obligando a scrollear pasado cada pedido activo para
+        // llegar a cualquier herramienta (hallazgo de auditoría UX, confirmado por el
+        // dueño). Ahora reusa adminToolsGridHTML() (ver arriba), la misma función que
+        // alimenta el drawer de navegación lateral desde las 14 pantallas secundarias.
+        + adminToolsGridHTML()
         // Active orders
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Pedidos activos // ' + (ao.length || 'ninguno') + '</div>'
         + (ao.length ? ao.map(function (o) {
@@ -5289,44 +5395,6 @@ function sAdminHome() {
                 + '<button onclick="cancelOrder(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">' + iconTxt('close', 'Cancelar pedido' + (manualPending ? ' (nunca pagó)' : ''), '#ff8888') + '</button>'
                 + '</div>';
         }).join('') : '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-card,#2D5246);border-radius:10px;padding:24px 20px;text-align:center;margin-bottom:8px">' + icon('check', 28, '#25D366') + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Sin pedidos activos //</div></div>')
-        + '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:16px 0"></div>'
-        // Antes esto era una lista plana de 11 filas idénticas sin agrupar ni con íconos —
-        // costaba escanear rápido cuál botón era cuál en medio de un turno con pedidos activos.
-        // Agrupado por qué tan seguido se usa cada herramienta, con un ícono por fila para
-        // reconocerla de un vistazo (mismo criterio que ya usan las tarjetas del perfil de
-        // cliente: 🔔 push, 💌 referidos, 💳 crédito).
-        + [
-            ['Clientes y ventas //', [
-                    ['clientes', 'Clientes', 'sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
-                    ['buscar', 'Buscar pedidos', 'sc=\'admin_search\';searchResults=null;render()'],
-                    ['reportes', 'Reportes', 'sc=\'admin_report\';reportData=null;render()'],
-                    ['estrella', 'Calificaciones', 'loadRatingsList()'],
-                    ['reclamo', 'Reclamaciones', 'loadAdminComplaints()'],
-                ]],
-            ['Marketing //', [
-                    ['megaphone', 'Contenido semanal', 'loadMarketingContent()'],
-                ]],
-            ['Catálogo //', [
-                    ['inventario', 'Inventario', 'loadInventory()'],
-                    ['precios', 'Precios', 'loadAdminCatalog()'],
-                    ['horario', 'Horario', 'loadStoreHoursForm()'],
-                ]],
-            ['Cuenta //', [
-                    ['puntos', 'Puntos manuales', 'sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
-                    ['admins', 'Administradores', 'loadAdminMgr()'],
-                    ['auditoria', 'Auditoría', 'loadAuditLog()'],
-                ]],
-            ['Cocina y operación //', [
-                    ['prep', 'Preparación', 'loadPrepList()'],
-                    ['franjas', 'Franjas horarias', 'loadTimeWindowReport()'],
-                    ['direccion', 'Direcciones', 'loadProblemAddresses()'],
-                ]],
-        ].map(function (section) {
-            return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 10px">' + section[0] + '</div>'
-                + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-                + section[1].map(function (x) { return '<div onclick="' + x[2] + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">' + icon(x[0]) + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + GOLD + ';letter-spacing:.03em">' + x[1] + '</div></div>'; }).join('')
-                + '</div>';
-        }).join('')
         + (!cust || !('serviceWorker' in navigator) || !('PushManager' in window) ? '' : '<div onclick="togglePushNotifications()" style="margin-top:18px;background:var(--sw-card,#2D5246);border:1px solid ' + (pushSubscribed ? GOLD : '#1c1c1c') + ';border-radius:10px;padding:12px 16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + icon('notif') + 'Alertas de pedidos y stock</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓ Activo' : '○ Activar') + '</span></div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-top:6px">' + esc(pushMsg) + '</div>' : '') + '</div>')
         + '<div style="margin-top:18px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + icon('sonido') + 'Sonido de nuevo pedido</span>'
         + '<select onchange="setNotifSound(this.value)" style="background:var(--sw-bg,#1E3932);color:var(--sw-text,#FFFFFF);border:1px solid var(--sw-border,#3A6B58);border-radius:6px;padding:6px 8px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">'
