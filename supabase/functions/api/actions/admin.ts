@@ -472,6 +472,66 @@ export async function actAdminCampaignPerformance(b: any) {
   return { campaigns, windowDays: CAMPAIGN_CONVERSION_WINDOW_DAYS, lookbackDays: CAMPAIGN_LOOKBACK_DAYS };
 }
 
+// Gestión de códigos promocionales (promo_codes/promo_code_redemptions, ver migración y
+// computePromoDiscount/redeemPromoBestEffort en orders.ts, que son quienes de verdad
+// aplican/redimen el descuento — estas 3 acciones son solo el CRUD admin).
+const PROMO_LIST_LIMIT = 100;
+export async function actAdminPromoList(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("promo_codes", `select=*&order=created_at.desc&limit=${PROMO_LIST_LIMIT}`);
+  return { promoCodes: rows };
+}
+
+const PROMO_DISCOUNT_TYPES = new Set(["percent", "fixed"]);
+export async function actAdminPromoCreate(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.code || "").trim().toUpperCase();
+  const discountType = String(b.discountType || "");
+  const value = Number(b.value);
+  if (!code || !/^[A-Z0-9_-]{3,20}$/.test(code)) throw new ApiError("El código debe tener 3-20 caracteres (letras, números, - o _).", 400);
+  if (!PROMO_DISCOUNT_TYPES.has(discountType)) throw new ApiError("Tipo de descuento inválido.", 400);
+  if (!(value > 0)) throw new ApiError("El valor del descuento debe ser mayor a 0.", 400);
+  if (discountType === "percent" && value > 100) throw new ApiError("Un descuento porcentual no puede pasar de 100%.", 400);
+  const maxDiscount = b.maxDiscount !== undefined && b.maxDiscount !== null && b.maxDiscount !== "" ? Number(b.maxDiscount) : null;
+  const maxUses = b.maxUses !== undefined && b.maxUses !== null && b.maxUses !== "" ? Math.max(1, parseInt(b.maxUses, 10) || 0) : null;
+  const minOrderTotal = b.minOrderTotal !== undefined && b.minOrderTotal !== null && b.minOrderTotal !== "" ? Math.max(0, Number(b.minOrderTotal)) : 0;
+  const validFrom = b.validFrom ? String(b.validFrom) : null;
+  const validUntil = b.validUntil ? String(b.validUntil) : null;
+  const campaignTag = b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null;
+  let row;
+  try {
+    const rows = await sbInsert("promo_codes", {
+      code,
+      discount_type: discountType,
+      value,
+      max_discount: maxDiscount,
+      max_uses: maxUses,
+      min_order_total: minOrderTotal,
+      valid_from: validFrom,
+      valid_until: validUntil,
+      campaign_tag: campaignTag,
+      created_by: s.phone,
+    });
+    row = rows[0];
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("23505")) throw new ApiError("Ya existe un código con ese nombre.", 409);
+    throw e;
+  }
+  await logAdminAction(s.phone, "promo-create", code, { discountType, value, maxUses, minOrderTotal });
+  return { success: true, promoCode: row };
+}
+
+export async function actAdminPromoToggle(b: any) {
+  const s = await requireAdmin(b.token);
+  const id = String(b.id || "").trim();
+  const active = !!b.active;
+  if (!id) throw new ApiError("Falta el código.", 400);
+  const rows = await sbUpdate("promo_codes", `id=eq.${encodeURIComponent(id)}`, { active });
+  if (!rows.length) throw new ApiError("Código no encontrado.", 404);
+  await logAdminAction(s.phone, "promo-toggle", rows[0].code, { active });
+  return { success: true, promoCode: rows[0] };
+}
+
 // Antes, ver el historial completo de un cliente exigía cruzar 3 pantallas distintas
 // (pedidos, puntos, admin_action_log) o consultar la DB a mano — esto lo junta en una
 // sola llamada para la ficha de cliente del panel admin.

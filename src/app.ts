@@ -646,6 +646,8 @@ var storeHoursForm=null,storeHoursMsg='';
 var reportFrom='',reportTo='',reportData=null,reportErr='';
 var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false;
 var prepListData=null,timeReportData=null,problemAddressesData=null,marketingContentData=null;
+var promoCodesData=null,pcCode='',pcType='percent',pcValue='',pcMaxUses='',pcMinOrder='',pcValidUntil='',pcCampaignTag='',pcMsg='';
+var campaignPerfData=null;
 var bulkSelected={};
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
@@ -692,6 +694,12 @@ var addrText='',scheduleMode='now',schedDay='today',schedSlot=null;
 var confNom='',confPhone='',confEmail='',confNotes='';
 var checkoutLocked=false,lockedMsg='',_payingInProgress=false;
 var appliedReward=null;
+// appliedPromo: {code, discount} tras validar con validate-promo-code — el descuento se
+// vuelve a calcular/validar server-side en prepare-order/place-order (nunca se confía en
+// este valor cacheado), así que si el carrito cambia después de aplicar el código y el
+// descuento quedó desactualizado, el checkout simplemente rechaza con "el total no
+// coincide" en vez de cobrar mal — mismo criterio de seguridad que el resto del checkout.
+var appliedPromo=null,promoStatus='';
 var previewSigId=null;
 var newAddrMsg='',favMsg='';
 var cart=[];
@@ -1335,9 +1343,12 @@ function rewardWaiverAmount(rewardId,targetIdx){
 function cartStackedDiscount(){return Math.max(cartComboDiscount(),cartOffPeakDrinkDiscount());}
 function cartFinalTotal(){
   var base=cartBaseTotal()-cartStackedDiscount();
-  if(!appliedReward)return Math.max(0,base);
-  var idx=findRewardTargetIndex(appliedReward);
-  return Math.max(0,base-rewardWaiverAmount(appliedReward,idx));
+  if(appliedReward){
+    var idx=findRewardTargetIndex(appliedReward);
+    base-=rewardWaiverAmount(appliedReward,idx);
+  }
+  if(appliedPromo)base-=appliedPromo.discount;
+  return Math.max(0,base);
 }
 // El carrito se guarda en localStorage en cada cambio y se restaura al abrir la app
 // (ver restoreCart() en INIT) — sin esto, refrescar la página, cerrar la pestaña por
@@ -1433,7 +1444,7 @@ function cartRemove(idx){
   saveCart();
   render();
 }
-function clearCart(){cart=[];appliedReward=null;saveCart();go('o_home');}
+function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 function loadCart(items){
@@ -2047,6 +2058,47 @@ function toggleReward(id){
   saveCart();
   render();
 }
+// Bloqueado con Yape/Plin (ver el mismo criterio del lado servidor, actPlaceOrder): el
+// código recién se redime cuando el pago manual se confirma, y ofrecerlo acá antes de eso
+// implicaría prometer un descuento que el servidor todavía va a rechazar.
+function promoCodeHTML(){
+  var box='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Código promocional //</div>';
+  if(appliedPromo){
+    return box+'<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366">'+esc(appliedPromo.code)+' aplicado · ahorras '+SOLES_TXT+appliedPromo.discount+'</span><span onclick="removePromoCode()" style="cursor:pointer;flex-shrink:0;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#ff8888">Quitar</span></div></div>';
+  }
+  return box+'<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:13px;text-transform:uppercase"/>'
+    +'<button onclick="applyPromoCode()" style="flex-shrink:0;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:8px;padding:0 16px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+GOLD+'">Aplicar</button></div>'
+    +'<div id="o-promo-status" style="font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;margin-top:6px;min-height:14px">'+esc(promoStatus)+'</div></div>';
+}
+// No usa render() completo (a diferencia del resto de este archivo) porque el checkout
+// tiene varios campos de texto que el usuario puede seguir tipeando mientras esto corre
+// (nombre/dirección/etc, ver syncConfirmFields) — un re-render completo aquí los borraría
+// a medio tipear, el mismo bug que syncConfirmFields ya existe para evitar en otros lados.
+function renderPromoStatus(){var el=document.getElementById('o-promo-status');if(el)el.textContent=promoStatus;}
+async function applyPromoCode(){
+  var el=(document.getElementById('o-promo') as HTMLInputElement|null);
+  var code=el?el.value.trim():'';
+  if(!code)return;
+  var phone=cust?cust.phone:gv('o-phone').trim();
+  if(!phone){promoStatus='Ingresa tu teléfono de contacto primero.';renderPromoStatus();return;}
+  promoStatus='Verificando...';renderPromoStatus();
+  try{
+    var schedEl=(document.getElementById('o-sched') as HTMLInputElement|null);
+    var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:scheduleMode==='later'&&schedEl?schedEl.value:null});
+    appliedPromo={code:res.code,discount:res.discount};
+    promoStatus='';
+  }catch(e){
+    appliedPromo=null;
+    promoStatus=e&&e.message?e.message:'No se pudo validar el código.';
+  }
+  // confirmRerender() (no render() a secas) — este re-render ocurre DESPUÉS de que el
+  // usuario ya pudo haber tipeado nombre/teléfono/dirección mientras se verificaba el
+  // código (llamada async); sin sincronizar esos campos primero, el re-render los pisaría
+  // con el valor viejo de confNom/confPhone/addrText (mismo bug ya corregido antes para
+  // el resto del checkout, ver syncConfirmFields).
+  confirmRerender();
+}
+function removePromoCode(){appliedPromo=null;promoStatus='';confirmRerender();}
 function pickAddr(id){
   var a=myAddresses.find(function(x){return x.id===id;});
   if(!a)return;
@@ -2096,7 +2148,7 @@ function checkoutExtrasHTML(){
     // perdida) — hallazgo de auditoría UX, MEDIO.
     +(manualPayMethod
       ?(appliedReward?(function(){var r=RWDS.find(function(x){return x.id===appliedReward;});return r?'<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;margin-top:14px;font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+'Recompensa aplicada: '+esc(r.n+' '+r.s)+'</div>':'';})():'')
-      :rewardsPickerHTML())
+      :rewardsPickerHTML()+promoCodeHTML())
     // "Contacto y entrega //" — antes este bloque (nombre/teléfono/correo/dirección)
     // arrancaba sin ningún encabezado propio, pegado directo a la tarjeta de puntos/combo
     // de arriba — el mockup sí separa cada bloque de propósito distinto con su propio
@@ -2673,7 +2725,7 @@ async function doOrder(){
     }
   });
   _payingInProgress=true;
-  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount()};
+  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount(),promoCode:appliedPromo?appliedPromo.code:null};
   if(t===0){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
@@ -2701,7 +2753,7 @@ async function placeOrderDirect(msg,extraFields){
   busy=true;busyMsg=msg;render();
   var res;
   try{
-    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone},extraFields||{}));
+    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode},extraFields||{}));
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
@@ -2738,7 +2790,7 @@ async function prepareThenPayWithCulqi(amountSoles,email){
   if(!po)return;
   busy=true;busyMsg='Verificando tu pedido...';render();
   try{
-    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone});
+    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
@@ -3582,6 +3634,7 @@ function doLogout(){
   dashStats=null;atRiskCustomers=null;
   searchResults=null;searchTruncated=false;auditLog=null;
   ratingsList=null;prepListData=null;timeReportData=null;problemAddressesData=null;marketingContentData=null;
+  promoCodesData=null;pcCode='';pcType='percent';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';pcMsg='';campaignPerfData=null;
   adminOrders=[];bulkSelected={};
   sc='p_auth';render();
 }
@@ -4182,6 +4235,8 @@ function adminToolsSections(){
     ]],
     ['Marketing //',[
       ['megaphone','Contenido semanal','loadMarketingContent()'],
+      ['precios','Códigos promo','loadPromoCodes()'],
+      ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
     ]],
     ['Catálogo //',[
       ['inventario','Inventario','loadInventory()'],
@@ -4785,6 +4840,8 @@ function render(){
     case'admin_time_report':h=sAdminTimeReport();break;
     case'admin_problem_addresses':h=sAdminProblemAddresses();break;
     case'admin_marketing':h=sAdminMarketing();break;
+    case'admin_promo':h=sAdminPromo();break;
+    case'admin_campaign_perf':h=sAdminCampaignPerf();break;
     default:           h=sOHome();
   }
   GOLD=_prevGold;
@@ -5439,6 +5496,88 @@ function sAdminMarketing(){
   h+=mktBlock(d.current,'current');
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:8px">Próxima semana //</div>';
   h+=mktBlock(d.next,'next');
+  h+='</div>';
+  return h;
+}
+
+async function loadPromoCodes(){
+  sc='admin_promo';busy=true;busyMsg='Cargando códigos...';render();
+  try{var res=await api('admin-promo-list',{token:token});promoCodesData=res.promoCodes;}
+  catch(e){promoCodesData=null;}
+  busy=false;render();
+}
+function setPcType(t){pcType=t;render();}
+async function createPromoCode(){
+  var code=gv('pc-code').trim();
+  var value=gv('pc-value').trim();
+  var maxUses=gv('pc-maxuses').trim();
+  var minOrder=gv('pc-minorder').trim();
+  var validUntil=gv('pc-validuntil').trim();
+  var campaignTag=gv('pc-tag').trim();
+  if(!code||!value){pcMsg='Completa código y valor.';render();return;}
+  pcMsg='Creando...';render();
+  try{
+    await api('admin-promo-create',{token:token,code:code,discountType:pcType,value:Number(value),maxUses:maxUses||null,minOrderTotal:minOrder||null,validUntil:validUntil?new Date(validUntil).toISOString():null,campaignTag:campaignTag||null});
+    pcMsg='';pcCode='';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';
+    await loadPromoCodes();
+  }catch(e){
+    pcMsg=e.message||'No se pudo crear el código.';
+    render();
+  }
+}
+async function togglePromoCode(id,active){
+  try{await api('admin-promo-toggle',{token:token,id:id,active:active});await loadPromoCodes();}
+  catch(e){showToast(e.message||'No se pudo actualizar.');}
+}
+function sAdminPromo(){
+  var h=H('CÓDIGOS PROMO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">El descuento se aplica solo sobre el total de comida (nunca sobre delivery), mismo criterio que las recompensas — y solo funciona con tarjeta o crédito, no con Yape/Plin hasta confirmar el pago.</div>';
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:20px">';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Nuevo código //</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px">'
+    +INP('pc-code','Código // ej. LANZAMIENTO10','text',pcCode)
+    +'<div style="display:flex;gap:8px"><div onclick="setPcType(\'percent\')" style="flex:1;text-align:center;background:'+(pcType==='percent'?'var(--sw-card2,#1A3028)':'transparent')+';border:1px solid '+(pcType==='percent'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:EB Garamond,serif;font-size:12px;color:'+(pcType==='percent'?GOLD:'#A8C8B0')+'">% Porcentaje</div><div onclick="setPcType(\'fixed\')" style="flex:1;text-align:center;background:'+(pcType==='fixed'?'var(--sw-card2,#1A3028)':'transparent')+';border:1px solid '+(pcType==='fixed'?GOLD:'#3A6B58')+';border-radius:8px;padding:10px;cursor:pointer;font-family:EB Garamond,serif;font-size:12px;color:'+(pcType==='fixed'?GOLD:'#A8C8B0')+'">S/ Monto fijo</div></div>'
+    +INP('pc-value',pcType==='percent'?'Valor // ej. 10 (%)':'Valor // ej. 5 (soles)','number',pcValue)
+    +INP('pc-maxuses','Usos máximos // opcional','number',pcMaxUses)
+    +INP('pc-minorder','Pedido mínimo // opcional, en soles','number',pcMinOrder)
+    +INP('pc-validuntil','Válido hasta // opcional','date',pcValidUntil)
+    +INP('pc-tag','Etiqueta de campaña // opcional, para tu referencia','text',pcCampaignTag)
+    +'</div>';
+  h+=(pcMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff8888;margin-top:8px">'+esc(pcMsg)+'</div>':'');
+  h+='<div style="margin-top:12px">'+BTN('Crear código //','createPromoCode()')+'</div>';
+  h+='</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Códigos existentes //</div>';
+  if(!promoCodesData||!promoCodesData.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Sin códigos creados todavía.</div>';
+  }else{
+    h+=promoCodesData.map(function(p){
+      var valueLabel=p.discount_type==='percent'?p.value+'%':SOLES_TXT+p.value;
+      var usesLabel=(p.uses_count||0)+(p.max_uses!=null?'/'+p.max_uses:'')+' usos';
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.code)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(valueLabel+' · '+usesLabel+(p.campaign_tag?' · '+p.campaign_tag:''))+'</div></div><div onclick="togglePromoCode(\''+p.id+'\','+(!p.active)+')" style="flex-shrink:0;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+(p.active?'#25D366':'#ff8888')+'">'+(p.active?'Activo':'Inactivo')+'</div></div></div>';
+    }).join('');
+  }
+  h+='</div>';
+  return h;
+}
+
+async function loadCampaignPerformance(){
+  sc='admin_campaign_perf';busy=true;busyMsg='Calculando rendimiento...';render();
+  try{campaignPerfData=await api('admin-campaign-performance',{token:token});}
+  catch(e){campaignPerfData=null;}
+  busy=false;render();
+}
+function sAdminCampaignPerf(){
+  var h=H('RENDIMIENTO CAMPAÑAS',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!campaignPerfData)return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadCampaignPerformance()')+'</div>';
+  var d=campaignPerfData;
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Últimos '+d.lookbackDays+' días · convertido = pagó dentro de '+d.windowDays+' días de recibir el aviso.</div>';
+  if(!d.campaigns.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Sin envíos registrados en este período.</div>';
+  }else{
+    h+=d.campaigns.map(function(c){
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+esc(c.campaignType)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+c.touches+' envíos · '+c.customersReached+' clientes · <span style="color:'+GOLD+'">'+c.conversionRate+'% convirtió</span> · '+SOLES_TXT+c.revenue+' en ingresos</div></div>';
+    }).join('');
+  }
   h+='</div>';
   return h;
 }

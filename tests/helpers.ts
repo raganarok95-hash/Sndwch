@@ -38,8 +38,17 @@ export async function mockBackend(page: Page, handlers: ActionHandlers = {}) {
       await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'acción no mockeada: ' + action }) });
       return;
     }
-    const payload = typeof entry === 'function' ? (entry as (b: any) => unknown)(body) : entry;
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    // Un handler puede lanzar (throw new Error('mensaje')) para simular un error real del
+    // servidor (400/409/etc.) — api() en el cliente solo distingue éxito/error por status
+    // HTTP (r.ok), así que antes no había forma de probar un camino de error del backend
+    // real sin ese salto de status; todo error simulado en los tests hasta ahora era
+    // client-side puro (nunca llegaba a llamar al mock).
+    try {
+      const payload = typeof entry === 'function' ? (entry as (b: any) => unknown)(body) : entry;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
+    } catch (e: any) {
+      await route.fulfill({ status: e?.status || 400, contentType: 'application/json', body: JSON.stringify({ error: e?.message || 'Error simulado.' }) });
+    }
   });
 
   // loadInvBackground() lee inventario directo de PostgREST (sbG), no por api() — sin
