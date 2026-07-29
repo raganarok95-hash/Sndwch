@@ -26,7 +26,7 @@ import {
   actUploadReceipt, actAdminReceiptUrl,
 } from "./actions/orders.ts";
 import {
-  actAddressesList, actAddressesAdd, actAddressesDelete,
+  actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
@@ -83,6 +83,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "my-history": actMyHistory,
   "addresses-list": actAddressesList,
   "addresses-add": actAddressesAdd,
+  "addresses-update": actAddressesUpdate,
   "addresses-delete": actAddressesDelete,
   "favorites-list": actFavoritesList,
   "favorites-add": actFavoritesAdd,

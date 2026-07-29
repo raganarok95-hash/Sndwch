@@ -156,5 +156,20 @@ export async function actCloseGroupOrder(b: any) {
   const updated = await sbUpdate("group_orders", `id=eq.${g.id}&status=eq.open`, { status: "closed" });
   if (!updated.length) throw new ApiError("Este pedido grupal ya se cerró.", 409);
   const rows = await sbGet("group_order_items", `group_order_id=eq.${g.id}&order=created_at.asc`);
-  return { success: true, items: rows.map((row: any) => row.item) };
+  // Sin esto, el carrito final perdía por completo quién pidió qué — con dos personas
+  // pidiendo el mismo Signature, cocina/admin no podía distinguir un sándwich del otro.
+  // Reutiliza el campo `note` (ya soportado en sig/byo, ya se imprime en el ticket de
+  // cocina y en el resumen de WhatsApp) en vez de inventar un campo nuevo de punta a
+  // punta — hallazgo de auditoría UX, MEDIO.
+  return {
+    success: true,
+    items: rows.map((row: any) => {
+      const item = { ...row.item };
+      if ((item.type === "sig" || item.type === "byo") && row.contributor_name) {
+        const prefix = `De: ${row.contributor_name}`;
+        item.note = item.note ? `${prefix} — ${item.note}` : prefix;
+      }
+      return item;
+    }),
+  };
 }

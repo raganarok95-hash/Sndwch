@@ -38,6 +38,23 @@ export async function actAddressesAdd(b: any) {
   });
   return { success: true, address: rows[0] };
 }
+// Antes solo se podía agregar/eliminar — un typo en la dirección obligaba a borrar y
+// crear de nuevo en vez de corregirla in-place (hallazgo de auditoría UX, BAJO).
+export async function actAddressesUpdate(b: any) {
+  const s = await requireSession(b.token);
+  const id = String(b.id || "");
+  const label = String(b.label || "").trim();
+  const address = String(b.address || "").trim();
+  if (!id) throw new ApiError("Falta la dirección.");
+  if (!label || !address) throw new ApiError("Ingresa un nombre y la dirección.");
+  const rows = await sbUpdate(
+    "saved_addresses",
+    `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
+    { label, address },
+  );
+  if (!rows.length) throw new ApiError("Dirección no encontrada.", 404);
+  return { success: true, address: rows[0] };
+}
 export async function actAddressesDelete(b: any) {
   const s = await requireSession(b.token);
   const id = String(b.id || "");
@@ -703,7 +720,11 @@ export async function actPrepareWeeklyPlan(b: any) {
     `buyer_phone=eq.${encodeURIComponent(active.payload.phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
   );
   if (existing.length) {
-    throw new ApiError("Ya tienes un Plan Semanal en proceso. Espera un momento antes de intentar de nuevo.", 409);
+    // Antes decía "espera un momento" — subestimaba la espera real frente al TTL
+    // verdadero de un plan pendiente (WEEKLY_PLAN_TTL_MINUTES=15). Un cliente cuyo primer
+    // intento quedó a medias podía quedar bloqueado hasta 15 min leyendo un mensaje que
+    // sonaba a segundos (hallazgo de auditoría UX, BAJO).
+    throw new ApiError(`Ya tienes un Plan Semanal en proceso. Espera hasta ${WEEKLY_PLAN_TTL_MINUTES} minutos o contáctanos si el cobro ya se hizo.`, 409);
   }
 
   const ref = "PLAN-" + crypto.randomUUID().slice(0, 8).toUpperCase();

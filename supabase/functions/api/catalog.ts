@@ -40,10 +40,15 @@ import { computeRankName } from "./env.ts";
 // ninguna razón documentada (a diferencia de R02, que sí está anotada como intencional).
 // A 320 pts queda en 40 pts/sol, dentro de la banda — DEBE coincidir con RWDS.R03 en
 // src/app.ts.
+// R02/R03 renombrados para coincidir con RWDS en src/app.ts (antes "4TA // SALSA" y
+// "SUBE A 30CM // GRATIS" — el cliente mostraba un nombre distinto en el checkout que
+// el que terminaba guardado/mostrado en el historial y recibos, además de romper la
+// convención sustantivo // sustantivo que sí siguen R04/R05/R06) — hallazgo de
+// auditoría de copy, BAJO.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
-  R02: { pts: 40, label: "4TA // SALSA" },
+  R02: { pts: 40, label: "SALSA // EXTRA" },
   R05: { pts: 220, label: "BEBIDA // GRATIS" },
-  R03: { pts: 320, label: "SUBE A 30CM // GRATIS" },
+  R03: { pts: 320, label: "TAMAÑO // 30CM" },
   R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
   R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
 };
@@ -215,7 +220,7 @@ export async function loadCatalogPrices(): Promise<void> {
   }
 }
 // P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo
-// del resto (Pollo/Cajún, Atún/House, Meatball/Marinara) — DEBE coincidir con PROTS.P01
+// del resto (Pollo/Cajún, Atún/House, Albóndiga/Marinara) — DEBE coincidir con PROTS.P01
 // en src/app.ts.
 export const PROT_LABEL: Record<string, string> = {
   P01: "RES // ASADO",
@@ -223,7 +228,10 @@ export const PROT_LABEL: Record<string, string> = {
   P03: "POLLO // CAJUN",
   P04: "ATÚN // HOUSE",
   P05: "EMBUTIDO // ITALIANO",
-  P06: "MEATBALL // MARINARA",
+  // P06 corregido de "MEATBALL // MARINARA" a "ALBÓNDIGA // MARINARA" — único nombre en
+  // inglés entre las 6 proteínas, ni coincidía con su propia descripción en español —
+  // DEBE coincidir con PROTS.P06 en src/app.ts.
+  P06: "ALBÓNDIGA // MARINARA",
 };
 
 export function rewardWaiver(rewardId: string | null, b: any, basePrice: number, dblSurcharge: number): number {
