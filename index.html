@@ -222,7 +222,7 @@ var BASES = [
 ];
 var PROTS = [
     // l/s invertidos (antes 'Asado // Res') — rompía la convención genérico+estilo que
-    // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Meatball/Marinara): "Res" es
+    // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Albóndiga/Marinara): "Res" es
     // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
     // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
     // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
@@ -242,13 +242,17 @@ var PROTS = [
     // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
     // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
-    // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, MEATBALL/MARINARA) — hallazgo de auditoría
+    // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
     // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
     { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16, p30: 30, pDbl: 9 },
     // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
     // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
     // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-    { id: 'P06', l: 'Meatball', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 6 }
+    // l corregido de 'Meatball' a 'Albóndiga' — único nombre en inglés entre las 6
+    // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
+    // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
+    // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
+    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14, p30: 24, pDbl: 6 }
 ];
 var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco' },
@@ -297,8 +301,14 @@ var SIGS = [
     // estaba en el signature más barato de los tres comparables (18/22) mientras el más
     // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
     // real. THE ORIGINAL pasa a CLÁSICO (encaja mejor: el asado mechado de siempre).
-    { id: 'SIG01', n: 'The Original', s: 'Signature', badge: 'Clásico', base: 'B01', prot: 'P01', tops: ['T01', 'T02', 'T03'], sauces: ['S01', 'S04'], p15: 18, p30: 22,
-        pitch: 'Res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. El sándwich que enamora desde el primer bocado.' },
+    // recommended:true en vez de asumir "el primero del array" para el badge Recomendado
+    // del home — antes se calculaba por posición (i===0), frágil si SIGS se reordena de
+    // nuevo (ya pasó una vez esta sesión, al mover el badge chef) — hallazgo de auditoría
+    // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
+    // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
+    // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
+    { id: 'SIG01', n: 'The Original', s: 'Signature', badge: 'Clásico', recommended: true, base: 'B01', prot: 'P01', tops: ['T01', 'T02', 'T03'], sauces: ['S01', 'S04'], p15: 18, p30: 22,
+        pitch: 'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.' },
     // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
     // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
     // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
@@ -405,10 +415,16 @@ var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/pro
 // R03 subido de 270 a 320 pts (auditoría de menú, ronda posterior) — a 270 pts entregaba
 // solo 33.75 pts/sol, por debajo de la banda ~36-54 pts/sol del resto tras la
 // recalibración de arriba — DEBE coincidir con REWARDS.R03 en catalog.ts.
+// R02/R03 renombrados: n/s se muestran como "n // s" en toda la app (mismo corte que
+// separa ingrediente/estilo en un Signature o proteína) — "4ta // Salsa" cortaba un
+// ordinal de su sustantivo y "Sube a // 30CM" cortaba una frase verbal a la mitad,
+// rompiendo la convención que sí siguen R04/R05/R06 (sustantivo // sustantivo) —
+// hallazgo de auditoría de copy, BAJO. R03 DEBE coincidir con REWARDS.R03.label en
+// catalog.ts.
 var RWDS = [
-    { id: 'R02', pts: 40, n: '4ta', s: 'Salsa', d: 'Perdona el cargo de salsa extra (S/2)' },
+    { id: 'R02', pts: 40, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
     { id: 'R05', pts: 220, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
-    { id: 'R03', pts: 320, n: 'Sube a', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
+    { id: 'R03', pts: 320, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
     { id: 'R04', pts: 320, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
     { id: 'R06', pts: 720, n: 'Sándwich', s: 'Gratis', d: 'Sándwich 15CM gratis — no aplica a Signatures Reserve', sizeOnly: '15' }
 ];
@@ -816,7 +832,20 @@ var groupCode = null, groupData = null, groupJoinName = '', groupMsg = '', group
 // Signatures para los que ya se pidió "avísame cuando vuelva" en esta sesión — solo
 // para no dejar tocar el botón dos veces mientras se está en la app; el servidor ya
 // deduplica con un unique (customer_phone, sig_id) si igual llega a repetirse.
-var restockNotified = [];
+// Persistido en localStorage — antes vivía solo en memoria, así que un refresh o volver
+// más tarde hacía que el botón "Avísame cuando vuelva →" se viera como si nunca se
+// hubiera tocado, aunque el backend sí lo haya registrado (restock_notify_requests es
+// idempotente) — el cliente mentía sobre el estado real (hallazgo de auditoría UX, MEDIO).
+var restockNotified = (function () { try {
+    return JSON.parse(localStorage.getItem('sw_restock_notified') || '[]');
+}
+catch (e) {
+    return [];
+} })();
+function saveRestockNotified() { try {
+    localStorage.setItem('sw_restock_notified', JSON.stringify(restockNotified));
+}
+catch (e) { } }
 try {
     groupJoinName = localStorage.getItem('sw_group_name') || '';
 }
@@ -1112,7 +1141,13 @@ function H(sub, bk, showCart) {
     // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
     // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
     var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:#0d0d0d;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
-    return '<div style="padding:20px 20px 16px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + '</div>';
+    // Toggle claro/oscuro — antes SOLO existía en sAdminHome, así que un operador en
+    // cualquiera de las 14 pantallas secundarias del admin (Inventario, Catálogo, Ficha de
+    // cliente, etc.) tenía que volver a la cola primero para cambiar de tema (hallazgo de
+    // auditoría visual, ALTO). H() es el header compartido de esas 14 pantallas — agregarlo
+    // acá, condicionado a estar en una pantalla admin, lo hace alcanzable desde cualquiera.
+    var lightToggle = sc.indexOf('admin') === 0 ? '<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + icon(adminLightMode ? 'moon' : 'sun', 16) + '</button>' : '';
+    return '<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border-soft,#3A6B58);display:flex;align-items:center;flex-shrink:0">' + b + '<div style="flex:1"><div style="line-height:1">' + WORDMARK(sz) + '</div>' + s2 + '</div>' + cartIcon + lightToggle + '</div>';
 }
 function NAV() {
     var oa = tab === 'order';
@@ -1142,7 +1177,7 @@ function contactFooterHTML() {
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">' + esc(BIZ_NAME) + ' · RUC ' + BIZ_RUC + '</div>'
         + '</div>';
 }
-function AB(t, can, bk, nfn, nl) {
+function AB(t, can, bk, nfn, nl, hint) {
     var bb = bk ? '<button onclick="' + bk + '" style="all:unset;cursor:pointer;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← Atrás</button>' : '';
     var tt = t ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.2em">Total //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + '<span style="color:' + GOLD + '">' + t + '</span></div>' : '';
     // Sombra hacia arriba (en vez de solo un hairline) para separar la barra fija del
@@ -1151,7 +1186,10 @@ function AB(t, can, bk, nfn, nl) {
     // — la barra de acción en sí (borde superior + fondo casi negro) ya la distingue como
     // LA acción de la pantalla, no hace falta un efecto extra en el botón (dirección Prada
     // Caffè: selección/énfasis se comunican con color plano y borde, nunca con glow).
-    return '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#0B0B0B);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? '#241a08' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
+    // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
+    // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
+    var hintRow = (!can && hint) ? '<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:6px">' + esc(hint) + '</span></div>' : '';
+    return hintRow + '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#0B0B0B);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? '#241a08' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
 }
 // Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
 // selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
@@ -1169,9 +1207,14 @@ function ST(n, t, s) { return '<div style="margin-bottom:20px"><h2 style="font-f
 // la mayoría de teléfonos de los clientes.
 function INP(id, ph, type, val, iconName) {
     var padLeft = iconName ? '44px' : '16px';
+    // El único campo type="password" de toda la app es el PIN (no hay contraseñas
+    // tradicionales) — antes abría el teclado QWERTY completo en móvil pese a ser siempre
+    // numérico (hallazgo de auditoría UX, MEDIO). inputmode="numeric" abre el teclado
+    // correcto sin dejar de ocultar el valor tecleado.
+    var numAttrs = type === 'password' ? ' inputmode="numeric" pattern="[0-9]*"' : '';
     return '<div style="position:relative">'
         + (iconName ? '<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">' + icon(iconName, 16, '#A8C8B0') + '</div>' : '')
-        + '<input id="' + id + '" type="' + (type || 'text') + '" placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:10px;padding:14px 16px 14px ' + padLeft + ';color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;caret-color:' + GOLD + ';box-shadow:' + SHADOW_SM + ';box-sizing:border-box">'
+        + '<input id="' + id + '" type="' + (type || 'text') + '"' + numAttrs + ' placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:10px;padding:14px 16px 14px ' + padLeft + ';color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;caret-color:' + GOLD + ';box-shadow:' + SHADOW_SM + ';box-sizing:border-box">'
         + '</div>';
 }
 // box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
@@ -1616,6 +1659,12 @@ function sideQtyChange(code, delta) {
     it.qty += delta;
     if (it.qty <= 0)
         cart = cart.filter(function (x) { return x !== it; });
+    // Mismo guard que cartQtyChange/cartRemove/editCartItem — antes faltaba acá, así que
+    // quitar a 0 la bebida a la que se le aplicó R05 (bebida gratis) desde ESTE picker (a
+    // diferencia de "Quitar" en TU CARRITO) dejaba la recompensa pintada como seleccionada
+    // pero sin poder tocarla para soltarla (hallazgo de auditoría UX, MEDIO).
+    if (appliedReward && findRewardTargetIndex(appliedReward) < 0)
+        appliedReward = null;
     saveCart();
     render();
 }
@@ -1732,7 +1781,7 @@ function sOHome() {
                 var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
                 if (!av)
                     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
-                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + s.badge + (i === 0 ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
+                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + s.badge + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
             }).join('') + '</div>';
             var byoPanel = '<div style="margin-bottom:8px">'
                 + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
@@ -2084,6 +2133,13 @@ function byoStepCanContinue() {
         return !!prot;
     return true;
 }
+function byoStepHint() {
+    if (byoStep === 0)
+        return !size && !base ? 'Elige tamaño y pan' : !size ? 'Elige un tamaño' : 'Elige un pan';
+    if (byoStep === 1)
+        return 'Elige una proteína';
+    return '';
+}
 function byoStepBack() {
     if (byoStep > 0) {
         byoStep--;
@@ -2168,7 +2224,7 @@ function sOBuild() {
         h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:16px 0 8px">Otras salsas //</div>';
         h += otherSauces.map(sauceCard).join('');
     }
-    h += AB(size ? total() : null, byoStepCanContinue(), 'byoStepBack()', 'byoStepNext()', byoStep < 4 ? 'Siguiente →' : 'Continuar //');
+    h += AB(size ? total() : null, byoStepCanContinue(), 'byoStepBack()', 'byoStepNext()', byoStep < 4 ? 'Siguiente →' : 'Continuar //', byoStepHint());
     return h;
 }
 function CARDOFF(item) { return '<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + item.l + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + item.s + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888">Agotado</span></div></div>'; }
@@ -2408,7 +2464,13 @@ function checkoutExtrasHTML() {
     var payingWithCreditFully = useCredit && cust && (cust.credit_balance || 0) >= payT;
     return pBox
         + comboDrinkNudgeHTML()
-        + (manualPayMethod ? '' : rewardsPickerHTML())
+        // Antes, al elegir Yape/Plin, el picker de recompensas se ocultaba por completo y no
+        // quedaba NINGUNA confirmación de que la recompensa ya aplicada seguía activa (el
+        // descuento sí sigue funcionando en el monto a transferir, pero visualmente parecía
+        // perdida) — hallazgo de auditoría UX, MEDIO.
+        + (manualPayMethod
+            ? (appliedReward ? (function () { var r = RWDS.find(function (x) { return x.id === appliedReward; }); return r ? '<div style="background:#0c1d30;border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;margin-top:14px;font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366;display:flex;align-items:center;gap:6px">' + icon('gift', 12, '#25D366') + 'Recompensa aplicada: ' + esc(r.n + ' ' + r.s) + '</div>' : ''; })() : '')
+            : rewardsPickerHTML())
         // "Contacto y entrega //" — antes este bloque (nombre/teléfono/correo/dirección)
         // arrancaba sin ningún encabezado propio, pegado directo a la tarjeta de puntos/combo
         // de arriba — el mockup sí separa cada bloque de propósito distinto con su propio
@@ -2418,7 +2480,13 @@ function checkoutExtrasHTML() {
         + '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'Notas // opcional', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + deliveryZonePickerHTML()
-        + '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>' + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
+        + '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'
+        // Antes el aviso de "estamos cerrados" solo aparecía como error al tocar pagar, al
+        // final de todo el checkout — un cliente podía llenar nombre/dirección/método de
+        // pago completos antes de enterarse. Ahora aparece apenas elige "Ahora" con la
+        // tienda cerrada (hallazgo de auditoría UX, BAJO).
+        + (scheduleMode === 'now' && !storeStatus().open ? '<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">' + icon('horario', 13, '#ff8888') + '<span>' + esc(storeStatus().label) + ' — elige "Programar" para pedir dentro de nuestro horario.</span></div>' : '')
+        + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
         + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= payT; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()' : '') + '" style="margin-top:16px;background:' + (checked ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + (cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
         // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
         // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
@@ -3965,7 +4033,13 @@ function sPHistory() {
 }
 function sPRewards() {
     var pts = cust.points || 0;
-    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">Tu balance //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:48px;font-weight:640;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : '#141C19') + ';border:1px solid ' + (ok ? GOLD : '#1a1a1a') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:' + (ok ? '#fff' : '#666') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : '#2a2a2a') + '"> // </span>' + r.s + '</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:' + (ok ? '#888' : '#555') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + (ok ? GOLD : '#444') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + '">Pts</div></div></div>' + (!ok ? '<div style="background:var(--sw-card,#2D5246);border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('Hacer un pedido //', 'swTab(\'order\')') + '</div>' + NAV();
+    return H('RECOMPENSAS', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">Tu balance //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:48px;font-weight:640;color:#fff;margin-bottom:12px;line-height:1">' + pts + '<span style="color:' + GOLD + ';font-size:22px"> pts</span></div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>' // La tarjeta bloqueada usaba una paleta gris propia (#141C19/#666/#555/#444/#1a1a1a/
+        // #2a2a2a) en vez de los tokens ya establecidos para "no disponible ahora" (CARDOFF/
+        // TOPOFF: var(--sw-card2)+var(--sw-text-muted)) — se unifica aquí, pero SIN el
+        // opacity:.35 de esas dos porque esta tarjeta sigue siendo accionable (barra de
+        // progreso + "faltan X puntos"), no un ítem agotado — hallazgo de auditoría visual,
+        // MEDIO.
+        + RWDS.map(function (r) { var ok = pts >= r.pts, pct = Math.min((pts / r.pts) * 100, 100); return '<div style="background:' + (ok ? '#0c1d30' : 'var(--sw-card2,#1A3028)') + ';border:1px solid ' + (ok ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:' + (ok ? 10 : 6) + 'px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:' + (ok ? '#fff' : 'var(--sw-text-muted,#A8C8B0)') + ';letter-spacing:.04em">' + r.n + '<span style="color:' + (ok ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '"> // </span>' + r.s + '</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:' + (ok ? '#888' : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:2px">' + r.d + '</p>' + (r.sizeOnly ? '<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">' + icon('warning', 10, '#ffa500') + '<span>Válido solo en tamaño ' + r.sizeOnly + 'CM</span></p>' : '') + '</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + (ok ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + ';line-height:1">' + r.pts + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + '">Pts</div></div></div>' + (!ok ? '<div style="background:var(--sw-card,#2D5246);border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + '">Faltan ' + (r.pts - pts) + ' puntos</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>') + '</div>'; }).join('') + '</div>' + BTN('Hacer un pedido //', 'swTab(\'order\')') + '</div>' + NAV();
 }
 // Insignias de hitos — puramente derivadas de datos que ya viven en `cust` (sin pedir
 // nada nuevo al servidor): marcan progreso acumulado (no solo del mes en curso, a
@@ -4006,9 +4080,18 @@ function sPProfile() {
     var challengeHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>mensual</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimChallenge()', true) + '</div>';
     var discoveryHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>descubrimiento</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimDiscoveryChallenge()', true) + '</div>';
     var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (pushSubscribed ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (pushSubscribed ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Notificaciones<span class="cut-sep" style="color:' + GOLD + '"> // </span>push</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
+    // Las 7 tarjetas de abajo (referidos/crédito/tarjeta de regalo/Plan Semanal/2 retos/
+    // push) antes se sucedían sin ningún agrupamiento, pese a tener mecánicas muy distintas
+    // (crecimiento vs. manejo de saldo vs. gamificación) — se agrupan bajo 2 eyebrows y se
+    // marca la única tarjeta con cobro real (Plan Semanal) para que no se confunda con las
+    // demás, que solo mueven saldo/puntos propios — hallazgo de auditoría visual, MEDIO.
+    var sectionLabel = function (t) { return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:20px 0 10px">' + t + '</div>'; };
+    weeklyPlanHTML = weeklyPlanHTML.replace('Plan<span class="cut-sep"', '<span style="float:right;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em">Pago con tarjeta</span>Plan<span class="cut-sep"');
     return H('MI PERFIL', 'sc=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">' + heroHTML
         + badgesHTML(cust)
-        + pushHTML + referralHTML + balanceCompareHTML + creditHTML + weeklyPlanHTML + giftCardHTML + challengeHTML + discoveryHTML
+        + pushHTML
+        + sectionLabel('Retos y referidos //') + referralHTML + challengeHTML + discoveryHTML
+        + sectionLabel('Tu saldo //') + balanceCompareHTML + creditHTML + giftCardHTML + weeklyPlanHTML
         + '<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
 }
 function shareReferral() {
@@ -4299,6 +4382,7 @@ async function doRequestRestockNotify(sigId) {
     try {
         await api('request-restock-notify', { token: token, sigId: sigId });
         restockNotified.push(sigId);
+        saveRestockNotified();
         render();
         showToast('Te avisamos apenas vuelva.', 'success');
     }
@@ -4354,6 +4438,7 @@ function doLogout() {
     myAddresses = [];
     myFavorites = [];
     pickedAddrId = null;
+    editingAddrId = null;
     custDetail = null;
     custDetailPhone = '';
     custDetailErr = '';
@@ -4468,7 +4553,10 @@ function sPComplaints() {
 }
 function sComplaintsSuccess(bk) {
     return H('LIBRO DE RECLAMACIONES', "sc='" + bk + "';render()") + '<div style="flex:1;padding:24px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
-        + '<div style="font-size:44px;margin-bottom:16px">✓</div>'
+        // Antes un carácter Unicode "✓" suelto a font-size:44px — sin relación con el
+        // tratamiento de éxito ya establecido en la app (círculo con ícono propio, ver
+        // pantalla de confirmación de pedido) — hallazgo de auditoría visual, MEDIO.
+        + '<div style="margin-bottom:16px;width:64px;height:64px;border-radius:50%;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);display:flex;align-items:center;justify-content:center">' + icon('check', 28, '#25D366') + '</div>'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:#fff;margin-bottom:8px">' + (cmplKind === 'queja' ? 'Queja' : 'Reclamo') + ' registrad' + (cmplKind === 'queja' ? 'a' : 'o') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Tu código //</div>'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:' + GOLD + ';margin-bottom:20px">' + esc(cmplCode || '') + '</div>'
@@ -4576,21 +4664,27 @@ async function loadAddresses() {
     busy = false;
     render();
 }
+// editingAddrId: null = formulario en modo "agregar nueva"; con un id, el formulario de
+// abajo queda prefilled con esa dirección y "Guardar" pasa a actualizarla en vez de crear
+// una nueva — antes solo se podía agregar/eliminar, un typo obligaba a borrar y rehacer
+// (hallazgo de auditoría UX, BAJO).
+var editingAddrId = null;
 function sPAddresses() {
+    var editing = editingAddrId ? myAddresses.find(function (a) { return a.id === editingAddrId; }) : null;
     var h = H('MIS DIRECCIONES', "sc='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (myAddresses.length) {
         h += myAddresses.map(function (a) {
-            return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + esc(a.address) + '</div></div><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:EB Garamond,serif;font-style:italic;font-size:10px;flex-shrink:0;margin-left:10px">Eliminar</button></div>';
+            return '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + (editingAddrId === a.id ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + esc(a.address) + '</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:10px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:EB Garamond,serif;font-style:italic;font-size:10px">Eliminar</button></div></div>';
         }).join('');
     }
     else {
         h += '<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">' + icon('direccion', 32, '#A8C8B0') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:' + GOLD + ';letter-spacing:.2em">Sin direcciones guardadas //</div></div>';
     }
-    h += '<div style="margin-top:20px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">Agregar dirección //</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'Nombre // Casa, Trabajo...', 'text', undefined, 'clientes') + INP('na-addr', 'Dirección completa', 'text', undefined, 'direccion') + '<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px">' + newAddrMsg + '</div>' + BTN('Guardar dirección //', 'doAddAddress()') + '</div></div>';
+    h += '<div style="margin-top:20px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">' + (editing ? 'Editar dirección //' : 'Agregar dirección //') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'Nombre // Casa, Trabajo...', 'text', editing ? editing.label : undefined, 'clientes') + INP('na-addr', 'Dirección completa', 'text', editing ? editing.address : undefined, 'direccion') + '<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px">' + newAddrMsg + '</div>' + BTN(editing ? 'Guardar cambios //' : 'Guardar dirección //', 'doSaveAddress()') + (editing ? '<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>' : '') + '</div></div>';
     h += '</div>' + NAV();
     return h;
 }
-async function doAddAddress() {
+async function doSaveAddress() {
     var label = gv('na-label').trim();
     var addr = gv('na-addr').trim();
     if (!label || !addr) {
@@ -4599,7 +4693,13 @@ async function doAddAddress() {
         return;
     }
     try {
-        await api('addresses-add', { token: token, label: label, address: addr });
+        if (editingAddrId) {
+            await api('addresses-update', { token: token, id: editingAddrId, label: label, address: addr });
+            editingAddrId = null;
+        }
+        else {
+            await api('addresses-add', { token: token, label: label, address: addr });
+        }
         newAddrMsg = '';
         await loadAddresses();
     }
@@ -4611,6 +4711,8 @@ async function doAddAddress() {
 async function doDeleteAddress(id) {
     if (!(await showConfirm('¿Eliminar esta dirección?')))
         return;
+    if (editingAddrId === id)
+        editingAddrId = null;
     var idx = myAddresses.findIndex(function (a) { return a.id == id; });
     var removed = idx >= 0 ? myAddresses.splice(idx, 1)[0] : null;
     render();
@@ -4806,15 +4908,17 @@ async function cancelOrder(ordId) {
         return;
     var ord = (adminOrders || []).find(function (o) { return o.id === ordId; });
     var wasPaid = ord && ord.payment_status === 'paid';
-    var msg = wasPaid
+    // Antes eran 2 modales secuenciales (confirmar → motivo) — fricción evitable justo en
+    // una acción ya de por sí estresante (hallazgo de auditoría operativa, MEDIO). Un solo
+    // showPrompt hace las dos cosas: cancelar el prompt (null) equivale a "no cancelar el
+    // pedido"; aceptar (con o sin texto) confirma y captura el motivo opcional a la vez.
+    var msg = (wasPaid
         ? '¿Cancelar este pedido? YA FUE PAGADO — tendrás que coordinar el reembolso tú mismo (Culqi/Yape/Plin/crédito), esto solo libera el stock reservado.'
-        : '¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.';
-    if (!(await showConfirm(msg)))
-        return;
-    // Motivo opcional — no bloquea la cancelación si se deja vacío, solo alimenta el
-    // resumen semanal ("3 cancelaciones esta semana por falta de stock") en vez de dejarlo
-    // como un número suelto sin explicación.
-    var reason = await showPrompt('¿Por qué se cancela? (opcional, ayuda al resumen semanal)', '');
+        : '¿Cancelar este pedido? Se asume que el cliente nunca transfirió. Esto libera el stock reservado.')
+        + '\n\n¿Por qué se cancela? (opcional, ayuda al resumen semanal)';
+    var reason = await showPrompt(msg, '');
+    if (reason === null)
+        return; // admin canceló
     // Mismo guard que updateStatus/confirmOrderPayment/confirmAndAdvance — antes esta
     // acción era la única de la cola admin sin protección contra doble-tap (hallazgo de
     // auditoría de funcionamiento).
@@ -5165,14 +5269,14 @@ function sAdminHome() {
                 + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#8BAF9A);margin-bottom:10px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
                 // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
                 // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
-                + (o.receipt_path ? '<button onclick="viewReceipt(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 4px;border-radius:8px;margin-bottom:8px">' + iconTxt('clip', 'Ver comprobante', '#A8C8B0') + '</button>' : '')
+                + (o.receipt_path ? '<button onclick="viewReceipt(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px;margin-bottom:8px">' + iconTxt('clip', 'Ver comprobante', '#A8C8B0') + '</button>' : '')
                 // Imprimir/WhatsApp son acciones secundarias (se usan, pero no en cada pedido) —
                 // antes ocupaban una fila completa cada una, alargando la tarjeta innecesariamente.
                 // Una fila de 2 columnas compactas deja la acción principal (avanzar estado) como
                 // lo único que realmente domina visualmente la tarjeta.
                 + '<div style="display:flex;gap:8px;margin-bottom:8px">'
-                + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#A8C8B0') + '</button>'
-                + ((o.contact_phone || o.customer_phone) ? '<button onclick="waAdmin(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 4px;border-radius:8px">' + iconTxt('chat', 'WhatsApp', GOLD) + '</button>' : '')
+                + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#A8C8B0') + '</button>'
+                + ((o.contact_phone || o.customer_phone) ? '<button onclick="waAdmin(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">' + iconTxt('chat', 'WhatsApp', GOLD) + '</button>' : '')
                 + '</div>'
                 + (manualPending
                     ? '<button onclick="confirmAndAdvance(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-bottom:6px">' + iconTxt('check', 'Confirmar pago y preparar', '#0d0d0d') + '</button>'
@@ -5228,7 +5332,11 @@ function sAdminHome() {
         + '<select onchange="setNotifSound(this.value)" style="background:var(--sw-bg,#1E3932);color:var(--sw-text,#FFFFFF);border:1px solid var(--sw-border,#3A6B58);border-radius:6px;padding:6px 8px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">'
         + ['campana', 'timbre', 'grave'].map(function (p) { return '<option value="' + p + '" ' + (notifSoundPreset === p ? 'selected' : '') + '>' + p + '</option>'; }).join('')
         + '</select></div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#222;text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
+        // Antes #222 fijo — pensado para fundirse casi invisible con el fondo oscuro original,
+        // pero en modo claro se volvía el texto de MAYOR contraste de toda la pantalla (un
+        // footnote menor terminaba dominando visualmente) — hallazgo de auditoría visual,
+        // MEDIO. Con la variable de tema se mantiene sutil en ambos modos.
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted3,#3A4A44);text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
         + '</div>'
         + bulkBar()
         + '</div>';
@@ -5331,7 +5439,7 @@ function sAdminDashboard() {
     if (d.trend && d.trend.length) {
         var trMax = Math.max.apply(null, d.trend.map(function (t) { return t.revenue; }).concat([1]));
         h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Tendencia · 14 días //</div>';
-        h += '<div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-bottom:6px">' + d.trend.map(function (t) { var pct = Math.round((t.revenue / trMax) * 100); return '<div style="flex:1;height:100%;display:flex;align-items:flex-end" title="' + t.date + ': S/' + t.revenue + '"><div style="width:100%;background:' + (t.revenue > 0 ? GOLD : '#2D5246') + ';height:' + Math.max(pct, t.revenue > 0 ? 4 : 2) + '%;border-radius:2px 2px 0 0"></div></div>'; }).join('') + '</div>';
+        h += '<div style="display:flex;gap:3px;align-items:flex-end;height:70px;margin-bottom:6px">' + d.trend.map(function (t) { var pct = Math.round((t.revenue / trMax) * 100); return '<div style="flex:1;height:100%;display:flex;align-items:flex-end" title="' + t.date + ': S/' + t.revenue + '"><div style="width:100%;background:' + (t.revenue > 0 ? GOLD : 'var(--sw-card2,#2D5246)') + ';height:' + Math.max(pct, t.revenue > 0 ? 4 : 2) + '%;border-radius:2px 2px 0 0"></div></div>'; }).join('') + '</div>';
         h += '<div style="display:flex;gap:3px;margin-bottom:18px">' + d.trend.map(function (t, i) { return '<div style="flex:1;text-align:center;font-family:EB Garamond,serif;font-style:italic;font-size:6px;color:var(--sw-text-muted,#A8C8B0)">' + (i % 2 === 0 ? t.date : '') + '</div>'; }).join('') + '</div>';
     }
     // Pedidos por estado
@@ -5491,8 +5599,13 @@ async function exportCsv(action, filename) {
     render();
 }
 // ADMIN GEN
+// Antes armaba su propio header a mano (flecha + título grande, sin wordmark) en vez de
+// usar H() como las otras 14 pantallas de detalle — se sentía "de otra app" sin ninguna
+// razón funcional (hallazgo de auditoría visual, MEDIO). H() también trae el toggle
+// claro/oscuro y sc='admin_home' vía loadAdmin() (no solo render()), que esta pantalla no
+// tenía.
 function sAdminGen() {
-    return '<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)"><div style="padding:20px;border-bottom:1px solid #3A6B58;display:flex;align-items:center;gap:12px"><button onclick="sc=\'admin_home\';render()" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;padding:0 12px 0 0">←</button><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Puntos<span class="cut-sep" style="color:' + GOLD + '"> // </span>manuales</div></div><div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">' + INP('ag-ph', 'Teléfono del cliente // 9XXXXXXXX', 'tel', agPhone, 'phone') + INP('ag-pts', 'Puntos a otorgar // Ej: 25', 'number', agPts) + BTN('Otorgar puntos //', 'doManualPts()') + '</div><div id="ag-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';min-height:20px">' + agMsg + '</div>'
+    return '<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">' + H('Puntos manuales', 'loadAdmin()') + '<div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">' + INP('ag-ph', 'Teléfono del cliente // 9XXXXXXXX', 'tel', agPhone, 'phone') + INP('ag-pts', 'Puntos a otorgar // Ej: 25', 'number', agPts) + BTN('Otorgar puntos //', 'doManualPts()') + '</div><div id="ag-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';min-height:20px">' + agMsg + '</div>'
         + '<div style="height:1px;background:var(--sw-card,#2D5246);margin:28px 0 24px"></div>'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px;text-wrap:balance">Crédito<span class="cut-sep" style="color:' + GOLD + '"> // </span>ajuste manual</div>'
         + '<p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);margin:8px 0 20px;line-height:1.6">Corrige el saldo de crédito interno de un cliente (ej. reponer un pedido cancelado que se pagó con crédito). Puede ser negativo para descontar un exceso otorgado por error.</p><div style="display:flex;flex-direction:column;gap:12px">' + INP('ac-ph', 'Teléfono del cliente // 9XXXXXXXX', 'tel', acPhone, 'phone') + INP('ac-delta', 'Monto // positivo suma, negativo descuenta', 'number', acDelta, 'coin') + BTN('Ajustar crédito //', 'doManualCredit()') + '</div><div id="ac-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';min-height:20px;margin-top:12px">' + acMsg + '</div></div></div>';
@@ -5950,11 +6063,14 @@ async function loadInventory() {
 async function toggleStock(code, name) {
     var cur = invStock[code] !== false;
     var goingTo = !cur;
-    var msg = goingTo
-        ? '¿Confirmas que "' + name + '" vuelve a estar DISPONIBLE?'
-        : '¿Confirmas marcar "' + name + '" como SIN STOCK? No se podrá elegir en pedidos hasta que lo reactives.';
-    if (!(await showConfirm(msg)))
-        return;
+    // Reactivar ya no pide confirmación — riesgo asimétrico frente a marcar agotado
+    // (bloquea ventas si es sin querer, mientras que reactivar solo vuelve a habilitar una
+    // opción) — hallazgo de auditoría operativa, BAJO.
+    if (!goingTo) {
+        var msg = '¿Confirmas marcar "' + name + '" como SIN STOCK? No se podrá elegir en pedidos hasta que lo reactives.';
+        if (!(await showConfirm(msg)))
+            return;
+    }
     busy = true;
     busyMsg = 'Actualizando...';
     render();
@@ -6004,11 +6120,11 @@ function sAdminInventory() {
                 + '<div style="display:flex;justify-content:space-between;align-items:center">'
                 + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:' + (av ? 'var(--sw-text,#FFFFFF)' : 'var(--sw-text-muted,#A8C8B0)') + '">' + name + '</div>'
                 + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + (av ? '#25D366' : '#ff8888') + ';margin-top:2px;letter-spacing:.1em">' + (av ? '● Disponible' : '● Sin stock') + (tracked ? ' · ' + qty + ' unid.' : '') + '</div></div>'
-                + '<button onclick="toggleStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:' + (av ? 'rgba(255,85,85,.12)' : 'rgba(37,211,102,.15)') + ';border:1px solid ' + (av ? 'rgba(255,85,85,.4)' : 'rgba(37,211,102,.4)') + ';color:' + (av ? '#ff8888' : '#25D366') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.08em;padding:9px 14px;border-radius:8px;text-align:center;flex-shrink:0">' + (av ? 'Marcar agotado' : 'Reactivar') + '</button>'
+                + '<button onclick="toggleStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:' + (av ? 'rgba(255,85,85,.12)' : 'rgba(37,211,102,.15)') + ';border:1px solid ' + (av ? 'rgba(255,85,85,.4)' : 'rgba(37,211,102,.4)') + ';color:' + (av ? '#ff8888' : '#25D366') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.08em;padding:15px 14px;border-radius:8px;text-align:center;flex-shrink:0">' + (av ? 'Marcar agotado' : 'Reactivar') + '</button>'
                 + '</div>'
                 + '<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">'
                 + '<input id="qty-' + item.id + '" type="number" min="0" placeholder="Sin rastreo de cantidad" value="' + (tracked ? qty : '') + '" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
-                + '<button onclick="setStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:9px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>'
+                + '<button onclick="setStock(\'' + item.id + '\',\'' + name.replace(/'/g, "\\'") + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>'
                 + '</div>'
                 + '</div>';
         }).join('');
@@ -6776,7 +6892,12 @@ function sAdminComplaints() {
     h += '<select onchange="setComplaintsFilter(this.value)" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-style:italic;font-size:11px;margin-bottom:14px">'
         + [['', 'Todos'], ['pendiente', 'Pendientes'], ['atendido', 'Atendidos']].map(function (x) { return '<option value="' + x[0] + '" ' + (cmplFilterStatus === x[0] ? 'selected' : '') + '>' + x[1] + '</option>'; }).join('')
         + '</select>';
-    var list = adminComplaints || [];
+    // Ordenado por antigüedad ascendente (el pendiente más viejo primero) — antes quedaba
+    // en el orden que devolviera la API, sin ninguna prioridad visual hacia el que está más
+    // cerca de vencer el plazo legal de respuesta (el cron alert-complaint-deadlines sí lo
+    // rastrea aparte, pero acá el operador no tenía ninguna señal al mirar la lista) —
+    // hallazgo de auditoría operativa, BAJO.
+    var list = (adminComplaints || []).slice().sort(function (a, b) { return new Date(a.created_at).getTime() - new Date(b.created_at).getTime(); });
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">' + list.length + ' reclamaciones //</div>';
     h += list.length ? list.map(function (c) {
         var pending = c.status === 'pendiente';
@@ -6870,6 +6991,9 @@ async function doRecover() {
             recEmailMasked = null;
             recPinRevealed = false;
         }
+        // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
+        // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
+        savedPh = phone;
         busy = false;
         sc = 'p_recover';
         render();
