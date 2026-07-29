@@ -309,3 +309,36 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   cada una puede corresponder al archivo anterior/siguiente del lote, no al que
   acompaña. Para verificar dimensiones reales de forma confiable, o pedir una imagen por
   llamada, o no confiar en el WxH del batch y calcularlo aparte (ej. `PIL`/`Image.size`).
+- **Publicación automática real en Instagram/Facebook: SÍ existe una vía técnica (Meta
+  Graph API), investigada 2026-07-29 pero NO implementada** (el usuario pidió solo
+  buscarla, no aplicarla). No es un conector de este entorno (ver más arriba, "no hay
+  conector real a redes sociales") — sería código nuevo en `api` (o una función aparte)
+  llamando directo a `graph.facebook.com` por HTTP. Resumen de lo investigado:
+  - **Instagram** (Content Publishing API, vía Instagram Graph API): exige (1) cuenta
+    Instagram Business/Creator vinculada a (2) una Página de Facebook, (3) una app de
+    Meta for Developers con el permiso `instagram_business_content_publish` aprobado por
+    **App Review de Meta** (revisión manual, ~2-4 semanas), y (4) un flujo de 2 pasos —
+    `POST /{ig-user-id}/media` (crea el contenedor) y luego `POST
+    /{ig-user-id}/media_publish`. Solo publica imagen/video/carrusel/reel — no existe un
+    post de solo texto vía API.
+  - **Facebook (Página)**: mismo tipo de exigencia — permiso `pages_manage_posts` +
+    dependencias, también sujeto a App Review y a verificación de negocio (Business
+    Verification) de Meta. Un token de Página de larga duración (o de un System User de
+    Business Manager) no expira por tiempo, pero conseguirlo igual pasa por el proceso de
+    revisión si la app va a publicar en producción.
+  - **Costo**: la API en sí es gratuita (sin cobro por Meta) — el costo real es el tiempo
+    de configuración (crear Business Manager, Página, cuenta Instagram Business, app de
+    developers, pasar App Review) y que requiere activos reales del negocio (no se pueden
+    inventar, mismo criterio que RUC/razón social — bloqueado hasta que el dueño tenga
+    Página/Instagram Business reales, cosa que probablemente no pase antes del
+    lanzamiento en septiembre 2026).
+  - **Conclusión**: viable a futuro, no hoy — depende de que el dueño complete primero el
+    setup de negocio en Meta (Business Manager + Página + Instagram Business + app +
+    App Review), que es trabajo humano fuera de esta sesión, antes de que valga la pena
+    escribir el código de integración.
+
+  Fuentes: [Instagram Graph API: Complete Developer Guide for 2026](https://elfsight.com/blog/instagram-graph-api-complete-developer-guide-for-2026/),
+  [Content Publishing - Meta for Developers](https://developers.facebook.com/docs/instagram-platform/content-publishing/),
+  [Instagram Graph API in 2026: Versions, Rate Limits & Content Publishing](https://www.netrows.com/blog/instagram-graph-api-guide-2026),
+  [Facebook Graph API Posting: Developer Guide](https://postproxy.dev/blog/facebook-graph-api-posting-guide/),
+  [Access Tokens for Meta Technologies - Meta for Developers](https://developers.facebook.com/documentation/facebook-login/guides/access-tokens).
