@@ -48,6 +48,44 @@
   --sw-text-muted3:#9C9480;
   --sw-text-muted4:#4A4230;
 }
+/* Identidad admin "Modo cocina de una mano" (elegida por el dueño entre 3 mockups,
+   2026-07-29) — reemplaza la piel "misma que el cliente" que tenía el admin antes.
+   .admin-dark es el estado por defecto (antes el admin oscuro no tenía NINGUNA clase
+   propia, solo heredaba los valores de fallback del cliente #1E3932/etc. — por eso hacía
+   falta esta clase nueva, no solo ajustar .admin-light). Negro puro + un solo acento ámbar
+   (ver GOLD reasignado en render()/app.ts, mismo mecanismo ya usado para adminLight)
+   pensado para legibilidad bajo luz de cocina y con el pulgar, no para "verse elegante". */
+.admin-dark{
+  --sw-bg:#000000;
+  --sw-card:#161616;
+  --sw-card2:#0D0D0D;
+  --sw-card-danger:#2A1010;
+  --sw-card-muted:#141414;
+  --sw-border:#2A2A2A;
+  --sw-border-soft:#1F1F1F;
+  --sw-border-muted:#242424;
+  --sw-text:#FFFFFF;
+  --sw-text-body:#F2F2F2;
+  --sw-text-muted:#9A9A9A;
+  --sw-text-muted2:#7D7D7D;
+  --sw-text-muted3:#666666;
+  --sw-text-muted4:#B3B3B3;
+}
+/* Tipografía humanista sin serifs finos para TODO el admin (dark y light) — las astas
+   finas de Bodoni Moda pierden legibilidad con glare de pantalla en cocina/exteriores.
+   `!important` + selector universal es necesario porque casi cada elemento de texto en
+   sAdmin*/DTILE/etc. trae su propio font-family inline (máxima especificidad CSS) —
+   ninguna regla de clase sin !important podría ganarle. Nunca toca el cliente (o_*/p_*),
+   que nunca recibe estas clases. */
+.admin-dark,.admin-dark *,.admin-light,.admin-light *{
+  font-family:'Public Sans','Segoe UI',system-ui,-apple-system,sans-serif!important;
+}
+/* El wordmark "//" (.wm-mark, ver más abajo) trae su degradado dorado fijo en la clase
+   compartida con el cliente — estas 2 reglas lo reemplazan por el acento ámbar del admin
+   sin tocar la regla original (mayor especificidad por combinador de clase, no hace falta
+   !important acá porque .wm-mark i no trae ningún estilo inline que competir). */
+.admin-dark .wm-mark i{background:linear-gradient(180deg,#FFC966,#FFB020)}
+.admin-light .wm-mark i{background:linear-gradient(180deg,#8A5000,#6B3E00)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
