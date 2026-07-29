@@ -251,7 +251,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     visual (paleta, tipografía, tratamiento del ícono) siguen la regla del punto 3
     ("concepto antes que código"): mostrar una propuesta concreta y esperar que se cierre
     la dirección explícitamente antes de tocar código — lo único no negociable es que el
-    "//" en sí siga existiendo como marca.
+    "//" en sí siga existiendo como marca. **SND//WCH NO tiene una identidad
+    trujillana/regional** (confirmado explícitamente por el usuario 2026-07-29, al
+    descartar una dirección "Chan Chan" inspirada en la ciudadela Chimú) — no proponer
+    ni asumir referencias a Trujillo, cultura Chimú/Moche, o cualquier otro anclaje
+    geográfico/regional específico en paleta, iconografía o naming, salvo que el usuario
+    lo pida explícitamente en el futuro.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
