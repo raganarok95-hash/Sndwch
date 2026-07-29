@@ -681,8 +681,8 @@ export async function actAdminProblemAddresses(b: any) {
 const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; photoIdea: string }[] = [
   {
     theme: "LANZAMIENTO",
-    whatsapp: "🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Tu primer pedido te regala 20 puntos.",
-    caption: "Ya abrimos // SND//WCH llega a tu zona. Sandwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — tu primer pedido te regala 20 puntos para canjear después.",
+    whatsapp: "🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Tu primer pedido te regala 40 puntos.",
+    caption: "Ya abrimos // SND//WCH llega a tu zona. Sandwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — tu primer pedido te regala 40 puntos para canjear después.",
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
   },
   {
