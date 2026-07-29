@@ -80,6 +80,13 @@ Deno.serve(async (req: Request) => {
         confirmed: true,
       });
       await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { birthday_pts_year: year });
+      // Log de marketing_touches (ver admin-campaign-performance en la función api) —
+      // best-effort, un fallo acá nunca debe tumbar el bono ya otorgado.
+      try {
+        await sbInsert("marketing_touches", { customer_phone: c.phone, campaign_type: "birthday", channel: "push" });
+      } catch (e) {
+        await debugLog(SOURCE, { stage: "touch_log_failed", phone: c.phone, error: String(e) });
+      }
       granted++;
       if (c.email) {
         try {

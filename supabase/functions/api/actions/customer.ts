@@ -10,6 +10,19 @@ import { sendPushToPhone } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
+// Log de campañas de marketing (`marketing_touches`) — antes ningún cron de re-enganche
+// dejaba rastro de a quién se le mandó qué, así que era imposible medir si un recordatorio
+// de verdad trae de vuelta al cliente (solo se sabía "se mandó", nunca "funcionó"). Este
+// helper es best-effort a propósito: si el insert falla, NUNCA debe tumbar el envío real
+// del push que ya se disparó — el log es observabilidad, no la operación en sí.
+async function logMarketingTouch(phone: string, campaignType: string): Promise<void> {
+  try {
+    await sbInsert("marketing_touches", { customer_phone: phone, campaign_type: campaignType, channel: "push" });
+  } catch (e) {
+    console.error("logMarketingTouch failed for", campaignType, phone, e);
+  }
+}
+
 // Antes actAddressesAdd y actFavoritesAdd repetían el mismo patrón de "cuenta las filas
 // existentes, rechaza si ya llegó al máximo" cada uno con su propio mensaje casi idéntico
 // (hallazgo de la auditoría de código) — este helper lo centraliza.
@@ -316,6 +329,7 @@ export async function actRemindUnclaimedChallenge(b: any) {
         url: "./index.html",
         tag: "sndwch-challenge-reminder-" + thisMonth,
       });
+      await logMarketingTouch(c.phone, "challenge_unclaimed");
       reminded++;
     } catch (e) {
       console.error("remind-unclaimed-challenge failed for", c.phone, e);
@@ -370,6 +384,7 @@ export async function actRemindPeakHour(b: any) {
         url: "./index.html",
         tag: "sndwch-peak-" + slot + "-" + dateKey,
       });
+      await logMarketingTouch(phone, "peak_hour_" + slot);
       reminded++;
     } catch (e) {
       console.error("remind-peak-hour failed for", phone, e);
@@ -424,6 +439,7 @@ export async function actRemindAbandonedCart(b: any) {
         tag: "sndwch-cart-abandoned",
       });
       await sbUpdate("cart_snapshots", `customer_phone=eq.${encodeURIComponent(row.customer_phone)}`, { reminded_at: new Date().toISOString() });
+      await logMarketingTouch(row.customer_phone, "cart_abandoned");
       reminded++;
     } catch (e) {
       console.error("remind-abandoned-cart failed for", row.customer_phone, e);
@@ -477,6 +493,7 @@ export async function actRemindSecondOrder(b: any) {
         url: "./index.html",
         tag: "sndwch-second-order",
       });
+      await logMarketingTouch(c.phone, "second_order");
       reminded++;
     } catch (e) {
       console.error("remind-second-order failed for", c.phone, e);
@@ -520,6 +537,7 @@ export async function actRemindHighRankWinback(b: any) {
         url: "./index.html",
         tag: "sndwch-high-rank-winback",
       });
+      await logMarketingTouch(c.phone, "high_rank_winback");
       reminded++;
     } catch (e) {
       console.error("remind-high-rank-winback failed for", c.phone, e);
@@ -563,6 +581,7 @@ export async function actRemindNeverOrdered(b: any) {
           url: "./index.html",
           tag: stage.tag,
         });
+        await logMarketingTouch(c.phone, "never_ordered_" + stage.key);
         reminded++;
       } catch (e) {
         console.error("remind-never-ordered stage " + stage.key + " failed for", c.phone, e);
@@ -610,6 +629,7 @@ export async function actAnniversaryGreeting(b: any) {
         url: "./index.html",
         tag: "sndwch-anniversary-" + year,
       });
+      await logMarketingTouch(c.phone, "anniversary");
       greeted++;
     } catch (e) {
       console.error("anniversary-greeting failed for", c.phone, e);

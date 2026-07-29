@@ -42,7 +42,7 @@ import {
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
-  actAdminMarketingContent, actRemindMarketingContent,
+  actAdminMarketingContent, actRemindMarketingContent, actAdminCampaignPerformance,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours } from "./actions/hours.ts";
 import {
@@ -131,6 +131,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-problem-addresses": actAdminProblemAddresses,
   "admin-marketing-content": actAdminMarketingContent,
   "remind-marketing-content": actRemindMarketingContent,
+  "admin-campaign-performance": actAdminCampaignPerformance,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,
