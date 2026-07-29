@@ -130,6 +130,9 @@ export async function actSubmitRating(b: any) {
     customer_phone: orders[0].customer_phone || null,
     stars,
     comment: b.comment ? String(b.comment).trim().slice(0, 500) : null,
+    // Consentimiento explícito para reutilizar la reseña como testimonio público (redes
+    // sociales, web) — nunca asumido por defecto, solo si el cliente marca el checkbox.
+    testimonial_consent: !!b.testimonialConsent,
   });
   return { success: true };
 }
@@ -827,6 +830,33 @@ export async function actRequestRestockNotify(b: any) {
   } catch (e) {
     // Ya lo había pedido antes (unique customer_phone+sig_id) — no es un error real,
     // solo confirma que ya está anotado.
+    if (!(e instanceof Error && e.message.includes("23505"))) throw e;
+  }
+  return { success: true };
+}
+
+// Lista de espera pre-lanzamiento (waitlist_signups) — el negocio aún no abre (ver
+// CLAUDE.md, contexto de negocio), así que esta es la única acción de captación que existe
+// hoy antes de tener catálogo real que ofrecer. Público a propósito (sin sesión: nadie
+// tiene cuenta todavía) y de baja fricción (solo teléfono obligatorio) — cualquier fricción
+// extra aquí compite directo contra la meta de la semana 5-6 del checklist de lanzamiento.
+const WAITLIST_RATE_LIMIT = 3;
+const WAITLIST_RATE_WINDOW_MINUTES = 60;
+export async function actWaitlistJoin(b: any) {
+  const phone = String(b.phone || "").trim();
+  const name = String(b.name || "").trim().slice(0, 80) || null;
+  const source = String(b.source || "").trim().slice(0, 40) || null;
+  if (phone.replace(/\D/g, "").length < 6) throw new ApiError("Ingresa un teléfono válido.");
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `waitlist:${phone}`,
+    p_limit: WAITLIST_RATE_LIMIT,
+    p_window_minutes: WAITLIST_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Ya registramos tu teléfono. Espera un momento antes de reintentar.", 429);
+  try {
+    await sbInsert("waitlist_signups", { phone, name, source });
+  } catch (e) {
+    // Unique en phone — ya estaba anotado, no es un error real para quien reintenta.
     if (!(e instanceof Error && e.message.includes("23505"))) throw e;
   }
   return { success: true };

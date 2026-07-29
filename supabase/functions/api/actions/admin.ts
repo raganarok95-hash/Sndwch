@@ -700,9 +700,11 @@ export async function actAdminRatingsList(b: any) {
   const limit = Math.min(RATINGS_LIST_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
   const minStars = b.minStars ? Math.max(1, Math.min(5, parseInt(b.minStars, 10) || 1)) : null;
   const onlyWithComments = !!b.onlyWithComments;
+  const onlyConsented = !!b.onlyConsented;
   const parts: string[] = [];
   if (minStars) parts.push(`stars=gte.${minStars}`);
   if (onlyWithComments) parts.push("comment=not.is.null");
+  if (onlyConsented) parts.push("testimonial_consent=eq.true");
   parts.push(`order=created_at.desc&limit=${limit}`);
   return { ratings: await sbGet("ratings", parts.join("&")) };
 }
@@ -906,4 +908,99 @@ export async function actRemindMarketingContent(b: any) {
     renotify: true,
   });
   return { success: true, theme };
+}
+
+// Calendario de contenido real (marketing_calendar) — reemplaza depender solo del rotador
+// estático de arriba (MARKETING_CONTENT) para "qué publicar hoy": el dueño puede planear
+// fechas concretas, por canal, con estado real (borrador/programado/publicado). Nada de
+// esto publica solo (mismo límite que el resto del sistema de marketing — no hay conector
+// real a Instagram/TikTok/Meta en este entorno) — es la lista de acción que el dueño copia
+// a mano, igual que ya hacía con MARKETING_CONTENT, pero con fechas y estado reales en vez
+// de un rotador de 2 semanas sin memoria de qué ya se publicó.
+const CALENDAR_CHANNELS = new Set(["instagram", "tiktok", "whatsapp", "facebook", "google_business", "otro"]);
+const CALENDAR_STATUSES = new Set(["draft", "scheduled", "posted"]);
+const CALENDAR_LIST_LIMIT = 200;
+
+export async function actAdminCalendarList(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("marketing_calendar", `select=*&order=scheduled_date.asc&limit=${CALENDAR_LIST_LIMIT}`);
+  return { entries: rows };
+}
+
+export async function actAdminCalendarCreate(b: any) {
+  const s = await requireAdmin(b.token);
+  const scheduledDate = String(b.scheduledDate || "").trim();
+  const channel = String(b.channel || "").trim();
+  const title = String(b.title || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) throw new ApiError("Fecha inválida.", 400);
+  if (!CALENDAR_CHANNELS.has(channel)) throw new ApiError("Canal inválido.", 400);
+  if (!title) throw new ApiError("El título/tema es obligatorio.", 400);
+  const status = CALENDAR_STATUSES.has(b.status) ? b.status : "draft";
+  const row = (await sbInsert("marketing_calendar", {
+    scheduled_date: scheduledDate,
+    channel,
+    status,
+    title,
+    caption_text: b.captionText ? String(b.captionText).slice(0, 2000) : null,
+    whatsapp_text: b.whatsappText ? String(b.whatsappText).slice(0, 2000) : null,
+    photo_idea: b.photoIdea ? String(b.photoIdea).slice(0, 500) : null,
+    campaign_tag: b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null,
+    created_by: s.phone,
+    posted_at: status === "posted" ? new Date().toISOString() : null,
+  }))[0];
+  await logAdminAction(s.phone, "calendar-create", title, { scheduledDate, channel, status });
+  return { success: true, entry: row };
+}
+
+export async function actAdminCalendarUpdate(b: any) {
+  const s = await requireAdmin(b.token);
+  const id = String(b.id || "").trim();
+  if (!id) throw new ApiError("Falta el id.", 400);
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (b.scheduledDate !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.scheduledDate))) throw new ApiError("Fecha inválida.", 400);
+    patch.scheduled_date = b.scheduledDate;
+  }
+  if (b.channel !== undefined) {
+    if (!CALENDAR_CHANNELS.has(b.channel)) throw new ApiError("Canal inválido.", 400);
+    patch.channel = b.channel;
+  }
+  if (b.title !== undefined) {
+    const title = String(b.title).trim();
+    if (!title) throw new ApiError("El título/tema es obligatorio.", 400);
+    patch.title = title;
+  }
+  if (b.captionText !== undefined) patch.caption_text = b.captionText ? String(b.captionText).slice(0, 2000) : null;
+  if (b.whatsappText !== undefined) patch.whatsapp_text = b.whatsappText ? String(b.whatsappText).slice(0, 2000) : null;
+  if (b.photoIdea !== undefined) patch.photo_idea = b.photoIdea ? String(b.photoIdea).slice(0, 500) : null;
+  if (b.campaignTag !== undefined) patch.campaign_tag = b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null;
+  if (b.status !== undefined) {
+    if (!CALENDAR_STATUSES.has(b.status)) throw new ApiError("Estado inválido.", 400);
+    patch.status = b.status;
+    if (b.status === "posted") patch.posted_at = new Date().toISOString();
+  }
+  const rows = await sbUpdate("marketing_calendar", `id=eq.${encodeURIComponent(id)}`, patch);
+  if (!rows.length) throw new ApiError("No encontrado.", 404);
+  await logAdminAction(s.phone, "calendar-update", rows[0].title, { id, patch: Object.keys(patch) });
+  return { success: true, entry: rows[0] };
+}
+
+export async function actAdminCalendarDelete(b: any) {
+  const s = await requireAdmin(b.token);
+  const id = String(b.id || "").trim();
+  if (!id) throw new ApiError("Falta el id.", 400);
+  const existing = await sbGet("marketing_calendar", `id=eq.${encodeURIComponent(id)}&select=title`);
+  if (!existing.length) throw new ApiError("No encontrado.", 404);
+  await sbDelete("marketing_calendar", `id=eq.${encodeURIComponent(id)}`);
+  await logAdminAction(s.phone, "calendar-delete", existing[0].title, { id });
+  return { success: true };
+}
+
+// Lista de espera pre-lanzamiento (waitlist_signups) — ver actWaitlistJoin en customer.ts
+// para el lado público. Esto es solo la vista/export admin.
+const WAITLIST_LIST_LIMIT = 1000;
+export async function actAdminWaitlistList(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("waitlist_signups", `select=*&order=created_at.desc&limit=${WAITLIST_LIST_LIMIT}`);
+  return { waitlist: rows };
 }
