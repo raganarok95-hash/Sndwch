@@ -13,9 +13,10 @@ ya están construidas).
 
 **3 apuestas grandes:**
 1. **El contenido en video (Reels/Historias) es el canal principal de
-   adquisición**, no un complemento — sin presupuesto pago, la única forma
-   creíble de generar demanda antes de abrir es contenido nativo de Instagram
-   grabado con el celular, con cadencia constante.
+   adquisición**, no un complemento — es la base que sostiene la demanda
+   mientras el presupuesto de ads pagados (idea ya conversada, monto aún sin
+   cerrar — ver §13) se define. Cuando ese presupuesto exista, amplifica el
+   contenido que ya funciona orgánicamente; no lo reemplaza.
 2. **La lista de espera + el programa de referidos hacen el trabajo pesado los
    primeros 60 días** — convertir a quien ya mostró interés (waitlist) y hacer
    que el primer lote de clientes reales traiga al siguiente (referidos) cuesta
@@ -70,11 +71,12 @@ agencia ni freelancer contratado. Arma los pedidos él mismo — el tiempo
 disponible para producir contenido es real pero limitado; cualquier formato de
 contenido debe ser grabable en minutos, no producciones de medio día.
 
-**Presupuesto pago:** ~S/0. Este plan asume cero gasto en ads (Meta Ads, Google
-Ads) durante el lanzamiento. Si el volumen lo justifica más adelante, la puerta
-de entrada más barata sería impulsar (boost) los Reels con mejor rendimiento
-orgánico, S/20-50 puntuales, no una campaña sostenida — decisión a revisar solo
-con datos reales de venta, nunca antes.
+**Presupuesto pago:** sin monto cerrado todavía — la idea de destinar
+presupuesto a ads pagados (Meta Ads, dado que Página/IG Business ya existen)
+ya se conversó, pero el monto y la fecha de arranque quedan como decisión
+abierta (§13). Mientras no haya cifra confirmada, este plan sigue tratando el
+contenido orgánico de §9 como la base — un presupuesto de ads amplifica lo que
+ya funciona orgánicamente, no lo sustituye desde cero.
 
 **Ya construido y listo para usar (sin escribir código nuevo):**
 - Página de Facebook, cuenta de Instagram Business y Meta Business Manager ya
@@ -133,12 +135,22 @@ estrategia, §9 la ejecución semana a semana.
   El día de apertura, un mensaje directo (WhatsApp o llamada, no espera a un
   cron) convierte mejor que cualquier post nuevo.
 
-**Lo que este plan deliberadamente NO incluye:** ads pagados (sin presupuesto),
-SEO de contenido/blog (la app es de una sola página, no hay dónde publicar
-contenido indexable sin construir infraestructura nueva — fuera de alcance),
-influencers pagados (sin presupuesto; ver §12 para la versión gratuita —
-intercambio de producto por post, viable con micro-influencers locales de
-comida en Trujillo).
+**Ads pagados (Meta Ads):** la idea ya se conversó, el monto y la fecha de
+arranque son la decisión abierta #6 de §13. En cuanto haya presupuesto
+confirmado, la forma más barata y de menor riesgo de empezar es impulsar
+(boost) los Reels orgánicos con mejor rendimiento real (no likes, pedidos) en
+vez de armar campañas nuevas desde cero — el contenido de §9 ya sirve como
+banco de creativos probados antes de gastar en algo sin validar. Las skills
+`ads` y `ad-creative` (ya instaladas en este proyecto) cubren la estrategia de
+campaña y la generación de variantes de copy/headline respectivamente, cuando
+llegue el momento de usarlas.
+
+**Lo que este plan deliberadamente NO incluye (por ahora):** SEO de
+contenido/blog (la app es de una sola página, no hay dónde publicar contenido
+indexable sin construir infraestructura nueva — fuera de alcance),
+influencers pagados en efectivo (ver §12 para la versión gratuita — intercambio
+de producto por post, viable con micro-influencers locales de comida en
+Trujillo).
 
 ## 5. Activación — de "vio el Instagram" a "primer pedido pagado"
 
@@ -294,7 +306,9 @@ mejor take) sigue siendo trabajo humano, ninguna herramienta lo reemplaza.
 - **Meses 3-4:** primeros datos reales de qué contenido convierte (qué Reels
   generaron más pedidos, no solo más likes) — ajustar la cadencia hacia lo que
   funciona, no seguir el calendario de §9 al pie de la letra si algo distinto
-  está rindiendo mejor.
+  está rindiendo mejor. Si para entonces ya hay presupuesto de ads confirmado
+  (§13, decisión #6), este es el momento natural de empezar a impulsar el
+  contenido que ya demostró funcionar orgánicamente, en vez de partir de cero.
 - **Meses 5-6:** evaluar activar el código promocional del programa de
   referidos con más fuerza si el % de pedidos recurrentes (rango INICIADO+)
   es bajo — el dato real decide, no una fecha fija en un calendario.
@@ -329,6 +343,16 @@ mejor take) sigue siendo trabajo humano, ninguna herramienta lo reemplaza.
 - Activar los 3 secrets de Meta para publicación automática.
 - Crear Google Business Profile (gratis, alto impacto en búsqueda local).
 - Código promocional exclusivo para la lista de espera.
+- **Cerrar el monto real de ads pagados** (decisión abierta #6, §13) — sin
+  cifra confirmada, esto se queda en pausa, pero es lo primero que desbloquea
+  el resto de este bloque en cuanto el dueño la defina.
+
+**En cuanto haya presupuesto de ads confirmado:**
+- Boost de los Reels con mejor rendimiento orgánico real (pedidos, no likes) —
+  más barato y menos riesgoso que armar campañas nuevas sin datos.
+- Si el volumen de aprendizaje lo justifica, campaña de Meta Ads dirigida
+  (retargeting de quienes vieron el contenido orgánico sin comprar) — usar la
+  skill `ads` para la estrategia y `ad-creative` para las variantes de copy.
 
 **Q1 post-apertura (primeros 3 meses):**
 - Intercambio de producto por post con 1-2 micro-influencers locales de comida
@@ -339,13 +363,9 @@ mejor take) sigue siendo trabajo humano, ninguna herramienta lo reemplaza.
   §10).
 
 **Q2+ (solo si el volumen lo justifica):**
-- Boost pago puntual (S/20-50) de los Reels con mejor rendimiento orgánico —
-  nunca una campaña sostenida sin datos reales de retorno.
 - Newsletter/email de retención más allá de lo transaccional.
 
 **Descartado explícitamente (con motivo):**
-- Ads pagados sostenidos — sin presupuesto, y prematuro sin datos de venta
-  reales que informen a quién targetear.
 - SEO de contenido/blog — la app es de una sola página, no hay infraestructura
   de contenido indexable; construirla no es prioridad frente al contenido
   social, que es más barato y más rápido de producir para este negocio.
@@ -379,5 +399,9 @@ nada nuevo).
 4. **¿Habrá un código promocional específico de lanzamiento?** — el sistema ya
    existe, falta decidir el monto/condición y crearlo desde el panel admin.
 5. **CAC real** — sin gasto pago, hoy no hay costo de adquisición que medir
-   más allá del tiempo del dueño; esto cambia solo si se activa cualquier
-   gasto pago futuro (§12, Q2+).
+   más allá del tiempo del dueño; esto cambia en cuanto se confirme el
+   presupuesto de ads (punto 6).
+6. **Monto y fecha de arranque de ads pagados (Meta Ads)** — la idea ya se
+   conversó, pero falta el número real y cuándo empieza a correr. Hasta que
+   se confirme, el plan sigue tratando el contenido orgánico de §9 como la
+   base que sostiene la demanda.
