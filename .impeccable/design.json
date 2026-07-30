@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-30T00:00:00Z",
+  "title": "Design System: SND//WCH",
+  "extensions": {
+    "colorMeta": {
+      "gold": { "role": "primary", "displayName": "Dorado SND//WCH", "canonical": "#CBA258", "tonalRamp": ["#3A2E15", "#5C4A22", "#836A30", "#A8873F", "#CBA258", "#DBBB7C", "#E9C98A", "#F5E4C4"] },
+      "forest-bg": { "role": "neutral", "displayName": "Verde bosque profundo", "canonical": "#1E3932", "tonalRamp": ["#050A08", "#0C1815", "#132923", "#1E3932", "#2D5246", "#457A69", "#6FA692", "#A8CFC0"] },
+      "forest-card": { "role": "neutral", "displayName": "Verde tarjeta", "canonical": "#2D5246", "tonalRamp": ["#0C1815", "#152722", "#1E3932", "#2D5246", "#3A6B58", "#5A8E7A", "#8AB6A3", "#C0DCCF"] },
+      "forest-card-deep": { "role": "neutral", "displayName": "Verde tarjeta profunda", "canonical": "#1A3028", "tonalRamp": ["#040A08", "#0A1712", "#132622", "#1A3028", "#254238", "#3A6656", "#5F9080", "#9BC2AF"] },
+      "text-muted": { "role": "neutral", "displayName": "Salvia apagada", "canonical": "#A8C8B0", "tonalRamp": ["#1E2E24", "#33493A", "#4C6B58", "#688C74", "#8BAF9A", "#A8C8B0", "#C6DECC", "#E4F0E7"] },
+      "status-received": { "role": "semantic-warning", "displayName": "Naranja Recibido", "canonical": "#ffa500" },
+      "status-preparing": { "role": "semantic-info", "displayName": "Azul Preparando", "canonical": "#3A86FF" },
+      "status-enroute": { "role": "semantic-info-alt", "displayName": "Morado En camino", "canonical": "#9b6fff" },
+      "status-delivered": { "role": "semantic-success", "displayName": "Verde Entregado", "canonical": "#25D366" },
+      "status-cancelled": { "role": "semantic-neutral", "displayName": "Gris Cancelado", "canonical": "#A5A5A5" },
+      "status-error": { "role": "semantic-danger", "displayName": "Rojo suave de error", "canonical": "#ff8888" },
+      "admin-dark-accent": { "role": "primary-admin-dark", "displayName": "Ámbar admin (oscuro)", "canonical": "#FFB020" },
+      "admin-light-accent": { "role": "primary-admin-light", "displayName": "Ámbar admin (claro, AA)", "canonical": "#8A5000" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Bodoni Moda Display", "purpose": "Nombres de producto, precios, headers de pantalla clave." },
+      "headline": { "displayName": "Bodoni Moda Headline", "purpose": "Títulos de sección, botones, nombres en listas." },
+      "label": { "displayName": "EB Garamond Label", "purpose": "Eyebrows, badges de estado, microcopy de apoyo — sustituto de chip de UI." },
+      "body": { "displayName": "EB Garamond Body", "purpose": "Descripciones y texto largo." },
+      "wordmark": { "displayName": "Fraunces Wordmark", "purpose": "Exclusivo del logotipo SND//WCH — nunca otro texto." }
+    },
+    "shadows": [
+      { "name": "ambient", "value": "0 2px 6px rgba(0,0,0,.22)", "purpose": "Tarjetas de selección e inputs — presente casi siempre, no es un estado especial." },
+      { "name": "overlay", "value": "0 4px 14px rgba(0,0,0,.28)", "purpose": "Modales y hojas inferiores que de verdad flotan sobre el contenido." },
+      { "name": "focus-bar", "value": "0 -6px 20px rgba(0,0,0,.25)", "purpose": "Barra de acción fija al fondo del viewport en modo foco (admin)." }
+    ],
+    "motion": [
+      { "name": "fi", "value": "fadeIn+translateY(10px)->none, scale(.985)->none, .3s aprox (via animation), respeta prefers-reduced-motion", "purpose": "Transición de entrada de pantalla completa al navegar." },
+      { "name": "pulse", "value": "opacity 1<->.35, 1.8s infinite", "purpose": "Indicador de urgencia (pedido atascado, punto de alerta)." },
+      { "name": "blink", "value": "opacity 1<->.3, 1.4s infinite", "purpose": "Parpadeo de atención en elementos puntuales." },
+      { "name": "bump", "value": "scale(1)->scale(1.35)->scale(1), .25s ease", "purpose": "Feedback de agregar/quitar cantidad (carrito)." },
+      { "name": "rankpop", "value": "scale(0) rotate(-6deg)->scale(1.12) rotate(2deg)->scale(1), .5s cubic-bezier(.34,1.56,.64,1), respeta prefers-reduced-motion", "purpose": "Celebración de subida de rango." }
+    ],
+    "breakpoints": [
+      { "name": "container-max", "value": "480px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA principal — fondo dorado sólido, texto oscuro para contraste AA.",
+      "html": "<button class=\"ds-btn-primary\">Confirmar pedido //</button>",
+      "css": ".ds-btn-primary { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; background: #CBA258; color: #241a08; font-family: 'Bodoni Moda', serif; font-size: 14px; font-weight: 600; letter-spacing: .05em; padding: 14px; border-radius: 10px; text-align: center; transition: transform .1s; } .ds-btn-primary:hover { transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "CTA secundario — transparente con borde salvia.",
+      "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
+      "css": ".ds-btn-outline { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; background: transparent; border: 1px solid #A8C8B0; color: #A8C8B0; font-family: 'Bodoni Moda', serif; font-size: 14px; font-weight: 600; letter-spacing: .05em; padding: 14px; border-radius: 10px; text-align: center; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Campo de texto estándar con caret dorado.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nombre completo\">",
+      "css": ".ds-input { background: #2D5246; border: 1px solid #1c1c1c; border-radius: 10px; padding: 14px 16px; color: #FFFFFF; width: 100%; font-size: 16px; font-family: 'EB Garamond', serif; caret-color: #CBA258; box-shadow: 0 2px 6px rgba(0,0,0,.22); box-sizing: border-box; } .ds-input::placeholder { color: #A8C8B0; font-size: 13px; }"
+    },
+    {
+      "name": "Selection Card",
+      "kind": "card",
+      "refersTo": "card-selection",
+      "description": "Fila/tarjeta seleccionable — borde dorado en estado activo, sin sombra extra.",
+      "html": "<div class=\"ds-card ds-card--selected\"><span class=\"ds-card-title\">THE ORIGINAL <span class=\"ds-cut\">//</span> Signature</span><span class=\"ds-card-price\">S/22</span></div>",
+      "css": ".ds-card { background: #2D5246; border: 1px solid #3A6B58; border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,.22); display: flex; justify-content: space-between; align-items: center; transition: all .15s; } .ds-card--selected { background: #1A3028; border-color: #CBA258; } .ds-card-title { font-family: 'Bodoni Moda', serif; font-size: 16px; font-weight: 600; color: #FFFFFF; } .ds-cut { color: #CBA258; } .ds-card-price { font-family: 'EB Garamond', serif; font-style: italic; font-size: 12px; color: #CBA258; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Pill de estado semántico (semáforo de pedido) — color propio, nunca el dorado de marca.",
+      "html": "<span class=\"ds-status\" style=\"--status-color:#ffa500\">Recibido</span>",
+      "css": ".ds-status { font-family: 'EB Garamond', serif; font-weight: 600; font-size: 9px; color: var(--status-color); background: color-mix(in srgb, var(--status-color) 9%, transparent); border: 1px solid color-mix(in srgb, var(--status-color) 27%, transparent); border-radius: 4px; padding: 3px 9px; letter-spacing: .1em; display: inline-flex; align-items: center; gap: 4px; }"
+    },
+    {
+      "name": "Wordmark",
+      "kind": "custom",
+      "refersTo": "wordmark",
+      "description": "Logotipo SND//WCH — el '//' es un componente de 2 barras doradas sesgadas, no texto plano.",
+      "html": "<span class=\"ds-wordmark\">SND<span class=\"ds-wm-mark\"><i></i><i></i></span>WCH</span>",
+      "css": ".ds-wordmark { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 620; color: #FFFFFF; letter-spacing: .02em; line-height: 1; } .ds-wm-mark { display: inline-flex; align-items: center; gap: .13em; margin: 0 .08em; vertical-align: -.04em; } .ds-wm-mark i { display: inline-block; width: .15em; height: .82em; background: linear-gradient(180deg,#E9C98A,#CBA258); transform: skewX(-16deg); border-radius: 1px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Prada Caffè Discipline",
+    "overview": "El nombre viene literal del código: dos comentarios del propio src/app.ts invocan \"dirección Prada Caffè\" al justificar por qué se retiró un sistema anterior de sombras/degradados/textura. La disciplina es esa — un verde bosque profundo casi negro (#1E3932) como fondo constante, tarjetas planas apenas un tono más claras, y un único acento dorado (#CBA258) que nunca compite consigo mismo. Nada brilla que no deba brillar. La app entera es de una sola columna (max 480px), pensada para leerse como una carta de restaurante editorial servida en un celular, no como un panel de e-commerce genérico.\n\nLa tipografía hace casi todo el trabajo de jerarquía: Bodoni Moda (display) para todo lo que el ojo debe encontrar primero, y EB Garamond (itálica en eyebrows/labels, regular en cuerpo) para todo lo demás. El resultado se lee más \"menú impreso de restaurante caro\" que \"app de delivery\".\n\nEl panel admin es un mundo aparte deliberado: mismo esqueleto de componentes, pero fondo neutro cálido/negro puro y acento ámbar en vez de dorado — la separación de paleta es la señal de \"estás en la cocina, no pidiendo\".",
+    "keyCharacteristics": [
+      "Fondo verde bosque casi negro (#1E3932) constante en todo el flujo de cliente — nunca blanco, nunca gris neutro.",
+      "Un solo acento (dorado #CBA258) usado con moderación real — colores de estado existen aparte y nunca se confunden con el acento de marca.",
+      "Planitud deliberada: sombras solo 0 2px 6px rgba(0,0,0,.22) como máximo, nunca glow ni degradado decorativo.",
+      "Bodoni Moda para todo lo que pesa, EB Garamond para todo lo que acompaña — sin una tercera familia de cuerpo.",
+      "El \"//\" no es solo texto: tiene su propio componente (.wm-mark) reservado para el wordmark."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "El dorado es el único acento de marca en toda la app — los colores de estado del pedido son semántica de operación, no expresión de marca, y nunca deben mezclarse ni sustituirse por dorado.", "section": "colors" },
+      { "name": "The No-Glow Rule", "body": "Ninguna tarjeta seleccionada usa sombra dorada, glow, ni degradado como señal de \"elegido\" — la señal es siempre un borde de 1px en #CBA258 (o el fondo --sw-card2).", "section": "colors" },
+      { "name": "The Kitchen Signal Rule", "body": "El cambio de paleta (verde↔negro/crema, dorado↔ámbar) es la única señal de \"estás en el panel admin, no pidiendo\" — ningún otro elemento estructural cambia entre cliente y admin.", "section": "colors" },
+      { "name": "The Two-Family Rule", "body": "Solo dos familias sirven todo el contenido de UI (Bodoni Moda + EB Garamond); Fraunces está reservada exclusivamente al wordmark.", "section": "typography" },
+      { "name": "The \"//\" Separator Rule", "body": "El glifo // (vía .cut-sep) reemplaza el punto, el guion o el \"·\" como separador de marca dentro de titulares compuestos — es tipografía funcionando como firma de marca.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Ninguna superficie usa sombra para simular \"flotar\" en reposo — solo overlays reales (modales, barras fijas) reciben una sombra más fuerte que el ambiente estándar.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar dorado (#CBA258) solo para: acento de marca, borde de selección, CTA primario, precios — nunca como color de fondo de pantalla completo.",
+      "Do mantener los 5 colores de estado del pedido completamente separados de la paleta de marca.",
+      "Do usar texto negro (#000/#241a08) sobre cualquier fondo de color vívido para pasar contraste AA.",
+      "Do usar .wm-mark para cualquier aparición del logotipo/wordmark; usar .cut-sep para cualquier otro // decorativo en copy.",
+      "Do mantener max-width:480px en cualquier pantalla nueva."
+    ],
+    "donts": [
+      "Don't agregar sombra, glow o degradado decorativo a una tarjeta para comunicar jerarquía.",
+      "Don't introducir una tercera familia tipográfica de cuerpo.",
+      "Don't usar el verde bosque del cliente en ninguna pantalla admin, ni el ámbar admin en ninguna pantalla de cliente.",
+      "Don't usar radios por debajo de 8px en componentes interactivos grandes."
+    ]
+  }
+}
