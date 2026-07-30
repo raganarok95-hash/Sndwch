@@ -84,6 +84,13 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
   P06: { p15: 14, p30: 24, pDbl: 6 },
+  // Nueva (auditoría de menú + confirmación del dueño: "si se preparan por separado, son
+  // preparaciones distintas") — antes SIG07 (THE CHICAGO) reutilizaba P01 como si fuera
+  // el mismo insumo que el asado mechado normal, contradiciendo RECIPE_RATIONALE.md (corte
+  // laminado tipo Chicago vs. deshilachado, nunca deben mezclarse en el mismo lote). Mismo
+  // precio que P01 (no es un cambio de precio, solo separa el código de inventario/costeo)
+  // — DEBE coincidir con PROTS.P07 en src/app.ts.
+  P07: { p15: 14, p30: 22, pDbl: 6 },
 };
 // Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
 // se pueden pedir por BUILD YOUR OWN aunque sigan en PROT_PRICE (deriveCart/deriveOrder
@@ -106,6 +113,11 @@ export const SIG_ONLY_SAUCES = new Set(["S13"]);
 // Topping exclusivo de un signature público (hoy solo T07 "Giardiniera" → SIG07 "THE
 // CHICAGO") — mismo criterio que SIG_ONLY_SAUCES.
 export const SIG_ONLY_TOPS = new Set(["T07"]);
+// Proteína exclusiva de un signature público (hoy solo P07 "corte Chicago" → SIG07 "THE
+// CHICAGO") — mismo criterio que SIG_ONLY_TOPS/SIG_ONLY_SAUCES: existe en PROT_PRICE
+// para que SIG_DATA/priceCartItem la puedan tasar, pero no es seleccionable por BUILD
+// YOUR OWN (ver priceByoBuild más abajo).
+export const SIG_ONLY_PROTS = new Set(["P07"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
@@ -136,7 +148,9 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
   SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 21 },
-  SIG07: { base: "B01", prot: "P01", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
+  // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
+  // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
+  SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
   SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
@@ -243,6 +257,9 @@ export const PROT_LABEL: Record<string, string> = {
   // inglés entre las 6 proteínas, ni coincidía con su propia descripción en español —
   // DEBE coincidir con PROTS.P06 en src/app.ts.
   P06: "ALBÓNDIGA // MARINARA",
+  // Exclusiva de THE CHICAGO (SIG07) — ver SIG_ONLY_PROTS. DEBE coincidir con PROTS.P07
+  // en src/app.ts.
+  P07: "RES // CHICAGO",
 };
 
 export function rewardWaiver(rewardId: string | null, b: any, basePrice: number, dblSurcharge: number): number {
@@ -306,7 +323,7 @@ function priceByoBuild(
 ): PricedBuild {
   if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.");
   const protInfo = PROT_PRICE[prot];
-  if (!protInfo || VAULT_ONLY_PROTS.has(prot)) throw new ApiError("Proteína inválida.");
+  if (!protInfo || VAULT_ONLY_PROTS.has(prot) || SIG_ONLY_PROTS.has(prot)) throw new ApiError("Proteína inválida.");
   if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
   // A diferencia de sauces (tope de 3), toppings no tiene tope de negocio ("Sin límite,
   // elige los que quieras" en el builder) — el tope real es "cada topping válido, como
