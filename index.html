@@ -851,6 +851,10 @@ var promoCodesData = null, pcCode = '', pcType = 'percent', pcValue = '', pcMaxU
 var campaignPerfData = null;
 var calendarData = null, calDate = '', calChannel = 'instagram', calTitle = '', calCaption = '', calWhatsapp = '', calPhoto = '', calTag = '', calMsg = '';
 var calImageUploadingId = null, calPublishingId = null;
+// Clips crudos (Reels/Historias) que el dueño sube una vez por semana — una sesión
+// programada aparte (no este código) los procesa y crea las entradas de calendario;
+// este bloque solo cubre la subida y la lista de "esperando procesar".
+var rawUploads = null, rawVideoUploading = false;
 var waitlistData = null;
 var bulkSelected = {};
 var focusIdx = 0;
@@ -6934,7 +6938,7 @@ var AUDIT_ACTION_LABEL = {
     'inventory-toggle': 'Disponibilidad de producto cambiada', 'inventory-set-stock': 'Stock de producto editado',
     'promo-create': 'Código promocional creado', 'promo-toggle': 'Código promocional activado/desactivado',
     'calendar-create': 'Entrada de calendario creada', 'calendar-update': 'Entrada de calendario editada', 'calendar-delete': 'Entrada de calendario eliminada',
-    'calendar-image-upload': 'Foto subida a una entrada del calendario', 'social-publish': 'Publicación enviada a Meta (Instagram/Facebook)',
+    'calendar-image-upload': 'Foto subida a una entrada del calendario', 'raw-video-upload': 'Clip crudo subido a la cola semanal', 'social-publish': 'Publicación enviada a Meta (Instagram/Facebook)',
 };
 function sAdminAudit() {
     var h = H('REGISTRO DE AUDITORÍA', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
@@ -7390,8 +7394,53 @@ async function loadCalendar() {
     catch (e) {
         calendarData = null;
     }
+    try {
+        var ru = await api('admin-list-raw-uploads', { token: token });
+        rawUploads = ru.uploads;
+    }
+    catch (e) {
+        rawUploads = null;
+    }
     busy = false;
     render();
+}
+// 20MB de tope (mismo límite que el backend, ver actAdminUploadRawVideo en social.ts) —
+// a diferencia de handleCalendarImageFile, no hay compresión posible del lado del
+// cliente para video, así que el clip ya debe llegar razonablemente liviano; si pesa de
+// más, el mensaje de error pide comprimirlo antes en vez de fallar en silencio.
+function handleRawVideoFile(ev) {
+    var input = ev && ev.target;
+    var file = input && input.files && input.files[0];
+    if (input)
+        input.value = '';
+    if (!file)
+        return;
+    if (!/^video\/(mp4|quicktime)$/.test(file.type)) {
+        showToast('Selecciona un video MP4 o MOV.');
+        return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+        showToast('El video pesa más de 20MB — comprímelo antes de subirlo.');
+        return;
+    }
+    rawVideoUploading = true;
+    render();
+    var reader = new FileReader();
+    reader.onload = async function () {
+        var base64 = String(reader.result || '').split(',')[1] || '';
+        try {
+            await api('admin-upload-raw-video', { token: token, videoBase64: base64, mime: file.type });
+            showToast('Clip subido — se procesa en la próxima sesión semanal.', 'success');
+            await loadCalendar();
+        }
+        catch (e) {
+            showToast(e.message || 'No se pudo subir el video.');
+        }
+        rawVideoUploading = false;
+        render();
+    };
+    reader.onerror = function () { rawVideoUploading = false; showToast('No se pudo leer el archivo.'); render(); };
+    reader.readAsDataURL(file);
 }
 function setCalChannel(c) { calChannel = c; render(); }
 async function createCalendarEntry() {
@@ -7520,7 +7569,18 @@ async function publishCalendarEntry(id) {
 }
 function sAdminCalendar() {
     var h = H('CALENDARIO DE CONTENIDO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
-    h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto y toca "Publicar ahora") — el resto de canales sigue siendo copiar el texto a mano.</div>';
+    h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto/video y toca "Publicar ahora", o déjalo programado y sale solo el día que le toca) — el resto de canales sigue siendo copiar el texto a mano.</div>';
+    h += '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:10px;padding:16px;margin-bottom:20px">';
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Clips de la semana //</div>';
+    h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;line-height:1.5">Sube aquí el video crudo (sin editar) de lo que grabaste — una sesión programada aparte lo recorta al formato correcto, escribe el caption y lo agenda solo, sin que tengas que volver a tocar nada.</div>';
+    h += '<label style="cursor:pointer;display:inline-block;background:' + (rawVideoUploading ? '#1E3932' : GOLD) + ';color:' + (rawVideoUploading ? '#4A7A68' : '#241a08') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">'
+        + (rawVideoUploading ? 'Subiendo...' : '+ Subir clip (MP4/MOV) →')
+        + '<input type="file" accept="video/mp4,video/quicktime" onchange="handleRawVideoFile(event)" style="display:none" ' + (rawVideoUploading ? 'disabled' : '') + '>'
+        + '</label>';
+    if (rawUploads && rawUploads.length) {
+        h += '<div style="margin-top:10px;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + rawUploads.length + ' clip' + (rawUploads.length === 1 ? '' : 's') + ' esperando la próxima sesión de procesamiento.</div>';
+    }
+    h += '</div>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:20px">';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Nueva entrada //</div>';
     h += '<div style="display:flex;flex-direction:column;gap:8px">'
@@ -7551,13 +7611,22 @@ function sAdminCalendar() {
             var canAutoPublish = (e.channel === 'instagram' || e.channel === 'facebook');
             var uploadingThis = calImageUploadingId === e.id;
             var publishingThis = calPublishingId === e.id;
+            // media_type='video' llega solo de la sesión de procesamiento semanal (nunca de
+            // este panel a mano) — acá solo se muestra un indicador, sin input para subirlo,
+            // porque el clip crudo se sube aparte en "Clips de la semana //" arriba.
+            var isVideoEntry = e.media_type === 'video';
+            var hasMedia = isVideoEntry ? !!e.video_url : !!e.image_url;
             var photoBlock = canAutoPublish ? ('<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'
-                + (e.image_url ? '<img src="' + esc(e.image_url) + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--sw-border-soft,#1c1c1c)">' : '')
-                + '<label style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + GOLD + '">'
-                + (uploadingThis ? 'Subiendo...' : (e.image_url ? 'Cambiar foto' : 'Subir foto'))
-                + '<input type="file" accept="image/*" onchange="handleCalendarImageFile(event,\'' + e.id + '\')" style="display:none" ' + (uploadingThis ? 'disabled' : '') + '>'
-                + '</label>'
-                + (e.image_url && e.status !== 'posted' ? '<span onclick="' + (publishingThis ? '' : 'publishCalendarEntry(\'' + e.id + '\')') + '" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#25D366">' + (publishingThis ? 'Publicando...' : 'Publicar ahora →') + '</span>' : '')
+                + (isVideoEntry
+                    ? (e.video_url ? '<div style="width:44px;height:44px;border-radius:6px;flex-shrink:0;border:1px solid ' + GOLD + ';display:flex;align-items:center;justify-content:center;font-family:EB Garamond,serif;font-size:8px;color:' + GOLD + '">VIDEO</div>' : '')
+                    : (e.image_url ? '<img src="' + esc(e.image_url) + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--sw-border-soft,#1c1c1c)">' : ''))
+                + (isVideoEntry ? '' :
+                    '<label style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + GOLD + '">'
+                        + (uploadingThis ? 'Subiendo...' : (e.image_url ? 'Cambiar foto' : 'Subir foto'))
+                        + '<input type="file" accept="image/*" onchange="handleCalendarImageFile(event,\'' + e.id + '\')" style="display:none" ' + (uploadingThis ? 'disabled' : '') + '>'
+                        + '</label>')
+                + (hasMedia && e.status !== 'posted' ? '<span onclick="' + (publishingThis ? '' : 'publishCalendarEntry(\'' + e.id + '\')') + '" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#25D366">' + (publishingThis ? 'Publicando...' : 'Publicar ahora →') + '</span>' : '')
+                + (e.status === 'scheduled' && hasMedia ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Programado — sale solo</span>' : '')
                 + (e.status === 'posted' && e.published_ref ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">✓ Publicado en Meta</span>' : '')
                 + '</div>') : '';
             return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px">'
