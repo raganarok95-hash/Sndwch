@@ -62,5 +62,8 @@ menú. No es la misma proteína con nombre distinto: difieren en corte y
 acompañamientos (au jus + giardiniera exclusivo del Chicago); mezclarlos en
 un mismo lote arriesga servir el corte equivocado.
 
-[ESPACIO PARA LA RAZÓN DE NEGOCIO ESPECÍFICA, SI APLICA — detalle adicional
-de por qué se procesan en tandas separadas]
+El dueño confirmó (2026-07-30) que en la práctica real de cocina se preparan
+y almacenan en tandas separadas — no es solo una distinción teórica de
+receta, son dos preparaciones físicas distintas. Por eso el catálogo (código
+`P07`, separado de `P01`) ahora refleja esa separación real en vez de
+reutilizar el mismo código de inventario para ambas.
