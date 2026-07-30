@@ -643,11 +643,16 @@ function willPayWithCard() {
         return false;
     if (manualPayMethod)
         return false;
-    // Solo engorda el fee si el cliente ya tocó "Tarjeta" a propósito — mientras no lo
-    // haga, el total mostrado nunca lleva un recargo que no eligió, aunque el pedido
-    // termine yendo por Culqi de todos modos si nunca toca el selector (mismo camino
-    // rápido de siempre, solo que esos pocos pedidos salen sin el fee cubierto).
-    return payMethodChosen;
+    // Ni recompensa/crédito cubre el total ni hay método manual elegido → el pedido va
+    // por Culqi sí o sí (mismo enrutamiento que doOrder() más abajo), tanto si el cliente
+    // tocó "Tarjeta" a propósito como si nunca tocó el selector y cae en el camino rápido.
+    // DEBE devolver true en ambos casos: actPrepareOrder (orders.ts) siempre calcula el
+    // fee inflado para cualquier pedido que vaya a Culqi, así que el total mostrado acá
+    // tiene que coincidir con lo que el servidor va a exigir — de lo contrario el pedido
+    // se rechaza con "El total no coincide con los productos del pedido." La transparencia
+    // del recargo (el hallazgo P2 original) se resuelve mostrándolo como línea aparte en
+    // paymentMethodPickerHTML(), no ocultando el monto real que se va a cobrar.
+    return true;
 }
 function deliveryFeeAmount() {
     var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
@@ -777,12 +782,16 @@ var byoStep = 0;
 var useCredit = false;
 var manualPayMethod = null;
 // true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
-// pagas?" (Yape/Plin o Tarjeta) — antes el total mostrado ya incluía la comisión de
-// Culqi con solo LLEGAR al checkout, sin ninguna elección real de por medio (hallazgo P2
-// de crítica impeccable 2026-07-30). Mientras esto sea false, deliveryFeeAmount() nunca
-// engorda el fee, así que si el cliente paga sin tocar el selector, el pedido igual sale
-// por Culqi (mismo camino rápido de siempre) pero al precio sin comisión — el negocio
-// absorbe esos ~S/0.30-0.50, nunca al revés (jamás se cobra más de lo que se mostró).
+// pagas?" (Yape/Plin o Tarjeta) — solo controla el resaltado visual de los botones
+// (payMethodBtn) y el mensaje de "Confirmar con tarjeta". NO controla si el recargo de
+// Culqi se aplica: eso lo decide willPayWithCard() mirando el mismo enrutamiento real
+// que usa doOrder() (¿alcanza el crédito? ¿hay método manual elegido? si no, va por
+// Culqi sea cual sea el estado de este flag) — server-side, actPrepareOrder SIEMPRE
+// calcula el fee inflado para cualquier pedido que termine en Culqi, sin importar si el
+// cliente tocó el botón; hacer que el cliente dependiera de este flag para calcular el
+// mismo total causaba que el camino rápido (nunca tocar el selector) mandara un total
+// más bajo que el que el servidor exige y el pedido se rechazara con "El total no
+// coincide" (bug real de la sesión anterior, hallazgo de auditoría de código).
 var payMethodChosen = false;
 var cust = null, isAdmin = false, atab = 'reg', aErr = '', refCode = '';
 // Credential (JWT) de Google Identity Services en espera de que el cliente complete el
@@ -1929,15 +1938,23 @@ function sOHome() {
         ? '<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + (cust.points || 0) + '</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>'
         : '<div onclick="swTab(\'points\')" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:' + GOLD + '"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Unirse \u2192</span></div>';
     var ss = storeStatus();
+    // storeStatus() solo mira el horario del día (11-22) — antes eso bastaba para decidir
+    // "abierto/cerrado", pero desde que existe businessLaunched (el negocio real aún no
+    // abrió) mostrar "ABIERTO AHORA" en verde junto a la tarjeta "Avísame cuando abramos"
+    // era una contradicción visible en la misma pantalla (auditoría UX, P1). El badge de
+    // Home ahora respeta businessLaunched sin tocar ss.open en sí — eso sigue gobernando
+    // si se puede pedir "ahora" vs. solo "programar" (isWithinStoreHours), una decisión de
+    // horario real, no de si el negocio ya abrió, y no se toca acá.
+    var showOpenBadge = ss.open && businessLaunched;
     // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
     // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-    var hoursBadge = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:' + (ss.open ? '#25D366' : '#ff8888') + '"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + (ss.open ? '#25D366' : '#ff8888') + ';letter-spacing:.1em">' + ss.label + '</span>' + (ss.open ? '<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· ' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</span>' : '') + '</div>';
+    var hoursBadge = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + '"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + ';letter-spacing:.1em">' + (!businessLaunched ? 'AÚN NO ABRIMOS' : ss.label) + '</span>' + (showOpenBadge ? '<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· ' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</span>' : '') + '</div>';
     var lastOrd = cust ? lastPaidOrder() : null;
     var recoItems = lastOrd ? (lastOrd.items && lastOrd.items.length ? lastOrd.items : (lastOrd.build ? [buildToCartItem(lastOrd.build)] : null)) : null;
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(lastOrd.summary || '') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
     var cartCard = cart.length ? '<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('cart', 16, '#FFFFFF') + 'Carrito<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + ' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>' : '';
     var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('device', 15, GOLD) + 'Instalar<span class="cut-sep" style="color:' + GOLD + '"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
-    var nearbyCard = (nearStore && ss.open) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('direccion', 15, GOLD) + '¡Estás cerca<span class="cut-sep" style="color:' + GOLD + '"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
+    var nearbyCard = (nearStore && ss.open && businessLaunched) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('direccion', 15, GOLD) + '¡Estás cerca<span class="cut-sep" style="color:' + GOLD + '"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
     return H()
         + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + hoursBadge
@@ -2694,7 +2711,13 @@ function deliveryZonePickerHTML() {
     var h = '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
     h += DELIVERY_PRICE_ZONES.map(function (z) {
         var sel = deliveryZone === z.id;
-        return '<div onclick="deliveryZone=\'' + z.id + '\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + z.l + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? GOLD : '#A8C8B0') + ';margin-top:2px">' + SOLES_TXT + z.fee + '</div></div>';
+        // La zona seleccionada muestra el fee REAL que se va a cobrar (inflado si el pedido
+        // va por Culqi, ver willPayWithCard()) — antes siempre mostraba el fee plano de
+        // catálogo aunque el total ya llevara el recargo de tarjeta sumado, dejando sin
+        // explicar por qué zona+comida no sumaban el total mostrado (residual del mismo
+        // hallazgo P2, auditoría UX).
+        var shownFee = sel ? deliveryFeeAmount() : z.fee;
+        return '<div onclick="deliveryZone=\'' + z.id + '\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + z.l + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? GOLD : '#A8C8B0') + ';margin-top:2px">' + SOLES_TXT + shownFee + '</div></div>';
     }).join('');
     h += '</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">' + icon('moto', 11, '#A8C8B0') + '<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
     return h;
@@ -3185,10 +3208,19 @@ function paymentMethodPickerHTML(t) {
     // — es el único método que hoy no paga la comisión de Culqi (~4-5.5%), así que
     // empujarlo primero es una decisión de negocio real, no solo de layout (ver Contexto
     // de negocio en CLAUDE.md).
+    // Mientras el pedido vaya a salir por Culqi (willPayWithCard(), sea por elección
+    // explícita o por no haber tocado el selector todavía — ver el comentario de esa
+    // función) el total YA incluye el recargo real. Esta línea lo hace explícito en vez de
+    // dejar que el cliente note el aumento recién al ver el total — resuelve el hallazgo
+    // P2 original (recargo invisible) sin cambiar el monto real que se cobra.
+    var cardFeeNote = willPayWithCard() && !manualPayMethod
+        ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye ' + SOLES_TXT + (deliveryFeeAmount() - (function () { var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; }); return z ? z.fee : 0; })()).toFixed(2) + ' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
+        : '';
     return '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
         + payMethodBtn('yape', 'Yape / Plin', true, 'Recomendado')
         + (culqiConfigured ? payMethodBtn('culqi', 'Tarjeta', true, null) : '')
         + '</div>'
+        + cardFeeNote
         + (manualPayMethod ? manualPayInstructionsHTML(t) : '')
         + '</div>';
 }
@@ -7380,8 +7412,11 @@ function sAdminCampaignPerf() {
 var CAL_CHANNELS = [['instagram', 'Instagram'], ['tiktok', 'TikTok'], ['whatsapp', 'WhatsApp'], ['facebook', 'Facebook'], ['google_business', 'Google Business'], ['otro', 'Otro']];
 var CAL_CHANNEL_LABEL = {};
 CAL_CHANNELS.forEach(function (c) { CAL_CHANNEL_LABEL[c[0]] = c[1]; });
-var CAL_STATUS_LABEL = { draft: 'Borrador', scheduled: 'Programado', posted: 'Publicado' };
-var CAL_STATUS_COLOR = { draft: '#A8C8B0', scheduled: GOLD, posted: '#25D366' };
+// 'publishing' es transitorio (segundos, hasta ~2min si es video) — lo pone
+// claimCalendarEntry() en el servidor mientras el cron o "Publicar ahora" están a mitad
+// de publicar, para que el otro camino no la duplique (auditoría de código, ALTO).
+var CAL_STATUS_LABEL = { draft: 'Borrador', scheduled: 'Programado', publishing: 'Publicando...', posted: 'Publicado' };
+var CAL_STATUS_COLOR = { draft: '#A8C8B0', scheduled: GOLD, publishing: GOLD, posted: '#25D366' };
 async function loadCalendar() {
     sc = 'admin_calendar';
     busy = true;
@@ -7572,13 +7607,23 @@ function sAdminCalendar() {
     h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto/video y toca "Publicar ahora", o déjalo programado y sale solo el día que le toca) — el resto de canales sigue siendo copiar el texto a mano.</div>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:10px;padding:16px;margin-bottom:20px">';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Clips de la semana //</div>';
-    h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;line-height:1.5">Sube aquí el video crudo (sin editar) de lo que grabaste — una sesión programada aparte lo recorta al formato correcto, escribe el caption y lo agenda solo, sin que tengas que volver a tocar nada.</div>';
+    // Copy corregida (auditoría UX, P2): antes prometía "sin que tengas que volver a tocar
+    // nada" — pero el procesamiento real depende de una sesión de Claude que se dispara a
+    // mano (no hay cron para esto, ver actAdminUploadRawVideo en social.ts), así que decir
+    // "automático" era engañoso. Ahora nombra la cadencia real (semanal) sin prometer más
+    // de lo que existe hoy.
+    h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;line-height:1.5">Sube aquí el video crudo (sin editar) de lo que grabaste — se procesa en la próxima sesión semanal de contenido (la disparas tú por chat cuando tengas clips listos), que lo recorta al formato correcto, escribe el caption y lo agenda.</div>';
     h += '<label style="cursor:pointer;display:inline-block;background:' + (rawVideoUploading ? '#1E3932' : GOLD) + ';color:' + (rawVideoUploading ? '#4A7A68' : '#241a08') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">'
         + (rawVideoUploading ? 'Subiendo...' : '+ Subir clip (MP4/MOV) →')
         + '<input type="file" accept="video/mp4,video/quicktime" onchange="handleRawVideoFile(event)" style="display:none" ' + (rawVideoUploading ? 'disabled' : '') + '>'
         + '</label>';
     if (rawUploads && rawUploads.length) {
-        h += '<div style="margin-top:10px;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + rawUploads.length + ' clip' + (rawUploads.length === 1 ? '' : 's') + ' esperando la próxima sesión de procesamiento.</div>';
+        // Muestra la fecha del clip más antiguo pendiente — sin esto no había forma de
+        // distinguir "recién subido, normal" de "lleva 3 semanas esperando, algo se
+        // atascó" (auditoría UX, P2).
+        var oldestUpload = rawUploads.reduce(function (a, b) { return new Date(a.uploaded_at) < new Date(b.uploaded_at) ? a : b; });
+        var oldestDate = new Date(oldestUpload.uploaded_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+        h += '<div style="margin-top:10px;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + rawUploads.length + ' clip' + (rawUploads.length === 1 ? '' : 's') + ' esperando — el más antiguo desde el ' + oldestDate + '.</div>';
     }
     h += '</div>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:20px">';
@@ -7625,7 +7670,8 @@ function sAdminCalendar() {
                         + (uploadingThis ? 'Subiendo...' : (e.image_url ? 'Cambiar foto' : 'Subir foto'))
                         + '<input type="file" accept="image/*" onchange="handleCalendarImageFile(event,\'' + e.id + '\')" style="display:none" ' + (uploadingThis ? 'disabled' : '') + '>'
                         + '</label>')
-                + (hasMedia && e.status !== 'posted' ? '<span onclick="' + (publishingThis ? '' : 'publishCalendarEntry(\'' + e.id + '\')') + '" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#25D366">' + (publishingThis ? 'Publicando...' : 'Publicar ahora →') + '</span>' : '')
+                + (hasMedia && e.status !== 'posted' && e.status !== 'publishing' ? '<span onclick="' + (publishingThis ? '' : 'publishCalendarEntry(\'' + e.id + '\')') + '" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#25D366">' + (publishingThis ? 'Publicando...' : 'Publicar ahora →') + '</span>' : '')
+                + (e.status === 'publishing' ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:' + GOLD + '">Publicando ahora mismo (cron o admin) — espera un momento</span>' : '')
                 + (e.status === 'scheduled' && hasMedia ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Programado — sale solo</span>' : '')
                 + (e.status === 'posted' && e.published_ref ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">✓ Publicado en Meta</span>' : '')
                 + '</div>') : '';
