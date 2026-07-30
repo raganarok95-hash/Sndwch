@@ -358,3 +358,17 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `pip install playwright`/`python3 -m playwright` no tiene el navegador disponible en
   este entorno. Para cualquier tarea de captura de pantalla fuera del repo (mockups
   sueltos en el scratchpad, por ejemplo), usar la vía Node, no Python.
+- **Asistente de IA para WhatsApp (skill `asistente-whatsapp`, subida por el usuario
+  2026-07-30): instalada, deliberadamente NO activada.** El WhatsApp del negocio hoy es
+  solo click-to-chat (`wa.me`, sin API oficial) — un asistente de IA real requiere
+  conectar una plataforma externa que hoy no existe en el proyecto (ManyChat, Typebot,
+  Botpress, o n8n + Z-API, todas con algún costo/cuenta propia) más un LLM detrás. Se
+  presentaron 2 rutas reales al usuario, que eligió explícitamente NO activar ninguna
+  todavía (negocio aún no abre):
+  - **n8n + Z-API**: más barato, pero Z-API es un wrapper NO oficial de WhatsApp —
+    riesgo real de que Meta banee el número si detecta automatización agresiva.
+  - **ManyChat/Typebot sobre WhatsApp Business API oficial** (vía Twilio/360dialog u
+    otro BSP): sin riesgo de baneo, pero trámite de aprobación más largo.
+  Si se retoma esto en el futuro, empezar por confirmar presupuesto/plataforma con el
+  usuario (regla de gastos reales del CLAUDE.md) antes de escribir cualquier
+  integración — no asumir la ruta más barata solo por serlo, dado el riesgo de baneo.
