@@ -369,10 +369,23 @@ async function computePromoDiscount(
 // Preview sin efectos secundarios (no reserva ni redime nada) — el cliente lo llama al
 // escribir un código en el checkout para mostrar el descuento antes de pagar, con
 // exactamente el mismo cálculo que usará el pedido real (misma deriveCart).
+// A diferencia de submit-complaint/upload-receipt/add-group-item (todas públicas y con
+// check_rate_limit), esta no tenía ningún límite — sin él, alguien podía automatizar la
+// búsqueda de códigos activos por fuerza bruta (el formato permite códigos de solo 3
+// caracteres) y usarlos antes de que el negocio los distribuyera a la audiencia prevista
+// (hallazgo de auditoría de seguridad, BAJO).
+const PROMO_VALIDATE_RATE_LIMIT = 20;
+const PROMO_VALIDATE_RATE_WINDOW_MINUTES = 10;
 export async function actValidatePromoCode(b: any) {
   const code = String(b.code || "").trim();
   const phone = String(b.phone || "").trim();
   if (!code || !phone) throw new ApiError("Faltan datos.", 400);
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `validate-promo:${phone}`,
+    p_limit: PROMO_VALIDATE_RATE_LIMIT,
+    p_window_minutes: PROMO_VALIDATE_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Demasiados intentos. Espera un momento antes de probar otro código.", 429);
   await loadCatalogPrices();
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
