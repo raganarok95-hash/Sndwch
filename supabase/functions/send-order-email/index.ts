@@ -4,10 +4,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // nunca un valor por defecto hardcodeado aquí (quien lea este archivo podría enviar
 // correos desde el dominio del negocio). Configúrala con: supabase secrets set RESEND_API_KEY=...
 import { debugLog } from "../_shared/sb.ts";
-import { emailShell } from "../_shared/email-shell.ts";
+import { emailShell, escHtml } from "../_shared/email-shell.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
+// Antes esta función no exigía NINGÚN tipo de autenticación — cualquiera con la URL
+// (deducible, o visible en el JS del cliente) podía usarla como relay abierto de correo
+// desde el dominio real del negocio, con `customerName`/`orderRef`/`status` interpolados
+// SIN escapar en el HTML (hallazgo de auditoría de seguridad, CRÍTICO). Ahora solo acepta
+// llamadas server-to-server autenticadas con la service role key — el cliente ya no la
+// llama directo (ver actAdminUpdateStatus en orders.ts, que la dispara después de que
+// requireAdmin ya validó la sesión).
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const SOURCE = "send-order-email";
 
 const CORS = {
@@ -39,6 +47,11 @@ Deno.serve(async (req: Request) => {
     return json({ error: "RESEND_API_KEY no configurada." }, 500);
   }
 
+  const auth = req.headers.get("Authorization") || "";
+  if (!SERVICE_ROLE_KEY || auth !== `Bearer ${SERVICE_ROLE_KEY}`) {
+    return json({ error: "No autorizado." }, 401);
+  }
+
   let body: any;
   try {
     body = await req.json();
@@ -53,14 +66,20 @@ Deno.serve(async (req: Request) => {
   }
 
   const copy = STATUS_COPY[status] || { subject: "Actualización de tu pedido", title: "Actualización de tu pedido" };
-  const nameLine = customerName ? `Hola ${customerName},` : "Hola,";
+  // customerName/orderRef antes se interpolaban SIN escapar — venían en última instancia
+  // del nombre/dirección que un cliente tipeó al pedir (ver auth check de arriba: ahora
+  // esta función solo la llama el propio backend, pero el dato original sigue siendo
+  // input de usuario, así que se sigue escapando por defecto en profundidad).
+  const safeName = escHtml(customerName || "");
+  const safeRef = escHtml(orderRef);
+  const nameLine = safeName ? `Hola ${safeName},` : "Hola,";
   const etaLine = (status === "EN CAMINO" && etaMinutes)
-    ? `<p style="font-size:20px;font-weight:900;color:#CBA258;margin:16px 0">Tiempo estimado: ${etaMinutes} minutos</p>`
+    ? `<p style="font-size:20px;font-weight:900;color:#CBA258;margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
     : "";
 
-  const html = emailShell(`${copy.title.toUpperCase()} //`, `
+  const html = emailShell(`${escHtml(copy.title.toUpperCase())} //`, `
     <p style="font-size:14px;color:#F2F0EB;line-height:1.6">${nameLine}</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Tu pedido <b style="color:#fff">${orderRef}</b> ahora está: <b style="color:#CBA258">${status}</b></p>
+    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Tu pedido <b style="color:#fff">${safeRef}</b> ahora está: <b style="color:#CBA258">${escHtml(status)}</b></p>
     ${etaLine}
     <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
   `);

@@ -77,7 +77,6 @@ var GOOGLE_CLIENT_ID='REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.c
 function googleConfigured(){return GOOGLE_CLIENT_ID&&GOOGLE_CLIENT_ID.indexOf('REEMPLAZA')<0;}
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
 var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
-var EMAIL_FN_URL=SB_URL+'/functions/v1/send-order-email';
 
 // `label` separado de la clave (hallazgo de auditoría de arquitectura): la clave
 // (RECIBIDO/PREPARANDO/...) es el identificador interno — se guarda en orders.status, se
@@ -4071,7 +4070,6 @@ async function viewReceipt(ordId){
 }
 async function updateStatus(ordId,newSt){
   if(_adminOrderActionInProgress)return;
-  var ord=(adminOrders||[]).find(function(o){return o.id===ordId;});
   var eta=null;
   if(newSt==='EN CAMINO'){
     var etaStr=await showPrompt('¿Tiempo estimado de entrega en minutos?','20','number');
@@ -4086,9 +4084,10 @@ async function updateStatus(ordId,newSt){
     if(newSt==='ENTREGADO')adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     _adminOrderActionInProgress=false;render();
   }catch(e){_adminOrderActionInProgress=false;console.warn(e);return;}
-  if(ord&&ord.customer_email){
-    notifyOrderEmail(ord.customer_email,ord.customer_name,ord.ref,newSt,eta);
-  }
+  // El correo de cambio de estado ahora lo manda el propio servidor dentro de
+  // admin-update-status (ver applyOrderStatusUpdate en orders.ts) — antes este cliente
+  // llamaba directo a la función edge send-order-email sin ninguna autenticación (relay
+  // de correo abierto + HTML sin escapar, hallazgo de auditoría de seguridad, CRÍTICO).
 }
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó —
 // recién entonces el pedido puede avanzar de RECIBIDO (el servidor también lo exige).
@@ -4235,18 +4234,6 @@ function printTicket(ordId){
   w.document.write(html);
   w.document.close();
 }
-async function notifyOrderEmail(to,name,ref,status,eta){
-  try{
-    var resp=await fetch(EMAIL_FN_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({to:to,customerName:name,orderRef:ref,status:status,etaMinutes:eta})
-    });
-    var data=await resp.json().catch(function(){return{};});
-    if(!resp.ok||!data.success){console.warn('Email no enviado:',data.error||data);}
-  }catch(e){console.warn('Error enviando correo:',e);}
-}
-
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
 // seleccionados; deja avanzar varios a la vez al mismo estado en un solo tap.

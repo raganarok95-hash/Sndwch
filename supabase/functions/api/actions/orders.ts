@@ -12,7 +12,7 @@ import { ApiError, SessionPayload } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
-import { sendOrderConfirmationEmail } from "../email.ts";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
@@ -1013,7 +1013,20 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     }
   }
 
-  return rows[0];
+  // Antes esto lo disparaba el cliente admin directo a la función edge send-order-email,
+  // sin ninguna autenticación (hallazgo de auditoría de seguridad, CRÍTICO — ver
+  // sendOrderStatusEmail en email.ts). rows[0] (no `order`, que se seleccionó sin
+  // customer_email) trae la fila completa tras el update.
+  const updatedOrder = rows[0];
+  if (updatedOrder?.customer_email) {
+    try {
+      await sendOrderStatusEmail(updatedOrder.customer_email, updatedOrder.customer_name || "", updatedOrder.ref, status, upd.eta_minutes as number | undefined);
+    } catch {
+      // un correo fallido no debe bloquear la actualización de estado del pedido
+    }
+  }
+
+  return updatedOrder;
 }
 
 export async function actAdminUpdateStatus(b: any) {
