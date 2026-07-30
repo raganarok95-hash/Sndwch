@@ -107,8 +107,17 @@ export async function actAdminAccountsList(b: any) {
   await requireAdmin(b.token);
   return { accounts: await sbGet("admin_accounts", "order=created_at.asc") };
 }
+// Agregar un admin nuevo es tan sensible como quitarle el acceso a uno (otorga acceso
+// administrativo total y persistente) — antes solo exigía requireAdmin, sin reconfirmar
+// el PIN de quien lo hace, a diferencia de actAdminAccountsDelete que sí lo pide desde
+// hace tiempo. Con una sesión admin robada, esto era un backdoor de un solo request que
+// sobrevivía a logout-everywhere (hallazgo de auditoría de seguridad, MEDIO).
 export async function actAdminAccountsAdd(b: any) {
   const s = await requireAdmin(b.token);
+  const pin = String(b.pin || "").trim();
+  if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
+  const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
+  if (!ok) throw new ApiError("PIN incorrecto.", 401);
   const phone = String(b.phone || "").trim();
   const name = String(b.name || "").trim();
   if (!phone || !name) throw new ApiError("Ingresa nombre y teléfono.");

@@ -349,7 +349,12 @@ export async function actRecover(b: any) {
     throw new ApiError("No encontramos una cuenta con esos datos exactos.", 404);
   }
   await resetLoginAttempts(phone);
-  const newPin = String(Math.floor(1000 + Math.random() * 9000));
+  // crypto.getRandomValues() en vez de Math.random() (no criptográficamente seguro, a
+  // diferencia del resto de refs/tokens de la app que sí usan crypto.randomUUID) —
+  // defensa en profundidad de bajo impacto real, dado que el PIN ya son solo 4 dígitos
+  // por diseño y el login ya tiene lockout tras 5 intentos (hallazgo de auditoría de
+  // seguridad, BAJO).
+  const newPin = String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
   const hashed = await rpc("hash_pin", { plain: newPin });
   await sbUpdate("customers", `phone=eq.${encodeURIComponent(phone)}`, { pin: hashed, session_version: (row.session_version || 1) + 1 });
   // DNI + fecha de nacimiento no son secretos fuertes (a veces se filtran/son semi-públicos

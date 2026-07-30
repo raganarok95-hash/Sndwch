@@ -5238,8 +5238,13 @@ async function addAdmin(){
   var ph=(document.getElementById('aa-ph') as HTMLInputElement | null)&&gv('aa-ph').trim();
   var nm=(document.getElementById('aa-nm') as HTMLInputElement | null)&&gv('aa-nm').trim();
   if(!ph||!nm){showToast('Ingresa nombre y teléfono.');return;}
+  // Misma fricción que quitarle el acceso a un admin (reingresar el PIN, no solo el
+  // token de sesión) — agregar acceso administrativo total es igual de sensible que
+  // quitarlo, antes solo esta acción pedía menos confirmación (auditoría de seguridad).
+  var pin=await showPrompt('Ingresa tu PIN para confirmar:','','tel');
+  if(!pin)return;
   try{
-    await api('admin-accounts-add',{token:token,phone:ph,name:nm});
+    await api('admin-accounts-add',{token:token,phone:ph,name:nm,pin:pin});
     await loadAdminMgr();
   }catch(e){showToast('Error: '+e.message);}
 }
