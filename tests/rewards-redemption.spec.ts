@@ -45,7 +45,13 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
   await page.getByRole('button', { name: 'VER CARRITO //' }).click();
 
-  await expect(page.locator('text=THE BLOOM')).toBeVisible();
+  // Texto exacto de la línea del carrito, no una subcadena — "text=THE BLOOM" también
+  // matchea el toast "¡The Bloom agregado! //" que sigue visible unos segundos más
+  // (antes esto quedaba oculto porque el toast tapaba el botón "VER CARRITO //" y
+  // Playwright esperaba a que desapareciera antes de poder hacer clic; con el fix P0 de
+  // la crítica impeccable 2026-07-30 el toast ya no bloquea el botón, así que el clic
+  // ahora sucede de inmediato, mientras el toast todavía está en pantalla).
+  await expect(page.getByText('The Bloom // Hibiscus', { exact: true })).toBeVisible();
 
   // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la
   // bebida (S/4) — antes de esta sesión este número siempre era S/0 (recompensa rota).

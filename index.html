@@ -643,7 +643,11 @@ function willPayWithCard() {
         return false;
     if (manualPayMethod)
         return false;
-    return true;
+    // Solo engorda el fee si el cliente ya tocó "Tarjeta" a propósito — mientras no lo
+    // haga, el total mostrado nunca lleva un recargo que no eligió, aunque el pedido
+    // termine yendo por Culqi de todos modos si nunca toca el selector (mismo camino
+    // rápido de siempre, solo que esos pocos pedidos salen sin el fee cubierto).
+    return payMethodChosen;
 }
 function deliveryFeeAmount() {
     var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
@@ -772,6 +776,14 @@ var tops = [], sauces = [], size = null, doubleProt = false, extraSauce = false;
 var byoStep = 0;
 var useCredit = false;
 var manualPayMethod = null;
+// true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
+// pagas?" (Yape/Plin o Tarjeta) — antes el total mostrado ya incluía la comisión de
+// Culqi con solo LLEGAR al checkout, sin ninguna elección real de por medio (hallazgo P2
+// de crítica impeccable 2026-07-30). Mientras esto sea false, deliveryFeeAmount() nunca
+// engorda el fee, así que si el cliente paga sin tocar el selector, el pedido igual sale
+// por Culqi (mismo camino rápido de siempre) pero al precio sin comisión — el negocio
+// absorbe esos ~S/0.30-0.50, nunca al revés (jamás se cobra más de lo que se mostró).
+var payMethodChosen = false;
 var cust = null, isAdmin = false, atab = 'reg', aErr = '', refCode = '';
 // Credential (JWT) de Google Identity Services en espera de que el cliente complete el
 // registro normal (nombre/teléfono/PIN/DNI) — ver onGoogleCredential()/doReg(). Nunca se
@@ -800,6 +812,12 @@ var isOffline = !navigator.onLine;
 var deferredInstallPrompt = null, pwaDismissed = localStorage.getItem('sw_pwa_dismissed') === '1';
 var nearStore = false, _nearCheckDone = false;
 var wlPhone = '', wlName = '', wlMsg = '', wlDone = localStorage.getItem('sw_wl_done') === '1';
+// Bandera real de "el negocio ya abrió de verdad" (app_settings.business_launched,
+// vía get-store-hours) — arranca en false para no cambiar el comportamiento mientras
+// carga; el admin la togglea el día real de lanzamiento y la tarjeta de lista de espera
+// desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
+// 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
+var businessLaunched = false;
 var pushSubscribed = false, pushMsg = '';
 var savedPh = localStorage.getItem('sw_ph') || '';
 var token = localStorage.getItem('sw_tok') || '';
@@ -992,7 +1010,11 @@ function renderOverlays() {
     var html = '';
     if (toastMsg) {
         var isErr = toastType === 'error';
-        html += '<div style="position:fixed;left:16px;right:16px;bottom:20px;z-index:400;display:flex;justify-content:center" class="fi">'
+        // bottom:92px, no 20px: deja despejada la barra de acción fija (AB(), z-index:100,
+        // ~70-80px de alto con el total) que vive en la misma zona — antes el toast de
+        // "agregado al carrito" la tapaba 3.2s justo en el momento en que el usuario busca
+        // pagar (hallazgo P0 de crítica impeccable 2026-07-30).
+        html += '<div style="position:fixed;left:16px;right:16px;bottom:92px;z-index:400;display:flex;justify-content:center" class="fi">'
             + '<div style="max-width:420px;width:100%;background:' + (isErr ? '#3a1414' : '#1A3028') + ';border:1px solid ' + (isErr ? 'rgba(255,85,85,.5)' : 'rgba(203,162,88,.4)') + ';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
             + '<div style="flex:1;font-family:\'EB Garamond\',serif;font-size:13px;color:' + (isErr ? '#ffb3b3' : '#F2F0EB') + ';line-height:1.4">' + esc(toastMsg) + '</div>'
             + '<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#A8C8B0') + ';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
@@ -1478,6 +1500,7 @@ function initCheckoutFields() {
     schedSlot = null;
     useCredit = false;
     manualPayMethod = null;
+    payMethodChosen = false;
     checkoutLocked = false;
     lockedMsg = '';
     _payingInProgress = false;
@@ -1887,7 +1910,7 @@ async function joinWaitlist() {
     render();
 }
 function waitlistCardHTML() {
-    if (cust || wlDone)
+    if (cust || wlDone || businessLaunched)
         return '';
     return '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:12px;padding:16px;margin-bottom:16px">'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Avísame<span class="cut-sep" style="color:' + GOLD + '"> // </span>cuando abramos</div>'
@@ -3172,7 +3195,10 @@ function paymentMethodPickerHTML(t) {
 // necesita: el texto ya identifica el método, sin arriesgar además un uso no autorizado
 // de la marca de Yape/Plin.
 function payMethodBtn(id, label, enabled, badge) {
-    var sel = id === 'culqi' ? !manualPayMethod : manualPayMethod === id;
+    // Ninguno aparece pre-seleccionado hasta que el cliente toca uno — antes Tarjeta se
+    // veía marcada por defecto sin ninguna elección real, lo que reforzaba la sensación de
+    // que el recargo ya estaba decidido de antemano (mismo hallazgo P2 de arriba).
+    var sel = id === 'culqi' ? (payMethodChosen && !manualPayMethod) : manualPayMethod === id;
     return '<div onclick="' + (enabled ? 'selectPayMethod(\'' + id + '\')' : '') + '" style="flex:1;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 6px;cursor:' + (enabled ? 'pointer' : 'not-allowed') + ';opacity:' + (enabled ? 1 : .4) + '">'
         + (badge ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:' + GOLD + ';letter-spacing:.08em;margin-bottom:3px">' + badge + '</div>' : '')
         + '<div style="display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">' + label + '</div>'
@@ -3180,6 +3206,7 @@ function payMethodBtn(id, label, enabled, badge) {
 }
 function selectPayMethod(m) {
     manualPayMethod = (m === 'culqi' ? null : m);
+    payMethodChosen = true;
     // Antes elegir Yape/Plin borraba en silencio cualquier recompensa ya aplicada — el
     // servidor (deriveCart) no tiene ninguna restricción que ate una recompensa a un
     // método de pago en particular, así que esto era un descuido, no una regla de
@@ -3703,6 +3730,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     mode = null;
     useCredit = false;
     manualPayMethod = null;
+    payMethodChosen = false;
     scheduleMode = 'now';
     schedDay = 'today';
     schedSlot = null;
@@ -6425,6 +6453,7 @@ async function loadStoreHoursBackground() {
         if (Array.isArray(r.hours) && r.hours.length === 7) {
             STORE_HOURS = r.hours.map(function (d) { return d.closed ? null : [d.open, d.close]; });
         }
+        businessLaunched = r.businessLaunched === true;
     }
     catch (e) { }
 }
@@ -6899,7 +6928,7 @@ var AUDIT_ACTION_LABEL = {
     'accounts-add': 'Cuenta admin agregada', 'accounts-delete': 'Cuenta admin eliminada',
     'export-orders': 'Exportó pedidos (CSV)', 'export-customers': 'Exportó clientes (CSV)',
     'catalog-set-price': 'Precio de catálogo editado', 'respond-complaint': 'Reclamo respondido',
-    'set-store-hours': 'Horario de atención editado', 'update-status': 'Estado de pedido actualizado',
+    'set-store-hours': 'Horario de atención editado', 'set-business-launched': 'Bandera "negocio abierto" cambiada', 'update-status': 'Estado de pedido actualizado',
     'bulk-update-status': 'Estados actualizados en lote', 'confirm-payment': 'Pago manual confirmado',
     'cancel-order': 'Pedido cancelado', 'self-cancel-needs-refund': 'Cliente canceló pedido pagado',
     'inventory-toggle': 'Disponibilidad de producto cambiada', 'inventory-set-stock': 'Stock de producto editado',
@@ -6932,11 +6961,32 @@ async function loadStoreHoursForm() {
     try {
         var r = await api('get-store-hours', {});
         storeHoursForm = r.hours;
+        businessLaunched = r.businessLaunched === true;
     }
     catch (e) {
         storeHoursForm = DOW_NAMES.map(function () { return { open: 11, close: 22, closed: false }; });
     }
     busy = false;
+    render();
+}
+var _launchToggleInProgress = false;
+async function toggleBusinessLaunched() {
+    if (_launchToggleInProgress)
+        return;
+    var next = !businessLaunched;
+    if (next && !(await showConfirm('¿Confirmas que SND//WCH ya abrió de verdad?\n\nEsto retira la tarjeta "Avísame cuando abramos" del Home para todos los invitados — solo actívalo el día real de lanzamiento.')))
+        return;
+    _launchToggleInProgress = true;
+    render();
+    try {
+        await api('admin-set-business-launched', { token: token, launched: next });
+        businessLaunched = next;
+        showToast(next ? '¡Listo! El negocio ya figura como abierto.' : 'Revertido: el negocio figura como aún no abierto.', 'success');
+    }
+    catch (e) {
+        showToast('Error: ' + e.message);
+    }
+    _launchToggleInProgress = false;
     render();
 }
 function toggleClosedDay(i) {
@@ -6975,6 +7025,14 @@ function sAdminHours() {
     var h = H('HORARIO DE ATENCIÓN', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
     if (storeHoursMsg)
         h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">' + esc(storeHoursMsg) + '</div>';
+    // Bandera de lanzamiento real — controla si la tarjeta "Avísame cuando abramos" sigue
+    // apareciendo en el Home de los invitados. Vive aparte del horario semanal porque es
+    // un interruptor de una sola vez, no un dato que se edite seguido.
+    h += '<div style="background:' + (businessLaunched ? 'rgba(37,211,102,.1)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (businessLaunched ? 'rgba(37,211,102,.4)' : GOLD) + ';border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:12px">'
+        + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + (businessLaunched ? 'El negocio ya abrió //' : 'Aún no hemos abierto //') + '</div>'
+        + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + (businessLaunched ? 'La tarjeta de lista de espera ya no aparece en el Home.' : 'Actívalo el día real de lanzamiento para retirar la lista de espera.') + '</div></div>'
+        + '<button onclick="toggleBusinessLaunched()" style="all:unset;cursor:pointer;flex-shrink:0;background:' + (businessLaunched ? 'transparent' : GOLD) + ';border:1px solid ' + (businessLaunched ? 'rgba(255,85,85,.4)' : GOLD) + ';color:' + (businessLaunched ? '#ff8888' : '#241a08') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 14px;border-radius:8px;text-align:center">' + (businessLaunched ? 'Revertir' : 'Ya abrimos →') + '</button>'
+        + '</div>';
     var days = storeHoursForm || [];
     h += DOW_NAMES.map(function (name, i) {
         var d = days[i] || { open: 11, close: 22, closed: false };
