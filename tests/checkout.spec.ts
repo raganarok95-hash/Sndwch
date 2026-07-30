@@ -102,3 +102,42 @@ test('invitado pide THE CHICAGO (SIG07, precio único 15CM=30CM) y paga con Yape
   // se haya calculado con la fórmula de split real.
   expect(placeOrderCall2!.body.total).toBe(33);
 });
+
+// Regresión del bug crítico de esta sesión: un cliente que nunca toca el selector
+// "¿Cómo pagas?" (ni Yape/Plin ni Tarjeta) sigue cayendo por el camino rápido de Culqi
+// (ver doOrder()) — antes, el total que el cliente mandaba a prepare-order no incluía el
+// recargo de tarjeta que el servidor SIEMPRE calcula para cualquier pedido que va a
+// Culqi (deliveryFeeForZoneCard en orders.ts), así que el servidor rechazaba el pedido
+// con "El total no coincide con los productos del pedido." en su camino más común. Este
+// test no puede ejercer el rechazo real del servidor (prepare-order está mockeado), pero
+// sí confirma que el cliente ya calcula y manda el total inflado sin que el cliente haya
+// elegido nada — que es la mitad que de verdad se rompió.
+test('invitado paga sin tocar el selector de método (camino rápido) y el total ya incluye el recargo de tarjeta', async ({ page }) => {
+  const calls = await gotoApp(page, {
+    'prepare-order': () => ({ success: true }),
+  });
+
+  await page.locator('[onclick*="startOrderWithSig("]').first().click();
+  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await page.locator('[onclick^="sigId=\'SIG07\'"]').click();
+  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
+
+  await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
+  await page.locator('#o-nom').fill('Cliente Camino Rápido');
+  await page.locator('#o-phone').fill('987654323');
+  await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+
+  // Nunca toca "Yape / Plin" ni "Tarjeta" — pasa directo a pagar.
+  await page.getByRole('button', { name: 'Pagar ahora //' }).click();
+
+  await expect
+    .poll(() => calls.find((c) => c.action === 'prepare-order'), { timeout: 10000 })
+    .toBeTruthy();
+  const prepareOrderCall = calls.find((c) => c.action === 'prepare-order')!;
+  // SIG07 15CM = S/25, zona 'media' = S/8 reales, pero engordado para tarjeta:
+  // 8/(1-0.055) = 8.47 → total = 33.47, no 33 (el fee sin engordar).
+  expect(prepareOrderCall.body.total).toBe(33.47);
+  expect(prepareOrderCall.body.deliveryZone).toBe('media');
+});

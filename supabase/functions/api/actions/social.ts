@@ -144,6 +144,30 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   return publishedRef;
 }
 
+// Reclama una fila atómicamente (status=eq.scheduled&status=eq.draft varía por caller —
+// ver abajo) ANTES de llamar a Meta — sin esto, el botón manual y el cron (cada 15 min)
+// podían leer la misma fila en 'scheduled' y publicarla dos veces: ninguno sabía que el
+// otro ya la había tomado (hallazgo de auditoría de código, ALTO). El UPDATE solo tiene
+// éxito si la fila SIGUE en el estado esperado; 0 filas devueltas = alguien más ya la
+// reclamó, así que el caller debe abortar sin publicar de nuevo.
+async function claimCalendarEntry(id: string, fromStatus: string): Promise<any | null> {
+  const rows = await sbUpdate(
+    "marketing_calendar",
+    `id=eq.${encodeURIComponent(id)}&status=eq.${fromStatus}&select=*`,
+    { status: "publishing", updated_at: new Date().toISOString() },
+  );
+  return rows[0] || null;
+}
+// Si Meta rechaza o falla el publish tras haber reclamado la fila, la devuelve a
+// 'scheduled' para que el cron (o un reintento manual) la vuelva a intentar — dejarla
+// en 'publishing' para siempre la escondería de ambos caminos sin ningún aviso.
+async function releaseClaim(id: string): Promise<void> {
+  await sbUpdate("marketing_calendar", `id=eq.${encodeURIComponent(id)}`, {
+    status: "scheduled",
+    updated_at: new Date().toISOString(),
+  });
+}
+
 export async function actAdminPublishSocial(b: any) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
@@ -151,7 +175,17 @@ export async function actAdminPublishSocial(b: any) {
   const rows = await sbGet("marketing_calendar", `id=eq.${encodeURIComponent(id)}&select=*`);
   const entry = rows[0];
   if (!entry) throw new ApiError("Entrada de calendario no encontrada.", 404);
-  const publishedRef = await publishCalendarEntry(entry);
+  // El botón manual puede tocar una entrada en 'draft' o 'scheduled' (el cron solo toca
+  // 'scheduled') — se reclama contra el estado real que tenga en ese momento.
+  const claimed = await claimCalendarEntry(id, entry.status);
+  if (!claimed) throw new ApiError("Esta entrada ya se está publicando (o ya se publicó) — espera un momento y recarga.", 409);
+  let publishedRef: string;
+  try {
+    publishedRef = await publishCalendarEntry(entry);
+  } catch (e) {
+    await releaseClaim(id);
+    throw e;
+  }
   const updated = await sbUpdate("marketing_calendar", `id=eq.${encodeURIComponent(id)}`, {
     status: "posted",
     posted_at: new Date().toISOString(),
@@ -177,6 +211,11 @@ export async function actAutoPublishCalendar(b: any) {
   );
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const entry of due) {
+    // Reclama antes de publicar — si el admin ya la publicó a mano (o una corrida
+    // anterior del cron sigue en curso, ver waitForIgContainerReady) entre el sbGet de
+    // arriba y este punto, el claim devuelve null y esta entrada se salta sin duplicar.
+    const claimed = await claimCalendarEntry(entry.id, "scheduled");
+    if (!claimed) { results.push({ id: entry.id, ok: false, error: "ya reclamada por otro proceso" }); continue; }
     try {
       const publishedRef = await publishCalendarEntry(entry);
       await sbUpdate("marketing_calendar", `id=eq.${entry.id}`, {
@@ -188,6 +227,7 @@ export async function actAutoPublishCalendar(b: any) {
       await logAdminAction("cron", "social-publish", entry.title, { id: entry.id, channel: entry.channel, publishedRef, auto: true });
       results.push({ id: entry.id, ok: true });
     } catch (e: any) {
+      await releaseClaim(entry.id);
       results.push({ id: entry.id, ok: false, error: e?.message || String(e) });
     }
   }
