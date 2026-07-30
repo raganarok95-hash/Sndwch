@@ -259,7 +259,12 @@ export async function actDashboardStats(b: any) {
   const orders = ordersRaw.slice(0, DASHBOARD_WINDOW_LIMIT);
   const lowStock = allInventory.filter((r: any) => r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
 
-  const paidOrders = orders.filter((o: any) => o.payment_status === "paid");
+  // status !== "CANCELADO" agregado (auditoría de análisis de negocio, ALTO) — un pedido
+  // cancelado sigue payment_status:'paid' (el reembolso se coordina manualmente fuera del
+  // sistema, ver needsManualRefund en orders.ts) y sin este filtro se seguía contando como
+  // ingreso real en todas las métricas de este período (confirmado con datos de prueba
+  // reales: 2 de 5 pedidos CANCELADO+paid inflaban el "ingreso" mostrado).
+  const paidOrders = orders.filter((o: any) => o.payment_status === "paid" && o.status !== "CANCELADO");
 
   function periodStats(sinceMs: number) {
     const inRange = paidOrders.filter((o: any) => new Date(o.created_at).getTime() >= sinceMs);
@@ -430,7 +435,10 @@ export async function actAdminCampaignPerformance(b: any) {
   const phonesList = phones.map((p) => `"${p}"`).join(",");
   const orders = await sbGet(
     "orders",
-    `customer_phone=in.(${phonesList})&payment_status=eq.paid&created_at=gte.${encodeURIComponent(since)}&select=customer_phone,created_at,total`,
+    // status=neq.CANCELADO agregado — mismo hallazgo que actDashboardStats/
+    // actAdminRangeReport: un pedido cancelado sigue payment_status:'paid' y sin este
+    // filtro inflaba el "revenue" atribuido a cada campaña de marketing.
+    `customer_phone=in.(${phonesList})&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(since)}&select=customer_phone,created_at,total`,
   );
   const ordersByPhone = new Map<string, { createdAt: number; total: number }[]>();
   for (const o of orders as any[]) {
@@ -654,11 +662,12 @@ export async function actAdminRangeReport(b: any) {
   const rows = await sbGet(
     "orders",
     `created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lte.${encodeURIComponent(to.toISOString())}` +
-      `&select=total,payment_status,payment_method,created_at,items,product_key,summary&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
+      `&select=total,payment_status,payment_method,created_at,items,product_key,summary,status&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
   );
   const truncated = rows.length > RANGE_REPORT_ORDER_LIMIT;
   const orders = rows.slice(0, RANGE_REPORT_ORDER_LIMIT);
-  const paid = orders.filter((o: any) => o.payment_status === "paid");
+  // status !== "CANCELADO" — mismo hallazgo/criterio que actDashboardStats arriba.
+  const paid = orders.filter((o: any) => o.payment_status === "paid" && o.status !== "CANCELADO");
 
   const revenue = paid.reduce((s: number, o: any) => s + (o.total || 0), 0);
   const byMethod: Record<string, { count: number; revenue: number }> = {};

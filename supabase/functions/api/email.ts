@@ -1,11 +1,7 @@
 // SND//WCH — api / email
 // Envío del PIN de recuperación de cuenta por correo (Resend).
 import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME } from "./env.ts";
-import { emailShell } from "../_shared/email-shell.ts";
-
-function escHtml(s: string): string {
-  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { emailShell, escHtml } from "../_shared/email-shell.ts";
 export function maskEmail(email: string): string {
   const [user, domain] = email.split("@");
   if (!domain) return email;
@@ -49,6 +45,34 @@ export async function sendOrderConfirmationEmail(to: string, name: string, ref: 
     <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
   `);
   return sendResend([to], `SND//WCH — Recibimos tu pedido (${ref})`, html);
+}
+
+// Correo de cambio de estado (RECIBIDO ya lo cubre sendOrderConfirmationEmail arriba) —
+// antes vivía en la función edge separada `send-order-email`, invocada directo desde el
+// cliente SIN ninguna autenticación (relay de correo abierto + HTML sin escapar,
+// hallazgo de auditoría de seguridad, CRÍTICO). Movido al servidor, junto al resto de
+// notificaciones de este mismo archivo — se llama desde applyOrderStatusUpdate justo
+// después de que requireAdmin ya validó la sesión, mismo patrón que el push de esa misma
+// función. `send-order-email` queda desplegada pero ahora exige la service role key
+// (por si algo más externo la necesitara), ya no la usa esta app.
+const STATUS_EMAIL_COPY: Record<string, string> = {
+  PREPARANDO: "Estamos preparando tu pedido",
+  "EN CAMINO": "Tu pedido salió para entrega",
+  ENTREGADO: "Disfruta tu SND//WCH",
+};
+export async function sendOrderStatusEmail(to: string, name: string, ref: string, status: string, etaMinutes?: number): Promise<boolean> {
+  const title = STATUS_EMAIL_COPY[status];
+  if (!title) return false;
+  const etaLine = (status === "EN CAMINO" && etaMinutes)
+    ? `<p style="font-size:20px;font-weight:900;color:#CBA258;margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
+    : "";
+  const html = emailShell(`${escHtml(title.toUpperCase())} //`, `
+    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Tu pedido <b style="color:#fff">${escHtml(ref)}</b> ahora está: <b style="color:#CBA258">${escHtml(status)}</b></p>
+    ${etaLine}
+    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+  `);
+  return sendResend([to], `SND//WCH — ${title} (${ref})`, html);
 }
 
 // Copia del reclamo/queja para el consumidor — exigido por el Código de Protección y

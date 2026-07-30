@@ -5,6 +5,16 @@
 // send-order-email) sin ningún helper común, así que un cambio de paleta de marca (libre
 // de cambiar, ver CLAUDE.md) obligaba a editar el mismo string 5+ veces sin garantía de
 // que quedara consistente (hallazgo de auditoría de arquitectura de código, ALTO).
+
+// Movida acá desde api/email.ts (que antes la definía solo para sí misma) — send-order-
+// email interpolaba customerName/orderRef/status en su HTML SIN escapar (auditoría de
+// seguridad, CRÍTICO: inyección de HTML en un correo que sale firmado por el dominio real
+// del negocio). Cualquier función que arme HTML de correo con datos que vengan del
+// cliente/base de datos DEBE pasar por acá primero.
+export function escHtml(s: string): string {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export function emailShell(eyebrow: string, bodyHtml: string, opts?: { maxWidth?: number; wordmarkSize?: number }): string {
   const maxWidth = opts?.maxWidth ?? 420;
   const wordmarkSize = opts?.wordmarkSize ?? 26;
