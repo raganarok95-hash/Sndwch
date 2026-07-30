@@ -54,6 +54,7 @@ import {
 import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
 } from "./actions/group.ts";
+import { actAdminCalendarUploadImage, actAdminPublishSocial } from "./actions/social.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 
@@ -145,6 +146,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-calendar-delete": actAdminCalendarDelete,
   "waitlist-join": actWaitlistJoin,
   "admin-waitlist-list": actAdminWaitlistList,
+  "admin-calendar-upload-image": actAdminCalendarUploadImage,
+  "admin-publish-social": actAdminPublishSocial,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "submit-complaint": actSubmitComplaint,

@@ -71,6 +71,22 @@ export const VAPID_SUBJECT = "mailto:contacto@sndwch.com";
 export const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 export const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "SND//WCH <pedidos@sndwch.app>";
 
+// Publicación real en Instagram/Facebook (Meta Graph API) — ver actAdminPublishSocial en
+// actions/social.ts. Los 3 vienen de tu Business Manager de Meta una vez que tengas la
+// app de developers.facebook.com con los permisos pages_manage_posts +
+// instagram_business_content_publish concedidos a tu propia Página/cuenta (no
+// necesariamente requiere App Review si el token se genera con tu propio login como
+// admin de esos activos — App Review solo es obligatorio para publicar en Páginas/
+// cuentas que NO son tuyas). Configúralos con:
+//   supabase secrets set META_PAGE_ACCESS_TOKEN=... META_PAGE_ID=... META_IG_USER_ID=...
+// Sin ellos, actAdminPublishSocial devuelve un error claro (no hay throw a nivel de
+// módulo, mismo criterio que el resto de integraciones opcionales de este archivo) — el
+// calendario de contenido y el resto de la app funcionan igual sin esto configurado.
+export const META_PAGE_ACCESS_TOKEN = Deno.env.get("META_PAGE_ACCESS_TOKEN");
+export const META_PAGE_ID = Deno.env.get("META_PAGE_ID");
+export const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID");
+export const META_GRAPH_VERSION = "v21.0";
+
 // Identidad legal del negocio — persona natural con negocio (RUC 10). Usada en el
 // Libro de Reclamaciones (obligatorio por el Código de Protección y Defensa del
 // Consumidor / INDECOPI) y en el correo de notificación de reclamos al negocio.

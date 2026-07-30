@@ -832,6 +832,7 @@ var prepListData = null, timeReportData = null, problemAddressesData = null, mar
 var promoCodesData = null, pcCode = '', pcType = 'percent', pcValue = '', pcMaxUses = '', pcMinOrder = '', pcValidUntil = '', pcCampaignTag = '', pcMsg = '';
 var campaignPerfData = null;
 var calendarData = null, calDate = '', calChannel = 'instagram', calTitle = '', calCaption = '', calWhatsapp = '', calPhoto = '', calTag = '', calMsg = '';
+var calImageUploadingId = null, calPublishingId = null;
 var waitlistData = null;
 var bulkSelected = {};
 var focusIdx = 0;
@@ -4706,6 +4707,8 @@ function doLogout() {
     calTag = '';
     calMsg = '';
     waitlistData = null;
+    calImageUploadingId = null;
+    calPublishingId = null;
     adminOrders = [];
     bulkSelected = {};
     focusIdx = 0;
@@ -6902,6 +6905,7 @@ var AUDIT_ACTION_LABEL = {
     'inventory-toggle': 'Disponibilidad de producto cambiada', 'inventory-set-stock': 'Stock de producto editado',
     'promo-create': 'Código promocional creado', 'promo-toggle': 'Código promocional activado/desactivado',
     'calendar-create': 'Entrada de calendario creada', 'calendar-update': 'Entrada de calendario editada', 'calendar-delete': 'Entrada de calendario eliminada',
+    'calendar-image-upload': 'Foto subida a una entrada del calendario', 'social-publish': 'Publicación enviada a Meta (Instagram/Facebook)',
 };
 function sAdminAudit() {
     var h = H('REGISTRO DE AUDITORÍA', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
@@ -7382,9 +7386,83 @@ async function deleteCalendarEntry(id) {
         showToast(e.message || 'No se pudo eliminar.');
     }
 }
+// Publicación real en Instagram/Facebook (Meta Graph API) — ver actAdminPublishSocial en
+// social.ts. La foto se comprime en el propio celular antes de subirla, mismo criterio
+// que handleReceiptFile (canvas, máx. 1080px de lado, JPEG) — la API de Instagram exige
+// una URL pública de imagen ya alojada, así que primero sube a Storage y recién después
+// se puede publicar.
+function handleCalendarImageFile(ev, id) {
+    var input = ev && ev.target;
+    var file = input && input.files && input.files[0];
+    if (input)
+        input.value = '';
+    if (!file)
+        return;
+    if (!/^image\//.test(file.type)) {
+        showToast('Selecciona una imagen.');
+        return;
+    }
+    calImageUploadingId = id;
+    render();
+    var reader = new FileReader();
+    reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+            var maxDim = 1080;
+            var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+            var w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) {
+                calImageUploadingId = null;
+                showToast('No se pudo procesar la imagen.');
+                render();
+                return;
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            var base64 = canvas.toDataURL('image/jpeg', .82).split(',')[1] || '';
+            uploadCalendarImageBase64(id, base64);
+        };
+        img.onerror = function () { calImageUploadingId = null; showToast('No se pudo leer la imagen.'); render(); };
+        img.src = String(reader.result || '');
+    };
+    reader.onerror = function () { calImageUploadingId = null; showToast('No se pudo leer el archivo.'); render(); };
+    reader.readAsDataURL(file);
+}
+async function uploadCalendarImageBase64(id, base64) {
+    try {
+        await api('admin-calendar-upload-image', { token: token, id: id, imageBase64: base64, mime: 'image/jpeg' });
+        calImageUploadingId = null;
+        await loadCalendar();
+    }
+    catch (e) {
+        calImageUploadingId = null;
+        showToast(e.message || 'No se pudo subir la imagen.');
+        render();
+    }
+}
+async function publishCalendarEntry(id) {
+    if (!(await showConfirm('¿Publicar esta entrada ahora en Instagram/Facebook? Esto sale de verdad a la cuenta real — no hay forma de deshacerlo desde acá.')))
+        return;
+    calPublishingId = id;
+    render();
+    try {
+        await api('admin-publish-social', { token: token, id: id });
+        calPublishingId = null;
+        showToast('Publicado en Meta.', 'success');
+        await loadCalendar();
+    }
+    catch (e) {
+        calPublishingId = null;
+        showToast(e.message || 'No se pudo publicar.');
+        render();
+    }
+}
 function sAdminCalendar() {
     var h = H('CALENDARIO DE CONTENIDO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
-    h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Nada se publica solo — sigues copiando el texto a mano, pero ya no dependes de un rotador genérico de 2 semanas.</div>';
+    h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto y toca "Publicar ahora") — el resto de canales sigue siendo copiar el texto a mano.</div>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:20px">';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Nueva entrada //</div>';
     h += '<div style="display:flex;flex-direction:column;gap:8px">'
@@ -7408,6 +7486,22 @@ function sAdminCalendar() {
             var next = e.status === 'draft' ? 'scheduled' : (e.status === 'scheduled' ? 'posted' : null);
             var nextLabel = e.status === 'draft' ? 'Programar' : (e.status === 'scheduled' ? 'Marcar publicado' : null);
             var texts = [e.caption_text ? 'Post: ' + e.caption_text : '', e.whatsapp_text ? 'WhatsApp: ' + e.whatsapp_text : '', e.photo_idea ? 'Foto: ' + e.photo_idea : ''].filter(Boolean);
+            // Publicar de verdad (Meta Graph API) solo tiene sentido para instagram/facebook, y
+            // solo una vez que la entrada tiene una foto real subida — el resto de canales
+            // (whatsapp/google_business/otro) siguen siendo copiar/pegar a mano, igual que
+            // siempre.
+            var canAutoPublish = (e.channel === 'instagram' || e.channel === 'facebook');
+            var uploadingThis = calImageUploadingId === e.id;
+            var publishingThis = calPublishingId === e.id;
+            var photoBlock = canAutoPublish ? ('<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'
+                + (e.image_url ? '<img src="' + esc(e.image_url) + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--sw-border-soft,#1c1c1c)">' : '')
+                + '<label style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + GOLD + '">'
+                + (uploadingThis ? 'Subiendo...' : (e.image_url ? 'Cambiar foto' : 'Subir foto'))
+                + '<input type="file" accept="image/*" onchange="handleCalendarImageFile(event,\'' + e.id + '\')" style="display:none" ' + (uploadingThis ? 'disabled' : '') + '>'
+                + '</label>'
+                + (e.image_url && e.status !== 'posted' ? '<span onclick="' + (publishingThis ? '' : 'publishCalendarEntry(\'' + e.id + '\')') + '" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#25D366">' + (publishingThis ? 'Publicando...' : 'Publicar ahora →') + '</span>' : '')
+                + (e.status === 'posted' && e.published_ref ? '<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">✓ Publicado en Meta</span>' : '')
+                + '</div>') : '';
             return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px">'
                 + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
                 + '<div style="min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(e.title) + '</div>'
@@ -7415,6 +7509,7 @@ function sAdminCalendar() {
                 + '<div style="flex-shrink:0;text-align:right"><span style="font-family:EB Garamond,serif;font-size:11px;color:' + CAL_STATUS_COLOR[e.status] + '">' + CAL_STATUS_LABEL[e.status] + '</span></div>'
                 + '</div>'
                 + (texts.length ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px;line-height:1.5;white-space:pre-wrap">' + esc(texts.join(' · ')) + '</div>' : '')
+                + photoBlock
                 + '<div style="display:flex;gap:14px;margin-top:10px">'
                 + (next ? '<span onclick="setCalendarStatus(\'' + e.id + '\',\'' + next + '\')" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + GOLD + '">' + nextLabel + '</span>' : '')
                 + '<span onclick="deleteCalendarEntry(\'' + e.id + '\')" style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:#ff8888">Eliminar</span>'
