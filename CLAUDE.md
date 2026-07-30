@@ -309,10 +309,14 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   cada una puede corresponder al archivo anterior/siguiente del lote, no al que
   acompaña. Para verificar dimensiones reales de forma confiable, o pedir una imagen por
   llamada, o no confiar en el WxH del batch y calcularlo aparte (ej. `PIL`/`Image.size`).
-- **Publicación automática real en Instagram/Facebook: SÍ existe una vía técnica (Meta
-  Graph API), investigada 2026-07-29 pero NO implementada** (el usuario pidió solo
-  buscarla, no aplicarla). No es un conector de este entorno (ver más arriba, "no hay
-  conector real a redes sociales") — sería código nuevo en `api` (o una función aparte)
+- **Publicación automática real en Instagram/Facebook: implementada 2026-07-29/30**
+  (investigada primero, aplicada después de que el usuario confirmó que ya tenía Página
+  de Facebook + Instagram Business + Meta Business Manager creados). Ver
+  `supabase/functions/api/actions/social.ts` (`actAdminPublishSocial`,
+  `actAdminCalendarUploadImage`) y las 3 env vars opcionales en `env.ts`
+  (`META_PAGE_ACCESS_TOKEN`/`META_PAGE_ID`/`META_IG_USER_ID`, `supabase secrets set`).
+  No es un conector de este entorno (ver más arriba, "no hay
+  conector real a redes sociales") — es código nuevo en `api` (o una función aparte)
   llamando directo a `graph.facebook.com` por HTTP. Resumen de lo investigado:
   - **Instagram** (Content Publishing API, vía Instagram Graph API): exige (1) cuenta
     Instagram Business/Creator vinculada a (2) una Página de Facebook, (3) una app de
@@ -332,13 +336,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     inventar, mismo criterio que RUC/razón social — bloqueado hasta que el dueño tenga
     Página/Instagram Business reales, cosa que probablemente no pase antes del
     lanzamiento en septiembre 2026).
-  - **Conclusión**: viable a futuro, no hoy — depende de que el dueño complete primero el
-    setup de negocio en Meta (Business Manager + Página + Instagram Business + app +
-    App Review), que es trabajo humano fuera de esta sesión, antes de que valga la pena
-    escribir el código de integración.
+  - **Conclusión**: el dueño confirmó que ya completó el setup de negocio en Meta
+    (Business Manager + Página + Instagram Business), así que se implementó el código de
+    integración — probablemente SIN necesitar App Review, porque publica solo hacia
+    activos que el dueño administra personalmente (App Review es obligatorio para apps
+    que publican en cuentas de terceros, no para el dueño de la propia cuenta usando su
+    propio token de larga duración). Falta correr `supabase secrets set` con las 3 env
+    vars reales para que funcione en producción — sin ellas, `actAdminPublishSocial`
+    devuelve un error 503 claro en vez de fallar en silencio.
 
   Fuentes: [Instagram Graph API: Complete Developer Guide for 2026](https://elfsight.com/blog/instagram-graph-api-complete-developer-guide-for-2026/),
   [Content Publishing - Meta for Developers](https://developers.facebook.com/docs/instagram-platform/content-publishing/),
   [Instagram Graph API in 2026: Versions, Rate Limits & Content Publishing](https://www.netrows.com/blog/instagram-graph-api-guide-2026),
   [Facebook Graph API Posting: Developer Guide](https://postproxy.dev/blog/facebook-graph-api-posting-guide/),
   [Access Tokens for Meta Technologies - Meta for Developers](https://developers.facebook.com/documentation/facebook-login/guides/access-tokens).
+- **Playwright en este sandbox: disponible vía npm global, NO vía pip.** Un subagente
+  que necesitaba renderizar HTML/tomar screenshots fuera de este repo (sin `node_modules`
+  propio disponible) encontró el paquete ya instalado en
+  `/opt/node22/lib/node_modules/playwright` (usable con `NODE_PATH` apuntando ahí, o
+  `node -e "require('/opt/node22/lib/node_modules/playwright')..."`) — pero
+  `pip install playwright`/`python3 -m playwright` no tiene el navegador disponible en
+  este entorno. Para cualquier tarea de captura de pantalla fuera del repo (mockups
+  sueltos en el scratchpad, por ejemplo), usar la vía Node, no Python.
