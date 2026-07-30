@@ -2,3 +2,9 @@ node_modules/
 test-results/
 playwright-report/
 dist/
+
+# Herramientas de sesión (skills instaladas vía `npx skills add`, worktrees de Claude
+# Code) — locales al entorno de trabajo, no forman parte de la app SND//WCH.
+.agents/
+.claude/
+skills-lock.json
