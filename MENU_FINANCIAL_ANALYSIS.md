@@ -194,6 +194,62 @@ Misma metodología (Python, librería estándar, 20,000 corridas por horizonte).
 
 ---
 
+## 5. Inversión inicial para empezar
+
+El dueño confirmó (2026-07-31) que **ya tiene el equipo básico de cocina** (refrigeradora/
+congeladora, superficies de trabajo) y **ya tiene el setup digital** (celular dedicado,
+cuentas de redes sociales) — así que la inversión real no incluye equipamiento ni
+tecnología, solo trámites legales y capital de trabajo.
+
+### 5.1 Trámites/permisos (Trujillo, Perú — investigado 2026-07-31)
+
+| Trámite | Costo | Fuente/nota |
+|---|---|---|
+| Licencia de Funcionamiento Municipal | S/100-400 | [Municipalidad de Trujillo](https://www.munitrujillo.gob.pe/portal/Licencias_funcionamiento) — negocios de riesgo bajo se aprueban el mismo día por Decreto Legislativo 1497. Un delivery de sándwiches desde casa, sin atención al público en el local, probablemente cae en la categoría de riesgo bajo (S/100-400), no la de restaurante grande (S/400-1,500) |
+| Inspección sanitaria (obligatoria) | S/150-350 | Emitida por una empresa autorizada por DIGESA, por servicio |
+| Carné de sanidad (solo el dueño, sin personal) | S/15-30 | Municipal, por persona que manipula alimentos |
+| **Registro Sanitario DIGESA** | **No aplica** | Ese trámite (~S/390/producto) es para productos envasados vendidos con marca propia (café molido, mermeladas, galletas) — no para comida preparada al pedido como un sándwich. Si en el futuro SND//WCH vende algo envasado con su marca (ej. una salsa embotellada), ahí sí aplicaría |
+| **Total trámites** | **S/265-780** | Punto medio ≈ **S/520** |
+
+### 5.2 Capital de trabajo inicial (insumos + empaque)
+
+No hay fuente pública de "cuánto stock inicial comprar" — es una estimación derivada del
+propio modelo de esta sección, no una investigación externa:
+
+| Concepto | Estimado | Base del cálculo |
+|---|---|---|
+| Insumos (2 semanas de stock, ~130 pedidos a COGS S/6.19/pedido) | S/400-800 | Ritmo de Mes 1 (5-15 pedidos/día) × COGS real de la sección 2.3 |
+| Empaque (compra inicial en lote) | S/300-500 | Estimación — el precio de empaque por pedido (sección 1) es de confianza "débil", ningún proveedor publicó precio de lote online |
+| **Total capital de trabajo** | **S/700-1,300** | |
+
+### 5.3 Colchón operativo recomendado (opcional, no un costo obligatorio)
+
+Los gastos fijos mensuales ya establecidos (marketing S/300 + otros S/150 = S/450/mes,
+sección 3.1) son el único costo que sigue corriendo aunque no entre ni un pedido. Tener
+1-2 meses de eso como reserva (**S/450-900**) es una práctica estándar de colchón, no un
+requisito legal ni un cálculo con fuente externa — es una recomendación, no una cifra
+investigada.
+
+### 5.4 Total estimado
+
+| Componente | Rango |
+|---|---|
+| Trámites/permisos | S/265-780 |
+| Capital de trabajo (insumos+empaque) | S/700-1,300 |
+| Colchón operativo (1-2 meses de fijos, opcional) | S/450-900 |
+| **Total** | **S/1,415-2,980** |
+
+**Con el equipo de cocina y el setup digital ya resueltos, la inversión real para abrir es
+baja** — el punto de equilibrio ya calculado en versiones anteriores de este documento
+(~33 pedidos/mes solo para cubrir marketing+otros fijos) confirma que no hace falta un
+capital grande para sostener las primeras semanas, siempre que el flujo de pedidos llegue
+dentro del rango investigado (sección 3.1bis). El rango de S/1,415-2,980 es sobre todo
+trámites legales y stock inicial, no equipamiento — la mayor incertidumbre real es el
+costo de empaque en lote (confianza "débil", nadie publicó precio online) y el rango
+amplio de trámites (depende de la categoría de riesgo exacta que la municipalidad asigne).
+
+---
+
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
 punto medio entre los precios ya documentados y los investigados online, con demanda
 anclada en fuentes de Perú/Trujillo. No reemplaza datos reales de venta ni un costeo de
