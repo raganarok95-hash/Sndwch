@@ -139,6 +139,53 @@ precios de insumos restaurados.
   real bottom-up bajó un poco al restaurar los precios documentados (22.9% vs. 26.6% en
   v2), principalmente porque atún y embutido volvieron a costar menos por kilo.
 
+### 3.3 Extensión a 6 y 12 meses (pedido explícito del dueño)
+
+**Advertencia de confiabilidad, antes de las cifras**: los benchmarks de demanda de la
+sección 3.1 (Chicago Booth, Toast, Databox, etc.) solo cubren el lanzamiento de un
+negocio nuevo — **meses 1-3**. No existe investigación equivalente para meses 4-12 de
+este documento ni de ninguna ronda anterior. Lo que sigue **no es una simulación con la
+misma base de evidencia que 1-3** — es una extrapolación explícita, con su propio
+supuesto declarado:
+
+- **Meses 4-6**: se asume crecimiento moderado que continúa el ritmo de meses 1-3 pero
+  desacelerando (de 15-40 pedidos/día en Mes 3 a 18-50 en Mes 6) — supuesto de
+  continuidad, no de un benchmark nuevo.
+- **Meses 7-12**: se asume una **meseta** al nivel de Mes 6 (18-50 pedidos/día, sin
+  crecimiento adicional) — por no tener ninguna base real para proyectar crecimiento tan
+  lejos en un negocio que aún no ha abierto.
+- **Advertencia operativa que no está en el modelo**: a partir de ~30-50 pedidos/día
+  sostenidos, la condición de "mano de obra S/0" (el dueño arma todos los pedidos él
+  mismo, ya documentada como condición, no como hecho permanente) puede dejar de ser
+  realista — este documento no tiene un dato real de cuántos pedidos/día puede sostener
+  una sola persona, así que las cifras de Mes 6 en adelante probablemente sobreestiman la
+  utilidad neta si el volumen real obliga a contratar ayuda.
+
+**Ganancia bruta (ingresos − insumos, antes de comisión de tarjeta/marketing/fijos) y
+ganancia neta, por mes (S/, mediana P50 de 20,000 corridas):**
+
+| Mes | Bruta (P50) | Neta (P50) | Confiabilidad |
+|---|---|---|---|
+| 1 | 5,226 | 4,591 | Investigado (benchmarks reales) |
+| 2 | 8,697 | 7,938 | Investigado (interpolación entre Mes 1 y 3) |
+| 3 | 14,405 | 13,451 | Investigado (benchmarks reales) |
+| 4 | 15,720 | 14,717 | Extrapolación — sin benchmark |
+| 5 | 16,768 | 15,742 | Extrapolación — sin benchmark |
+| 6 | 17,886 | 16,796 | Extrapolación — sin benchmark |
+| 7-12 | ~17,900 c/mes | ~16,800 c/mes | Meseta asumida — sin base real |
+
+**Acumulado (S/, P10 / P50 / P90 de 20,000 corridas):**
+
+| Horizonte | Bruta P10 | Bruta P50 | Bruta P90 | Neta P10 | Neta P50 | Neta P90 |
+|---|---|---|---|---|---|---|
+| **3 meses** | 21,539 | 29,144 | 38,530 | 19,426 | 26,770 | 35,839 |
+| **6 meses** | 66,326 | 81,820 | 99,504 | 61,207 | 76,234 | 93,366 |
+| **12 meses (1 año)** | 167,808 | 194,061 | 222,835 | 156,371 | 181,815 | 209,659 |
+
+Los números de 3 meses de esta tabla difieren muy poco de los de la sección 3.2 (P50 neta
+26,770 vs. 26,876) — es variación normal de correr la simulación de nuevo con la misma
+distribución, no un cambio de supuestos.
+
 **La misma advertencia de v2 sigue aplicando**: el 0% de corridas en pérdida es un
 resultado honesto dentro de los rangos investigados (demanda, COGS, ticket), no una
 garantía — no captura un escenario de demanda muy por debajo del piso investigado (17-30%
