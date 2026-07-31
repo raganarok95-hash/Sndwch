@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npx playwright test *)",
+      "Bash(npm run build)",
+      "Bash(npm test *)",
+      "Bash(git fetch origin *)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run verify)",
+      "mcp__github__actions_list",
+      "mcp__github__actions_get",
+      "mcp__Supabase__list_edge_functions",
+      "mcp__Supabase__get_edge_function",
+      "mcp__Supabase__get_logs",
+      "mcp__Supabase__list_projects",
+      "mcp__Supabase__list_tables",
+      "mcp__Supabase__get_advisors",
+      "mcp__Supabase__list_migrations",
+      "mcp__Supabase__get_project_url",
+      "mcp__Supabase__get_publishable_keys",
+      "mcp__Adobe_for_creativity__asset_search",
+      "mcp__Adobe_for_creativity__asset_inline_preview",
+      "mcp__Vercel__list_teams",
+      "mcp__Vercel__list_projects"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "command": "cd /home/user/Sndwch && npm run verify || { echo 'npm run verify (typecheck+build+test) fallo -- commit bloqueado. Revisa la salida arriba antes de reintentar.' >&2; exit 2; }",
+            "timeout": 400,
+            "statusMessage": "Verificando (typecheck+build+test) antes de comitear..."
+          }
+        ]
+      }
+    ]
+  }
+}

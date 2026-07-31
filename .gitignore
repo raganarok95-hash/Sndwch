@@ -5,8 +5,12 @@ dist/
 
 # Herramientas de sesión (skills instaladas vía `npx skills add`, worktrees de Claude
 # Code) — locales al entorno de trabajo, no forman parte de la app SND//WCH.
+# Excepción: .claude/settings.json SÍ se commitea a propósito (hooks/permisos
+# compartidos por todo el equipo/sesiones futuras, ver CLAUDE.md); todo lo demás en
+# .claude/ (skills instaladas, settings.local.json, plans/) sigue siendo local.
 .agents/
-.claude/
+.claude/*
+!.claude/settings.json
 skills-lock.json
 # Estado efímero de la skill impeccable (puerto/token de "modo live") — .impeccable/
 # design.json y critique/ SÍ se commitean (son artefactos durables), esto no.
