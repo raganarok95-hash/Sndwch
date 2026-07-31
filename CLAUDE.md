@@ -372,3 +372,44 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Si se retoma esto en el futuro, empezar por confirmar presupuesto/plataforma con el
   usuario (regla de gastos reales del CLAUDE.md) antes de escribir cualquier
   integración — no asumir la ruta más barata solo por serlo, dado el riesgo de baneo.
+- **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
+  recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
+  distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en
+  `SearchSkills` (claude.ai) como en `npx skills search` (registro de Vercel Labs) contra
+  las ~90 skills ya instaladas en `.claude/skills/` — 0 resultados en todos los casos. Es
+  un gap real, no un fallo de búsqueda. Las más cercanas que sí existen y sirven como
+  sustituto parcial: `financial-analyst` (su `ratio_calculator.py` sirve para validar
+  márgenes/rentabilidad, pero su `forecast_builder.py` de crecimiento driver-based asume
+  una sola tasa de crecimiento constante por escenario — no sirve tal cual para un ramp
+  de lanzamiento con tasas de crecimiento mes a mes distintas, hay que construir esa
+  parte del modelo a mano) y `pricing` (enfocada en SaaS/tiers, su marco de "precio entre
+  costo de servir y valor percibido" es reutilizable en concepto, no sus scripts). El
+  análisis de menú (matriz de popularidad × margen de contribución) se hizo a mano con
+  metodología estándar de menu engineering (Kasavana & Smith) — ver
+  `MENU_FINANCIAL_ANALYSIS.md`.
+- **No existe ninguna skill "selectora de MCP"/optimización de tokens de herramientas en
+  esta cuenta — buscado 2026-07-31** (`npx skills search` con "mcp", "token", "context
+  management": 0 resultados). El mecanismo real que ya cumple ese rol en este entorno es
+  el listado de tools diferidas (`ToolSearch`): los MCP conectados no cargan su schema
+  completo hasta que se buscan por nombre, solo aparece el nombre en el listado — ya es
+  optimización de tokens por diseño del harness, no algo que falte configurar. Lo que sí
+  es un gasto real de tokens evitable: conectores habilitados en el chat
+  (`enabledInChat:true` en `ListConnectors`) que son irrelevantes para este proyecto
+  (AgentMail, Airtable, Asana, Gmail, Google Calendar/Drive, HubSpot, Notion, PayPal,
+  Postman, Replit, SlidesGPT, Stripe, Windsor.ai) — cada uno agrega su nombre+descripción
+  al listado de cada turno aunque nunca se use. Esto **no se puede desactivar desde una
+  sesión** (ni con herramientas MCP ni con hooks) — se apaga en Ajustes de conectores de
+  claude.ai, fuera de esta conversación. Conectores que sí tienen uso real en este
+  proyecto y conviene dejar prendidos: Adobe for Creativity (fotos de stock), Supabase,
+  GitHub (vía MCP dedicado, no listado en `ListConnectors`), Context7 (docs de librerías).
+- **Automatizaciones de sesión configuradas 2026-07-31**: `.claude/settings.json` (nuevo,
+  commiteado en el repo — afecta a cualquier sesión futura que trabaje aquí) tiene (1) un
+  allowlist de ~22 comandos/tools de solo lectura de uso frecuente (extraído del propio
+  historial de la sesión, ver `fewer-permission-prompts`) y (2) un hook `PreToolUse` que
+  corre `npm run verify` (typecheck+build+test, ~4 min) antes de cualquier `git commit` y
+  bloquea el commit si falla — probado en vivo (disparo confirmado con un commit
+  `--dry-run` antes de dejarlo con el comando real). **Costo real a tener en cuenta**:
+  como es un hook de proyecto commiteado, cualquier sesión futura (no solo esta) pagará
+  esos ~4 minutos extra en CADA commit, incluso commits triviales — si en el futuro esto
+  resulta más molesto que útil, el hook se quita editando/borrando la sección `hooks` de
+  `.claude/settings.json`, no hace falta tocar nada más.
