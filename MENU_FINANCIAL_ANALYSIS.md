@@ -18,6 +18,7 @@ una SIMULACIÓN, no un pronóstico con historial real.
 | v2 | Todo re-investigado online desde cero | El dueño pidió tratar v1 como errónea y partir de cero |
 | v3 | Todo restaurado a CLAUDE.md | El dueño aclaró que solo quería una investigación crítica, no descartar los precios ya documentados |
 | **v4 (esta)** | **Restaurado, EXCEPTO atún y embutido (online)** | Punto medio: confiar en los precios ya dados, pero usar el dato online para los dos insumos que no tenían cotización propia |
+| **v4.1 (nota, sin recálculo)** | Embutido actualizado a S/48/kg real (2026-08-01), atún sigue online | El dueño confirmó el precio real de embutido — cambio de solo 4% vs. el S/50 usado en v4, **las cifras de este documento (COGS%, márgenes, utilidad) siguen siendo las de v4, no se recalcularon** — pendiente rehacer la simulación completa cuando también haya precio real de atún, para no correrla dos veces |
 
 ## 1. Insumos: precios usados en v4
 
@@ -27,7 +28,7 @@ una SIMULACIÓN, no un pronóstico con historial real.
 | Res | S/20 | CLAUDE.md |
 | Pollo | S/17 | CLAUDE.md |
 | **Atún (en lata, neto escurrido)** | **S/67** | **Investigado online (v2)** — [Tottus, filete de atún](https://tottus.falabella.com.pe/tottus-pe/product/113709279/filete-de-atun-en-aceite-de-girasol-170g/113709281), conversión a neto escurrido |
-| **Embutido premium** | **S/50** | **Investigado online (v2)** — rango S/37-65 investigado, punto medio usado |
+| **Embutido premium** | ~~S/50~~ **S/48** | **Precio real confirmado por el dueño (2026-08-01)** — reemplaza el estimado online de v2/v4 (S/50, punto medio de un rango S/37-65). Diferencia de 4%, no recalculada en las cifras de este documento (ver nota abajo) |
 | Carne molida | S/10 | CLAUDE.md |
 | Queso | S/35 | CLAUDE.md |
 | Salsa (proxy mostaza) | S/19 | Sin precio documentado antes — se mantiene el investigado en v2 |

@@ -160,10 +160,10 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 
 ## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
 
-- **El negocio aún NO ha abierto** — el plan del dueño es lanzar en ~2 meses desde julio
-  2026 (aprox. septiembre 2026). Todo lo que hay hoy en `orders`/`customers` en Supabase
-  es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales. Cualquier
-  proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
+- **El negocio aún NO ha abierto** — fecha de apertura confirmada por el dueño 2026-08-01:
+  **lunes 7 de septiembre de 2026**. Todo lo que hay hoy en `orders`/`customers` en
+  Supabase es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales.
+  Cualquier proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
   referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
   datos reales apenas el negocio esté operando y haya volumen real que medir.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
@@ -173,9 +173,14 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
   volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
   para necesitar contratar).
-- **Precios de insumos investigados (Perú, julio 2026)**: res ~S/20/kg, pollo ~S/17/kg,
-  atún en lata ~S/38/kg, embutido premium (jamón/paté/cabanossi) ~S/38/kg, carne molida
-  ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según tipo. Las bebidas caseras (infusiones)
+- **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
+  **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
+  2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
+  `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
+  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según
+  tipo. **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
+  el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
+  conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).

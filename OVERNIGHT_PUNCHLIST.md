@@ -40,4 +40,29 @@ Para activarlo (no puedo hacer esto por ti — son credenciales reales de tu pro
 Mientras no hagas esto, el botón simplemente no aparece — el registro/login por
 teléfono+PIN de siempre sigue funcionando exactamente igual.
 
-## 3. (los agentes irán agregando ítems aquí si aparecen)
+## 3. Activar publicación automática a Meta (en proceso — 2026-08-01)
+
+El dueño no encontró el ID de Página con la ruta clásica de Configuración → Información
+de la Página (Meta reubica esa opción seguido). Vía más confiable, evita perseguir el
+menú: todo con el **Graph API Explorer** (developers.facebook.com/tools/explorer).
+
+1. Crea una app en [Meta for Developers](https://developers.facebook.com/apps) si no
+   tienes una (gratis, solo registro).
+2. En Graph API Explorer, selecciona esa app y genera un **User Access Token** con los
+   permisos: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`,
+   `instagram_basic`, `instagram_content_publish`.
+3. Con ese token, corre esta única consulta:
+   `GET /me/accounts?fields=id,name,access_token,instagram_business_account{id,username}`
+   — la respuesta trae, para tu Página, **`id` (= `META_PAGE_ID`)**,
+   **`instagram_business_account.id` (= `META_IG_USER_ID`)**, y un `access_token` de
+   Página de corta duración.
+4. Canjea ese `access_token` corto por uno de larga duración (60 días) con:
+   `GET /oauth/access_token?grant_type=fb_exchange_token&client_id=TU_APP_ID&client_secret=TU_APP_SECRET&fb_exchange_token=TOKEN_CORTO`
+5. Repite el paso 3 (`/me/accounts`) pero autenticado con el token largo del paso 4 — el
+   `access_token` que devuelve ahí para tu Página **no expira por tiempo** (dura mientras
+   no revoques permisos). Ese es el valor final de **`META_PAGE_ACCESS_TOKEN`**.
+
+Con los 3 valores, se pasan aquí (al asistente) y se corre `supabase secrets set` — no
+requiere que el dueño toque la terminal.
+
+## 4. (los agentes irán agregando ítems aquí si aparecen)

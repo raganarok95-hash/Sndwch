@@ -71,12 +71,15 @@ agencia ni freelancer contratado. Arma los pedidos él mismo — el tiempo
 disponible para producir contenido es real pero limitado; cualquier formato de
 contenido debe ser grabable en minutos, no producciones de medio día.
 
-**Presupuesto pago:** sin monto cerrado todavía — la idea de destinar
-presupuesto a ads pagados (Meta Ads, dado que Página/IG Business ya existen)
-ya se conversó, pero el monto y la fecha de arranque quedan como decisión
-abierta (§13). Mientras no haya cifra confirmada, este plan sigue tratando el
-contenido orgánico de §9 como la base — un presupuesto de ads amplifica lo que
-ya funciona orgánicamente, no lo sustituye desde cero.
+**Presupuesto pago:** confirmado por el dueño 2026-08-01 — **S/300 iniciales,
+escalable** según resultado. Fecha de arranque recomendada (decisión técnica,
+no del dueño — ver §13 decisión #6): últimas 1-2 semanas antes de apertura,
+no desde hoy. Motivo: la lógica de §12 es impulsar (boost) contenido orgánico
+que ya demostró tracción real, no financiar campañas sin ningún dato de qué
+funciona — arrancar el gasto antes de tener al menos 2-3 Reels publicados
+desestima esa ventaja. Concentrar el grueso del presupuesto en boostear el
+Reel de apertura + el/los Reels de pre-lanzamiento con mejor performance real
+(pedidos desde la waitlist, no likes).
 
 **Ya construido y listo para usar (sin escribir código nuevo):**
 - Página de Facebook, cuenta de Instagram Business y Meta Business Manager ya
@@ -108,11 +111,18 @@ ya funciona orgánicamente, no lo sustituye desde cero.
   segundo pedido, re-enganche de rango alto, "nunca ha pedido" (3 etapas),
   aniversario de cuenta.
 
-**Fase del negocio:** pre-apertura. Lanzamiento planeado ~septiembre 2026. Todo
-dato de `orders`/`customers` hoy en producción es de prueba (~10 pedidos, 2
-clientes) — no hay historial de ventas real todavía, así que ninguna proyección
-de este plan es un pronóstico, es una hipótesis de trabajo a validar con datos
-reales apenas haya volumen.
+**Fase del negocio:** pre-apertura. **Fecha de apertura confirmada: lunes 7 de
+septiembre de 2026** (dueño, 2026-08-01). Todo dato de `orders`/`customers` hoy
+en producción es de prueba (~10 pedidos, 2 clientes) — no hay historial de
+ventas real todavía, así que ninguna proyección de este plan es un pronóstico,
+es una hipótesis de trabajo a validar con datos reales apenas haya volumen.
+
+**Urgencia de calendario (2026-08-01):** con apertura el 7 de septiembre,
+quedan ~5.3 semanas — menos que las 6 semanas que asume el calendario de §9.
+La pieza de "semana -6" (Reel "Por qué //") ya debería estar grabada; empezarla
+esta misma semana para no perder más terreno. El resto del calendario de §9 se
+corre completo, comprimido a 5 semanas en vez de 6 (fusionar semana -6 y -5 si
+hace falta, no saltarse ninguna pieza).
 
 ## 4. Adquisición — cómo se enteran desconocidos
 
@@ -343,9 +353,9 @@ mejor take) sigue siendo trabajo humano, ninguna herramienta lo reemplaza.
 - Activar los 3 secrets de Meta para publicación automática.
 - Crear Google Business Profile (gratis, alto impacto en búsqueda local).
 - Código promocional exclusivo para la lista de espera.
-- **Cerrar el monto real de ads pagados** (decisión abierta #6, §13) — sin
-  cifra confirmada, esto se queda en pausa, pero es lo primero que desbloquea
-  el resto de este bloque en cuanto el dueño la defina.
+- ~~Cerrar el monto real de ads pagados~~ — resuelto, S/300 iniciales
+  escalables (§13, decisión #6). Falta solo decidir la fecha exacta de
+  arranque dentro de la ventana recomendada.
 
 **En cuanto haya presupuesto de ads confirmado:**
 - Boost de los Reels con mejor rendimiento orgánico real (pedidos, no likes) —
@@ -386,22 +396,21 @@ rendimiento por franja horaria (ya existen en Admin → Dashboard, no requieren
 nada nuevo).
 
 **Decisiones abiertas (sin resolver en este plan, requieren al dueño):**
-1. **Fecha de apertura exacta** — el fix del "Modo cocina de una mano"
-   (`business_launched`) depende de que alguien lo active a mano el día real;
-   no hay fecha automática porque nunca se confirmó una fecha exacta, solo
-   "~septiembre 2026".
+1. ~~Fecha de apertura exacta~~ — **RESUELTO 2026-08-01: lunes 7 de septiembre
+   de 2026.** Falta activar `business_launched` a mano ese día (o el día real,
+   si se corre).
 2. **Google Business Profile** — requiere dirección física confirmada de
    operación, dato de negocio fuera del alcance de este plan.
 3. **Configurar los 3 secrets de Meta** (`META_PAGE_ACCESS_TOKEN`,
-   `META_PAGE_ID`, `META_IG_USER_ID`) — paso técnico simple pero requiere que
-   el dueño extraiga esos valores desde su Meta Business Manager; sin esto, la
-   mitad del stack operativo de §11 sigue siendo manual.
+   `META_PAGE_ID`, `META_IG_USER_ID`) — el dueño está en proceso de extraerlos
+   desde Meta Business Manager/Graph API Explorer (guía dada 2026-08-01); sin
+   esto, la mitad del stack operativo de §11 sigue siendo manual.
 4. **¿Habrá un código promocional específico de lanzamiento?** — el sistema ya
    existe, falta decidir el monto/condición y crearlo desde el panel admin.
-5. **CAC real** — sin gasto pago, hoy no hay costo de adquisición que medir
-   más allá del tiempo del dueño; esto cambia en cuanto se confirme el
-   presupuesto de ads (punto 6).
-6. **Monto y fecha de arranque de ads pagados (Meta Ads)** — la idea ya se
-   conversó, pero falta el número real y cuándo empieza a correr. Hasta que
-   se confirme, el plan sigue tratando el contenido orgánico de §9 como la
-   base que sostiene la demanda.
+5. **CAC real** — sin gasto pago hasta ahora, no hay costo de adquisición que
+   medir más allá del tiempo del dueño; empieza a poder calcularse en cuanto
+   arranque el presupuesto de ads (punto 6).
+6. ~~Monto y fecha de arranque de ads pagados~~ — **RESUELTO (monto)
+   2026-08-01: S/300 iniciales, escalable.** Fecha de arranque queda a
+   criterio operativo: recomendado últimas 1-2 semanas antes del 7 de
+   septiembre, no desde hoy (ver §3, motivo detallado ahí).
