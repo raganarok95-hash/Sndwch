@@ -65,9 +65,17 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
 // real bastante más de lo que el precio fijo alcanzaba a cubrir (hallazgo de costeo real
-// con precios de insumos de Perú). Mismo criterio en pDbl de P04: atún (~S/38/kg) cuesta
-// igual que el embutido italiano de P05 (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 —
-// menos que P01/P02 (pollo/res, más baratos) — subido a 9 para igualar a P05.
+// con precios de insumos de Perú). Mismo criterio en pDbl de P04: en el momento de esta
+// decisión, se creía que atún (~S/38/kg) costaba igual que el embutido italiano de P05
+// (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 — menos que P01/P02 (pollo/res, más
+// baratos) — subido a 9 para igualar a P05.
+// NOTA (corregida en la re-auditoría de 10 agentes, BAJO — comentario desactualizado, sin
+// cambio de precio): esa paridad de costo ya NO es cierta. CLAUDE.md/MENU_FINANCIAL_ANALYSIS.md
+// documentan atún a ~S/67/kg (investigado online, sin cotización real todavía) y embutido a
+// S/48/kg (precio real confirmado por el dueño, 2026-08-01) — ~40% de diferencia, no
+// paridad. El precio de venta se deja igual a propósito (pDbl:9 en ambos), pero eso ahora
+// significa que la doble proteína de atún en BYO rinde bastante menos margen que la de
+// embutido con el mismo precio — ver MENU_FINANCIAL_ANALYSIS.md §2.2 (36.7% vs 52.8%).
 // P04 p15/p30 subidos otra vez (14/25→16/30, análisis financiero de otra sesión) —
 // con el mismo costo real por kilo que P05, el atún BYO rentaba solo 46.4%/44.0% contra
 // el objetivo del negocio (~55% margen), mientras P05 con costo idéntico ya rentaba
@@ -262,19 +270,27 @@ export const PROT_LABEL: Record<string, string> = {
   P07: "RES // CHICAGO",
 };
 
-export function rewardWaiver(rewardId: string | null, b: any, basePrice: number, dblSurcharge: number): number {
+// priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo
+// recibía basePrice/dblSurcharge sueltos, así que solo podía implementar R04/R06 y dejaba
+// R02/R03/R05 siempre en 0, además de aplicar R04 SIN el tope anti-abuso (R04_FLAT_WAIVER)
+// que sí protege a deriveCart (hallazgo de la re-auditoría de 10 agentes, BAJO: hoy sin
+// impacto real en dinero porque el único llamador, actFavoritesAdd/deriveOrder, descarta
+// este precio y solo lo usa para validar que el build es armable — pero heredaba un
+// descuento sin tope si algún día se reutiliza para tasar un pedido real). Ahora replica
+// exactamente el mismo cálculo (con los mismos topes) que deriveCart usa para el pedido
+// real, una sola fuente de verdad en vez de dos implementaciones que podían divergir.
+export function rewardWaiver(rewardId: string | null, b: any, priced: PricedBuild): number {
   if (!rewardId) return 0;
   const reward = REWARDS[rewardId];
   if (!reward) throw new ApiError("Recompensa inválida.");
-  if (rewardId === "R04") {
-    if (!b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
-    return dblSurcharge;
-  }
-  if (rewardId === "R06") {
-    if (b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
-    return basePrice;
-  }
-  return 0;
+  if (rewardId === "R04" && !b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
+  if (rewardId === "R06" && b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
+  return rewardId === "R02" ? priced.sauceSurcharge
+    : rewardId === "R03" ? Math.min(priced.sizeUpgradeDiff, R03_FLAT_WAIVER)
+    : rewardId === "R04" ? Math.min(priced.dblSurcharge, R04_FLAT_WAIVER)
+    : rewardId === "R05" ? Math.min(priced.basePrice, R05_FLAT_WAIVER)
+    : rewardId === "R06" ? priced.basePrice
+    : 0;
 }
 
 type PricedBuild = {
@@ -368,7 +384,7 @@ export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: num
       Array.isArray(b.sauces) ? b.sauces.filter((x: any) => typeof x === "string") : [],
       size, doubleProt, extraSauce,
     );
-  const waiver = rewardWaiver(rewardId, b, priced.basePrice, priced.dblSurcharge);
+  const waiver = rewardWaiver(rewardId, b, priced);
   return {
     ingredients: priced.ingredientsPerUnit,
     expectedTotal: Math.max(0, priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge - waiver),

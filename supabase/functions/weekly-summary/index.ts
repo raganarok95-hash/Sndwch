@@ -1,7 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // SND//WCH — weekly-summary
-// Se dispara una vez por semana desde pg_cron (lunes) y le manda al dueño un correo con
+// Se dispara una vez por semana desde pg_cron: "0 2 * * 1" (lunes 2:00 UTC), que en hora de
+// Lima (UTC-5) cae DOMINGO 9:00pm, no lunes por la mañana como sugería una versión anterior
+// de este comentario (hallazgo de la re-auditoría de 10 agentes, informativo — la ventana
+// de datos es rolling de 7 días, no de calendario, así que esto no corrompe ninguna cifra;
+// si en algún momento se quiere que dispare lunes por la mañana hora Lima, el cron real
+// vive en Supabase (`select * from cron.job`), no en este archivo, y habría que moverlo a
+// algo como "0 13 * * 1" ≈ 8am Lima). Le manda al dueño un correo con
 // dos cosas que daily-summary no cubre por ser diario: comparativa semana-contra-semana
 // (para decisiones, no solo el día a día) y una lista de reabastecimiento — qué productos
 // están bajos/agotados AHORA, para comprar antes de que falten en plena semana. No hay un

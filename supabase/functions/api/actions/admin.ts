@@ -587,7 +587,12 @@ export async function actAdminAtRiskCustomers(b: any) {
   await requireAdmin(b.token);
   const [customers, orders] = await Promise.all([
     sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders&limit=5000"),
-    sbGet("orders", "payment_status=eq.paid&select=customer_phone,created_at&limit=5000"),
+    // status=neq.CANCELADO (hallazgo de la re-auditoría de 10 agentes, MEDIO): a diferencia
+    // del resto del dashboard (dashboard_aggregates y las demás métricas de admin.ts), esta
+    // consulta no excluía pedidos cancelados — un pedido pagado-y-luego-cancelado contaba
+    // como "última compra real", subestimando o directamente ocultando de la lista a un
+    // cliente que en los hechos no ha comprado de verdad hace tiempo.
+    sbGet("orders", "payment_status=eq.paid&status=neq.CANCELADO&select=customer_phone,created_at&limit=5000"),
   ]);
 
   const lastOrderMs = new Map<string, number>();

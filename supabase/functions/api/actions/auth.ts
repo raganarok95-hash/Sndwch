@@ -266,10 +266,12 @@ export async function actLogoutEverywhere(b: any) {
 // Borrado de cuenta a pedido del cliente (antes no existía ningún camino para esto —
 // solo un borrado manual del dueño en la base de datos). Pide el PIN de nuevo (no solo
 // el token de sesión) para que un token filtrado/robado no baste para una acción
-// irreversible. Los pedidos/transacciones/calificaciones se ANONIMIZAN en vez de
-// borrarse — el negocio conserva sus cifras de ventas/historial, pero sin ningún dato
-// que identifique a esta persona; lo estrictamente personal (direcciones, favoritos,
-// suscripciones push, movimientos de crédito) sí se borra por completo.
+// irreversible. Los pedidos/calificaciones se ANONIMIZAN en vez de borrarse — el negocio
+// conserva sus cifras de ventas/historial, pero sin ningún dato que identifique a esta
+// persona; lo estrictamente personal (direcciones, favoritos, suscripciones push,
+// movimientos de crédito/puntos, reservas de pago, Plan Semanal sin confirmar, carritos
+// abandonados, historial de contactos de marketing, canjes de código promocional, avisos
+// de reabastecimiento, lista de espera) sí se borra por completo.
 export async function actDeleteAccount(b: any) {
   const s = await requireSession(b.token);
   const pin = String(b.pin || "").trim();
@@ -293,6 +295,22 @@ export async function actDeleteAccount(b: any) {
     // pidió borrar su cuenta (hallazgo de la re-auditoría legal/datos). Se borra por
     // completo, igual que direcciones/favoritos: es dato estrictamente personal.
     sbDelete("pending_charges", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    // Las 6 tablas de abajo (hallazgo de la re-auditoría de 10 agentes, MEDIO) tienen el
+    // mismo problema que pending_charges arriba — quedaban con teléfono/nombre vivos
+    // indefinidamente tras borrar la cuenta. Todas sus columnas de teléfono/nombre son
+    // NOT NULL (no se pueden anonimizar con null como orders/ratings abajo), así que se
+    // borran por completo — mismo criterio que pending_charges/transactions: es dato
+    // estrictamente personal, no una cifra de negocio que valga la pena conservar
+    // anonimizada. promo_code_redemptions: se borra solo el registro de ESTE cliente: NO
+    // se toca uses_count en promo_codes (esa cifra agregada de "cuántas veces se usó el
+    // código en total" es una métrica de negocio real, no dato personal, y debe seguir
+    // reflejando que el código sí se usó aunque quien lo usó haya borrado su cuenta).
+    sbDelete("pending_weekly_plans", `buyer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("cart_snapshots", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("marketing_touches", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("promo_code_redemptions", `phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("restock_notify_requests", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("waitlist_signups", `phone=eq.${encodeURIComponent(s.phone)}`),
     sbUpdate("orders", `customer_phone=eq.${encodeURIComponent(s.phone)}`, {
       customer_phone: null,
       customer_name: "Cuenta eliminada",

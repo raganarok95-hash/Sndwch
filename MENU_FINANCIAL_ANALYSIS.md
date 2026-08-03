@@ -88,6 +88,27 @@ en el borde bajo), reforzando que **el 45% de trabajo del negocio sigue siendo u
 deliberado, no el costo real** — con o sin el atún caro, la conclusión sobre el 45% no
 cambia.
 
+### 2.4 Recompensas (REWARDS) vs. el 45% de colchón — nota agregada en la re-auditoría de 10 agentes
+
+Los topes planos de canje en `catalog.ts` (R03_FLAT_WAIVER=S/8, R04_FLAT_WAIVER=S/6,
+R06=precio completo) se calibraron para que el costo real de honrar cada canje ronde el
+45% de colchón (ver CLAUDE.md, "Programa de puntos"). Con los costos reales de este mismo
+documento (§2.2), esa calibración se sostiene para res/pollo/molida (P01/P02/P06) pero NO
+para atún/embutido (P04/P05), donde el costo real de honrar el canje es bastante más alto:
+
+| Recompensa | Con P04 (atún) | Con P05 (embutido) | Con P01/P02/P06 |
+|---|---|---|---|
+| R03 (sube a 30CM gratis, tope S/8) | S/7.00 → **87.5%** | S/5.55 → 69.4% | 27-38% |
+| R04 (doble proteína gratis, tope S/6) | ~S/3.80 → **63.3%** | dentro del tope, seguro | 14-28% |
+| R06 (15CM gratis, waiver = precio completo) | S/8.10/S/16 → **50.6%** | 19-32% (según Signature) | 19-32% |
+
+Esto **no es un bug** — `catalog.ts` (líneas ~552-559) ya documenta la decisión deliberada
+de no subir estos topes para P04/P05 específicamente, por el riesgo de abrir una vía de
+abuso más golosa. Queda anotado acá porque este documento usa exactamente los mismos datos
+de costo y antes no cruzaba esta interacción — vale la pena revisarla junto con el punto 1
+de la sección 4 (cotizar atún/embutido con proveedor real), ya que un precio de insumo más
+bajo del que se confirme reduciría automáticamente estos porcentajes.
+
 ---
 
 ## 3. Proyección financiera — Simulación Monte Carlo (12 meses)

@@ -351,9 +351,10 @@ async function computePromoDiscount(
   if (foodTotal < Number(promo.min_order_total || 0)) {
     throw new ApiError(`Ese código requiere un pedido de al menos S/${Number(promo.min_order_total).toFixed(2)}.`, 400);
   }
-  // Chequeo previo por cortesía (mejor mensaje de error) — redeem_promo_code repite esto
-  // de forma atómica al confirmar el pedido, que es la verificación que de verdad importa
-  // contra una carrera (dos pedidos casi simultáneos con el mismo código+teléfono).
+  // Chequeo previo por cortesía (mejor mensaje de error) — es de solo lectura, así que un
+  // caso límite (dos solicitudes casi simultáneas) puede pasar aquí igual; la verificación
+  // que de verdad importa contra una carrera es el reclamo atómico de claimPromoDiscount,
+  // no esta.
   const already = await sbGet(
     "promo_code_redemptions",
     `promo_code_id=eq.${encodeURIComponent(promo.id)}&phone=eq.${encodeURIComponent(phone)}&select=id`,
@@ -364,6 +365,48 @@ async function computePromoDiscount(
   if (promo.discount_type === "percent" && promo.max_discount !== null) raw = Math.min(raw, Number(promo.max_discount));
   const discount = Math.round(Math.min(raw, foodTotal) * 100) / 100;
   return { promoCodeId: promo.id, code, discount };
+}
+
+// A diferencia de computePromoDiscount (solo lectura, usada también por el preview de
+// actValidatePromoCode — NUNCA debe tener efectos secundarios), esta SÍ reclama el uso de
+// verdad de forma atómica (RPC redeem_promo_code, con lock de fila + índice único
+// (promo_code_id, phone)) — se usa solo en los caminos reales de creación de pedido, ANTES
+// de cobrar/finalizar. Hallazgo de la re-auditoría de 10 agentes (MEDIO/ALTO): antes el
+// reclamo real ocurría recién DESPUÉS de crear el pedido, de forma best-effort — dos
+// solicitudes casi simultáneas con el mismo código podían pasar ambas el precheck de
+// computePromoDiscount y aplicar el descuento dos veces antes de que cualquiera escribiera
+// en promo_code_redemptions, rompiendo tanto el límite "una vez por cliente" como
+// max_uses global. Si el pedido termina fallando después de este reclamo, quien llame debe
+// liberarlo con releasePromoBestEffort (mismo patrón que restockBestEffort con inventario).
+async function claimPromoDiscount(
+  codeRaw: string,
+  phone: string,
+  foodTotal: number,
+  orderRef: string,
+): Promise<{ promoCodeId: string; code: string; discount: number }> {
+  const result = await computePromoDiscount(codeRaw, phone, foodTotal);
+  try {
+    await rpc("redeem_promo_code", { p_promo_id: result.promoCodeId, p_phone: phone, p_order_ref: orderRef, p_discount: result.discount });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("promo_code_exhausted")) throw new ApiError("Ese código promocional ya alcanzó su límite de usos.", 409);
+    if (msg.includes("23505") || msg.toLowerCase().includes("duplicate")) throw new ApiError("Ya usaste ese código promocional antes.", 409);
+    throw e;
+  }
+  return result;
+}
+
+// Revierte un reclamo de claimPromoDiscount si el pedido termina fallando después (reserva
+// que expira sin pagarse, pago que falla, un insert que revienta) — sin propagar el error
+// si falla (mismo criterio que restockBestEffort): no vale la pena tumbar la respuesta real
+// por esto, en el peor caso el código queda "gastado" de más y se corrige a mano.
+async function releasePromoBestEffort(promoCodeId: string | null, phone: string, orderRef: string): Promise<void> {
+  if (!promoCodeId) return;
+  try {
+    await rpc("release_promo_redemption", { p_promo_id: promoCodeId, p_phone: phone, p_order_ref: orderRef });
+  } catch (e) {
+    console.error("releasePromoBestEffort failed for", orderRef, e);
+  }
 }
 
 // Preview sin efectos secundarios (no reserva ni redime nada) — el cliente lo llama al
@@ -392,23 +435,6 @@ export async function actValidatePromoCode(b: any) {
   const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor);
   const result = await computePromoDiscount(code, phone, foodTotal);
   return { valid: true, code: result.code, discount: result.discount };
-}
-
-// Registra el uso real de un código (incrementa uses_count + inserta en
-// promo_code_redemptions, ambos atómicos dentro de la RPC — ver migración) DESPUÉS de que
-// el pedido ya se creó con el descuento correcto. Best-effort a propósito, mismo criterio
-// que logMarketingTouch (customer.ts): si esto falla, el cliente ya pagó el monto correcto
-// (el descuento ya se restó del total real cobrado) — lo único que se pierde es el
-// contador de usos/registro de auditoría, nunca dinero. El índice único
-// (promo_code_id, phone) en la tabla sigue protegiendo contra doble canje aunque este
-// insert se reintente.
-async function redeemPromoBestEffort(promoCodeId: string | null, phone: string, orderRef: string, discount: number): Promise<void> {
-  if (!promoCodeId || !discount) return;
-  try {
-    await rpc("redeem_promo_code", { p_promo_id: promoCodeId, p_phone: phone, p_order_ref: orderRef, p_discount: discount });
-  } catch (e) {
-    console.error("redeemPromoBestEffort failed for", orderRef, e);
-  }
 }
 
 // El cliente elige su zona en el checkout (ver DELIVERY_PRICE_ZONES en src/app.ts) y
@@ -477,99 +503,111 @@ export async function actPrepareOrder(b: any) {
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await computePromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal);
+    const promo = await claimPromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }
-  const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
-  if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
-    throw new ApiError("El total no coincide con los productos del pedido.", 400);
-  }
 
-  let phone: string | null = null;
-  let totalOrders = 0;
-  if (b.token) {
-    const active = await verifyActiveSession(b.token);
-    if (active) { phone = active.payload.phone; totalOrders = active.row.total_orders || 0; }
-    if (rewardId) {
-      if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-      const reward = REWARDS[rewardId];
-      if (!reward) throw new ApiError("Recompensa inválida.");
-      if ((active.row.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
-    }
-  } else if (rewardId) {
-    throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-  }
-  assertCartGatesAllowed(b.items, totalOrders);
-
-  // Bloquea una segunda reserva concurrente del mismo número de contacto (dos
-  // pestañas/dispositivos pagando el mismo carrito a la vez, o un reintento tras un fallo
-  // de red ambiguo) — sin esto, cada intento podría terminar generando su propio cargo
-  // real. Antes esto solo miraba customer_phone (null para invitados) — un invitado que
-  // reintentaba tras un fallo de red generaba una referencia nueva cada vez (ver oref() en
-  // el cliente) y se saltaba el bloqueo por completo (hallazgo de la re-auditoría de pagos).
-  // contact_phone es un campo obligatorio del checkout para TODOS, con o sin cuenta, así
-  // que sirve como identidad estable en ambos casos.
-  {
-    const nowIso = new Date().toISOString();
-    const existing = await sbGet(
-      "pending_charges",
-      `contact_phone=eq.${encodeURIComponent(contactPhone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
-    );
-    if (existing.length) {
-      throw new ApiError("Ya tienes un pedido en proceso de pago con este número. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
-    }
-  }
-
-  // Misma reserva atómica de siempre (ver reserve_inventory), solo que ahora ocurre
-  // ANTES del cobro en vez de después.
-  const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
-  const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
-  if (codes.length) {
-    try {
-      await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
-    } catch (e) {
-      throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
-    }
-    try {
-      await alertLowStockCrossing(codes, qtys);
-    } catch {
-      // una alerta fallida no debe afectar la reserva
-    }
-  }
-
-  const expiresAt = new Date(Date.now() + PENDING_CHARGE_TTL_MINUTES * 60000).toISOString();
+  // A partir de aquí, cualquier salida con error DEBE liberar el código promocional recién
+  // reclamado (si se usó uno) — mismo criterio que orderInserted/restockBestEffort con
+  // inventario más abajo, pero para claimPromoDiscount. Un solo try/catch envolvente en vez
+  // de repetir la liberación en cada punto de salida (hallazgo de la re-auditoría de 10
+  // agentes, MEDIO/ALTO: antes el reclamo real de un código promocional ocurría recién
+  // DESPUÉS de crear el pedido, de forma best-effort — ver claimPromoDiscount arriba).
   try {
-    await sbInsert("pending_charges", {
-      ref,
-      customer_phone: phone,
-      contact_phone: contactPhone,
-      customer_name: name,
-      customer_email: email || null,
-      customer_address: address,
-      notes: b.notes || null,
-      summary: b.summary || "",
-      expected_total: expectedTotal,
-      delivery_fee: deliveryFee,
-      delivery_zone: deliveryZone,
-      reserved_codes: codes,
-      reserved_qtys: qtys,
-      sanitized_items: sanitizedItems,
-      reward_id: rewardId,
-      scheduled_for: scheduledFor,
-      expires_at: expiresAt,
-      promo_code_id: promoCodeId,
-      promo_discount: promoDiscount,
-    });
-  } catch (e) {
-    await restockBestEffort(codes, qtys, "prepare-order");
-    if (e instanceof Error && e.message.includes("23505")) {
-      throw new ApiError("Ya hay un pago en proceso para este pedido. Espera un momento e intenta de nuevo.", 409);
+    const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
+    if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
+      throw new ApiError("El total no coincide con los productos del pedido.", 400);
     }
+
+    let phone: string | null = null;
+    let totalOrders = 0;
+    if (b.token) {
+      const active = await verifyActiveSession(b.token);
+      if (active) { phone = active.payload.phone; totalOrders = active.row.total_orders || 0; }
+      if (rewardId) {
+        if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+        const reward = REWARDS[rewardId];
+        if (!reward) throw new ApiError("Recompensa inválida.");
+        if ((active.row.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+      }
+    } else if (rewardId) {
+      throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+    }
+    assertCartGatesAllowed(b.items, totalOrders);
+
+    // Bloquea una segunda reserva concurrente del mismo número de contacto (dos
+    // pestañas/dispositivos pagando el mismo carrito a la vez, o un reintento tras un fallo
+    // de red ambiguo) — sin esto, cada intento podría terminar generando su propio cargo
+    // real. Antes esto solo miraba customer_phone (null para invitados) — un invitado que
+    // reintentaba tras un fallo de red generaba una referencia nueva cada vez (ver oref() en
+    // el cliente) y se saltaba el bloqueo por completo (hallazgo de la re-auditoría de pagos).
+    // contact_phone es un campo obligatorio del checkout para TODOS, con o sin cuenta, así
+    // que sirve como identidad estable en ambos casos.
+    {
+      const nowIso = new Date().toISOString();
+      const existing = await sbGet(
+        "pending_charges",
+        `contact_phone=eq.${encodeURIComponent(contactPhone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
+      );
+      if (existing.length) {
+        throw new ApiError("Ya tienes un pedido en proceso de pago con este número. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
+      }
+    }
+
+    // Misma reserva atómica de siempre (ver reserve_inventory), solo que ahora ocurre
+    // ANTES del cobro en vez de después.
+    const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+    const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
+    if (codes.length) {
+      try {
+        await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
+      } catch (e) {
+        throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
+      }
+      try {
+        await alertLowStockCrossing(codes, qtys);
+      } catch {
+        // una alerta fallida no debe afectar la reserva
+      }
+    }
+
+    const expiresAt = new Date(Date.now() + PENDING_CHARGE_TTL_MINUTES * 60000).toISOString();
+    try {
+      await sbInsert("pending_charges", {
+        ref,
+        customer_phone: phone,
+        contact_phone: contactPhone,
+        customer_name: name,
+        customer_email: email || null,
+        customer_address: address,
+        notes: b.notes || null,
+        summary: b.summary || "",
+        expected_total: expectedTotal,
+        delivery_fee: deliveryFee,
+        delivery_zone: deliveryZone,
+        reserved_codes: codes,
+        reserved_qtys: qtys,
+        sanitized_items: sanitizedItems,
+        reward_id: rewardId,
+        scheduled_for: scheduledFor,
+        expires_at: expiresAt,
+        promo_code_id: promoCodeId,
+        promo_discount: promoDiscount,
+      });
+    } catch (e) {
+      await restockBestEffort(codes, qtys, "prepare-order");
+      if (e instanceof Error && e.message.includes("23505")) {
+        throw new ApiError("Ya hay un pago en proceso para este pedido. Espera un momento e intenta de nuevo.", 409);
+      }
+      throw e;
+    }
+
+    return { success: true, ref, expiresAt };
+  } catch (e) {
+    if (promoCodeId) await releasePromoBestEffort(promoCodeId, contactPhone, ref);
     throw e;
   }
-
-  return { success: true, ref, expiresAt };
 }
 
 // Confirma un cobro de Culqi ya realizado contra la reserva creada por actPrepareOrder —
@@ -624,8 +662,11 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
       useCredit: false,
     });
     orderInserted = true;
-
-    await redeemPromoBestEffort(pc.promo_code_id, pc.contact_phone, pc.ref, Number(pc.promo_discount || 0));
+    // El código promocional (si se usó uno) ya quedó reclamado de forma atómica desde
+    // actPrepareOrder (ver claimPromoDiscount) — no hay nada que redimir aquí. Si el pedido
+    // termina fallando después de este punto, orderInserted ya es true y el código
+    // promocional NO se libera (mismo criterio que el inventario: el catch de abajo solo
+    // restockea/libera cuando `!orderInserted`).
 
     try {
       await sendPushToAdmins({
@@ -640,7 +681,10 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
 
     return { success: true, order, customer };
   } catch (e) {
-    if (!orderInserted) await restockBestEffort(codes, qtys, "confirm");
+    if (!orderInserted) {
+      await restockBestEffort(codes, qtys, "confirm");
+      await releasePromoBestEffort(pc.promo_code_id, pc.contact_phone, pc.ref);
+    }
     // La reserva ya quedó 'consumed' — si el pedido no llegó a crearse, la marcamos
     // 'cancelled' para que el registro de conciliación refleje que el cobro real no
     // terminó en un pedido (en vez de quedar engañosamente como 'consumed').
@@ -723,114 +767,125 @@ export async function actPlaceOrder(b: any) {
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  // Nota: manualMethod+promoCode ya se rechazó arriba (línea ~687), así que un código
+  // promocional real solo llega aquí por el camino de pago inmediato (crédito/recompensa),
+  // nunca por Yape/Plin pendiente.
   const promoCodeRaw = b.promoCode ? String(b.promoCode).trim() : "";
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await computePromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal);
+    const promo = await claimPromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }
-  const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
-  if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
-    throw new ApiError("El total no coincide con los productos del pedido.", 400);
-  }
 
-  // verifyActiveSession no depende de la reserva de stock (ni viceversa) — se lanza ya
-  // mismo y se resuelve más abajo justo donde se usa, en vez de esperar a que
-  // reserve_inventory termine primero para recién empezarla.
-  const sessionPromise: Promise<{ payload: SessionPayload; row: any } | null> = b.token
-    ? verifyActiveSession(b.token)
-    : Promise.resolve(null);
-
-  // Reserva de stock ANTES de registrar nada: reserve_inventory revisa Y descuenta
-  // en una sola transacción atómica (con bloqueo de fila), así que dos pedidos concurrentes
-  // por el último ingrediente disponible no pueden ambos "pasar" — el que llega segundo
-  // rechaza limpio en vez de sobrevender.
-  const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
-  const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
-  if (codes.length) {
-    try {
-      await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
-    } catch (e) {
-      throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
-    }
-    try {
-      await alertLowStockCrossing(codes, qtys);
-    } catch {
-      // una alerta fallida no debe afectar el pedido — el stock ya se descontó de verdad
-    }
-  }
-
-  // A partir de aquí el inventario ya quedó reservado/descontado de verdad — cualquier
-  // salida de este punto en adelante (recompensa/crédito insuficiente, un fallo de red)
-  // DEBE devolver el stock antes de propagar el error. `orderInserted` marca el punto de
-  // no-retorno: una vez que el pedido ya quedó creado, un fallo posterior (ej. el insert
-  // de auditoría) NO debe restituir stock que de verdad se usó para armar el pedido.
-  let orderInserted = false;
+  // A partir de aquí, cualquier salida con error DEBE liberar el código promocional recién
+  // reclamado (si se usó uno) — mismo criterio que actPrepareOrder (ver claimPromoDiscount).
   try {
-    // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
-    // que mandó el cliente.
-    const total = expectedTotal;
-
-    let phone: string | null = null;
-    let custRow: any = null;
-    const active = await sessionPromise;
-    if (active) {
-      phone = active.payload.phone;
-      custRow = active.row;
-    }
-    assertCartGatesAllowed(b.items, custRow?.total_orders || 0);
-
-    let reward: { pts: number; label: string } | null = null;
-    if (rewardId) {
-      if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-      reward = REWARDS[rewardId] || null;
-      if (!reward) throw new ApiError("Recompensa inválida.");
-      if ((custRow.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+    const expectedTotal = foodExpectedTotal - promoDiscount + deliveryFee;
+    if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
+      throw new ApiError("El total no coincide con los productos del pedido.", 400);
     }
 
-    let paymentMethod = "reward";
-    let paymentStatus = "paid";
-    if (total > 0) {
-      if (useCredit) {
-        if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
-        if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
-        paymentMethod = "credit";
-      } else if (manualMethod) {
-        paymentMethod = manualMethod;
-        paymentStatus = "pending";
-      } else {
-        throw new ApiError("Faltan datos del pedido.");
+    // verifyActiveSession no depende de la reserva de stock (ni viceversa) — se lanza ya
+    // mismo y se resuelve más abajo justo donde se usa, en vez de esperar a que
+    // reserve_inventory termine primero para recién empezarla.
+    const sessionPromise: Promise<{ payload: SessionPayload; row: any } | null> = b.token
+      ? verifyActiveSession(b.token)
+      : Promise.resolve(null);
+
+    // Reserva de stock ANTES de registrar nada: reserve_inventory revisa Y descuenta
+    // en una sola transacción atómica (con bloqueo de fila), así que dos pedidos concurrentes
+    // por el último ingrediente disponible no pueden ambos "pasar" — el que llega segundo
+    // rechaza limpio en vez de sobrevender.
+    const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+    const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
+    if (codes.length) {
+      try {
+        await rpc("reserve_inventory", { p_codes: codes, p_qtys: qtys });
+      } catch (e) {
+        throw new ApiError("Uno o más productos de tu pedido se agotaron. Actualiza tu carrito e intenta de nuevo.", 409);
+      }
+      try {
+        await alertLowStockCrossing(codes, qtys);
+      } catch {
+        // una alerta fallida no debe afectar el pedido — el stock ya se descontó de verdad
       }
     }
 
-    const { order, customer } = await finalizeAndInsertOrder({
-      ref, phone, contactPhone, name, email, address,
-      summary: b.summary || "", notes: b.notes || null, total,
-      deliveryFee, deliveryZone,
-      paymentStatus, paymentId: null, paymentMethod,
-      items: sanitizedItems, scheduledFor, reward, useCredit,
-    });
-    orderInserted = true;
-
-    await redeemPromoBestEffort(promoCodeId, contactPhone, ref, promoDiscount);
-
+    // A partir de aquí el inventario ya quedó reservado/descontado de verdad — cualquier
+    // salida de este punto en adelante (recompensa/crédito insuficiente, un fallo de red)
+    // DEBE devolver el stock antes de propagar el error. `orderInserted` marca el punto de
+    // no-retorno: una vez que el pedido ya quedó creado, un fallo posterior (ej. el insert
+    // de auditoría) NO debe restituir stock que de verdad se usó para armar el pedido.
+    let orderInserted = false;
     try {
-      await sendPushToAdmins({
-        title: "Nuevo pedido " + ref + " 🥪",
-        body: (name || "Cliente") + " — S/" + total.toFixed(2)
-          + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : ""),
-        url: "./index.html",
-        tag: "sndwch-new-order-" + ref,
-      });
-    } catch {
-      // un push fallido no debe bloquear la creación del pedido
-    }
+      // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
+      // que mandó el cliente.
+      const total = expectedTotal;
 
-    return { success: true, order, customer };
+      let phone: string | null = null;
+      let custRow: any = null;
+      const active = await sessionPromise;
+      if (active) {
+        phone = active.payload.phone;
+        custRow = active.row;
+      }
+      assertCartGatesAllowed(b.items, custRow?.total_orders || 0);
+
+      let reward: { pts: number; label: string } | null = null;
+      if (rewardId) {
+        if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+        reward = REWARDS[rewardId] || null;
+        if (!reward) throw new ApiError("Recompensa inválida.");
+        if ((custRow.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+      }
+
+      let paymentMethod = "reward";
+      let paymentStatus = "paid";
+      if (total > 0) {
+        if (useCredit) {
+          if (!phone || !custRow) throw new ApiError("Debes iniciar sesión para pagar con tu crédito.", 401);
+          if ((custRow.credit_balance || 0) < total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
+          paymentMethod = "credit";
+        } else if (manualMethod) {
+          paymentMethod = manualMethod;
+          paymentStatus = "pending";
+        } else {
+          throw new ApiError("Faltan datos del pedido.");
+        }
+      }
+
+      const { order, customer } = await finalizeAndInsertOrder({
+        ref, phone, contactPhone, name, email, address,
+        summary: b.summary || "", notes: b.notes || null, total,
+        deliveryFee, deliveryZone,
+        paymentStatus, paymentId: null, paymentMethod,
+        items: sanitizedItems, scheduledFor, reward, useCredit,
+      });
+      orderInserted = true;
+      // El código promocional (si se usó uno) ya quedó reclamado de forma atómica arriba
+      // (claimPromoDiscount) — no hay nada que redimir aquí.
+
+      try {
+        await sendPushToAdmins({
+          title: "Nuevo pedido " + ref + " 🥪",
+          body: (name || "Cliente") + " — S/" + total.toFixed(2)
+            + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : ""),
+          url: "./index.html",
+          tag: "sndwch-new-order-" + ref,
+        });
+      } catch {
+        // un push fallido no debe bloquear la creación del pedido
+      }
+
+      return { success: true, order, customer };
+    } catch (e) {
+      if (!orderInserted) await restockBestEffort(codes, qtys, "order");
+      throw e;
+    }
   } catch (e) {
-    if (!orderInserted) await restockBestEffort(codes, qtys, "order");
+    if (promoCodeId) await releasePromoBestEffort(promoCodeId, contactPhone, ref);
     throw e;
   }
 }
@@ -1096,19 +1151,26 @@ export async function actAdminConfirmPayment(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (!["yape", "plin", "cod"].includes(order.payment_method)) {
     throw new ApiError("Este pedido no requiere confirmación manual de pago.", 400);
   }
+  // Un pedido ya CANCELADO (a mano o por el cron de pagos manuales sin confirmar) ya
+  // devolvió su inventario reservado — confirmar el pago después igualmente otorgaría
+  // puntos/bono/total_orders reales por un pedido que nunca se va a entregar (hallazgo de
+  // la re-auditoría de 10 agentes, ALTO). El guard va en el mismo chequeo previo a la
+  // reserva atómica de abajo, no en la reserva misma, porque distinguir "cancelado" de
+  // "confirmado dos veces" da un mensaje de error más claro al admin.
+  if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado — no se puede confirmar su pago.", 409);
   // Reclamo atómico ANTES de otorgar puntos: el filtro payment_status=neq.paid en la misma
   // sentencia hace que un doble clic o un reintento de red en "confirmar pago" solo pueda
   // ganarlo UNA vez — antes se leía payment_status, se otorgaban puntos, y RECIÉN AL FINAL
   // se marcaba paid, dejando una ventana donde dos solicitudes casi simultáneas otorgaban
   // el bono/puntos dos veces para el mismo pedido (confirmado en vivo durante la auditoría).
-  const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid`, { payment_status: "paid" });
-  if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado.", 409);
+  const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid&status=neq.CANCELADO`, { payment_status: "paid" });
+  if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado o fue cancelado.", 409);
   await confirmManualPayment(order);
   // Confirmar que un Yape/Plin de verdad llegó es tan sensible como cancelar un pedido o
   // dar puntos manuales (ambos ya se auditan) — no quedaba ningún rastro de quién lo
@@ -1599,7 +1661,7 @@ export async function actExpirePendingCharges(b: any) {
   // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,contact_phone,ref`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -1607,6 +1669,11 @@ export async function actExpirePendingCharges(b: any) {
       const codes: string[] = pc.reserved_codes || [];
       const qtys: number[] = pc.reserved_qtys || [];
       if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+      // Mismo criterio que el inventario: una reserva que nunca se pagó y expira debe
+      // liberar también el código promocional que claimPromoDiscount reclamó de forma
+      // atómica en actPrepareOrder — si no, el código queda "gastado" para un pedido que
+      // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO).
+      if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.contact_phone, p_order_ref: pc.ref });
       await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
       expired++;
     } catch (e) {

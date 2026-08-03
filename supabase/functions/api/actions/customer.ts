@@ -151,9 +151,13 @@ export async function actClaimChallenge(b: any) {
   const thisMonth = limaMonthKey(now);
   if (c.challenge_claimed_month === thisMonth) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
   const monthStart = limaMonthStartIso(now);
+  // status=neq.CANCELADO (hallazgo de la re-auditoría de 10 agentes, MEDIA-ALTA): cancelar
+  // un pedido revierte el pago/puntos pero NUNCA toca payment_status (se queda 'paid') —
+  // sin este filtro, pagar 3 pedidos con crédito propio y cancelarlos de inmediato (con
+  // reembolso automático completo) reclamaba el bono gratis, repetible cada mes.
   const orders = await sbGet(
     "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
   );
   if (orders.length < CHALLENGE_TARGET_ORDERS) throw new ApiError(`Todavía te faltan pedidos este mes (${orders.length}/${CHALLENGE_TARGET_ORDERS}).`, 400);
   // claim_monthly_challenge (marca el mes reclamado + suma el bono, atómico) va PRIMERO —
@@ -191,9 +195,10 @@ export async function actClaimDiscoveryChallenge(b: any) {
   const thisMonth = limaMonthKey(now);
   if (c.discovery_claimed_month === thisMonth) throw new ApiError("Ya reclamaste este reto este mes.", 409);
   const monthStart = limaMonthStartIso(now);
+  // status=neq.CANCELADO — mismo hallazgo/motivo que actClaimChallenge arriba.
   const orders = await sbGet(
     "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
   );
   const flavors = new Set<string>();
   for (const o of orders) {
