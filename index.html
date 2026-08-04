@@ -1954,9 +1954,14 @@ async function joinWaitlist() {
 function waitlistCardHTML() {
     if (cust || wlDone || businessLaunched)
         return '';
+    // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.2) — antes era
+    // un mensaje puramente pasivo ("te avisamos"), sin ningún incentivo concreto visible en
+    // el primer segundo. Ahora menciona el código BIENVENIDA real (ya creado, -S/5, mínimo
+    // S/15) en vez de prometer un mecanismo de "primeros N inscritos" que no existe en el
+    // backend — nunca se promete algo que la app no cumple de verdad (Product Principle #2).
     return '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:12px;padding:16px;margin-bottom:16px">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Avísame<span class="cut-sep" style="color:' + GOLD + '"> // </span>cuando abramos</div>'
-        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te escribimos apenas empecemos a repartir de verdad.</div>'
+        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sé de los primeros<span class="cut-sep" style="color:' + GOLD + '"> // </span>en probarlo</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:' + GOLD + '">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
         + '<div style="display:flex;flex-direction:column;gap:8px">' + INP('wl-phone', 'Teléfono', 'tel', wlPhone) + INP('wl-name', 'Nombre // opcional', 'text', wlName) + '</div>'
         + (wlMsg ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff8888;margin-top:8px">' + esc(wlMsg) + '</div>' : '')
         + '<div style="margin-top:10px">' + BTN('Avísame //', 'joinWaitlist()') + '</div>'
@@ -4298,7 +4303,13 @@ function ratingHTML(o) {
         // no en cada visita futura al historial — y solo si hay cuenta (el código es el
         // teléfono del cliente, no existe para invitados).
         if (justRatedRef === o.ref && cust) {
-            return '<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Le compartes SND//WCH a alguien?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos.</div>' + BTN('Compartir por WhatsApp //', 'shareReferral()') + '</div>';
+            // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.3) — antes
+            // solo mencionaba WhatsApp en el texto y en el botón, aunque shareReferral() ya usa
+            // navigator.share() cuando está disponible (abre el selector nativo completo:
+            // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
+            // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
+            // satisfacción de siempre, sin lógica nueva.
+            return '<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos — compártelo en una historia o mándaselo directo a alguien.</div>' + BTN('Compartir //', 'shareReferral()') + '</div>';
         }
         return '<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
     }

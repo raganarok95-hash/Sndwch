@@ -503,25 +503,24 @@ Fuentes: [Unicorn Platform — Food Delivery Conversion Pages 2026](https://unic
 [Percengage — Restaurant Website CRO 2026](https://percengage.com/blog/restaurant-website-conversion-optimization-turn-browsers-diners-delivery-orders),
 [Ressto — Why your restaurant website gets traffic but no orders](https://ressto.co/blog/restaurant-conversion-rate-optimization/).
 
-### 14.4 Qué le falta a la página (app.ts) para este embudo específico — PROPUESTA, sin implementar todavía
+### 14.4 Qué le falta a la página (app.ts) para este embudo específico — RESUELTO 2026-08-03
 
-Estos 3 cambios son los que de verdad conectan "alguien llega frío desde TikTok/Instagram" →
-"hace su primer pedido". Ninguno se ha tocado — quedan para que elijas cuáles aprobar antes
-de escribir código (ver §14.7):
+1. ~~Código de bienvenida~~ — **HECHO.** Código `BIENVENIDA` creado (S/5 fijo, mínimo de
+   pedido S/15, sin fecha de expiración, una vez por cliente vía el sistema ya existente).
+   Verificado financieramente seguro: con el ticket promedio (S/24) deja ~S/12.8 de
+   contribución tras COGS; en el peor caso (pedido mínimo S/15) sigue positivo (~S/6.1).
+2. ~~Copy de la tarjeta de lista de espera~~ — **HECHO.** Ahora menciona el código
+   `BIENVENIDA` real en vez de prometer un mecanismo de "primeros N inscritos" que no existe
+   en el backend (nunca se promete algo que la app no cumple de verdad).
+3. ~~Copy del resurfacing de referido post-entrega~~ — **HECHO.** Ahora pide compartir en
+   Instagram/TikTok/WhatsApp explícitamente — el botón ya usaba `navigator.share()` (abre el
+   selector nativo completo) cuando está disponible, el copy viejo solo mencionaba
+   WhatsApp y subestimaba lo que el botón de verdad hacía.
 
-1. **Código de bienvenida visible de inmediato para quien llega desde el link en bio** —
-   hoy el sistema de códigos promocionales ya existe, pero nadie ve un incentivo concreto en
-   el primer segundo de la visita. Un banner simple ("Primer pedido // -S/X con el código
-   BIENVENIDA") reduce exactamente la incertidumbre de "¿vale la pena pedir aquí sin conocer
-   la marca?" — coincide con el punto 4 de las decisiones abiertas de §13, que ya estaba
-   pendiente de definir monto/condición.
-2. **Reforzar el copy de la tarjeta de lista de espera** ahora que se sabe que está en 0 —
-   de un mensaje pasivo a algo con incentivo real medible (ej. "los primeros 20 inscritos
-   reciben X puntos de bienvenida extra al abrir"), usando el programa de puntos ya
-   construido, no un mecanismo nuevo.
-3. **Reforzar el copy del resurfacing de referido post-entrega** para pedir explícitamente
-   compartir en redes (no solo WhatsApp 1:1 como está hoy) — mismo momento de mayor
-   satisfacción que ya se aprovecha, con un pedido más específico.
+Falta todavía un banner específico para quien llega desde el link en bio con el código ya
+resaltado en el primer segundo (más allá de la tarjeta de lista de espera) — no se hizo en
+esta pasada, queda como posible mejora futura si el código `BIENVENIDA` no se nota lo
+suficiente una vez haya tráfico real que medir.
 
 ### 14.5 Automatización — qué corre solo vs qué es trabajo humano
 
@@ -529,33 +528,148 @@ de escribir código (ver §14.7):
 |---|---|
 | Publicar a Instagram/Facebook con un toque | Construido, bloqueado por 3 secrets de Meta (§11, sin cambio) |
 | Publicar a TikTok con un toque | **No construido** — TikTok no tiene una integración propia en `api`; publicar ahí sigue siendo manual desde el celular, igual que Instagram/Facebook antes de `actAdminPublishSocial`. Evaluar si vale la pena construirla una vez que el resto del embudo esté validado — no es prioridad #1 hoy. |
-| Sorteo de lanzamiento con mecánica de referido | El motor (bono de referido) ya corre solo — la campaña en sí (definir premio/fecha/anunciarla) es trabajo humano, una sola vez |
-| Código de bienvenida para tráfico frío | El sistema de códigos promocionales ya corre solo una vez creado — falta crearlo (decisión de monto) y, si se aprueba, el banner de la app (§14.4.1) |
+| Sorteo de lanzamiento con mecánica de referido | El motor (bono de referido) ya corre solo — la campaña en sí (definir premio/anunciarla) es trabajo humano, una sola vez. **Fecha decidida 2026-08-03: 2da semana de apertura (~14-21 de septiembre), no antes de abrir** — falta todavía el premio. |
+| Código de bienvenida para tráfico frío | **RESUELTO 2026-08-03** — código `BIENVENIDA` (S/5 fijo, mínimo S/15) ya creado y activo, corre solo desde ahora. |
 | Grabar/publicar contenido en sí (Reels/TikToks) | No automatizable — trabajo humano cada semana, sin cambio respecto al plan original |
 
-### 14.6 Calendario de 5 semanas — integrado con §9, no lo reemplaza
+### 14.6 Calendario — integrado con §9, no lo reemplaza
 
 El calendario de §9 (semanas -6 a -1) sigue siendo la base — lo único que cambia es
-publicar cada pieza en TikTok Y Reels desde el día 1 (no solo Instagram), y sumar estas 2
-piezas nuevas en las semanas donde tiene más sentido:
+publicar cada pieza en TikTok Y Reels desde el día 1 (no solo Instagram), y sumar estas
+piezas nuevas donde corresponde:
 
-- **Semana -5 (ahora)**: además del Reel de §9, lanzar el sorteo de referido si se aprueba
-  (§14.7) — es la pieza con más potencial de generar los primeros seguidores reales rápido.
+- **Ahora (semana -5)**: código `BIENVENIDA` ya activo — mencionarlo desde el primer
+  contenido de pre-lanzamiento en vez de esperar a la última semana.
 - **Semana -3/-2**: si hay dirección física confirmada, activar Google Business Profile.
-- **Semana -1**: banner de código de bienvenida activo en la app, listo para el tráfico que
-  llegue de la última semana de contenido antes de abrir.
+- **2da semana de apertura (~14-21 sept)**: sorteo de lanzamiento con mecánica de referido —
+  movido de "antes de abrir" a después a pedido del dueño (2026-08-03), para lanzarlo con
+  clientes reales ya entrando, no solo con seguidores fríos sin haber probado el producto.
 
-### 14.7 Decisiones que requieren tu aprobación antes de que se ejecute algo real
+### 14.7 Decisiones que requieren tu aprobación — actualizado 2026-08-03
 
-Nada de esto se ha creado ni tocado todavía — son decisiones de negocio, no técnicas:
-
-1. **¿Aprobamos el código promocional de bienvenida?** Falta el monto/condición (ej. -S/5,
-   -15%, tope de descuento) y si se limita a primer pedido.
-2. **¿Aprobamos el sorteo de lanzamiento con mecánica de referido?** Falta definir el premio
-   (¿un Plan Semanal gratis? ¿crédito? ¿un combo específico?), la fecha de cierre, y si
-   quieres que use exactamente el sistema de referidos existente o algo aparte.
-3. **¿Autorizas que actualice el copy de la tarjeta de lista de espera y del resurfacing de
-   referido** (solo texto, sin nueva lógica) para reflejar lo de arriba?
+1. ~~¿Aprobamos el código promocional de bienvenida?~~ — **RESUELTO: S/5 fijo, mínimo de
+   pedido S/15, código `BIENVENIDA`, ya creado y activo.**
+2. **¿Premio del sorteo de referido?** Fecha ya resuelta (2da semana de apertura) — falta
+   definir el premio (¿un Plan Semanal gratis? ¿crédito? ¿un combo específico?) y si usa
+   exactamente el sistema de referidos existente o algo aparte. Sigue abierto.
+3. ~~¿Autorizas el cambio de copy?~~ — **RESUELTO: sí, aplicado** (tarjeta de lista de
+   espera + resurfacing de referido post-entrega, ver §14.4).
 4. Todo lo demás de esta sección (TikTok como prioridad igual a Instagram, geoetiquetado,
    colaboraciones, WhatsApp local, UGC con QR) es contenido/operación pura — no requiere
    aprobación técnica, se ejecuta según tu propio criterio y tiempo disponible.
+
+## 15. Investigación profunda de mercado, competencia y conversión (agregado 2026-08-04)
+
+10 investigaciones paralelas con WebSearch, cada una con fuentes citadas. Resumen ejecutivo
+por tema — el detalle completo con todas las fuentes queda en el historial de la sesión;
+acá solo lo accionable.
+
+### 15.1 Competencia real en Trujillo
+
+**Ningún competidor de Trujillo tiene programa de puntos/fidelización propio, y no existe
+ningún "build-your-own sandwich" real operando en la ciudad** (confirmado tras búsqueda
+específica, no solo ausencia de resultado). El líder histórico, **Jano's Sandwichería**
+(la más establecida, precio bajo S/11-14), tiene debilidad documentada en velocidad/
+precisión de pedido (2.9/5, 592 reseñas) — un competidor con cola de pedidos estructurada
+(que SND//WCH ya tiene) compite directo en ese punto débil real, no inventado. Otros
+locales identificados: La Stación, Sandwichería El Halley, Juguería San Agustín (más
+parada rápida que delivery). Subway solo tiene presencia en el patio de comidas de Mall
+Aventura Plaza Trujillo — sin build-your-own delivery propio en la ciudad. Cadenas
+nacionales con delivery activo en Trujillo (competencia indirecta por el mismo momento de
+consumo): Bembos, Pardos Chicken, China Wok, Otto Grill. Rappi lista ~48-50 locales en la
+categoría "Sándwiches" en Trujillo, dominados por poke/acai, no sandwicherías tradicionales.
+
+### 15.2 Subway (el competidor conceptual explícito de la marca)
+
+Subway Perú expandió a Trujillo, con plan nacional de 100-150 locales en 5 años. Relanzó
+globalmente su programa de lealtad **Sub Club** (4to sándwich footlong gratis cada 3
+comprados) — confirma que la fidelización SÍ es un vector de competencia activo en la
+categoría, no algo que SND//WCH inventó de más. Reputación real documentada: 2.0-2.7★ en
+la mayoría de plataformas, quejas recurrentes de pan rancio/sin tostar, ingredientes
+escasos, y solo 13% de tasa de resolución de quejas — contraste real y verificable para
+comunicación de marca (curaduría + calidad consistente vs. cadena de bajo margen).
+
+### 15.3 Mercado de delivery — Trujillo específicamente vs. nacional
+
+**No existe ninguna cifra dura de pedidos/día para un delivery nuevo en Trujillo** (mismo
+gap que ya documentaba `MENU_FINANCIAL_ANALYSIS.md` — confirmado de nuevo, no resuelto).
+Trujillo sí es ciudad priorizada de expansión por Rappi/PedidosYa fuera de Lima. Contexto
+nacional aplicable: horas pico almuerzo 12-14h y cena 19-22h (ticket más alto), fin de
+semana (~45% de pedidos semanales) concentra la demanda, Yape/Plin ~60% de transacciones
+de e-commerce en Perú. Las apps cobran 20-30% de comisión — negocios pequeños las usan
+para captar clientes nuevos y migrarlos a pedido directo (exactamente el modelo de
+SND//WCH, validado por la tendencia real del mercado, no solo por decisión propia).
+
+### 15.4 Contenido de comida que convierte (no solo genera views)
+
+Video de proceso/armado (ASMR) y "empaque del pedido" (packing) son los formatos con
+mejor evidencia de conversión real — casos documentados de negocios de un solo operador
+(Judy's Family Café, La Vecindad) creciendo ventas reales con celular, sin producción.
+CTA debe ser específico ("pide antes de las X, link en bio"), nunca genérico. Escasez
+real y verificable ("quedan N del Signature de hoy", ligada a alertas de stock bajo que
+ya existen en el backend) es más creíble que urgencia inventada — coherente con la voz de
+marca ya definida.
+
+### 15.5 Convertir tráfico frío (sin ninguna reseña todavía)
+
+Descuento de primer pedido en el rango **10-20%** es el estándar que mueve comportamiento
+sin regalar margen de más — el `BIENVENIDA` ya creado (S/5 fijo sobre ticket promedio S/24
+≈ 21%) cae justo en ese rango, validado con evidencia externa después del hecho. El **Libro
+de Reclamaciones**, obligatorio por ley en Perú, funciona también como señal real de
+confianza según fuentes de e-commerce peruano — vale la pena mostrarlo como parte de la
+propuesta de transparencia, no solo como trámite legal escondido. La "regla de 7"
+(≈7 exposiciones antes de decidir comprar) confirma que un solo Reel no basta — refuerza
+la necesidad del calendario sostenido de §9, no un solo golpe de lanzamiento.
+
+### 15.6 Psicología de precios — el formato actual ya está bien
+
+El formato de precio de SND//WCH (símbolo S/ chico, sin decimales) ya sigue la evidencia
+de menor "dolor de pagar" (Cornell, 2009) — no requiere cambio. Único hallazgo accionable
+real: el combo de -S/2 se aplica en silencio al carrito sin mostrar el ahorro como cifra
+explícita — un texto "Ahorras S/2" en el resumen probablemente convierte mejor que
+dejarlo implícito (aversión a la pérdida > descuento silencioso).
+
+### 15.7 Publicidad paga — S/300 refinado
+
+Confirma y afina la recomendación de §12/§13: **nunca usar el botón "Impulsar publicación"
+(optimiza para engagement, no pedidos)** — crear la campaña en Ads Manager con objetivo
+Mensajes/Conversión. Radio geográfico 3-8 km sobre la zona real de reparto (ni "toda la
+ciudad" ni hiperlocal). Reparto sugerido de los S/300: ~S/220 en 2-3 tandas de Meta Ads
+(boosteando solo contenido con tracción real) + ~S/80 en TikTok Spark Ads o WhatsApp
+click-to-chat si hay contenido con tracción para esa fecha.
+
+### 15.8 Retención — 2 gaps reales encontrados cruzando con datos reales del cron
+
+1. **`sndwch-remind-second-order` dispara mal calibrado**: hoy es día 3-5 desde el primer
+   pedido a las 15:00 UTC (10am Lima) — la evidencia dice que el reorden mediano ocurre a
+   los ~8.9 días y que push de comida convierte mejor 11:30am o 19:30-20:00h. Es un cambio
+   de código real y acotado (mover el rango de días + el horario del cron), no implementado
+   todavía — requiere tu aprobación antes de tocarlo (ver §15.9).
+2. El reto mensual (3 pedidos=50pts) ya funciona como una "racha" mensual en la práctica —
+   la recomendación es hacerlo más visible en la UI (barra de progreso tipo streak) en vez
+   de construir un mecanismo de racha diaria nuevo, que no calza con la cadencia real de
+   pedido semanal de este negocio.
+
+### 15.9 Checkout — 1 gap real encontrado
+
+**No hay ningún estimado de tiempo de entrega visible en el checkout** (confirmado
+revisando `src/app.ts`, ni antes ni después de pagar) — la evidencia dice que mostrarlo
+ANTES de pagar reduce abandono ~10 puntos porcentuales, porque es una variable real de
+decisión, no un detalle post-hoc. El resto del checkout (guest checkout, orden de métodos
+de pago con Yape/Plin destacado, una sola pantalla) ya está alineado con la evidencia
+2026, sin cambios necesarios ahí.
+
+**3 cambios de código nuevos identificados en esta investigación, ninguno implementado
+todavía — requieren tu aprobación, igual que §14.7:**
+1. Mostrar "Ahorras S/2" explícito cuando se detecta el combo (§15.6).
+2. Recalibrar el cron de "segundo pedido" a día ~7-10 y horario de almuerzo/cena (§15.8).
+3. Agregar un estimado de tiempo de entrega visible antes de pagar en el checkout (§15.9).
+
+### 15.10 Tendencia estacional real a tener en cuenta
+
+El **Festival Internacional de la Primavera de Trujillo** cae del 21 al 28 de septiembre
+2026 (Gran Corso 27-28) — el evento cultural más grande de la ciudad, ~2 semanas después
+de la apertura del 7 de septiembre. Es una ventana real de contenido/campaña con la
+ciudad ya en modo festivo, sin necesidad de anclar la marca a identidad regional
+(coherente con la restricción ya definida de no usar Trujillo/Chimú como ángulo de marca
+— es solo timing de campaña, no identidad).
