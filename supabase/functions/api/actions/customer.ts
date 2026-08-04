@@ -469,8 +469,13 @@ export async function actRemindAbandonedCart(b: any) {
 // cuántos pedidos tenga). No hay una columna "fecha del primer pedido" separada, así que
 // se reconstruye el primer pedido pagado real desde `orders` para los clientes que hoy
 // siguen en total_orders=1 — más preciso que usar customers.created_at como proxy.
-const SECOND_ORDER_MIN_DAYS = 3;
-const SECOND_ORDER_MAX_DAYS = 5;
+// Ventana recalibrada 2026-08-04 (investigación de mercado: el reorden mediano en food
+// delivery ocurre ~día 9, no día 3-5) — antes disparaba antes de que la mayoría de
+// clientes reales estuviera lista para su segundo pedido. El horario del cron (ver
+// cron.job en Supabase, no en este archivo) también se movió de 10am a la ventana de
+// cena Lima, mismo motivo.
+const SECOND_ORDER_MIN_DAYS = 7;
+const SECOND_ORDER_MAX_DAYS = 10;
 export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1");
