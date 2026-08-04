@@ -191,6 +191,28 @@ Misma metodología (Python, librería estándar, 20,000 corridas por horizonte).
   insumo real distinto al usado aquí si el dueño cotiza con un proveedor real (sobre todo
   para atún/embutido, que siguen siendo los dos insumos sin cotización propia confirmada).
 
+### 3.5 Piso realista para la Semana 1 específicamente (no la mediana de Mes 1)
+
+Agregado 2026-08-03 a pedido del dueño: la mediana de Mes 1 (§3.2, uniforme 5-15
+pedidos/día desde el primer día) asume que ya hay algo de demanda "tibia" esperando desde
+el día 1 — pero **`waitlist_signups` tiene 0 inscritos hoy** (consultado en vivo), y el
+calendario de contenido de pre-lanzamiento de `MARKETING_PLAN.md` apenas está arrancando.
+Es realista que varios de los primeros 7 días de operación real tengan muy poca o ninguna
+venta mientras el contenido/boca-a-boca recién agarra tracción.
+
+| Escenario | Pedidos semana 1 | Bruta | Insumos (escalados a esa demanda) | Neta |
+|---|---|---|---|---|
+| **Piso realista** (días 1-3: 0-3 pedidos/día · días 4-7: 3-8 pedidos/día) | ~27 | S/648 | ~S/208 | **≈ S/361** |
+| Mediana de Mes 1 (§3.2), prorrateada a 7 de 26 días | ~65 | S/1,378 | ~S/500 | ≈ S/1,208 |
+
+**Los rangos "0-3" y "3-8" del piso realista son una decisión editorial, no investigada**
+(mismo motivo que Meses 4-12 arriba: no existe ese dato público para un delivery nuevo en
+Trujillo) — ilustran el riesgo de arranque lento, no un pronóstico. Ambos escenarios dan
+neta positiva porque los insumos se escalan junto con la demanda (comprar por rondas, no
+los S/500 completos del §5.2 de una sola vez el día 1) — el riesgo real de un arranque
+lento no es pérdida, es una ganancia absoluta menor mientras el contenido de pre-
+lanzamiento (todavía sin ejecutar) empieza a convertir.
+
 ---
 
 ## 4. Recomendaciones concretas
