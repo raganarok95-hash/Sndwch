@@ -414,3 +414,148 @@ nada nuevo).
    2026-08-01: S/300 iniciales, escalable.** Fecha de arranque queda a
    criterio operativo: recomendado últimas 1-2 semanas antes del 7 de
    septiembre, no desde hoy (ver §3, motivo detallado ahí).
+
+## 14. Plan de conversión desde frío (agregado 2026-08-03)
+
+**Por qué esta sección existe aparte:** `waitlist_signups` tiene **0 inscritos** (consultado
+en vivo, 2026-08-03) — todo lo de arriba (§9 en adelante) asume que hay algo de audiencia
+"tibia" esperando. Hoy no la hay. Este plan asume tráfico 100% frío: nadie que llegue a la
+cuenta o a la app te conoce todavía. Investigado con fuentes externas (no solo criterio
+propio) — ver fuentes al final de cada bloque.
+
+### 14.1 Cambio de énfasis: TikTok primero, no Instagram primero
+
+El plan original (§4/§9) trata Instagram/Facebook como el canal principal. Con audiencia en
+cero, eso hay que revisarlo: en 2026, TikTok tiene ~3.70% de engagement promedio (+49%
+interanual) contra ~0.48% de Instagram, y da hasta 10x más alcance orgánico con el mismo
+contenido — la diferencia está en que un Reel/TikTok se muestra a gente que **nunca vio la
+cuenta** (vía Explore/For You), mientras que un post de feed normal se muestra sobre todo a
+quien ya te sigue. Para ganar seguidores desde cero, el formato que ya se graba para
+Instagram (Reels verticales, celular, sin producción) se sube **igual a TikTok**, sin
+trabajo extra — es el mismo archivo. ([Malou — TikTok for Restaurants 2026](https://www.malou.io/en-us/blog/tiktok-for-restaurants),
+[SocialMediaToday](https://www.socialmediatoday.com/news/brands-see-biggest-growth-on-tiktok-but-organic-reach-is-slowing-on-instagr/812789/))
+
+**Semana 1 de TikTok (arranque del algoritmo, aplica también a Instagram):** publicar 3
+piezas la primera semana — 1 de producto/visual, 1 detrás de cámara, 1 formato tendencia —
+para señalizar cuenta activa, y **responder cada comentario dentro de la primera hora** (el
+algoritmo premia el loop de interacción rápida, no solo el contenido en sí).
+
+**No se propone abandonar Instagram** — Facebook/Instagram siguen siendo donde el 45% de la
+gente revisa el perfil de un restaurante antes de pedir, y ahí vive toda la automatización
+ya construida (`actAdminPublishSocial`) — se sigue publicando en ambos, solo que TikTok deja
+de ser una idea "en cuanto haya tiempo" y pasa a tener la misma prioridad desde el día 1.
+
+### 14.2 Conseguir seguidores reales desde cero — tácticas concretas
+
+1. **Geoetiquetar cada publicación** con la ubicación de reparto — hace que la cuenta
+   aparezca a gente buscando o navegando cerca, sin gastar nada.
+2. **UGC con incentivo real, usando lo que ya existe**: un sticker/QR en el empaque que
+   lleve directo al perfil, con una recompensa por etiquetar en su historia/video al recibir
+   el pedido — la recompensa puede ser puntos del programa ya construido (ej. +50 pts, el
+   mismo monto que el reto de descubrimiento) en vez de inventar un mecanismo de premio
+   nuevo.
+3. **Colaboraciones con cuentas locales de Trujillo que compartan audiencia** (no
+   competidores directos — ej. una cafetería, un gimnasio, un fotógrafo de comida local) —
+   un Reel conjunto simple es de las formas más rápidas de ganar visibilidad real sin gastar.
+4. **Sorteo de lanzamiento con mecánica de referido**, enganchado al sistema de referidos
+   YA CONSTRUIDO: en vez de "comenta y etiqueta a 3 amigos" (spam de comentarios, cada vez
+   más penalizado por las plataformas), cada participante entra con SU propio código de
+   referido — quien se una con ese código le suma una entrada extra al sorteo. Esto es
+   exactamente el loop que ya paga la app (bono de referido ambos lados) con una capa de
+   sorteo encima; el mecanismo de referido no es código nuevo, la campaña sí es una decisión
+   de negocio (premio, fecha, monto) que falta definir contigo — ver §14.7.
+5. **Google Business Profile** — sigue bloqueado por la misma razón de siempre (dirección
+   física confirmada), pero confirmado por investigación externa que es alto impacto/costo
+   cero: 45% de comensales lo revisan antes de pedir. Prioridad #1 en cuanto tengas la
+   dirección de operación lista.
+6. **WhatsApp ultra-local**: compartir el catálogo (ya existe como resumen del pedido) en
+   grupos de vecinos/urbanización cercanos a la zona de reparto — la recomendación
+   boca-a-boca sigue siendo el canal de mayor conversión real para un delivery nuevo en Perú
+   (+80% del primer pedido de un cliente nuevo viene de una recomendación directa, no de un
+   anuncio).
+
+Fuentes: [Tiendanube — 14 estrategias 2026](https://www.tiendanube.com/blog/como-conseguir-seguidores-en-instagram/),
+[CursoTutorial — primeros 1000 seguidores](https://cursotutorial.com/instagram-2026-primeros-1000-seguidores/),
+[KickoffLabs — Instagram Giveaway Rules 2026](https://kickofflabs.com/blog/instagram-giveaway-rules-2026/),
+[Restaurant India — cloud kitchen marketing](https://restaurant.indianretailer.com/article/how-to-market-your-cloud-kitchen-business.13833),
+[PANCA — Delivery para Restaurantes en Perú](https://www.panca.pe/blog/delivery-restaurante-peru-como-empezar/).
+
+### 14.3 Convertir tráfico frío en primer pedido — sin ninguna reseña/prueba social todavía
+
+Investigación externa: sitios de comida/delivery convierten en promedio 4.5-6%, con >5%
+como buen resultado; por debajo de 3% hay fricción real que vale la pena buscar. Sin
+reseñas (el negocio no ha abierto — ninguna es real todavía), la regla que más aplica es
+"cada sección debe quitarle una incertidumbre concreta al visitante nuevo, no sumar
+adorno". Revisando la app contra eso:
+
+**Ya cumple** (confirmado en la auditoría de UX de esta sesión, sin cambios pendientes):
+checkout como invitado sin login forzado, precio final visible antes de pagar sin cargos
+sorpresa, flujo de pago claro (Culqi/Yape/Plin explícitos).
+
+**Fricción real que sigue sin resolverse — requiere una decisión tuya, no es solo código:**
+fotos de producto son de stock licenciado, no reales (el negocio no ha abierto) — la
+investigación confirma que las imágenes son el primer punto de contacto real ("se come
+primero con los ojos", afecta conversión más que casi cualquier otro elemento) — en cuanto
+haya fotos reales de los primeros pedidos saliendo, reemplazarlas es la mejora de conversión
+de mayor impacto disponible, más que cualquier cambio de copy o de layout.
+
+Fuentes: [Unicorn Platform — Food Delivery Conversion Pages 2026](https://unicornplatform.com/blog/food-delivery-conversion-pages-in-2026/),
+[Percengage — Restaurant Website CRO 2026](https://percengage.com/blog/restaurant-website-conversion-optimization-turn-browsers-diners-delivery-orders),
+[Ressto — Why your restaurant website gets traffic but no orders](https://ressto.co/blog/restaurant-conversion-rate-optimization/).
+
+### 14.4 Qué le falta a la página (app.ts) para este embudo específico — PROPUESTA, sin implementar todavía
+
+Estos 3 cambios son los que de verdad conectan "alguien llega frío desde TikTok/Instagram" →
+"hace su primer pedido". Ninguno se ha tocado — quedan para que elijas cuáles aprobar antes
+de escribir código (ver §14.7):
+
+1. **Código de bienvenida visible de inmediato para quien llega desde el link en bio** —
+   hoy el sistema de códigos promocionales ya existe, pero nadie ve un incentivo concreto en
+   el primer segundo de la visita. Un banner simple ("Primer pedido // -S/X con el código
+   BIENVENIDA") reduce exactamente la incertidumbre de "¿vale la pena pedir aquí sin conocer
+   la marca?" — coincide con el punto 4 de las decisiones abiertas de §13, que ya estaba
+   pendiente de definir monto/condición.
+2. **Reforzar el copy de la tarjeta de lista de espera** ahora que se sabe que está en 0 —
+   de un mensaje pasivo a algo con incentivo real medible (ej. "los primeros 20 inscritos
+   reciben X puntos de bienvenida extra al abrir"), usando el programa de puntos ya
+   construido, no un mecanismo nuevo.
+3. **Reforzar el copy del resurfacing de referido post-entrega** para pedir explícitamente
+   compartir en redes (no solo WhatsApp 1:1 como está hoy) — mismo momento de mayor
+   satisfacción que ya se aprovecha, con un pedido más específico.
+
+### 14.5 Automatización — qué corre solo vs qué es trabajo humano
+
+| Tarea | Estado |
+|---|---|
+| Publicar a Instagram/Facebook con un toque | Construido, bloqueado por 3 secrets de Meta (§11, sin cambio) |
+| Publicar a TikTok con un toque | **No construido** — TikTok no tiene una integración propia en `api`; publicar ahí sigue siendo manual desde el celular, igual que Instagram/Facebook antes de `actAdminPublishSocial`. Evaluar si vale la pena construirla una vez que el resto del embudo esté validado — no es prioridad #1 hoy. |
+| Sorteo de lanzamiento con mecánica de referido | El motor (bono de referido) ya corre solo — la campaña en sí (definir premio/fecha/anunciarla) es trabajo humano, una sola vez |
+| Código de bienvenida para tráfico frío | El sistema de códigos promocionales ya corre solo una vez creado — falta crearlo (decisión de monto) y, si se aprueba, el banner de la app (§14.4.1) |
+| Grabar/publicar contenido en sí (Reels/TikToks) | No automatizable — trabajo humano cada semana, sin cambio respecto al plan original |
+
+### 14.6 Calendario de 5 semanas — integrado con §9, no lo reemplaza
+
+El calendario de §9 (semanas -6 a -1) sigue siendo la base — lo único que cambia es
+publicar cada pieza en TikTok Y Reels desde el día 1 (no solo Instagram), y sumar estas 2
+piezas nuevas en las semanas donde tiene más sentido:
+
+- **Semana -5 (ahora)**: además del Reel de §9, lanzar el sorteo de referido si se aprueba
+  (§14.7) — es la pieza con más potencial de generar los primeros seguidores reales rápido.
+- **Semana -3/-2**: si hay dirección física confirmada, activar Google Business Profile.
+- **Semana -1**: banner de código de bienvenida activo en la app, listo para el tráfico que
+  llegue de la última semana de contenido antes de abrir.
+
+### 14.7 Decisiones que requieren tu aprobación antes de que se ejecute algo real
+
+Nada de esto se ha creado ni tocado todavía — son decisiones de negocio, no técnicas:
+
+1. **¿Aprobamos el código promocional de bienvenida?** Falta el monto/condición (ej. -S/5,
+   -15%, tope de descuento) y si se limita a primer pedido.
+2. **¿Aprobamos el sorteo de lanzamiento con mecánica de referido?** Falta definir el premio
+   (¿un Plan Semanal gratis? ¿crédito? ¿un combo específico?), la fecha de cierre, y si
+   quieres que use exactamente el sistema de referidos existente o algo aparte.
+3. **¿Autorizas que actualice el copy de la tarjeta de lista de espera y del resurfacing de
+   referido** (solo texto, sin nueva lógica) para reflejar lo de arriba?
+4. Todo lo demás de esta sección (TikTok como prioridad igual a Instagram, geoetiquetado,
+   colaboraciones, WhatsApp local, UGC con QR) es contenido/operación pura — no requiere
+   aprobación técnica, se ejecuta según tu propio criterio y tiempo disponible.
