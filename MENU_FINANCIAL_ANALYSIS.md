@@ -294,6 +294,96 @@ amplio de trámites (depende de la categoría de riesgo exacta que la municipali
 
 ---
 
+## 6. Investigación adicional — financiero, insumos y empaque (agregado 2026-08-04)
+
+10 investigaciones paralelas con WebSearch. Resumen accionable, fuentes en el detalle
+completo de la sesión.
+
+**6.1 Atún/embutido — primera referencia real de mayorista.** Precio caja x48 latas
+(canal B2B, más cercano a mayorista que retail): Arica ~S/19.71/kg escurrido, San Jorge
+~S/46.85/kg, A-1 ~S/53.31/kg — **las tres por debajo o cerca del S/67/kg usado hoy**,
+confirmando que la cifra actual es conservadora, no que haya que bajarla ya (el rango
+entre marcas es amplio, ~2.7x, así que no reemplaza una cotización real). Embutido sigue
+sin cifra numérica — vía concreta identificada: **Mercado Zonal Palermo** (mayorista físico
+de Trujillo, con Facebook activo) o el canal de ventas institucionales de San Fernando.
+
+**6.2 Unit economics — SND//WCH está mejor que el benchmark, no peor.** CAC de industria
+US$30-120/cliente; con CAC≈S/0 hoy (sin ads), cualquier segundo pedido ya pone el ratio
+CAC:LTV muy por encima del 2:1-4:1 saludable para food & beverage. El margen de
+contribución real (~55-74%, incluso con el 45% conservador de trabajo) supera el prime
+cost sano de industria (60-65%). El punto débil real de la industria — y por extensión,
+el mayor apalancamiento disponible — es retención: 70-78% de clientes de restaurante
+nunca vuelven a nivel benchmark, no la adquisición.
+
+**6.3 Flujo de caja — colchón recomendado más alto de lo estimado.** El estándar de
+industria es 3-6 meses de fijos, más alto que el S/450-900 (1-2 meses) ya estimado en
+§5.3 — para un negocio sin historial de ventas, apuntar al extremo alto (2-3 meses) es
+más prudente que al mínimo. Recomendación práctica agregada: cuenta Yape/BCP separada
+del negocio desde el primer pedido, comprar insumos según venta real de la semana
+anterior (no en bulto), revisar saldo cada 2-3 días.
+
+**6.4 Empaque — primera cotización real encontrada.** Bolsa kraft delivery: **S/0.35/unidad**
+confirmado (proveedor Bio Pack, Lima). Envase biodegradable fibra de caña: S/0.48-0.605/
+unidad. Sumando caja+bolsa+servilleta+sticker, el set completo cae en el mismo rango o
+ligeramente por debajo del S/1.10 ya estimado — **la cifra actual no está disparatada**,
+aunque sigue sin cotización exacta de la caja de sándwich en sí. Distribuidoras físicas en
+Trujillo identificadas para cotizar directo sin flete: Interplast, Multienvases, Mayplast,
+Truplast.
+
+**6.5 Precios dinámicos — no expandir hacia recargos.** La asimetría ya usada por
+SND//WCH (descuento en valle, nunca recargo en pico) es la que la evidencia recomienda —
+el caso Wendy's (2024, boicot real por mencionar "dynamic pricing") confirma el riesgo
+reputacional real de cualquier recargo por demanda, desproporcionado para una marca que
+recién abre. Única extensión de bajo riesgo dentro de la misma familia (descuento, nunca
+recargo): un combo tipo "última llamada" cerca del cierre para mover insumos frescos con
+vencimiento corto, sin construir nada nuevo de pricing.
+
+## 7. Investigación de sabores, recetas y menú (agregado 2026-08-04)
+
+**7.1 Tendencias de sabor 2026 — 2 huecos reales identificados.** "Swicy" (dulce+picante)
+ya domina y el catálogo actual ya lo cubre bien (THE VAULT, Spicy Mayo, Picante-Miel). Los
+dos huecos reales frente a la tendencia 2026 son **coreano** (gochujang/kimchi — top
+protein seasoning en el forecast 2026 de la NRA, 72% de interés Gen Z) y **mexicano**
+(chipotle/chamoy/tajín) — ninguna de las 7 Signatures ni las 12 salsas los nombra hoy.
+
+**7.2 Ciencia de maridaje — 2 combinaciones reales para revisar.** SIG02 THE MEATBALL
+apila ácido/umami (marinara+vinagre+aceituna) sin ningún elemento graso/cremoso por
+defecto (el queso queda opcional) — el sub de albóndiga clásico usa mozzarella justo para
+ese contraste. SIG06 THE TERIYAKI apila 2 salsas dulce-umami (teriyaki+satay) en el mismo
+eje sin un ácido fuerte que corte — riesgo real de sabor plano. SIG01 y SIG05 sí están
+bien balanceados según los mismos principios (grasa+ácido, dulce+picante).
+
+**7.3 Costo de receta sin perder calidad.** Técnica recomendada: plegado de proteína/
+embutido en vez de capas planas (más volumen percibido, mismo gramaje) y relleno de aire
+con vegetales entre capas. **No perseguir sustituciones tipo soya texturizada/extensores**
+— contradice la curaduría de marca y el riesgo reputacional (caso Chipotle
+"shrinkflation" 2024-2025, 16M+ vistas virales) supera el ahorro marginal dado que el COGS
+actual (25.8%) ya está lejos del 45% de colchón.
+
+**7.4 Opción vegetariana — no agregar al lanzamiento.** Solo 2% de los pedidos en Rappi
+Perú son vegetarianos (dato directo de delivery, no proxy) pese a que Rappi ya tiene
+filtro dedicado. Recomendación: medir demanda real post-lanzamiento (reclamos, "avísame
+cuando vuelva") antes de invertir en desarrollo de receta; si se agrega después, tofu
+(~S/5-6/kg) es la proteína más barata de las evaluadas.
+
+**7.5 Salsa de autor nueva — hueco de categoría.** Fermentado/umami (miso, gochujang) es
+la tendencia 2025-2026 más citada y el catálogo no tiene ninguna salsa en esa categoría
+(sí cubre ahumado, fruta, satay). Idea concreta: `Miso // Gochujang`, mismo patrón de
+naming ya usado (`Smoke BBQ`, `SNDWCH Special`).
+
+**7.6 Bebida de autor nueva — idea concreta.** `// LUISA` (hierba luisa + maracuyá),
+preparada por flash-infusión (agua caliente 3-5 min + dilución en frío) en vez de
+infusión larga — evita el tiempo de reposo de 8-12h que no calza con un operador único
+armando todo el mismo día.
+
+**7.7 Naming "THE X" — validado, sin cambio necesario.** Wendy's, Arby's y Capriotti's
+usan el mismo patrón con éxito — no está "quemado". El estudio de referencia sobre
+descripciones evocadoras (+27% en ventas, Wansink 2001) debe tratarse como direccional,
+no como cifra dura: su autor tiene 13+ papers retractados por conducta científica
+cuestionable en otros trabajos (no este específico, pero amerita cautela).
+
+---
+
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
 punto medio entre los precios ya documentados y los investigados online, con demanda
 anclada en fuentes de Perú/Trujillo. No reemplaza datos reales de venta ni un costeo de

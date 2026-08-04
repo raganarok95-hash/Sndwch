@@ -265,6 +265,20 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
+- **Subagentes que mezclan WebSearch con lectura de código pueden equivocarse en la parte
+  de código — verificar antes de implementar, no confiar ciego.** Descubierto 2026-08-04
+  en una ronda de 10 subagentes de investigación de mercado: dos hallazgos ("el combo no
+  muestra el ahorro", "no hay estimado de tiempo de entrega en el checkout") resultaron
+  ser falsos — ambos ya existían en `src/app.ts` desde el commit `390de6a`, confirmado con
+  `git blame` antes de "corregirlos". Un tercer caso similar ya había pasado antes en la
+  misma sesión con un hallazgo de contraste de badges (el agente no rastreó un swap
+  dinámico de color en `render()`). Patrón: cuando un agente de investigación reporta un
+  hallazgo de código (no solo de mercado/tendencias), verificar con `git blame`/lectura
+  directa del archivo real ANTES de implementar el "fix" — el costo de verificar es bajo,
+  el costo de "arreglar" algo que ya funcionaba (o peor, revertirlo sin querer) no lo es.
+  No invalida el valor real de las partes de WebSearch puro de esos mismos reportes, que
+  sí fueron precisas — el punto débil específico es la lectura de código dentro de una
+  tarea mayormente orientada a búsqueda externa.
 - **Generación de imágenes AI**: no hay una herramienta directa de texto-a-imagen
   disponible. La única vía encontrada es a través de `mcp__Gamma__generate` (genera un
   documento/presentación completo, no solo una foto) — y en el plan actual de la cuenta,

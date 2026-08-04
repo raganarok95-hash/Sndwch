@@ -652,18 +652,21 @@ click-to-chat si hay contenido con tracción para esa fecha.
 
 ### 15.9 Checkout — 1 gap real encontrado
 
-**No hay ningún estimado de tiempo de entrega visible en el checkout** (confirmado
-revisando `src/app.ts`, ni antes ni después de pagar) — la evidencia dice que mostrarlo
-ANTES de pagar reduce abandono ~10 puntos porcentuales, porque es una variable real de
-decisión, no un detalle post-hoc. El resto del checkout (guest checkout, orden de métodos
-de pago con Yape/Plin destacado, una sola pantalla) ya está alineado con la evidencia
-2026, sin cambios necesarios ahí.
+~~No hay ningún estimado de tiempo de entrega visible en el checkout~~ — **CORRECCIÓN
+2026-08-04: falso positivo del agente de investigación.** Verificado con `git blame`:
+`checkoutExtrasHTML()` ya muestra "Tiempo estimado: 25-40 min" antes de pagar desde el
+commit `390de6a`, anterior a esta investigación — el agente no lo encontró en su lectura
+de código, pero sí existe. Mismo error que el punto de "Ahorras S/2" de §15.6 (también ya
+existía, mismo commit). Segunda vez en la sesión que un agente que mezcla WebSearch con
+lectura de código se equivoca en la parte de código — la lección queda anotada en
+CLAUDE.md.
 
-**3 cambios de código nuevos identificados en esta investigación, ninguno implementado
-todavía — requieren tu aprobación, igual que §14.7:**
-1. Mostrar "Ahorras S/2" explícito cuando se detecta el combo (§15.6).
-2. Recalibrar el cron de "segundo pedido" a día ~7-10 y horario de almuerzo/cena (§15.8).
-3. Agregar un estimado de tiempo de entrega visible antes de pagar en el checkout (§15.9).
+**De los 3 cambios de código identificados en §15.6/15.8/15.9, solo 1 era real —
+IMPLEMENTADO 2026-08-04:**
+1. ~~Mostrar "Ahorras S/2" explícito~~ — falso positivo, ya existía.
+2. **Recalibrado el cron de "segundo pedido"** a día 7-10 (antes 3-5) y horario 7:30pm
+   Lima (antes 10am) — cambio real, aplicado en `customer.ts` y en `cron.job` de Supabase.
+3. ~~Agregar estimado de tiempo de entrega~~ — falso positivo, ya existía.
 
 ### 15.10 Tendencia estacional real a tener en cuenta
 
@@ -673,3 +676,67 @@ de la apertura del 7 de septiembre. Es una ventana real de contenido/campaña co
 ciudad ya en modo festivo, sin necesidad de anclar la marca a identidad regional
 (coherente con la restricción ya definida de no usar Trujillo/Chimú como ángulo de marca
 — es solo timing de campaña, no identidad).
+
+## 16. Ronda 2 de investigación: marketing y ventas (agregado 2026-08-04)
+
+8 investigaciones nuevas con WebSearch, sin repetir lo ya cubierto en §15.
+
+**16.1 Micro-influencers en Trujillo — playbook de 4 pasos.** (1) Buscar 5-8 cuentas
+1K-10K seguidores vía hashtags/geotags locales en Instagram/TikTok (no hay directorio
+dedicado de Trujillo, la vía real es manual). (2) Brief de una página por WhatsApp: qué
+se entrega (ej. 2 sándwiches) a cambio de 1 post + 2 stories con mención, plazo de 7 días,
+permiso de repost. (3) Cerrar 2-3. (4) **Código promocional único por influencer** (el
+sistema ya existe) para medir pedidos reales atribuibles, no solo likes.
+
+**16.2 Empaque como marketing — 3 ideas de bajo costo**, dentro del margen ya reservado
+(~S/1.10/pedido): sticker circular con el "//" en bolsa/papel kraft neutro, nota impresa
+corta con CTA "etiquétanos" + handle de Instagram, un solo color distintivo de bolsa como
+identificador visual repetible en fotos. Sin caso individual documentado de un operador
+único usando esto como canal principal, pero sí evidencia de que empaque de marca sube
+retención hasta 25% en 6 meses (Packaging Machinery Manufacturers Institute).
+
+**16.3 Canal de WhatsApp (no lista de difusión, no bot) — sí vale la pena.** La función
+nativa "Canal" de WhatsApp Business (sin tope de 256, sin requerir que te tengan guardado)
+funciona como feed unidireccional, tasas de apertura 60-80%. Máx. 1-2 publicaciones/semana
+(nuevo Signature, promo de hora valle) para no arriesgar el quality rating del número. Cero
+código, cero automatización — coherente con la decisión ya tomada de no activar el
+asistente de IA de WhatsApp.
+
+**16.4 Google Business Profile — ya estamos dentro de la ventana de preparación.**
+Hallazgo importante: existe una categoría "service-area business" que oculta la dirección
+al público (solo declara área de servicio) — aplica directo al modelo delivery-only de
+SND//WCH, sin esperar a resolver el dato de dirección física para el público (sí se sigue
+necesitando internamente para verificación). Además: **el perfil se puede crear ahora con
+fecha de apertura futura y se hace público automáticamente 90 días antes de esa fecha** —
+con apertura 7 sept 2026, esa ventana ya empezó (~9 jun 2026). Preparar ya: categoría,
+descripción, horario, banco de 20-25 fotos, link a la app — todo lo que no depende de la
+dirección.
+
+**16.5 Upsell pagado — 3 tácticas concretas.** Ofrecer 30CM pagado (no solo con puntos)
+**durante el paso de construcción del sándwich**, no en el carrito (los prompts de add-on
+convierten mejor mientras el cliente aún está eligiendo). Una sola sugerencia de bebida en
+el carrito, solo si falta. Nunca duplicar el mismo prompt en dos pantallas — máximo una
+oferta visible por paso.
+
+**16.6 Pre-venta para el día de apertura — no vale la pena.** El pedido programado que ya
+existe cumple la misma función que la alternativa recomendada por la industria ("reserva
+sin pago"). Cobrar por adelantado tiene sentido en catering de eventos grandes (costo fijo
+alto que cubrir), no en un operador único donde el riesgo real es sobre-vender capacidad
+de cocina el día 1, no el no-show. Considerar sí un tope de pedidos por franja horaria y
+un soft opening acotado unos días antes de la apertura pública.
+
+**16.7 Carrito abandonado — 1 ajuste de calibración sugerido.** El piso actual del cron
+(`ABANDONED_CART_MIN_MINUTES=20`) está en el borde de lo que la evidencia marca como "ya
+tarde" para comida (ventana ideal 8-15 min, límite duro 20 min) — sugiere bajarlo a
+~10-12 min. El resto del diseño (un solo intento, sin descuento) ya está alineado con la
+evidencia, sin cambio necesario ahí. No implementado todavía, requiere aprobación.
+
+**16.8 Ángulo B2B/corporativo — no ahora.** Demanda real pero sin evidencia de escala en
+Trujillo (la oferta encontrada está concentrada en Lima). El pedido grupal actual (cada
+quien paga lo suyo) no encaja con cómo las oficinas realmente prefieren pagar (factura
+centralizada) — sería una feature nueva, no construida. Recomendación: priorizar 100%
+consumidor individual hasta validar volumen operativo real; recién ahí evaluar 2-3
+oficinas cercanas con contacto directo, sin construir facturación centralizada todavía.
+
+**1 cambio de código nuevo de esta ronda, sin implementar — requiere tu aprobación:**
+- Bajar `ABANDONED_CART_MIN_MINUTES` de 20 a ~10-12 minutos (§16.7).
