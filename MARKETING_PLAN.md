@@ -908,5 +908,165 @@ Fuentes (17.13-17.15): [Skedsocial — Instagram Stories 2026](https://skedsocia
 [InfluencerMarketingHub — Reels vs Stories](https://influencermarketinghub.com/instagram-reels-vs-stories/),
 [Metricool — Countdown en Instagram](https://metricool.com/instagram-countdown/).
 
-*Queda 1 agente de esta misma ronda en investigación (fórmulas exitosas de negocios de
-comida chicos) — se agrega aquí cuando termine.*
+## 18. Ronda 4: reseñas/SEO local y TikTok (agregado 2026-08-05)
+
+**18.1 Reseñas de Google — cómo pedirlas sin violar política.** Pedir reseñas SÍ está
+permitido (Google tiene su propio "Marketing Kit" con QR/carteles). Prohibido: ofrecer
+cualquier cosa a cambio (descuento/puntos/saldo — violaría también la norma de incentivos
+de reseñas), y el "review gating" (filtrar antes de pedir, mandando el link de Google solo
+a quien respondió bien) — hay que pedir a TODOS los clientes por igual, nunca ligado al
+programa de fidelidad existente.
+
+**18.2 Timing y canal — ventana corta, no al día siguiente.** La evidencia (con sesgo
+comercial de vendors de SMS/CRM, pero dirección consistente) marca 1-4 horas después de
+la entrega como ventana óptima, mientras la experiencia sigue fresca — encaja bien con el
+push de "entregado" que ya existe en el flujo real de la app, ese es el gatillo natural.
+SMS reporta ~34% de finalización vs. ~4.2% de email (cifra de vendor, orden de magnitud);
+no hay estudio serio que mida WhatsApp para esto, pero como SND//WCH ya usa WhatsApp como
+canal principal es razonable extrapolar un desempeño comparable o mejor. Refuerzo pasivo:
+QR + texto explícito en el empaque ("¿nos regalas 30 segundos en Google?") — un QR sin
+petición directa al lado genera 30-50% menos reseñas según una fuente con sesgo comercial.
+
+**18.3 Qué pesa más en SEO local — según Whitespark 2026 (encuesta a 47 expertos, fuente
+de mayor peso del grupo).** Señales de Google Business Profile (~32%) > señales de
+reseñas (~20%) > SEO on-page (~19%) > enlaces (~15%) > señales de comportamiento (~8%) >
+NAP/citaciones (~7%). Proximidad al buscador es el factor individual más determinante
+(~55%) — ninguna táctica de reseñas lo compensa, importa más la categoría correcta del GBP
+(ya activo, ver §16.3) y la dirección exacta.
+
+**18.4 Velocidad de reseñas > cantidad total — el hallazgo más accionable.** Consenso
+2026: Google favorece flujo constante y reciente sobre volumen acumulado estático — un
+negocio con 80 reseñas y ritmo semanal supera en ranking a uno con 200 sin ninguna en 6
+meses. Ventaja real para un negocio que recién abre: no hace falta "ponerse al día" con
+negocios de años, hace falta sostener un ritmo constante desde el primer pedido.
+
+**18.5 Cómo responder reseñas negativas.** Responder es en sí señal positiva para el
+algoritmo (meta razonable: <24-48h, tasa de respuesta >80% incluyendo positivas). El
+objetivo real no es convencer a quien se quejó — es convencer a quien lee después: tono
+profesional, sin litigar en público, reconocer y mover la resolución a WhatsApp/teléfono.
+Mismo principio que probablemente ya aplica el Libro de Reclamaciones Virtual existente —
+mantener el mismo tono en ambos canales.
+
+**18.6 Umbral real de reseñas que mueve conversión.** Cifra citada de forma consistente
+(estudio Womply ~2017-2019 sobre ~200k negocios reales, desactualizado pero con base de
+datos reales, no solo opinión): pasar a 9+ reseñas se asoció con ~52% más ingresos
+promedio; a 25 reseñas, ~108% más. Dato relevante: el rating asociado a más ingresos NO es
+un 5.0 perfecto sino 3.5-4.5 (un rating "demasiado perfecto" genera sospecha). BrightLocal
+2026 (más actual, encuesta a consumidores reales): el umbral psicológico de confianza bajó
+— hoy deciden con 0-49 reseñas, antes exigían 50+. Meta práctica para SND//WCH: llegar a
+~9-10 reseñas reales cuanto antes tras la apertura, y sostener un flujo semanal de 1-3
+nuevas después.
+
+**18.7 TikTok — caso real que valida directamente la estrategia de arrancar ahora, antes
+de abrir.** Salt Hank (Henry Laporte) construyó su cuenta de contenido de comida en TikTok
+durante **cinco años antes de abrir su local físico** (Salt Hank's, West Village NYC,
+~5M seguidores acumulados) — el día de apertura ya había cola en la puerta. Formato
+distintivo replicable: filmar el sándwich en el momento de máximo desborde/jugosidad, no
+estático. Valida directamente construir audiencia en TikTok desde ahora (agosto 2026),
+antes de la apertura de septiembre.
+
+**18.8 Formato POV de armado — el más aplicable directamente al rubro de SND//WCH.**
+Milad Mirghahari pasó de 10,000 a 1,000,000 de seguidores en menos de un mes con cámara
+POV armando sándwiches pedidos por comentarios de seguidores, narrado con historias
+personales — evidencia directa (aunque con apoyo de sponsor, no 100% orgánico) de que el
+formato POV+interacción con comentarios funciona a escala en el formato sándwich
+específico. Otros formatos con buen desempeño reportado: ASMR de preparación (crunch,
+sizzle, corte — aprovecha el consumo con sonido activado de TikTok) y overhead/time-lapse
+de armado (menor fricción de producción para negocio sin equipo de video).
+
+**18.9 El cliente real puede viralizar mejor que el negocio mismo.** East 81st Street Deli
+(Cleveland): el video viral no lo publicó el negocio sino una clienta elogiando el
+producto en 15 segundos — resultado: ventas triplicadas (de 40 a 300 porciones/día).
+Lección aplicable: facilitar (no fabricar) que clientes graben su propia reacción al
+recibir el pedido, en vez de depender solo de contenido producido por el dueño.
+
+**18.10 Sin ventana garantizada de "explosión" — no planear asumiendo viralidad
+inmediata.** El mismo caso East 81st Street Deli no empezó a viralizar hasta ~7 semanas
+después de publicado. Frecuencia recomendada para cuenta nueva: 2-3 publicaciones
+diarias en fase de arranque (piso mínimo aceptable 3-5/semana) — dado que el dueño arma
+los pedidos él mismo sin planilla, el piso de 3-5/semana es más realista que 2-3/día antes
+de la apertura.
+
+**18.11 Hashtags locales — geolocalización algorítmica sí, identidad regional no
+(compatible con la restricción ya definida).** La geolocalización algorítmica de TikTok y
+el hashtag de ubicación son mecánica de descubrimiento, no identidad de marca — usar
+`#TrujilloPeru`/`#deliveryTrujillo` como etiqueta de alcance es compatible con que
+SND//WCH no tenga anclaje trujillano en naming/iconografía/guion, siempre que el hashtag
+no se filtre hacia esos otros elementos. Mezcla recomendada: 1 hashtag amplio + 1-2 locales
++ 1 de nicho — evitar hashtag stuffing (20+ tags), 3-5 enfocados superarían en desempeño.
+
+**18.12 Nota de cautela sobre fuentes (17 y 18).** La mayoría de fuentes de TikTok son
+blogs de herramientas/agencias con incentivo comercial directo, repitiendo cifras sin
+atribución primaria verificable — tratadas como consenso de industria, no dato duro. Los
+4 casos reales de negocios (18.7-18.9) sí tienen respaldo periodístico/documentación
+verificable (Square, Wikipedia, Cleveland Scene, Today.com, ABC7), y ninguno usó anclaje
+regional como gancho — el gancho fue siempre el producto y la persona, coherente con la
+restricción ya definida del proyecto. Para reseñas, Whitespark y BrightLocal (18.3, 18.6)
+son encuestas metodológicamente transparentes pese a también vender software, y el estudio
+Womply (18.6) usa datos reales de ~200k negocios aunque desactualizado — se marcan aparte
+del resto de blogs de agencias sin metodología visible.
+
+Fuentes (18.1-18.6): [Google — Prohibited & restricted content policy](https://support.google.com/contributionpolicy/answer/7400114?hl=en),
+[Whitespark — 2026 Local Search Ranking Factors](https://whitespark.ca/local-search-ranking-factors/),
+[BrightLocal — What is NAP in Local SEO](https://www.brightlocal.com/learn/what-is-nap/),
+[Womply vía Search Engine Land — review counts vs. revenue](https://searchengineland.com/review-counts-matter-more-to-local-business-revenue-than-star-ratings-according-to-study-320271),
+[Search Engine Land — how to handle negative Google reviews](https://searchengineland.com/guide/how-to-handle-negative-google-reviews).
+
+Fuentes (18.7-18.11): [Square — From TikTok to the Table: Salt Hank's](https://squareup.com/us/en/the-bottom-line/starting-your-business/opening-salt-hanks-nyc),
+[Cleveland Scene — East 81st Deli, un año después](https://www.clevescene.com/news/how-the-east-81st-deli-its-a-chicken-salad-viral-video-changed-the-lives-of-the-business-and-star-one-year-later-42929261/),
+[Today.com — Chicken Salad Deli Viral](https://www.today.com/food/trends/chicken-salad-81st-deli-cleveland-viral-tiktok-rcna54854),
+[ABC7 NY — NJ Deli Owner Goes Viral](https://abc7ny.com/nj-deli-guy-tiktok-the-midland-park/12043744/),
+[Malou — TikTok for Restaurants 2026](https://www.malou.io/en-us/blog/tiktok-for-restaurants).
+
+**18.13 Fórmulas exitosas de negocios de comida chicos — el patrón real, no una fórmula
+matemática.** No existe ningún caso de comida con una "fórmula de primeras 100 ventas"
+verificada con cifras duras (hueco real de esta investigación) — pero el patrón que se
+repite en los casos con nombre real (no en blogs comerciales) es consistente: **boca a
+boca amplificado por creadores/reviewers locales pequeños + un formato de contenido
+repetible y barato de producir + un ítem-ancla reconocible**, sostenido sobre una
+operación que pueda absorber un pico de demanda. 2 estudios académicos (Walden
+University, entrevistas cualitativas a dueños de restaurantes independientes) confirman
+el mismo eje: boca a boca + redes sociales dirigidas por el consumidor, nunca una sola
+táctica aislada.
+
+**18.14 Casos reales verificados — el más comparable es un salumeria/paninoteca, no una
+cadena.** Ai Monti Lattari (Nápoles, Italia): un empleado filmó un ritual fijo y repetible
+(misma pregunta, "¿Con mollica o senza?", mismo gesto de cortar el pan) sin producción
+cara — se volvió viral, atrajo turistas internacionales. **Arepas XL** (Medellín,
+Colombia — el caso más cercano en escala/contexto latinoamericano): fundado en 1,5 m² con
+2 empleados, creció por boca a boca amplificado en redes, en 7 meses el local se quedó
+chico y tuvo que mudarse; hoy ~20 empleados. **BBQFromTheCurb** (California, negocio de 1
+año): un solo video de un reviewer local generó fila hasta la esquina — la lección
+replicable no es "lograr un video viral" (no es controlable) sino **cultivar reviewers
+locales pequeños invitándolos, sin pagarles**, táctica de costo bajo/cero.
+
+**18.15 El riesgo real no es "no viralizar" — es viralizar sin poder sostenerlo.** Tanto
+Ai Monti Lattari (Nápoles) como un caso paralelo en París (Folderol) muestran el mismo
+patrón: la viralidad atrajo tanta gente enfocada en fotos que los clientes habituales
+dejaron de ir, y terminaron restringiendo el acceso. Mitigación concreta recomendada:
+**soft opening con creadores/vecinos locales invitados (descuento 20-50% o gratis) antes
+de la fecha oficial del 7-sep-2026** — prueba la operación con volumen bajo y genera el
+primer lote de contenido/reseñas orgánicas antes del lanzamiento real. Dato de contexto
+(no específico de lanzamiento en redes, estudio Ohio State sobre permisos sanitarios de 3
+años): ~26% de restaurantes independientes cierran/cambian de dueño en el primer año (no
+el mito popular de 90%) — y el estudio de Cornell "Why Restaurants Fail" atribuye las
+quiebras sobre todo a falta de visión de liderazgo y a dueños que no conocen sus costos
+diarios, no a falta de marketing.
+
+**18.16 Ítem-ancla y fricción de pedido — ya resueltos de origen en SND//WCH.** Concentrar
+el contenido/boca a boca en 1-2 ítems reconocibles en vez de diluir en todo el catálogo es
+coherente con la estructura que ya existe (Signatures + THE VAULT como menú secreto,
+sin necesidad de cambio). Y el hallazgo de "vender solo por DM sin link directo pierde
+pedidos al crecer" ya está resuelto de origen — SND//WCH tiene checkout propio, no depende
+de mensajes manuales para cerrar la venta.
+
+Fuentes (18.13-18.16): [The Takeout — Ai Monti Lattari](https://www.thetakeout.com/tiktok-viral-chaotic-italian-sandwich-maker-farewell-1849331317/),
+[Food Republic — qué pasa cuando un restaurante se viraliza](https://www.foodrepublic.com/1428411/what-happens-when-restaurants-become-viral-tiktok/),
+[El Colombiano — Arepas XL](https://www.elcolombiano.com/negocios/negocios-virales-por-tiktok-emprendimiento-antioquia-KC34635069),
+[CBS Sacramento — BBQFromTheCurb](https://www.cbsnews.com/sacramento/news/tiktok-ban-could-impact-local-businesses-limiting-their-exposure/),
+[Ohio State News — tasa real de fracaso de restaurantes](https://news.osu.edu/restaurant-failure-rate-much-lower-than-commonly-assumed-study-finds/),
+[ScholarWorks Walden — estudio cualitativo Pittsburgh](https://scholarworks.waldenu.edu/cgi/viewcontent.cgi?article=3567&context=dissertations),
+[PUCP-CIDE — casos peruanos (Mitos Anticuchos)](https://cide.pucp.edu.pe/casos-de-exito-nakarys-y-mitos-anticuchos-negocios-superan-la-crisis-de-la-covid-19/).
+
+*Falta el agente de economía real del reparto para operador único (se agrega en
+MENU_FINANCIAL_ANALYSIS.md cuando termine).*

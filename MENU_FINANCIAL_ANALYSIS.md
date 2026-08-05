@@ -488,6 +488,120 @@ de `RECIPE_RATIONALE.md`. Dos puntos reales sí requieren atención:
 *Queda 1 agente de esta misma ronda en investigación (gramaje/porciones) — se agrega aquí
 cuando termine.*
 
+## 9. Costo real de permisos y licencias para abrir en Trujillo (agregado 2026-08-05)
+
+Vacío real detectado: la sección 5 (inversión inicial) cubre equipo/insumos/empaque pero
+no el costo de operar legalmente. Estimado con cautela — algunos montos son confirmados
+para Trujillo, otros son extrapolación nacional peruana marcada explícitamente.
+
+**9.1 Licencia de Funcionamiento (Municipalidad Provincial de Trujillo) — confirmado.**
+La Subgerencia de Defensa Civil de la MPT cobra S/247.70 (riesgo alto) o S/457.10 (riesgo
+muy alto) — un restaurante con cocina/gas probablemente cae en ese rango, no en el mínimo.
+Multa por operar sin licencia: 2 UIT (~S/11,000 en 2026).
+
+**9.2 Carnet sanitario — confirmado a nivel nacional, costo recurrente.** S/10-20 por
+persona, **vigente solo 6 meses** (no es un costo único de apertura, se repite cada
+semestre) — como mínimo el dueño necesita el suyo al armar los pedidos él mismo.
+
+**9.3 DIGESA/Registro Sanitario — aclaración importante, no aplica como tal.** El Registro
+Sanitario de DIGESA es para alimentos envasados/industrializados, NO para restaurantes que
+preparan comida fresca para delivery. Lo que sí exige la norma real (R.M. 822-2018/MINSA)
+es un **Plan de Higiene y Saneamiento (PHS)** aprobado por certificadora + **certificado de
+fumigación/desratización vigente (máx. 3 meses, recurrente trimestral)**. **Sin cifra de
+precio confiable encontrada** — es el hueco más real de esta investigación, recomienda
+cotizar directo con una certificadora en Trujillo antes de presupuestar (estimado de
+mercado sin fuente confirmada: S/300-800 inicial).
+
+**9.4 ITSE/Defensa Civil — posible duplicado con 9.1, sin confirmar.** Ambigüedad real sin
+resolver: los montos de riesgo alto/muy alto de la MPT (9.1) podrían ser el mismo trámite
+ITSE visto desde otro ángulo, no un costo adicional — solo se resuelve consultando el TUPA
+de la MPT o la Gerencia de Desarrollo Económico Local (Av. España 746/792, tel.
+932287295).
+
+**9.5 RUC y régimen tributario — decisión estructural, no solo trámite.** RUC en SUNAT es
+gratis. Nuevo RUS: cuota fija S/20 o S/50/mes según categoría, tope anual S/96,000, solo
+boletas (no facturas). Dado el margen de insumos ya calculado (45%), conviene decidir entre
+NRUS/RER (1.5% de ingresos brutos)/MYPE Tributario con un contador local considerando el
+margen neto real después de todos los gastos operativos — no solo el % de insumos.
+
+**9.6 Estimado total de puesta en regla (aparte de equipo/insumos/empaque): S/460 –
+S/1,530 antes de abrir**, más recurrentes no incluidos en ese rango (carnet sanitario cada
+6 meses, fumigación trimestral, cuota tributaria mensual S/20-50 si es NRUS). El rango
+depende sobre todo de si Trujillo cobra el ITSE aparte de la licencia (9.4, sin confirmar)
+y de cuánto cueste realmente el PHS/fumigación (9.3, sin cifra confirmada).
+
+Fuentes: [tramitoarq-trujillo.org.pe — Licencia de Funcionamiento Trujillo](https://tramitoarq-trujillo.org.pe/como-obtener-tu-licencia-de-funcionamiento-en-trujillo-paso-a-paso/),
+[trujilloenlinea.pe — licencias en una hora MPT 2026](https://trujilloenlinea.pe/noticias/locales/06/05/2026/la-municipalidad-de-trujillo-entregara-licencias-de-funcionamiento-en-una-hora),
+[infobae — carnet de sanidad](https://www.infobae.com/peru/2026/01/22/conoce-como-tramitar-tu-carne-de-sanidad-en-lima-requisitos-precio-vigencia-y-donde-obtenerlo/),
+[panca.pe — normas sanitarias restaurantes Perú/DIGESA](https://www.panca.pe/blog/normas-sanitarias-restaurantes-peru-digesa/),
+[noticierocontable.com — Nuevo RUS](https://noticierocontable.com/nuevo-rus/),
+[panca.pe — régimen tributario ideal](https://www.panca.pe/blog/regimen-tributario-ideal-para-mi-negocio-en-peru/).
+
+**9.7 Economía real del reparto — vacío real en el modelo actual (asume S/0).** El
+análisis financiero de la sección 5 no modela el costo de LLEVAR el pedido al cliente —
+relevante porque es un negocio 100% delivery, sin atención en local. Estimado por
+escenario (extrapolación de tarifas confirmadas de Perú, sin dato específico de Trujillo
+en varios puntos, marcado explícitamente):
+- **Reparto propio (moto del dueño), volumen bajo:** ~S/2-4/pedido (combustible ~S/0.50-
+  1.50/viaje corto + desgaste), costo de oportunidad ≈S/0 mientras no haya cola de pedidos
+  esperando. SOAT particular desde ~S/130/año, más si se declara uso comercial.
+- **Reparto propio, volumen saturado:** el costo real deja de ser en soles — es el margen
+  del pedido que no se pudo empezar a preparar mientras el dueño está en la calle
+  (cuello de botella de capacidad de un operador único, no de caja).
+- **Bajo demanda externo (mototaxi/inDrive/courier) dentro de Trujillo:** ~S/6-10/pedido
+  (mototaxi S/3-10, inDrive ejemplo S/12/17km, couriers formales S/8-15/paquete — sin
+  tarifa específica de Trujillo confirmada, extrapolación nacional).
+- **Repartidor fijo part-time:** ~S/450-650/mes — rompe el supuesto de mano de obra S/0
+  que sostiene todo el costeo actual, solo se justifica con volumen real que lo cubra.
+- **Uber Direct (reparto de terceros sin comisión de marketplace, confirmado disponible en
+  Perú):** tarifa exacta en soles no encontrada, pendiente de cotizar directo antes de
+  abrir — es la opción más alineada con la decisión de marca ya tomada (evitar comisión
+  de 25-30% de Rappi/PedidosYa/Uber Eats como canal de venta, ya descartados).
+
+**Radio de reparto propio realista:** ~2-3 km desde el punto de preparación (extrapolación
+razonada a partir de la ventana de 25-40 min ya prometida en el checkout, considerando
+~5-10 min de armado + velocidad urbana efectiva ~20-30 km/h con tráfico), hasta ~4-5 km en
+rutas menos congestionadas o pedidos programados.
+
+**Recomendación para el lanzamiento:** reparto propio dentro de ~2-3 km como modelo por
+defecto al abrir (costo bajo, volumen inicial improbable de saturar); bajo demanda
+(mototaxi/inDrive/Uber Direct cotizado antes de abrir) para fuera de radio o picos
+puntuales; no contratar repartidor fijo hasta tener volumen real que lo justifique — mismo
+criterio que el resto del documento (recalcular con datos reales post-lanzamiento).
+Incorporar un costo de delivery explícito (aunque sea el estimado conservador de S/2-4/
+pedido) al costeo, en vez de asumir S/0 como hoy.
+
+Fuentes (9.7): [PANCA — comisiones apps de delivery Perú 2026](https://www.panca.pe/blog/comisiones-apps-delivery-peru-comparativa),
+[inDrive Delivery Perú](https://indrive.com/es-pe/delivery),
+[Uber Direct — merchants.uber.com](https://merchants.uber.com/uber-direct.html),
+[comparabien — costo SOAT moto](https://comparabien.com.pe/blog-consejos/cuanto-vale-soat-moto),
+[modelo.pe — sueldo mínimo Perú 2026](https://modelo.pe/blog/sueldo-minimo-rmv-peru-2026-cuanto-es/),
+[Enviame — courier Trujillo](https://enviame.io/courier-trujillo/).
+
+---
+
+### Cierre de la ronda 3-4 de investigación de menú/financiero (2026-08-05)
+
+Las 8 investigaciones de menú/financiero lanzadas en esta sesión (maridaje SIG03/04/07,
+RECIPE_RATIONALE vs. ingredientes, gramaje/porciones — *aún pendiente, no se relanzó en
+esta ronda, ver nota abajo*, 4 bebidas, riesgo combinatorio BYO, permisos/licencias,
+economía del reparto) están compiladas en §8-9. **Cambios de código/negocio pendientes de
+aprobación, ninguno implementado todavía:**
+- Ajustar el nombre visible de D07 THE MIDNIGHT//BREW para nombrar "té"/"cold brew de té"
+  explícitamente (§8.1).
+- 2-3 chips de "sugerido" por proteína en el paso de salsas de BYO (§8.8).
+- Confirmar con el dueño la receta real de S01 Aioli/S05 SNDWCH Special/S10 Peanut Satay
+  (¿llevan huevo/lácteo?) para decidir si necesitan el mismo refresco 2x/semana que S02
+  Spicy Mayo, ya confirmada como mayonesa (§8.10).
+- Cotizar el PHS + fumigación con una certificadora real en Trujillo (§9.3, sin cifra
+  confirmada) y confirmar con la MPT si el ITSE es un pago aparte de la licencia (§9.4).
+- Cotizar Uber Direct directamente para tener una tarifa real de reparto en soles (§9.7).
+- Incorporar un costo de delivery explícito al costeo (§9.7), hoy asumido en S/0.
+
+*Nota: el agente de "gramaje/porciones por Signature" de la ronda original (10 agentes)
+no llegó a relanzarse en esta ronda de continuación — sigue pendiente si se retoma esta
+línea de investigación más adelante.*
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
