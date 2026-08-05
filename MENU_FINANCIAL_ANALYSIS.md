@@ -382,6 +382,112 @@ descripciones evocadoras (+27% en ventas, Wansink 2001) debe tratarse como direc
 no como cifra dura: su autor tiene 13+ papers retractados por conducta científica
 cuestionable en otros trabajos (no este específico, pero amerita cautela).
 
+## 8. Auditoría del menú real — ronda 3 (agregado 2026-08-05)
+
+**8.1 Nombre de THE MIDNIGHT // BREW — riesgo de confusión real.** El producto es té negro
+reposado en frío toda la noche (cold brew tea), no café. "Cold brew" e "iced tea" ya
+generan confusión incluso en menús con contexto — en un canal de delivery sin foto visible
+junto al nombre corto ("Brew" solo), un cliente puede asumir razonablemente que es café.
+Recomendación concreta: ajustar el label visible de D07 para nombrar "té"/"cold brew de
+té" explícitamente (ej. "THE MIDNIGHT // Cold Brew Tea"), sin tocar precio ni receta —
+pendiente de aprobación, no implementado.
+
+**8.2 Precio de THE SPICE // CHAI (S/6 vs. S/3-4 del resto) — justificado, sin cambio.**
+El chai lleva leche + especias importadas (canela, cardamomo, clavo, jengibre) frente a
+una infusión de solo agua+hierba; el diferencial de insumo respalda el diferencial de
+precio aunque no se halló una cifra directa S/-por-taza comparada.
+
+**8.3 Riesgo de seguridad del lácteo del chai — ya bien cubierto, sin vacío.**
+`RECIPE_RATIONALE.md` §4 ya identifica correctamente la base láctea como el ambiente de
+mayor riesgo microbiológico (zona de peligro 5°C-60°C) con la mitigación correcta
+(preparar solo la cantidad a usar). No requiere cambio.
+
+**8.4 Alineación de las 4 bebidas con tendencias 2026 — confirmada.** Cold brew (café o
+té) crece ~20%/año y domina la franja de tarde; té ya supera a café entre Gen Z, con auge
+de botánicos/infusiones funcionales (THE BLOOM, THE COOL) y bebidas de inspiración global
+tipo chai/horchata (THE SPICE). THE MIDNIGHT ya es objetivamente un cold brew de té — el
+problema no es el producto, es que el nombre no lo comunica (ver 8.1).
+
+**8.5 Riesgo combinatorio en Build Your Own — 3 combinaciones reales de sabor a evitar.**
+Verificado en el código real (`src/app.ts`) contra los propios Signatures como referencia
+de maridaje ya endosado por el dueño:
+- Pollo Teriyaki (P02) + Teriyaki Glaze (S08) + Honey Mustard/Peanut Satay: apila
+  dulce-soya sobre una proteína ya glaseada dulce sin ácido/picor que corte — el propio
+  SIG06 nunca usa Teriyaki Glaze encima, solo Satay+SNDWCH Special.
+- Atún House (P04, ya cremoso) + Smoke BBQ (S03, ahumado-dulce, salsa "pesada"): enmascara
+  el sabor delicado del atún — el propio SIG04 empareja atún con Aioli+Dijon (salsas
+  ligeras).
+- Albóndiga Marinara (P06, ya ácida) + Oil & Vinegar (S06) + Mostaza Dijon (S11): triple
+  fuente de acidez sin grasa/dulce que equilibre — SIG02 usa solo vinagreta sobre marinara.
+
+**8.6 Tope de 3 salsas en BYO — ya existe, confirmado correcto, no tocar.** El código
+(`src/app.ts` línea 1979) ya limita a 3 salsas seleccionables gratis en BYO, con una 4ta
+opcional de pago (gratis vía recompensa R02). La ciencia sensorial confirma que sin ácido
+que "resetee" el paladar entre bocados, salsas apiladas producen fatiga antes de llegar a
+4-5 — el tope actual ya es razonable, no requiere ajuste.
+
+**8.7 Toppings húmedos en conflicto — riesgo real para delivery/pedido programado.**
+Tomate (T01) + Pepinillo (T02) + Pimiento (T06) son los 3 toppings más húmedos/en salmuera
+del catálogo — combinados con 2-3 salsas, ablandan el pan (especialmente Focaccia sin
+tostar) antes de la entrega en pedidos de trayecto largo.
+
+**8.8 Propuesta de UX derivada — pendiente de aprobación, no implementada.** Agregar 2-3
+chips de "sugerido" por proteína en el paso de salsas de BYO (no exclusivos, no bloquean
+otras opciones), anclados a las combinaciones que ya usan los propios Signatures:
+Atún→Aioli/Dijon, Pollo Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar. Subway y
+guías de menú similares publican "mejores parejas" por proteína como contenido curado de
+marketing/UX — no se halló evidencia de que lo implementen como sugerencia algorítmica en
+vivo dentro del flujo de pedido, así que el precedente es de buenas prácticas de copy, no
+un patrón de UI ya probado en producción por un competidor directo.
+
+Fuentes: [Cold Brew Tea vs. Iced Tea](https://www.foodnhotelasia.com/blog/horeca/cold-brew-tea-vs-iced-tea/),
+[Iced Tea vs. Cold Brew Tea — Ahista Tea](https://ahistatea.com/blogs/journal/iced-tea-vs-cold-brew-tea-its-not-the-same),
+[Iced Chai vs Iced Chai Latte — Majesty Coffee](https://majestycoffee.com/blogs/posts/iced-chai-vs-iced-chai-latte),
+[Coffee & Tea Trends for 2026 — WebstaurantStore](https://www.webstaurantstore.com/blog/2356/top-coffee-trends.html),
+[How to Pair Sauces with Foods Without Clashing Flavors](https://www.imlsupplier.com/how-to-pair-sauces-with-foods-without-clashing-flavors/),
+[The Science of Food Pairing — Flavoreer](https://www.flavoreer.com/the-science-of-food-pairing-why-certain-ingredients-work-together),
+[Subway Sauces List & Best Flavor Pairings](https://subwaymenu.co.uk/subway-sauces/),
+[Sauce it up — condiment properties on sensory perception (ResearchGate)](https://www.researchgate.net/publication/342235032_Sauce_it_up_Influence_of_condiment_properties_on_oral_processing_behavior_bolus_formation_and_sensory_perception_of_solid_foods),
+[Filling forensics — the science behind the perfect sandwich](https://tasteat55.co.uk/2021/05/19/filling-forensics-the-science-behind-the-perfect-sandwich-and-how-to-stop-the-sog/).
+
+**8.9 Maridaje de SIG03/SIG04/SIG07 — verificado, sin hallazgo accionable.** Los tres ya
+están bien resueltos gastronómicamente con el catálogo actual:
+- THE SMOKE (embutido ahumado + Smoke BBQ) no es redundante ni le falta ácido: T02
+  Pepinillo Encurtido ya cumple el rol de cortar la grasa de curados, y ahumado+miel sobre
+  fiambre es una combinación clásica, no repetitiva.
+- THE FRESH (Atún + Aioli + Dijon) replica el maridaje clásico francés pan bagnat/tuna
+  niçoise (atún+mayo+dijon+limón) — el Aioli ya es el componente graso que equilibra la
+  acidez de la Dijon, no falta un tercer elemento.
+- THE CHICAGO (giardiniera + au jus) es fiel a la receta pública del Italian Beef de
+  Chicago; el queso provolone es una adición no tradicional en la receta real, así que su
+  ausencia es una omisión válida de negocio, no un vacío. Dato aparte sin acción requerida:
+  en la tradición de Chicago un "combo" agrega salchicha italiana entera, no queso — solo
+  relevante si algún día se evalúa una variante "Chicago Combo".
+
+**8.10 RECIPE_RATIONALE.md vs. ingredientes reales — 2 hallazgos de seguridad
+alimentaria, requieren confirmación del dueño.** La mayoría del catálogo (proteínas
+cocidas, encurtidos, frescos, quesos) está correctamente clasificado en las 4 categorías
+de `RECIPE_RATIONALE.md`. Dos puntos reales sí requieren atención:
+- **P05 Embutido/Italiano** ("Paté peperoncino, jamón ahumado, cabanossi") se trata hoy
+  como un solo SKU en la categoría "dura la semana" (curado industrial) — pero el paté
+  específicamente es una preparación cocida untable de alta humedad, sin el curado que
+  reduce actividad de agua en jamón/cabanossi (dura 3-5 días una vez abierto, no semanas).
+  Jamón y cabanossi sí encajan en esa categoría; el paté dentro de la mezcla es el eslabón
+  débil si se le aplica la misma ventana de una semana.
+- **S02 Spicy Mayo** es mayonesa confirmada por nombre/descripción ("cremoso") — hoy cae
+  en el bucket genérico de salsas de una semana sin el mismo carve-out que ya recibió el
+  atún-mayo (refresco 2x/semana). **S01 Aioli** es candidato probable al mismo tratamiento
+  (el "aioli" cremoso comercial suele llevar huevo, a diferencia del allioli catalán
+  tradicional sin huevo) pero depende de la receta real del negocio, no documentada en el
+  código — igual que **S05 SNDWCH Special** (receta no revelada) y, con menor certeza,
+  **S10 Peanut Satay** (si lleva leche de coco). Ninguna de estas 4 está confirmada con
+  certeza salvo S02; requieren que el dueño confirme la receta real antes de reclasificar.
+- El placeholder de RECIPE_RATIONALE.md §3 (razón de negocio para domingo+miércoles como
+  días de refresco) sigue vacío — confirmado, sin llenar (decisión del dueño).
+
+*Queda 1 agente de esta misma ronda en investigación (gramaje/porciones) — se agrega aquí
+cuando termine.*
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),

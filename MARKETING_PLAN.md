@@ -729,7 +729,8 @@ un soft opening acotado unos días antes de la apertura pública.
 (`ABANDONED_CART_MIN_MINUTES=20`) está en el borde de lo que la evidencia marca como "ya
 tarde" para comida (ventana ideal 8-15 min, límite duro 20 min) — sugiere bajarlo a
 ~10-12 min. El resto del diseño (un solo intento, sin descuento) ya está alineado con la
-evidencia, sin cambio necesario ahí. No implementado todavía, requiere aprobación.
+evidencia, sin cambio necesario ahí. **APROBADO e IMPLEMENTADO 2026-08-05** — bajado a 10
+min en `customer.ts`.
 
 **16.8 Ángulo B2B/corporativo — no ahora.** Demanda real pero sin evidencia de escala en
 Trujillo (la oferta encontrada está concentrada en Lima). El pedido grupal actual (cada
@@ -738,5 +739,174 @@ centralizada) — sería una feature nueva, no construida. Recomendación: prior
 consumidor individual hasta validar volumen operativo real; recién ahí evaluar 2-3
 oficinas cercanas con contacto directo, sin construir facturación centralizada todavía.
 
-**1 cambio de código nuevo de esta ronda, sin implementar — requiere tu aprobación:**
-- Bajar `ABANDONED_CART_MIN_MINUTES` de 20 a ~10-12 minutos (§16.7).
+## 17. Ronda 3: ventas desde frío por Instagram y WhatsApp (agregado 2026-08-05)
+
+Investigación de conversión manual (sin bot/API de pago) para el arranque en frío. Nota
+de cautela común a ambos: buena parte de la evidencia de conversión proviene de blogs de
+herramientas de automatización DM con incentivo comercial directo — se cita por falta de
+estudios independientes mejores, tómese como orientación direccional, no benchmark exacto.
+
+**17.1 Velocidad de respuesta — la variable de mayor impacto, en ambos canales.**
+Consistente en IG DM y WhatsApp: responder en el primer minuto puede multiplicar la
+conversión hasta 391% (Velocify), con la ventaja cayendo a la mitad tras solo 4 minutos
+más; a los 5 minutos las probabilidades de calificar el lead caen ~80%. En WhatsApp
+específicamente, 98% de los leads abren el mensaje en los primeros 5 minutos (ese es el
+margen real de respuesta), un estudio de Meta (2024) encontró +60% de conversión
+respondiendo bajo 5 min, y 78% de los compradores le compran a la primera empresa que
+responde — frente a un promedio de industria de ~42 horas. Activar notificaciones push y
+tratar la respuesta como prioridad operativa durante horas de atención, no "cuando haya
+tiempo", es la palanca de mayor retorno de todo este plan y no cuesta nada.
+
+**17.2 Comment-to-DM manual en Instagram — viable sin bot a bajo volumen.** Meta soporta
+oficialmente el patrón "comenta X y recibe un DM"; sin automatización se vuelve "revisar
+comentarios y responder a mano", que no escala pero es totalmente manejable a volumen bajo
+(pocas decenas de comentarios/día). Táctica concreta: en cada post de producto, pedir
+"comenta 🥪 y te mando el link para pedir" y responder uno por uno con el link directo al
+checkout — sin intermediarios de terceros.
+
+**17.3 Botón nativo "Order Food" de Meta — gratis, vale la pena configurarlo.** Desde
+septiembre 2025 el checkout nativo in-app de Instagram Shopping fue reemplazado por
+checkout hacia el sitio propio, y el catálogo de Shopping exige productos físicos que se
+envían (excluye comida preparada) — no aplica a SND//WCH. Lo que sí aplica es el botón
+nativo "Order Food" de Meta para restaurantes (gratis, enlaza directo a la web propia) —
+pendiente de configurar, requiere aprobación previa (activos de Meta ya existen, ver
+CLAUDE.md).
+
+**17.4 Primer mensaje que convierte — misma estructura en IG y WhatsApp.** Valor primero
+(entregar lo que pidieron) → prueba social breve → pregunta de seguimiento; corto (bajo
+100 palabras en IG, 5-6 líneas de pantalla en WhatsApp) — evitar el genérico "gracias por
+escribirnos, en breve te respondemos", que no orienta ni genera confianza.
+
+**17.5 Plantilla de bienvenida sugerida para WhatsApp (click-to-chat actual, sin API):**
+> Hola, gracias por escribir a SND//WCH.
+> Armamos tu sándwich a tu manera o eliges uno de nuestros Signatures — pedidos y precios
+> acá: [link a la web].
+> Cualquier duda sobre el menú, contame directo por aquí.
+
+**17.6 Notas de voz en WhatsApp — señal débil pero direccional.** Evidencia mayormente de
+blogs de marketing (no estudios controlados): un audio corto transmite "persona real" más
+rápido que texto; en campañas estacionales el cierre sube 15-35% con audio personalizado.
+Pedidos de comida por WhatsApp en LATAM reportan 18-25% de conversión, de las más altas
+por canal — sin comparación rigurosa audio-vs-texto específica para comida, tratar como
+señal, no como cifra dura.
+
+**17.7 Errores frecuentes que enfrían la venta (ambos canales).** Respuestas
+inconsistentes entre quien atiende (un solo dueño mitiga esto de por sí), no pedir datos
+estructurados de una vez (dirección, forma de pago), fragmentar la atención en varios
+números/cuentas, y sobre todo la lentitud misma de respuesta (ver 17.1).
+
+Fuentes: [QuickDM — Instagram comment-to-DM](https://quickdm.app/blog/instagram-comment-to-dm-automation-complete-guide),
+[LeadResponse — speed-to-lead statistics](https://leadresponse.co/blog/speed-to-lead-statistics),
+[SkedSocial — Instagram DM templates](https://skedsocial.com/blog/instagram-business-direct-message-templates),
+[inro.social — Instagram Shop 2025](https://www.inro.social/blog/instagram-shop),
+[Meta Help Center — Order Food button](https://help.instagram.com/661624171320775/?helpref=related_articles),
+[getsauce.com — Order Food button setup](https://www.getsauce.com/post/how-to-add-the-order-food-button-to-your-restaurant-s-instagram-facebook),
+[Mercately — mensajes de bienvenida WhatsApp](https://blog.mercately.com/whatsapp/mensajes-bienvenida-whatsapp/),
+[Tiendanube — mensaje de bienvenida WhatsApp Business](https://www.tiendanube.com/blog/mensaje-de-bienvenida-de-whatsapp/),
+[GreetNow — lead response time statistics](https://greetnow.com/blog/lead-response-time-statistics),
+[Kraya AI — lead response time](https://blog.kraya-ai.com/lead-response-time),
+[B2Chat — errores comunes WhatsApp Business](https://www.b2chat.io/blog/whatsapp/como-usar-whatsapp-business-para-aumentar-ventas-en-2025-5-estrategias-clave/),
+[Chattigo — WhatsApp Voice](https://blog.chattigo.com/whatsapp-business/whatsapp-voice-beneficios-clave-para-las-empreses),
+[Waicom — pedidos por WhatsApp restaurante](https://waicom.ai/blog/pedidos-por-whatsapp-restaurante),
+[Escala — errores comunes al vender por WhatsApp](https://escala.com/buenas-practicas-y-errores-comunes-al-vender-por-whatsapp/),
+[Beex — errores comunes WhatsApp](https://blog.beexcc.com/errores-comunes-whatsapp-c%C3%B3mo-evitarlos).
+
+**17.8 Setup técnico de WhatsApp Business (app gratuita, sin API de pago).** Herramientas
+de negocio gratis a configurar (menos de 5 min c/u, menú "Herramientas para la empresa"):
+mensaje de bienvenida (dispara automático al primer contacto o tras 14 días de
+inactividad — ideal para el cliente frío que llega desde Instagram), mensaje de ausencia
+(configurable por horario, usa el horario ya cargado en el perfil), y respuestas rápidas
+(atajos tipo `/menu`, `/horario`, `/delivery` para no reescribir lo mismo cada vez).
+
+**17.9 Catálogo nativo de WhatsApp — fuerte para Signatures/bebidas, débil para BYO.**
+Soporta hasta 500 productos con foto/precio/variantes simples (talla/sabor), organizables
+en colecciones, con "carrito" que el cliente arma y envía como mensaje — pero el pago
+siempre ocurre fuera (Yape/Plin/transferencia manual, igual al flujo `pending` que ya
+existe). Encaja bien para las 7 Signatures + 4 bebidas (productos fijos); no soporta la
+combinatoria real de build-your-own (proteína+tamaño+doble+salsa extra) — para eso seguir
+dirigiendo al link del sitio o atender por chat manual con respuestas rápidas.
+
+**17.10 Etiquetas nativas para seguimiento con un solo dueño.** Hasta 20 etiquetas
+personalizables (5 predeterminadas: nuevo cliente, nuevo pedido, pago pendiente, pedido
+finalizado). Set sugerido para SND//WCH: Cliente nuevo, Pedido en curso, Pago pendiente
+Yape/Plin (espejo del flujo `pending` del admin), Cliente recurrente, Reclamo (para no
+perder el plazo legal). Cumple el rol de un CRM básico sin herramienta externa.
+
+**17.11 Enlaces wa.me con mensaje prellenado — puente de baja fricción, no checkout.**
+Formato `wa.me/<código país><número>?text=<mensaje>` (sin +, espacios ni ceros iniciales).
+Usar el mismo número en Instagram bio y en el botón nativo de WhatsApp de Google Business
+Profile (ambos lo soportan). Recomendado: mensaje prellenado distinto por canal de origen
+(bio IG vs. Stories vs. Google) para inferir qué canal generó el contacto sin analítica
+externa — y mantenimiento mensual del texto para que no quede desalineado con precios/
+promos vigentes.
+
+**17.12 Límites reales de la app gratuita.** 1 teléfono principal + hasta 4 dispositivos
+vinculados (no es "un solo dispositivo" estricto, pero el principal debe seguir conectado);
+difusión tope 256 contactos por lista (sin límite de listas, pero el destinatario debe
+tener el número guardado en su agenda o el mensaje no llega, sin aviso de rebote). No es
+un problema al lanzamiento (base de clientes reducida) — reconsiderar si el negocio crece
+lo suficiente como para necesitar difusión masiva.
+
+**2 cambios de código/configuración pendientes de aprobación de esta ronda:**
+- Configurar el botón nativo "Order Food" de Meta (§17.3) — sin costo, solo configuración.
+- Configurar perfil + herramientas gratuitas de WhatsApp Business (§17.8-17.10) — sin
+  costo, solo configuración manual del dueño en la app.
+
+Fuentes (17.8-17.12): [Tiendanube — WhatsApp Business guía 2026](https://www.tiendanube.com/blog/whatsapp-business/),
+[Tiendanube — catálogo en WhatsApp](https://www.tiendanube.com/blog/como-hacer-un-catalogo-en-whatsapp/),
+[Cliengo — Guía Completa WhatsApp Business 2026](https://guiawabusiness.cliengo.com/business-app),
+[Leadsales — etiquetas WhatsApp Business](https://leadsales.io/blog/etiquetas-whatsapp-business/),
+[gowalink — wa.me link generator](https://www.gowalink.org/Guides/wa-me-link-generator/),
+[pickyassist — botón WhatsApp en Google Business Profile](https://pickyassist.com/blog/add-whatsapp-google-business-profile/),
+[Blueticks — WhatsApp broadcast limit 2026](https://blueticks.co/blog/whatsapp-broadcast-limit),
+[Blueticks — WhatsApp Business app limitations 2026](https://blueticks.co/blog/whatsapp-business-app-limitations),
+[Gurusup — WhatsApp away message](https://gurusup.com/blog/whatsapp-away-message).
+
+**17.13 Instagram Stories NO es la herramienta correcta para el primer contacto en frío
+— corrección importante a la secuencia del embudo.** Hallazgo más relevante de esta
+ronda: la evidencia (con reserva, ver nota de sesgo abajo) indica que Stories es un
+formato "follower-first" — Meta lo posiciona para profundizar audiencia YA existente, no
+para alcanzar gente nueva, porque aparece sobre todo en la bandeja de quien ya sigue la
+cuenta. Reels es el formato que Instagram empuja activamente a no-seguidores (Explore,
+hashtags, geoetiquetas). Con SND//WCH arrancando en cero seguidores, publicar solo
+stickers de Stories (encuesta, countdown, quiz) hoy prácticamente no lo ve nadie fuera de
+quien ya sigue la cuenta — **la secuencia correcta es Reels/hashtags/colaboraciones
+locales primero para conseguir los primeros seguidores, y recién ahí Stories entra a
+convertir/nutrir a esa audiencia ya tibia.** Esto es coherente con y refuerza el
+énfasis "TikTok/Reels-first" ya establecido en §14, no lo contradice — pero corrige
+cualquier plan que hubiera puesto Stories como canal de captación inicial.
+
+**17.14 Countdown de apertura — escalar en fases, no arrancar recién en septiembre.**
+Publicar el mismo sticker de cuenta regresiva todos los días (no una sola vez) maximiza
+alcance acumulado, reforzado en paralelo con un Reel-teaser (el countdown solo no llega a
+gente nueva, ver 17.13). Aplicado al calendario real: quedan ~33 días hasta el 7-sep-2026
+desde esta investigación — no activar el countdown recién en septiembre, sino primero
+acumular seguidores vía Reels/hashtags locales, y activar el sticker de countdown en la
+última semana-10 días cuando ya haya base que lo vea y comparta.
+
+**17.15 Highlights (historias destacadas) — set sugerido.** Deben responder de inmediato
+qué es/dónde está/cuándo abre/qué se puede pedir, con portadas de diseño consistente. Para
+el catálogo real de SND//WCH: **MENÚ** (Signatures), **ARMÁ EL TUYO** (BYO), **CÓMO
+PEDIR**, **COMBOS/PROMOS**, y — una vez abierto — **RESEÑAS**. No hay cifra óptima de
+cantidad bien sustentada en ninguna fuente, solo la heurística de "lo mínimo necesario
+para no saturar el perfil".
+
+**17.16 Nota de cautela sobre fuentes de esta sub-ronda.** La mayoría de fuentes sobre
+Stories son blogs de herramientas de gestión de redes (Hootsuite, Sprout Social,
+Metricool, Skedsocial, ChowNow) con incentivo comercial directo. Un dato específico
+encontrado durante la investigación (cifras de "79-85% de finalización" para quiz
+stickers, atribuidas a un supuesto "Meta Engineering Blog") se identificó como
+probablemente fabricado/no verificable (fuente de blog de contenido genérico sin
+trazabilidad) — **descartado explícitamente, no se incluye como dato**. El hallazgo de
+17.13 (Stories = follower-first, Reels = descubrimiento) sí es consistente entre múltiples
+fuentes independientes entre sí, a diferencia de esa cifra puntual.
+
+Fuentes (17.13-17.15): [Skedsocial — Instagram Stories 2026](https://skedsocial.com/blog/ideas-to-boost-interactions-on-instagram-stories-in-2026),
+[Brandwatch — Guide to Instagram Stories](https://www.brandwatch.com/blog/instagram-stories/),
+[UpMenu — Restaurant Instagram Marketing Strategies](https://www.upmenu.com/blog/instagram-for-restaurants/),
+[ChowNow — Instagram Tips for Restaurants](https://get.chownow.com/blog/instagram-guide-for-restaurants/),
+[InfluencerMarketingHub — Reels vs Stories](https://influencermarketinghub.com/instagram-reels-vs-stories/),
+[Metricool — Countdown en Instagram](https://metricool.com/instagram-countdown/).
+
+*Queda 1 agente de esta misma ronda en investigación (fórmulas exitosas de negocios de
+comida chicos) — se agrega aquí cuando termine.*
