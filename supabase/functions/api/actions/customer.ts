@@ -420,11 +420,14 @@ export async function actSyncCart(b: any) {
 }
 
 // Recordatorio de carrito abandonado — si un carrito sincronizado (ver actSyncCart) lleva
-// entre 20 min y 3h sin cambios, un solo push. Menos de 20 min es normal (sigue armando el
+// entre 10 min y 3h sin cambios, un solo push. Menos de 10 min es normal (sigue armando el
 // pedido); más de 3h ya no vale la pena recordar (probablemente ni se acuerda de qué
 // armó). reminded_at evita reenviar el mismo aviso en cada corrida de este cron mientras
 // el carrito sigue sin tocarse.
-const ABANDONED_CART_MIN_MINUTES = 20;
+// Piso bajado de 20 a 10 min (investigación de mercado 2026-08-04): en food delivery la
+// ventana ideal de recuperación es 8-15 min, con 20 min ya como límite duro de "tarde" —
+// el producto es perecedero, a diferencia de e-commerce genérico donde 20-60 min es normal.
+const ABANDONED_CART_MIN_MINUTES = 10;
 const ABANDONED_CART_MAX_MINUTES = 180;
 export async function actRemindAbandonedCart(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
