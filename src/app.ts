@@ -1968,6 +1968,14 @@ function sOBuild(){
   }else{
     h+=ST('','Salsas','Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
     h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
+    // Sugerencia no restrictiva por proteína, anclada a los maridajes que ya usan los
+    // propios Signatures (auditoría de menú 2026-08-05: Atún→Aioli/Dijon, Pollo
+    // Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar) — solo marca las cartas
+    // sugeridas con un tag, nunca bloquea ni preselecciona ninguna otra salsa.
+    var sauceSuggest=({P04:['S01','S11'],P02:['S10','S05'],P06:['S06']})[prot]||[];
+    if(sauceSuggest.length){
+      h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Sugerencia para tu proteína, marcada abajo — sigue siendo tu elección.</div>';
+    }
     // Antes las 13 salsas eran una sola lista plana sin ningún elemento visual que las
     // distinguiera entre sí (el único paso de BUILD YOUR OWN sin agrupar/iconos, hallazgo
     // de auditoría UX). Se agrupan en PICANTES/OTRAS SALSAS y se marca con el ícono de ají
@@ -1976,8 +1984,8 @@ function sOBuild(){
     var sauceCard=function(s){
       var av=isAvail(s.id);
       if(!av)return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.l+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+s.s+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;margin-left:8px">Agotado</span></div></div>';
-      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
+      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3,suggested=sauceSuggest.indexOf(s.id)>=0;
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+(suggested?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';border:1px solid '+GOLD+';border-radius:20px;padding:1px 8px;margin-left:auto">Sugerida</span>':'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
     };
     var byoSauces=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;});
     var spicySauces=byoSauces.filter(function(s){return s.spicy;});

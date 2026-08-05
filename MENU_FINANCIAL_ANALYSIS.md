@@ -384,13 +384,18 @@ cuestionable en otros trabajos (no este específico, pero amerita cautela).
 
 ## 8. Auditoría del menú real — ronda 3 (agregado 2026-08-05)
 
-**8.1 Nombre de THE MIDNIGHT // BREW — riesgo de confusión real.** El producto es té negro
-reposado en frío toda la noche (cold brew tea), no café. "Cold brew" e "iced tea" ya
-generan confusión incluso en menús con contexto — en un canal de delivery sin foto visible
-junto al nombre corto ("Brew" solo), un cliente puede asumir razonablemente que es café.
-Recomendación concreta: ajustar el label visible de D07 para nombrar "té"/"cold brew de
-té" explícitamente (ej. "THE MIDNIGHT // Cold Brew Tea"), sin tocar precio ni receta —
-pendiente de aprobación, no implementado.
+**8.1 Nombre de THE MIDNIGHT // BREW — riesgo real, pero menor de lo reportado; sigue
+pendiente de decisión de marca.** El producto es té negro reposado en frío toda la noche
+(cold brew tea), no café. **Verificación 2026-08-05**: el agente no revisó que la tarjeta
+del menú (`src/app.ts`, función de render de bebidas) ya muestra la descripción completa
+("Té negro reposado en frío toda la noche...") justo debajo del nombre en el único lugar
+donde el cliente elige la bebida — el riesgo de confusión en el momento de compra es
+menor al descrito. Sigue existiendo en contextos de solo texto (resumen de pedido,
+WhatsApp) donde puede aparecer sin la descripción. Cambiar el nombre visible ("Brew" →
+algo que nombre "té") es una decisión de identidad de marca (rompe el patrón de dos
+palabras que comparten las otras 3 bebidas: Bloom/Hibiscus, Cool/Mint, Spice/Chai), no
+solo una corrección de copy — **queda pendiente de que el dueño decida un nuevo subtítulo
+antes de tocar el código**, no implementado.
 
 **8.2 Precio de THE SPICE // CHAI (S/6 vs. S/3-4 del resto) — justificado, sin cambio.**
 El chai lleva leche + especias importadas (canela, cardamomo, clavo, jengibre) frente a
@@ -431,10 +436,11 @@ Tomate (T01) + Pepinillo (T02) + Pimiento (T06) son los 3 toppings más húmedos
 del catálogo — combinados con 2-3 salsas, ablandan el pan (especialmente Focaccia sin
 tostar) antes de la entrega en pedidos de trayecto largo.
 
-**8.8 Propuesta de UX derivada — pendiente de aprobación, no implementada.** Agregar 2-3
-chips de "sugerido" por proteína en el paso de salsas de BYO (no exclusivos, no bloquean
-otras opciones), anclados a las combinaciones que ya usan los propios Signatures:
-Atún→Aioli/Dijon, Pollo Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar. Subway y
+**8.8 Propuesta de UX derivada — IMPLEMENTADO 2026-08-05.** Tag "Sugerida" (no exclusivo,
+no bloquea otras opciones) en el paso de salsas de BYO, anclado a las combinaciones que ya
+usan los propios Signatures: Atún→Aioli/Dijon, Pollo Teriyaki→Satay/SNDWCH Special,
+Albóndiga→Oil&Vinegar. `src/app.ts`, función de render de salsas del paso 4 de BYO
+(`sauceSuggest` + tag "Sugerida" en `sauceCard`). Subway y
 guías de menú similares publican "mejores parejas" por proteína como contenido curado de
 marketing/UX — no se halló evidencia de que lo implementen como sugerencia algorítmica en
 vivo dentro del flujo de pedido, así que el precedente es de buenas prácticas de copy, no
@@ -537,46 +543,36 @@ Fuentes: [tramitoarq-trujillo.org.pe — Licencia de Funcionamiento Trujillo](ht
 [noticierocontable.com — Nuevo RUS](https://noticierocontable.com/nuevo-rus/),
 [panca.pe — régimen tributario ideal](https://www.panca.pe/blog/regimen-tributario-ideal-para-mi-negocio-en-peru/).
 
-**9.7 Economía real del reparto — vacío real en el modelo actual (asume S/0).** El
-análisis financiero de la sección 5 no modela el costo de LLEVAR el pedido al cliente —
-relevante porque es un negocio 100% delivery, sin atención en local. Estimado por
-escenario (extrapolación de tarifas confirmadas de Perú, sin dato específico de Trujillo
-en varios puntos, marcado explícitamente):
-- **Reparto propio (moto del dueño), volumen bajo:** ~S/2-4/pedido (combustible ~S/0.50-
-  1.50/viaje corto + desgaste), costo de oportunidad ≈S/0 mientras no haya cola de pedidos
-  esperando. SOAT particular desde ~S/130/año, más si se declara uso comercial.
-- **Reparto propio, volumen saturado:** el costo real deja de ser en soles — es el margen
-  del pedido que no se pudo empezar a preparar mientras el dueño está en la calle
-  (cuello de botella de capacidad de un operador único, no de caja).
-- **Bajo demanda externo (mototaxi/inDrive/courier) dentro de Trujillo:** ~S/6-10/pedido
-  (mototaxi S/3-10, inDrive ejemplo S/12/17km, couriers formales S/8-15/paquete — sin
-  tarifa específica de Trujillo confirmada, extrapolación nacional).
-- **Repartidor fijo part-time:** ~S/450-650/mes — rompe el supuesto de mano de obra S/0
-  que sostiene todo el costeo actual, solo se justifica con volumen real que lo cubra.
-- **Uber Direct (reparto de terceros sin comisión de marketplace, confirmado disponible en
-  Perú):** tarifa exacta en soles no encontrada, pendiente de cotizar directo antes de
-  abrir — es la opción más alineada con la decisión de marca ya tomada (evitar comisión
-  de 25-30% de Rappi/PedidosYa/Uber Eats como canal de venta, ya descartados).
+**9.7 Economía real del reparto — CORRECCIÓN 2026-08-05: el hallazgo original estaba mal
+planteado, el reparto ya es pass-through al cliente, no un costo del negocio.** ~~El
+análisis financiero no modela el costo de reparto, asume S/0~~ — falso: verificado en
+`src/app.ts` (`deliveryFeeAmount()`) y `supabase/functions/api/env.ts`
+(`DELIVERY_ZONE_FEES = {cerca: 6, media: 8, lejos: 12, muy_lejos: 15}`), el cliente YA paga
+el costo de reparto completo, por zona, en cada pedido — el negocio no lo absorbe. Más
+aún: cuando el pedido se paga con tarjeta, `deliveryFeeForZoneCard()` en
+`actions/orders.ts` ya "engorda" ese monto con la tasa alta de comisión Culqi (5.5%) para
+que ni ahí el negocio termine recibiendo menos de lo que le paga al motorizado — un ajuste
+que el propio código documenta como corrección de una auditoría financiera previa. El
+agente que investigó esto no revisó el código existente antes de reportarlo como vacío —
+mismo patrón de falso positivo ya documentado en `CLAUDE.md` (verificar hallazgos de
+código contra el repo real antes de "corregir" algo que ya funciona).
 
-**Radio de reparto propio realista:** ~2-3 km desde el punto de preparación (extrapolación
-razonada a partir de la ventana de 25-40 min ya prometida en el checkout, considerando
-~5-10 min de armado + velocidad urbana efectiva ~20-30 km/h con tráfico), hasta ~4-5 km en
-rutas menos congestionadas o pedidos programados.
+**Lo que sigue siendo información real y útil de esta investigación** (no descartar todo):
+los rangos de costo real de un motorizado en Trujillo (S/6-10/pedido bajo demanda,
+consistente con el S/6-15 ya cobrado por `DELIVERY_ZONE_FEES`) sirven para verificar que
+las tarifas actuales por zona no estén desactualizadas frente al costo real de mercado —
+y la opción de Uber Direct (sin comisión de marketplace, confirmado disponible en Perú,
+tarifa exacta no encontrada) queda como alternativa a cotizar si el dueño alguna vez
+necesita tercerizar el reparto en vez de asumirlo él mismo o contratar un motorizado fijo.
+El resto del análisis (reparto propio como cuello de botella de capacidad de un operador
+único, radio realista ~2-3 km) sigue siendo válido como consideración OPERATIVA (tiempos,
+capacidad), solo no aplica como hallazgo FINANCIERO de margen — el costo de mano de obra
+de reparto sigue siendo S/0 para el negocio tal como ya asumía el documento, simplemente
+porque no es el negocio quien paga.
 
-**Recomendación para el lanzamiento:** reparto propio dentro de ~2-3 km como modelo por
-defecto al abrir (costo bajo, volumen inicial improbable de saturar); bajo demanda
-(mototaxi/inDrive/Uber Direct cotizado antes de abrir) para fuera de radio o picos
-puntuales; no contratar repartidor fijo hasta tener volumen real que lo justifique — mismo
-criterio que el resto del documento (recalcular con datos reales post-lanzamiento).
-Incorporar un costo de delivery explícito (aunque sea el estimado conservador de S/2-4/
-pedido) al costeo, en vez de asumir S/0 como hoy.
-
-Fuentes (9.7): [PANCA — comisiones apps de delivery Perú 2026](https://www.panca.pe/blog/comisiones-apps-delivery-peru-comparativa),
+Fuentes (9.7, contexto de mercado aún útil): [PANCA — comisiones apps de delivery Perú 2026](https://www.panca.pe/blog/comisiones-apps-delivery-peru-comparativa),
 [inDrive Delivery Perú](https://indrive.com/es-pe/delivery),
-[Uber Direct — merchants.uber.com](https://merchants.uber.com/uber-direct.html),
-[comparabien — costo SOAT moto](https://comparabien.com.pe/blog-consejos/cuanto-vale-soat-moto),
-[modelo.pe — sueldo mínimo Perú 2026](https://modelo.pe/blog/sueldo-minimo-rmv-peru-2026-cuanto-es/),
-[Enviame — courier Trujillo](https://enviame.io/courier-trujillo/).
+[Uber Direct — merchants.uber.com](https://merchants.uber.com/uber-direct.html).
 
 ---
 
@@ -595,8 +591,9 @@ aprobación, ninguno implementado todavía:**
   Spicy Mayo, ya confirmada como mayonesa (§8.10).
 - Cotizar el PHS + fumigación con una certificadora real en Trujillo (§9.3, sin cifra
   confirmada) y confirmar con la MPT si el ITSE es un pago aparte de la licencia (§9.4).
-- Cotizar Uber Direct directamente para tener una tarifa real de reparto en soles (§9.7).
-- Incorporar un costo de delivery explícito al costeo (§9.7), hoy asumido en S/0.
+
+*El reparto (§9.7) ya no requiere ningún cambio de costeo — es pass-through al cliente
+desde antes de esta ronda de investigación, corregido arriba.*
 
 *Nota: el agente de "gramaje/porciones por Signature" de la ronda original (10 agentes)
 no llegó a relanzarse en esta ronda de continuación — sigue pendiente si se retoma esta
