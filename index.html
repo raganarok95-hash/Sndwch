@@ -383,8 +383,15 @@ var SIGS = [
     // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
     // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
     // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
-    // como pide el pitch. Badge PREMIUM (antes en SIG01, el
-    // más barato de los tres) pasa acá, que sí es el de precio intermedio entre los tres.
+    // como pide el pitch.
+    // Badge cambiado de PREMIUM a ITALIANO (auditoría de naming por sabor 2026-08-07):
+    // "Premium" prometía una experiencia elevada que la proteína real no entrega (carne
+    // molida, el insumo más barato del catálogo por kilo) y contradecía el propio pitch
+    // ("el clásico de toda la vida"). ITALIANO describe el estilo real (marinara +
+    // vinagreta al estilo italiano) sin implicar sobreprecio — mismo patrón descriptivo que
+    // ya usan AHUMADO (SIG03) y AL ESTILO CHICAGO (SIG07). Explícitamente NO se usa
+    // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
+    // como compañía consolidada, no como negocio local/casero).
     // cheeseOptional: único Signature con queso a elección — un meatball sub sin queso
     // derretido es atípico para el arquetipo (hallazgo de auditoría de receta). En vez de
     // fijar un queso en la receta curada (cambiaría el pitch/precio sin que el cliente lo
@@ -399,7 +406,7 @@ var SIGS = [
     // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
     // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
     // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-    { id: 'SIG02', n: 'The Meatball', s: 'Signature', badge: 'Premium', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
+    { id: 'SIG02', n: 'The Meatball', s: 'Signature', badge: 'Italiano', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 24, cheeseOptional: true,
         pitch: 'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.' },
     // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
     // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
@@ -417,7 +424,13 @@ var SIGS = [
     // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
     // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
     // Ahora sí iguala el criterio de premio S/0 a 30CM que ya tienen los demás Signatures.
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Ligero', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 30,
+    // Badge cambiado de LIGERO a CÍTRICO (auditoría de naming por sabor 2026-08-07):
+    // "Ligero" choca con la proteína real (atún CON MAYONESA + Aioli, otra base cremosa) —
+    // evidencia real de "health halo" muestra que una etiqueta tipo "light" puede bajar la
+    // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
+    // CÍTRICO describe lo que sí es honesto del producto (el toque de limón del aioli, ya
+    // nombrado en el pitch de abajo) sin prometer ligereza que la receta no entrega.
+    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 16, p30: 30,
         // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
         // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
         pitch: 'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
@@ -443,7 +456,22 @@ var SIGS = [
     // prot P01→P07: usa su propio corte (laminado, estilo Chicago), nunca el asado mechado
     // normal — ver P07 en PROTS y RECIPE_RATIONALE.md.
     { id: 'SIG07', n: 'The Chicago', s: 'Reserve', badge: 'Al estilo Chicago', base: 'B01', prot: 'P07', tops: ['T07'], sauces: ['S13'], p15: 25, p30: 25,
-        pitch: 'Nuestro Italian Beef al estilo Chicago: res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
+        // Pitch corregido de "res mechada" a "res laminada" (auditoría de menú 2026-08-07):
+        // P07 usa corte fino laminado (no deshilachado, ver comentario en PROTS arriba y
+        // RECIPE_RATIONALE.md) — el pitch seguía prometiendo el corte equivocado pese a que
+        // el resto del catálogo (código de inventario, `d` de P07) ya reflejaba el correcto.
+        pitch: 'Nuestro Italian Beef al estilo Chicago: res laminada fina sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
+    // Variante de temporada de apertura (aprobada 2026-08-07, investigación de menú §10.8/
+    // §11.4): S08 (Teriyaki Glaze) y S09 (Chimichurri Piña Asada) eran las únicas 2 salsas
+    // del catálogo sin ninguna receta fija detrás. Reutiliza la proteína más preparada del
+    // negocio (P01, la de THE ORIGINAL) — cero fricción de producción, cero SKU nuevo.
+    // `availableUntil` (distinto de `newUntil`, que solo cambia el badge a "Nuevo" pero
+    // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
+    // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
+    // el ítem completo desaparezca de la lista (sigAvailable()) y del backend
+    // (SIG_AVAILABILITY en catalog.ts) al pasar la fecha — expira solo, no es una palabra.
+    { id: 'SIG08', n: 'The Ember', s: 'Signature', badge: 'Edición de Apertura', availableUntil: '2026-10-07', base: 'B03', prot: 'P01', tops: ['T03', 'T06'], sauces: ['S09'], p15: 14, p30: 22,
+        pitch: 'Res asada mechada de cocción lenta sobre focaccia artesanal, con un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.' },
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
     // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
     // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
@@ -1369,6 +1397,10 @@ function selBar(sel) { return sel ? '<div style="position:absolute;left:0;top:0;
 // newUntil no haya pasado, si no el badge permanente en s.badge — evita que un badge de
 // novedad se quede pegado para siempre (hallazgo de auditoría de copy, BAJO).
 function sigBadge(s) { return (s.newUntil && Date.now() < new Date(s.newUntil + 'T23:59:59').getTime()) ? 'Nuevo' : s.badge; }
+// Distinto de `newUntil` (que solo cambia el texto del badge, nunca oculta el ítem) —
+// `availableUntil` es para variantes de temporada de verdad: el Signature entero deja de
+// listarse/pedirse al pasar la fecha. Espejo server-side: SIG_AVAILABILITY en catalog.ts.
+function sigAvailable(s) { return !s.availableUntil || Date.now() < new Date(s.availableUntil + 'T23:59:59').getTime(); }
 // `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
 // mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
@@ -2010,7 +2042,7 @@ function sOHome() {
             // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
             // sección separada, no una fila más entre los Signatures normales). Evita el
             // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-            var visibleSigs = SIGS.filter(function (s) { return !s.secret; });
+            var visibleSigs = SIGS.filter(function (s) { return !s.secret && sigAvailable(s); });
             var secretSig = SIGS.find(function (s) { return s.secret; });
             var tabBar = '<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
                 + '<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'sig' ? GOLD : 'transparent') + ';color:' + (homeTab === 'sig' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
@@ -2229,7 +2261,7 @@ function sGroupOrder() {
         h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:12px">Agregar mi pedido //</div>';
         h += INP('grp-name', 'Tu nombre', 'text', groupJoinName || (g.isOrganizer && cust ? cust.name : ''), 'clientes');
         h += '<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '15' ? GOLD : '#1A3028') + ';color:' + (groupSize === '15' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '30' ? GOLD : '#1A3028') + ';color:' + (groupSize === '30' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
-        h += SIGS.filter(function (s) { return !s.secret; }).map(function (s) {
+        h += SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).map(function (s) {
             var price = groupSize === '15' ? s.p15 : s.p30;
             return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">' + SOLES + price + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
         }).join('');
@@ -2329,8 +2361,13 @@ function sigPreviewOverlayHTML() {
     if (!s)
         return '';
     var pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });
-    var toppingsLbl = s.tops.map(function (id) { return fn(TOPS, id); }).join(' · ');
-    var saucesLbl = s.sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ');
+    // A diferencia de fn() (usado en resúmenes de texto plano), acá sí se agrega la
+    // descripción larga (`d`) cuando existe — sin esto, ingredientes exclusivos de un
+    // Signature (ej. Giardiniera/Au Jus, sigOnly) nunca se explican en ningún otro lugar
+    // de la interfaz porque BUILD YOUR OWN (el único paso que sí muestra `d`) los excluye
+    // por diseño (hallazgo de auditoría de menú).
+    var toppingsLbl = s.tops.map(function (id) { var t = TOPS.find(function (x) { return x.id === id; }); return t ? t.l + ' // ' + t.s + (t.d ? ' — ' + t.d : '') : ''; }).join(' · ');
+    var saucesLbl = s.sauces.map(function (id) { var sc = SAUCES.find(function (x) { return x.id === id; }); return sc ? sc.l + ' // ' + sc.s + (sc.d ? ' — ' + sc.d : '') : ''; }).join(' + ');
     var photo = SIG_IMG[s.id];
     var hero = photo
         ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="' + esc(s.n) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + sigBadge(s) + '</span></div></div>'
@@ -2352,8 +2389,8 @@ function sigPreviewOverlayHTML() {
             ? '<div style="background:var(--sw-card,#2D5246);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
             : '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
-                + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s : '') + '</div>'
-                + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>'
+                + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s + (bs.d ? ' — ' + bs.d : '') : '') + '</div>'
+                + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s + (pr.d ? ' — ' + pr.d : '') : '') + '</div>'
                 + '<div><span style="color:' + GOLD + '">Toppings · </span>' + toppingsLbl + '</div>'
                 + '<div><span style="color:' + GOLD + '">Salsas · </span>' + saucesLbl + '</div>'
                 + '</div></div>')

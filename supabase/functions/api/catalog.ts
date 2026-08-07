@@ -162,6 +162,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
   SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
+  // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
+  // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
+  // cliente, que solo cambia el badge a "Nuevo" sin ocultar el ítem).
+  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09"], p15: 14, p30: 22 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
@@ -183,6 +187,20 @@ export function sigGateError(sigId: string, totalOrders: number): string | null 
   // umbral bajó a 5 pedidos (ese número corresponde a "INICIADO", no a Círculo Interno).
   return `Ese sabor es exclusivo de ${computeRankName(gate.minOrders)} — sigue pidiendo para desbloquearlo.`;
 }
+// Variantes de temporada real (hoy solo SIG08 "THE EMBER", edición de apertura) — a
+// diferencia de SIG_GATES (acceso que se ABRE con el tiempo/rango), esto es acceso que
+// se CIERRA en una fecha fija. Vencido el `until`, el ítem deja de poder pedirse aunque
+// alguien arme el request a mano contra la API sin pasar por la UI (que ya lo oculta,
+// ver sigAvailable() en src/app.ts) — el servidor es quien de verdad lo rechaza.
+export const SIG_AVAILABILITY: Record<string, { until: string }> = {
+  SIG08: { until: "2026-10-07" },
+};
+export function sigAvailabilityError(sigId: string): string | null {
+  const avail = SIG_AVAILABILITY[sigId];
+  if (!avail) return null;
+  if (Date.now() < new Date(avail.until + "T23:59:59").getTime()) return null;
+  return "Ese sabor fue una edición de temporada y ya no está disponible.";
+}
 // Usado por actPrepareOrder/actPlaceOrder ANTES de reservar inventario o cobrar — un
 // carrito con un sabor restringido para quien lo manda se rechaza igual que un producto
 // agotado, nunca solo se "ignora" el ítem en silencio.
@@ -190,7 +208,7 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
   if (!Array.isArray(rawItems)) return;
   for (const it of rawItems) {
     if (it && it.type === "sig" && typeof it.sigId === "string") {
-      const err = sigGateError(it.sigId, totalOrders);
+      const err = sigGateError(it.sigId, totalOrders) || sigAvailabilityError(it.sigId);
       if (err) throw new ApiError(err, 403);
     }
   }
@@ -220,6 +238,7 @@ export const SIG_LABEL: Record<string, string> = {
   SIG05: "THE VAULT // RESERVE",
   SIG06: "THE TERIYAKI // SIGNATURE",
   SIG07: "THE CHICAGO // RESERVE",
+  SIG08: "THE EMBER // SIGNATURE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto

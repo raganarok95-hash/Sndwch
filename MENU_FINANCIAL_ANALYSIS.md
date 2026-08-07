@@ -1005,18 +1005,31 @@ ingredientes, es preservar el misterio del menú secreto.
 
 ### Resumen de decisiones pendientes de esta ronda
 
-**Bug de código, bajo riesgo, listo para corregir:**
-- `fn()` no pasa `item.d` a la vista previa/confirmación de Signature — afecta
-  especialmente a Giardiniera y Au Jus de THE CHICAGO (11.4).
+**Resueltas e IMPLEMENTADAS 2026-08-07** (respuesta del dueño a las 4 decisiones + fix del
+bug):
+- Bug de `fn()`/`item.d` en la vista previa de Signature — corregido en
+  `sigPreviewOverlayHTML()` (`src/app.ts`), muestra descripción cuando existe.
+- Badge "Premium" (THE MEATBALL) → **"Italiano"** — explícitamente NO "Casero"/
+  "Tradicional"/homemade (decisión del dueño: la marca se posiciona como compañía
+  consolidada, no como negocio local).
+- Badge "Ligero" (THE FRESH) → **"Cítrico"** (referencia honesta al toque de limón del
+  aioli, ya nombrado en el pitch).
+- Bug adicional encontrado al implementar: el pitch de SIG07 seguía diciendo "res
+  mechada" — corregido a "res laminada" (ya identificado en §10.1, quedó pendiente,
+  corregido junto con lo demás).
+- Palabra de intensidad de sabor en proteínas/salsas de BYO y el sistema de ícono
+  picante — **aprobado, pendiente de implementar** (siguiente ronda de código).
+- 5 Signatures igualados en precio a BYO — **confirmado intencional por el dueño**: la
+  curaduría es un extra para motivar el consumo, no un mecanismo de sobreprecio. Sin
+  cambio necesario.
+- **Variante estacional lanzada**: THE EMBER (SIG08) — Focaccia + Res Asado (P01) +
+  Cebolla + Pimiento + Chimichurri Piña Asada (S09), S/14/22, badge "Edición de
+  Apertura", disponible hasta el 2026-10-07. Expira de verdad (no solo el badge): ver
+  `sigAvailable()` en `src/app.ts` y `SIG_AVAILABILITY`/`sigAvailabilityError()` en
+  `catalog.ts` — el servidor rechaza el pedido aunque alguien arme el request a mano
+  después de la fecha, no solo se oculta en la UI.
 
-**Decisiones de dirección (no de código):**
-- ¿Ajustar el badge "Ligero" de THE FRESH y/o "Premium" de THE MEATBALL? (11.2)
-- ¿Agregar palabra de intensidad (suave/intenso) a proteínas y salsas de BYO, y decidir
-  qué hacer con el sistema de ícono de ají hoy muerto en la práctica? (11.2)
-- ¿Los 5 Signatures igualados en precio a BYO son intencionales o necesitan un premio de
-  curaduría real? (11.3)
-- ¿Lanzar la variante estacional propuesta (Focaccia+Res+Piña Asada) para la apertura?
-  (11.4)
+**Aún pendiente (no resuelto en esta ronda):**
 - ¿Reordenar THE CHICAGO a 2da posición? (esperar datos reales, no urgente) (11.4)
 
 **Listo para implementar sin más discusión (validado financiera y técnicamente):**
