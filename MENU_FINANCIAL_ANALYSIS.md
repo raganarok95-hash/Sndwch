@@ -824,6 +824,207 @@ con `c.s` como sí hacen Toppings y el resto — habría que tocar también esa 
   delivery? (10.2, 10.8)
 - ¿Vale la pena escribir las 13 descripciones propuestas en 10.9?
 
+## 11. Técnica de cocina, naming por sabor y financiero profundo — ronda 6 (agregado 2026-08-07)
+
+20 agentes: batch-prep, producción de salsas, coreografía de armado, QC, empaque por
+riesgo; naming de Signatures/proteínas/salsas/badges según sabor real; impacto financiero
+de los 4 cambios de §10, elasticidad de precios, combo, gramaje (ambigüedad cerrada),
+tarjeta de regalo/Plan Semanal; octógonos, psicología de menú, upsell, variantes
+estacionales, fotografía, claridad de menú, consistencia BYO vs. Signatures. Nada
+implementado — pendiente de aprobación.
+
+### 11.1 Técnica de cocina — batch-prep, salsas, armado, QC, empaque
+
+**El cuello de botella real de las proteínas es ENFRIAR, no cocinar.** El tiempo de
+cocción casi no cambia con el tamaño del lote; lo que sí importa es enfriar de zona de
+peligro (5-60°C) rápido: porcionar EN CALIENTE a bolsas planas delgadas (2-3cm) y
+sumergir en baño de hielo agitado, no enfriar el lote grande entero. Solo 5 de las 7
+proteínas son "cocinar y congelar" real (P01, P02, P03, P06, P07) — P05 es
+porcionar/rebanar producto curado comprado, P04 nunca se congela (ciclo dom/mié ya
+fijado). P07 (Chicago) necesita 2 sesiones separadas: rostizar/enfriar un día, rebanar
+frío al siguiente (laminar en caliente desgarra). Calendario semanal propuesto: lunes P01,
+martes P07 (rostizar), miércoles rebanar P07 + refresco de atún, jueves P02+P03, viernes
+P06, domingo refresco de atún + revisión de P05.
+
+**Las 12 salsas no son un solo grupo de riesgo al escalar en lote.** 3 emulsiones con
+huevo (S01 Aioli, S02 Spicy Mayo, S05 SNDWCH Special probable) son las delicadas —
+técnica: batidora de inmersión, huevo pasteurizado para extender vida útil, temperatura
+pareja. Vida útil real más corta de lo que trata hoy `RECIPE_RATIONALE.md` §2: 3-5 días
+para las emulsiones con huevo (no una semana completa como encurtidos/curados), 1-2
+semanas para BBQ/Teriyaki cocidas, 2 semanas-meses para Honey Mustard/Dijon, vida
+larguísima para Picante-Miel (la miel casi conserva sola). Calendario propuesto: domingo
+lote grande de las cocidas + tanda CHICA de las 3 con huevo, miércoles segunda tanda chica
+de las 3 con huevo (mismo día que el refresco de atún ya fijado) — no agrega carga nueva,
+reutiliza el ciclo existente.
+
+**Coreografía de armado**: orden físico recomendado pan→proteína→queso→toppings→salsas
+(distinto del orden de selección en pantalla del cliente, que no tiene por qué coincidir).
+Para pedidos con varios ítems (grupal), la técnica real es "recorrido por lote" — agregar
+proteína a TODOS los sándwiches antes de pasar a queso, etc. — reduce de 5×N a solo 5
+pasadas totales.
+
+**Control de calidad sin manual formal**: dishers/cucharas de porción por color (uno por
+proteína, calibrado una vez), botellas dosificadoras calibradas por salsa ("N apretones =
+X gramos"), tarjeta de receta + foto de referencia real por Signature pegada en la
+estación (nunca comparar contra la memoria propia, que también deriva). Auto-auditoría por
+muestreo: pesar 1 de cada 10 sándwiches contra el objetivo escrito.
+
+**Empaque por riesgo**: la bolsa kraft exterior ya usada alcanza para los 7 Signatures por
+igual — el punto débil es qué papel toca el pan directamente. Para los 3 de mayor riesgo
+de humedad (SIG02/03/06, identificados en §10.4): cambiar el envoltorio de contacto
+directo a papel graso-resistente/encerado (costo marginal bajo, mismo formato de hoja) y
+nunca sellar hermético (doblez suelto o un sticker, nunca cinta perimetral) — el vapor
+condensado es tan dañino como el contacto directo con salsa.
+
+### 11.2 Naming ligado a sabor real (distinto de la auditoría de idioma de §10.5)
+
+**6 de 7 Signatures están bien resueltos** — el nombre/badge no promete algo que el
+producto no entrega. THE CHICAGO es el mejor caso (naming por procedencia real, refuerza
+la expectativa correcta). Dos tensiones reales, confirmadas por 3 agentes independientes
+desde ángulos distintos (naming sensorial, badges, Signatures):
+
+- **THE FRESH — badge "Ligero" choca con su propia proteína.** Atún con mayonesa + Aioli
+  (otra base cremosa) es lo opuesto de "ligero" en boca. Evidencia científica real (no
+  solo opinión): un estudio con queso idéntico mostró que la etiqueta "light" por sí sola
+  **reduce** la percepción real de sabor — el efecto "health halo" trabaja en contra del
+  producto, no a favor. El nombre "Fresh" sí se sostiene parcialmente por los toppings
+  crocantes y la Dijon.
+- **THE MEATBALL — badge "Premium" contradice su propio pitch.** Es la proteína más
+  barata del catálogo (carne molida ~S/10/kg) y el propio pitch se describe a sí mismo
+  como "el clásico de toda la vida" — comfort food casero, no algo elevado. "Casero" o
+  "Tradicional" encajarían mejor con lo que el producto y su propio copy ya dicen de sí.
+
+**Ninguna proteína ni 6 de 9 salsas de BYO usan una palabra de intensidad de sabor**
+(suave/equilibrado/intenso) — el cliente no tiene pista de qué tan fuerte es cada
+combinación antes de armarla. **Bug de código confirmado**: el sistema de ícono de ají
+para agrupar "Picantes //" en BYO (`src/app.ts`, sección de salsas) es código muerto en la
+práctica — las 2 únicas salsas `spicy:true` (S02, S12) son ambas `vaultOnly` desde una
+sesión posterior, así que `spicySauces.length` es siempre 0 en BYO y esa sección nunca
+se renderiza, aunque el código siga ahí (mismo hallazgo, dos ángulos: confirma también
+§10.7).
+
+### 11.3 Financiero profundo
+
+**Los 4 cambios propuestos en §10 son financieramente triviales.** Lechuga cuesta
+centavos por sándwich (S/0.08-0.29, no cotización mayorista real todavía) y no mueve el
+colchón del 45% en más de 1 punto porcentual; sacar S12 de `vaultOnly` cuesta S/0 (misma
+salsa, mismo costo); las 13 descripciones y el fix del pitch SIG07 son solo texto. Las
+decisiones reales pendientes en estos 4 son operativas (inocuidad/humedad de lechuga) y
+estratégicas (diluir el gancho de fidelidad de THE VAULT), no de presupuesto.
+
+**Ambigüedad de gramaje de salsa — CERRADA.** El propio código ya resuelve esto
+internamente: `SALSA EXTRA` (S/2) se define como "una porción doble de una salsa ya
+incluida" — es decir, el modelo mental del código ya trata 1 salsa = 1 porción completa.
+Un Signature con 2 salsas (SIG01, SIG04, SIG05 VAULT, SIG06 — 4 de 7, no 3 como se
+estimaba) son 2 porciones, no una repartida. El costeo actual **subestima** esos 4
+Signatures en S/0.27 (15CM) / S/0.53 (30CM), bajando el margen real 1-2.6 puntos
+porcentuales — dirección contraria y parcialmente compensada por el hallazgo de toppings.
+
+**Gramaje de toppings — recalibrado con datos reales de Subway (UK, sept-2025).** El flat
+actual de 65g/130g coincide casi exacto con el máximo teórico de BYO (las 6 toppings
+juntas = 67g) — parece calibrado sobre ese máximo, no sobre los 3 toppings típicos de un
+Signature (~43g de promedio real). El costeo actual **sobreestima** el costo de toppings
+en los Signatures en S/0.09 (15CM) / S/0.17 (30CM) — compensa parcialmente el error de
+salsas de arriba. Neto combinado por Signature con 2 salsas: entre +S/0.07 y +S/0.18 por
+unidad. **Ninguna conclusión gruesa del documento cambia** (THE FRESH sigue el peor
+margen, COGS bottom-up sigue ~26%, 45% sigue de colchón) — vale la pena aplicar junto con
+el ajuste pendiente de embutido a S/48 si se recalcula v4.1, no antes.
+
+**Elasticidad de precios**: el catálogo (S/16-25 por Signature) coincide casi exacto con
+sangucherías icónicas de Lima (S/16-25.50) — pero Trujillo corre ~24-25% más barato que
+Lima en costo de vida (Expatistan), así que los precios parecen anclados a referencia
+limeña sin ese ajuste. THE CHICAGO (S/25 fijo) y THE VAULT son el tramo con más riesgo
+real de fricción — no necesariamente mal, ambos son productos premium/exclusivos por
+diseño, pero vale validar con datos reales de Trujillo tras el lanzamiento.
+
+**Combo de -S/2: sano, no tocar todavía.** Solo se acerca al límite del 45% en el peor
+caso ya conocido (embutido/atún + bebida cara). S/2 está por debajo del rango de industria
+(12-18% de descuento vs. el 9-12.5% real de SND//WCH), pero subirlo ahora reabriría el
+problema ya resuelto de "bebida gratis fuera de hora valle" con THE MIDNIGHT (la más
+barata) — si se ajusta en el futuro con datos reales, mejor un % con tope que un monto
+fijo mayor.
+
+**Tarjeta de regalo y Plan Semanal: ambos sanos, sin ajuste necesario.** Tarjeta de
+regalo cuesta ~1.1 céntimos por punto canjeado (conservador). Plan Semanal gana
+~S/44.78-46.20 netos por activación en términos absolutos — el único "costo" es ~9-10%
+de dilución de margen relativo frente a una venta a precio completo, el trade-off esperado
+de cualquier instrumento de caja anticipada, no una pérdida real.
+
+**Verificación cruzada BYO vs. Signatures — hallazgo real, requiere tu decisión.** 5 de
+7 Signatures cuestan EXACTAMENTE igual que armarlos por BYO en 30CM (SIG01, SIG02, SIG03,
+SIG04, SIG06) — y SIG04 THE FRESH está igualado también en 15CM (arrastre del aumento de
+precio de P04 en una sesión anterior que no se propagó al Signature). No es
+automáticamente un bug — podría ser una decisión válida de "curaduría = comodidad, no
+sobreprecio" — pero si la intención original era que un Signature tuviera premio real,
+hoy no lo tiene en 5 de 7 casos.
+
+### 11.4 Otros aspectos — regulación, UX, contenido
+
+**Octógonos de la Ley 30021 — NO aplican.** Confirmado con múltiples fuentes legales
+independientes y un antecedente real: Indecopi archivó en 2019 un intento de extender la
+obligación a comida rápida. La ley regula alimentos procesados/envasados industrialmente,
+con exclusión explícita para "preparación culinaria" — exactamente la categoría de
+SND//WCH. Sin obligación de advertencias en menú ni empaque.
+
+**Bug de código real y verificado — descripciones no llegan a la vista previa de
+Signature.** La función `fn()` que arma el desglose de ingredientes en
+`sigPreviewOverlayHTML()`/`sOItemConfirm()` descarta el campo `d` (descripción). Para
+THE CHICAGO esto importa: Giardiniera y Au Jus son `sigOnly` (nunca aparecen en BYO, el
+único lugar donde `d` sí se muestra) — un cliente nuevo no tiene ningún punto de la
+interfaz donde vea qué son esos ingredientes antes de pedir. Fix simple: mostrar `item.d`
+también en esas dos pantallas.
+
+**Psicología de orden del menú**: el orden actual de los 7 Signatures es histórico (orden
+de cuándo se agregaron), no diseñado por conversión — pero por suerte no hace daño (el
+peor margen, THE FRESH, cae en la posición 4, la zona "muerta" del medio según el efecto
+de posición serial). 6 públicos + 1 oculto coincide con el punto óptimo documentado en la
+literatura de "choice overload" (Iyengar & Lepper). Hipótesis de bajo riesgo si se quiere
+optimizar: subir THE CHICAGO (mejor margen público) a 2da posición — validar con datos
+reales, no implementar a ciegas.
+
+**Upsell de bebida — el único mecanismo sin botón de un tap.** A diferencia de "sube a
+30CM" y los chips de salsa sugerida (ambos clicables), el aviso de "agrega una bebida y
+ahorra S/2" es solo texto sin CTA, y no aparece en el flujo normal de compra (solo en pago
+directo de un solo ítem). Propuesta: tarjeta con imagen+nombre+botón "+Agregar" en el
+mismo punto donde ya funcionan los otros upsells.
+
+**Variante estacional — propuesta concreta y honesta.** S08 (Teriyaki Glaze) y S09
+(Chimichurri Piña Asada) son las únicas 2 salsas del catálogo sin ninguna receta fija
+detrás. Propuesta: Focaccia + Res Asado (misma proteína de SIG01, cero fricción de
+producción) + Cebolla + Pimiento + S09 sola, con fecha real de expiración en código (mismo
+patrón `newUntil` que ya usa SIG06) ligada al mes de apertura — nunca un badge de escasez
+sin mecanismo real detrás, coherente con por qué se retiró "EDICIÓN LIMITADA" antes.
+Lanzar solo 1 variante, no 2 (menor carga operativa).
+
+**Dirección de fotografía** (para cuando se consiga fotografía real, vía Adobe Stock
+licenciada — no generación IA, no disponible en este plan): corte transversal como toma
+por defecto para 6 de 7 Signatures. THE CHICAGO necesita el vasito de Au Jus en cuadro
+(es literalmente lo que define el nombre del producto). THE VAULT debe fotografiarse
+deliberadamente más oscuro/ambiguo — el objetivo ahí no es máxima claridad de
+ingredientes, es preservar el misterio del menú secreto.
+
+### Resumen de decisiones pendientes de esta ronda
+
+**Bug de código, bajo riesgo, listo para corregir:**
+- `fn()` no pasa `item.d` a la vista previa/confirmación de Signature — afecta
+  especialmente a Giardiniera y Au Jus de THE CHICAGO (11.4).
+
+**Decisiones de dirección (no de código):**
+- ¿Ajustar el badge "Ligero" de THE FRESH y/o "Premium" de THE MEATBALL? (11.2)
+- ¿Agregar palabra de intensidad (suave/intenso) a proteínas y salsas de BYO, y decidir
+  qué hacer con el sistema de ícono de ají hoy muerto en la práctica? (11.2)
+- ¿Los 5 Signatures igualados en precio a BYO son intencionales o necesitan un premio de
+  curaduría real? (11.3)
+- ¿Lanzar la variante estacional propuesta (Focaccia+Res+Piña Asada) para la apertura?
+  (11.4)
+- ¿Reordenar THE CHICAGO a 2da posición? (esperar datos reales, no urgente) (11.4)
+
+**Listo para implementar sin más discusión (validado financiera y técnicamente):**
+- Recalibrar gramaje de salsa (1 salsa = 1 porción completa) y de toppings (según datos
+  reales de Subway) en el próximo recálculo de v4.1, junto con el ajuste de embutido a
+  S/48 ya pendiente.
+- Tarjeta con botón de un tap para el upsell de bebida (11.4).
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
