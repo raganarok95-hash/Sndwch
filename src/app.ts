@@ -4669,9 +4669,14 @@ async function loadDashboard(){
   }catch(e){dashStats=null;atRiskCustomers=null;}
   busy=false;render();
 }
-function waRiskContact(phone,name){
-  var msg='Hola '+name+'! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
-  window.open('https://wa.me/51'+String(phone).replace(/\D/g,'').replace(/^51/,'')+'?text='+encodeURIComponent(msg),'_blank');
+function waRiskContact(i){
+  // Recibe solo el índice (numérico, seguro de interpolar en onclick) y busca el cliente
+  // en memoria — nunca se embebe name/phone (texto libre del cliente) directo en el
+  // atributo onclick, que un XSS podría explotar para robar el token de admin de localStorage
+  // (hallazgo de auditoría 2026-08-07).
+  var c=(atRiskCustomers||[])[i];if(!c)return;
+  var msg='Hola '+(c.name||'')+'! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
+  window.open('https://wa.me/51'+String(c.phone).replace(/\D/g,'').replace(/^51/,'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 function DTILE(label,big,sub?,muted?){
   // muted=true reduce el peso visual para data de solo-referencia (ej. puntos en
@@ -4837,9 +4842,9 @@ function sAdminDashboard(){
   // decida a quién más vale la pena escribirle personalmente.
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Clientes en riesgo //</div>';
   if(atRiskCustomers&&atRiskCustomers.length){
-    h+=atRiskCustomers.slice(0,10).map(function(c){
+    h+=atRiskCustomers.slice(0,10).map(function(c,i){
       var daysTxt=c.daysSinceLastOrder==null?'nunca pagó un pedido':'hace '+c.daysSinceLastOrder+' días';
-      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(c.name||c.phone)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(c.rank)+' · último pedido '+daysTxt+'</div></div><button onclick="waRiskContact(\''+esc(c.phone)+'\',\''+esc(c.name||'')+'\')" aria-label="Contactar por WhatsApp" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">'+icon('chat',14,GOLD)+'</button></div>';
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(c.name||c.phone)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(c.rank)+' · último pedido '+daysTxt+'</div></div><button onclick="waRiskContact('+i+')" aria-label="Contactar por WhatsApp" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">'+icon('chat',14,GOLD)+'</button></div>';
     }).join('');
   }else{
     h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px">Sin clientes en riesgo por ahora.</div>';

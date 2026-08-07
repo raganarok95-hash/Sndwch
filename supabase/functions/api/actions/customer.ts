@@ -323,7 +323,10 @@ export async function actRemindUnclaimedChallenge(b: any) {
   for (const o of orders) counts.set(o.customer_phone, (counts.get(o.customer_phone) || 0) + 1);
   const qualifyingPhones = [...counts.entries()].filter(([, n]) => n >= CHALLENGE_TARGET_ORDERS).map(([phone]) => phone);
   if (!qualifyingPhones.length) return { success: true, reminded: 0 };
-  const phonesList = qualifyingPhones.map((p) => `"${p}"`).join(",");
+  // phone es texto libre en el registro (sin restricción de charset) — escapar comillas/backslash
+  // antes de interpolar en un literal de lista in.() de PostgREST evita que un valor malicioso
+  // rompa fuera de su literal y altere el filtro (hallazgo de auditoría 2026-08-07).
+  const phonesList = qualifyingPhones.map((p) => `"${String(p).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const customers = await sbGet("customers", `phone=in.(${phonesList})&select=phone,challenge_claimed_month`);
   let reminded = 0;
   for (const c of customers) {
@@ -483,7 +486,7 @@ export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1");
   if (!customers.length) return { success: true, reminded: 0 };
-  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
   const firstOrderByPhone = new Map<string, number>();
   for (const o of orders) {
@@ -529,7 +532,7 @@ export async function actRemindHighRankWinback(b: any) {
   // — no hace falta filtrar de nuevo con computeRankName, solo usarlo para el texto.
   const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15");
   if (!customers.length) return { success: true, reminded: 0 };
-  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
   const lastOrderByPhone = new Map<string, number>();
   for (const o of orders) {

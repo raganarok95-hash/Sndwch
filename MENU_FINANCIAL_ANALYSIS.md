@@ -1038,6 +1038,193 @@ bug):
   S/48 ya pendiente.
 - Tarjeta con botón de un tap para el upsell de bebida (11.4).
 
+## 12. Curaduría de chef + auditoría técnica completa — ronda 7 (agregado 2026-08-07)
+
+Segunda tanda de esta sesión: 10 agentes de curaduría de chef (sabor/venta) + 20 agentes de
+auditoría técnica (requisitos no funcionales pedidos explícitamente por el dueño:
+seguridad, infraestructura, pagos, observabilidad, legal, costos). No todos los 30
+terminaron — ver "Pendiente" al final. Dos hallazgos de seguridad (uno crítico) se
+corrigieron directo en código, no solo se documentan aquí.
+
+### 12.1 Curaduría de chef
+
+- **Queso ausente en 6 de 7 Signatures públicos, y no solo por default — es imposible
+  agregarlo.** Solo THE MEATBALL (`cheeseOptional:true`) permite queso (gratis). THE
+  ORIGINAL (perfil roast-beef/cheesesteak) y THE SMOKE (ahumados) son los casos más
+  llamativos — combinaciones donde queso derretido es casi una expectativa del género y
+  hoy no hay ni la opción de pagarlo extra. Decisión pendiente del dueño: abrir queso como
+  extra pagado en más Signatures (no se implementó, es una decisión de menú).
+- **Construcción física para el momento de abrir el pedido en casa** (distinto de humedad
+  §10.4/11.1 y de foto de marketing §11.4): dos riesgos nuevos de **forma** del relleno,
+  no de humedad — THE MEATBALL (las albóndigas sueltas ruedan dentro del empaque durante
+  el trayecto, se amontonan en una punta) y THE FRESH (mezcla de atún tipo pasta se
+  aplasta bajo el peso de encima, sin cuerpo propio). Recomendaciones de técnica de
+  armado/corte, sin costo de insumo: extender relleno hasta el borde del pan (no
+  concentrar al centro), abanicar proteínas en fetas/laminadas de punta a punta, formar un
+  lomo/cresta en proteínas deshilachadas, y — el cambio de mayor impacto en el "reveal" —
+  envolver apretado primero y cortar en diagonal a través del papel ya envuelto, nunca
+  servir entero ni cortar suelto antes de envolver.
+- **Riesgo combinatorio en Build Your Own**: el tope de 3 salsas ya existe en código
+  (`sL>=3`, contrario a lo que asumía el enunciado de la tarea) y es correcto según la
+  ciencia de fatiga del paladar — no tocar. Combinaciones de riesgo real identificadas
+  (proteína+salsa que ningún Signature endosa): Pollo Teriyaki + Teriyaki Glaze (dulce
+  sobre dulce, sin ácido), Atún House + Smoke BBQ (salsa pesada enmascara proteína
+  delicada), Albóndiga Marinara + Oil&Vinegar+Dijon (triple ácido sin grasa que equilibre).
+  Propuesta de bajo costo: 2-3 chips de "sugerido" (no bloqueantes) por proteína en el paso
+  de salsas, anclados a los pairings que ya usan los propios Signatures.
+- **Ranking de venta esperada** (margen real combinado con atractivo de venta): THE
+  CHICAGO en el tope, THE FRESH en el último lugar — coincide con el hallazgo ya
+  documentado en §11.2/11.4 sobre THE FRESH necesitando o bien atún con cotización real
+  (mismo patrón que el embutido) o reposicionamiento de marketing lejos del eje
+  salud/ligereza que generó el problema original de "Ligero" (ya corregido a "Cítrico").
+
+### 12.2 Auditoría técnica — hallazgos por severidad
+
+**CRÍTICO — corregido en esta sesión.** XSS almacenado en el dashboard admin
+(`waRiskContact`, panel "Clientes en riesgo de fuga"): `name`/`phone` de un cliente
+(texto libre, sin restricción de charset en el registro) se interpolaban directo dentro
+de un atributo `onclick` inline. `esc()` protege contexto de atributo HTML pero no
+contexto de string JS dentro de un handler inline — un cliente podía registrarse con un
+`name` que rompiera el string JS y ejecutara código arbitrario en la sesión del admin
+que abre el dashboard, robando el token de `localStorage` (mismo origen que sirve cliente
+y admin). **Corregido**: `waRiskContact` ahora recibe solo el índice numérico dentro del
+array ya en memoria (mismo patrón ya usado por `waAdmin(ordId)` en otra parte del
+archivo) — nunca se vuelve a interpolar texto libre del cliente en un atributo `onclick`.
+Ver `src/app.ts` (`waRiskContact`, línea ~4672, y el `map` que la llama en el dashboard).
+
+**MEDIO — corregido en esta sesión.** Filtros `in.(...)` de PostgREST construidos
+concatenando `phone` sin escapar comillas/backslash, en 4 crons de marketing/retención
+(`actRemindUnclaimedChallenge`, `actRemindSecondOrder`, `actRemindHighRankWinback` en
+`customer.ts`; el cálculo de conversión de campañas en `admin.ts`). Como el registro no
+restringe el charset del teléfono, un valor con comillas internas podía romper fuera del
+literal de PostgREST y alterar el filtro. **Corregido**: se escapan `\` y `"` antes de
+interpolar en los 4 sitios — no requiere cambiar la validación de registro.
+
+**ALTO — reportado, no corregido (decisión de producto, no bug puntual).** Recuperación
+de PIN por DNI+fecha de nacimiento sin correo registrado devuelve el PIN nuevo en texto
+plano en la misma respuesta JSON (`auth.ts` `actRecover`) — toma de cuenta completa en una
+sola petición no autenticada si el atacante ya conoce ambos datos (realista: ex-pareja,
+familiar, compañero de trabajo — NIST 800-63B desaconseja KBA como único factor de
+recuperación). Mitigado parcialmente por el lockout de 5 intentos/15 min, pero eso protege
+contra fuerza bruta ciega, no contra alguien que ya sabe los dos datos del objetivo
+específico. Recomendación: exigir un canal secundario (SMS/WhatsApp OTP, el negocio ya usa
+mucho WhatsApp) antes de completar el reset sin correo — requiere decisión del dueño antes
+de implementar, no es un fix mecánico.
+
+**Autenticación/sesiones — resto de hallazgos (severidad media/baja), no urgentes:**
+PIN hasheado con bcrypt real (`pgcrypto`, correcto) pero `gen_salt('bf')` sin cost factor
+explícito usa el default (6), bajo para el estándar actual — mitigado porque el PIN es de
+4 dígitos y la defensa real es el lockout, no el costo del hash. No existe "cerrar sesión"
+de un solo dispositivo (solo `logout-everywhere`), y el TTL de sesión es 30 días sin
+rotación — si un token se filtra, la ventana de exposición puede llegar a 30 días
+completos porque un logout normal no lo revoca en servidor. `actRegister` no tiene
+rate-limit (a diferencia de login/recover) y sus mensajes de error permiten enumerar qué
+teléfonos/DNIs ya están registrados. Google Sign-In sí valida server-side correctamente
+(nunca crea cuenta sin pasar por registro), pero usa el endpoint `tokeninfo` de Google,
+que el propio Google desaconseja para producción por riesgo de *throttling* — no es un
+hueco de seguridad, es una dependencia de red frágil en el camino crítico de login.
+
+**Secretos/credenciales/cifrado**: todas las claves privadas (Culqi secret, session
+secret, VAPID private, Resend, Meta) vienen de env vars, nunca hardcodeadas, y nunca
+llegan al cliente — confirmado con grep en todo el repo. El secreto de los crons vive en
+Supabase Vault, no en `cron.job` ni en código. PIN con hash bcrypt correcto, nunca
+comparado en texto plano. **Hallazgo real, sin corregir**: `customers.dni` y
+`customers.birthday` viven en texto plano en la base de datos, sin cifrado a nivel de
+aplicación (más allá del cifrado de disco de infraestructura) — dato sensible en Perú,
+usado además como parte del mecanismo de recuperación de cuenta. RLS confirmado
+correctamente denegando por defecto en `customers`/`orders`/etc. (RLS activo, cero
+políticas) — la anon key pública del cliente solo puede leer `inventory` (única política
+RLS que existe), así que la falta de cifrado de columna no es explotable vía la API
+pública hoy, pero sigue siendo un gap real si alguna vez hay una fuga de la base completa.
+
+**Pagos (Culqi) — sólido, con más capas de idempotencia de las que el enunciado de la
+tarea asumía.** No hay webhook de Culqi en absoluto (confirmado por grep) — el diseño
+evita ese vector completo con verificación síncrona (`verifyCulqiCharge` reconsulta
+Culqi directo) + polling activo cada 3 min (`actExpirePendingCharges`/`actExpirePendingWeeklyPlans`,
+liberan reservas huérfanas) + conciliación horaria real (`actReconcileCulqiCharges`,
+cron confirmado en `cron.job`, detecta cargos reales sin pedido asociado y alerta al
+admin por push — nunca crea el pedido solo, es detección+alerta). Reembolso es 100%
+manual por diseño explícito en el código (siempre termina en notificación push al dueño
+para que lo haga a mano en el dashboard de Culqi) — no hay riesgo de doble-reembolso
+automatizado porque simplemente no existe reembolso automatizado. Bugs previos ya
+corregidos y verificados contra el código actual (no solo contra el comentario): orden de
+validación cobro/inventario, reutilización de un `chargeId` legítimo contra una `ref`
+ajena, bloqueo de reserva concurrente saltado por invitados.
+
+**Observabilidad — gap real, sin costo para resolver.** Si `api` empieza a fallar hoy
+(ej. 500 en checkout), el dueño NO se entera de forma automática — no hay alertas en
+tiempo real, `debug_logs` es un basurero de solo-escritura (nada lo consulta ni agrega,
+solo se purga a los 30 días) y el dashboard de negocio no tiene ninguna métrica técnica
+(tasa de error, latencia). El único modo real de enterarse hoy sería que un cliente se
+queje. Recomendación de costo cero: agregar un cron más siguiendo el mismo patrón ya
+probado en producción (`alert-stuck-orders`: cron + `sendPushToAdmins` vía Web
+Push/VAPID, ya gratis en el plan actual) que consulte `debug_logs` por `stage:'exception'`
+y avise al admin si cruza un umbral bajo — no requiere Sentry/Datadog ni ningún tier pago.
+
+**Caché/colas/tareas en segundo plano.** No hay caché de catálogo/precios (decisión
+deliberada y documentada en el propio código — aceptable a esta escala, aunque agrega 2
+round-trips extra en el hot path de checkout). No hay ninguna cola real (`pgmq` o
+similar) para email/push — todo corre síncrono dentro del request, con `try/catch` local
+que nunca bloquea la respuesta principal si falla. La idempotencia ante una caída a medias
+se logra con un patrón artesanal (flags puestos post-éxito + rate-limit atómico +
+claim/release), sólido para los crons frecuentes (3-30 min, por descarte natural de
+filtro) pero más débil para los diarios/semanales (sin reintento hasta la próxima
+corrida). Bug de documentación encontrado (no de comportamiento): el comentario en
+`social.ts` sobre `actAutoPublishCalendar` afirma que un fallo queda registrado en
+`debug_logs` vía el catch de nivel superior — el catch real es local y nunca re-lanza, así
+que una entrada de calendario que falle repetido en Meta reintenta cada 15 min
+indefinidamente sin dejar ningún rastro persistido.
+
+**Infraestructura cloud — Supabase confirmado, Vercel NO se pudo confirmar.** Supabase:
+proyecto `rjosezuoyngiadunfzyn`, plan Free, región us-east-2, `ACTIVE_HEALTHY`. Vercel: el
+MCP conectado a esta sesión no devuelve ningún team accesible (`list_teams` → `{"teams":
+[]}`), y todas las demás tools de Vercel exigen `teamId` — no se pudo confirmar dominio
+propio, SSL, ni protección de despliegue. El conector en sí funciona (otra tool sin
+dependencia de team respondió bien), así que el problema es de autorización/alcance, no
+un fallo genérico — requiere que el dueño reconecte/autorice el conector de Vercel con la
+cuenta/equipo real, o indique el `teamId` manualmente.
+
+**Costos de infraestructura — hoy $0/mes** (Supabase Free confirmado por herramienta;
+Vercel probablemente Hobby, no confirmado — ver arriba; Resend probablemente Free por
+volumen de prueba). **Hallazgo importante no ligado a volumen**: los Términos de Servicio
+de Vercel prohíben uso comercial en el plan Hobby por contrato (no solo por límite
+técnico) — cualquier sitio que cobre pagos requiere Pro ($20/mes). El trigger real para
+subir de plan en Vercel es la fecha de apertura (7 de septiembre de 2026), no el tráfico.
+Señal de volumen para Supabase Pro ($25/mes): egress (5GB/mes incluidos en Free) con
+tráfico diario sostenido — más urgente que el tamaño de DB (109MB de 500MB hoy, con solo
+data de prueba). Riesgo operativo aparte de volumen: un proyecto Supabase Free se pausa
+automáticamente tras 1 semana de inactividad — relevante ahora, antes de abrir, si hay
+tramos sin actividad de prueba. Señal de volumen para Resend Pro ($20/mes, 50k emails):
+con ~3 emails/pedido (confirmación + recordatorios) entre 1,000 pedidos/mes ya supera el
+límite Free de 3,000/mes.
+
+**Privacidad/Ley N° 29733 (Perú)**: inscripción en el RNPDP (Registro Nacional de
+Protección de Datos Personales) es obligatoria sin excepción por tamaño de negocio, y
+desde el reglamento 2025 es gratuita y 100% en línea (SIPDP) — pendiente, sin costo,
+vale la pena hacerla antes de operar con datos reales. Oficial de Protección de Datos NO
+es urgente (escalonado por ingresos anuales en UIT; el negocio probablemente no alcanza ni
+el umbral de "pequeña empresa", y aun así el plazo más cercano es noviembre 2027). La
+Política de Privacidad ya existe (`sPLegal()` en `src/app.ts`) pero el propio código la
+marca como borrador pendiente de revisión legal — le faltan plazo de conservación
+explícito, base legal del tratamiento, mención de transferencia a proveedores externos
+(Culqi/Resend) y enumeración explícita de derechos ARCO-PD (ampliados en el reglamento
+2025 con Portabilidad y Desindexación). El flujo de borrar cuenta SÍ es consistente con el
+derecho de Cancelación (anonimiza en vez de borrar donde hay interés legítimo de
+conservar cifras agregadas del negocio, patrón que la ley permite).
+
+### 12.3 Pendiente de esta ronda
+
+No todos los agentes de la ronda terminaron antes de compilar este resumen — quedan
+pendientes de relanzar (5 agentes nunca llegaron a ejecutarse por límite de concurrencia
+del propio harness, "Concurrent subagent limit reached", no una falla de la tarea):
+rendimiento del frontend, modelo de datos/migraciones/índices/restricciones, autorización
+real admin vs. cliente en cada acción, escalabilidad con más volumen, diseño/consistencia
+de la API. Además, de los 10 chef/sabor originales solo se compilaron 4 arriba (el resto
+no se recibió a tiempo para esta compilación). Retomar en una ronda futura si se necesita
+cobertura completa de estos temas — el resto de la auditoría solicitada (autenticación,
+inyección/XSS, secretos, pagos, observabilidad, caché/colas, infra cloud, privacidad,
+costos) sí se completó y está resumida arriba.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),

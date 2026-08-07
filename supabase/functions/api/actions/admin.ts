@@ -441,7 +441,9 @@ export async function actAdminCampaignPerformance(b: any) {
   if (!touches.length) return { campaigns: [], windowDays: CAMPAIGN_CONVERSION_WINDOW_DAYS, lookbackDays: CAMPAIGN_LOOKBACK_DAYS };
 
   const phones = [...new Set(touches.map((t: any) => t.customer_phone))];
-  const phonesList = phones.map((p) => `"${p}"`).join(",");
+  // Escapar comillas/backslash del phone antes de interpolarlo en un literal de lista in.()
+  // de PostgREST (hallazgo de auditoría 2026-08-07) — mismo criterio que customer.ts.
+  const phonesList = phones.map((p) => `"${String(p).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const orders = await sbGet(
     "orders",
     // status=neq.CANCELADO agregado — mismo hallazgo que actDashboardStats/
