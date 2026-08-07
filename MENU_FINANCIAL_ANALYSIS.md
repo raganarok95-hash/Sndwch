@@ -1200,17 +1200,20 @@ límite Free de 3,000/mes.
 
 **Privacidad/Ley N° 29733 (Perú)**: inscripción en el RNPDP (Registro Nacional de
 Protección de Datos Personales) es obligatoria sin excepción por tamaño de negocio, y
-desde el reglamento 2025 es gratuita y 100% en línea (SIPDP) — pendiente, sin costo,
-vale la pena hacerla antes de operar con datos reales. Oficial de Protección de Datos NO
-es urgente (escalonado por ingresos anuales en UIT; el negocio probablemente no alcanza ni
-el umbral de "pequeña empresa", y aun así el plazo más cercano es noviembre 2027). La
-Política de Privacidad ya existe (`sPLegal()` en `src/app.ts`) pero el propio código la
-marca como borrador pendiente de revisión legal — le faltan plazo de conservación
-explícito, base legal del tratamiento, mención de transferencia a proveedores externos
-(Culqi/Resend) y enumeración explícita de derechos ARCO-PD (ampliados en el reglamento
-2025 con Portabilidad y Desindexación). El flujo de borrar cuenta SÍ es consistente con el
-derecho de Cancelación (anonimiza en vez de borrar donde hay interés legítimo de
-conservar cifras agregadas del negocio, patrón que la ley permite).
+desde el reglamento 2025 es gratuita y 100% en línea (SIPDP). Oficial de Protección de
+Datos NO es urgente (escalonado por ingresos anuales en UIT; el negocio probablemente no
+alcanza ni el umbral de "pequeña empresa", y aun así el plazo más cercano es noviembre
+2027). La Política de Privacidad ya existe (`sPLegal()` en `src/app.ts`) y en su momento
+el propio código la marcaba como borrador pendiente de revisión legal — le faltaban plazo
+de conservación explícito, base legal del tratamiento, mención de transferencia a
+proveedores externos (Culqi/Resend) y enumeración explícita de derechos ARCO-PD
+(ampliados en el reglamento 2025 con Portabilidad y Desindexación). El flujo de borrar
+cuenta SÍ es consistente con el derecho de Cancelación (anonimiza en vez de borrar donde
+hay interés legítimo de conservar cifras agregadas del negocio, patrón que la ley
+permite). **Actualización 2026-08-07**: el dueño confirmó que la inscripción en el RNPDP
+y la actualización del texto de la Política de Privacidad ya están resueltas (gestión
+real fuera de este repo — no verificado con herramienta, es un trámite/revisión legal del
+dueño, no algo que el código pueda confirmar por sí solo).
 
 ### 12.3 Los 5 audits relanzados (rendimiento, modelo de datos, autorización, escalabilidad, API)
 
@@ -1304,10 +1307,20 @@ campos requeridos duplicada ad-hoc en ~11 lugares sin un helper compartido.
   `actRemindUnclaimedChallenge`, `actRemindPeakHour`.
 
 Verificado con `npm run typecheck && npm run build && npm test` (32/32) antes de cada
-commit. Sin corregir, quedan como decisiones pendientes del dueño (no bugs mecánicos):
-recuperación de PIN sin correo (§12.2, requiere decidir sobre OTP), inscripción en el
-RNPDP, actualización del texto de Política de Privacidad, y las mejoras de pulido de bajo
-impacto listadas en 12.3 (minificación de JS, FK reales en `ratings`/
+commit.
+
+**Actualización 2026-08-07 (mismo día, después de compilar lo de arriba)**: el dueño
+confirmó que los temas legales de §12.2 (inscripción en el RNPDP, actualización del texto
+de Política de Privacidad) **ya están resueltos** — hechos fuera de esta sesión, no
+verificados aquí con herramienta (son trámites/acciones reales del dueño, no algo que este
+proyecto pueda confirmar por sí mismo). El OTP de recuperación por WhatsApp (§12.2, H1/H2)
+se investigó (costo real, requisitos de Meta Cloud API, ver `CLAUDE.md`) pero el dueño
+decidió explícitamente **esperar a tener volumen real del negocio** antes de
+implementarlo — no es un hallazgo abandonado, es una decisión de priorización tomada con
+la información completa sobre la mesa.
+
+Quedan como decisiones pendientes del dueño (no bugs mecánicos): las mejoras de pulido de
+bajo impacto listadas en 12.3 (minificación de JS, FK reales en `ratings`/
 `promo_code_redemptions`, limpieza de columnas vestigiales, convención única de "flag de
 éxito").
 

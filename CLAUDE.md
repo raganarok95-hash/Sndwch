@@ -391,6 +391,33 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Si se retoma esto en el futuro, empezar por confirmar presupuesto/plataforma con el
   usuario (regla de gastos reales del CLAUDE.md) antes de escribir cualquier
   integración — no asumir la ruta más barata solo por serlo, dado el riesgo de baneo.
+- **OTP de recuperación de cuenta por WhatsApp — investigado 2026-08-07, decisión
+  explícita del dueño: esperar a tener volumen real del negocio antes de implementar**
+  ("dejemoslo para el futuro midiendo realmente como va el negocio"). Contexto: una
+  auditoría de autenticación encontró que la recuperación de PIN (DNI+fecha de
+  nacimiento) es débil como único factor, y que sin correo registrado el PIN nuevo se
+  devuelve en texto plano en la misma respuesta — la propuesta era agregar un código de
+  6 dígitos por WhatsApp (categoría "Authentication" de Meta) como segundo factor
+  universal, reemplazando el camino de reenviar el PIN en la respuesta HTTP. Investigación
+  ya hecha, reutilizable sin rehacer la búsqueda:
+  - **Costo real**: Meta cobra por mensaje de plantilla "Authentication" entregado, tarifa
+    por país — banda global ~US$0.004–0.046/mensaje. No se encontró la tarifa exacta de
+    Perú por búsqueda (se confirma en la calculadora de Meta al configurar la cuenta) —
+    de todos modos es un gasto real y recurrente, aunque mínimo dado que la recuperación
+    de cuenta es infrecuente.
+  - **No hace falta un número nuevo**: desde mayo 2025 Meta permite "Coexistence" — el
+    mismo número de WhatsApp Business ya usado para click-to-chat (`wa.me`) puede quedar
+    activo en la app normal Y en la Cloud API a la vez, sin perder chats/contactos. Perú
+    no está en la lista de países excluidos (solo Nigeria/Sudáfrica). Fuentes:
+    [Authentication templates — Meta for Developers](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/authentication-templates/authentication-templates),
+    [WhatsApp API Pricing Explained 2026 — Authgear](https://www.authgear.com/post/whatsapp-api-pricing/),
+    [What is WhatsApp Business App Coexistence? — YCloud](https://www.ycloud.com/blog/whatsapp-business-app-coexistence-meta-update).
+  - **Diseño propuesto (no implementado)**: DNI+fecha sigue siendo el primer paso, pero
+    se agregaría un código de 6 dígitos vía WhatsApp que TODOS los clientes (con o sin
+    correo) deban confirmar antes de fijar un PIN nuevo — reemplazo universal del camino
+    actual de correo/texto-plano, un solo flujo más seguro para el 100% de las cuentas.
+  - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
+    y la fricción de configurar el número en Meta Business Platform — no antes.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en
