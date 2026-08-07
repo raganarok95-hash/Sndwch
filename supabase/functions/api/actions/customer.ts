@@ -315,9 +315,12 @@ export async function actRemindUnclaimedChallenge(b: any) {
   const now = new Date();
   const thisMonth = limaMonthKey(now);
   const monthStart = limaMonthStartIso(now);
+  // limit explícito (cap de seguridad) — sin esto, PostgREST trunca en silencio a 1000
+  // filas por defecto una vez que el negocio tenga suficiente volumen mensual (hallazgo
+  // de auditoría 2026-08-07).
   const orders = await sbGet(
     "orders",
-    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&customer_phone=not.is.null&select=customer_phone`,
+    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&customer_phone=not.is.null&select=customer_phone&limit=20000`,
   );
   const counts = new Map<string, number>();
   for (const o of orders) counts.set(o.customer_phone, (counts.get(o.customer_phone) || 0) + 1);
@@ -368,9 +371,10 @@ export async function actRemindPeakHour(b: any) {
   const windowStart = new Date(now.getTime() - FREQUENT_WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
   const todayStart = limaDayStartIso(now);
   const todayStartMs = new Date(todayStart).getTime();
+  // limit explícito (cap de seguridad) — mismo motivo que actRemindUnclaimedChallenge.
   const orders = await sbGet(
     "orders",
-    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(windowStart)}&customer_phone=not.is.null&select=customer_phone,created_at`,
+    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(windowStart)}&customer_phone=not.is.null&select=customer_phone,created_at&limit=20000`,
   );
   const counts = new Map<string, number>();
   const orderedToday = new Set<string>();
@@ -484,10 +488,13 @@ const SECOND_ORDER_MIN_DAYS = 7;
 const SECOND_ORDER_MAX_DAYS = 10;
 export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1");
+  // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
+  // esto, PostgREST trunca en silencio a 1000 filas por defecto (hallazgo de auditoría
+  // 2026-08-07).
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1&limit=20000");
   if (!customers.length) return { success: true, reminded: 0 };
   const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
-  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
   const firstOrderByPhone = new Map<string, number>();
   for (const o of orders) {
     const t = new Date(o.created_at).getTime();
@@ -530,10 +537,15 @@ export async function actRemindHighRankWinback(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   // total_orders>=15 ya implica rango CÍRCULO INTERNO o MESA FUNDADORA (ver RANKS/env.ts)
   // — no hace falta filtrar de nuevo con computeRankName, solo usarlo para el texto.
-  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15");
+  // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
+  // esto, PostgREST trunca en silencio a 1000 filas por defecto. Acá NO se puede acotar
+  // por fecha reciente como en winback-campaign porque este cron necesita la fecha del
+  // ÚLTIMO pedido de clientes que llevan MUCHO sin pedir — filtrar por ventana reciente
+  // los dejaría fuera del todo (hallazgo de auditoría 2026-08-07).
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15&limit=20000");
   if (!customers.length) return { success: true, reminded: 0 };
   const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
-  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
   const lastOrderByPhone = new Map<string, number>();
   for (const o of orders) {
     const t = new Date(o.created_at).getTime();

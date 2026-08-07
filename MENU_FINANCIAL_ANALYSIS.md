@@ -1212,18 +1212,104 @@ explícito, base legal del tratamiento, mención de transferencia a proveedores 
 derecho de Cancelación (anonimiza en vez de borrar donde hay interés legítimo de
 conservar cifras agregadas del negocio, patrón que la ley permite).
 
-### 12.3 Pendiente de esta ronda
+### 12.3 Los 5 audits relanzados (rendimiento, modelo de datos, autorización, escalabilidad, API)
 
-No todos los agentes de la ronda terminaron antes de compilar este resumen — quedan
-pendientes de relanzar (5 agentes nunca llegaron a ejecutarse por límite de concurrencia
-del propio harness, "Concurrent subagent limit reached", no una falla de la tarea):
-rendimiento del frontend, modelo de datos/migraciones/índices/restricciones, autorización
-real admin vs. cliente en cada acción, escalabilidad con más volumen, diseño/consistencia
-de la API. Además, de los 10 chef/sabor originales solo se compilaron 4 arriba (el resto
-no se recibió a tiempo para esta compilación). Retomar en una ronda futura si se necesita
-cobertura completa de estos temas — el resto de la auditoría solicitada (autenticación,
-inyección/XSS, secretos, pagos, observabilidad, caché/colas, infra cloud, privacidad,
-costos) sí se completó y está resumida arriba.
+Relanzados y completados: los 5 que no llegaron a ejecutarse por límite de concurrencia sí
+corrieron esta vez.
+
+**Rendimiento del frontend — sin problemas graves.** `render()` reconstruye todo el árbol
+vía `innerHTML=` en cada cambio de estado (255 sitios lo llaman), pero los puntos donde
+ese patrón sí duele ya están resueltos: inputs de formulario son "no controlados" (no
+disparan `render()` por tecla), overlays/toasts viven en un contenedor separado, el
+polling de la cola admin compara una firma antes de re-renderizar, y todas las listas
+server-side están topadas (30 pedidos activos, 20-50 en historiales). `index.html`: 623 KB
+sin comprimir / 161 KB gzip — aceptable en 4G, algo pesado en 3G rural. Único ajuste con
+buena relación costo/beneficio, no aplicado: minificar el JS compilado como paso extra
+después de `tsc` (sin tocar la legibilidad de `src/app.ts` en el repo).
+
+**Modelo de datos — bien diseñado, con un hallazgo real ALTO ya corregido.**
+`customers.dni` no tenía restricción `UNIQUE` (aunque sí un índice normal) — dos registros
+concurrentes con el mismo DNI podían insertarse ambos con éxito, mismo patrón que
+`google_id` ya tenía bien resuelto. **Corregido**: se confirmó que no había duplicados
+existentes y se aplicó `ALTER TABLE customers ADD CONSTRAINT customers_dni_key UNIQUE
+(dni)` directo en Supabase. El resto del schema está sólido: FKs reales en las relaciones
+que importan, tipos monetarios `numeric` (nunca `float`) en todos los campos de dinero,
+índices parciales inteligentes ya alineados con los patrones de query reales. Hallazgos
+menores sin corregir (no urgentes): `ratings.order_ref`/`promo_code_redemptions.order_ref`
+son solo convención de texto sin FK real a `orders.ref`; columnas vestigiales
+(`orders.mode/product_key/size/build`, ya no leídas por ningún handler) siguen en el
+schema y se siguen trayendo en algunos `select=` de admin.
+
+**Autorización admin vs. cliente — sin hallazgos graves.** Se recorrieron las 104 acciones
+reales de `ACTIONS`: cada una que toca un recurso de cliente filtra por
+`customer_phone=eq.session.phone` (nunca confía en un ID del body sin cruzar contra la
+sesión), el claim `isAdmin` del token sigue sin usarse para autorizar en ninguna de las 39
+acciones `admin-*` (`requireAdmin` siempre re-consulta `admin_accounts` en vivo), y el
+código de pedido grupal solo autoriza leer/agregar — cerrar o cancelar exige sesión +
+`organizer_phone===s.phone` explícito. Único punto de riesgo bajo, no nuevo: `submit-rating`
+solo se protege por `ref` no adivinable, mismo patrón ya aceptado para invitados en el
+resto del sistema.
+
+**Escalabilidad con más volumen — inventario sólido, crons con hallazgo real ya
+corregido.** `reserve_inventory` (RPC) usa `SELECT ... FOR UPDATE` en una sola transacción
+— dos clientes peleando por la última unidad no pueden ambos "ganar", el segundo rechaza
+limpio. **Corregido**: el orden de `codes` que se pasa a esa RPC ahora se ordena
+determinísticamente (`.sort()`) antes de bloquear filas, en `actPrepareOrder` y
+`actPlaceOrder` — sin esto, dos pedidos concurrentes que comparten 2+ ingredientes en
+orden distinto podían en teoría deadlockear entre sí (Postgres lo detecta y aborta una
+transacción sin corromper datos, pero es un error evitable). **Corregido también**:
+varios crons de marketing/retención (`birthday-bonus`, `winback-campaign`,
+`actRemindSecondOrder`, `actRemindHighRankWinback`, `actRemindUnclaimedChallenge`,
+`actRemindPeakHour`) hacían `sbGet` sin `limit` explícito — PostgREST trunca en silencio a
+1000 filas por defecto. El caso más serio era `winback-campaign`: con suficiente volumen
+(~300+ pedidos/día), los 2000 pedidos más recientes del negocio dejaban de cubrir 30 días
+completos, y un cliente que SÍ pidió recientemente podía caer al fallback de fecha de
+registro y recibir el correo de "te extrañamos" por error. Se reescribió esa query para
+filtrar por fecha (solo importa si el cliente pidió dentro de la ventana de inactividad,
+no cuántas filas trajo la consulta) en vez de por cantidad fija de filas — resuelve la
+corrección sin importar el volumen futuro. Los demás crons recibieron un `limit=20000`
+explícito como cap de seguridad (mismo criterio que ya usaba `actAnniversaryGreeting`).
+Confirmado sin problema real: `loadCatalogPrices` sin caché (ya documentado) no es cuello
+de botella a esta escala; edge functions de Supabase no tienen límite duro de concurrencia
+relevante aquí (solo cuota mensual y CPU/wall-time por invocación, lejos de tocarse).
+Observación de arquitectura, no bug: el modelo de datos no tiene ningún concepto de
+sucursal/`store_id` — coherente con un solo local hoy, sería un rediseño estructural real
+si el dueño abriera un segundo local en el futuro.
+
+**Diseño de la API — razonable para el tamaño del proyecto, sin hallazgos ALTO/CRÍTICO.**
+El patrón "un entrypoint + tabla de acciones" (en vez de REST) es una decisión defendible
+para un solo dev con ~90 operaciones de negocio heterogéneas — se pierde cacheable-por-URL
+y herramientas REST estándar, se gana un solo punto para razonar sobre CORS/auth/logging y
+cero fricción para agregar acciones nuevas muy específicas del dominio (tarjeta de regalo,
+Plan Semanal, pedido grupal). No migrar sin una razón de negocio concreta (ej. un tercer
+consumidor externo). Hallazgos menores, todos de pulido: 4 convenciones distintas de
+"flag de éxito" (`success`/`valid`/`ok`/ninguno) conviviendo sin documentarse — sin
+impacto real hoy porque el cliente decide éxito/error solo por status HTTP, nunca lee esos
+campos; nomenclatura de acciones mezclando verbo-antes/verbo-después dentro del mismo
+namespace `admin-`; sin versionado de contrato cliente-servidor (mitigado por CI que
+despliega backend y frontend juntos, y un service worker network-first); validación de
+campos requeridos duplicada ad-hoc en ~11 lugares sin un helper compartido.
+
+### 12.4 Resumen de lo corregido en código esta ronda (2026-08-07)
+
+- XSS crítico en dashboard admin (`waRiskContact`) — commit `dc54c8a`.
+- Filtros PostgREST `in.()` sin escapar en 4 crons — commit `dc54c8a`.
+- `customers.dni` sin `UNIQUE` (condición de carrera de registro) — migración aplicada
+  directo en Supabase, sin duplicados previos confirmados antes de aplicar.
+- Orden no determinístico de bloqueo en `reserve_inventory` (riesgo teórico de deadlock)
+  — `.sort()` en `actPrepareOrder`/`actPlaceOrder`.
+- 6 crons sin `limit` explícito (PostgREST trunca en silencio a 1000 filas) —
+  `birthday-bonus`, `winback-campaign` (+ fix real de lógica: filtrar por fecha, no por
+  cantidad de filas), `actRemindSecondOrder`, `actRemindHighRankWinback`,
+  `actRemindUnclaimedChallenge`, `actRemindPeakHour`.
+
+Verificado con `npm run typecheck && npm run build && npm test` (32/32) antes de cada
+commit. Sin corregir, quedan como decisiones pendientes del dueño (no bugs mecánicos):
+recuperación de PIN sin correo (§12.2, requiere decidir sobre OTP), inscripción en el
+RNPDP, actualización del texto de Política de Privacidad, y las mejoras de pulido de bajo
+impacto listadas en 12.3 (minificación de JS, FK reales en `ratings`/
+`promo_code_redemptions`, limpieza de columnas vestigiales, convención única de "flag de
+éxito").
 
 ---
 

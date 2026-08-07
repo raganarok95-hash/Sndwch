@@ -556,8 +556,12 @@ export async function actPrepareOrder(b: any) {
     }
 
     // Misma reserva atómica de siempre (ver reserve_inventory), solo que ahora ocurre
-    // ANTES del cobro en vez de después.
-    const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+    // ANTES del cobro en vez de después. .sort() antes del RPC: reserve_inventory bloquea
+    // filas en el orden de `codes` (SELECT ... FOR UPDATE) — sin un orden determinístico,
+    // dos pedidos concurrentes que comparten 2+ ingredientes en orden distinto podrían
+    // deadlockear entre sí (Postgres lo detecta y aborta una transacción, no corrompe
+    // datos, pero el cliente afectado ve un error evitable). Hallazgo de auditoría 2026-08-07.
+    const codes = ingredients.length ? Array.from(new Set(ingredients)).sort() : [];
     const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
     if (codes.length) {
       try {
@@ -797,8 +801,10 @@ export async function actPlaceOrder(b: any) {
     // Reserva de stock ANTES de registrar nada: reserve_inventory revisa Y descuenta
     // en una sola transacción atómica (con bloqueo de fila), así que dos pedidos concurrentes
     // por el último ingrediente disponible no pueden ambos "pasar" — el que llega segundo
-    // rechaza limpio en vez de sobrevender.
-    const codes = ingredients.length ? Array.from(new Set(ingredients)) : [];
+    // rechaza limpio en vez de sobrevender. .sort() por el mismo motivo que en
+    // actPrepareOrder — orden determinístico de bloqueo evita deadlocks entre pedidos
+    // concurrentes que comparten ingredientes en distinto orden.
+    const codes = ingredients.length ? Array.from(new Set(ingredients)).sort() : [];
     const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
     if (codes.length) {
       try {

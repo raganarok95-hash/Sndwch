@@ -47,7 +47,11 @@ Deno.serve(async (req: Request) => {
     // que usan bancos/tarjetas de crédito para cumpleaños bisiestos).
     const alsoMatchFeb29 = mm === "02" && dd === "28" && !isLeapYear(year);
 
-    const customers = await sbGet("customers", "select=phone,name,email,birthday,birthday_pts_year&birthday=not.is.null");
+    // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
+    // esto, PostgREST trunca en silencio a 1000 filas por defecto y clientes con
+    // cumpleaños hoy podían quedar fuera sin ningún error visible (hallazgo de auditoría
+    // 2026-08-07).
+    const customers = await sbGet("customers", "select=phone,name,email,birthday,birthday_pts_year&birthday=not.is.null&limit=20000");
     const todaysBirthdays = customers.filter((c: any) =>
       typeof c.birthday === "string" &&
       (c.birthday.endsWith(monthDay) || (alsoMatchFeb29 && c.birthday.endsWith("-02-29"))) &&
