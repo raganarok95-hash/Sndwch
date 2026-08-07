@@ -599,6 +599,231 @@ desde antes de esta ronda de investigación, corregido arriba.*
 no llegó a relanzarse en esta ronda de continuación — sigue pendiente si se retoma esta
 línea de investigación más adelante.*
 
+## 10. Análisis profundo de receta/textura/sabor — ronda 5 (agregado 2026-08-07)
+
+20 agentes: 7 proteínas individuales, panes, toppings, quesos, 12 salsas (3 lotes),
+textura de los 7 Signatures (4 lotes), coherencia de THE VAULT, idioma en todo el
+catálogo, gap vs. competencia, calidad de descripciones, perfil de picor. Todo pendiente
+de aprobación — nada implementado en esta sección salvo lo ya marcado como IMPLEMENTADO.
+
+### 10.1 Proteínas — hallazgos por ítem
+
+- **P01 Res//Asado**: técnica correcta (cocción lenta→mechado es el método real de la
+  industria para este corte). Único vacío: es la única proteína del catálogo cuya
+  descripción no nombra su sazón/especias — el resto sí (Cajún, teriyaki, mayonesa,
+  marinara, sazón italiana). Requiere que el dueño confirme qué especias usa realmente
+  antes de escribir algo — no inventar.
+- **P02 Pollo//Teriyaki**: sin error objetivo. Dos vacíos de información bloquean un
+  veredicto firme: (1) no se sabe si el pan se tuesta antes de armar, (2) la receta de S05
+  SNDWCH Special es secreta — sin saber si aporta acidez, no se puede confirmar si el
+  perfil dulce-sobre-dulce (teriyaki+satay+especial) queda plano. El pepinillo (T02) ya
+  aporta algo de corte ácido parcial.
+- **P03 Pollo//Cajún (VAULT)**: técnica real confirmada (pechuga cocida en líquido +
+  deshilachado + reincorporación de sazón, no sellado en seco). El perfil de picor de
+  THE VAULT (4 elementos picantes, sin tomate ni salsa neutra) es plausiblemente
+  intencional ("para valientes"), pero sin ninguna válvula de escape — riesgo real de
+  quemazón plana en vez de picante complejo hacia el final del sándwich. Decisión de
+  concepto: ¿el Vault busca desafío puro o picante disfrutable?
+- **P04 Atún//House**: sin error, maridaje con Aioli+Dijon confirmado como intencional
+  (replica pan bagnat/tuna niçoise clásico). Dato nuevo de referencia: proporción
+  atún:mayo ~1:10 en peso para textura óptima, insumo en aceite (no agua) rinde mejor.
+- **P05 Embutido//Italiano**: mezcla paté+jamón+cabanossi es atípica frente al sub
+  italiano clásico (que nunca mezcla paté untable con fiambres en lonja) — el único
+  precedente real es el bánh mì vietnamita, que compensa con mucha más acidez fresca de
+  la que tiene SIG03. THE SMOKE tiene un solo elemento realmente ácido (pepinillo) — le
+  falta un ácido más distribuido. S06 Oil & Vinegar (ya en el catálogo, sin usar acá)
+  encajaría de nombre y función.
+- **P06 Albóndiga//Marinara**: **confirma y agrava** el hallazgo previo (§7.2) — el queso
+  opcional NO mitiga el problema porque no está activado por defecto, y el chip
+  "Sugerida" que ya implementé en BYO (§8.8) refuerza Oil & Vinegar sobre marinara sin
+  agregar el contraste graso que le falta. El pitch de SIG02 no menciona el queso como
+  opción. Cocinar directo en la marinara (sin etapa seca) ya es la técnica correcta y
+  coincide con cómo `RECIPE_RATIONALE.md` dice que se guarda (con su au jus).
+- **P07 Res//Chicago**: técnica, corte y au jus aparte ya están bien resueltos y
+  confirmados como decisión correcta para delivery. **Bug real encontrado**: el `pitch`
+  de SIG07 en `src/app.ts` todavía dice "res mechada" — la palabra exacta que
+  `RECIPE_RATIONALE.md` y el propio comentario de código dicen que NO aplica a P07 (es
+  "corte fino laminado"). Sobrevivió a la auditoría que separó P07 de P01. Corrección
+  simple: cambiar a "res laminada" o similar en el pitch.
+
+### 10.2 Panes, toppings, quesos
+
+- **Panes (B01/B03)**: confirma con fuente independiente que Focaccia sin tostar es más
+  vulnerable a humedad que Classic — refuerza §8.7. Descripciones actuales ("Masa suave
+  básica"/"Masa de focaccia artesanal") son las más genéricas de todo el catálogo.
+- **Toppings (7)**: **ninguno** tiene descripción (corrijo mi supuesto inicial de que 4 sí
+  tenían — 0/7). Ausencia real: ningún vegetal de hoja (lechuga/espinaca) en todo el
+  catálogo — desviación notable frente a la convención del formato sub (Subway/Jersey
+  Mike's/Firehouse/Potbelly la tienen las 4, gratis, como base). Defendible por 2 razones
+  operativas reales: mayor riesgo de inocuidad (categoría de producto más vinculada a
+  brotes de Listeria/E.coli por no tener "kill step") y mal comportamiento en 25-40 min de
+  delivery (se marchita/suelta agua). Confirmado independientemente por el agente de gap
+  analysis: es la única ausencia que un cliente "extrañaría" de verdad (estructural, no
+  discrecional como las gaseosas).
+- **Quesos (3)**: ninguno tiene descripción. **Pregunta abierta que bloquea varias
+  decisiones**: ¿el sándwich se sirve frío o con el queso derretido? El copy de venta
+  (`d:'Cheddar derretido, opcional y gratis'` en el flujo de recompensas) asume calor,
+  pero `RECIPE_RATIONALE.md` trata el queso como insumo de refrigerador sin mención de
+  equipo de calentamiento. Si es frío: Americano (elegido por sus propiedades de fusión)
+  queda redundante frente a Cheddar/Edam. Si es caliente: los 3 cubren un rango real. Edam
+  es además el "queso amarillo" default reconocido en supermercados peruanos (Laive/Gloria).
+
+### 10.3 Salsas — hallazgos técnicos y de idioma
+
+- **S01-S04**: descripciones son copy de menú, no fichas de receta reproducible
+  (subjetivas: "suave", "equilibrado") — normal para un catálogo público, S05 ya modela
+  el patrón correcto de no revelar receta interna si se quiere consistencia real. **S01
+  Aioli casi con certeza lleva huevo** (inferencia técnica, no declarada en el texto) —
+  mismo tratamiento que S02 en `RECIPE_RATIONALE.md`, pendiente de confirmación real.
+- **S05, S06, S08, S09**: S05 está bien ejecutada como "salsa secreta de marca" (ancla en
+  SIG06, no da pistas) pero le falta el *relato* que sí construyeron Big Mac/In-N-Out
+  (jingle, mito, décadas de continuidad) — hoy es solo una línea de copy funcional. S09
+  Chimichurri+Piña asada es combinación real y documentada (no un choque inventado).
+  **S06/S08 confirmadas como inconsistencia de idioma real** (ver 10.5).
+- **S10-S13**: Peanut Satay le falta leche de coco (ingrediente clave de una satay
+  auténtica) — hoy describe más una salsa de maní simplificada que una satay real; no es
+  bug de idioma, es de receta (evaluación del dueño). S11/S12/S13 técnicamente correctas,
+  sin cambios necesarios.
+
+### 10.4 Textura de los 7 Signatures — riesgo de humedad en delivery (25-40 min)
+
+Ranking de riesgo confirmado por 3 agentes independientes cruzando ingredientes reales
+contra principios de arquitectura de sándwich (barrera grasa contra el pan, núcleo húmedo
+protegido, tostado como defensa):
+
+1. **SIG03 THE SMOKE — el de mayor riesgo**: único con 4 factores húmedos simultáneos
+   (focaccia porosa + paté untable + BBQ líquida-azucarada + tomate fresco). Mitigación
+   de bajo costo sin tocar receta: tostar la focaccia, tomate al centro nunca contra el
+   pan.
+2. **SIG02 THE MEATBALL — rival cercano**: albóndigas en marinara líquida, sin barrera de
+   queso por defecto (mismo hallazgo que 10.1) — además vapor condensado en empaque
+   cerrado ya es suficiente para ablandar pan en la ventana de 25-40 min, sin necesitar
+   contacto directo con salsa.
+3. **SIG06 THE TERIYAKI**: 3 fuentes de líquido apiladas (proteína pre-salseada + 2 salsas
+   + pepinillo), más que cualquier otro Signature — riesgo acumulativo, no catastrófico.
+4. **SIG01, SIG04, SIG07**: sin problema real. SIG04 no tiene problema de pan sino de
+   relleno — recomienda escurrir bien el atún antes de mezclar con mayo. SIG07 confirma
+   que el au jus aparte es la decisión correcta (un "dipped" real desintegraría el pan en
+   el trayecto), reforzado por un dato nuevo: B01 no tiene la corteza dura que el roll
+   tradicional de Chicago usa como escudo — por lo que servir aparte es aún más necesario
+   acá que en un local de Chicago.
+
+### 10.5 Idioma/naming — inventario completo (reemplaza el hallazgo parcial anterior)
+
+**Corrección de escala importante**: no son 3-4 nombres sueltos. De 42 ítems del catálogo,
+**11 tienen una inconsistencia real de idioma** (inglés genérico con equivalente español
+que además ya se usa en otra parte del mismo archivo — la evidencia más fuerte de
+inconsistencia, no solo preferencia de estilo):
+
+| Ítem | Actual | Evidencia de inconsistencia | Propuesta |
+|---|---|---|---|
+| B01 | Classic // White | "Clásico" ya es el badge de SIG01 | Clásico // Blanco |
+| P04 | Atún // House | S05 ya se autodescribe "de la casa" | Atún // Casa |
+| S02 | Spicy // Mayo | S12 ya usa "Picante" en la misma lista | Picante // Mayonesa |
+| S03 | Smoke // BBQ | El propio `d` de S03 dice "Ahumado"; badge de SIG03 también | Ahumado // BBQ |
+| S04 | Honey // Mustard | S11 ya dice "Mostaza // Dijon" en la misma lista | Miel // Mostaza |
+| S05 | SNDWCH // Special | Sin razón culinaria para "Special" | SNDWCH // Especial |
+| S06 | Oil & Vinegar // Classic | `d` ya dice "estilo italiano" en español | Vinagreta // Italiana |
+| S08 | Teriyaki // Glaze | "Glaseado" ya aparece en el pitch de SIG03 | Teriyaki // Glaseado |
+| S10 | Peanut // Satay | El propio `d` de S10 ya dice "Maní" | Maní // Satay |
+| D06 | The Bloom // Hibiscus | El propio `d` dice "flor de jamaica" | The Bloom // Jamaica |
+| D08 | The Cool // Mint | El propio `d` dice "menta fresca" | The Cool // Menta |
+
+Caso de menor confianza: **S01 Aioli//Signature** — "Signature" es también el tag de marca
+deliberado de la línea de 7 Signatures (`sigTypeTag`); no está claro si reusarlo en una
+salsa es descuido o eco de marca intencional. Si se decide tocar: `Aioli // Especial`.
+
+**Términos culinarios que NO deben tocarse** (préstamos internacionales sin traducción
+corta natural, usados así en cualquier carta en español): Teriyaki, Cajún, Marinara,
+Satay, Giardiniera, Cheddar, Edam, Focaccia, Au Jus, BBQ, Chai, Chimichurri, Dijon,
+Chicago.
+
+**Nota de marca, no de idioma**: los 7 nombres "The X" de Signatures y los 4 "The X" de
+bebidas son un device de marca 100% consistente (11/11) — no es el mismo tipo de
+inconsistencia, tocarlo sería decisión de identidad, no corrección de copy. Sí vale
+señalar una disonancia puntual: **SIG02 sigue llamándose "The Meatball"** en inglés
+mientras su propia proteína interna (P06) ya se corrigió a "Albóndiga" — la tarjeta hoy
+muestra el mismo ingrediente en dos idiomas distintos en el mismo lugar. Marcado para tu
+decisión, no corregido.
+
+### 10.6 THE VAULT — coherencia interna
+
+Solo 4 de 7 componentes son genuinamente exclusivos (proteína + 2 salsas + 1 topping); la
+base (ya asociada a THE SMOKE) y 2 de 3 toppings se repiten en otros Signatures públicos.
+No es descalificante (In-N-Out Animal Style tampoco usa ingredientes 100% exclusivos, el
+mecanismo real es la técnica de preparación distinta + el misterio del pitch, ambos ya
+presentes) pero el margen de "sensación de secreto" es más delgado de lo ideal. El perfil
+de picor sí tiene contraste real (dulce vía miel picante, ácido vía jalapeño encurtido) —
+no es picor plano — pero depende de esos 2 elementos solamente, sin nada fresco/frío.
+
+### 10.7 Perfil de picor — vacío real en BYO
+
+**BYO no tiene ninguna opción picante para ningún cliente, en ningún rango, nunca** — las
+2 únicas salsas `spicy:true` (S02, S12) son ambas `vaultOnly`, y el propio código ya
+documenta que sin ese guard el encabezado "Picantes //" quedaría huérfano. La única opción
+picante pública (THE CHICAGO) es receta fija, sin descuento de 15CM, y obliga a querer
+específicamente res estilo Chicago. Con 65% de consumidores reportando preferencia por
+comida picante y crecimiento sostenido de la categoría en menús (Datassential 2025), y el
+ají como ingrediente transversal en la cocina peruana, vale la pena evaluar sacar S12
+Picante-Miel de `vaultOnly` para dejar al menos 1 salsa con calor moderado disponible en
+BYO desde el día 1 — dejando S02+T04+P03 (cajún) como el gancho exclusivo real de VAULT.
+
+### 10.8 Gap vs. competencia (Subway/Jersey Mike's/Firehouse/Potbelly)
+
+Confirma 10.2: **lechuga/vegetal de hoja es la única ausencia que trasciende "la
+competencia la tiene"** — es estructural al formato sub (no un extra discrecional), con
+costo de agregarla bajo si se decide. Prioridad si se quisiera sumar algo, de menor a
+mayor costo operativo: queso más intenso tipo provolone/pepper jack (SKU nueva, sin
+cambiar flujo) > proteína vegetariana (nicho real pero ni el líder lo garantiza siempre) >
+pan integral/multigrano (mayor carga operativa para un operador único, dejar para después).
+
+### 10.9 Calidad de descripciones — 13 ítems sin descripción o genéricos, con propuesta lista
+
+Inventario completo con propuesta de copy (mismo tono del resto del catálogo, sin inventar
+nada no confirmado):
+
+| Ítem | Estado | Propuesta |
+|---|---|---|
+| B01 | Genérica | Pan blanco clásico, miga suave, sabor neutro y directo |
+| B03 | Genérica | Corteza dorada y miga esponjosa — más textura que la clásica |
+| S05 | Genérica | Nuestra receta secreta de la casa — no revelamos qué lleva |
+| S11 | Floja ("con carácter") | Mostaza dijon intensa y clásica, con un punto picante |
+| T01 Tomate | Sin `d` | Tomate fresco en rodajas, jugoso y ácido |
+| T02 Pepinillo | Sin `d` | Pepinillo encurtido, crocante y ácido, corte fino |
+| T03 Cebolla | Sin `d` | Cebolla morada en juliana fina, dulce y crocante |
+| T04 Jalapeño | Sin `d` | Jalapeño encurtido, picante fresco y crocante |
+| T05 Aceituna | Sin `d` | Aceituna negra en rodajas, salada e intensa |
+| T06 Pimiento | Sin `d` | Pimiento curado, dulce y suave, con textura tierna |
+| T07 Giardiniera | Sin `d` | Mezcla de vegetales encurtidos y picantes, al estilo Chicago |
+| C01 Americano | Sin `d` | Queso americano, suave y cremoso, se derrite fácil |
+| C02 Cheddar | Sin `d` | Queso cheddar, sabor intenso y textura firme |
+| C03 Edam | Sin `d`, sin fuente propia confirmada | Pendiente — no hay dato real del perfil de este queso específico en el negocio, confirmar con el dueño antes de escribir |
+
+**Nota técnica**: agregar `d` a los quesos no alcanza por sí solo — el paso de Queso de
+BYO (`byoStep===3` en `src/app.ts`) hoy solo pinta `c.l`, ni siquiera el separador `//`
+con `c.s` como sí hacen Toppings y el resto — habría que tocar también esa tarjeta.
+
+### Resumen de decisiones pendientes de esta ronda (nada implementado)
+
+**Bug objetivo, bajo riesgo, listo para corregir en cuanto apruebes:**
+- Pitch de SIG07 dice "res mechada", debe decir algo como "res laminada" (10.1).
+
+**Preguntas reales que solo el dueño puede responder:**
+- ¿El sándwich se sirve frío o con el queso derretido? (10.2 — bloquea varias decisiones)
+- ¿Qué especias lleva realmente el asado de P01? (10.1)
+- ¿S01 Aioli / S05 SNDWCH Special / S10 Peanut Satay llevan huevo/leche de coco? (10.1, 10.3)
+- Receta real de C03 Edam para poder describirlo con el mismo nivel de confianza que C01/C02 (10.9)
+
+**Decisiones de concepto/dirección (no de código):**
+- Alcance de la limpieza de idioma: ¿solo los 4 ya discutidos o los 11 de la tabla 10.5?
+- ¿Abrir BYO a 1 salsa picante pública (sacar S12 de vaultOnly)? (10.7)
+- ¿THE VAULT busca desafío puro o picante disfrutable? ¿vale agregar algo fresco/frío? (10.6)
+- ¿Reforzar el pitch de SIG02 para mencionar el queso opcional, dado que el chip
+  "Sugerida" de BYO ya reproduce el mismo problema de falta de grasa? (10.1)
+- ¿Agregar lechuga/vegetal de hoja pese al riesgo de inocuidad y mal comportamiento en
+  delivery? (10.2, 10.8)
+- ¿Vale la pena escribir las 13 descripciones propuestas en 10.9?
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
