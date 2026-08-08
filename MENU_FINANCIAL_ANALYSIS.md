@@ -1504,6 +1504,75 @@ tocó ningún asesor.
 4. Auditoría de SIG03 y SIG08 con el mismo rigor que se aplicó a SIG04/SIG06.
 5. Auditoría de los 3 Signatures que quedaron completamente sin revisar (SIG01/SIG05/SIG07).
 
+### 13.4 Sexto council — Signatures restantes + las 12 salsas + concepto de marca
+(2026-08-08) — SOLO HALLAZGOS, NADA IMPLEMENTADO
+
+Continuación directa de §13.3: completa la auditoría de los 6 Signatures que habían
+quedado sin revisar, agrega análisis de sabor de las 12 salsas del catálogo (¿reducir a
+10?) y abre la conversación de concepto/look-and-feel de marca. Veredicto completo en
+`council-report-2026-08-08-salsas-marca.html` / `council-transcript-2026-08-08-salsas-marca.md`
+(entregados al dueño, no versionados en este repo).
+
+**Hallazgo más importante de la sesión** (señalado de forma independiente en las 5 rondas
+de revisión por pares): un asesor propuso arreglar la inconsistencia real de que
+**SIG06 "The Teriyaki" no lleva ninguna salsa Teriyaki** (usa S05+S10, no S08 Teriyaki
+Glaze) devolviéndole S08. Pero S08 es "dulce, soja, jengibre" — y §13.3 ya había
+confirmado con 5/5 asesores que SIG06 tiene un problema de "doble dulce" (teriyaki+satay,
+sin nada ácido) sin resolver. Nadie cruzó ambos hallazgos: el fix de naming podría agravar
+el problema de sabor ya documentado. **No implementado** hasta documentar el perfil real
+de S08 y S05 y verificar la interacción antes de decidir.
+
+**Signatures — veredictos del consejo (en disputa/pendiente, no ejecutados):**
+- **THE ORIGINAL (SIG01)** y **THE CHICAGO (SIG07)**: sin objeciones reales, consenso de
+  "no tocar" (el segundo ya validado en §13.2/13.3 como el mejor resuelto del catálogo).
+- **THE VAULT (SIG05)**: sin objeciones reales; único pendiente menor — confirmar que la
+  cantidad de Picante Miel no se vuelva una cuarta fuente de humedad.
+- **THE MARINARA (SIG02)**: la contradicción de §13.3 se profundiza — un asesor cuenta
+  ahora CUATRO fuentes de humedad (marinara+tomate+oil&vinegar+mozzarella, no tres) y
+  propone cortar Oil & Vinegar por redundante con el ácido de la marinara; otro propone
+  en cambio cambiar el ORDEN de armado (queso tocando el pan como barrera, no mezclado con
+  la salsa). Ninguna de las dos vías está probada ni decidida.
+- **THE SMOKE (SIG03)**: confirma el riesgo ya señalado en §13.3 — mismo problema, sin
+  resolver.
+- **THE EMBER (SIG08)**: confirma la falta de barrera cremosa/grasa de §13.3. Tres
+  propuestas sin resolver: agregar aioli neutro opcional (barato), construirle un
+  Signature nuevo de línea "asiática" para S08 (caro, I+D contra el lanzamiento), o
+  dejarlo para después.
+- **Riesgo operativo nuevo, no relacionado con receta**: el Au Jus de THE CHICAGO se sirve
+  aparte para evitar pan mojado — funciona en una mesa, pero en delivery en moto es un
+  vaso que se puede derramar o que el cliente simplemente no usa. Decisión operativa
+  (empaque, instrucción al cliente), no de receta.
+
+**Salsas (12 total) — hallazgos:**
+- **No reducir a 10** — 12-14 salsas es el rango normal de la industria (Subway ofrece
+  12-14 en EE.UU., investigado por WebSearch). La pregunta original del dueño queda
+  respondida: no hace falta, y "cantidad" no era el problema real.
+- **Redundancia real identificada**: S04 (Honey Mustard) vs. S11 (Mostaza Dijon) — dos
+  mostazas en el catálogo, sin diferenciar. Pendiente de decisión (¿se queda una, o se
+  diferencian mejor?).
+- **S05 "Salsa SNDWCH de la casa" sigue sin perfil de sabor documentado** (ya señalado en
+  §13.3) — bloquea evaluar redundancia real contra S04/S11 y decidir sobre S08/SIG06.
+- **S08 (Teriyaki Glaze) sigue huérfana** (ningún Signature la usa hoy) — su destino
+  (volver a SIG06, Signature nuevo, quedarse en BYO) depende de la verificación de sabor
+  pendiente arriba.
+
+**Concepto y look-and-feel de marca** — conversación de DIRECCIÓN, nada decidido ni
+propuesto visualmente todavía (regla del proyecto: concepto antes que código). El consejo
+identificó la pregunta que hay que cerrar primero, no una paleta: **¿qué comunica
+SND//WCH que no sea "trujillano" (ya descartado explícitamente) ni "genérico fast-casual
+2026" (blanco-y-negro alto contraste + tipografía expresiva — tendencia real investigada,
+pero describe toda la categoría, no una marca propia)?** Hallazgo convergente real (4 de
+5 asesores, de forma independiente): reinterpretar el "//" como el **corte diagonal del
+pan** (elemento visual propio del producto) en vez de su lectura por defecto como sintaxis
+de código/terminal — el propio "//" sin dirección clara lee hoy como ruta de archivo o
+comentario de código para alguien sin contexto previo del proyecto (hallazgo del
+Outsider, coincide con lo ya documentado en el punto 10 de las "Restricciones permanentes"
+de CLAUDE.md sobre que el "//" no está atado a ninguna estética específica). Próximo paso
+acotado propuesto por el consejo: 2 mockups del ícono "//" solo (no el sitio completo) en
+dos direcciones contrastantes, para que el dueño elija dirección antes de tocar
+`shell.html` — no implementado, pendiente de que el dueño confirme que quiere avanzar con
+esta conversación.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
