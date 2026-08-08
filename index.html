@@ -265,7 +265,8 @@ var STATUSES = {
 };
 var STEPS = ['RECIBIDO', 'PREPARANDO', 'EN CAMINO', 'ENTREGADO'];
 // B02 (HERBS//CHEESE, "Masa con orégano y parmesano") retirado por decisión del dueño —
-// solo lo usaba THE MEATBALL (SIG02, movido a B01) y CLASSIC//WHITE/FOCACCIA//ARTESANAL
+// solo lo usaba SIG02 (hoy "The Marinara", antes "The Meatball", movido a B01) y
+// CLASSIC//WHITE/FOCACCIA//ARTESANAL
 // concentran mejor la variedad real de pan mostrada en el menú. Posible reincorporación
 // futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
 // cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
@@ -365,7 +366,14 @@ var SAUCES = [
     // la siguen necesitando para tasar SIG07). El caldo de cocción de res mechada no tiene
     // sentido como salsa suelta fuera de ese sándwich — antes se podía elegir en cualquier
     // build sin relación con el Italian Beef (hallazgo del dueño).
-    { id: 'S13', l: 'Au Jus', s: 'Para mojar', d: 'Caldo de la cocción de la carne, servido aparte para mojar cada bocado', sigOnly: true }
+    { id: 'S13', l: 'Au Jus', s: 'Para mojar', d: 'Caldo de la cocción de la carne, servido aparte para mojar cada bocado', sigOnly: true },
+    // Nueva 2026-08-08 (decisión del dueño, LLM Council de naming/sabor) — sigOnly: exclusiva
+    // de THE FRESH (SIG04). Reemplaza al Aioli en esa receta (quitado por duplicar la
+    // mayonesa que P04 ya trae) — el badge CÍTRICO ahora se sostiene con este ingrediente
+    // directo en vez de depender del limón que llevaba el Aioli. No es una salsa que se
+    // unte como el resto, es un toque puntual — por eso no tiene sentido ofrecerla suelta
+    // en BUILD YOUR OWN.
+    { id: 'S14', l: 'Limón', s: 'Exprimido', d: 'Jugo de limón fresco, exprimido al momento', sigOnly: true }
 ];
 var SIGS = [
     // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
@@ -413,7 +421,13 @@ var SIGS = [
     // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
     // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
     // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-    { id: 'SIG02', n: 'The Meatball', s: 'Signature', badge: 'Italiano', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 26, cheeseOptional: true,
+    // Nombre cambiado de "The Meatball" a "The Marinara" 2026-08-08 (decisión del dueño, LLM
+    // Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que la
+    // proteína interna ya muestra en español ("Albóndiga", ver PROTS.P06 arriba), bilingüismo
+    // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
+    // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
+    // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
+    { id: 'SIG02', n: 'The Marinara', s: 'Signature', badge: 'Italiano', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 26, cheeseOptional: true,
         pitch: 'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.' },
     // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
     // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
@@ -435,12 +449,17 @@ var SIGS = [
     // "Ligero" choca con la proteína real (atún CON MAYONESA + Aioli, otra base cremosa) —
     // evidencia real de "health halo" muestra que una etiqueta tipo "light" puede bajar la
     // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
-    // CÍTRICO describe lo que sí es honesto del producto (el toque de limón del aioli, ya
-    // nombrado en el pitch de abajo) sin prometer ligereza que la receta no entrega.
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S01', 'S11'], p15: 18, p30: 32,
-        // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
-        // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
-        pitch: 'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.' },
+    // Receta y pitch corregidos otra vez 2026-08-08 (decisión del dueño, LLM Council de
+    // naming/sabor 2026-08-08): el consejo señaló, con 5/5 asesores y 5/5 rondas de
+    // revisión por pares, que el fix de arriba corrigió el badge pero dejó intactos el
+    // nombre del producto y el pitch — "Ligero" seguía escrito en el pitch, prometiendo algo
+    // que el bocado real (dos bases cremosas: mayonesa de P04 + Aioli) no entregaba. En vez
+    // de renombrar el producto, el dueño eligió arreglar la receta: se quita el Aioli
+    // (duplicaba la mayonesa que P04 ya trae) y se agrega Limón real exprimido (S14, nueva)
+    // — CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. "Ligero"
+    // se retira del pitch (no es honesto con una base de mayonesa, sea una o dos).
+    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S11', 'S14'], p15: 18, p30: 32,
+        pitch: 'Atún premium con mayonesa clásica, realzado con un toque de limón recién exprimido que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.' },
     // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
     // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
     // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría

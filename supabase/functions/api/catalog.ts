@@ -60,7 +60,9 @@ export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T0
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
+// S14 (Limón) agregada 2026-08-08 (decisión del dueño, LLM Council de naming/sabor) —
+// ver el mismo cambio en SAUCES en src/app.ts.
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13", "S14"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -112,12 +114,14 @@ export const VAULT_ONLY_PROTS = new Set(["P03"]);
 // las siguen necesitando para tasar THE VAULT.
 export const VAULT_ONLY_TOPS = new Set(["T04"]);
 export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
-// Salsas exclusivas de un signature público, no secreto (hoy solo S13 "Au Jus" → SIG07
-// "THE CHICAGO") — mismo criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR
-// OWN aunque sigan en VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para
-// tasar SIG07). El caldo de cocción de res mechada no tiene sentido como salsa suelta
-// fuera de ese sándwich.
-export const SIG_ONLY_SAUCES = new Set(["S13"]);
+// Salsas exclusivas de un signature público, no secreto (S13 "Au Jus" → SIG07 "THE
+// CHICAGO"; S14 "Limón" → SIG04 "THE FRESH", agregada 2026-08-08) — mismo criterio que
+// VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR OWN aunque sigan en VALID_SAUCES
+// (SIG_DATA/priceCartItem las siguen necesitando para tasar el signature). El caldo de
+// cocción de res mechada no tiene sentido como salsa suelta fuera de ese sándwich, y el
+// limón exprimido de THE FRESH tampoco (no es una salsa que se unte, es un toque cítrico
+// puntual de esa receta específica).
+export const SIG_ONLY_SAUCES = new Set(["S13", "S14"]);
 // Topping exclusivo de un signature público (hoy solo T07 "Giardiniera" → SIG07 "THE
 // CHICAGO") — mismo criterio que SIG_ONLY_SAUCES.
 export const SIG_ONLY_TOPS = new Set(["T07"]);
@@ -154,13 +158,19 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32 },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
-  // THE ORIGINAL/THE MEATBALL/THE SMOKE.
+  // THE ORIGINAL/THE MARINARA/THE SMOKE.
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 18, p30: 32 },
+  // Receta corregida 2026-08-08 (decisión del dueño, LLM Council de naming/sabor): se
+  // quita el Aioli (S01, segunda base cremosa que duplicaba la mayonesa ya incluida en
+  // P04 "Atún premium con mayonesa clásica") y se agrega Limón (S14, exprimido real) —
+  // el badge CÍTRICO ahora se sostiene con un ingrediente cítrico directo en vez de
+  // depender del limón que llevaba el Aioli. Mantiene la mostaza Dijon (S11). DEBE
+  // coincidir con SIGS.SIG04 en src/app.ts.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S11", "S14"], p15: 18, p30: 32 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
-  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
+  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
   SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
   // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
@@ -236,9 +246,15 @@ export const SIDE_LABEL: Record<string, string> = {
 };
 // "BUILD" se renombró a "SIGNATURE" (hallazgo de auditoría UX, CRÍTICO) — chocaba con el
 // modo "BUILD YOUR OWN" del cliente. DEBE coincidir con el tag `s` de SIGS en src/app.ts.
+// SIG02 renombrado de "THE MEATBALL" a "THE MARINARA" 2026-08-08 (decisión del dueño, LLM
+// Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que su
+// propia proteína interna ya muestra en español ("ALBÓNDIGA // MARINARA", ver PROT_LABEL
+// abajo), bilingüismo visible en la misma tarjeta. "Marinara" es un préstamo ya usado
+// igual en español e inglés (la salsa italiana), evita la traducción duplicada y sigue
+// encajando con el badge "Italiano". DEBE coincidir con SIGS.SIG02 en src/app.ts.
 export const SIG_LABEL: Record<string, string> = {
   SIG01: "THE ORIGINAL // SIGNATURE",
-  SIG02: "THE MEATBALL // SIGNATURE",
+  SIG02: "THE MARINARA // SIGNATURE",
   SIG03: "THE SMOKE // SIGNATURE",
   SIG04: "THE FRESH // SIGNATURE",
   SIG05: "THE VAULT // RESERVE",

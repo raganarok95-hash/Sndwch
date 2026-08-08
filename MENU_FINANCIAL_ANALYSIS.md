@@ -740,11 +740,12 @@ Chicago.
 
 **Nota de marca, no de idioma**: los 7 nombres "The X" de Signatures y los 4 "The X" de
 bebidas son un device de marca 100% consistente (11/11) — no es el mismo tipo de
-inconsistencia, tocarlo sería decisión de identidad, no corrección de copy. Sí vale
-señalar una disonancia puntual: **SIG02 sigue llamándose "The Meatball"** en inglés
-mientras su propia proteína interna (P06) ya se corrigió a "Albóndiga" — la tarjeta hoy
-muestra el mismo ingrediente en dos idiomas distintos en el mismo lugar. Marcado para tu
-decisión, no corregido.
+inconsistencia, tocarlo sería decisión de identidad, no corrección de copy. Se había
+señalado una disonancia puntual: SIG02 se llamaba "The Meatball" en inglés mientras su
+propia proteína interna (P06) ya se corrigió a "Albóndiga" — la tarjeta mostraba el mismo
+ingrediente en dos idiomas distintos en el mismo lugar. **RESUELTO 2026-08-08** (LLM
+Council de naming/sabor, ver §13.1): renombrado a "The Marinara" — préstamo que ya se usa
+igual en español e inglés, sin traducción duplicada.
 
 ### 10.6 THE VAULT — coherencia interna
 
@@ -1365,6 +1366,44 @@ tener una cotización real de alguna de estas vías.
 
 **Trámites legales/sanitarios — confirmados resueltos por el dueño** (mismo estado que
 §12.2/§12.4, sin cambio).
+
+### 13.1 Segundo council — sabores del menú vs. nombres reales (2026-08-08) — IMPLEMENTADO
+
+Tercera sesión de la skill `llm-council` esta misma fecha, sobre si el trabajo de "el
+nombre coincide con el sabor real" (badges Premium→Italiano, Ligero→Cítrico, ya aplicados
+antes de este council) quedaba genuinamente cerrado. Veredicto completo en
+`council-report-2026-08-08-menu-naming.html` / `council-transcript-2026-08-08-menu-naming.md`
+(entregados al dueño, no versionados en este repo). Convergencia de 5/5 asesores y 5/5
+rondas de revisión por pares: **no estaba cerrado** — el badge de SIG04 se había corregido
+pero el nombre del producto y el pitch quedaron intactos, "Ligero" seguía escrito
+literalmente en el pitch, prometiendo algo que la receta real (dos bases cremosas:
+mayonesa de P04 + Aioli) no entregaba. Segunda tensión, de menor peso: SIG02 "The
+Meatball" (inglés) repetía en la misma tarjeta el mismo ingrediente que su propia proteína
+interna ya mostraba en español ("Albóndiga").
+
+**Decisiones del dueño, ambas IMPLEMENTADAS:**
+
+- **SIG04 "The Fresh"** — el dueño eligió arreglar la *receta*, no renombrar el producto
+  (evita el costo en cascada de un rename que el propio consejo señaló como blind spot:
+  SKU en favoritos/"avísame cuando vuelva"/puntos, contenido de marketing). Se quita el
+  Aioli (S01, duplicaba la mayonesa que P04 ya trae) y se agrega una salsa nueva, Limón
+  (S14, jugo de limón fresco exprimido, `sigOnly` igual que Au Jus/S13 en THE CHICAGO) —
+  el badge CÍTRICO ahora se sostiene con un ingrediente directo en vez de heredarlo del
+  Aioli retirado. Mantiene la mostaza Dijon (S11). Pitch reescrito quitando "Ligero" del
+  cuerpo del texto. Aplicado en `src/app.ts` (`SAUCES`, `SIGS.SIG04`) y
+  `supabase/functions/api/catalog.ts` (`VALID_SAUCES`, `SIG_ONLY_SAUCES`,
+  `SIG_DATA.SIG04`).
+- **SIG02 "The Meatball" → "The Marinara"** — resuelve el bilingüismo de la nota de §10.5
+  (marcada entonces "para tu decisión, no corregido"). "Marinara" es un préstamo que ya se
+  usa igual en español e inglés (no requiere traducción, a diferencia de "Meatball" vs.
+  "Albóndiga"), y sigue encajando con el badge "Italiano" y con la convención "The X" del
+  resto de Signatures. Aplicado en `src/app.ts` (`SIGS.SIG02`) y
+  `supabase/functions/api/catalog.ts` (`SIG_LABEL.SIG02`).
+
+El vacío de picante en Build Your Own (§10.7, propuesto por el Expansionist como posible
+segunda tensión) el consejo lo descartó por 5/5 de este cierre — es oportunidad de
+catálogo/expansión, no un caso de nombre que traiciona sabor real. Sigue documentado en
+§10.7 como pendiente, sin decisión tomada todavía.
 
 ---
 
