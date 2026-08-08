@@ -1452,6 +1452,58 @@ Aplicado en `src/app.ts` (`CHEESE`, `SIGS.SIG02/SIG03/SIG06`) y
 mecanismo nuevo `fixedCheese` en `priceSigBuild`). Verificado con
 `npm run typecheck && npm run build && npm test` (32/32).
 
+### 13.3 Quinto council — lógica de ingredientes y palatabilidad, a total profundidad
+(2026-08-08) — SOLO HALLAZGOS, NADA IMPLEMENTADO TODAVÍA
+
+A pedido del dueño, análisis ingrediente-por-ingrediente de las 8 Signatures (no solo si
+el pairing general funciona, ya validado en §13.2, sino textura/balance de 5
+sabores/riesgo de humedad de cada elemento), con investigación real de principios de
+contraste de textura, balance de sabor y manejo de humedad. Veredicto completo en
+`council-report-2026-08-08-ingredientes.html` / `council-transcript-2026-08-08-ingredientes.md`
+(entregados al dueño, no versionados en este repo). A diferencia de los councils
+anteriores, **ningún cambio de receta se implementó esta ronda** — son hallazgos
+pendientes de decisión del dueño.
+
+**Hallazgos confirmados 5/5 asesores:**
+- **THE FRESH (SIG04)** roto en dos ejes: fatiga de paladar (solo el pepinillo aporta
+  crocancia real; atún+mayo, tomate y pimiento curado son todos blandos/cremosos) y
+  desbalance de sabor (Dijon + limón apilan ácido sobre la misma nota, sin ningún
+  elemento dulce — el único Signature de los 8 sin dulzor).
+- **THE TERIYAKI (SIG06) sin pepinillo** (ver §13.2) es el caso más grave del menú: se
+  perdieron simultáneamente el único elemento crocante Y el único ácido de la receta —
+  dos roles distintos que cubría un solo ingrediente, ninguno reemplazado. Ningún asesor
+  propone devolver el pepinillo (respeta la decisión ya tomada del dueño); todos
+  convergen en un encurtido *distinto* que cubra ambos roles, sin acuerdo sobre cuál:
+  cebolla morada encurtida (sin sourcing nuevo) vs. daikon/zanahoria estilo asiático
+  (identidad propia, pero sourcing nuevo).
+
+**Hallazgos en disputa dentro del propio consejo (sin resolver):**
+- **THE MARINARA (SIG02)**: ¿el queso fijo agregado en §13.2 lo mejoró, o es ahora el
+  mayor riesgo de pan mojado de los 8 (albóndiga en salsa + tomate + oil&vinegar = tres
+  fuentes de humedad)? El consejo se contradice a sí mismo, no hay veredicto cerrado.
+- **THE SMOKE (SIG03)** y **THE EMBER (SIG08)**: 2 de 5 asesores, de forma independiente,
+  encontraron riesgo real de pan mojado (SIG03: BBQ+queso+tomate, tres elementos húmedos
+  sin nada seco; SIG08: cero componente cremoso/graso en toda la receta, el chimichurri
+  es aceite, no una barrera). Un tercer asesor había declarado estos dos "ya balanceados,
+  no tocar" — la revisión por pares marcó esa declaración como el punto ciego más grave
+  de las cinco respuestas (señalado en 3 de 5 rondas).
+
+**Cobertura incompleta, sin auditar por nadie:** THE ORIGINAL (SIG01), THE VAULT (SIG05)
+y THE CHICAGO (SIG07) nunca se revisaron ingrediente por ingrediente pese a que la
+pregunta pedía las 8 recetas "a total profundidad". El eje de sabor "amargo" tampoco lo
+tocó ningún asesor.
+
+**Pendiente de decisión del dueño antes de tocar código** (ninguno implementado):
+1. Ingrediente de reemplazo para SIG06 (cebolla encurtida vs. daikon/zanahoria asiática) —
+   requiere primero documentar el perfil real de "Salsa SNDWCH de la casa" (S05, hoy sin
+   `d` descriptivo en `src/app.ts`, un agujero real señalado por 2 de 5 asesores).
+2. Ingrediente crocante + fuente de dulzor para SIG04 (candidatos sin sourcing nuevo: apio
+   picado, cebolla morada cruda, pimiento fresco en vez del curado).
+3. Auditoría real (no solo inspección) de si SIG02 necesita una barrera de humedad
+   (tostar el pan, o un elemento cremoso adicional) antes de darlo por cerrado.
+4. Auditoría de SIG03 y SIG08 con el mismo rigor que se aplicó a SIG04/SIG06.
+5. Auditoría de los 3 Signatures que quedaron completamente sin revisar (SIG01/SIG05/SIG07).
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
