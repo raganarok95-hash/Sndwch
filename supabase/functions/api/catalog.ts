@@ -60,9 +60,7 @@ export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T0
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
-// S14 (Limón) agregada 2026-08-08 (decisión del dueño, LLM Council de naming/sabor) —
-// ver el mismo cambio en SAUCES en src/app.ts.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13", "S14"]);
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -114,14 +112,12 @@ export const VAULT_ONLY_PROTS = new Set(["P03"]);
 // las siguen necesitando para tasar THE VAULT.
 export const VAULT_ONLY_TOPS = new Set(["T04"]);
 export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
-// Salsas exclusivas de un signature público, no secreto (S13 "Au Jus" → SIG07 "THE
-// CHICAGO"; S14 "Limón" → SIG04 "THE FRESH", agregada 2026-08-08) — mismo criterio que
-// VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR OWN aunque sigan en VALID_SAUCES
-// (SIG_DATA/priceCartItem las siguen necesitando para tasar el signature). El caldo de
-// cocción de res mechada no tiene sentido como salsa suelta fuera de ese sándwich, y el
-// limón exprimido de THE FRESH tampoco (no es una salsa que se unte, es un toque cítrico
-// puntual de esa receta específica).
-export const SIG_ONLY_SAUCES = new Set(["S13", "S14"]);
+// Salsas exclusivas de un signature público, no secreto (hoy solo S13 "Au Jus" → SIG07
+// "THE CHICAGO") — mismo criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR
+// OWN aunque sigan en VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para
+// tasar SIG07). El caldo de cocción de res mechada no tiene sentido como salsa suelta
+// fuera de ese sándwich.
+export const SIG_ONLY_SAUCES = new Set(["S13"]);
 // Topping exclusivo de un signature público (hoy solo T07 "Giardiniera" → SIG07 "THE
 // CHICAGO") — mismo criterio que SIG_ONLY_SAUCES.
 export const SIG_ONLY_TOPS = new Set(["T07"]);
@@ -163,11 +159,13 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
   // Receta corregida 2026-08-08 (decisión del dueño, LLM Council de naming/sabor): se
   // quita el Aioli (S01, segunda base cremosa que duplicaba la mayonesa ya incluida en
-  // P04 "Atún premium con mayonesa clásica") y se agrega Limón (S14, exprimido real) —
-  // el badge CÍTRICO ahora se sostiene con un ingrediente cítrico directo en vez de
-  // depender del limón que llevaba el Aioli. Mantiene la mostaza Dijon (S11). DEBE
-  // coincidir con SIGS.SIG04 en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S11", "S14"], p15: 18, p30: 32 },
+  // P04 "Atún premium con mayonesa clásica") y se agrega un chorrito de limón real — el
+  // badge CÍTRICO ahora se sostiene con un ingrediente cítrico directo en vez de depender
+  // del limón que llevaba el Aioli. El limón es un ingrediente de preparación, no una
+  // salsa seleccionable — no tiene entrada en VALID_SAUCES/SIG_ONLY_SAUCES arriba, solo
+  // vive en el pitch de SIGS.SIG04 en src/app.ts (confirmado con el dueño 2026-08-08).
+  // Mantiene la mostaza Dijon (S11). DEBE coincidir con SIGS.SIG04 en src/app.ts.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S11"], p15: 18, p30: 32 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.

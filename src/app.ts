@@ -196,14 +196,7 @@ var SAUCES=[
   // la siguen necesitando para tasar SIG07). El caldo de cocción de res mechada no tiene
   // sentido como salsa suelta fuera de ese sándwich — antes se podía elegir en cualquier
   // build sin relación con el Italian Beef (hallazgo del dueño).
-  {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado',sigOnly:true},
-  // Nueva 2026-08-08 (decisión del dueño, LLM Council de naming/sabor) — sigOnly: exclusiva
-  // de THE FRESH (SIG04). Reemplaza al Aioli en esa receta (quitado por duplicar la
-  // mayonesa que P04 ya trae) — el badge CÍTRICO ahora se sostiene con este ingrediente
-  // directo en vez de depender del limón que llevaba el Aioli. No es una salsa que se
-  // unte como el resto, es un toque puntual — por eso no tiene sentido ofrecerla suelta
-  // en BUILD YOUR OWN.
-  {id:'S14',l:'Limón',   s:'Exprimido', d:'Jugo de limón fresco, exprimido al momento',sigOnly:true}
+  {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado',sigOnly:true}
 ];
 var SIGS=[
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
@@ -285,11 +278,15 @@ var SIGS=[
   // nombre del producto y el pitch — "Ligero" seguía escrito en el pitch, prometiendo algo
   // que el bocado real (dos bases cremosas: mayonesa de P04 + Aioli) no entregaba. En vez
   // de renombrar el producto, el dueño eligió arreglar la receta: se quita el Aioli
-  // (duplicaba la mayonesa que P04 ya trae) y se agrega Limón real exprimido (S14, nueva)
-  // — CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. "Ligero"
-  // se retira del pitch (no es honesto con una base de mayonesa, sea una o dos).
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S11','S14'],p15:18,p30:32,
-    pitch:'Atún premium con mayonesa clásica, realzado con un toque de limón recién exprimido que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
+  // (duplicaba la mayonesa que P04 ya trae) y se agrega un chorrito de limón real —
+  // CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. El limón
+  // es un ingrediente de preparación (se exprime al armar el sándwich), no una salsa
+  // seleccionable — no tiene entrada propia en SAUCES/catalog.ts, solo vive en este pitch
+  // (confirmado con el dueño 2026-08-08, no asumir de nuevo que necesita ser una entidad
+  // de catálogo). "Ligero" se retira del pitch (no es honesto con una base de mayonesa,
+  // sea una o dos).
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S11'],p15:18,p30:32,
+    pitch:'Atún premium con mayonesa clásica, realzado con un chorrito de limón fresco que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
   // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría

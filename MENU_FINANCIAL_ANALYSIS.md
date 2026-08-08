@@ -1386,13 +1386,14 @@ interna ya mostraba en español ("Albóndiga").
 - **SIG04 "The Fresh"** — el dueño eligió arreglar la *receta*, no renombrar el producto
   (evita el costo en cascada de un rename que el propio consejo señaló como blind spot:
   SKU en favoritos/"avísame cuando vuelva"/puntos, contenido de marketing). Se quita el
-  Aioli (S01, duplicaba la mayonesa que P04 ya trae) y se agrega una salsa nueva, Limón
-  (S14, jugo de limón fresco exprimido, `sigOnly` igual que Au Jus/S13 en THE CHICAGO) —
-  el badge CÍTRICO ahora se sostiene con un ingrediente directo en vez de heredarlo del
+  Aioli (S01, duplicaba la mayonesa que P04 ya trae) y se agrega un chorrito de limón real
+  — el badge CÍTRICO ahora se sostiene con un ingrediente directo en vez de heredarlo del
   Aioli retirado. Mantiene la mostaza Dijon (S11). Pitch reescrito quitando "Ligero" del
-  cuerpo del texto. Aplicado en `src/app.ts` (`SAUCES`, `SIGS.SIG04`) y
-  `supabase/functions/api/catalog.ts` (`VALID_SAUCES`, `SIG_ONLY_SAUCES`,
-  `SIG_DATA.SIG04`).
+  cuerpo del texto. **El limón es un ingrediente de preparación, no una salsa** — primer
+  intento de implementación lo modeló como salsa nueva (S14, `sigOnly`) sin preguntar,
+  corregido 2026-08-08 tras el usuario aclarar que nunca pidió eso; el limón vive solo
+  como texto en el pitch, sin entidad propia en el catálogo. Aplicado en `src/app.ts`
+  (`SIGS.SIG04`) y `supabase/functions/api/catalog.ts` (`SIG_DATA.SIG04`).
 - **SIG02 "The Meatball" → "The Marinara"** — resuelve el bilingüismo de la nota de §10.5
   (marcada entonces "para tu decisión, no corregido"). "Marinara" es un préstamo que ya se
   usa igual en español e inglés (no requiere traducción, a diferencia de "Meatball" vs.
