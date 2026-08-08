@@ -448,6 +448,23 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   claude.ai, fuera de esta conversación. Conectores que sí tienen uso real en este
   proyecto y conviene dejar prendidos: Adobe for Creativity (fotos de stock), Supabase,
   GitHub (vía MCP dedicado, no listado en `ListConnectors`), Context7 (docs de librerías).
+- **No existe ninguna skill de "automatización de procesos de negocio" (restaurante,
+  delivery, WhatsApp Business, marketing/CRM) en esta cuenta — buscado 2026-08-08 con 3
+  vías distintas** (`SuggestSkills` con 8 keywords de negocio, `SearchSkills` con 2 tandas
+  de 8 keywords c/u — operaciones de restaurante, delivery, WhatsApp, email marketing,
+  CRM, contabilidad, reseñas, SEO local — y `npx skills search` con 5 términos): **0
+  resultados en las 3**. Mismo patrón que el gap de skill de cocina/menu engineering
+  (2026-07-30) y el de "selectora de MCP" (2026-07-31) — no es fallo de búsqueda, es un
+  gap real de esta categoría en los 3 registros disponibles hoy. Conclusión: "automatizar
+  todos los procesos" de este negocio NO es un problema de buscar la skill correcta — el
+  95% de la automatización real ya vive en el propio código de este repo (crons de
+  marketing/retención en `supabase/functions/api`, dashboard admin, programa de
+  fidelidad) y lo que falta NO son skills sino trabajo real del dueño (configurar los 3
+  secrets de Meta para publicación automática, decidir sobre WhatsApp Business API si
+  algún día se retoma — ver entradas de arriba). Antes de volver a buscar "skill de
+  automatización" para este proyecto, revisar primero qué de "todos los procesos" ya está
+  automatizado en código (bastante) vs. qué depende de una integración externa real
+  todavía sin configurar (poco, y ya identificado).
 - **Automatizaciones de sesión configuradas 2026-07-31**: `.claude/settings.json` (nuevo,
   commiteado en el repo — afecta a cualquier sesión futura que trabaje aquí) tiene (1) un
   allowlist de ~22 comandos/tools de solo lectura de uso frecuente (extraído del propio
