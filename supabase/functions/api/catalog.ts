@@ -132,30 +132,36 @@ export const SIG_ONLY_PROTS = new Set(["P07"]);
 // muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
-  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
+  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
+  // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
+  // OWN" documentado en los comentarios de abajo — SIG01/02/03/06 p30 y SIG04 p15+p30
+  // quedaban EXACTAMENTE igualados al precio de armar la misma proteína+tamaño por BYO
+  // (priceByoBuild cobra directo PROT_PRICE[prot].p15/p30, sin sumar nada por curaduría).
+  // +S/2 solo en los puntos exactos de paridad — DEBE coincidir con SIGS en src/app.ts.
+  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 24 },
   // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
   // mismo cambio en src/app.ts, DEBE coincidir).
   // cheeseOptional: único Signature con queso a elección — DEBE coincidir con SIGS en
   // src/app.ts (mismo hallazgo/razonamiento ahí).
   // base movida de B02 (retirado) a B01 — DEBE coincidir con SIGS en src/app.ts.
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24, cheeseOptional: true },
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 26, cheeseOptional: true },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
   // italiano cuesta casi el doble por kilo que pollo/res, duplicar su porción a 30CM
   // costaba más de lo que el precio fijo anterior cubría) — mantiene el criterio de
   // premio S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 30 },
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32 },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
   // THE ORIGINAL/THE MEATBALL/THE SMOKE.
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 30 },
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 18, p30: 32 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 21 },
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
   // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },

@@ -198,6 +198,13 @@ var SAUCES=[
   {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado',sigOnly:true}
 ];
 var SIGS=[
+  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
+  // Council): SIG01/02/03/06 p30 y SIG04 p15+p30 estaban EXACTAMENTE igualados al precio
+  // de armar la misma proteína+tamaño por BUILD YOUR OWN (ver itemUnitPrice — BYO cobra
+  // directo prot.p15/p30, sin sumar nada por curaduría) — 0 premio de precio por la
+  // curaduría en 5 de 7 Signatures. +S/2 en esos puntos exactos de paridad (nunca donde ya
+  // había premio, ej. SIG01 p15=18 vs BYO P01 p15=14 se deja igual). DEBE coincidir con
+  // SIG_DATA en supabase/functions/api/catalog.ts.
   // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
   // estaba en el signature más barato de los tres comparables (18/22) mientras el más
   // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
@@ -208,7 +215,7 @@ var SIGS=[
   // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
   // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
   // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
+  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:24,
     pitch:'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.'},
   // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
   // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
@@ -236,7 +243,7 @@ var SIGS=[
   // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
   // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
   // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-  {id:'SIG02',n:'The Meatball',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,cheeseOptional:true,
+  {id:'SIG02',n:'The Meatball',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:26,cheeseOptional:true,
     pitch:'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
@@ -248,7 +255,7 @@ var SIGS=[
   // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
   // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
   // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:30,
+  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:32,
     pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
@@ -260,7 +267,7 @@ var SIGS=[
   // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
   // CÍTRICO describe lo que sí es honesto del producto (el toque de limón del aioli, ya
   // nombrado en el pitch de abajo) sin prometer ligereza que la receta no entrega.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:30,
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:18,p30:32,
     // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
     // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
     pitch:'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
@@ -271,7 +278,7 @@ var SIGS=[
   // negocio (~septiembre 2026, ver "Contexto de negocio" en CLAUDE.md) + ~60 días de
   // ventana — AJUSTAR a la fecha real de apertura en cuanto se confirme, esto es un
   // placeholder documentado, no un dato certero (hallazgo de auditoría de copy, BAJO).
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:21,
+  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:23,
     pitch:'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.'},
   // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll

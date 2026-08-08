@@ -1324,6 +1324,48 @@ bajo impacto listadas en 12.3 (minificación de JS, FK reales en `ratings`/
 `promo_code_redemptions`, limpieza de columnas vestigiales, convención única de "flag de
 éxito").
 
+## 13. LLM Council sobre rentabilidad + decisiones del dueño (2026-08-08)
+
+Se corrió la skill `llm-council` (5 asesores independientes + revisión anónima entre
+pares + síntesis) sobre "cómo hacer más rentable el negocio con el menor dinero posible,
+con exactitud". Veredicto completo en `council-report-2026-08-08.html` /
+`council-transcript-2026-08-08.md` (entregados al dueño, no versionados en este repo).
+Resumen de lo accionado:
+
+**Precio de curaduría — IMPLEMENTADO.** Hallazgo confirmado por el consejo: `itemUnitPrice()`
+(cliente) y `priceByoBuild` (servidor) cobran BUILD YOUR OWN directo al precio de la
+proteína (`PROT_PRICE[prot].p15/p30`), sin sumar nada por curaduría — 5 Signatures
+(SIG01/02/03/04/06) tenían premio S/0 exacto frente a armarlos por BYO en 30CM (SIG04
+también en 15CM), reflejo de un criterio de diseño explícito documentado en comentarios
+previos del código ("mantiene el criterio de premio S/0 a 30CM"). El dueño confirmó
+2026-08-08 que la curaduría sí puede llevar algo de precio — se revierte ese criterio con
+**+S/2 en cada punto exacto de paridad** (nunca donde ya había premio):
+SIG01 p30 22→24, SIG02 p30 24→26, SIG03 p30 30→32, SIG04 p15 16→18 y p30 30→32, SIG06
+p30 21→23. Aplicado en `src/app.ts` (`SIGS`) y `supabase/functions/api/catalog.ts`
+(`SIG_DATA`), verificado con `npm run typecheck && npm run build && npm test` (32/32).
+
+**Proveedor real de atún — investigado, sin cotizar todavía.** No hay proveedor mayorista
+confirmado por caja/kg específico para Trujillo (el ~S/67/kg de Tottus sigue siendo
+retail, no mayorista). Vías reales identificadas para que el dueño cotice él mismo:
+- **MAKRO Trujillo** (Av. Industrial cruce Av. Federico Villareal, El Bosque — tel. tienda
+  (044) 458-020) — la opción más directa: supermayorista HORECA con tienda física ya
+  operando en la ciudad, alta probabilidad de tener atún en lata en caja a precio
+  mayorista.
+- **San Jorge** — ya cotizado por catálogo web (~S/53.31/kg, caja x48, §6.1), y tiene
+  tienda física en Trujillo (Av. Teodoro Valcárcel 950, Santa Leonor) — vale confirmar
+  presencialmente si venden ahí al por mayor a precio distinto del online.
+- **Mercado Zonal Palermo** (Jr. Sinchi Roca s/n, km 0) — mismo mercado ya usado como
+  canal físico para embutido; no hay puesto de atún confirmado públicamente, hay que
+  recorrerlo en persona como se hizo con el embutido.
+- Respaldo escrito: Atunruna Perú (+51 995 157 674) y Conservas.pe
+  (ventas@conservas.pe) — ninguno confirma despacho a Trujillo todavía, preguntar
+  explícitamente.
+Ningún precio se cambió en el catálogo todavía — el estimado de S/67/kg se mantiene hasta
+tener una cotización real de alguna de estas vías.
+
+**Trámites legales/sanitarios — confirmados resueltos por el dueño** (mismo estado que
+§12.2/§12.4, sin cambio).
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
