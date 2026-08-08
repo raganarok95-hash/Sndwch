@@ -1049,12 +1049,16 @@ corrigieron directo en código, no solo se documentan aquí.
 
 ### 12.1 Curaduría de chef
 
-- **Queso ausente en 6 de 7 Signatures públicos, y no solo por default — es imposible
-  agregarlo.** Solo THE MEATBALL (`cheeseOptional:true`) permite queso (gratis). THE
-  ORIGINAL (perfil roast-beef/cheesesteak) y THE SMOKE (ahumados) son los casos más
-  llamativos — combinaciones donde queso derretido es casi una expectativa del género y
-  hoy no hay ni la opción de pagarlo extra. Decisión pendiente del dueño: abrir queso como
-  extra pagado en más Signatures (no se implementó, es una decisión de menú).
+- **Queso ausente en 6 de 7 Signatures públicos — RESUELTO 2026-08-08 para THE SMOKE y
+  THE MARINARA (antes THE MEATBALL) tras el LLM Council de menú completo** (ver §13.2):
+  investigación real de comparables exitosos confirmó que el queso derretido es
+  estructural en esas dos categorías de sándwich, no un extra opcional. THE MARINARA pasa
+  de `cheeseOptional:true` (gratis, a elección) a `fixedCheese:'C01'` (Mozzarella, fijo,
+  sin costo extra al cliente). THE SMOKE pasa de sin queso a `fixedCheese:'C02'`
+  (Cheddar, fijo). Sin cambio de precio (costo real calculado ~S/0.39-0.77/unidad,
+  confirmado por el dueño que no amerita subirlo). THE ORIGINAL (roast-beef/cheesesteak)
+  queda sin queso — no fue parte de esta decisión, el hallazgo del council se limitó a
+  THE MARINARA/THE SMOKE, los dos con comparable exitoso confirmado.
 - **Construcción física para el momento de abrir el pedido en casa** (distinto de humedad
   §10.4/11.1 y de foto de marketing §11.4): dos riesgos nuevos de **forma** del relleno,
   no de humedad — THE MEATBALL (las albóndigas sueltas ruedan dentro del empaque durante
@@ -1405,6 +1409,48 @@ El vacío de picante en Build Your Own (§10.7, propuesto por el Expansionist co
 segunda tensión) el consejo lo descartó por 5/5 de este cierre — es oportunidad de
 catálogo/expansión, no un caso de nombre que traiciona sabor real. Sigue documentado en
 §10.7 como pendiente, sin decisión tomada todavía.
+
+### 13.2 Cuarto council — menú completo (sabores, recetas, pitch) con investigación real de
+chef y comparables exitosos (2026-08-08) — IMPLEMENTADO
+
+El dueño pidió un análisis completo del menú ("no creo que sean para nada los adecuados")
+con investigación real (WebSearch: fuentes de chef, comparables de cadena — Firehouse
+Subs, Jersey Mike's, Potbelly) antes de responder. Veredicto completo en
+`council-report-2026-08-08-menu-completo.html` / `council-transcript-2026-08-08-menu-completo.md`
+(entregados al dueño, no versionados en este repo). Convergencia de 5/5 asesores y 5/5
+rondas de revisión por pares: la desconfianza total NO tenía sustento — 6 de 8 recetas
+están validadas ingrediente por ingrediente contra fuente de chef o comparable exitoso
+(THE ORIGINAL, THE FRESH, THE VAULT, THE CHICAGO con validación fuerte; THE TERIYAKI con
+riesgo real de "doble dulce" mitigado sin querer por su propio pepinillo). El único
+hallazgo real y accionable: ausencia de queso derretido estructural en THE MARINARA y THE
+SMOKE, confirmado por dos comparables independientes (ver §12.1, ya corregido).
+
+**Decisiones del dueño, todas IMPLEMENTADAS** (no fueron parte del council — el dueño las
+dio como resultado ya decidido del veredicto, para ejecutar directo):
+
+- **Queso fijo en THE MARINARA (Mozzarella) y THE SMOKE (Cheddar)** — ver detalle en
+  §12.1. Cheese C01 renombrado de Americano a Mozzarella (precio real investigado, Braedt
+  ~S/22.50/kg, similar o menor al proxy genérico de S/35/kg ya usado en este documento, y
+  mejor derretido que el Americano procesado que reemplaza) — se eligió reemplazar
+  Americano en vez de Edam/Cheddar por ser el queso más genérico del catálogo, sin
+  ninguna receta que lo usara por nombre, y el que peor derrite de los tres.
+- **Pitches reescritos**: THE MARINARA ("Albóndigas caseras bañadas en marinara, con
+  mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo
+  italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad."), THE
+  SMOKE (agrega "y cheddar derretido" para reflejar la receta real), THE TERIYAKI
+  ("Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa —
+  dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba
+  al menú.").
+- **THE TERIYAKI sin Pepinillo** — decisión explícita del dueño, contraria a la
+  recomendación del council de poner el pepinillo en foco en el pitch (ese ingrediente
+  cortaba sin querer el riesgo de "doble dulce" teriyaki+satay). Quitado igual: queda
+  Tomate+Pimiento. El riesgo de doble dulce queda sin ningún elemento ácido que lo corte
+  — documentado a propósito, sin reemplazo agregado sin pedido explícito del dueño.
+
+Aplicado en `src/app.ts` (`CHEESE`, `SIGS.SIG02/SIG03/SIG06`) y
+`supabase/functions/api/catalog.ts` (`VALID_CHEESE`, `SIG_DATA.SIG02/SIG03/SIG06`,
+mecanismo nuevo `fixedCheese` en `priceSigBuild`). Verificado con
+`npm run typecheck && npm run build && npm test` (32/32).
 
 ---
 

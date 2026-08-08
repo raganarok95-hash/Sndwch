@@ -57,6 +57,11 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 // ver el mismo cambio (con el detalle completo) en BASES en src/app.ts.
 export const VALID_BASES = new Set(["B01", "B03"]);
 export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
+// C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
+// menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
+// de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
+// Americano procesado que reemplaza — el id no cambia, solo el label (ver CHEESE en
+// src/app.ts). C02 (Cheddar) se mantiene sin cambio.
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
@@ -131,7 +136,7 @@ export const SIG_ONLY_PROTS = new Set(["P07"]);
 // Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
 // muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
-export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
   // OWN" documentado en los comentarios de abajo — SIG01/02/03/06 p30 y SIG04 p15+p30
@@ -141,17 +146,26 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 24 },
   // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
   // mismo cambio en src/app.ts, DEBE coincidir).
-  // cheeseOptional: único Signature con queso a elección — DEBE coincidir con SIGS en
-  // src/app.ts (mismo hallazgo/razonamiento ahí).
-  // base movida de B02 (retirado) a B01 — DEBE coincidir con SIGS en src/app.ts.
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 26, cheeseOptional: true },
+  // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
+  // menú — investigación real confirmó que el queso derretido es un componente
+  // estructural del plato en sus comparables exitosos, "melted mozzarella is what makes
+  // a Meatball Sub", no un extra). fixedCheese:'C01' (Mozzarella, ver VALID_CHEESE arriba)
+  // se agrega siempre a ingredientsPerUnit en priceSigBuild, sin depender de que el
+  // cliente lo pida. Sin cambio de precio (costo real ~S/0.39-0.77/unidad, confirmado por
+  // el dueño que no amerita subir S/19/26). base movida de B02 (retirado) a B01 — DEBE
+  // coincidir con SIGS en src/app.ts.
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 26, fixedCheese: "C01" },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
   // italiano cuesta casi el doble por kilo que pollo/res, duplicar su porción a 30CM
   // costaba más de lo que el precio fijo anterior cubría) — mantiene el criterio de
   // premio S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32 },
+  // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02 arriba) —
+  // fixedCheese:'C02' (Cheddar), comparable exitoso investigado (Firehouse "Smokehouse
+  // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
+  // categoría. Sin cambio de precio.
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32, fixedCheese: "C02" },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
   // THE ORIGINAL/THE MARINARA/THE SMOKE.
@@ -169,7 +183,11 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
+  // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño, mismo cambio que
+  // SIGS.SIG06 en src/app.ts) — queda Tomate+Pimiento. El riesgo de "doble dulce"
+  // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
+  // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
   // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
@@ -358,9 +376,14 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
-  // Queso opcional y gratis (igual que en BUILD YOUR OWN) — solo en los Signatures que
-  // lo declaran (hoy solo SIG02). Se ignora silenciosamente si un cliente lo manda para
-  // un Signature que no lo permite, en vez de lanzar un error por un campo inofensivo.
+  // Queso fijo (hoy SIG02 Mozzarella, SIG03 Cheddar) — parte de la receta, no depende de
+  // que el cliente lo pida ni de qué mande en `cheese`. Se agrega siempre a
+  // ingredientsPerUnit para que el descuento de inventario/costo real lo refleje.
+  if (sig.fixedCheese) ingredientsPerUnit.push(sig.fixedCheese);
+  // Queso opcional y gratis (igual que en BUILD YOUR OWN) — para Signatures que lo
+  // declaren en el futuro (hoy ninguno usa cheeseOptional). Se ignora silenciosamente si
+  // un cliente lo manda para un Signature que no lo permite, en vez de lanzar un error
+  // por un campo inofensivo.
   if (cheese && sig.cheeseOptional) {
     if (!VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
     ingredientsPerUnit.push(cheese);
@@ -510,7 +533,8 @@ export function priceCartItem(raw: any): PricedItem {
 
   if (raw?.type === "sig") {
     // Queso opcional y gratis, solo válido para los Signatures que lo declaran
-    // (SIG_DATA[sigId].cheeseOptional, hoy solo SIG02) — priceSigBuild ya ignora
+    // (SIG_DATA[sigId].cheeseOptional, hoy ninguno — ver fixedCheese para SIG02/SIG03,
+    // que va siempre sin depender de este campo) — priceSigBuild ya ignora
     // silenciosamente cheese si el Signature no lo permite.
     const cheese = raw.cheese ? String(raw.cheese) : null;
     const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce, cheese);

@@ -332,9 +332,13 @@ var TOPS = [
     { id: 'T06', l: 'Pimiento', s: 'Curado' },
     { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true, sigOnly: true }
 ];
+// C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
+// menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
+// de queso ya usado en el análisis financiero, y con mejor derretido que el Americano
+// procesado que reemplaza — id NO cambia, DEBE coincidir con VALID_CHEESE en catalog.ts.
 var CHEESE = [
-    { id: 'C01', l: 'Americano', s: '' },
-    { id: 'C02', l: 'Cheddar', s: '' },
+    { id: 'C01', l: 'Mozzarella', s: '', d: 'Derrite fácil, sabor suave' },
+    { id: 'C02', l: 'Cheddar', s: '', d: 'Sabor intenso y textura firme' },
     { id: 'C03', l: 'Edam', s: '' }
 ];
 // `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
@@ -400,10 +404,12 @@ var SIGS = [
     // ya usan AHUMADO (SIG03) y AL ESTILO CHICAGO (SIG07). Explícitamente NO se usa
     // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
     // como compañía consolidada, no como negocio local/casero).
-    // cheeseOptional: único Signature con queso a elección — un meatball sub sin queso
-    // derretido es atípico para el arquetipo (hallazgo de auditoría de receta). En vez de
-    // fijar un queso en la receta curada (cambiaría el pitch/precio sin que el cliente lo
-    // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
+    // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
+    // menú — investigación real de comparables exitosos confirmó que el queso derretido es
+    // estructural en esta categoría de sándwich, no un extra: "melted mozzarella is what
+    // makes a Meatball Sub"). fixedCheese:'C01' (Mozzarella) va siempre en la receta, sin
+    // depender de que el cliente lo pida — DEBE coincidir con SIG_DATA.SIG02 en catalog.ts.
+    // Sin cambio de precio (costo real ~S/0.39-0.77/unidad, el dueño confirmó no subirlo).
     // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
     // hecho más auténtico para un meatball sub que uno con hierbas.
     // chef:true (FAVORITO DEL CHEF) retirado esta sesión (auditoría de menú/copy) — se
@@ -420,8 +426,8 @@ var SIGS = [
     // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
     // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
     // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-    { id: 'SIG02', n: 'The Marinara', s: 'Signature', badge: 'Italiano', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 26, cheeseOptional: true,
-        pitch: 'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.' },
+    { id: 'SIG02', n: 'The Marinara', s: 'Signature', badge: 'Italiano', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 19, p30: 26, fixedCheese: 'C01',
+        pitch: 'Albóndigas caseras bañadas en marinara, con mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad.' },
     // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
     // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
     // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
@@ -432,8 +438,12 @@ var SIGS = [
     // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
     // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
     // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-    { id: 'SIG03', n: 'The Smoke', s: 'Signature', badge: 'Ahumado', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 32,
-        pitch: 'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
+    // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02) —
+    // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
+    // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
+    // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
+    { id: 'SIG03', n: 'The Smoke', s: 'Signature', badge: 'Ahumado', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 21, p30: 32, fixedCheese: 'C02',
+        pitch: 'Fiambres italianos ahumados y cheddar derretido sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.' },
     // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
     // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
     // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
@@ -464,8 +474,15 @@ var SIGS = [
     // negocio (~septiembre 2026, ver "Contexto de negocio" en CLAUDE.md) + ~60 días de
     // ventana — AJUSTAR a la fecha real de apertura en cuanto se confirme, esto es un
     // placeholder documentado, no un dato certero (hallazgo de auditoría de copy, BAJO).
-    { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Asiático', newUntil: '2026-10-31', base: 'B01', prot: 'P02', tops: ['T01', 'T02', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 23,
-        pitch: 'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.' },
+    // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño) — el consejo de
+    // menú había señalado que el pepinillo mitigaba sin querer el riesgo de "doble dulce"
+    // (teriyaki+satay, dos salsas dulces sin nada ácido) documentado por fuentes de chef;
+    // el dueño pidió quitarlo igual. Queda Tomate+Pimiento. El riesgo de doble dulce ya NO
+    // tiene ningún elemento ácido que lo corte — sin resolver, documentado a propósito
+    // (no se agregó ningún reemplazo sin que el dueño lo pidiera). DEBE coincidir con
+    // SIG_DATA.SIG06 en catalog.ts si esa entrada llega a declarar tops explícitos.
+    { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Asiático', newUntil: '2026-10-31', base: 'B01', prot: 'P02', tops: ['T01', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 23,
+        pitch: 'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.' },
     // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
     // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
     // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
@@ -2391,6 +2408,10 @@ function sigPreviewOverlayHTML() {
     // por diseño (hallazgo de auditoría de menú).
     var toppingsLbl = s.tops.map(function (id) { var t = TOPS.find(function (x) { return x.id === id; }); return t ? t.l + ' // ' + t.s + (t.d ? ' — ' + t.d : '') : ''; }).join(' · ');
     var saucesLbl = s.sauces.map(function (id) { var sc = SAUCES.find(function (x) { return x.id === id; }); return sc ? sc.l + ' // ' + sc.s + (sc.d ? ' — ' + sc.d : '') : ''; }).join(' + ');
+    // fixedCheese (SIG02 Mozzarella, SIG03 Cheddar, ver comentario junto a esas entradas en
+    // SIGS) — a diferencia de toppings/salsas, no es una elección del cliente, siempre va.
+    var ch = s.fixedCheese ? CHEESE.find(function (x) { return x.id === s.fixedCheese; }) : null;
+    var cheeseLbl = ch ? ch.l + (ch.s ? ' // ' + ch.s : '') + (ch.d ? ' — ' + ch.d : '') : '';
     var photo = SIG_IMG[s.id];
     var hero = photo
         ? '<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="' + photo + '" alt="' + esc(s.n) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">' + sigBadge(s) + '</span></div></div>'
@@ -2414,6 +2435,7 @@ function sigPreviewOverlayHTML() {
                 + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
                 + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s + (bs.d ? ' — ' + bs.d : '') : '') + '</div>'
                 + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s + (pr.d ? ' — ' + pr.d : '') : '') + '</div>'
+                + (cheeseLbl ? '<div><span style="color:' + GOLD + '">Queso · </span>' + cheeseLbl + '</div>' : '')
                 + '<div><span style="color:' + GOLD + '">Toppings · </span>' + toppingsLbl + '</div>'
                 + '<div><span style="color:' + GOLD + '">Salsas · </span>' + saucesLbl + '</div>'
                 + '</div></div>')
@@ -2577,9 +2599,11 @@ function sOItemConfirm() {
         rows.push({ k: 'Doble', v: 'Doble ' + dbl.l + ' // ' + dbl.s, p: dbl.pDbl });
     if (extraSauce)
         rows.push({ k: 'Salsa extra', v: 'Salsa adicional a tu elección', p: 2 });
-    // Queso opcional — único Signature con esta opción (SIG02, ver cheeseOptional en SIGS):
-    // un meatball sub sin queso derretido era atípico para el arquetipo (hallazgo de
-    // auditoría de receta). Gratis, igual que el queso en BUILD YOUR OWN.
+    // Queso opcional — mecanismo para un futuro Signature que lo ofrezca a elección (ver
+    // cheeseOptional en SIGS). SIG02 lo usó hasta 2026-08-08; ahora tiene queso FIJO
+    // (fixedCheese, ver sigPreviewOverlayHTML) porque la investigación de esa sesión
+    // encontró que el queso derretido es estructural en esa receta, no opcional — ningún
+    // Signature usa cheeseOptional hoy, esto queda listo por si hace falta más adelante.
     var cheeseSigAllowed = mode === 'sig' && sig && sig.cheeseOptional;
     if (cheeseSigAllowed && cheese)
         rows.push({ k: 'Queso', v: fn(CHEESE, cheese) + ' (opcional, sin costo)' });
