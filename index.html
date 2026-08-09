@@ -330,7 +330,14 @@ var TOPS = [
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
     { id: 'T06', l: 'Pimiento', s: 'Curado' },
-    { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true, sigOnly: true }
+    { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true, sigOnly: true },
+    // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
+    // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
+    // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
+    // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
+    // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
+    // con VALID_TOPS en supabase/functions/api/catalog.ts.
+    { id: 'T08', l: 'Apio', s: 'Picado' }
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
@@ -353,8 +360,13 @@ var SAUCES = [
     // por el dueño para tratarla igual que Au Jus.
     { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremoso, calor progresivo', spicy: true, vaultOnly: true },
     { id: 'S03', l: 'Smoke', s: 'BBQ', d: 'Ahumado, miel, pimentón' },
-    { id: 'S04', l: 'Honey', s: 'Mustard', d: 'Dulce, mostaza equilibrado' },
-    { id: 'S05', l: 'SNDWCH', s: 'Special', d: 'Nuestra salsa de la casa. Receta exclusiva SND//WCH.' },
+    { id: 'S04', l: 'Honey', s: 'Mustard', d: 'Dulce, mostaza suave' },
+    // Perfil documentado 2026-08-08 (confirmado por el dueño, LLM Council de menú) — hasta
+    // ahora era la única de las 12 salsas sin descripción de sabor, lo que bloqueaba evaluar
+    // si era redundante con otras o cómo combinaba en SIG06. Es salada/umami, NO dulce —
+    // dato relevante: SIG06 (Teriyaki+Satay+SNDWCH) tiene 2 fuentes dulces, no 3, porque
+    // esta salsa aporta un contrapunto salado, no otro dulzor apilado.
+    { id: 'S05', l: 'SNDWCH', s: 'Special', d: 'Salada, con carácter umami. Receta exclusiva de la casa.' },
     { id: 'S06', l: 'Oil & Vinegar', s: 'Classic', d: 'Aceite de oliva y vinagre, estilo italiano' },
     { id: 'S08', l: 'Teriyaki', s: 'Glaze', d: 'Dulce, soja, jengibre' },
     // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
@@ -363,7 +375,15 @@ var SAUCES = [
     // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
     { id: 'S09', l: 'Chimichurri', s: 'Piña asada', d: 'Herbal, ajo, ácido, con piña asada' },
     { id: 'S10', l: 'Peanut', s: 'Satay', d: 'Maní, soya, jengibre' },
-    { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Intensa, clásica, con carácter' },
+    // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
+    // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
+    // eje difieren las dos mostazas. Dijon es ácida y filosa, SIN dulzor — S04 es lo
+    // opuesto (dulce, suave). Mismo ingrediente base, roles opuestos, ambas se quedan.
+    // Ojo: evitar la palabra "picante" acá — no es exacta para Dijon (es acidez/pungencia,
+    // no calor) y además rompe tests/menu-exclusivity-toppings-sauces.spec.ts, que usa esa
+    // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
+    // aparezca en BUILD YOUR OWN.
+    { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Ácida y filosa, sin dulzor' },
     { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true, vaultOnly: true },
     // sigOnly: exclusiva de THE CHICAGO (SIG07) — mismo criterio que vaultOnly en PROTS
     // (P03/CAJUN): no seleccionable en BUILD YOUR OWN aunque siga en SAUCES (SIGS/deriveOrder
@@ -465,8 +485,15 @@ var SIGS = [
     // (confirmado con el dueño 2026-08-08, no asumir de nuevo que necesita ser una entidad
     // de catálogo). "Ligero" se retira del pitch (no es honesto con una base de mayonesa,
     // sea una o dos).
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T06'], sauces: ['S11'], p15: 18, p30: 32,
-        pitch: 'Atún premium con mayonesa clásica, realzado con un chorrito de limón fresco que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.' },
+    // Pimiento (T06) reemplazado por Apio (T08) 2026-08-08 (decisión del dueño, LLM Council
+    // de menú) — el pimiento curado es tierno, no aporta crocancia real, dejando esta receta
+    // con un solo elemento crocante (Pepinillo) y riesgo real de fatiga de paladar (5/5
+    // asesores lo confirmaron). Apio picado es el ingrediente clásico de ensalada de atún
+    // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
+    // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
+    // de dulzor, no inventar una solución sin pedido explícito.
+    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T08'], sauces: ['S11'], p15: 18, p30: 32,
+        pitch: 'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.' },
     // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
     // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
     // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -481,6 +508,15 @@ var SIGS = [
     // tiene ningún elemento ácido que lo corte — sin resolver, documentado a propósito
     // (no se agregó ningún reemplazo sin que el dueño lo pidiera). DEBE coincidir con
     // SIG_DATA.SIG06 en catalog.ts si esa entrada llega a declarar tops explícitos.
+    // Naming ("The Teriyaki" sin salsa Teriyaki Glaze/S08) revisado 2026-08-08 — un council
+    // posterior señaló que el nombre no coincide con ninguna salsa de la receta (usa S10
+    // Peanut Satay + S05 SNDWCH Special). El dueño decidió NO reactivar S08 (agregarla
+    // habría sumado una tercera fuente dulce — "dulce, soja, jengibre" — al doble dulce ya
+    // documentado arriba). El nombre queda igual sin cambiar la receta: "Teriyaki" describe
+    // la proteína (Pollo//Teriyaki, P02, marinado real), no una salsa — el pitch ya lo deja
+    // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
+    // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
+    // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
     { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Asiático', newUntil: '2026-10-31', base: 'B01', prot: 'P02', tops: ['T01', 'T06'], sauces: ['S10', 'S05'], p15: 17, p30: 23,
         pitch: 'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.' },
     // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
@@ -510,8 +546,13 @@ var SIGS = [
     // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
     // el ítem completo desaparezca de la lista (sigAvailable()) y del backend
     // (SIG_AVAILABILITY en catalog.ts) al pasar la fecha — expira solo, no es una palabra.
-    { id: 'SIG08', n: 'The Ember', s: 'Signature', badge: 'Edición de Apertura', availableUntil: '2026-10-07', base: 'B03', prot: 'P01', tops: ['T03', 'T06'], sauces: ['S09'], p15: 14, p30: 22,
-        pitch: 'Res asada mechada de cocción lenta sobre focaccia artesanal, con un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.' },
+    // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — esta
+    // receta no tenía NINGÚN componente cremoso/graso (el chimichurri es a base de aceite,
+    // no una barrera de humedad como sí lo son aioli/mayo/queso en el resto del menú) —
+    // 2 asesores de forma independiente lo confirmaron como riesgo real de pan mojado. DEBE
+    // coincidir con SIG_DATA.SIG08 en catalog.ts.
+    { id: 'SIG08', n: 'The Ember', s: 'Signature', badge: 'Edición de Apertura', availableUntil: '2026-10-07', base: 'B03', prot: 'P01', tops: ['T03', 'T06'], sauces: ['S09', 'S01'], p15: 14, p30: 22,
+        pitch: 'Res asada mechada de cocción lenta sobre focaccia artesanal, con un toque de aioli y un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.' },
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
     // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
     // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es

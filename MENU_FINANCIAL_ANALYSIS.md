@@ -1575,6 +1575,65 @@ esta conversación.
 
 ---
 
+### 13.5 Decisiones del dueño sobre §13.4, ejecutadas (2026-08-08)
+
+Resultado real de preguntarle al dueño cada pendiente de §13.4, uno por uno:
+
+**Implementado en código:**
+- **SIG08 "The Ember"**: se agregó Aioli (S01) como segunda salsa fija — resuelve la
+  falta de barrera cremosa/grasa. Pitch actualizado.
+- **SIG04 "The Fresh"**: Pimiento (T06) reemplazado por **Apio picado (T08, nuevo
+  topping)** — resuelve la fatiga de paladar (antes un solo elemento crocante real). T08
+  también disponible en BUILD YOUR OWN. **Sigue pendiente sin resolver**: la falta de
+  dulzor (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia.
+- **S05 "Salsa SNDWCH de la casa"**: perfil de sabor documentado por el dueño —
+  **salada/umami, no dulce**. Esto resuelve dos cosas a la vez: (1) confirma que SIG06
+  tiene 2 fuentes dulces reales (proteína marinada + satay), no 3 como se temía; (2)
+  destraba la pregunta de redundancia de §13.4 (S05 no es redundante con S04/S11, son
+  ejes de sabor distintos).
+- **SIG06 "The Teriyaki" — naming resuelto sin reactivar S08**: el dueño decidió NO
+  devolver Teriyaki Glaze (S08) a la receta (habría sumado una tercera fuente dulce al
+  doble dulce ya documentado). El nombre queda igual — "Teriyaki" describe la proteína
+  (Pollo//Teriyaki, marinado real), no una salsa, y el pitch ya lidera con "Pollo teriyaki
+  caramelizado" sin prometer una salsa que no está. **S08 sigue huérfana** (sin
+  Signature), sin decisión tomada sobre su destino final.
+- **Mostazas S04/S11**: el dueño pidió diferenciarlas mejor en el copy en vez de cortar
+  una. S04 Honey Mustard: "Dulce, mostaza suave". S11 Dijon: "Ácida y filosa, sin dulzor"
+  (se evitó la palabra "picante" — no es exacta para Dijon y rompía un test que la usa
+  como proxy de salsas vaultOnly).
+
+Aplicado en `src/app.ts` (`TOPS` nuevo T08, `SIGS.SIG04/SIG06/SIG08`, `SAUCES.S04/S05/S11`)
+y `supabase/functions/api/catalog.ts` (`VALID_TOPS`, `SIG_DATA.SIG04/SIG08`). Verificado
+con `npm run typecheck && npm run build && npm test` (32/32 — un test
+—`menu-exclusivity-toppings-sauces.spec.ts`— falló en el primer intento porque la
+descripción nueva de Dijon decía "picante", corregido a "filosa").
+
+**Decisiones operativas (no de código, no hay dónde reflejarlas en `catalog.ts`/`app.ts`):**
+- **SIG02 "The Marinara" — pan mojado**: el dueño eligió **reordenar el armado** (queso
+  Mozzarella tocando el pan directo, debajo de la proteína, en vez de mezclado arriba con
+  la marinara+tomate) en vez de cortar Oil & Vinegar. Es una instrucción de cocina, no un
+  cambio de receta/ingredientes — anotar en la coreografía de armado del negocio (ver
+  §10.4, "orden físico recomendado pan→proteína→queso→toppings→salsas").
+- **SIG07 "The Chicago" — au jus en delivery**: el dueño eligió **mejorar el empaque**
+  (vaso con tapa hermética/sellado) en vez de aceptar el riesgo o solo agregar una nota.
+  Acción real pendiente del dueño: cotizar/conseguir un vaso con tapa sellada para el au
+  jus en los pedidos de THE CHICAGO — no es algo que este repo pueda resolver en código.
+
+**Concepto de marca — aprobado avanzar** (ver §13.6, mockups del ícono "//" entregados
+por separado, no en este documento).
+
+### 13.6 Mockups del ícono "//" (2026-08-08)
+
+Primer paso acotado del concepto de marca, per la recomendación del sexto council: 2
+mockups del ícono "//" solo (no el sitio completo), reinterpretándolo como el corte
+diagonal del pan en vez de su lectura por defecto como sintaxis de código/terminal —
+entregados al dueño para elegir dirección antes de tocar `shell.html`. Nada implementado
+en producto todavía; es una conversación de dirección, no de ejecución (regla del
+proyecto). Ver los archivos entregados (no versionados en este repo) para el detalle
+visual — este documento no reproduce imágenes.
+
+---
+
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
 punto medio entre los precios ya documentados y los investigados online, con demanda
 anclada en fuentes de Perú/Trujillo. No reemplaza datos reales de venta ni un costeo de

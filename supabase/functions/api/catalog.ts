@@ -56,7 +56,9 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
 // ver el mismo cambio (con el detalle completo) en BASES en src/app.ts.
 export const VALID_BASES = new Set(["B01", "B03"]);
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
+// T08 (Apio) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — ver el mismo
+// cambio en TOPS en src/app.ts.
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08"]);
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
@@ -178,8 +180,11 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // del limón que llevaba el Aioli. El limón es un ingrediente de preparación, no una
   // salsa seleccionable — no tiene entrada en VALID_SAUCES/SIG_ONLY_SAUCES arriba, solo
   // vive en el pitch de SIGS.SIG04 en src/app.ts (confirmado con el dueño 2026-08-08).
-  // Mantiene la mostaza Dijon (S11). DEBE coincidir con SIGS.SIG04 en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S11"], p15: 18, p30: 32 },
+  // Mantiene la mostaza Dijon (S11). Pimiento (T06) reemplazado por Apio (T08) 2026-08-08
+  // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
+  // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
+  // en src/app.ts.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 18, p30: 32 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
@@ -197,7 +202,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
   // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
   // cliente, que solo cambia el badge a "Nuevo" sin ocultar el ítem).
-  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09"], p15: 14, p30: 22 },
+  // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — la receta
+  // no tenía ningún componente cremoso/graso (el chimichurri es a base de aceite, no
+  // barrera de humedad) — DEBE coincidir con SIGS.SIG08 en src/app.ts.
+  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09", "S01"], p15: 14, p30: 22 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
