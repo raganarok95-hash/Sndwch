@@ -1637,6 +1637,49 @@ de tocar `shell.html`. Nada implementado en producto todavía; es una conversaci
 dirección, no de ejecución (regla del proyecto). Ver los archivos entregados (no
 versionados en este repo) para el detalle visual — este documento no reproduce imágenes.
 
+### 13.7 Séptimo council — el "//" y el look-and-feel de la marca (2026-08-08)
+
+El dueño pidió un council dedicado a evaluar los 2 mockups de §13.6 y el look-and-feel en
+general. Veredicto completo en `council-report-2026-08-08-marca-corte.html` /
+`council-transcript-2026-08-08-marca-corte.md` (entregados al dueño, no versionados en
+este repo). **Nada decidido ni implementado** — sigue siendo conversación de dirección.
+
+**Hallazgo principal, 5/5 asesores**: Mockup A y B no son dos direcciones de marca
+distintas — son el mismo gesto de corte decorativo entre bloques tipográficos bold, con
+paleta invertida (negro/dorado vs. crema/gris). Que al dueño le gustaran los dos es señal
+de que aprobó un TONO (bold, alto contraste), no de que comparó dos hipótesis reales.
+
+**Tensión real señalada por 3 de 5 asesores**: ninguno de los dos mockups tiene textura
+física (borde irregular, sombra, un asomo de color cálido) — se leen como diseño gráfico
+limpio, no como pan real. Uno de los asesores fue explícito: "ninguno me da hambre".
+
+**Punto ciego señalado en las 5 rondas de revisión sin excepción**: la propuesta de
+convertir el corte en sistema de movimiento/empaque/fotografía (animaciones de tracking,
+troquel físico en la caja, firma fotográfica por Signature) es prematura — no resuelve si
+el símbolo base se lee como corte de pan, y viola la regla de "concepto antes que
+implementación" del proyecto. Queda archivada para retomar después de elegir dirección,
+no descartada.
+
+**Recomendación del consejo — 5 pruebas antes de elegir A o B**, ninguna ejecutada
+todavía:
+1. Legibilidad del "//" aislado a tamaño real (favicon 32px, ícono de app, miniatura de
+   listado de delivery 24-32px).
+2. Si el corte necesita textura física (borde irregular, sombra, color de relleno
+   asomando).
+3. Costo real de producción con el proveedor de empaque (tinta blanca sobre negro vs.
+   negro sobre crema/kraft).
+4. Test de percepción con 5-8 personas reales de Trujillo (3 segundos, "¿qué venden
+   acá?") — resuelve si el riesgo de leerse como código (§13.6) es real para el cliente
+   real o una proyección de diseño internacional, señalado explícitamente como hipótesis
+   sin testear, no como hecho confirmado.
+5. Si el "//" necesita verse cortado (imperfecto) o le basta con verse ordenado (limpio,
+   de sistema) — pregunta conceptual en paralelo, no una tercera paleta.
+
+Puntos ciegos adicionales sin resolver: nadie evaluó el costo de migrar desde la
+identidad visual YA en producción (`shell.html`/`app.ts`, paleta verde/dorado actual) ni
+la accesibilidad/contraste para baja visión; nadie probó el lockup completo "SND//WCH" a
+tamaño de handle de red social o rótulo de bolsa.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
