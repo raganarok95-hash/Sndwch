@@ -261,7 +261,15 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     descartar una dirección "Chan Chan" inspirada en la ciudadela Chimú) — no proponer
     ni asumir referencias a Trujillo, cultura Chimú/Moche, o cualquier otro anclaje
     geográfico/regional específico en paleta, iconografía o naming, salvo que el usuario
-    lo pida explícitamente en el futuro.
+    lo pida explícitamente en el futuro. **El "//" SIEMPRE representó el corte del
+    pan/sándwich — nunca tuvo intención tech/terminal** (corregido explícitamente por el
+    usuario 2026-08-08, tras una sesión de LLM Council que asumió mal que el "//" partía
+    de una connotación de código que había que "reinterpretar" alejándose de ella). No es
+    una reinterpretación ni un cambio de dirección: es el significado real desde el
+    origen. El riesgo real señalado por esa sesión (alguien sin contexto puede leer "//"
+    como sintaxis de código/ruta de archivo la primera vez que lo ve) sigue siendo válido
+    como dato de percepción externa a reforzar visualmente — pero no asumir de nuevo que
+    el propio proyecto/dueño alguna vez tuvo esa intención o que hace falta "corregirla".
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 

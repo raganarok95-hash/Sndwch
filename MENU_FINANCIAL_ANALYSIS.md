@@ -1625,12 +1625,17 @@ por separado, no en este documento).
 ### 13.6 Mockups del ícono "//" (2026-08-08)
 
 Primer paso acotado del concepto de marca, per la recomendación del sexto council: 2
-mockups del ícono "//" solo (no el sitio completo), reinterpretándolo como el corte
-diagonal del pan en vez de su lectura por defecto como sintaxis de código/terminal —
-entregados al dueño para elegir dirección antes de tocar `shell.html`. Nada implementado
-en producto todavía; es una conversación de dirección, no de ejecución (regla del
-proyecto). Ver los archivos entregados (no versionados en este repo) para el detalle
-visual — este documento no reproduce imágenes.
+mockups del ícono "//" solo (no el sitio completo), reforzando visualmente el corte del
+pan/sándwich. **Corrección del dueño (2026-08-08): el "//" SIEMPRE representó ese corte —
+nunca tuvo intención tech/terminal.** El sexto council había asumido que hacía falta
+"reinterpretar" el ícono alejándolo de una lectura de código, cuando esa lectura nunca fue
+el origen real, solo un riesgo de percepción externa (alguien sin contexto del proyecto
+puede leer "//" como sintaxis de código la primera vez que lo ve) — ver el mismo hallazgo
+ya corregido en CLAUDE.md, punto 10. Los 2 mockups siguen siendo válidos como propuesta
+visual (dueño respondió "me gustan los mockups"), entregados para elegir dirección antes
+de tocar `shell.html`. Nada implementado en producto todavía; es una conversación de
+dirección, no de ejecución (regla del proyecto). Ver los archivos entregados (no
+versionados en este repo) para el detalle visual — este documento no reproduce imágenes.
 
 ---
 
