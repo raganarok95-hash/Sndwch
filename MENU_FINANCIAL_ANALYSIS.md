@@ -1788,6 +1788,21 @@ resto del sistema). Cada archivo incluye además el avatar aislado a 64/44/32/24
 fondo blanco, cubriendo también la prueba de legibilidad a tamaño real pendiente de
 §13.7. Pendiente: correr esto con el panel real de 5-8 personas.
 
+**Corrección de contexto del dueño (2026-08-10)**: el dueño eligió la variante A (avatar
+negro/anillo dorado) como la mejor de las dos, pero corrigió una asunción de este consejo
+y de las sesiones previas — el canal principal de venta NO es un listado tipo
+Rappi/PedidosYa (nunca confirmado como canal real de este negocio, ver estructura del
+proyecto en `CLAUDE.md`: cliente de una sola página + backend propio, sin integración de
+marketplace documentada), sino **redes sociales y la web propia**. También pidió no
+seguir generando mockups que impliquen retests formales repetidos con personas reales
+("mucho trabajo sin privilegios"). En respuesta, se generó
+`retest-context-social-a.html` (PNG entregado): la variante A aplicada a los contextos
+reales (foto de perfil de Instagram/Facebook/WhatsApp Business 1080×1080, cómo se ve en
+una lista de chats de WhatsApp junto a otros contactos, comparación directa contra el
+ícono de app YA en producción `icon-192.png`, y crops a 56px/32px) — sin pedir un nuevo
+test formal, solo para revisión directa del dueño. Pendiente: el dueño decide si esto
+cierra la dirección del ícono o si sigue en exploración.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
