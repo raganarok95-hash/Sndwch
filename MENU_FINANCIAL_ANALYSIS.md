@@ -1750,6 +1750,28 @@ lanzamiento; el color #1E3932 (verde oscuro, producción actual) contra la conve
 cálida del rubro delivery se mencionó pero no se llevó a una decisión ni se verificó si
 sigue en juego o es una decisión ya cerrada fuera de alcance de este council.
 
+**Investigación de competidores reales, ejecutada 2026-08-10** (`WebSearch`, sin acceso a
+capturas reales de Rappi/PedidosYa — herramientas de este entorno no llegan a esos
+dominios directamente, ver "Capacidades y limitaciones" en `CLAUDE.md`): la categoría
+"Sándwiches" de Rappi en Trujillo lista 48-50 restaurantes, todos negocios pequeños con
+naming 100% literal/descriptivo (Sanguchería Don Pacho, Sanguchería Montero, San
+Agustín) — ninguno usa un signo abstracto ni sistema de marca deliberado; SND//WCH ya se
+diferencia de esa categoría local solo por tener identidad de marca, el "//" no compite
+contra otro signo abstracto local porque no existe ninguno. Las cadenas peruanas de fast-
+casual (Bembos —confirmado con fuente dedicada: rojo/amarillo diagonal, pop-art de alto
+contraste—, Norkys, China Wok, Otto Grill, Popeyes) coinciden en paleta cálida/saturada
+(rojo-amarillo-naranja); ninguna referencia usa verde oscuro — confirma con datos reales,
+no solo teoría, que el #1E3932 actual rompe la convención de categoría que el Executor
+señaló sin dato local en el council. Estructuralmente, las tarjetas de listado de
+Rappi/PedidosYa se arman alrededor de una foto de producto grande con el logo como avatar
+circular pequeño superpuesto — el logo nunca carga solo el peso de comunicar "comida" en
+el uso real de la app, lo que respalda con evidencia de mercado (no solo argumento
+teórico) la posición del First Principles Thinker y el Contrarian en el Council #8: el
+test que aisló el "//" sin foto de producto ni contexto no representa cómo se usa la app
+realmente. Reporte completo en
+`investigacion-competidores-reales-2026-08-10.md` (entregado al dueño, no versionado en
+este repo).
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
