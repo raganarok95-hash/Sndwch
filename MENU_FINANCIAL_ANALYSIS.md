@@ -1772,6 +1772,22 @@ realmente. Reporte completo en
 `investigacion-competidores-reales-2026-08-10.md` (entregado al dueño, no versionado en
 este repo).
 
+**Mockups de contexto para el retest, generados 2026-08-10** (`retest-context-card-a.html`
+/ `-b.html`, entregados como PNG, no versionados en este repo): siguiendo el hallazgo de
+arriba, se construyó el avatar "//" (dos barras diagonales dentro de un círculo — mismo
+motivo de corte de los Mockups A/B, nunca literalizado en pan) y se simuló dentro de una
+tarjeta de listado de delivery real (foto de portada + avatar superpuesto + nombre +
+rating/tiempo), usando la foto de producto real de SIG01 (`img/sig01.jpg`, ya en
+producción) en vez de un mockup aislado — exactamente lo que el council recomendó como
+"lo primero que hay que hacer". Variante A (avatar negro con anillo dorado #CBA258)
+mantiene mucho más contraste contra el chrome blanco de la app que la variante B (avatar
+crema con borde fino oscuro, casi se funde con el fondo blanco de la tarjeta a 24px) —
+hallazgo visual nuevo, no anticipado por ningún asesor del council, a favor de la
+variante A específicamente para el uso de avatar de listado (no necesariamente para el
+resto del sistema). Cada archivo incluye además el avatar aislado a 64/44/32/24px sobre
+fondo blanco, cubriendo también la prueba de legibilidad a tamaño real pendiente de
+§13.7. Pendiente: correr esto con el panel real de 5-8 personas.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
