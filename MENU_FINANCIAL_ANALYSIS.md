@@ -1680,6 +1680,76 @@ identidad visual YA en producción (`shell.html`/`app.ts`, paleta verde/dorado a
 la accesibilidad/contraste para baja visión; nadie probó el lockup completo "SND//WCH" a
 tamaño de handle de red social o rótulo de bolsa.
 
+### 13.8 Octavo council — el "//" y el look-and-feel, sin literalizar en pan (2026-08-10)
+
+Después de §13.7, se generó un tercer mockup ("Mockup C") que convertía las dos barras
+del "//" en una textura literal de pan (gradiente corteza-migas, bordes irregulares,
+sombra de profundidad) como respuesta directa al hallazgo #4 de §13.7 (ningún mockup
+evocó comida en el test real). **El dueño rechazó esta dirección explícitamente**: "No me
+gusta para nada que cambies a algo como pan o comida el //" — el "//" debe seguir siendo
+signo gráfico/tipográfico, nunca una ilustración/textura literal de comida. Pidió un
+council dedicado con esa restricción explícita, más comparación con negocios/marcas
+reales funcionando. Veredicto completo en
+`council-report-2026-08-10-look-and-feel-8.html` /
+`council-transcript-2026-08-10-look-and-feel-8.md` (entregados al dueño, no versionados
+en este repo). **Nada decidido ni implementado.**
+
+**Hallazgo principal, 5/5 asesores**: el test de §13.7 (mostrar el "//" aislado, sin
+wordmark, sin color de marca, sin contexto, y preguntar "¿qué venden acá?") midió la
+pieza equivocada. Bajo ese mismo estándar fallarían casi todos los íconos abstractos de
+marcas reales (swoosh de Nike, puntos de Domino's, flecha oculta de FedEx, pimiento de
+Chipotle, "1" de F1). Ningún ícono de restaurante carga solo el peso semántico de "esto
+es comida" — lo hace el sistema completo (color + tipografía + wordmark + contexto +
+repetición). El Mockup C fue la solución equivocada (problema de sistema disfrazado de
+problema de glifo) — y cualquier variante "suavizada" de la misma idea (fondo color-pan,
+sombra que insinúa migas) sigue rozando la restricción explícita del dueño.
+
+**Punto ciego más señalado, 4/5 revisores**: la propuesta de escalar el "//" a sistema de
+movimiento (animación en carga de app/confirmación de pedido) y lenguaje gráfico completo
+(separadores de menú, cinta de empaque, recibos) es una dirección válida a mediano plazo,
+pero ignora el plazo de 27 días hasta el lanzamiento y tiene una contradicción interna
+(afirma "todo vive en pantalla, sin restricción de señalética" y en el mismo aliento
+propone cinta de empaque y recibos térmicos, que son superficies físicas). Queda
+archivada para retomar después de elegir dirección, no descartada — mismo tratamiento que
+recibió la propuesta equivalente del Expansionist en §13.7.
+
+**Hueco más grave y repetido, 4-5 de 5 revisores**: cero benchmarks locales. El dueño
+pidió explícitamente comparar con "negocios/marcas reales funcionando" — los 5 asesores
+solo nombraron gigantes globales (Nike, FedEx, Domino's, Chipotle, F1, Cash App, Chick-
+fil-A, Häagen-Dazs, Robinhood, Slack), ninguno una marca de delivery/fast-casual operando
+hoy en Trujillo o Perú, que es la comparación real que el dueño pidió y que más importa
+porque es contra eso que un cliente compara el ícono en un scroll real de Rappi/PedidosYa.
+Segundo hueco: nadie propuso simplemente re-testear los Mockups A/B **completos** (con
+wordmark y color) contra el mismo panel antes de generar algo nuevo — la validación más
+barata y directa disponible, y nadie la puso como primer paso.
+
+**Recomendación del consejo**: no generar un cuarto mockup del glifo todavía. Antes: (1)
+re-testear los Mockups A/B completos — wordmark "SND//WCH" entero, color de marca,
+simulados dentro de una miniatura de listado de delivery — contra un panel similar de 5-8
+personas, misma pregunta ("¿qué venden acá?"); (2) investigar 3-5 competidores reales de
+delivery/fast-casual en Trujillo/Perú (capturas de su ícono/logo en listados reales de
+Rappi/PedidosYa) como referencia de contraste — directamente lo que el dueño pidió y
+ningún asesor hizo con profundidad esta vez; (3) la idea del Outsider — favicon = "//"
+sobre una forma/fondo que sugiere comida, sin que el glifo mismo se vuelva ilustrativo (ej.
+un óvalo color-pan como FONDO detrás del glifo tipográfico, no el glifo convertido en
+pan) — es la única propuesta que resuelve la tensión "necesita evocar comida" vs. "no debe
+volverse pan" sin rozar la restricción del dueño; vale maquetarla como variante adicional,
+no como reemplazo del glifo.
+
+**Lo primero que hay que hacer**: re-testear el Mockup A (o B) completo — wordmark entero,
+color de marca, dentro de una miniatura de listado de delivery — contra el mismo tipo de
+panel de 5-8 personas, misma pregunta. Si en ese contexto real el "//" sí lee como corte/
+comida, el glifo nunca fue el problema y el consejo se ahorra generar más variantes de un
+símbolo que no era la variable rota.
+
+Puntos ciegos adicionales sin resolver (heredados de §13.7, todavía sin cerrar): el
+thumbnail de listado de delivery nunca se definió como spec de diseño real (tamaño en
+píxeles, comportamiento de recorte, chrome de la plataforma); nadie propuso un plan de
+contingencia si el retest con wordmark+contexto también falla, a menos de un mes del
+lanzamiento; el color #1E3932 (verde oscuro, producción actual) contra la convención
+cálida del rubro delivery se mencionó pero no se llevó a una decisión ni se verificó si
+sigue en juego o es una decisión ya cerrada fuera de alcance de este council.
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),
