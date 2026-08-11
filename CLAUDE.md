@@ -291,6 +291,18 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     como sintaxis de código/ruta de archivo la primera vez que lo ve) sigue siendo válido
     como dato de percepción externa a reforzar visualmente — pero no asumir de nuevo que
     el propio proyecto/dueño alguna vez tuvo esa intención o que hace falta "corregirla".
+    **"El '//' en sí" significa la FORMA — dos barras/trazos diagonales paralelos
+    reconocibles como el glifo "//" — no solo el concepto abstracto de "corte".**
+    Error real cometido 2026-08-11: al pedir "20 modelos creativos desde cero con el //
+    como principal", se generaron 20 variantes que reinterpretaban el propio glifo en
+    otras formas (puntos, hexágonos, espirales, red de nodos, chevrons) conectadas al
+    concepto de "corte" pero ya no reconocibles como dos barras paralelas — el dueño lo
+    rechazó explícitamente: "no vamos a cambiar nunca el //". Lo que sí puede/debe variar
+    en una ronda "creativa" es todo lo DEMÁS alrededor del mismo glifo fijo: color,
+    fondo, marco/contenedor, proporción de las barras, acabado (plano/degradado/
+    sombra/metálico) — nunca la identidad estructural de las dos barras diagonales en
+    sí. Antes de generar variantes "creativas" del ícono, confirmar cuál de las dos
+    interpretaciones aplica si hay ambigüedad real en el pedido.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
