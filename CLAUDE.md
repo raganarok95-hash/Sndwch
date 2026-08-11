@@ -91,9 +91,11 @@ intento manual sea carísimo en tokens y fácil de arruinar a medias.
 ## Flujos y funcionalidades actuales del cliente
 
 Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 7 Signatures
-(6 públicos + `SIG05` THE VAULT, menú secreto), 6 proteínas build-your-own (`P03` es
-exclusiva del VAULT, no se puede armar por BYO), 4 bebidas de la casa (sin gaseosas de
-reventa, decisión de marca), tamaños 15CM/30CM, doble proteína, salsa extra.
+(6 públicos + `SIG05`, menú secreto de **rotación mensual** — ya no se llama "The Vault",
+decisión del dueño 2026-08-10, ver detalle abajo), 6 proteínas build-your-own (una puede
+quedar exclusiva del menú secreto según el ciclo vigente, no se puede armar por BYO), 4
+bebidas de la casa (sin gaseosas de reventa, decisión de marca), tamaños 15CM/30CM, doble
+proteína, salsa extra.
 
 **Formato de pan (fotografía/generación de producto):** el sándwich SIEMPRE es un pan
 tipo sub/hoagie alargado (formato "Subway"), sin importar el nombre del `BASES` elegido
@@ -118,7 +120,7 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → INICIADO (5, desbloquea THE VAULT) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5, desbloquea el menú secreto) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).
@@ -144,7 +146,26 @@ Signature o build.
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
   gestión de inventario/cuentas admin/horario editable, exportar CSV, log de auditoría,
-  contenido de marketing semanal listo para copiar.
+  contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
+  (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
+  pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
+  sesión de código, ver detalle técnico abajo).
+- **Menú secreto con rotación mensual** (decisión del dueño, 2026-08-10 — reemplaza "The
+  Vault" fijo que existió hasta esa fecha; SIG05 sigue siendo su id interno, el concepto
+  "menú secreto/desbloqueo por rango/composición nunca revelada al cliente" no cambió,
+  solo dejó de tener un nombre/receta fijos). Tabla `secret_signature` en Supabase
+  (append-only: publicar SIEMPRE inserta una fila nueva, nunca actualiza in-place — la
+  fila de mayor id es la vigente, así el historial de sándwiches secretos anteriores
+  queda gratis). `loadSecretSignature()` (`supabase/functions/api/catalog.ts`) refresca
+  `SIG_DATA.SIG05`/`SIG_LABEL.SIG05`/`SIG_GATES.SIG05`/`VAULT_ONLY_PROTS`/
+  `VAULT_ONLY_TOPS`/`VAULT_ONLY_SAUCES` desde esa fila en cada `loadCatalogPrices()`
+  (mismo patrón ya usado para precios editables, ver `catalog_prices`). El cliente
+  (`src/app.ts`, `loadCatalogBackground()`) recibe la composición vigente vía la acción
+  pública `get-catalog` (`secretSignature` en la respuesta) y sobreescribe la entrada
+  SIG05 del array `SIGS` en memoria — el literal de `SIGS`/`SIG_DATA` en código es solo
+  el respaldo/semilla del primer render, nunca la fuente real una vez que el fetch
+  resuelve. Panel de edición: Admin // Catálogo // Menú secreto
+  (`sAdminSecretSignature()`/`admin-secret-signature-get`/`admin-secret-signature-set`).
 
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
@@ -426,6 +447,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     actual de correo/texto-plano, un solo flujo más seguro para el 100% de las cuentas.
   - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
     y la fricción de configurar el número en Meta Business Platform — no antes.
+- **Producción de video para marketing: el dueño ya tiene su propio proceso con Google
+  Flow (generación de video con IA), confirmado 2026-08-10** — no es una integración de
+  este repo ni de este entorno, el dueño genera y carga los videos por su cuenta fuera de
+  esta sesión. No asumir que hace falta resolver generación de video como capacidad
+  pendiente de este proyecto; si se pide ayuda con guiones/prompts para esos videos, es
+  contenido de apoyo al proceso ya existente del dueño, no una integración técnica nueva.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en

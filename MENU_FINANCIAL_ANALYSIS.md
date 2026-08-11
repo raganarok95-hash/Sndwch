@@ -1803,6 +1803,52 @@ una lista de chats de WhatsApp junto a otros contactos, comparación directa con
 test formal, solo para revisión directa del dueño. Pendiente: el dueño decide si esto
 cierra la dirección del ícono o si sigue en exploración.
 
+### 13.9 "The Vault" pasa a rotación mensual (2026-08-10) — implementado
+
+El dueño, en el mismo mensaje que rechazó el logo (§13 arriba), pidió además: (1) "muchas
+más opciones" de logo (ver §13.8/investigación de competidores — no aplica acá) y (2)
+**"el sandwich secreto ya no se llamará the vault sino que rotará todos los meses"**.
+Todas las menciones a "THE VAULT" en las secciones §1-12 de este documento (análisis de
+costeo, coherencia de receta, feedback de chef) describen el estado histórico — Pollo
+Cajún + Spicy Mayo + Picante-Miel como receta FIJA — vigente hasta esta fecha. No se
+reescriben esas secciones (son el registro de lo que se analizó en su momento); esta
+entrada documenta el cambio real de mecanismo desde acá en adelante.
+
+**Decisiones tomadas vía `AskUserQuestion` antes de implementar** (4 preguntas, todas
+respondidas explícitamente por el dueño):
+1. Mecanismo de actualización: **panel en el admin** (no editar código cada mes).
+2. El concepto "menú secreto" (desbloqueo por rango, composición nunca revelada al
+   cliente) **se mantiene igual** — solo deja de tener nombre/receta fijos.
+3. La proteína/salsas exclusivas (hoy Pollo Cajún/Jalapeño/Spicy Mayo/Picante-Miel)
+   **también rotan** — no quedan ancladas para siempre.
+4. Prioridad: **implementar ya** (no esperar a cerrar primero la dirección de marca).
+
+**Lo implementado** (código + infraestructura, ver detalle técnico en `CLAUDE.md` bajo
+"Menú secreto con rotación mensual"): tabla `secret_signature` en Supabase (append-only,
+semillada con la receta que hasta hoy era "The Vault" — Pollo Cajún/B03/T04+T06+T03/
+S02+S12/S/24-S/30/5 pedidos mínimos — como punto de partida editable, ya renombrada a
+"Menú secreto" como placeholder neutro hasta que el dueño publique un nombre real desde
+el panel); `loadSecretSignature()` server-side que reemplaza los literales fijos
+`SIG_DATA.SIG05`/`SIG_GATES.SIG05`/`VAULT_ONLY_PROTS`/`VAULT_ONLY_TOPS`/
+`VAULT_ONLY_SAUCES` con la fila vigente en cada refresco (mismo patrón que
+`catalog_prices` ya usa para precios editables); el cliente recibe la composición vigente
+vía `get-catalog` y ya no tiene "The Vault" hardcodeado en ningún string visible (barrido
+completo de `src/app.ts`/tests — la única referencia real de usuario, "Ya puedes ver The
+Vault" al subir a INICIADO, ahora dice "Ya puedes ver el menú secreto"); pantalla nueva
+Admin // Catálogo // Menú secreto para publicar el sándwich del mes (nombre, pan,
+proteína, hasta 3 toppings, hasta 2 salsas, qué ingredientes de esos quedan exclusivos
+este ciclo, precio 15CM/30CM, pedidos mínimos para desbloquear, foto opcional), con
+historial de meses anteriores visible debajo. `npm run verify` completo (typecheck+build+
+32/32 tests) pasa con estos cambios.
+
+**Sin resolver, no pedido por el dueño todavía**: qué nombre real usar para el primer mes
+publicado (queda "Menú secreto" de placeholder hasta que el dueño lo edite); si el
+mecanismo de foto (campo de texto con ruta/URL) es suficiente o conviene una subida de
+archivo real desde el panel (se dejó texto simple a propósito, más barato de construir,
+iterable después si resulta incómodo); coherencia de sabor/costeo real del PRIMER
+sándwich que el dueño publique con este mecanismo (cada mes que se recalibre, revisar
+igual que se hizo con Pollo Cajún en §10.6/§15).
+
 ---
 
 *Documento generado como simulación de apoyo a la decisión — versión 4 (2026-07-31),

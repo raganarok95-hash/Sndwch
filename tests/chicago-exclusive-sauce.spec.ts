@@ -4,7 +4,7 @@ import { gotoApp } from './helpers';
 // AU JUS (S13) es la salsa exclusiva de THE CHICAGO (SIG07, Italian Beef) — el caldo de
 // la cocción de la res mechada no tiene sentido como salsa suelta fuera de ese sándwich
 // (hallazgo del dueño: antes se podía elegir en cualquier build sin relación con el
-// Chicago). Mismo criterio que POLLO CAJÚN/THE VAULT (ver vault-exclusive-protein.spec.ts):
+// Chicago). Mismo criterio que POLLO CAJÚN/menú secreto (ver vault-exclusive-protein.spec.ts):
 // sigOnly en SAUCES (src/app.ts) + SIG_ONLY_SAUCES en el backend (catalog.ts).
 
 test('AU JUS (salsa exclusiva de THE CHICAGO) no aparece en ARMA EL TUYO', async ({ page }) => {

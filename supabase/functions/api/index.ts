@@ -46,6 +46,7 @@ import {
   actAdminPromoList, actAdminPromoCreate, actAdminPromoToggle,
   actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete,
   actAdminWaitlistList,
+  actAdminSecretSignatureGet, actAdminSecretSignatureSet,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched } from "./actions/hours.ts";
 import {
@@ -120,6 +121,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
+  "admin-secret-signature-get": actAdminSecretSignatureGet,
+  "admin-secret-signature-set": actAdminSecretSignatureSet,
   "dashboard-stats": actDashboardStats,
   "export-orders": actAdminExportOrders,
   "export-customers": actAdminExportCustomers,

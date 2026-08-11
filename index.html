@@ -282,7 +282,7 @@ var PROTS = [
     // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
     { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14, p30: 22, pDbl: 6 },
     { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Tiras marinadas en teriyaki', p15: 13, p30: 21, pDbl: 6 },
-    // vaultOnly: exclusiva de THE VAULT (SIG05, menú secreto) — no seleccionable en BUILD
+    // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
     // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
     { id: 'P03', l: 'Pollo', s: 'Cajun', d: 'Pechuga deshilachada, condimento cajún', p15: 13, p30: 21, pDbl: 6, vaultOnly: true },
@@ -319,7 +319,7 @@ var PROTS = [
 ];
 // vaultOnly (T04) y sigOnly (T07) — mismo criterio que vaultOnly en PROTS y sigOnly en
 // SAUCES: eran seleccionables en ARMA EL TUYO pese a solo aparecer en la receta de un
-// Signature (T04 en THE VAULT, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
+// Signature (T04 en el menú secreto, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
 // igual que Au Jus (S13). No se pueden pedir por BUILD YOUR OWN aunque sigan en este array
 // (SIG_DATA/priceSigBuild los siguen necesitando para tasar esos Signatures) — filtro real
 // en byoTops() más abajo. DEBEN coincidir con VAULT_ONLY_TOPS/SIG_ONLY_TOPS en catalog.ts.
@@ -355,7 +355,7 @@ var CHEESE = [
 // (hallazgo de auditoría UX).
 var SAUCES = [
     { id: 'S01', l: 'Aioli', s: 'Signature', d: 'Ajo, limón, suave' },
-    // vaultOnly: exclusiva de THE VAULT (SIG05, junto con S12) — mismo criterio que sigOnly
+    // vaultOnly: exclusiva del menú secreto (SIG05, junto con S12) — mismo criterio que sigOnly
     // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
     // por el dueño para tratarla igual que Au Jus.
     { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremoso, calor progresivo', spicy: true, vaultOnly: true },
@@ -558,20 +558,27 @@ var SIGS = [
     // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
     // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
     // elegir en la UI antes de intentarlo.
-    // Pitch sin ingredientes explícitos (pedido del dueño) — THE VAULT es secreto de
-    // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva.
-    // Se revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
+    // Pitch sin ingredientes explícitos (pedido del dueño) — el sándwich secreto lo es de
+    // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva. Se
+    // revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
     // sigPreviewOverlayHTML(), que ocultan el desglose de Pan/Proteína/Toppings/Salsas
     // específicamente para s.secret.
-    { id: 'SIG05', n: 'The Vault', s: 'Reserve', badge: 'Secreto', base: 'B03', prot: 'P03', tops: ['T04', 'T06', 'T03'], sauces: ['S02', 'S12'], p15: 24, p30: 30,
+    // Rotación mensual (decisión del dueño, 2026-08-10 — reemplaza "The Vault" fijo, que
+    // existió hasta esa fecha). n/base/prot/tops/sauces/p15/p30/minOrders de abajo son solo
+    // el respaldo/semilla para el primer render antes de que loadCatalogBackground()
+    // reciba la fila vigente de la tabla `secret_signature` (vía get-catalog); a partir de
+    // ahí esos campos de este mismo objeto se sobreescriben en memoria, igual que ya pasa
+    // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
+    // del mes — eso se hace desde Admin // Menú secreto.
+    { id: 'SIG05', n: 'Menú secreto', s: 'Reserve', badge: 'Secreto', base: 'B03', prot: 'P03', tops: ['T04', 'T06', 'T03'], sauces: ['S02', 'S12'], p15: 24, p30: 30,
         secret: true, minOrders: 5,
-        pitch: 'Solo para clientes INICIADO. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.' }
+        pitch: 'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.' }
 ];
 // Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
 // que el modo "BUILD YOUR OWN" en la pantalla de inicio, confundiendo a un cliente nuevo
 // sobre si estaba viendo un sándwich curado por la casa o el armado libre (hallazgo de
 // auditoría UX, CRÍTICO). Ahora todos los Signatures regulares usan "SIGNATURE" (solo
-// THE VAULT y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
+// el menú secreto y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
 // distinguen tipográficamente del resto del texto — cursiva y más grande, como una
 // firma — para reforzar que son curados por la casa.
 function sigTypeTag(tag) {
@@ -2119,7 +2126,7 @@ function sOHome() {
         // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
         // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
         + (function () {
-            // THE VAULT nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
+            // el menú secreto nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
             // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
             // sección separada, no una fila más entre los Signatures normales). Evita el
             // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
@@ -2405,10 +2412,10 @@ function sOSig() {
         var thumb = SIG_IMG[s.id]
             ? '<img src="' + SIG_IMG[s.id] + '" alt="' + esc(s.n) + '" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
             : '<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">' + icon('sandwich', 26, GOLD) + '</div>';
-        // THE VAULT (s.secret), incluso YA desbloqueado, no debe revelar su composición —
+        // el menú secreto (s.secret), incluso YA desbloqueado, no debe revelar su composición —
         // el punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas
         // (pedido explícito del dueño). Antes esta misma línea mostraba pan+proteína en
-        // texto plano para CUALQUIER Signature, incluida THE VAULT una vez desbloqueada.
+        // texto plano para CUALQUIER Signature, incluida el menú secreto una vez desbloqueada.
         // Antes el pitch (lo que de verdad diferencia sabor/estilo entre Signatures) solo
         // se veía tras abrir "VER FOTO" — comparar 6 Signatures exigía 6 taps extra solo para
         // entender en qué se diferencian (hallazgo de auditoría UX, ALTO). Truncado a 1 línea
@@ -2467,7 +2474,7 @@ function sigPreviewOverlayHTML() {
         + hero
         + '<div style="padding:20px">'
         + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.6;margin-bottom:16px">' + esc(s.pitch || '') + '</p>'
-        // THE VAULT (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
+        // el menú secreto (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
         // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
         // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
         + (s.secret
@@ -3913,7 +3920,7 @@ async function chargeAndFinalize(culqiToken) {
 function finalizeOrderSuccess(res, po, chargeId) {
     // Celebración de rango — antes rankName() era puramente informativo, sin ningún evento
     // ni aviso al cruzar un umbral (hallazgo de auditoría: cero feedback al pasar de NUEVO a
-    // REGULAR, o al desbloquear THE VAULT en INICIADO). Se compara el rango justo antes y
+    // REGULAR, o al desbloquear el menú secreto en INICIADO). Se compara el rango justo antes y
     // justo después de que el servidor confirme este pedido (fuente real: total_orders que
     // ya devuelve el propio res.customer, no un cálculo local que podría desincronizarse).
     var prevRank = cust ? rankName(cust.total_orders) : null;
@@ -3989,7 +3996,7 @@ function sOSent() {
     // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
     // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
     var rankUp = window._lRankUp;
-    var rankPerk = rankUp === 'INICIADO' ? 'Ya puedes ver The Vault — el menú secreto.' : null;
+    var rankPerk = rankUp === 'INICIADO' ? 'Ya puedes ver el menú secreto.' : null;
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
         + '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>'
         // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
@@ -5728,6 +5735,7 @@ function adminToolsSections() {
                 ['inventario', 'Inventario', 'loadInventory()'],
                 ['precios', 'Precios', 'loadAdminCatalog()'],
                 ['horario', 'Horario', 'loadStoreHoursForm()'],
+                ['lock', 'Menú secreto', 'loadSecretSignatureAdmin()'],
             ]],
         ['Cuenta //', [
                 ['puntos', 'Puntos manuales', 'sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
@@ -6553,6 +6561,9 @@ function render() {
         case 'admin_catalog':
             h = sAdminCatalog();
             break;
+        case 'admin_secret':
+            h = sAdminSecretSignature();
+            break;
         case 'admin_dashboard':
             h = sAdminDashboard();
             break;
@@ -6659,6 +6670,33 @@ async function loadCatalogBackground() {
             d.p = v; });
         RWDS.forEach(function (rw) { var v = r.rewardPts && r.rewardPts[rw.id]; if (typeof v === 'number')
             rw.pts = v; });
+        // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05
+        // era un literal fijo ('The Vault', Pollo Cajún) en el array de arriba. Ahora
+        // r.secretSignature trae la composición vigente (nombre/pan/proteína/tops/salsas/
+        // precio/minOrders) publicada desde Admin // Menú secreto, y este bloque la vuelca
+        // sobre la misma entrada SIG05 ya presente en SIGS — el resto del código (vaultCard,
+        // sigPreviewOverlayHTML, checkout) sigue leyendo esos mismos campos sin cambios.
+        var secret = r.secretSignature;
+        if (secret) {
+            var secretSig = SIGS.find(function (s) { return s.id === 'SIG05'; });
+            if (secretSig) {
+                secretSig.n = secret.name;
+                secretSig.base = secret.base;
+                secretSig.prot = secret.prot;
+                secretSig.tops = secret.tops;
+                secretSig.sauces = secret.sauces;
+                secretSig.p15 = secret.p15;
+                secretSig.p30 = secret.p30;
+                secretSig.minOrders = secret.minOrders;
+            }
+            // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
+            // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
+            // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que
+            // el sándwich secreto de este mes reserva para sí, ni más ni menos.
+            PROTS.forEach(function (p) { p.vaultOnly = (secret.vaultOnlyProts || []).indexOf(p.id) >= 0; });
+            TOPS.forEach(function (t) { t.vaultOnly = (secret.vaultOnlyTops || []).indexOf(t.id) >= 0; });
+            SAUCES.forEach(function (sc) { sc.vaultOnly = (secret.vaultOnlySauces || []).indexOf(sc.id) >= 0; });
+        }
     }
     catch (e) { }
 }
@@ -7026,6 +7064,137 @@ async function saveAllCatalogChanges() {
     busy = false;
     render();
     setTimeout(function () { catalogMsg = ''; if (sc === 'admin_catalog')
+        render(); }, 2500);
+}
+// MENÚ SECRETO — rotación mensual (decisión del dueño, 2026-08-10, reemplaza "The Vault"
+// fijo). Publicar un cambio INSERTA una fila nueva en `secret_signature` (nunca
+// actualiza in-place, ver actAdminSecretSignatureSet) — la fila de mayor id es la
+// vigente, así queda historial de sándwiches secretos anteriores gratis.
+var ssName = '', ssBase = '', ssProt = '', ssTops = [], ssSauces = [], ssVaultIds = [], ssP15 = '', ssP30 = '', ssMinOrders = '', ssImagePath = '', ssMsg = '', ssHistory = [];
+async function loadSecretSignatureAdmin() {
+    sc = 'admin_secret';
+    busy = true;
+    busyMsg = 'Cargando menú secreto...';
+    render();
+    try {
+        var r = await api('admin-secret-signature-get', { token: token });
+        var cur = r.current;
+        ssName = cur ? cur.name : '';
+        ssBase = cur ? cur.base : 'B03';
+        ssProt = cur ? cur.protein_id : '';
+        ssTops = cur && Array.isArray(cur.tops) ? cur.tops.slice() : [];
+        ssSauces = cur && Array.isArray(cur.sauces) ? cur.sauces.slice() : [];
+        ssVaultIds = cur && Array.isArray(cur.vault_only_ids) ? cur.vault_only_ids.slice() : [];
+        ssP15 = cur ? String(cur.price_15) : '';
+        ssP30 = cur ? String(cur.price_30) : '';
+        ssMinOrders = cur ? String(cur.min_orders) : '5';
+        ssImagePath = cur && cur.image_path ? cur.image_path : '';
+        ssHistory = r.history || [];
+    }
+    catch (e) {
+        showToast('Error: ' + e.message);
+    }
+    busy = false;
+    render();
+}
+function ssToggle(arr, id, max) {
+    var i = arr.indexOf(id);
+    if (i >= 0) {
+        arr.splice(i, 1);
+        var vi = ssVaultIds.indexOf(id);
+        if (vi >= 0)
+            ssVaultIds.splice(vi, 1);
+    }
+    else if (arr.length < max)
+        arr.push(id);
+    render();
+}
+function ssToggleVault(id) {
+    var i = ssVaultIds.indexOf(id);
+    if (i >= 0)
+        ssVaultIds.splice(i, 1);
+    else
+        ssVaultIds.push(id);
+    render();
+}
+function ssChip(sel, label, onclick) {
+    return '<div onclick="' + onclick + '" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:8px;padding:9px 12px;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text,#FFFFFF);display:inline-block;margin:0 6px 6px 0">' + label + '</div>';
+}
+function sAdminSecretSignature() {
+    var chosenIds = [ssProt, ...ssTops, ...ssSauces].filter(function (id) { return !!id; });
+    var vaultChips = chosenIds.map(function (id) {
+        var item = PROTS.find(function (x) { return x.id === id; }) || TOPS.find(function (x) { return x.id === id; }) || SAUCES.find(function (x) { return x.id === id; });
+        if (!item)
+            return '';
+        var sel = ssVaultIds.indexOf(id) >= 0;
+        return ssChip(sel, (sel ? '✓ ' : '') + item.l + ' ' + item.s, "ssToggleVault('" + id + "')");
+    }).join('');
+    return H('MENÚ SECRETO', "loadAdmin()")
+        + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
+        + (ssMsg ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">' + esc(ssMsg) + '</div>' : '')
+        + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">El sándwich secreto rota — publica una receta nueva cuando quieras, sin depender de una sesión de código. El nombre y el precio son lo único que el cliente ve; la composición se revela recién cuando lo pide.</p>'
+        + '<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Nombre del mes</div>' + INP('ss-name', 'ej. Reserva de Agosto', 'text', ssName) + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
+        + '<div style="margin-bottom:14px">' + BASES.map(function (b) { return ssChip(ssBase === b.id, b.l + ' ' + b.s, "ssBase='" + b.id + "';render()"); }).join('') + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
+        + '<div style="margin-bottom:14px">' + PROTS.filter(function (p) { return !p.sigOnly; }).map(function (p) { return ssChip(ssProt === p.id, p.l + ' ' + p.s, "ssProt='" + p.id + "';var vi=ssVaultIds.indexOf('" + p.id + "');render()"); }).join('') + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 (' + ssTops.length + '/3)</div>'
+        + '<div style="margin-bottom:14px">' + TOPS.filter(function (t) { return !t.sigOnly; }).map(function (t) { return ssChip(ssTops.indexOf(t.id) >= 0, t.l + ' ' + t.s, "ssToggle(ssTops,'" + t.id + "',3)"); }).join('') + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 (' + ssSauces.length + '/2)</div>'
+        + '<div style="margin-bottom:14px">' + SAUCES.filter(function (s) { return !s.sigOnly; }).map(function (s) { return ssChip(ssSauces.indexOf(s.id) >= 0, s.l + ' ' + s.s, "ssToggle(ssSauces,'" + s.id + "',2)"); }).join('') + '</div>'
+        + (chosenIds.length ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Exclusivos de este mes //</div>'
+            + '<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:8px">Marca los ingredientes que NO deben poder armarse por Arma el tuyo este mes — es lo que hace que valga la pena desbloquear el secreto.</p>'
+            + '<div style="margin-bottom:14px">' + vaultChips + '</div>' : '')
+        + '<div style="display:flex;gap:8px;margin-bottom:14px">' + cpNumField('ss-p15', '15CM', ssP15) + cpNumField('ss-p30', '30CM', ssP30) + cpNumField('ss-min', 'Pedidos mín.', ssMinOrders) + '</div>'
+        + '<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Foto (ruta/URL, opcional)</div>' + INP('ss-img', 'ej. img/sig05.jpg', undefined, ssImagePath) + '</div>'
+        + BTN('Publicar sándwich del mes //', 'saveSecretSignature()')
+        + (ssHistory.length ? '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+            + ssHistory.map(function (h) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + esc(h.name) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
+        + '</div>';
+}
+async function saveSecretSignature() {
+    ssName = gv('ss-name');
+    ssImagePath = gv('ss-img');
+    ssP15 = gv('ss-p15');
+    ssP30 = gv('ss-p30');
+    ssMinOrders = gv('ss-min');
+    if (!ssName.trim()) {
+        showToast('Falta el nombre del sándwich del mes.');
+        return;
+    }
+    if (!ssBase || !ssProt) {
+        showToast('Elige pan y proteína.');
+        return;
+    }
+    if (!ssTops.length && !ssSauces.length) {
+        showToast('Elige al menos un topping o una salsa.');
+        return;
+    }
+    var p15 = Number(ssP15), p30 = Number(ssP30), minOrders = Number(ssMinOrders);
+    if (!(p15 > 0) || !(p30 > 0)) {
+        showToast('Precio inválido.');
+        return;
+    }
+    if (!Number.isInteger(minOrders) || minOrders < 0) {
+        showToast('Pedidos mínimos inválido.');
+        return;
+    }
+    busy = true;
+    busyMsg = 'Publicando...';
+    render();
+    try {
+        await api('admin-secret-signature-set', { token: token, name: ssName.trim(), base: ssBase, proteinId: ssProt, tops: ssTops, sauces: ssSauces, vaultOnlyIds: ssVaultIds, price15: p15, price30: p30, minOrders: minOrders, imagePath: ssImagePath.trim() || null });
+        await loadCatalogBackground();
+        ssMsg = 'Sándwich del mes publicado.';
+    }
+    catch (e) {
+        busy = false;
+        render();
+        showToast('Error: ' + e.message);
+        return;
+    }
+    await loadSecretSignatureAdmin();
+    setTimeout(function () { ssMsg = ''; if (sc === 'admin_secret')
         render(); }, 2500);
 }
 // FICHA DE CLIENTE (#94) — historial completo de un cliente (pedidos, puntos,
@@ -7820,7 +7989,7 @@ function sAdminCalendar() {
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Nueva entrada //</div>';
     h += '<div style="display:flex;flex-direction:column;gap:8px">'
         + INP('cal-date', 'Fecha', 'date', calDate)
-        + INP('cal-title', 'Tema // ej. Lanzamiento THE VAULT', 'text', calTitle)
+        + INP('cal-title', 'Tema // ej. Sándwich secreto del mes', 'text', calTitle)
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">' + CAL_CHANNELS.map(function (c) { return '<div onclick="setCalChannel(\'' + c[0] + '\')" style="text-align:center;background:' + (calChannel === c[0] ? 'var(--sw-card2,#1A3028)' : 'transparent') + ';border:1px solid ' + (calChannel === c[0] ? GOLD : '#3A6B58') + ';border-radius:8px;padding:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + (calChannel === c[0] ? GOLD : '#A8C8B0') + '">' + c[1] + '</div>'; }).join('') + '</div>'
         + INP('cal-caption', 'Texto para el post // opcional', 'text', calCaption)
         + INP('cal-whatsapp', 'Texto para difusión WhatsApp // opcional', 'text', calWhatsapp)

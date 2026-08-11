@@ -237,7 +237,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // inmediato en vez de dejar que se entere la próxima vez que abra su perfil.
     const previousRank = computeRankName(c.total_orders || 0);
     if (previousRank !== customerRank) {
-      // El rango exacto que desbloquea THE VAULT se deriva de SIG_GATES (hoy 5 pedidos,
+      // El rango exacto que desbloquea el menú secreto se deriva de SIG_GATES (hoy 5 pedidos,
       // antes 15) en vez de estar escrito a mano acá — así este aviso no se desincroniza
       // si el umbral de negocio vuelve a cambiar.
       const vaultRank = computeRankName(SIG_GATES.SIG05.minOrders);
@@ -1478,7 +1478,7 @@ export async function actCancelMyOrder(b: any) {
   // los puntos de una recompensa canjeada, dejando los puntos GANADOS como un premio
   // permanente aunque el pedido se cancelara y el stock se restituyera. Eso permitía
   // "pedir con crédito propio → cancelar → repetir" para farmear puntos infinitos sin
-  // costo real, e inflar total_orders para desbloquear rangos/THE VAULT sin comprar de
+  // costo real, e inflar total_orders para desbloquear rangos/menú secreto sin comprar de
   // verdad (hallazgo de auditoría de código — CRÍTICO). Ahora se revierte exactamente
   // el mismo delta neto que finalizeAndInsertOrder/confirmManualPayment aplicaron al
   // pagar: total ganado menos puntos de recompensa ya restados en ese momento. Solo

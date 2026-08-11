@@ -95,9 +95,9 @@ export async function actFavoritesAdd(b: any) {
   await assertUnderLimit("favorites", s.phone, MAX_FAVORITES, "favoritos guardados");
   await loadCatalogPrices();
   // Antes faltaba acá — actPrepareOrder/actPlaceOrder/actAddGroupItem ya validaban el
-  // gate de rango (ej. THE VAULT solo para INICIADO+) antes de tasar, pero
+  // gate de rango (ej. menú secreto solo para INICIADO+) antes de tasar, pero
   // actFavoritesAdd tasaba con deriveOrder() sin pasar por sigGateError primero: un
-  // cliente con 0 pedidos podía GUARDAR THE VAULT como favorito llamando a la API
+  // cliente con 0 pedidos podía GUARDAR el menú secreto como favorito llamando a la API
   // directo, aunque el checkout normal lo siga rechazando al intentar pedirlo de verdad
   // (hallazgo de auditoría de composición/exclusividad, ALTO).
   if (b.mode === "sig") {

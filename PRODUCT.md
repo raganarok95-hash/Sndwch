@@ -18,7 +18,7 @@ SND//WCH es una sandwichería con pedidos online — build-your-own o Signatures
 
 ## Positioning
 
-Se distingue deliberadamente de un build-your-own tipo Subway: Signatures curados con nombre propio, un menú secreto (THE VAULT, desbloqueado por rango de fidelidad) y una identidad de marca centrada en el símbolo "//" — sin apoyarse en gaseosas de reventa ni en ninguna identidad regional/geográfica.
+Se distingue deliberadamente de un build-your-own tipo Subway: Signatures curados con nombre propio, un menú secreto de rotación mensual (desbloqueado por rango de fidelidad, antes fijo bajo el nombre "The Vault") y una identidad de marca centrada en el símbolo "//" — sin apoyarse en gaseosas de reventa ni en ninguna identidad regional/geográfica.
 
 ## Operating Context
 
@@ -30,7 +30,7 @@ Se distingue deliberadamente de un build-your-own tipo Subway: Signatures curado
 
 ## Capabilities and Constraints
 
-- Catálogo: build-your-own (base+proteína+toppings+salsas, tamaños 15CM/30CM, doble proteína) o 7 Signatures (6 públicos + THE VAULT secreto, desbloqueado por rango); 4 bebidas de la casa (sin gaseosas de reventa).
+- Catálogo: build-your-own (base+proteína+toppings+salsas, tamaños 15CM/30CM, doble proteína) o 7 Signatures (6 públicos + el menú secreto (rotación mensual), desbloqueado por rango); 4 bebidas de la casa (sin gaseosas de reventa).
 - Checkout multi-ítem: tarjeta (Culqi, reserva atómica antes de cobrar), Yape/Plin manual, crédito interno, recompensa que cubre el 100%, o combinación con código promocional; pedido inmediato o programado dentro de horario.
 - Fidelidad: puntos 1:1 por sol gastado, bono de bienvenida/referido, retos mensual y de descubrimiento, rangos puramente cosméticos (nunca cambian precio), recompensas canjeables (R02-R06), tarjeta de regalo (con puntos, sin cobro real), Plan Semanal (paga S/95 hoy, recibe S/100 en saldo).
 - Pedido grupal: un organizador crea un código, cualquiera con el link agrega su sándwich sin cuenta, se paga todo junto.

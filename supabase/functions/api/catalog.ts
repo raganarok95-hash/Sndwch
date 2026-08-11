@@ -107,18 +107,26 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // — DEBE coincidir con PROTS.P07 en src/app.ts.
   P07: { p15: 14, p30: 22, pDbl: 6 },
 };
-// Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
-// se pueden pedir por BUILD YOUR OWN aunque sigan en PROT_PRICE (deriveCart/deriveOrder
-// las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
-// justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
+// Proteína/toppings/salsas exclusivas del sándwich secreto — no se pueden pedir por
+// BUILD YOUR OWN aunque sigan en PROT_PRICE/VALID_TOPS/VALID_SAUCES (deriveCart/
+// deriveOrder las siguen necesitando para tasar SIG05). Es lo que hace que el precio del
+// menú secreto sea justificable: no existe forma de armar el mismo sándwich más barato
+// fuera de él. Antes eran Sets fijos en código (solo Pollo Cajún/Jalapeño/Spicy Mayo/
+// Picante Miel, hardcodeados); desde la rotación mensual del sándwich secreto (decisión
+// del dueño, 2026-08-10) el contenido de estos 3 Sets se recalcula en cada
+// loadSecretSignature() a partir de `vault_only_ids` de la fila vigente en la tabla
+// `secret_signature` — mutables (.clear()/.add()) en vez de literales para que ese
+// refresco funcione sin reasignar el binding que ya importan otros módulos.
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
-// T04 (Jalapeño) y S02/S12 (Spicy Mayo/Picante Miel) — mismos criterio y motivo que
-// VAULT_ONLY_PROTS: solo aparecían en SIG_DATA.SIG05 pero eran seleccionables igual por
-// BUILD YOUR OWN (hallazgo de auditoría de menú, confirmado por el dueño para tratarlos
-// igual que Au Jus). Se mantienen en VALID_TOPS/VALID_SAUCES porque SIG_DATA/priceCartItem
-// las siguen necesitando para tasar THE VAULT.
 export const VAULT_ONLY_TOPS = new Set(["T04"]);
 export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
+// Nombre del sándwich secreto vigente (ej. "Reserva de Agosto") — separado de
+// SIG_LABEL.SIG05 porque ese trae pegado el sufijo " // RESERVE" usado en notificaciones/
+// recibos, mientras que este es el nombre "limpio" que se muestra en la tarjeta del
+// cliente (ver secretSig.n en src/app.ts). `let` en vez de `const` porque
+// loadSecretSignature() lo reasigna en cada refresco (a diferencia de los Sets de
+// arriba, un string no se puede mutar in-place).
+export let SECRET_SIGNATURE_NAME = "Menú secreto";
 // Salsas exclusivas de un signature público, no secreto (hoy solo S13 "Au Jus" → SIG07
 // "THE CHICAGO") — mismo criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR
 // OWN aunque sigan en VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para
@@ -135,7 +143,7 @@ export const SIG_ONLY_TOPS = new Set(["T07"]);
 export const SIG_ONLY_PROTS = new Set(["P07"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
-// Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
+// Signature más caro disponible (SIG05 (menú secreto) S/24, SIG07 THE CHICAGO S/25)
 // muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
@@ -197,7 +205,12 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
-  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
+  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
+  // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
+  // 2026-08-10) loadSecretSignature() los sobreescribe en cada refresco con la fila
+  // vigente de la tabla `secret_signature` (ver esa función más abajo), igual que
+  // loadCatalogPrices() ya hace con los precios. No editar este literal para cambiar el
+  // sándwich del mes — eso se hace desde el panel admin.
   SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
   // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
   // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
@@ -214,6 +227,9 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
 // (sin sesión) nunca puede pedirlos, sin importar qué diga el carrito.
 // Bajado de 15 a 5 pedidos (decisión de negocio) para que el menú secreto se desbloquee
 // mucho antes en la vida del cliente — DEBE coincidir con SIG05.minOrders en src/app.ts.
+// minOrders también admin-editable por fila desde la rotación mensual — ver
+// loadSecretSignature(), que sobreescribe SIG_GATES.SIG05.minOrders igual que sobreescribe
+// SIG_DATA.SIG05 arriba.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
   SIG05: { minOrders: 5 },
 };
@@ -281,7 +297,7 @@ export const SIG_LABEL: Record<string, string> = {
   SIG02: "THE MARINARA // SIGNATURE",
   SIG03: "THE SMOKE // SIGNATURE",
   SIG04: "THE FRESH // SIGNATURE",
-  SIG05: "THE VAULT // RESERVE",
+  SIG05: "MENÚ SECRETO // RESERVE",
   SIG06: "THE TERIYAKI // SIGNATURE",
   SIG07: "THE CHICAGO // RESERVE",
   SIG08: "THE EMBER // SIGNATURE",
@@ -315,6 +331,51 @@ export async function loadCatalogPrices(): Promise<void> {
     // Si falla, seguimos con los valores hardcodeados de arriba como respaldo — nunca
     // debe bloquear un pedido por un problema leyendo la tabla de precios.
     console.error("loadCatalogPrices failed:", e);
+  }
+  await loadSecretSignature();
+}
+// Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — reemplaza el
+// "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA.SIG05/SIG_GATES.SIG05/
+// VAULT_ONLY_* eran literales de código: cambiar el sándwich del mes exigía editar 2
+// archivos (este + src/app.ts) y redesplegar. Ahora la fila más reciente de la tabla
+// `secret_signature` (una por cada vez que el admin publica un cambio, nunca se
+// actualiza in-place — historial gratis) sobreescribe esos mismos objetos en memoria,
+// llamada siempre junto a loadCatalogPrices() arriba para que los 9 call sites
+// existentes de esa función la recojan sin tocarlos uno por uno.
+export async function loadSecretSignature(): Promise<void> {
+  try {
+    const rows = await sbGet("secret_signature", "select=*&order=id.desc&limit=1");
+    const row = rows[0];
+    if (!row) return;
+    SIG_DATA.SIG05 = {
+      base: row.base,
+      prot: row.protein_id,
+      tops: Array.isArray(row.tops) ? row.tops : [],
+      sauces: Array.isArray(row.sauces) ? row.sauces : [],
+      p15: Number(row.price_15),
+      p30: Number(row.price_30),
+    };
+    SECRET_SIGNATURE_NAME = String(row.name || "").trim() || "Menú secreto";
+    SIG_LABEL.SIG05 = `${SECRET_SIGNATURE_NAME.toUpperCase()} // RESERVE`;
+    SIG_GATES.SIG05 = { minOrders: Number(row.min_orders) || 5 };
+    // vault_only_ids es una lista plana de ids (proteína y/o tops y/o salsas) que este
+    // ciclo quiere reservados solo para el menú secreto — se reparte en los 3 Sets según
+    // a qué categoría pertenece cada id, en vez de que el admin tenga que llenar 3 campos
+    // separados sabiendo de memoria en qué categoría cae cada ingrediente.
+    const vaultOnlyIds: string[] = Array.isArray(row.vault_only_ids) ? row.vault_only_ids : [];
+    VAULT_ONLY_PROTS.clear();
+    VAULT_ONLY_TOPS.clear();
+    VAULT_ONLY_SAUCES.clear();
+    for (const id of vaultOnlyIds) {
+      if (id === row.protein_id) VAULT_ONLY_PROTS.add(id);
+      else if (SIG_DATA.SIG05.tops.includes(id)) VAULT_ONLY_TOPS.add(id);
+      else if (SIG_DATA.SIG05.sauces.includes(id)) VAULT_ONLY_SAUCES.add(id);
+    }
+  } catch (e) {
+    // Igual que loadCatalogPrices: si falla, seguimos con SIG_DATA.SIG05/SIG_GATES.SIG05/
+    // VAULT_ONLY_* como estén en memoria (el literal de arriba en el primer arranque de
+    // cada instancia, o la última fila cargada con éxito) en vez de bloquear un pedido.
+    console.error("loadSecretSignature failed:", e);
   }
 }
 // P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo

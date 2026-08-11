@@ -42,7 +42,7 @@ este volumen.
 
 **Categoría:** sandwichería de pedidos online, Trujillo, Perú. No es "delivery
 genérico" ni "cadena de sándwiches" — es curaduría (7 Signatures con historia
-propia) + build-your-own + un menú secreto por rango (THE VAULT), con
+propia) + build-your-own + un menú secreto por rango (rotación mensual, antes fijo como "The Vault"), con
 mecánicas de fidelidad reales detrás.
 
 **Quién compra:** dos perfiles distintos que conviven en el mismo catálogo —
@@ -245,7 +245,7 @@ compleja (las apps nativas de Instagram/CapCut bastan).
 | -5 | Close-up del pan real (formato sub/hoagie, nunca pan de molde) siendo cortado — textura, corte transversal, sin mostrar el sándwich armado completo todavía | Cuenta regresiva sticker hacia la fecha de apertura + link a la waitlist | Reforzar "esto es artesanal", capturar más teléfonos |
 | -4 | "Arma tu propio //" — timelapse de un build-your-own completo, capa por capa (pan, proteína, topping, salsa) | Pregunta: "¿Cuál proteína no puede faltar en tu sándwich?" | Mostrar la mecánica BYO sin revelar precios todavía |
 | -3 | Reveal de 1-2 Signatures (nombre + foto, sin el menú completo) — "THE ORIGINAL" y otro contrastante | Sticker de cuenta regresiva actualizado + "guarda este post" | Empezar a anclar nombres de producto en la memoria |
-| -2 | Teaser de THE VAULT (menú secreto) — nunca mostrar qué es, solo "hay algo que no todos van a poder pedir el día 1" | Historia tipo "shh" con sticker de emoji de candado | Crear intriga sin gastar el gancho principal antes de tiempo |
+| -2 | Teaser del menú secreto (rota cada mes) — nunca mostrar qué es, solo "hay algo que no todos van a poder pedir el día 1" | Historia tipo "shh" con sticker de emoji de candado | Crear intriga sin gastar el gancho principal antes de tiempo |
 | -1 | "Así se pide" — mini demo de 15-20seg del flujo de compra real en la app (elegir, pagar con Yape, confirmar) | Countdown final "Mañana abrimos" + recordatorio de la lista de espera | Bajar la fricción percibida antes del día 1 |
 
 ### Semana de apertura (día 0 a día 7)
@@ -272,7 +272,7 @@ horas. Formatos recurrentes (reducen el costo de decidir qué grabar cada vez):
 
 1. **"Armando el [Signature de la semana]"** — estilo ASMR/timelapse, un
    Signature distinto cada semana, rotando los 7 (6 públicos + eventualmente
-   THE VAULT una vez algunos clientes ya llegaron a INICIADO). 1 Reel/semana
+   el menú secreto una vez algunos clientes ya llegaron a INICIADO). 1 Reel/semana
    fijo en este formato.
 2. **Reposting de UGC** — fotos/reseñas de clientes reales que ya dieron su
    consentimiento (flujo ya construido: consentimiento de reseña como
@@ -301,7 +301,7 @@ mejor take) sigue siendo trabajo humano, ninguna herramienta lo reemplaza.
   artificial. "Bebida gratis de 2 a 6pm" es suficiente, sin signos de
   exclamación en cascada.
 - El "//" aparece en captions como separador tipográfico natural ("Nuevo //
-  THE VAULT"), no como decoración forzada en cada frase.
+  el sabor del mes"), no como decoración forzada en cada frase.
 - Nunca inventar reseñas, testimonios o cifras de venta — todo UGC reposteado
   debe venir del flujo de consentimiento real, nunca redactado a mano
   simulando ser de un cliente.
@@ -1055,7 +1055,7 @@ diarios, no a falta de marketing.
 
 **18.16 Ítem-ancla y fricción de pedido — ya resueltos de origen en SND//WCH.** Concentrar
 el contenido/boca a boca en 1-2 ítems reconocibles en vez de diluir en todo el catálogo es
-coherente con la estructura que ya existe (Signatures + THE VAULT como menú secreto,
+coherente con la estructura que ya existe (Signatures + un menú secreto de rotación mensual,
 sin necesidad de cambio). Y el hallazgo de "vender solo por DM sin link directo pierde
 pedidos al crecer" ya está resuelto de origen — SND//WCH tiene checkout propio, no depende
 de mensajes manuales para cerrar la venta.
