@@ -453,6 +453,40 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   esta sesión. No asumir que hace falta resolver generación de video como capacidad
   pendiente de este proyecto; si se pide ayuda con guiones/prompts para esos videos, es
   contenido de apoyo al proceso ya existente del dueño, no una integración técnica nueva.
+- **No existe ningún MCP dedicado a "diseño de logos" — confirmado 2026-08-11 con
+  `SearchMcpRegistry` en 2 tandas de keywords distintas** (logo design/maker/brand
+  identity/vector logo/generator, y logo/icon design/brand mark/svg design/graphic design
+  tool) — el único resultado relacionado (Brandfetch) sirve para traer logos de marcas
+  YA existentes, no para diseñar uno nuevo, y no está conectado en esta cuenta. La vía
+  real para un logo/wordmark vector "oficial" es **Figma** (ya conectado): `use_figma`
+  (Plugin API) permite construir texto real con fuente real (`figma.loadFontAsync` +
+  `figma.createText`) y formas vectoriales propias (`figma.createVector` con
+  `vectorPaths`/gradientes) — no hace falta ninguna herramienta de "generar logo", con
+  la Plugin API alcanza para reconstruir un wordmark existente como vector real 1:1
+  (probado reconstruyendo el wordmark de producción de SND//WCH: texto "SND"/"WCH" en
+  Fraunces SemiBold + 2 paralelogramos con gradiente dorado como el "//", ver
+  `wordmark-official-source.html` en el scratchpad como referencia visual usada). El
+  seat de Figma de esta cuenta aparece como `"seat":"View"` en `whoami` pero
+  `create_new_file`/`use_figma` funcionaron igual — no asumir de la etiqueta del seat que
+  faltan permisos de escritura, probar directo. **Adobe for Creativity también tiene
+  `image_vectorize`** (raster→SVG, pensado para logos) como alternativa si ya se tiene un
+  PNG bien resuelto y se prefiere trazado automático en vez de reconstrucción vectorial
+  manual — no probado a fondo esta sesión por el bloqueo de red de abajo.
+- **Descarga directa de assets de Figma (`www.figma.com`) y subida de archivos a Adobe
+  (`at.adobe.com`) bloqueadas por el proxy de este entorno — mismo patrón que
+  `checkout.culqi.com`/`docs.culqi.com`/dominios de Adobe ya documentados arriba, no es
+  un caso nuevo de política de red, es la misma restricción general.** `curl` a
+  `www.figma.com` y `at.adobe.com` devuelve 403 en el CONNECT (confirmado con
+  `curl -sS "$HTTPS_PROXY/__agentproxy/status"`, que lista los rechazos recientes).
+  Consecuencia práctica: `asset_initialize_file_upload` de Adobe (subir un PNG local para
+  vectorizar) y `download_assets`/`get_screenshot` con URL de Figma (bajar el SVG/PNG
+  exportado a este sandbox) NO funcionan — el archivo QUEDA CREADO/EDITABLE del lado del
+  servicio (Figma/Adobe), pero no se puede traer una copia local para mandarla por
+  `SendUserFile`. La única vía real de imagen que sí llega a este sandbox es la que ya
+  documentada arriba (S3 de Adobe Stock tras licenciar). Para casos como este, entregar al
+  dueño el link directo al archivo (ej. URL de Figma `figma.com/design/<fileKey>`) para
+  que lo abra/exporte con su propio navegador (sin la restricción de red de este
+  sandbox), en vez de insistir en traerlo localmente.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en
