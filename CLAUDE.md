@@ -297,12 +297,21 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     como principal", se generaron 20 variantes que reinterpretaban el propio glifo en
     otras formas (puntos, hexágonos, espirales, red de nodos, chevrons) conectadas al
     concepto de "corte" pero ya no reconocibles como dos barras paralelas — el dueño lo
-    rechazó explícitamente: "no vamos a cambiar nunca el //". Lo que sí puede/debe variar
-    en una ronda "creativa" es todo lo DEMÁS alrededor del mismo glifo fijo: color,
-    fondo, marco/contenedor, proporción de las barras, acabado (plano/degradado/
-    sombra/metálico) — nunca la identidad estructural de las dos barras diagonales en
-    sí. Antes de generar variantes "creativas" del ícono, confirmar cuál de las dos
-    interpretaciones aplica si hay ambigüedad real en el pedido.
+    rechazó explícitamente: "no vamos a cambiar nunca el //". Segundo error, mismo día,
+    en la ronda de corrección inmediata: las 9 variantes que sí mantuvieron dos barras
+    paralelas las dibujaron de ALTURA DISTINTA entre sí (una más larga, una más corta,
+    "asimetría" que nunca fue parte del glifo real) — el dueño corrigió de nuevo: **"Son
+    dos del mismo tamaño"**. Especificación exacta del "//" real, tomada literal de
+    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción): dos barras **idénticas**
+    (misma regla CSS compartida por ambas, no dos reglas distintas) — cada una
+    `width:.15em;height:.82em` (proporción ancho:alto ≈ 1:5.5), `transform:skewX(-16deg)`,
+    `border-radius:1px`, separadas por `gap:.13em`. Lo que sí puede/debe variar en una
+    ronda "creativa" es todo lo DEMÁS alrededor de este par fijo: color, fondo,
+    marco/contenedor, acabado (plano/degradado/sombra/metálico) — nunca el tamaño
+    relativo entre las dos barras, ni la identidad estructural del par. Antes de generar
+    cualquier variante nueva del ícono, partir de esta especificación exacta (o de
+    `wordmark-official-source.html` en el scratchpad, que ya la replica correctamente)
+    en vez de reconstruir el mark de memoria/aproximado.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
