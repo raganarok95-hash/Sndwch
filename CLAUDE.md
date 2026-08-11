@@ -472,6 +472,26 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `image_vectorize`** (raster→SVG, pensado para logos) como alternativa si ya se tiene un
   PNG bien resuelto y se prefiere trazado automático en vez de reconstrucción vectorial
   manual — no probado a fondo esta sesión por el bloqueo de red de abajo.
+- **Sí existe una skill externa real de logos, fuera de los 2 registros ya buscados
+  (`SearchSkills`/`npx skills search`) — el usuario la encontró por su cuenta
+  (`op7418/logo-generator-skill` en GitHub) y se instaló con éxito 2026-08-11 vía
+  `npx skills add <url-de-github>`.** Confirma que "0 resultados en los registros
+  buscados" no equivale a "no existe en absoluto" — un repo de GitHub cualquiera
+  instalable por URL directa nunca aparecerá en esos 2 registros salvo que su autor lo
+  haya publicado ahí. Queda instalada en `.agents/skills/logo-generator/` (symlink en
+  `.claude/skills/`), **local a este entorno** (excluida de git a propósito, ver
+  `.gitignore` — mismo criterio que cualquier skill instalada por sesión). Aporta un
+  documento real de principios de diseño de logo (`references/design_patterns.md`:
+  simplicidad extrema, espacio negativo generoso 40-50%, cortes con esquinas SIEMPRE
+  redondeadas nunca afiladas, asimetría intencional, estabilidad estructural, un solo
+  punto focal) — útil como checklist de calidad aun sin usar sus scripts. Su fase de
+  generación de imágenes de showcase (`scripts/generate_showcase.py`, fondos
+  profesionales) usa la API de Gemini ("Nano Banana") y SÍ tiene costo real/requiere
+  `GEMINI_API_KEY` propia — no configurada, no usada esta sesión (regla de gastos
+  reales del punto 8 de abajo). Las fases 1-3 (generar variantes SVG con principios de
+  diseño, sin IA de imagen) no tienen ningún costo ni dependencia externa — son las que
+  sí se usaron para generar 6 variantes nuevas del "//" (`logo-skill-variants.html` en
+  el scratchpad).
 - **Descarga directa de assets de Figma (`www.figma.com`) y subida de archivos a Adobe
   (`at.adobe.com`) bloqueadas por el proxy de este entorno — mismo patrón que
   `checkout.culqi.com`/`docs.culqi.com`/dominios de Adobe ya documentados arriba, no es
