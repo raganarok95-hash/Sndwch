@@ -91,9 +91,11 @@ intento manual sea carísimo en tokens y fácil de arruinar a medias.
 ## Flujos y funcionalidades actuales del cliente
 
 Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 7 Signatures
-(6 públicos + `SIG05` THE VAULT, menú secreto), 6 proteínas build-your-own (`P03` es
-exclusiva del VAULT, no se puede armar por BYO), 4 bebidas de la casa (sin gaseosas de
-reventa, decisión de marca), tamaños 15CM/30CM, doble proteína, salsa extra.
+(6 públicos + `SIG05`, menú secreto de **rotación mensual** — ya no se llama "The Vault",
+decisión del dueño 2026-08-10, ver detalle abajo), 6 proteínas build-your-own (una puede
+quedar exclusiva del menú secreto según el ciclo vigente, no se puede armar por BYO), 4
+bebidas de la casa (sin gaseosas de reventa, decisión de marca), tamaños 15CM/30CM, doble
+proteína, salsa extra.
 
 **Formato de pan (fotografía/generación de producto):** el sándwich SIEMPRE es un pan
 tipo sub/hoagie alargado (formato "Subway"), sin importar el nombre del `BASES` elegido
@@ -118,7 +120,7 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → INICIADO (5, desbloquea THE VAULT) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5, desbloquea el menú secreto) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).
@@ -144,7 +146,26 @@ Signature o build.
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
   gestión de inventario/cuentas admin/horario editable, exportar CSV, log de auditoría,
-  contenido de marketing semanal listo para copiar.
+  contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
+  (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
+  pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
+  sesión de código, ver detalle técnico abajo).
+- **Menú secreto con rotación mensual** (decisión del dueño, 2026-08-10 — reemplaza "The
+  Vault" fijo que existió hasta esa fecha; SIG05 sigue siendo su id interno, el concepto
+  "menú secreto/desbloqueo por rango/composición nunca revelada al cliente" no cambió,
+  solo dejó de tener un nombre/receta fijos). Tabla `secret_signature` en Supabase
+  (append-only: publicar SIEMPRE inserta una fila nueva, nunca actualiza in-place — la
+  fila de mayor id es la vigente, así el historial de sándwiches secretos anteriores
+  queda gratis). `loadSecretSignature()` (`supabase/functions/api/catalog.ts`) refresca
+  `SIG_DATA.SIG05`/`SIG_LABEL.SIG05`/`SIG_GATES.SIG05`/`VAULT_ONLY_PROTS`/
+  `VAULT_ONLY_TOPS`/`VAULT_ONLY_SAUCES` desde esa fila en cada `loadCatalogPrices()`
+  (mismo patrón ya usado para precios editables, ver `catalog_prices`). El cliente
+  (`src/app.ts`, `loadCatalogBackground()`) recibe la composición vigente vía la acción
+  pública `get-catalog` (`secretSignature` en la respuesta) y sobreescribe la entrada
+  SIG05 del array `SIGS` en memoria — el literal de `SIGS`/`SIG_DATA` en código es solo
+  el respaldo/semilla del primer render, nunca la fuente real una vez que el fetch
+  resuelve. Panel de edición: Admin // Catálogo // Menú secreto
+  (`sAdminSecretSignature()`/`admin-secret-signature-get`/`admin-secret-signature-set`).
 
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
@@ -160,10 +181,10 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 
 ## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
 
-- **El negocio aún NO ha abierto** — el plan del dueño es lanzar en ~2 meses desde julio
-  2026 (aprox. septiembre 2026). Todo lo que hay hoy en `orders`/`customers` en Supabase
-  es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales. Cualquier
-  proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
+- **El negocio aún NO ha abierto** — fecha de apertura confirmada por el dueño 2026-08-01:
+  **lunes 7 de septiembre de 2026**. Todo lo que hay hoy en `orders`/`customers` en
+  Supabase es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales.
+  Cualquier proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
   referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
   datos reales apenas el negocio esté operando y haya volumen real que medir.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
@@ -173,9 +194,14 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
   volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
   para necesitar contratar).
-- **Precios de insumos investigados (Perú, julio 2026)**: res ~S/20/kg, pollo ~S/17/kg,
-  atún en lata ~S/38/kg, embutido premium (jamón/paté/cabanossi) ~S/38/kg, carne molida
-  ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según tipo. Las bebidas caseras (infusiones)
+- **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
+  **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
+  2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
+  `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
+  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según
+  tipo. **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
+  el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
+  conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
@@ -205,7 +231,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
    contrario. Esto cubre TODO texto visible: el mensaje de cierre, pero también
    descripciones de tool calls, captions de archivos, nombres de tareas del checklist,
    preguntas de `AskUserQuestion`. Revisar cada uno antes de enviarlo, no solo el mensaje
-   principal.
+   principal. **Español con "tú", nunca voseo argentino ("vos", "tenés", "sabés",
+   "andá")** — corregido explícitamente por el usuario 2026-08-11, DOS VECES en la misma
+   conversación (la sesión aceptó la corrección la primera vez y volvió a usar "vos" en
+   el siguiente mensaje sin darse cuenta — no basta con aceptar la corrección una vez, hay
+   que revisar el propio texto de salida contra esta regla antes de cada envío, no solo
+   la primera vez que se corrige).
 2. **"Primero muéstrame/hagamos X antes de Y" es un punto de parada real para avanzar de
    verdad** (comitear, pushear, mergear, expandir el cambio a otras pantallas, gastar algo
    real) — eso espera confirmación explícita antes de tocar Y. Verificación interna sin
@@ -256,10 +287,53 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     descartar una dirección "Chan Chan" inspirada en la ciudadela Chimú) — no proponer
     ni asumir referencias a Trujillo, cultura Chimú/Moche, o cualquier otro anclaje
     geográfico/regional específico en paleta, iconografía o naming, salvo que el usuario
-    lo pida explícitamente en el futuro.
+    lo pida explícitamente en el futuro. **El "//" SIEMPRE representó el corte del
+    pan/sándwich — nunca tuvo intención tech/terminal** (corregido explícitamente por el
+    usuario 2026-08-08, tras una sesión de LLM Council que asumió mal que el "//" partía
+    de una connotación de código que había que "reinterpretar" alejándose de ella). No es
+    una reinterpretación ni un cambio de dirección: es el significado real desde el
+    origen. El riesgo real señalado por esa sesión (alguien sin contexto puede leer "//"
+    como sintaxis de código/ruta de archivo la primera vez que lo ve) sigue siendo válido
+    como dato de percepción externa a reforzar visualmente — pero no asumir de nuevo que
+    el propio proyecto/dueño alguna vez tuvo esa intención o que hace falta "corregirla".
+    **"El '//' en sí" significa la FORMA — dos barras/trazos diagonales paralelos
+    reconocibles como el glifo "//" — no solo el concepto abstracto de "corte".**
+    Error real cometido 2026-08-11: al pedir "20 modelos creativos desde cero con el //
+    como principal", se generaron 20 variantes que reinterpretaban el propio glifo en
+    otras formas (puntos, hexágonos, espirales, red de nodos, chevrons) conectadas al
+    concepto de "corte" pero ya no reconocibles como dos barras paralelas — el dueño lo
+    rechazó explícitamente: "no vamos a cambiar nunca el //". Segundo error, mismo día,
+    en la ronda de corrección inmediata: las 9 variantes que sí mantuvieron dos barras
+    paralelas las dibujaron de ALTURA DISTINTA entre sí (una más larga, una más corta,
+    "asimetría" que nunca fue parte del glifo real) — el dueño corrigió de nuevo: **"Son
+    dos del mismo tamaño"**. Especificación exacta del "//" real, tomada literal de
+    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción): dos barras **idénticas**
+    (misma regla CSS compartida por ambas, no dos reglas distintas) — cada una
+    `width:.15em;height:.82em` (proporción ancho:alto ≈ 1:5.5), `transform:skewX(-16deg)`,
+    `border-radius:1px`, separadas por `gap:.13em`. Lo que sí puede/debe variar en una
+    ronda "creativa" es todo lo DEMÁS alrededor de este par fijo: color, fondo,
+    marco/contenedor, acabado (plano/degradado/sombra/metálico) — nunca el tamaño
+    relativo entre las dos barras, ni la identidad estructural del par. Antes de generar
+    cualquier variante nueva del ícono, partir de esta especificación exacta (o de
+    `wordmark-official-source.html` en el scratchpad, que ya la replica correctamente)
+    en vez de reconstruir el mark de memoria/aproximado.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
+- **Subagentes que mezclan WebSearch con lectura de código pueden equivocarse en la parte
+  de código — verificar antes de implementar, no confiar ciego.** Descubierto 2026-08-04
+  en una ronda de 10 subagentes de investigación de mercado: dos hallazgos ("el combo no
+  muestra el ahorro", "no hay estimado de tiempo de entrega en el checkout") resultaron
+  ser falsos — ambos ya existían en `src/app.ts` desde el commit `390de6a`, confirmado con
+  `git blame` antes de "corregirlos". Un tercer caso similar ya había pasado antes en la
+  misma sesión con un hallazgo de contraste de badges (el agente no rastreó un swap
+  dinámico de color en `render()`). Patrón: cuando un agente de investigación reporta un
+  hallazgo de código (no solo de mercado/tendencias), verificar con `git blame`/lectura
+  directa del archivo real ANTES de implementar el "fix" — el costo de verificar es bajo,
+  el costo de "arreglar" algo que ya funcionaba (o peor, revertirlo sin querer) no lo es.
+  No invalida el valor real de las partes de WebSearch puro de esos mismos reportes, que
+  sí fueron precisas — el punto débil específico es la lectura de código dentro de una
+  tarea mayormente orientada a búsqueda externa.
 - **Generación de imágenes AI**: no hay una herramienta directa de texto-a-imagen
   disponible. La única vía encontrada es a través de `mcp__Gamma__generate` (genera un
   documento/presentación completo, no solo una foto) — y en el plan actual de la cuenta,
@@ -372,6 +446,119 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Si se retoma esto en el futuro, empezar por confirmar presupuesto/plataforma con el
   usuario (regla de gastos reales del CLAUDE.md) antes de escribir cualquier
   integración — no asumir la ruta más barata solo por serlo, dado el riesgo de baneo.
+- **OTP de recuperación de cuenta por WhatsApp — investigado 2026-08-07, decisión
+  explícita del dueño: esperar a tener volumen real del negocio antes de implementar**
+  ("dejemoslo para el futuro midiendo realmente como va el negocio"). Contexto: una
+  auditoría de autenticación encontró que la recuperación de PIN (DNI+fecha de
+  nacimiento) es débil como único factor, y que sin correo registrado el PIN nuevo se
+  devuelve en texto plano en la misma respuesta — la propuesta era agregar un código de
+  6 dígitos por WhatsApp (categoría "Authentication" de Meta) como segundo factor
+  universal, reemplazando el camino de reenviar el PIN en la respuesta HTTP. Investigación
+  ya hecha, reutilizable sin rehacer la búsqueda:
+  - **Costo real**: Meta cobra por mensaje de plantilla "Authentication" entregado, tarifa
+    por país — banda global ~US$0.004–0.046/mensaje. No se encontró la tarifa exacta de
+    Perú por búsqueda (se confirma en la calculadora de Meta al configurar la cuenta) —
+    de todos modos es un gasto real y recurrente, aunque mínimo dado que la recuperación
+    de cuenta es infrecuente.
+  - **No hace falta un número nuevo**: desde mayo 2025 Meta permite "Coexistence" — el
+    mismo número de WhatsApp Business ya usado para click-to-chat (`wa.me`) puede quedar
+    activo en la app normal Y en la Cloud API a la vez, sin perder chats/contactos. Perú
+    no está en la lista de países excluidos (solo Nigeria/Sudáfrica). Fuentes:
+    [Authentication templates — Meta for Developers](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/authentication-templates/authentication-templates),
+    [WhatsApp API Pricing Explained 2026 — Authgear](https://www.authgear.com/post/whatsapp-api-pricing/),
+    [What is WhatsApp Business App Coexistence? — YCloud](https://www.ycloud.com/blog/whatsapp-business-app-coexistence-meta-update).
+  - **Diseño propuesto (no implementado)**: DNI+fecha sigue siendo el primer paso, pero
+    se agregaría un código de 6 dígitos vía WhatsApp que TODOS los clientes (con o sin
+    correo) deban confirmar antes de fijar un PIN nuevo — reemplazo universal del camino
+    actual de correo/texto-plano, un solo flujo más seguro para el 100% de las cuentas.
+  - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
+    y la fricción de configurar el número en Meta Business Platform — no antes.
+- **Producción de video para marketing: el dueño ya tiene su propio proceso con Google
+  Flow (generación de video con IA), confirmado 2026-08-10** — no es una integración de
+  este repo ni de este entorno, el dueño genera y carga los videos por su cuenta fuera de
+  esta sesión. No asumir que hace falta resolver generación de video como capacidad
+  pendiente de este proyecto; si se pide ayuda con guiones/prompts para esos videos, es
+  contenido de apoyo al proceso ya existente del dueño, no una integración técnica nueva.
+- **No existe ningún MCP dedicado a "diseño de logos" — confirmado 2026-08-11 con
+  `SearchMcpRegistry` en 2 tandas de keywords distintas** (logo design/maker/brand
+  identity/vector logo/generator, y logo/icon design/brand mark/svg design/graphic design
+  tool) — el único resultado relacionado (Brandfetch) sirve para traer logos de marcas
+  YA existentes, no para diseñar uno nuevo, y no está conectado en esta cuenta. La vía
+  real para un logo/wordmark vector "oficial" es **Figma** (ya conectado): `use_figma`
+  (Plugin API) permite construir texto real con fuente real (`figma.loadFontAsync` +
+  `figma.createText`) y formas vectoriales propias (`figma.createVector` con
+  `vectorPaths`/gradientes) — no hace falta ninguna herramienta de "generar logo", con
+  la Plugin API alcanza para reconstruir un wordmark existente como vector real 1:1
+  (probado reconstruyendo el wordmark de producción de SND//WCH: texto "SND"/"WCH" en
+  Fraunces SemiBold + 2 paralelogramos con gradiente dorado como el "//", ver
+  `wordmark-official-source.html` en el scratchpad como referencia visual usada). El
+  seat de Figma de esta cuenta aparece como `"seat":"View"` en `whoami` pero
+  `create_new_file`/`use_figma` funcionaron igual — no asumir de la etiqueta del seat que
+  faltan permisos de escritura, probar directo. **Adobe for Creativity también tiene
+  `image_vectorize`** (raster→SVG, pensado para logos) como alternativa si ya se tiene un
+  PNG bien resuelto y se prefiere trazado automático en vez de reconstrucción vectorial
+  manual — no probado a fondo esta sesión por el bloqueo de red de abajo.
+- **Sí existe una skill externa real de logos, fuera de los 2 registros ya buscados
+  (`SearchSkills`/`npx skills search`) — el usuario la encontró por su cuenta
+  (`op7418/logo-generator-skill` en GitHub) y se instaló con éxito 2026-08-11 vía
+  `npx skills add <url-de-github>`.** Confirma que "0 resultados en los registros
+  buscados" no equivale a "no existe en absoluto" — un repo de GitHub cualquiera
+  instalable por URL directa nunca aparecerá en esos 2 registros salvo que su autor lo
+  haya publicado ahí. Queda instalada en `.agents/skills/logo-generator/` (symlink en
+  `.claude/skills/`), **local a este entorno** (excluida de git a propósito, ver
+  `.gitignore` — mismo criterio que cualquier skill instalada por sesión). Aporta un
+  documento real de principios de diseño de logo (`references/design_patterns.md`:
+  simplicidad extrema, espacio negativo generoso 40-50%, cortes con esquinas SIEMPRE
+  redondeadas nunca afiladas, asimetría intencional, estabilidad estructural, un solo
+  punto focal) — útil como checklist de calidad aun sin usar sus scripts. Su fase de
+  generación de imágenes de showcase (`scripts/generate_showcase.py`, fondos
+  profesionales) usa la API de Gemini ("Nano Banana") y SÍ tiene costo real/requiere
+  `GEMINI_API_KEY` propia — no configurada, no usada esta sesión (regla de gastos
+  reales del punto 8 de abajo). Las fases 1-3 (generar variantes SVG con principios de
+  diseño, sin IA de imagen) no tienen ningún costo ni dependencia externa — son las que
+  sí se usaron para generar 6 variantes nuevas del "//" (`logo-skill-variants.html` en
+  el scratchpad).
+- **`SearchMcpRegistry` solo cubre el directorio curado de Anthropic — un resultado
+  vacío ahí NO es evidencia de que un MCP no exista, sobre todo para empresas grandes
+  que ahora publican su propio servidor MCP oficial de primera mano fuera de ese
+  directorio.** Error real cometido 2026-08-11, la MISMA sesión que ya había dejado
+  escrita la lección equivalente para la skill de logos un rato antes (línea de arriba)
+  y aun así la repitió: al preguntar por un MCP oficial de "Meta Ads" y de "Higgsfield",
+  `SearchMcpRegistry` con varias tandas de keywords dio 0 resultados relevantes y se
+  concluyó (mal) "no existen". Ambos SÍ existen y son oficiales: **Meta Ads AI
+  Connectors** (`mcp.facebook.com/ads`, beta abierta desde el 29 de abril de 2026, 29
+  herramientas de campañas/reportes/catálogo vía OAuth de Meta Business) y **Higgsfield
+  MCP** (`mcp.higgsfield.ai/mcp`, oficial desde el 30 de abril de 2026, 30+ modelos de
+  imagen/video). Recién se encontraron cuando el usuario insistió en volver a buscar y
+  después pasó el link directo de la documentación de Meta. Causa raíz identificada:
+  (1) `SearchMcpRegistry` nunca iba a encontrarlos por diseño — es un directorio curado,
+  no un buscador de internet, y ninguno de los dos estaba dado de alta ahí todavía por
+  ser muy recientes; (2) el primer `WebSearch` de respaldo se sesgó con la palabra
+  "github" en la query ("Meta Ads MCP server github 'model context protocol'"), lo que
+  prioriza wrappers de terceros en GitHub sobre la página oficial de producto del propio
+  Meta/Higgsfield. **Corrección para la próxima vez**: ante "¿existe un MCP oficial de
+  X?", además de `SearchMcpRegistry`, correr un `WebSearch` SIN sesgo de "github" (ej.
+  "X official MCP server", "X model context protocol announcement") y probar el patrón
+  de dominio `mcp.<empresa>.com` o `<empresa>.com/mcp` directo — las empresas grandes
+  cada vez más hostean su propio servidor MCP de primera mano en vez de publicarlo como
+  repo de GitHub. Ninguno de los dos quedó conectado en esta sesión (no existe una
+  herramienta para registrar un MCP remoto por URL desde acá — requiere que el usuario
+  lo agregue desde Ajustes de conectores de claude.ai con su propia cuenta/OAuth).
+- **Descarga directa de assets de Figma (`www.figma.com`) y subida de archivos a Adobe
+  (`at.adobe.com`) bloqueadas por el proxy de este entorno — mismo patrón que
+  `checkout.culqi.com`/`docs.culqi.com`/dominios de Adobe ya documentados arriba, no es
+  un caso nuevo de política de red, es la misma restricción general.** `curl` a
+  `www.figma.com` y `at.adobe.com` devuelve 403 en el CONNECT (confirmado con
+  `curl -sS "$HTTPS_PROXY/__agentproxy/status"`, que lista los rechazos recientes).
+  Consecuencia práctica: `asset_initialize_file_upload` de Adobe (subir un PNG local para
+  vectorizar) y `download_assets`/`get_screenshot` con URL de Figma (bajar el SVG/PNG
+  exportado a este sandbox) NO funcionan — el archivo QUEDA CREADO/EDITABLE del lado del
+  servicio (Figma/Adobe), pero no se puede traer una copia local para mandarla por
+  `SendUserFile`. La única vía real de imagen que sí llega a este sandbox es la que ya
+  documentada arriba (S3 de Adobe Stock tras licenciar). Para casos como este, entregar al
+  dueño el link directo al archivo (ej. URL de Figma `figma.com/design/<fileKey>`) para
+  que lo abra/exporte con su propio navegador (sin la restricción de red de este
+  sandbox), en vez de insistir en traerlo localmente.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en
@@ -402,6 +589,23 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   claude.ai, fuera de esta conversación. Conectores que sí tienen uso real en este
   proyecto y conviene dejar prendidos: Adobe for Creativity (fotos de stock), Supabase,
   GitHub (vía MCP dedicado, no listado en `ListConnectors`), Context7 (docs de librerías).
+- **No existe ninguna skill de "automatización de procesos de negocio" (restaurante,
+  delivery, WhatsApp Business, marketing/CRM) en esta cuenta — buscado 2026-08-08 con 3
+  vías distintas** (`SuggestSkills` con 8 keywords de negocio, `SearchSkills` con 2 tandas
+  de 8 keywords c/u — operaciones de restaurante, delivery, WhatsApp, email marketing,
+  CRM, contabilidad, reseñas, SEO local — y `npx skills search` con 5 términos): **0
+  resultados en las 3**. Mismo patrón que el gap de skill de cocina/menu engineering
+  (2026-07-30) y el de "selectora de MCP" (2026-07-31) — no es fallo de búsqueda, es un
+  gap real de esta categoría en los 3 registros disponibles hoy. Conclusión: "automatizar
+  todos los procesos" de este negocio NO es un problema de buscar la skill correcta — el
+  95% de la automatización real ya vive en el propio código de este repo (crons de
+  marketing/retención en `supabase/functions/api`, dashboard admin, programa de
+  fidelidad) y lo que falta NO son skills sino trabajo real del dueño (configurar los 3
+  secrets de Meta para publicación automática, decidir sobre WhatsApp Business API si
+  algún día se retoma — ver entradas de arriba). Antes de volver a buscar "skill de
+  automatización" para este proyecto, revisar primero qué de "todos los procesos" ya está
+  automatizado en código (bastante) vs. qué depende de una integración externa real
+  todavía sin configurar (poco, y ya identificado).
 - **Automatizaciones de sesión configuradas 2026-07-31**: `.claude/settings.json` (nuevo,
   commiteado en el repo — afecta a cualquier sesión futura que trabaje aquí) tiene (1) un
   allowlist de ~22 comandos/tools de solo lectura de uso frecuente (extraído del propio

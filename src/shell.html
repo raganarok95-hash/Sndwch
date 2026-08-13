@@ -28,8 +28,11 @@
    superficie/texto neutro del panel admin usa una custom property con el valor oscuro
    actual como fallback (así cualquier pantalla que NO esté dentro de .admin-light se ve
    exactamente igual que antes, cero regresión), y .admin-light solo redefine esas
-   properties. Los colores semánticos/de estado (naranja, verde, rojo, azul, morado) se
-   dejan sin cambio entre temas — práctica estándar, ya son legibles sobre fondo claro.
+   properties. Los colores semánticos/de estado (naranja, verde, rojo, azul, morado) SÍ se
+   reasignan a variantes oscurecidas verificadas por contraste (≥4.5:1 WCAG AA) mientras se
+   renderiza una pantalla admin en modo claro — ver STATUSES[k].c en render()/app.ts, mismo
+   mecanismo que GOLD (comentario corregido: la versión anterior de esta nota decía "sin
+   cambio entre temas", pero el código de app.ts ya no es así desde antes de esta sesión).
    El dorado de marca (variable JS GOLD) se reasigna a un tono más oscuro solo mientras se
    renderiza una pantalla admin en modo claro (ver toggleAdminLight/render en app.ts). */
 .admin-light{
@@ -121,6 +124,19 @@ button{cursor:pointer;border:none}
 input,textarea,select{color:#F2F0EB !important}
 input::placeholder,textarea::placeholder{color:#A8C8B0 !important;opacity:1}
 input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shadow:0 0 0 2px rgba(203,162,88,.15)}
+/* Foco de teclado visible en botones/tarjetas interactivas — hallazgo de la re-auditoría
+   de 10 agentes (ALTO): casi todo elemento interactivo usa style="all:unset;..." (74
+   apariciones), lo que borra el outline nativo del navegador sin dejar NINGÚN indicador de
+   foco propio — imposible saber qué botón está seleccionado navegando con teclado/switch-
+   access. El !important es necesario porque all:unset es un estilo INLINE (máxima
+   especificidad) — solo un !important en la hoja de estilos puede ganarle. Se aplica a
+   cualquier elemento con cursor:pointer (la convención ya usada en este archivo para
+   "esto es interactivo", ver [style*="cursor:pointer"] más abajo) más button/a genéricos
+   por si acaso. */
+[style*="cursor:pointer"]:focus-visible,button:focus-visible,a:focus-visible{
+  outline:2px solid #CBA258 !important;
+  outline-offset:2px !important;
+}
 /* Transición de entrada de cada pantalla — antes había dos definiciones
    distintas de .fi (una quedaba muerta, sobreescrita por la segunda);
    se deja una sola. Un leve scale-in además del translateY le da más cuerpo

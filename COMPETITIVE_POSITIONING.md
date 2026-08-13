@@ -9,7 +9,7 @@ volumen por ítem, personalización limitada. SND//WCH hace algo más ambicioso:
 menú Signature curado (THE ORIGINAL, THE MEATBALL, THE SMOKE, THE FRESH, THE
 TERIYAKI, CHICAGO ITALIAN BEEF) cobrado como premium sobre armar el mismo
 sándwich a mano, MÁS una línea BUILD YOUR OWN completa en paralelo, MÁS un menú
-secreto (THE VAULT) desbloqueado por rango de pedidos.
+secreto (rotación mensual, antes fijo bajo el nombre "The Vault") desbloqueado por rango de pedidos.
 
 Honestamente: son tres modelos de negocio corriendo a la vez, no uno. Para una
 cadena con equipos de producto en cada local es viable; para un operador solo,

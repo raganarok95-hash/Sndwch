@@ -35,9 +35,20 @@ Deno.serve(async (req: Request) => {
 
   try {
     const now = Date.now();
+    // Antes traía los 2000 pedidos MÁS RECIENTES del negocio entero (sin filtro de fecha)
+    // para reconstruir el último pedido por teléfono — con suficiente volumen (~300+
+    // pedidos/día), 2000 filas dejan de cubrir 30 días completos y un cliente activo podía
+    // caer al fallback de `created_at` (fecha de registro, mucho más antigua) y recibir el
+    // correo de "te extrañamos" por error. Fix real: solo importa si el cliente pidió
+    // dentro de la ventana de inactividad — filtrar por fecha, no por cantidad de filas,
+    // resuelve la corrección sin importar el volumen (hallazgo de auditoría 2026-08-07).
+    const cutoffIso = new Date(now - INACTIVE_DAYS * DAY_MS).toISOString();
     const [customers, orders] = await Promise.all([
-      sbGet("customers", "select=phone,name,email,points,created_at,last_winback_sent&email=not.is.null"),
-      sbGet("orders", "select=customer_phone,created_at&payment_status=eq.paid&customer_phone=not.is.null&order=created_at.desc&limit=2000"),
+      sbGet("customers", "select=phone,name,email,points,created_at,last_winback_sent&email=not.is.null&limit=20000"),
+      sbGet(
+        "orders",
+        `select=customer_phone,created_at&payment_status=eq.paid&customer_phone=not.is.null&created_at=gte.${encodeURIComponent(cutoffIso)}&limit=20000`,
+      ),
     ]);
 
     const lastOrderByPhone: Record<string, number> = {};

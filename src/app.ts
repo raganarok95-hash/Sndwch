@@ -95,7 +95,8 @@ var STATUSES={
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
 
 // B02 (HERBS//CHEESE, "Masa con orégano y parmesano") retirado por decisión del dueño —
-// solo lo usaba THE MEATBALL (SIG02, movido a B01) y CLASSIC//WHITE/FOCACCIA//ARTESANAL
+// solo lo usaba SIG02 (hoy "The Marinara", antes "The Meatball", movido a B01) y
+// CLASSIC//WHITE/FOCACCIA//ARTESANAL
 // concentran mejor la variedad real de pan mostrada en el menú. Posible reincorporación
 // futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
 // cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
@@ -111,7 +112,7 @@ var PROTS=[
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
   {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14,p30:22,pDbl:6},
   {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13,p30:21,pDbl:6},
-  // vaultOnly: exclusiva de THE VAULT (SIG05, menú secreto) — no seleccionable en BUILD
+  // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
   {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13,p30:21,pDbl:6,vaultOnly:true},
@@ -148,7 +149,7 @@ var PROTS=[
 ];
 // vaultOnly (T04) y sigOnly (T07) — mismo criterio que vaultOnly en PROTS y sigOnly en
 // SAUCES: eran seleccionables en ARMA EL TUYO pese a solo aparecer en la receta de un
-// Signature (T04 en THE VAULT, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
+// Signature (T04 en el menú secreto, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
 // igual que Au Jus (S13). No se pueden pedir por BUILD YOUR OWN aunque sigan en este array
 // (SIG_DATA/priceSigBuild los siguen necesitando para tasar esos Signatures) — filtro real
 // en byoTops() más abajo. DEBEN coincidir con VAULT_ONLY_TOPS/SIG_ONLY_TOPS en catalog.ts.
@@ -159,11 +160,22 @@ var TOPS=[
   {id:'T04',l:'Jalapeño', s:'Encurtido',vaultOnly:true},
   {id:'T05',l:'Aceituna', s:'Negra en rodajas'},
   {id:'T06',l:'Pimiento', s:'Curado'},
-  {id:'T07',l:'Giardiniera',s:'Encurtido picante',spicy:true,sigOnly:true}
+  {id:'T07',l:'Giardiniera',s:'Encurtido picante',spicy:true,sigOnly:true},
+  // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
+  // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
+  // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
+  // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
+  // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
+  // con VALID_TOPS en supabase/functions/api/catalog.ts.
+  {id:'T08',l:'Apio',     s:'Picado'}
 ];
+// C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
+// menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
+// de queso ya usado en el análisis financiero, y con mejor derretido que el Americano
+// procesado que reemplaza — id NO cambia, DEBE coincidir con VALID_CHEESE en catalog.ts.
 var CHEESE=[
-  {id:'C01',l:'Americano',s:''},
-  {id:'C02',l:'Cheddar',  s:''},
+  {id:'C01',l:'Mozzarella',s:'',d:'Derrite fácil, sabor suave'},
+  {id:'C02',l:'Cheddar',  s:'',d:'Sabor intenso y textura firme'},
   {id:'C03',l:'Edam',     s:''}
 ];
 // `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
@@ -173,13 +185,18 @@ var CHEESE=[
 // (hallazgo de auditoría UX).
 var SAUCES=[
   {id:'S01',l:'Aioli',   s:'Signature',d:'Ajo, limón, suave'},
-  // vaultOnly: exclusiva de THE VAULT (SIG05, junto con S12) — mismo criterio que sigOnly
+  // vaultOnly: exclusiva del menú secreto (SIG05, junto con S12) — mismo criterio que sigOnly
   // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
   // por el dueño para tratarla igual que Au Jus.
   {id:'S02',l:'Spicy',   s:'Mayo',     d:'Cremoso, calor progresivo',spicy:true,vaultOnly:true},
   {id:'S03',l:'Smoke',   s:'BBQ',      d:'Ahumado, miel, pimentón'},
-  {id:'S04',l:'Honey',   s:'Mustard',  d:'Dulce, mostaza equilibrado'},
-  {id:'S05',l:'SNDWCH',  s:'Special',  d:'Nuestra salsa de la casa. Receta exclusiva SND//WCH.'},
+  {id:'S04',l:'Honey',   s:'Mustard',  d:'Dulce, mostaza suave'},
+  // Perfil documentado 2026-08-08 (confirmado por el dueño, LLM Council de menú) — hasta
+  // ahora era la única de las 12 salsas sin descripción de sabor, lo que bloqueaba evaluar
+  // si era redundante con otras o cómo combinaba en SIG06. Es salada/umami, NO dulce —
+  // dato relevante: SIG06 (Teriyaki+Satay+SNDWCH) tiene 2 fuentes dulces, no 3, porque
+  // esta salsa aporta un contrapunto salado, no otro dulzor apilado.
+  {id:'S05',l:'SNDWCH',  s:'Special',  d:'Salada, con carácter umami. Receta exclusiva de la casa.'},
   {id:'S06',l:'Oil & Vinegar',s:'Classic', d:'Aceite de oliva y vinagre, estilo italiano'},
   {id:'S08',l:'Teriyaki',s:'Glaze',    d:'Dulce, soja, jengibre'},
   // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
@@ -188,7 +205,15 @@ var SAUCES=[
   // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
   {id:'S09',l:'Chimichurri',s:'Piña asada',d:'Herbal, ajo, ácido, con piña asada'},
   {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní, soya, jengibre'},
-  {id:'S11',l:'Mostaza', s:'Dijon',    d:'Intensa, clásica, con carácter'},
+  // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
+  // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
+  // eje difieren las dos mostazas. Dijon es ácida y filosa, SIN dulzor — S04 es lo
+  // opuesto (dulce, suave). Mismo ingrediente base, roles opuestos, ambas se quedan.
+  // Ojo: evitar la palabra "picante" acá — no es exacta para Dijon (es acidez/pungencia,
+  // no calor) y además rompe tests/menu-exclusivity-toppings-sauces.spec.ts, que usa esa
+  // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
+  // aparezca en BUILD YOUR OWN.
+  {id:'S11',l:'Mostaza', s:'Dijon',    d:'Ácida y filosa, sin dulzor'},
   {id:'S12',l:'Picante', s:'Miel',     d:'Dulce con golpe de picor',spicy:true,vaultOnly:true},
   // sigOnly: exclusiva de THE CHICAGO (SIG07) — mismo criterio que vaultOnly en PROTS
   // (P03/CAJUN): no seleccionable en BUILD YOUR OWN aunque siga en SAUCES (SIGS/deriveOrder
@@ -197,7 +222,14 @@ var SAUCES=[
   // build sin relación con el Italian Beef (hallazgo del dueño).
   {id:'S13',l:'Au Jus',  s:'Para mojar',d:'Caldo de la cocción de la carne, servido aparte para mojar cada bocado',sigOnly:true}
 ];
-var SIGS=[
+var SIGS:any[]=[
+  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
+  // Council): SIG01/02/03/06 p30 y SIG04 p15+p30 estaban EXACTAMENTE igualados al precio
+  // de armar la misma proteína+tamaño por BUILD YOUR OWN (ver itemUnitPrice — BYO cobra
+  // directo prot.p15/p30, sin sumar nada por curaduría) — 0 premio de precio por la
+  // curaduría en 5 de 7 Signatures. +S/2 en esos puntos exactos de paridad (nunca donde ya
+  // había premio, ej. SIG01 p15=18 vs BYO P01 p15=14 se deja igual). DEBE coincidir con
+  // SIG_DATA en supabase/functions/api/catalog.ts.
   // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
   // estaba en el signature más barato de los tres comparables (18/22) mientras el más
   // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
@@ -208,17 +240,26 @@ var SIGS=[
   // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
   // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
   // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:22,
+  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:24,
     pitch:'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.'},
   // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
   // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
   // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
-  // como pide el pitch. Badge PREMIUM (antes en SIG01, el
-  // más barato de los tres) pasa acá, que sí es el de precio intermedio entre los tres.
-  // cheeseOptional: único Signature con queso a elección — un meatball sub sin queso
-  // derretido es atípico para el arquetipo (hallazgo de auditoría de receta). En vez de
-  // fijar un queso en la receta curada (cambiaría el pitch/precio sin que el cliente lo
-  // pida), se deja como agregado opcional y gratis, igual que el queso en BUILD YOUR OWN.
+  // como pide el pitch.
+  // Badge cambiado de PREMIUM a ITALIANO (auditoría de naming por sabor 2026-08-07):
+  // "Premium" prometía una experiencia elevada que la proteína real no entrega (carne
+  // molida, el insumo más barato del catálogo por kilo) y contradecía el propio pitch
+  // ("el clásico de toda la vida"). ITALIANO describe el estilo real (marinara +
+  // vinagreta al estilo italiano) sin implicar sobreprecio — mismo patrón descriptivo que
+  // ya usan AHUMADO (SIG03) y AL ESTILO CHICAGO (SIG07). Explícitamente NO se usa
+  // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
+  // como compañía consolidada, no como negocio local/casero).
+  // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
+  // menú — investigación real de comparables exitosos confirmó que el queso derretido es
+  // estructural en esta categoría de sándwich, no un extra: "melted mozzarella is what
+  // makes a Meatball Sub"). fixedCheese:'C01' (Mozzarella) va siempre en la receta, sin
+  // depender de que el cliente lo pida — DEBE coincidir con SIG_DATA.SIG02 en catalog.ts.
+  // Sin cambio de precio (costo real ~S/0.39-0.77/unidad, el dueño confirmó no subirlo).
   // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
   // hecho más auténtico para un meatball sub que uno con hierbas.
   // chef:true (FAVORITO DEL CHEF) retirado esta sesión (auditoría de menú/copy) — se
@@ -229,8 +270,14 @@ var SIGS=[
   // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
   // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
   // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-  {id:'SIG02',n:'The Meatball',s:'Signature',badge:'Premium',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:24,cheeseOptional:true,
-    pitch:'Albóndigas caseras en salsa marinara y aceituna negra, con una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe.'},
+  // Nombre cambiado de "The Meatball" a "The Marinara" 2026-08-08 (decisión del dueño, LLM
+  // Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que la
+  // proteína interna ya muestra en español ("Albóndiga", ver PROTS.P06 arriba), bilingüismo
+  // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
+  // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
+  // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
+  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:26,fixedCheese:'C01',
+    pitch:'Albóndigas caseras bañadas en marinara, con mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad.'},
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
   // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
@@ -241,16 +288,42 @@ var SIGS=[
   // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
   // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
   // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:30,
-    pitch:'Fiambres italianos ahumados sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
+  // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02) —
+  // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
+  // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
+  // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
+  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:32,fixedCheese:'C02',
+    pitch:'Fiambres italianos ahumados y cheddar derretido sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
   // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
   // Ahora sí iguala el criterio de premio S/0 a 30CM que ya tienen los demás Signatures.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Ligero',    base:'B01',prot:'P04',tops:['T01','T02','T06'],sauces:['S01','S11'],p15:16,p30:30,
-    // Pitch corregido: el toque cítrico viene del aioli (ajo, limón), no de la mostaza
-    // dijon — antes se lo atribuía a la salsa equivocada (hallazgo de auditoría).
-    pitch:'Atún premium, vegetales frescos y un toque cítrico de nuestro aioli, con el carácter justo de la mostaza dijon. Ligero pero lleno de sabor — ideal para cualquier hora del día.'},
+  // Badge cambiado de LIGERO a CÍTRICO (auditoría de naming por sabor 2026-08-07):
+  // "Ligero" choca con la proteína real (atún CON MAYONESA + Aioli, otra base cremosa) —
+  // evidencia real de "health halo" muestra que una etiqueta tipo "light" puede bajar la
+  // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
+  // Receta y pitch corregidos otra vez 2026-08-08 (decisión del dueño, LLM Council de
+  // naming/sabor 2026-08-08): el consejo señaló, con 5/5 asesores y 5/5 rondas de
+  // revisión por pares, que el fix de arriba corrigió el badge pero dejó intactos el
+  // nombre del producto y el pitch — "Ligero" seguía escrito en el pitch, prometiendo algo
+  // que el bocado real (dos bases cremosas: mayonesa de P04 + Aioli) no entregaba. En vez
+  // de renombrar el producto, el dueño eligió arreglar la receta: se quita el Aioli
+  // (duplicaba la mayonesa que P04 ya trae) y se agrega un chorrito de limón real —
+  // CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. El limón
+  // es un ingrediente de preparación (se exprime al armar el sándwich), no una salsa
+  // seleccionable — no tiene entrada propia en SAUCES/catalog.ts, solo vive en este pitch
+  // (confirmado con el dueño 2026-08-08, no asumir de nuevo que necesita ser una entidad
+  // de catálogo). "Ligero" se retira del pitch (no es honesto con una base de mayonesa,
+  // sea una o dos).
+  // Pimiento (T06) reemplazado por Apio (T08) 2026-08-08 (decisión del dueño, LLM Council
+  // de menú) — el pimiento curado es tierno, no aporta crocancia real, dejando esta receta
+  // con un solo elemento crocante (Pepinillo) y riesgo real de fatiga de paladar (5/5
+  // asesores lo confirmaron). Apio picado es el ingrediente clásico de ensalada de atún
+  // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
+  // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
+  // de dulzor, no inventar una solución sin pedido explícito.
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:18,p30:32,
+    pitch:'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
   // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -258,8 +331,24 @@ var SIGS=[
   // negocio (~septiembre 2026, ver "Contexto de negocio" en CLAUDE.md) + ~60 días de
   // ventana — AJUSTAR a la fecha real de apertura en cuanto se confirme, esto es un
   // placeholder documentado, no un dato certero (hallazgo de auditoría de copy, BAJO).
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T02','T06'],sauces:['S10','S05'],p15:17,p30:21,
-    pitch:'Pollo teriyaki con salsa satay de maní y nuestra salsa de la casa. El sabor asiático que le faltaba al menú, con la firma SND//WCH.'},
+  // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño) — el consejo de
+  // menú había señalado que el pepinillo mitigaba sin querer el riesgo de "doble dulce"
+  // (teriyaki+satay, dos salsas dulces sin nada ácido) documentado por fuentes de chef;
+  // el dueño pidió quitarlo igual. Queda Tomate+Pimiento. El riesgo de doble dulce ya NO
+  // tiene ningún elemento ácido que lo corte — sin resolver, documentado a propósito
+  // (no se agregó ningún reemplazo sin que el dueño lo pidiera). DEBE coincidir con
+  // SIG_DATA.SIG06 en catalog.ts si esa entrada llega a declarar tops explícitos.
+  // Naming ("The Teriyaki" sin salsa Teriyaki Glaze/S08) revisado 2026-08-08 — un council
+  // posterior señaló que el nombre no coincide con ninguna salsa de la receta (usa S10
+  // Peanut Satay + S05 SNDWCH Special). El dueño decidió NO reactivar S08 (agregarla
+  // habría sumado una tercera fuente dulce — "dulce, soja, jengibre" — al doble dulce ya
+  // documentado arriba). El nombre queda igual sin cambiar la receta: "Teriyaki" describe
+  // la proteína (Pollo//Teriyaki, P02, marinado real), no una salsa — el pitch ya lo deja
+  // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
+  // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
+  // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
+  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:17,p30:23,
+    pitch:'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.'},
   // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
   // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
@@ -273,26 +362,53 @@ var SIGS=[
   // prot P01→P07: usa su propio corte (laminado, estilo Chicago), nunca el asado mechado
   // normal — ver P07 en PROTS y RECIPE_RATIONALE.md.
   {id:'SIG07',n:'The Chicago',s:'Reserve',badge:'Al estilo Chicago',base:'B01',prot:'P07',tops:['T07'],sauces:['S13'],p15:25,p30:25,
-    pitch:'Nuestro Italian Beef al estilo Chicago: res mechada sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
+    // Pitch corregido de "res mechada" a "res laminada" (auditoría de menú 2026-08-07):
+    // P07 usa corte fino laminado (no deshilachado, ver comentario en PROTS arriba y
+    // RECIPE_RATIONALE.md) — el pitch seguía prometiendo el corte equivocado pese a que
+    // el resto del catálogo (código de inventario, `d` de P07) ya reflejaba el correcto.
+    pitch:'Nuestro Italian Beef al estilo Chicago: res laminada fina sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.'},
+  // Variante de temporada de apertura (aprobada 2026-08-07, investigación de menú §10.8/
+  // §11.4): S08 (Teriyaki Glaze) y S09 (Chimichurri Piña Asada) eran las únicas 2 salsas
+  // del catálogo sin ninguna receta fija detrás. Reutiliza la proteína más preparada del
+  // negocio (P01, la de THE ORIGINAL) — cero fricción de producción, cero SKU nuevo.
+  // `availableUntil` (distinto de `newUntil`, que solo cambia el badge a "Nuevo" pero
+  // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
+  // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
+  // el ítem completo desaparezca de la lista (sigAvailable()) y del backend
+  // (SIG_AVAILABILITY en catalog.ts) al pasar la fecha — expira solo, no es una palabra.
+  // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — esta
+  // receta no tenía NINGÚN componente cremoso/graso (el chimichurri es a base de aceite,
+  // no una barrera de humedad como sí lo son aioli/mayo/queso en el resto del menú) —
+  // 2 asesores de forma independiente lo confirmaron como riesgo real de pan mojado. DEBE
+  // coincidir con SIG_DATA.SIG08 en catalog.ts.
+  {id:'SIG08',n:'The Ember',s:'Signature',badge:'Edición de Apertura',availableUntil:'2026-10-07',base:'B03',prot:'P01',tops:['T03','T06'],sauces:['S09','S01'],p15:14,p30:22,
+    pitch:'Res asada mechada de cocción lenta sobre focaccia artesanal, con un toque de aioli y un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
   // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
   // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
   // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
   // elegir en la UI antes de intentarlo.
-  // Pitch sin ingredientes explícitos (pedido del dueño) — THE VAULT es secreto de
-  // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva.
-  // Se revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
+  // Pitch sin ingredientes explícitos (pedido del dueño) — el sándwich secreto lo es de
+  // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva. Se
+  // revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
   // sigPreviewOverlayHTML(), que ocultan el desglose de Pan/Proteína/Toppings/Salsas
   // específicamente para s.secret.
-  {id:'SIG05',n:'The Vault',   s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24,p30:30,
+  // Rotación mensual (decisión del dueño, 2026-08-10 — reemplaza "The Vault" fijo, que
+  // existió hasta esa fecha). n/base/prot/tops/sauces/p15/p30/minOrders de abajo son solo
+  // el respaldo/semilla para el primer render antes de que loadCatalogBackground()
+  // reciba la fila vigente de la tabla `secret_signature` (vía get-catalog); a partir de
+  // ahí esos campos de este mismo objeto se sobreescriben en memoria, igual que ya pasa
+  // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
+  // del mes — eso se hace desde Admin // Menú secreto.
+  {id:'SIG05',n:'Menú secreto',s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24,p30:30,
     secret:true,minOrders:5,
-    pitch:'Solo para clientes INICIADO. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.'}
+    pitch:'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.'}
 ];
 // Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
 // que el modo "BUILD YOUR OWN" en la pantalla de inicio, confundiendo a un cliente nuevo
 // sobre si estaba viendo un sándwich curado por la casa o el armado libre (hallazgo de
 // auditoría UX, CRÍTICO). Ahora todos los Signatures regulares usan "SIGNATURE" (solo
-// THE VAULT y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
+// el menú secreto y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
 // distinguen tipográficamente del resto del texto — cursiva y más grande, como una
 // firma — para reforzar que son curados por la casa.
 function sigTypeTag(tag){
@@ -1108,6 +1224,10 @@ function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bott
 // newUntil no haya pasado, si no el badge permanente en s.badge — evita que un badge de
 // novedad se quede pegado para siempre (hallazgo de auditoría de copy, BAJO).
 function sigBadge(s){return(s.newUntil&&Date.now()<new Date(s.newUntil+'T23:59:59').getTime())?'Nuevo':s.badge;}
+// Distinto de `newUntil` (que solo cambia el texto del badge, nunca oculta el ítem) —
+// `availableUntil` es para variantes de temporada de verdad: el Signature entero deja de
+// listarse/pedirse al pasar la fecha. Espejo server-side: SIG_AVAILABILITY en catalog.ts.
+function sigAvailable(s){return!s.availableUntil||Date.now()<new Date(s.availableUntil+'T23:59:59').getTime();}
 // `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
 // mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
@@ -1551,9 +1671,14 @@ async function joinWaitlist(){
 }
 function waitlistCardHTML(){
   if(cust||wlDone||businessLaunched)return'';
+  // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.2) — antes era
+  // un mensaje puramente pasivo ("te avisamos"), sin ningún incentivo concreto visible en
+  // el primer segundo. Ahora menciona el código BIENVENIDA real (ya creado, -S/5, mínimo
+  // S/15) en vez de prometer un mecanismo de "primeros N inscritos" que no existe en el
+  // backend — nunca se promete algo que la app no cumple de verdad (Product Principle #2).
   return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:12px;padding:16px;margin-bottom:16px">'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Avísame<span class="cut-sep" style="color:'+GOLD+'"> // </span>cuando abramos</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te escribimos apenas empecemos a repartir de verdad.</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sé de los primeros<span class="cut-sep" style="color:'+GOLD+'"> // </span>en probarlo</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:'+GOLD+'">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'+INP('wl-phone','Teléfono','tel',wlPhone)+INP('wl-name','Nombre // opcional','text',wlName)+'</div>'
     +(wlMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff8888;margin-top:8px">'+esc(wlMsg)+'</div>':'')
     +'<div style="margin-top:10px">'+BTN('Avísame //','joinWaitlist()')+'</div>'
@@ -1598,11 +1723,11 @@ function sOHome(){
     // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
     // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
     +(function(){
-      // THE VAULT nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
+      // el menú secreto nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
       // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
       // sección separada, no una fila más entre los Signatures normales). Evita el
       // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-      var visibleSigs=SIGS.filter(function(s){return!s.secret;});
+      var visibleSigs=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);});
       var secretSig=SIGS.find(function(s){return s.secret;});
       var tabBar='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
         +'<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:'+(homeTab==='sig'?GOLD:'transparent')+';color:'+(homeTab==='sig'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
@@ -1610,7 +1735,7 @@ function sOHome(){
         +'</div>';
       var sigPanel='<div style="margin-bottom:8px">'+visibleSigs.map(function(s,i){
         var av=isAvail(s.base)&&isAvail(s.prot);
-        var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:'+'var(--sw-card2,#1A3028)'+'"></div>';
+        var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:'+'var(--sw-card2,#1A3028)'+'"></div>';
         if(!av)return'<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">'+thumb+'<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
         return'<div onclick="startOrderWithSig(\''+s.id+'\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">'+thumb+'<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:'+GOLD+'">'+sigBadge(s)+(s.recommended?' · Recomendado':'')+'</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+';flex-shrink:0">'+SOLES+s.p15+'</span></div>';
       }).join('')+'</div>';
@@ -1759,7 +1884,7 @@ function sGroupOrder(){
     h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:12px">Agregar mi pedido //</div>';
     h+=INP('grp-name','Tu nombre','text',groupJoinName||(g.isOrganizer&&cust?cust.name:''),'clientes');
     h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#1A3028')+';color:'+(groupSize==='15'?'#0d0d0d':'#A8C8B0')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#1A3028')+';color:'+(groupSize==='30'?'#0d0d0d':'#A8C8B0')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
-    h+=SIGS.filter(function(s){return!s.secret;}).map(function(s){
+    h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
       var price=groupSize==='15'?s.p15:s.p30;
       return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:'+GOLD+'">'+SOLES+price+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
     }).join('');
@@ -1820,12 +1945,12 @@ function sOSig(){
     // sigPreviewOverlayHTML cuando no hay foto, a la misma escala que la miniatura real —
     // nunca se inventa una foto, solo se pareja el espacio que ocupa.
     var thumb=SIG_IMG[s.id]
-      ?'<img src="'+SIG_IMG[s.id]+'" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
+      ?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">'
       :'<div style="width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(160deg,#2D5246,#1A3028);display:flex;align-items:center;justify-content:center;opacity:.6">'+icon('sandwich',26,GOLD)+'</div>';
-    // THE VAULT (s.secret), incluso YA desbloqueado, no debe revelar su composición —
+    // el menú secreto (s.secret), incluso YA desbloqueado, no debe revelar su composición —
     // el punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas
     // (pedido explícito del dueño). Antes esta misma línea mostraba pan+proteína en
-    // texto plano para CUALQUIER Signature, incluida THE VAULT una vez desbloqueada.
+    // texto plano para CUALQUIER Signature, incluida el menú secreto una vez desbloqueada.
     // Antes el pitch (lo que de verdad diferencia sabor/estilo entre Signatures) solo
     // se veía tras abrir "VER FOTO" — comparar 6 Signatures exigía 6 taps extra solo para
     // entender en qué se diferencian (hallazgo de auditoría UX, ALTO). Truncado a 1 línea
@@ -1858,11 +1983,20 @@ function sigPreviewOverlayHTML(){
   var s=SIGS.find(function(x){return x.id===previewSigId;});
   if(!s)return'';
   var pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
-  var toppingsLbl=s.tops.map(function(id){return fn(TOPS,id);}).join(' · ');
-  var saucesLbl=s.sauces.map(function(id){return fn(SAUCES,id);}).join(' + ');
+  // A diferencia de fn() (usado en resúmenes de texto plano), acá sí se agrega la
+  // descripción larga (`d`) cuando existe — sin esto, ingredientes exclusivos de un
+  // Signature (ej. Giardiniera/Au Jus, sigOnly) nunca se explican en ningún otro lugar
+  // de la interfaz porque BUILD YOUR OWN (el único paso que sí muestra `d`) los excluye
+  // por diseño (hallazgo de auditoría de menú).
+  var toppingsLbl=s.tops.map(function(id){var t:any=TOPS.find(function(x){return x.id===id;});return t?t.l+' // '+t.s+(t.d?' — '+t.d:''):'';}).join(' · ');
+  var saucesLbl=s.sauces.map(function(id){var sc=SAUCES.find(function(x){return x.id===id;});return sc?sc.l+' // '+sc.s+(sc.d?' — '+sc.d:''):'';}).join(' + ');
+  // fixedCheese (SIG02 Mozzarella, SIG03 Cheddar, ver comentario junto a esas entradas en
+  // SIGS) — a diferencia de toppings/salsas, no es una elección del cliente, siempre va.
+  var ch:any=s.fixedCheese?CHEESE.find(function(x){return x.id===s.fixedCheese;}):null;
+  var cheeseLbl=ch?ch.l+(ch.s?' // '+ch.s:'')+(ch.d?' — '+ch.d:''):'';
   var photo=SIG_IMG[s.id];
   var hero=photo
-    ?'<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="'+photo+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
+    ?'<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
     :'<div style="background:linear-gradient(160deg,#2D5246,#1A3028);border-radius:14px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
     +'<div style="position:absolute;top:10px;right:14px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(242,240,235,.5);letter-spacing:.15em">Imagen referencial</div>'
     +'<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">'+icon('sandwich',56,GOLD)+'</div>'
@@ -1874,15 +2008,16 @@ function sigPreviewOverlayHTML(){
     +hero
     +'<div style="padding:20px">'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.6;margin-bottom:16px">'+esc(s.pitch||'')+'</p>'
-    // THE VAULT (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
+    // el menú secreto (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
     // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
     // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
     +(s.secret
       ?'<div style="background:var(--sw-card,#2D5246);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
       :'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
       +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
-      +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s:'')+'</div>'
-      +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s:'')+'</div>'
+      +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
+      +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s+(pr.d?' — '+pr.d:''):'')+'</div>'
+      +(cheeseLbl?'<div><span style="color:'+GOLD+'">Queso · </span>'+cheeseLbl+'</div>':'')
       +'<div><span style="color:'+GOLD+'">Toppings · </span>'+toppingsLbl+'</div>'
       +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
       +'</div></div>')
@@ -1939,7 +2074,7 @@ function sOBuild(){
     h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
   }else if(byoStep===1){
     h+=ST('','Proteína','');
-    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
+    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
   }else if(byoStep===2){
     h+=ST('','Toppings','Sin límite, elige los que quieras.');
     h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
@@ -1963,6 +2098,14 @@ function sOBuild(){
   }else{
     h+=ST('','Salsas','Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
     h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
+    // Sugerencia no restrictiva por proteína, anclada a los maridajes que ya usan los
+    // propios Signatures (auditoría de menú 2026-08-05: Atún→Aioli/Dijon, Pollo
+    // Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar) — solo marca las cartas
+    // sugeridas con un tag, nunca bloquea ni preselecciona ninguna otra salsa.
+    var sauceSuggest=({P04:['S01','S11'],P02:['S10','S05'],P06:['S06']})[prot]||[];
+    if(sauceSuggest.length){
+      h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Sugerencia para tu proteína, marcada abajo — sigue siendo tu elección.</div>';
+    }
     // Antes las 13 salsas eran una sola lista plana sin ningún elemento visual que las
     // distinguiera entre sí (el único paso de BUILD YOUR OWN sin agrupar/iconos, hallazgo
     // de auditoría UX). Se agrupan en PICANTES/OTRAS SALSAS y se marca con el ícono de ají
@@ -1971,8 +2114,8 @@ function sOBuild(){
     var sauceCard=function(s){
       var av=isAvail(s.id);
       if(!av)return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.l+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+s.s+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;margin-left:8px">Agotado</span></div></div>';
-      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3;
-      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
+      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3,suggested=sauceSuggest.indexOf(s.id)>=0;
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+(suggested?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';border:1px solid '+GOLD+';border-radius:20px;padding:1px 8px;margin-left:auto">Sugerida</span>':'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
     };
     var byoSauces=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;});
     var spicySauces=byoSauces.filter(function(s){return s.spicy;});
@@ -2010,9 +2153,11 @@ function sOItemConfirm(){
   if(mode!=='sig'){rows.push({k:'Pan',v:fn(BASES,base)});rows.push({k:'Proteína',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'Toppings',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'Queso',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'Salsas',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
   if(doubleProt&&dbl)rows.push({k:'Doble',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl});
   if(extraSauce)rows.push({k:'Salsa extra',v:'Salsa adicional a tu elección',p:2});
-  // Queso opcional — único Signature con esta opción (SIG02, ver cheeseOptional en SIGS):
-  // un meatball sub sin queso derretido era atípico para el arquetipo (hallazgo de
-  // auditoría de receta). Gratis, igual que el queso en BUILD YOUR OWN.
+  // Queso opcional — mecanismo para un futuro Signature que lo ofrezca a elección (ver
+  // cheeseOptional en SIGS). SIG02 lo usó hasta 2026-08-08; ahora tiene queso FIJO
+  // (fixedCheese, ver sigPreviewOverlayHTML) porque la investigación de esa sesión
+  // encontró que el queso derretido es estructural en esa receta, no opcional — ningún
+  // Signature usa cheeseOptional hoy, esto queda listo por si hace falta más adelante.
   var cheeseSigAllowed=mode==='sig'&&sig&&sig.cheeseOptional;
   if(cheeseSigAllowed&&cheese)rows.push({k:'Queso',v:fn(CHEESE,cheese)+' (opcional, sin costo)'});
   // "Extra" es más de una salsa que ya elegiste — en BUILD YOUR OWN no tiene sentido
@@ -2078,7 +2223,7 @@ function cartItemsHTML(){
   return cart.map(function(it,idx){
     var extras=itemExtrasLabel(it);
     var canEdit=it.type!=='side';
-    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+itemLineTotal(it)+'</span></div></div>';
+    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+itemLineTotal(it)+'</span></div></div>';
   }).join('');
 }
 // Edita un producto ya en el carrito: lo saca y precarga el builder con su
@@ -2112,6 +2257,11 @@ async function editItemNote(idx){
 // registradas en el pedido (recibo, ticket de cocina, WhatsApp).
 function rewardsPickerHTML(){
   if(!cust)return'';
+  // Mismo criterio que en promoCodeHTML: un código promocional y una recompensa de
+  // puntos no se combinan en el mismo pedido.
+  if(appliedPromo){
+    return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Usa tus puntos //</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No se puede combinar con el código promocional aplicado abajo — quítalo primero si prefieres usar una recompensa.</div></div>';
+  }
   var unlocked=RWDS.filter(function(r){return(cust.points||0)>=r.pts;});
   // Antes, sin ninguna recompensa desbloqueada (el caso más común en un primer o segundo
   // pedido), esta función no mostraba nada — el mismo framing "Te faltan N pts" que ya
@@ -2165,6 +2315,12 @@ function promoCodeHTML(){
   var box='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Código promocional //</div>';
   if(appliedPromo){
     return box+'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366">'+esc(appliedPromo.code)+' aplicado · ahorras '+SOLES_TXT+appliedPromo.discount+'</span><span onclick="removePromoCode()" style="cursor:pointer;flex-shrink:0;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#ff8888">Quitar</span></div></div>';
+  }
+  // Un código promocional y una recompensa de puntos no se pueden combinar en el mismo
+  // pedido (mismo criterio que combo/hora-valle: nunca se suman) — el servidor ya lo
+  // rechaza, esto solo evita que el cliente llegue a intentarlo sin saber por qué falla.
+  if(appliedReward){
+    return box+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No se puede combinar con la recompensa aplicada arriba — quítala primero si prefieres usar un código.</div></div>';
   }
   return box+'<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:13px;text-transform:uppercase"/>'
     +'<button onclick="applyPromoCode()" style="flex-shrink:0;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:8px;padding:0 16px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+GOLD+'">Aplicar</button></div>'
@@ -3023,7 +3179,7 @@ async function chargeAndFinalize(culqiToken){
 function finalizeOrderSuccess(res,po,chargeId){
   // Celebración de rango — antes rankName() era puramente informativo, sin ningún evento
   // ni aviso al cruzar un umbral (hallazgo de auditoría: cero feedback al pasar de NUEVO a
-  // REGULAR, o al desbloquear THE VAULT en INICIADO). Se compara el rango justo antes y
+  // REGULAR, o al desbloquear el menú secreto en INICIADO). Se compara el rango justo antes y
   // justo después de que el servidor confirme este pedido (fuente real: total_orders que
   // ya devuelve el propio res.customer, no un cálculo local que podría desincronizarse).
   var prevRank=cust?rankName(cust.total_orders):null;
@@ -3076,7 +3232,7 @@ function sOSent(){
   // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
   // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
   var rankUp=window._lRankUp;
-  var rankPerk=rankUp==='INICIADO'?'Ya puedes ver The Vault — el menú secreto.':null;
+  var rankPerk=rankUp==='INICIADO'?'Ya puedes ver el menú secreto.':null;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
     +'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>'
     // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
@@ -3427,7 +3583,13 @@ function ratingHTML(o){
     // no en cada visita futura al historial — y solo si hay cuenta (el código es el
     // teléfono del cliente, no existe para invitados).
     if(justRatedRef===o.ref&&cust){
-      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Le compartes SND//WCH a alguien?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos.</div>'+BTN('Compartir por WhatsApp //','shareReferral()')+'</div>';
+      // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.3) — antes
+      // solo mencionaba WhatsApp en el texto y en el botón, aunque shareReferral() ya usa
+      // navigator.share() cuando está disponible (abre el selector nativo completo:
+      // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
+      // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
+      // satisfacción de siempre, sin lógica nueva.
+      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
     }
     return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
   }
@@ -4387,6 +4549,7 @@ function adminToolsSections(){
       ['inventario','Inventario','loadInventory()'],
       ['precios','Precios','loadAdminCatalog()'],
       ['horario','Horario','loadStoreHoursForm()'],
+      ['lock','Menú secreto','loadSecretSignatureAdmin()'],
     ]],
     ['Cuenta //',[
       ['puntos','Puntos manuales','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
@@ -4613,9 +4776,14 @@ async function loadDashboard(){
   }catch(e){dashStats=null;atRiskCustomers=null;}
   busy=false;render();
 }
-function waRiskContact(phone,name){
-  var msg='Hola '+name+'! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
-  window.open('https://wa.me/51'+String(phone).replace(/\D/g,'').replace(/^51/,'')+'?text='+encodeURIComponent(msg),'_blank');
+function waRiskContact(i){
+  // Recibe solo el índice (numérico, seguro de interpolar en onclick) y busca el cliente
+  // en memoria — nunca se embebe name/phone (texto libre del cliente) directo en el
+  // atributo onclick, que un XSS podría explotar para robar el token de admin de localStorage
+  // (hallazgo de auditoría 2026-08-07).
+  var c=(atRiskCustomers||[])[i];if(!c)return;
+  var msg='Hola '+(c.name||'')+'! Somos de SND//WCH — te extrañamos por acá, ¿todo bien? Cuando quieras tu Signature de siempre, ahí estamos.';
+  window.open('https://wa.me/51'+String(c.phone).replace(/\D/g,'').replace(/^51/,'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 function DTILE(label,big,sub?,muted?){
   // muted=true reduce el peso visual para data de solo-referencia (ej. puntos en
@@ -4781,9 +4949,9 @@ function sAdminDashboard(){
   // decida a quién más vale la pena escribirle personalmente.
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Clientes en riesgo //</div>';
   if(atRiskCustomers&&atRiskCustomers.length){
-    h+=atRiskCustomers.slice(0,10).map(function(c){
+    h+=atRiskCustomers.slice(0,10).map(function(c,i){
       var daysTxt=c.daysSinceLastOrder==null?'nunca pagó un pedido':'hace '+c.daysSinceLastOrder+' días';
-      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(c.name||c.phone)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(c.rank)+' · último pedido '+daysTxt+'</div></div><button onclick="waRiskContact(\''+esc(c.phone)+'\',\''+esc(c.name||'')+'\')" aria-label="Contactar por WhatsApp" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">'+icon('chat',14,GOLD)+'</button></div>';
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(c.name||c.phone)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(c.rank)+' · último pedido '+daysTxt+'</div></div><button onclick="waRiskContact('+i+')" aria-label="Contactar por WhatsApp" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;flex-shrink:0;display:inline-flex">'+icon('chat',14,GOLD)+'</button></div>';
     }).join('');
   }else{
     h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px">Sin clientes en riesgo por ahora.</div>';
@@ -5052,6 +5220,7 @@ function render(){
     case'admin_mgr':   h=sAdminMgr();break;
     case'admin_inventory':h=sAdminInventory();break;
     case'admin_catalog':h=sAdminCatalog();break;
+    case'admin_secret': h=sAdminSecretSignature();break;
     case'admin_dashboard':h=sAdminDashboard();break;
     case'admin_customer':h=sAdminCustomer();break;
     case'admin_search':h=sAdminSearch();break;
@@ -5113,6 +5282,28 @@ async function loadCatalogBackground(){
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
+    // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05
+    // era un literal fijo ('The Vault', Pollo Cajún) en el array de arriba. Ahora
+    // r.secretSignature trae la composición vigente (nombre/pan/proteína/tops/salsas/
+    // precio/minOrders) publicada desde Admin // Menú secreto, y este bloque la vuelca
+    // sobre la misma entrada SIG05 ya presente en SIGS — el resto del código (vaultCard,
+    // sigPreviewOverlayHTML, checkout) sigue leyendo esos mismos campos sin cambios.
+    var secret=r.secretSignature;
+    if(secret){
+      var secretSig=SIGS.find(function(s){return s.id==='SIG05';});
+      if(secretSig){
+        secretSig.n=secret.name;secretSig.base=secret.base;secretSig.prot=secret.prot;
+        secretSig.tops=secret.tops;secretSig.sauces=secret.sauces;
+        secretSig.p15=secret.p15;secretSig.p30=secret.p30;secretSig.minOrders=secret.minOrders;
+      }
+      // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
+      // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
+      // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que
+      // el sándwich secreto de este mes reserva para sí, ni más ni menos.
+      PROTS.forEach(function(p){p.vaultOnly=(secret.vaultOnlyProts||[]).indexOf(p.id)>=0;});
+      TOPS.forEach(function(t){t.vaultOnly=(secret.vaultOnlyTops||[]).indexOf(t.id)>=0;});
+      SAUCES.forEach(function(sc){sc.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sc.id)>=0;});
+    }
   }catch(e){}
 }
 // Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
@@ -5407,6 +5598,93 @@ async function saveAllCatalogChanges(){
   }
   busy=false;render();
   setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2500);
+}
+
+// MENÚ SECRETO — rotación mensual (decisión del dueño, 2026-08-10, reemplaza "The Vault"
+// fijo). Publicar un cambio INSERTA una fila nueva en `secret_signature` (nunca
+// actualiza in-place, ver actAdminSecretSignatureSet) — la fila de mayor id es la
+// vigente, así queda historial de sándwiches secretos anteriores gratis.
+var ssName='',ssBase='',ssProt='',ssTops:string[]=[],ssSauces:string[]=[],ssVaultIds:string[]=[],ssP15='',ssP30='',ssMinOrders='',ssImagePath='',ssMsg='',ssHistory:any[]=[];
+async function loadSecretSignatureAdmin(){
+  sc='admin_secret';busy=true;busyMsg='Cargando menú secreto...';render();
+  try{
+    var r=await api('admin-secret-signature-get',{token:token});
+    var cur=r.current;
+    ssName=cur?cur.name:'';ssBase=cur?cur.base:'B03';ssProt=cur?cur.protein_id:'';
+    ssTops=cur&&Array.isArray(cur.tops)?cur.tops.slice():[];
+    ssSauces=cur&&Array.isArray(cur.sauces)?cur.sauces.slice():[];
+    ssVaultIds=cur&&Array.isArray(cur.vault_only_ids)?cur.vault_only_ids.slice():[];
+    ssP15=cur?String(cur.price_15):'';ssP30=cur?String(cur.price_30):'';
+    ssMinOrders=cur?String(cur.min_orders):'5';ssImagePath=cur&&cur.image_path?cur.image_path:'';
+    ssHistory=r.history||[];
+  }catch(e){showToast('Error: '+e.message);}
+  busy=false;render();
+}
+function ssToggle(arr,id,max){
+  var i=arr.indexOf(id);
+  if(i>=0){arr.splice(i,1);var vi=ssVaultIds.indexOf(id);if(vi>=0)ssVaultIds.splice(vi,1);}
+  else if(arr.length<max)arr.push(id);
+  render();
+}
+function ssToggleVault(id){
+  var i=ssVaultIds.indexOf(id);
+  if(i>=0)ssVaultIds.splice(i,1);else ssVaultIds.push(id);
+  render();
+}
+function ssChip(sel,label,onclick){
+  return'<div onclick="'+onclick+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:8px;padding:9px 12px;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text,#FFFFFF);display:inline-block;margin:0 6px 6px 0">'+label+'</div>';
+}
+function sAdminSecretSignature(){
+  var chosenIds=[ssProt,...ssTops,...ssSauces].filter(function(id){return!!id;});
+  var vaultChips=chosenIds.map(function(id){
+    var item:any=PROTS.find(function(x){return x.id===id;})||TOPS.find(function(x){return x.id===id;})||SAUCES.find(function(x){return x.id===id;});
+    if(!item)return'';
+    var sel=ssVaultIds.indexOf(id)>=0;
+    return ssChip(sel,(sel?'✓ ':'')+item.l+' '+item.s,"ssToggleVault('"+id+"')");
+  }).join('');
+  return H('MENÚ SECRETO',"loadAdmin()")
+    +'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
+    +(ssMsg?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">'+esc(ssMsg)+'</div>':'')
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">El sándwich secreto rota — publica una receta nueva cuando quieras, sin depender de una sesión de código. El nombre y el precio son lo único que el cliente ve; la composición se revela recién cuando lo pide.</p>'
+    +'<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Nombre del mes</div>'+INP('ss-name','ej. Reserva de Agosto','text',ssName)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
+    +'<div style="margin-bottom:14px">'+BASES.map(function(b){return ssChip(ssBase===b.id,b.l+' '+b.s,"ssBase='"+b.id+"';render()");}).join('')+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
+    +'<div style="margin-bottom:14px">'+PROTS.filter(function(p){return!p.sigOnly;}).map(function(p){return ssChip(ssProt===p.id,p.l+' '+p.s,"ssProt='"+p.id+"';var vi=ssVaultIds.indexOf('"+p.id+"');render()");}).join('')+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 ('+ssTops.length+'/3)</div>'
+    +'<div style="margin-bottom:14px">'+TOPS.filter(function(t){return!t.sigOnly;}).map(function(t){return ssChip(ssTops.indexOf(t.id)>=0,t.l+' '+t.s,"ssToggle(ssTops,'"+t.id+"',3)");}).join('')+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 ('+ssSauces.length+'/2)</div>'
+    +'<div style="margin-bottom:14px">'+SAUCES.filter(function(s){return!s.sigOnly;}).map(function(s){return ssChip(ssSauces.indexOf(s.id)>=0,s.l+' '+s.s,"ssToggle(ssSauces,'"+s.id+"',2)");}).join('')+'</div>'
+    +(chosenIds.length?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Exclusivos de este mes //</div>'
+      +'<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:8px">Marca los ingredientes que NO deben poder armarse por Arma el tuyo este mes — es lo que hace que valga la pena desbloquear el secreto.</p>'
+      +'<div style="margin-bottom:14px">'+vaultChips+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-bottom:14px">'+cpNumField('ss-p15','15CM',ssP15)+cpNumField('ss-p30','30CM',ssP30)+cpNumField('ss-min','Pedidos mín.',ssMinOrders)+'</div>'
+    +'<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Foto (ruta/URL, opcional)</div>'+INP('ss-img','ej. img/sig05.jpg',undefined,ssImagePath)+'</div>'
+    +BTN('Publicar sándwich del mes //','saveSecretSignature()')
+    +(ssHistory.length?'<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+      +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
+    +'</div>';
+}
+async function saveSecretSignature(){
+  ssName=gv('ss-name');ssImagePath=gv('ss-img');ssP15=gv('ss-p15');ssP30=gv('ss-p30');ssMinOrders=gv('ss-min');
+  if(!ssName.trim()){showToast('Falta el nombre del sándwich del mes.');return;}
+  if(!ssBase||!ssProt){showToast('Elige pan y proteína.');return;}
+  if(!ssTops.length&&!ssSauces.length){showToast('Elige al menos un topping o una salsa.');return;}
+  var p15=Number(ssP15),p30=Number(ssP30),minOrders=Number(ssMinOrders);
+  if(!(p15>0)||!(p30>0)){showToast('Precio inválido.');return;}
+  if(!Number.isInteger(minOrders)||minOrders<0){showToast('Pedidos mínimos inválido.');return;}
+  busy=true;busyMsg='Publicando...';render();
+  try{
+    await api('admin-secret-signature-set',{token:token,name:ssName.trim(),base:ssBase,proteinId:ssProt,tops:ssTops,sauces:ssSauces,vaultOnlyIds:ssVaultIds,price15:p15,price30:p30,minOrders:minOrders,imagePath:ssImagePath.trim()||null});
+    await loadCatalogBackground();
+    ssMsg='Sándwich del mes publicado.';
+  }catch(e){
+    busy=false;render();
+    showToast('Error: '+e.message);
+    return;
+  }
+  await loadSecretSignatureAdmin();
+  setTimeout(function(){ssMsg='';if(sc==='admin_secret')render();},2500);
 }
 
 // FICHA DE CLIENTE (#94) — historial completo de un cliente (pedidos, puntos,
@@ -5990,7 +6268,7 @@ function sAdminCalendar(){
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Nueva entrada //</div>';
   h+='<div style="display:flex;flex-direction:column;gap:8px">'
     +INP('cal-date','Fecha','date',calDate)
-    +INP('cal-title','Tema // ej. Lanzamiento THE VAULT','text',calTitle)
+    +INP('cal-title','Tema // ej. Sándwich secreto del mes','text',calTitle)
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+CAL_CHANNELS.map(function(c){return'<div onclick="setCalChannel(\''+c[0]+'\')" style="text-align:center;background:'+(calChannel===c[0]?'var(--sw-card2,#1A3028)':'transparent')+';border:1px solid '+(calChannel===c[0]?GOLD:'#3A6B58')+';border-radius:8px;padding:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+(calChannel===c[0]?GOLD:'#A8C8B0')+'">'+c[1]+'</div>';}).join('')+'</div>'
     +INP('cal-caption','Texto para el post // opcional','text',calCaption)
     +INP('cal-whatsapp','Texto para difusión WhatsApp // opcional','text',calWhatsapp)
@@ -6024,7 +6302,7 @@ function sAdminCalendar(){
         '<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'
         +(isVideoEntry
           ?(e.video_url?'<div style="width:44px;height:44px;border-radius:6px;flex-shrink:0;border:1px solid '+GOLD+';display:flex;align-items:center;justify-content:center;font-family:EB Garamond,serif;font-size:8px;color:'+GOLD+'">VIDEO</div>':'')
-          :(e.image_url?'<img src="'+esc(e.image_url)+'" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--sw-border-soft,#1c1c1c)">':''))
+          :(e.image_url?'<img src="'+esc(e.image_url)+'" alt="Vista previa de la publicación programada" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--sw-border-soft,#1c1c1c)">':''))
         +(isVideoEntry?'':
           '<label style="cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+GOLD+'">'
           +(uploadingThis?'Subiendo...':(e.image_url?'Cambiar foto':'Subir foto'))

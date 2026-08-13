@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE } from "../catalog.ts";
 import { computeRankName } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
@@ -441,7 +441,9 @@ export async function actAdminCampaignPerformance(b: any) {
   if (!touches.length) return { campaigns: [], windowDays: CAMPAIGN_CONVERSION_WINDOW_DAYS, lookbackDays: CAMPAIGN_LOOKBACK_DAYS };
 
   const phones = [...new Set(touches.map((t: any) => t.customer_phone))];
-  const phonesList = phones.map((p) => `"${p}"`).join(",");
+  // Escapar comillas/backslash del phone antes de interpolarlo en un literal de lista in.()
+  // de PostgREST (hallazgo de auditoría 2026-08-07) — mismo criterio que customer.ts.
+  const phonesList = phones.map((p) => `"${String(p).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const orders = await sbGet(
     "orders",
     // status=neq.CANCELADO agregado — mismo hallazgo que actDashboardStats/
@@ -587,7 +589,12 @@ export async function actAdminAtRiskCustomers(b: any) {
   await requireAdmin(b.token);
   const [customers, orders] = await Promise.all([
     sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders&limit=5000"),
-    sbGet("orders", "payment_status=eq.paid&select=customer_phone,created_at&limit=5000"),
+    // status=neq.CANCELADO (hallazgo de la re-auditoría de 10 agentes, MEDIO): a diferencia
+    // del resto del dashboard (dashboard_aggregates y las demás métricas de admin.ts), esta
+    // consulta no excluía pedidos cancelados — un pedido pagado-y-luego-cancelado contaba
+    // como "última compra real", subestimando o directamente ocultando de la lista a un
+    // cliente que en los hechos no ha comprado de verdad hace tiempo.
+    sbGet("orders", "payment_status=eq.paid&status=neq.CANCELADO&select=customer_phone,created_at&limit=5000"),
   ]);
 
   const lastOrderMs = new Map<string, number>();
@@ -1021,4 +1028,63 @@ export async function actAdminWaitlistList(b: any) {
   await requireAdmin(b.token);
   const rows = await sbGet("waitlist_signups", `select=*&order=created_at.desc&limit=${WAITLIST_LIST_LIMIT}`);
   return { waitlist: rows };
+}
+
+// Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — ver
+// loadSecretSignature en ../catalog.ts). Publicar un cambio siempre INSERTA una fila
+// nueva en vez de actualizar in-place — la fila vigente es la de mayor id, así el
+// historial de sándwiches secretos anteriores queda gratis para revisión/marketing
+// futura, sin una tabla de auditoría aparte.
+const SECRET_SIGNATURE_HISTORY_LIMIT = 12;
+export async function actAdminSecretSignatureGet(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("secret_signature", `select=*&order=id.desc&limit=${SECRET_SIGNATURE_HISTORY_LIMIT}`);
+  return { current: rows[0] || null, history: rows.slice(1) };
+}
+export async function actAdminSecretSignatureSet(b: any) {
+  const s = await requireAdmin(b.token);
+  const name = String(b.name || "").trim();
+  if (!name) throw new ApiError("Falta el nombre del sándwich del mes.", 400);
+  const base = String(b.base || "").trim();
+  if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.", 400);
+  const proteinId = String(b.proteinId || "").trim();
+  if (!PROT_PRICE[proteinId]) throw new ApiError("Proteína inválida.", 400);
+  const tops = Array.isArray(b.tops) ? b.tops.map(String) : [];
+  if (tops.length > 3 || new Set(tops).size !== tops.length || tops.some((t: string) => !VALID_TOPS.has(t))) {
+    throw new ApiError("Toppings inválidos (máximo 3, sin repetir, de la lista real).", 400);
+  }
+  const sauces = Array.isArray(b.sauces) ? b.sauces.map(String) : [];
+  if (sauces.length > 2 || new Set(sauces).size !== sauces.length || sauces.some((sc: string) => !VALID_SAUCES.has(sc))) {
+    throw new ApiError("Salsas inválidas (máximo 2, sin repetir, de la lista real).", 400);
+  }
+  const price15 = Number(b.price15);
+  const price30 = Number(b.price30);
+  if (!(price15 > 0) || !(price30 > 0)) throw new ApiError("Precio inválido.", 400);
+  const minOrders = Number(b.minOrders);
+  if (!Number.isInteger(minOrders) || minOrders < 0) throw new ApiError("Pedidos mínimos inválidos.", 400);
+  // vaultOnlyIds: qué ingredientes de ESTA receta quedan reservados solo al menú
+  // secreto (no se pueden armar más barato por ARMA EL TUYO) — debe ser subconjunto de
+  // los ingredientes reales elegidos arriba, nunca un id ajeno a la receta.
+  const vaultOnlyIds = Array.isArray(b.vaultOnlyIds) ? b.vaultOnlyIds.map(String) : [];
+  const allowedIds = new Set([proteinId, ...tops, ...sauces]);
+  if (vaultOnlyIds.some((id: string) => !allowedIds.has(id))) {
+    throw new ApiError("Solo puedes marcar como exclusivo un ingrediente que sea parte de esta receta.", 400);
+  }
+  const imagePath = b.imagePath ? String(b.imagePath).trim().slice(0, 300) : null;
+  await sbInsert("secret_signature", {
+    name,
+    base,
+    protein_id: proteinId,
+    tops,
+    sauces,
+    price_15: price15,
+    price_30: price30,
+    vault_only_ids: vaultOnlyIds,
+    min_orders: minOrders,
+    image_path: imagePath,
+    created_by: s.phone,
+  });
+  await logAdminAction(s.phone, "secret-signature-set", name, { proteinId, tops, sauces, price15, price30, minOrders, vaultOnlyIds });
+  await loadSecretSignature();
+  return { success: true };
 }

@@ -5,7 +5,7 @@ import { gotoApp } from './helpers';
 // CAJÚN (P03, vault-exclusive-protein.spec.ts) a los ingredientes que el subagente de
 // menú marcó como candidatos y el dueño confirmó tratar igual: GIARDINIERA (T07, solo
 // aparecía en THE CHICAGO/SIG07) y JALAPEÑO (T04) + SPICY MAYO/PICANTE MIEL (S02/S12,
-// solo aparecían en THE VAULT/SIG05) — sigOnly/vaultOnly en TOPS/SAUCES (src/app.ts) +
+// solo aparecían en el menú secreto/SIG05) — sigOnly/vaultOnly en TOPS/SAUCES (src/app.ts) +
 // SIG_ONLY_TOPS/VAULT_ONLY_TOPS/VAULT_ONLY_SAUCES en el backend (catalog.ts).
 
 test('GIARDINIERA (topping exclusivo de THE CHICAGO) no aparece en ARMA EL TUYO', async ({ page }) => {
@@ -26,7 +26,7 @@ test('GIARDINIERA (topping exclusivo de THE CHICAGO) no aparece en ARMA EL TUYO'
   await expect(page.locator('text=Giardiniera')).not.toBeVisible();
 });
 
-test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos de THE VAULT) no aparecen en ARMA EL TUYO', async ({ page }) => {
+test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no aparecen en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});
 
   await page.locator('text=Arma el tuyo').click();

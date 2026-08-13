@@ -5,7 +5,7 @@ import { sbUpdate } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, PROT_PRICE, SIG_DATA, SIDE_PRICE, REWARDS } from "../catalog.ts";
+import { loadCatalogPrices, PROT_PRICE, SIG_DATA, SIG_GATES, SIDE_PRICE, REWARDS, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME } from "../catalog.ts";
 
 // Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
 // que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
@@ -15,7 +15,35 @@ export async function actGetCatalog(_b: any) {
   for (const code of Object.keys(SIG_DATA)) sigs[code] = { p15: SIG_DATA[code].p15, p30: SIG_DATA[code].p30 };
   const rewardPts: Record<string, number> = {};
   for (const code of Object.keys(REWARDS)) rewardPts[code] = REWARDS[code].pts;
-  return { proteins: PROT_PRICE, sigs, sides: SIDE_PRICE, rewardPts };
+  // Sándwich secreto con rotación mensual (ver loadSecretSignature en ../catalog.ts) — se
+  // manda la composición completa igual que ya pasaba con el literal estático de SIGS en
+  // src/app.ts (nunca fue un secreto a nivel de red, la UI simplemente nunca la muestra;
+  // el servidor jamás confía en lo que el cliente mande de vuelta, siempre re-tasa/valida
+  // contra SIG_DATA/VAULT_ONLY_* acá). Sin esto, el cliente no tendría forma de armar la
+  // línea de carrito, mostrar el nombre del mes, ni saber qué proteína/tops/salsas quedan
+  // excluidas de ARMA EL TUYO este ciclo. El nombre se manda aparte (SIG_LABEL.SIG05 trae
+  // el sufijo " // RESERVE" pegado, que no es el que se muestra en la tarjeta del cliente).
+  return {
+    proteins: PROT_PRICE,
+    sigs,
+    sides: SIDE_PRICE,
+    rewardPts,
+    secretSignature: SIG_DATA.SIG05
+      ? {
+          name: SECRET_SIGNATURE_NAME,
+          base: SIG_DATA.SIG05.base,
+          prot: SIG_DATA.SIG05.prot,
+          tops: SIG_DATA.SIG05.tops,
+          sauces: SIG_DATA.SIG05.sauces,
+          p15: SIG_DATA.SIG05.p15,
+          p30: SIG_DATA.SIG05.p30,
+          minOrders: SIG_GATES.SIG05 ? SIG_GATES.SIG05.minOrders : 5,
+          vaultOnlyProts: [...VAULT_ONLY_PROTS],
+          vaultOnlyTops: [...VAULT_ONLY_TOPS],
+          vaultOnlySauces: [...VAULT_ONLY_SAUCES],
+        }
+      : null,
+  };
 }
 export async function actAdminCatalogSetPrice(b: any) {
   const s = await requireAdmin(b.token);

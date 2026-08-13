@@ -2,7 +2,7 @@
 // Registro, login, verificación de sesión, cierre de sesión en todos los dispositivos,
 // borrado de cuenta y recuperación de PIN.
 import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
-import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
   signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession, fetchIsAdmin,
@@ -50,7 +50,22 @@ export async function actGoogleAuth(b: any) {
   return { needsRegistration: true, prefill: { name: info.name || "", email: info.email || "" } };
 }
 
+// Sin esto, nada impedía crear cuentas en volumen desde una sola IP — vector principal
+// para farmear el bono de bienvenida (WELCOME_BONUS_POINTS) y el de referido (hallazgo de
+// auditoría, ALTO). 6 registros/hora por IP es holgado para un hogar/oficina compartiendo
+// IP, pero corta un script que crea cuentas en ráfaga.
+const REGISTER_RATE_LIMIT = 6;
+const REGISTER_RATE_WINDOW_MINUTES = 60;
+
 export async function actRegister(b: any) {
+  const ip = String(b._ip || "unknown");
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `register-ip:${ip}`,
+    p_limit: REGISTER_RATE_LIMIT,
+    p_window_minutes: REGISTER_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Demasiadas cuentas creadas desde tu conexión. Espera un momento e intenta de nuevo.", 429);
+
   const name = String(b.name || "").trim();
   const phone = String(b.phone || "").trim();
   const pin = String(b.pin || "").trim();
@@ -95,11 +110,15 @@ export async function actRegister(b: any) {
   const dupeFilter = googleId
     ? `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)},google_id.eq.${encodeURIComponent(googleId)})&select=phone,dni,google_id`
     : `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone,dni,google_id`;
-  const [dupes, referrerRows] = await Promise.all([
+  const [dupes, referrerRows, tombstones] = await Promise.all([
     sbGet("customers", dupeFilter),
     referredBy && referredBy !== phone
       ? sbGet("customers", `referral_code=eq.${encodeURIComponent(referredBy)}&select=phone`)
       : Promise.resolve([]),
+    // deleted_account_identities: quien ya borró una cuenta con este teléfono o DNI antes
+    // no vuelve a recibir el bono de bienvenida al re-registrarse (hallazgo de auditoría,
+    // ALTO) — el registro en sí SÍ se permite, no es un bloqueo de cuenta.
+    sbGet("deleted_account_identities", `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone`),
   ]);
   if (dupes.some((c: any) => c.phone === phone)) throw new ApiError("Ya existe una cuenta con ese teléfono.", 409);
   if (dupes.some((c: any) => c.dni === dni)) throw new ApiError("Ya existe una cuenta con ese DNI.", 409);
@@ -107,6 +126,8 @@ export async function actRegister(b: any) {
 
   let referredByValid: string | null = null;
   if (referrerRows.length) referredByValid = referrerRows[0].phone;
+
+  const welcomeBonus = tombstones.length ? 0 : WELCOME_BONUS_POINTS;
 
   const hashed = await rpc("hash_pin", { plain: pin });
   const rows = await sbInsert("customers", {
@@ -116,7 +137,7 @@ export async function actRegister(b: any) {
     email,
     dni,
     birthday: bday,
-    points: WELCOME_BONUS_POINTS,
+    points: welcomeBonus,
     pending_points: 0,
     total_orders: 0,
     total_redeemed: 0,
@@ -126,13 +147,13 @@ export async function actRegister(b: any) {
     google_id: googleId,
   });
   let customer = safeCustomer(rows[0]);
-  // Bono de bienvenida para TODO registro nuevo (antes solo quien llegaba con un código de
-  // referido recibía puntos al crear cuenta) — se registra en el historial igual que
-  // cualquier otro ingreso de puntos, no solo se suma en silencio.
-  await sbInsert("transactions", {
+  // Bono de bienvenida para TODO registro nuevo que no haya recibido uno antes (ver
+  // welcomeBonus arriba) — se registra en el historial igual que cualquier otro ingreso de
+  // puntos, no solo se suma en silencio.
+  if (welcomeBonus > 0) await sbInsert("transactions", {
     customer_phone: phone,
     type: "earn_confirmed",
-    points: WELCOME_BONUS_POINTS,
+    points: welcomeBonus,
     description: "Bono de bienvenida",
     confirmed: true,
   });
@@ -266,16 +287,26 @@ export async function actLogoutEverywhere(b: any) {
 // Borrado de cuenta a pedido del cliente (antes no existía ningún camino para esto —
 // solo un borrado manual del dueño en la base de datos). Pide el PIN de nuevo (no solo
 // el token de sesión) para que un token filtrado/robado no baste para una acción
-// irreversible. Los pedidos/transacciones/calificaciones se ANONIMIZAN en vez de
-// borrarse — el negocio conserva sus cifras de ventas/historial, pero sin ningún dato
-// que identifique a esta persona; lo estrictamente personal (direcciones, favoritos,
-// suscripciones push, movimientos de crédito) sí se borra por completo.
+// irreversible. Los pedidos/calificaciones se ANONIMIZAN en vez de borrarse — el negocio
+// conserva sus cifras de ventas/historial, pero sin ningún dato que identifique a esta
+// persona; lo estrictamente personal (direcciones, favoritos, suscripciones push,
+// movimientos de crédito/puntos, reservas de pago, Plan Semanal sin confirmar, carritos
+// abandonados, historial de contactos de marketing, canjes de código promocional, avisos
+// de reabastecimiento, lista de espera) sí se borra por completo.
 export async function actDeleteAccount(b: any) {
   const s = await requireSession(b.token);
   const pin = String(b.pin || "").trim();
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
   const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
   if (!ok) throw new ApiError("PIN incorrecto.", 401);
+
+  // Tombstone de phone/dni ANTES de borrar la fila real — ver deleted_account_identities:
+  // sin esto, re-registrarse con el mismo teléfono/DNI pasa el chequeo de duplicados de
+  // actRegister (que solo mira filas existentes) y vuelve a regalar el bono de bienvenida
+  // sin límite (hallazgo de auditoría, ALTO). Va primero y con upsert (no bloquea el resto
+  // del borrado si la fila del tombstone ya existía de un ciclo borrar/re-registrar previo).
+  const custRows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}&select=dni`);
+  await sbUpsert("deleted_account_identities", { phone: s.phone, dni: custRows[0]?.dni || null }, "phone");
 
   await Promise.all([
     sbDelete("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
@@ -293,6 +324,22 @@ export async function actDeleteAccount(b: any) {
     // pidió borrar su cuenta (hallazgo de la re-auditoría legal/datos). Se borra por
     // completo, igual que direcciones/favoritos: es dato estrictamente personal.
     sbDelete("pending_charges", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    // Las 6 tablas de abajo (hallazgo de la re-auditoría de 10 agentes, MEDIO) tienen el
+    // mismo problema que pending_charges arriba — quedaban con teléfono/nombre vivos
+    // indefinidamente tras borrar la cuenta. Todas sus columnas de teléfono/nombre son
+    // NOT NULL (no se pueden anonimizar con null como orders/ratings abajo), así que se
+    // borran por completo — mismo criterio que pending_charges/transactions: es dato
+    // estrictamente personal, no una cifra de negocio que valga la pena conservar
+    // anonimizada. promo_code_redemptions: se borra solo el registro de ESTE cliente: NO
+    // se toca uses_count en promo_codes (esa cifra agregada de "cuántas veces se usó el
+    // código en total" es una métrica de negocio real, no dato personal, y debe seguir
+    // reflejando que el código sí se usó aunque quien lo usó haya borrado su cuenta).
+    sbDelete("pending_weekly_plans", `buyer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("cart_snapshots", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("marketing_touches", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("promo_code_redemptions", `phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("restock_notify_requests", `customer_phone=eq.${encodeURIComponent(s.phone)}`),
+    sbDelete("waitlist_signups", `phone=eq.${encodeURIComponent(s.phone)}`),
     sbUpdate("orders", `customer_phone=eq.${encodeURIComponent(s.phone)}`, {
       customer_phone: null,
       customer_name: "Cuenta eliminada",

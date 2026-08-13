@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
 // Antes rankName() era puramente informativo — cruzar un umbral de rango (ej. de REGULAR
-// a INICIADO, que desbloquea THE VAULT) no generaba ningún aviso ni celebración
+// a INICIADO, que desbloquea el menú secreto) no generaba ningún aviso ni celebración
 // (hallazgo de auditoría UX/diseño). Cubre finalizeOrderSuccess() comparando el rango
 // antes/después del pedido y la tarjeta "¡SUBISTE DE RANGO!" en sOSent(), además de que
 // ahora se muestra la referencia del pedido en esa misma pantalla.
@@ -44,7 +44,7 @@ test('cliente sube de rango a INICIADO al pagar el 5to pedido y ve la celebraci�
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=¡SUBISTE DE RANGO! //')).toBeVisible();
   await expect(page.locator('text=INICIADO')).toBeVisible();
-  await expect(page.locator('text=Ya puedes ver THE VAULT')).toBeVisible();
+  await expect(page.locator('text=Ya puedes ver el menú secreto')).toBeVisible();
   // Referencia del pedido visible — antes esta pantalla nunca la mostraba.
   await expect(page.locator('text=Pedido ORD-')).toBeVisible();
 });

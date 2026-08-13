@@ -95,9 +95,9 @@ export async function actFavoritesAdd(b: any) {
   await assertUnderLimit("favorites", s.phone, MAX_FAVORITES, "favoritos guardados");
   await loadCatalogPrices();
   // Antes faltaba acá — actPrepareOrder/actPlaceOrder/actAddGroupItem ya validaban el
-  // gate de rango (ej. THE VAULT solo para INICIADO+) antes de tasar, pero
+  // gate de rango (ej. menú secreto solo para INICIADO+) antes de tasar, pero
   // actFavoritesAdd tasaba con deriveOrder() sin pasar por sigGateError primero: un
-  // cliente con 0 pedidos podía GUARDAR THE VAULT como favorito llamando a la API
+  // cliente con 0 pedidos podía GUARDAR el menú secreto como favorito llamando a la API
   // directo, aunque el checkout normal lo siga rechazando al intentar pedirlo de verdad
   // (hallazgo de auditoría de composición/exclusividad, ALTO).
   if (b.mode === "sig") {
@@ -151,9 +151,13 @@ export async function actClaimChallenge(b: any) {
   const thisMonth = limaMonthKey(now);
   if (c.challenge_claimed_month === thisMonth) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
   const monthStart = limaMonthStartIso(now);
+  // status=neq.CANCELADO (hallazgo de la re-auditoría de 10 agentes, MEDIA-ALTA): cancelar
+  // un pedido revierte el pago/puntos pero NUNCA toca payment_status (se queda 'paid') —
+  // sin este filtro, pagar 3 pedidos con crédito propio y cancelarlos de inmediato (con
+  // reembolso automático completo) reclamaba el bono gratis, repetible cada mes.
   const orders = await sbGet(
     "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
   );
   if (orders.length < CHALLENGE_TARGET_ORDERS) throw new ApiError(`Todavía te faltan pedidos este mes (${orders.length}/${CHALLENGE_TARGET_ORDERS}).`, 400);
   // claim_monthly_challenge (marca el mes reclamado + suma el bono, atómico) va PRIMERO —
@@ -191,9 +195,10 @@ export async function actClaimDiscoveryChallenge(b: any) {
   const thisMonth = limaMonthKey(now);
   if (c.discovery_claimed_month === thisMonth) throw new ApiError("Ya reclamaste este reto este mes.", 409);
   const monthStart = limaMonthStartIso(now);
+  // status=neq.CANCELADO — mismo hallazgo/motivo que actClaimChallenge arriba.
   const orders = await sbGet(
     "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
   );
   const flavors = new Set<string>();
   for (const o of orders) {
@@ -310,15 +315,21 @@ export async function actRemindUnclaimedChallenge(b: any) {
   const now = new Date();
   const thisMonth = limaMonthKey(now);
   const monthStart = limaMonthStartIso(now);
+  // limit explícito (cap de seguridad) — sin esto, PostgREST trunca en silencio a 1000
+  // filas por defecto una vez que el negocio tenga suficiente volumen mensual (hallazgo
+  // de auditoría 2026-08-07).
   const orders = await sbGet(
     "orders",
-    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&customer_phone=not.is.null&select=customer_phone`,
+    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(monthStart)}&customer_phone=not.is.null&select=customer_phone&limit=20000`,
   );
   const counts = new Map<string, number>();
   for (const o of orders) counts.set(o.customer_phone, (counts.get(o.customer_phone) || 0) + 1);
   const qualifyingPhones = [...counts.entries()].filter(([, n]) => n >= CHALLENGE_TARGET_ORDERS).map(([phone]) => phone);
   if (!qualifyingPhones.length) return { success: true, reminded: 0 };
-  const phonesList = qualifyingPhones.map((p) => `"${p}"`).join(",");
+  // phone es texto libre en el registro (sin restricción de charset) — escapar comillas/backslash
+  // antes de interpolar en un literal de lista in.() de PostgREST evita que un valor malicioso
+  // rompa fuera de su literal y altere el filtro (hallazgo de auditoría 2026-08-07).
+  const phonesList = qualifyingPhones.map((p) => `"${String(p).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const customers = await sbGet("customers", `phone=in.(${phonesList})&select=phone,challenge_claimed_month`);
   let reminded = 0;
   for (const c of customers) {
@@ -360,9 +371,10 @@ export async function actRemindPeakHour(b: any) {
   const windowStart = new Date(now.getTime() - FREQUENT_WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
   const todayStart = limaDayStartIso(now);
   const todayStartMs = new Date(todayStart).getTime();
+  // limit explícito (cap de seguridad) — mismo motivo que actRemindUnclaimedChallenge.
   const orders = await sbGet(
     "orders",
-    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(windowStart)}&customer_phone=not.is.null&select=customer_phone,created_at`,
+    `payment_status=eq.paid&created_at=gte.${encodeURIComponent(windowStart)}&customer_phone=not.is.null&select=customer_phone,created_at&limit=20000`,
   );
   const counts = new Map<string, number>();
   const orderedToday = new Set<string>();
@@ -415,11 +427,14 @@ export async function actSyncCart(b: any) {
 }
 
 // Recordatorio de carrito abandonado — si un carrito sincronizado (ver actSyncCart) lleva
-// entre 20 min y 3h sin cambios, un solo push. Menos de 20 min es normal (sigue armando el
+// entre 10 min y 3h sin cambios, un solo push. Menos de 10 min es normal (sigue armando el
 // pedido); más de 3h ya no vale la pena recordar (probablemente ni se acuerda de qué
 // armó). reminded_at evita reenviar el mismo aviso en cada corrida de este cron mientras
 // el carrito sigue sin tocarse.
-const ABANDONED_CART_MIN_MINUTES = 20;
+// Piso bajado de 20 a 10 min (investigación de mercado 2026-08-04): en food delivery la
+// ventana ideal de recuperación es 8-15 min, con 20 min ya como límite duro de "tarde" —
+// el producto es perecedero, a diferencia de e-commerce genérico donde 20-60 min es normal.
+const ABANDONED_CART_MIN_MINUTES = 10;
 const ABANDONED_CART_MAX_MINUTES = 180;
 export async function actRemindAbandonedCart(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
@@ -464,14 +479,22 @@ export async function actRemindAbandonedCart(b: any) {
 // cuántos pedidos tenga). No hay una columna "fecha del primer pedido" separada, así que
 // se reconstruye el primer pedido pagado real desde `orders` para los clientes que hoy
 // siguen en total_orders=1 — más preciso que usar customers.created_at como proxy.
-const SECOND_ORDER_MIN_DAYS = 3;
-const SECOND_ORDER_MAX_DAYS = 5;
+// Ventana recalibrada 2026-08-04 (investigación de mercado: el reorden mediano en food
+// delivery ocurre ~día 9, no día 3-5) — antes disparaba antes de que la mayoría de
+// clientes reales estuviera lista para su segundo pedido. El horario del cron (ver
+// cron.job en Supabase, no en este archivo) también se movió de 10am a la ventana de
+// cena Lima, mismo motivo.
+const SECOND_ORDER_MIN_DAYS = 7;
+const SECOND_ORDER_MAX_DAYS = 10;
 export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1");
+  // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
+  // esto, PostgREST trunca en silencio a 1000 filas por defecto (hallazgo de auditoría
+  // 2026-08-07).
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1&limit=20000");
   if (!customers.length) return { success: true, reminded: 0 };
-  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
-  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
   const firstOrderByPhone = new Map<string, number>();
   for (const o of orders) {
     const t = new Date(o.created_at).getTime();
@@ -514,10 +537,15 @@ export async function actRemindHighRankWinback(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   // total_orders>=15 ya implica rango CÍRCULO INTERNO o MESA FUNDADORA (ver RANKS/env.ts)
   // — no hace falta filtrar de nuevo con computeRankName, solo usarlo para el texto.
-  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15");
+  // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
+  // esto, PostgREST trunca en silencio a 1000 filas por defecto. Acá NO se puede acotar
+  // por fecha reciente como en winback-campaign porque este cron necesita la fecha del
+  // ÚLTIMO pedido de clientes que llevan MUCHO sin pedir — filtrar por ventana reciente
+  // los dejaría fuera del todo (hallazgo de auditoría 2026-08-07).
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.15&limit=20000");
   if (!customers.length) return { success: true, reminded: 0 };
-  const phones = customers.map((c: any) => `"${c.phone}"`).join(",");
-  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at`);
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
   const lastOrderByPhone = new Map<string, number>();
   for (const o of orders) {
     const t = new Date(o.created_at).getTime();
@@ -781,15 +809,18 @@ export async function actConfirmWeeklyPlan(b: any) {
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
-  const claim = await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.pending`, { status: "consumed" });
-  if (!claim.length) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-
-  await rpc("add_gifted_credit", { p_to_phone: pp.buyer_phone, p_amount: Number(pp.credit_amount) });
-  await sbInsert("credit_ledger", {
-    customer_phone: pp.buyer_phone,
-    delta: Number(pp.credit_amount),
-    reason: "Plan Semanal (pagó S/" + pp.amount_paid + ")",
-  });
+  // claim + otorgar crédito + registrar en el ledger van en una sola transacción SQL
+  // (confirm_weekly_plan_credit) — si cualquier paso falla, todo se revierte y la fila
+  // queda en "pending" en vez de "consumed a medias", así actReconcileCulqiCharges la
+  // detecta como huérfana en vez de darla por buena (ver comentario de la migración).
+  try {
+    await rpc("confirm_weekly_plan_credit", { p_plan_id: pp.id });
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("already_processed")) {
+      throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
+    }
+    throw e;
+  }
   return { success: true, creditAmount: pp.credit_amount };
 }
 

@@ -46,6 +46,7 @@ import {
   actAdminPromoList, actAdminPromoCreate, actAdminPromoToggle,
   actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete,
   actAdminWaitlistList,
+  actAdminSecretSignatureGet, actAdminSecretSignatureSet,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched } from "./actions/hours.ts";
 import {
@@ -120,6 +121,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
+  "admin-secret-signature-get": actAdminSecretSignatureGet,
+  "admin-secret-signature-set": actAdminSecretSignatureSet,
   "dashboard-stats": actDashboardStats,
   "export-orders": actAdminExportOrders,
   "export-customers": actAdminExportCustomers,
@@ -192,6 +195,12 @@ Deno.serve(async (req: Request) => {
   const action = String(body?.action || "");
   const handler = ACTIONS[action];
   if (!handler) return json({ error: "Acción desconocida: " + action }, 400);
+
+  // x-forwarded-for trae la cadena completa de proxies (Supabase incluido) — el primer
+  // valor es la IP real del cliente. Se inyecta en el body (nunca se confía en un ip que
+  // el cliente reporte directamente) para que acciones sin identidad de cuenta todavía
+  // (ej. register) puedan aplicar rate limiting por IP — ver actRegister.
+  body._ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
 
   try {
     const result = await handler(body);

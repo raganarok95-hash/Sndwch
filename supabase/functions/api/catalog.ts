@@ -56,7 +56,14 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
 // ver el mismo cambio (con el detalle completo) en BASES en src/app.ts.
 export const VALID_BASES = new Set(["B01", "B03"]);
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07"]);
+// T08 (Apio) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — ver el mismo
+// cambio en TOPS en src/app.ts.
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08"]);
+// C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
+// menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
+// de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
+// Americano procesado que reemplaza — el id no cambia, solo el label (ver CHEESE en
+// src/app.ts). C02 (Cheddar) se mantiene sin cambio.
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
@@ -65,9 +72,17 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
 // real bastante más de lo que el precio fijo alcanzaba a cubrir (hallazgo de costeo real
-// con precios de insumos de Perú). Mismo criterio en pDbl de P04: atún (~S/38/kg) cuesta
-// igual que el embutido italiano de P05 (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 —
-// menos que P01/P02 (pollo/res, más baratos) — subido a 9 para igualar a P05.
+// con precios de insumos de Perú). Mismo criterio en pDbl de P04: en el momento de esta
+// decisión, se creía que atún (~S/38/kg) costaba igual que el embutido italiano de P05
+// (~S/38/kg, pDbl:9) pero antes cobraba solo S/5 — menos que P01/P02 (pollo/res, más
+// baratos) — subido a 9 para igualar a P05.
+// NOTA (corregida en la re-auditoría de 10 agentes, BAJO — comentario desactualizado, sin
+// cambio de precio): esa paridad de costo ya NO es cierta. CLAUDE.md/MENU_FINANCIAL_ANALYSIS.md
+// documentan atún a ~S/67/kg (investigado online, sin cotización real todavía) y embutido a
+// S/48/kg (precio real confirmado por el dueño, 2026-08-01) — ~40% de diferencia, no
+// paridad. El precio de venta se deja igual a propósito (pDbl:9 en ambos), pero eso ahora
+// significa que la doble proteína de atún en BYO rinde bastante menos margen que la de
+// embutido con el mismo precio — ver MENU_FINANCIAL_ANALYSIS.md §2.2 (36.7% vs 52.8%).
 // P04 p15/p30 subidos otra vez (14/25→16/30, análisis financiero de otra sesión) —
 // con el mismo costo real por kilo que P05, el atún BYO rentaba solo 46.4%/44.0% contra
 // el objetivo del negocio (~55% margen), mientras P05 con costo idéntico ya rentaba
@@ -92,18 +107,26 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // — DEBE coincidir con PROTS.P07 en src/app.ts.
   P07: { p15: 14, p30: 22, pDbl: 6 },
 };
-// Proteínas exclusivas de un signature secreto (hoy solo P03 → SIG05 "THE VAULT") — no
-// se pueden pedir por BUILD YOUR OWN aunque sigan en PROT_PRICE (deriveCart/deriveOrder
-// las siguen necesitando para tasar SIG05). Es lo que hace que el precio del VAULT sea
-// justificable: no existe forma de armar el mismo sándwich más barato fuera de él.
+// Proteína/toppings/salsas exclusivas del sándwich secreto — no se pueden pedir por
+// BUILD YOUR OWN aunque sigan en PROT_PRICE/VALID_TOPS/VALID_SAUCES (deriveCart/
+// deriveOrder las siguen necesitando para tasar SIG05). Es lo que hace que el precio del
+// menú secreto sea justificable: no existe forma de armar el mismo sándwich más barato
+// fuera de él. Antes eran Sets fijos en código (solo Pollo Cajún/Jalapeño/Spicy Mayo/
+// Picante Miel, hardcodeados); desde la rotación mensual del sándwich secreto (decisión
+// del dueño, 2026-08-10) el contenido de estos 3 Sets se recalcula en cada
+// loadSecretSignature() a partir de `vault_only_ids` de la fila vigente en la tabla
+// `secret_signature` — mutables (.clear()/.add()) en vez de literales para que ese
+// refresco funcione sin reasignar el binding que ya importan otros módulos.
 export const VAULT_ONLY_PROTS = new Set(["P03"]);
-// T04 (Jalapeño) y S02/S12 (Spicy Mayo/Picante Miel) — mismos criterio y motivo que
-// VAULT_ONLY_PROTS: solo aparecían en SIG_DATA.SIG05 pero eran seleccionables igual por
-// BUILD YOUR OWN (hallazgo de auditoría de menú, confirmado por el dueño para tratarlos
-// igual que Au Jus). Se mantienen en VALID_TOPS/VALID_SAUCES porque SIG_DATA/priceCartItem
-// las siguen necesitando para tasar THE VAULT.
 export const VAULT_ONLY_TOPS = new Set(["T04"]);
 export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
+// Nombre del sándwich secreto vigente (ej. "Reserva de Agosto") — separado de
+// SIG_LABEL.SIG05 porque ese trae pegado el sufijo " // RESERVE" usado en notificaciones/
+// recibos, mientras que este es el nombre "limpio" que se muestra en la tarjeta del
+// cliente (ver secretSig.n en src/app.ts). `let` en vez de `const` porque
+// loadSecretSignature() lo reasigna en cada refresco (a diferencia de los Sets de
+// arriba, un string no se puede mutar in-place).
+export let SECRET_SIGNATURE_NAME = "Menú secreto";
 // Salsas exclusivas de un signature público, no secreto (hoy solo S13 "Au Jus" → SIG07
 // "THE CHICAGO") — mismo criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR
 // OWN aunque sigan en VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para
@@ -120,40 +143,82 @@ export const SIG_ONLY_TOPS = new Set(["T07"]);
 export const SIG_ONLY_PROTS = new Set(["P07"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
-// Signature más caro disponible (SIG05 THE VAULT S/24, SIG07 THE CHICAGO S/25)
+// Signature más caro disponible (SIG05 (menú secreto) S/24, SIG07 THE CHICAGO S/25)
 // muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
 export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
-export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean }> = {
-  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 22 },
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
+  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
+  // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
+  // OWN" documentado en los comentarios de abajo — SIG01/02/03/06 p30 y SIG04 p15+p30
+  // quedaban EXACTAMENTE igualados al precio de armar la misma proteína+tamaño por BYO
+  // (priceByoBuild cobra directo PROT_PRICE[prot].p15/p30, sin sumar nada por curaduría).
+  // +S/2 solo en los puntos exactos de paridad — DEBE coincidir con SIGS en src/app.ts.
+  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 24 },
   // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
   // mismo cambio en src/app.ts, DEBE coincidir).
-  // cheeseOptional: único Signature con queso a elección — DEBE coincidir con SIGS en
-  // src/app.ts (mismo hallazgo/razonamiento ahí).
-  // base movida de B02 (retirado) a B01 — DEBE coincidir con SIGS en src/app.ts.
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 24, cheeseOptional: true },
+  // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
+  // menú — investigación real confirmó que el queso derretido es un componente
+  // estructural del plato en sus comparables exitosos, "melted mozzarella is what makes
+  // a Meatball Sub", no un extra). fixedCheese:'C01' (Mozzarella, ver VALID_CHEESE arriba)
+  // se agrega siempre a ingredientsPerUnit en priceSigBuild, sin depender de que el
+  // cliente lo pida. Sin cambio de precio (costo real ~S/0.39-0.77/unidad, confirmado por
+  // el dueño que no amerita subir S/19/26). base movida de B02 (retirado) a B01 — DEBE
+  // coincidir con SIGS en src/app.ts.
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 26, fixedCheese: "C01" },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
   // italiano cuesta casi el doble por kilo que pollo/res, duplicar su porción a 30CM
   // costaba más de lo que el precio fijo anterior cubría) — mantiene el criterio de
   // premio S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 30 },
+  // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02 arriba) —
+  // fixedCheese:'C02' (Cheddar), comparable exitoso investigado (Firehouse "Smokehouse
+  // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
+  // categoría. Sin cambio de precio.
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32, fixedCheese: "C02" },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
-  // THE ORIGINAL/THE MEATBALL/THE SMOKE.
+  // THE ORIGINAL/THE MARINARA/THE SMOKE.
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T06"], sauces: ["S01", "S11"], p15: 16, p30: 30 },
+  // Receta corregida 2026-08-08 (decisión del dueño, LLM Council de naming/sabor): se
+  // quita el Aioli (S01, segunda base cremosa que duplicaba la mayonesa ya incluida en
+  // P04 "Atún premium con mayonesa clásica") y se agrega un chorrito de limón real — el
+  // badge CÍTRICO ahora se sostiene con un ingrediente cítrico directo en vez de depender
+  // del limón que llevaba el Aioli. El limón es un ingrediente de preparación, no una
+  // salsa seleccionable — no tiene entrada en VALID_SAUCES/SIG_ONLY_SAUCES arriba, solo
+  // vive en el pitch de SIGS.SIG04 en src/app.ts (confirmado con el dueño 2026-08-08).
+  // Mantiene la mostaza Dijon (S11). Pimiento (T06) reemplazado por Apio (T08) 2026-08-08
+  // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
+  // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
+  // en src/app.ts.
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 18, p30: 32 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
-  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MEATBALL/THE SMOKE/THE FRESH.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T02", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 21 },
+  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
+  // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño, mismo cambio que
+  // SIGS.SIG06 en src/app.ts) — queda Tomate+Pimiento. El riesgo de "doble dulce"
+  // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
+  // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
   // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
-  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError).
+  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
+  // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
+  // 2026-08-10) loadSecretSignature() los sobreescribe en cada refresco con la fila
+  // vigente de la tabla `secret_signature` (ver esa función más abajo), igual que
+  // loadCatalogPrices() ya hace con los precios. No editar este literal para cambiar el
+  // sándwich del mes — eso se hace desde el panel admin.
   SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
+  // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
+  // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
+  // cliente, que solo cambia el badge a "Nuevo" sin ocultar el ítem).
+  // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — la receta
+  // no tenía ningún componente cremoso/graso (el chimichurri es a base de aceite, no
+  // barrera de humedad) — DEBE coincidir con SIGS.SIG08 en src/app.ts.
+  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09", "S01"], p15: 14, p30: 22 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
@@ -162,6 +227,9 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
 // (sin sesión) nunca puede pedirlos, sin importar qué diga el carrito.
 // Bajado de 15 a 5 pedidos (decisión de negocio) para que el menú secreto se desbloquee
 // mucho antes en la vida del cliente — DEBE coincidir con SIG05.minOrders en src/app.ts.
+// minOrders también admin-editable por fila desde la rotación mensual — ver
+// loadSecretSignature(), que sobreescribe SIG_GATES.SIG05.minOrders igual que sobreescribe
+// SIG_DATA.SIG05 arriba.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
   SIG05: { minOrders: 5 },
 };
@@ -175,6 +243,20 @@ export function sigGateError(sigId: string, totalOrders: number): string | null 
   // umbral bajó a 5 pedidos (ese número corresponde a "INICIADO", no a Círculo Interno).
   return `Ese sabor es exclusivo de ${computeRankName(gate.minOrders)} — sigue pidiendo para desbloquearlo.`;
 }
+// Variantes de temporada real (hoy solo SIG08 "THE EMBER", edición de apertura) — a
+// diferencia de SIG_GATES (acceso que se ABRE con el tiempo/rango), esto es acceso que
+// se CIERRA en una fecha fija. Vencido el `until`, el ítem deja de poder pedirse aunque
+// alguien arme el request a mano contra la API sin pasar por la UI (que ya lo oculta,
+// ver sigAvailable() en src/app.ts) — el servidor es quien de verdad lo rechaza.
+export const SIG_AVAILABILITY: Record<string, { until: string }> = {
+  SIG08: { until: "2026-10-07" },
+};
+export function sigAvailabilityError(sigId: string): string | null {
+  const avail = SIG_AVAILABILITY[sigId];
+  if (!avail) return null;
+  if (Date.now() < new Date(avail.until + "T23:59:59").getTime()) return null;
+  return "Ese sabor fue una edición de temporada y ya no está disponible.";
+}
 // Usado por actPrepareOrder/actPlaceOrder ANTES de reservar inventario o cobrar — un
 // carrito con un sabor restringido para quien lo manda se rechaza igual que un producto
 // agotado, nunca solo se "ignora" el ítem en silencio.
@@ -182,7 +264,7 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
   if (!Array.isArray(rawItems)) return;
   for (const it of rawItems) {
     if (it && it.type === "sig" && typeof it.sigId === "string") {
-      const err = sigGateError(it.sigId, totalOrders);
+      const err = sigGateError(it.sigId, totalOrders) || sigAvailabilityError(it.sigId);
       if (err) throw new ApiError(err, 403);
     }
   }
@@ -204,14 +286,21 @@ export const SIDE_LABEL: Record<string, string> = {
 };
 // "BUILD" se renombró a "SIGNATURE" (hallazgo de auditoría UX, CRÍTICO) — chocaba con el
 // modo "BUILD YOUR OWN" del cliente. DEBE coincidir con el tag `s` de SIGS en src/app.ts.
+// SIG02 renombrado de "THE MEATBALL" a "THE MARINARA" 2026-08-08 (decisión del dueño, LLM
+// Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que su
+// propia proteína interna ya muestra en español ("ALBÓNDIGA // MARINARA", ver PROT_LABEL
+// abajo), bilingüismo visible en la misma tarjeta. "Marinara" es un préstamo ya usado
+// igual en español e inglés (la salsa italiana), evita la traducción duplicada y sigue
+// encajando con el badge "Italiano". DEBE coincidir con SIGS.SIG02 en src/app.ts.
 export const SIG_LABEL: Record<string, string> = {
   SIG01: "THE ORIGINAL // SIGNATURE",
-  SIG02: "THE MEATBALL // SIGNATURE",
+  SIG02: "THE MARINARA // SIGNATURE",
   SIG03: "THE SMOKE // SIGNATURE",
   SIG04: "THE FRESH // SIGNATURE",
-  SIG05: "THE VAULT // RESERVE",
+  SIG05: "MENÚ SECRETO // RESERVE",
   SIG06: "THE TERIYAKI // SIGNATURE",
   SIG07: "THE CHICAGO // RESERVE",
+  SIG08: "THE EMBER // SIGNATURE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
@@ -243,6 +332,51 @@ export async function loadCatalogPrices(): Promise<void> {
     // debe bloquear un pedido por un problema leyendo la tabla de precios.
     console.error("loadCatalogPrices failed:", e);
   }
+  await loadSecretSignature();
+}
+// Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — reemplaza el
+// "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA.SIG05/SIG_GATES.SIG05/
+// VAULT_ONLY_* eran literales de código: cambiar el sándwich del mes exigía editar 2
+// archivos (este + src/app.ts) y redesplegar. Ahora la fila más reciente de la tabla
+// `secret_signature` (una por cada vez que el admin publica un cambio, nunca se
+// actualiza in-place — historial gratis) sobreescribe esos mismos objetos en memoria,
+// llamada siempre junto a loadCatalogPrices() arriba para que los 9 call sites
+// existentes de esa función la recojan sin tocarlos uno por uno.
+export async function loadSecretSignature(): Promise<void> {
+  try {
+    const rows = await sbGet("secret_signature", "select=*&order=id.desc&limit=1");
+    const row = rows[0];
+    if (!row) return;
+    SIG_DATA.SIG05 = {
+      base: row.base,
+      prot: row.protein_id,
+      tops: Array.isArray(row.tops) ? row.tops : [],
+      sauces: Array.isArray(row.sauces) ? row.sauces : [],
+      p15: Number(row.price_15),
+      p30: Number(row.price_30),
+    };
+    SECRET_SIGNATURE_NAME = String(row.name || "").trim() || "Menú secreto";
+    SIG_LABEL.SIG05 = `${SECRET_SIGNATURE_NAME.toUpperCase()} // RESERVE`;
+    SIG_GATES.SIG05 = { minOrders: Number(row.min_orders) || 5 };
+    // vault_only_ids es una lista plana de ids (proteína y/o tops y/o salsas) que este
+    // ciclo quiere reservados solo para el menú secreto — se reparte en los 3 Sets según
+    // a qué categoría pertenece cada id, en vez de que el admin tenga que llenar 3 campos
+    // separados sabiendo de memoria en qué categoría cae cada ingrediente.
+    const vaultOnlyIds: string[] = Array.isArray(row.vault_only_ids) ? row.vault_only_ids : [];
+    VAULT_ONLY_PROTS.clear();
+    VAULT_ONLY_TOPS.clear();
+    VAULT_ONLY_SAUCES.clear();
+    for (const id of vaultOnlyIds) {
+      if (id === row.protein_id) VAULT_ONLY_PROTS.add(id);
+      else if (SIG_DATA.SIG05.tops.includes(id)) VAULT_ONLY_TOPS.add(id);
+      else if (SIG_DATA.SIG05.sauces.includes(id)) VAULT_ONLY_SAUCES.add(id);
+    }
+  } catch (e) {
+    // Igual que loadCatalogPrices: si falla, seguimos con SIG_DATA.SIG05/SIG_GATES.SIG05/
+    // VAULT_ONLY_* como estén en memoria (el literal de arriba en el primer arranque de
+    // cada instancia, o la última fila cargada con éxito) en vez de bloquear un pedido.
+    console.error("loadSecretSignature failed:", e);
+  }
 }
 // P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo
 // del resto (Pollo/Cajún, Atún/House, Albóndiga/Marinara) — DEBE coincidir con PROTS.P01
@@ -262,19 +396,27 @@ export const PROT_LABEL: Record<string, string> = {
   P07: "RES // CHICAGO",
 };
 
-export function rewardWaiver(rewardId: string | null, b: any, basePrice: number, dblSurcharge: number): number {
+// priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo
+// recibía basePrice/dblSurcharge sueltos, así que solo podía implementar R04/R06 y dejaba
+// R02/R03/R05 siempre en 0, además de aplicar R04 SIN el tope anti-abuso (R04_FLAT_WAIVER)
+// que sí protege a deriveCart (hallazgo de la re-auditoría de 10 agentes, BAJO: hoy sin
+// impacto real en dinero porque el único llamador, actFavoritesAdd/deriveOrder, descarta
+// este precio y solo lo usa para validar que el build es armable — pero heredaba un
+// descuento sin tope si algún día se reutiliza para tasar un pedido real). Ahora replica
+// exactamente el mismo cálculo (con los mismos topes) que deriveCart usa para el pedido
+// real, una sola fuente de verdad en vez de dos implementaciones que podían divergir.
+export function rewardWaiver(rewardId: string | null, b: any, priced: PricedBuild): number {
   if (!rewardId) return 0;
   const reward = REWARDS[rewardId];
   if (!reward) throw new ApiError("Recompensa inválida.");
-  if (rewardId === "R04") {
-    if (!b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
-    return dblSurcharge;
-  }
-  if (rewardId === "R06") {
-    if (b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
-    return basePrice;
-  }
-  return 0;
+  if (rewardId === "R04" && !b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
+  if (rewardId === "R06" && b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
+  return rewardId === "R02" ? priced.sauceSurcharge
+    : rewardId === "R03" ? Math.min(priced.sizeUpgradeDiff, R03_FLAT_WAIVER)
+    : rewardId === "R04" ? Math.min(priced.dblSurcharge, R04_FLAT_WAIVER)
+    : rewardId === "R05" ? Math.min(priced.basePrice, R05_FLAT_WAIVER)
+    : rewardId === "R06" ? priced.basePrice
+    : 0;
 }
 
 type PricedBuild = {
@@ -303,9 +445,14 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
-  // Queso opcional y gratis (igual que en BUILD YOUR OWN) — solo en los Signatures que
-  // lo declaran (hoy solo SIG02). Se ignora silenciosamente si un cliente lo manda para
-  // un Signature que no lo permite, en vez de lanzar un error por un campo inofensivo.
+  // Queso fijo (hoy SIG02 Mozzarella, SIG03 Cheddar) — parte de la receta, no depende de
+  // que el cliente lo pida ni de qué mande en `cheese`. Se agrega siempre a
+  // ingredientsPerUnit para que el descuento de inventario/costo real lo refleje.
+  if (sig.fixedCheese) ingredientsPerUnit.push(sig.fixedCheese);
+  // Queso opcional y gratis (igual que en BUILD YOUR OWN) — para Signatures que lo
+  // declaren en el futuro (hoy ninguno usa cheeseOptional). Se ignora silenciosamente si
+  // un cliente lo manda para un Signature que no lo permite, en vez de lanzar un error
+  // por un campo inofensivo.
   if (cheese && sig.cheeseOptional) {
     if (!VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
     ingredientsPerUnit.push(cheese);
@@ -368,7 +515,7 @@ export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: num
       Array.isArray(b.sauces) ? b.sauces.filter((x: any) => typeof x === "string") : [],
       size, doubleProt, extraSauce,
     );
-  const waiver = rewardWaiver(rewardId, b, priced.basePrice, priced.dblSurcharge);
+  const waiver = rewardWaiver(rewardId, b, priced);
   return {
     ingredients: priced.ingredientsPerUnit,
     expectedTotal: Math.max(0, priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge - waiver),
@@ -455,7 +602,8 @@ export function priceCartItem(raw: any): PricedItem {
 
   if (raw?.type === "sig") {
     // Queso opcional y gratis, solo válido para los Signatures que lo declaran
-    // (SIG_DATA[sigId].cheeseOptional, hoy solo SIG02) — priceSigBuild ya ignora
+    // (SIG_DATA[sigId].cheeseOptional, hoy ninguno — ver fixedCheese para SIG02/SIG03,
+    // que va siempre sin depender de este campo) — priceSigBuild ya ignora
     // silenciosamente cheese si el Signature no lo permite.
     const cheese = raw.cheese ? String(raw.cheese) : null;
     const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce, cheese);
