@@ -2,7 +2,7 @@
 // Registro, login, verificación de sesión, cierre de sesión en todos los dispositivos,
 // borrado de cuenta y recuperación de PIN.
 import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
-import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
   signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession, fetchIsAdmin,
@@ -50,7 +50,22 @@ export async function actGoogleAuth(b: any) {
   return { needsRegistration: true, prefill: { name: info.name || "", email: info.email || "" } };
 }
 
+// Sin esto, nada impedía crear cuentas en volumen desde una sola IP — vector principal
+// para farmear el bono de bienvenida (WELCOME_BONUS_POINTS) y el de referido (hallazgo de
+// auditoría, ALTO). 6 registros/hora por IP es holgado para un hogar/oficina compartiendo
+// IP, pero corta un script que crea cuentas en ráfaga.
+const REGISTER_RATE_LIMIT = 6;
+const REGISTER_RATE_WINDOW_MINUTES = 60;
+
 export async function actRegister(b: any) {
+  const ip = String(b._ip || "unknown");
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `register-ip:${ip}`,
+    p_limit: REGISTER_RATE_LIMIT,
+    p_window_minutes: REGISTER_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Demasiadas cuentas creadas desde tu conexión. Espera un momento e intenta de nuevo.", 429);
+
   const name = String(b.name || "").trim();
   const phone = String(b.phone || "").trim();
   const pin = String(b.pin || "").trim();
@@ -95,11 +110,15 @@ export async function actRegister(b: any) {
   const dupeFilter = googleId
     ? `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)},google_id.eq.${encodeURIComponent(googleId)})&select=phone,dni,google_id`
     : `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone,dni,google_id`;
-  const [dupes, referrerRows] = await Promise.all([
+  const [dupes, referrerRows, tombstones] = await Promise.all([
     sbGet("customers", dupeFilter),
     referredBy && referredBy !== phone
       ? sbGet("customers", `referral_code=eq.${encodeURIComponent(referredBy)}&select=phone`)
       : Promise.resolve([]),
+    // deleted_account_identities: quien ya borró una cuenta con este teléfono o DNI antes
+    // no vuelve a recibir el bono de bienvenida al re-registrarse (hallazgo de auditoría,
+    // ALTO) — el registro en sí SÍ se permite, no es un bloqueo de cuenta.
+    sbGet("deleted_account_identities", `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone`),
   ]);
   if (dupes.some((c: any) => c.phone === phone)) throw new ApiError("Ya existe una cuenta con ese teléfono.", 409);
   if (dupes.some((c: any) => c.dni === dni)) throw new ApiError("Ya existe una cuenta con ese DNI.", 409);
@@ -107,6 +126,8 @@ export async function actRegister(b: any) {
 
   let referredByValid: string | null = null;
   if (referrerRows.length) referredByValid = referrerRows[0].phone;
+
+  const welcomeBonus = tombstones.length ? 0 : WELCOME_BONUS_POINTS;
 
   const hashed = await rpc("hash_pin", { plain: pin });
   const rows = await sbInsert("customers", {
@@ -116,7 +137,7 @@ export async function actRegister(b: any) {
     email,
     dni,
     birthday: bday,
-    points: WELCOME_BONUS_POINTS,
+    points: welcomeBonus,
     pending_points: 0,
     total_orders: 0,
     total_redeemed: 0,
@@ -126,13 +147,13 @@ export async function actRegister(b: any) {
     google_id: googleId,
   });
   let customer = safeCustomer(rows[0]);
-  // Bono de bienvenida para TODO registro nuevo (antes solo quien llegaba con un código de
-  // referido recibía puntos al crear cuenta) — se registra en el historial igual que
-  // cualquier otro ingreso de puntos, no solo se suma en silencio.
-  await sbInsert("transactions", {
+  // Bono de bienvenida para TODO registro nuevo que no haya recibido uno antes (ver
+  // welcomeBonus arriba) — se registra en el historial igual que cualquier otro ingreso de
+  // puntos, no solo se suma en silencio.
+  if (welcomeBonus > 0) await sbInsert("transactions", {
     customer_phone: phone,
     type: "earn_confirmed",
-    points: WELCOME_BONUS_POINTS,
+    points: welcomeBonus,
     description: "Bono de bienvenida",
     confirmed: true,
   });
@@ -278,6 +299,14 @@ export async function actDeleteAccount(b: any) {
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
   const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
   if (!ok) throw new ApiError("PIN incorrecto.", 401);
+
+  // Tombstone de phone/dni ANTES de borrar la fila real — ver deleted_account_identities:
+  // sin esto, re-registrarse con el mismo teléfono/DNI pasa el chequeo de duplicados de
+  // actRegister (que solo mira filas existentes) y vuelve a regalar el bono de bienvenida
+  // sin límite (hallazgo de auditoría, ALTO). Va primero y con upsert (no bloquea el resto
+  // del borrado si la fila del tombstone ya existía de un ciclo borrar/re-registrar previo).
+  const custRows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}&select=dni`);
+  await sbUpsert("deleted_account_identities", { phone: s.phone, dni: custRows[0]?.dni || null }, "phone");
 
   await Promise.all([
     sbDelete("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}`),

@@ -196,6 +196,12 @@ Deno.serve(async (req: Request) => {
   const handler = ACTIONS[action];
   if (!handler) return json({ error: "Acción desconocida: " + action }, 400);
 
+  // x-forwarded-for trae la cadena completa de proxies (Supabase incluido) — el primer
+  // valor es la IP real del cliente. Se inyecta en el body (nunca se confía en un ip que
+  // el cliente reporte directamente) para que acciones sin identidad de cuenta todavía
+  // (ej. register) puedan aplicar rate limiting por IP — ver actRegister.
+  body._ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+
   try {
     const result = await handler(body);
     return json(result);

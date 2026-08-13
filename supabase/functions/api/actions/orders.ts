@@ -8,7 +8,7 @@ import {
   CULQI_FEE_RATE,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
-import { ApiError, SessionPayload } from "../types.ts";
+import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
@@ -429,8 +429,12 @@ export async function actValidatePromoCode(b: any) {
     p_window_minutes: PROMO_VALIDATE_RATE_WINDOW_MINUTES,
   });
   if (!withinLimit) throw new ApiError("Demasiados intentos. Espera un momento antes de probar otro código.", 429);
-  await loadCatalogPrices();
   const rewardId = b.rewardId ? String(b.rewardId) : null;
+  // Mismo criterio que actPrepareOrder/actPlaceOrder: un código promocional y una
+  // recompensa de puntos no se combinan — rechazarlo ya en el preview evita que el
+  // cliente vea "válido" acá y recién se entere del rechazo real al pagar.
+  if (rewardId) throw new ApiError("Los códigos promocionales no se pueden combinar con una recompensa de puntos.", 400);
+  await loadCatalogPrices();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor);
   const result = await computePromoDiscount(code, phone, foodTotal);
@@ -496,14 +500,44 @@ export async function actPrepareOrder(b: any) {
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+
+  // Sesión (si hay token) se resuelve ANTES del código promocional — el teléfono de la
+  // CUENTA autenticada (no contactPhone, campo de texto libre del checkout que un
+  // cliente logueado podía cambiar en cada intento) es la identidad real usada para el
+  // límite "una vez por cliente" de un código promocional (hallazgo de auditoría, ALTO —
+  // antes bastaba con reportar un contactPhone distinto para reusar el mismo código).
+  let phone: string | null = null;
+  let totalOrders = 0;
+  if (b.token) {
+    const active = await verifyActiveSession(b.token);
+    if (active) { phone = active.payload.phone; totalOrders = active.row.total_orders || 0; }
+    if (rewardId) {
+      if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+      const reward = REWARDS[rewardId];
+      if (!reward) throw new ApiError("Recompensa inválida.");
+      if ((active.row.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
+    }
+  } else if (rewardId) {
+    throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
+  }
+  assertCartGatesAllowed(b.items, totalOrders);
+  const promoPhone = phone || contactPhone;
+
+  // Mismo criterio que combo/hora-valle (nunca se suman, solo se aplica el mayor de los
+  // dos) — un código promocional y una recompensa de puntos tampoco deben combinarse en
+  // el mismo pedido (hallazgo de auditoría, ALTO: no había ningún guard equivalente).
+  if (rewardId && b.promoCode) {
+    throw new ApiError("Los códigos promocionales no se pueden combinar con una recompensa de puntos.", 400);
+  }
+
   // Código promocional (opcional) — se valida/calcula ANTES de fijar expectedTotal, nunca
-  // se confía en un descuento que reporte el cliente. contactPhone (no customer_phone) es
-  // la identidad usada tanto acá como en el checkout de invitados.
+  // se confía en un descuento que reporte el cliente. Usa promoPhone (cuenta si hay
+  // sesión, si no contactPhone, igual que el checkout de invitados).
   const promoCodeRaw = b.promoCode ? String(b.promoCode).trim() : "";
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await claimPromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal, ref);
+    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }
@@ -519,22 +553,6 @@ export async function actPrepareOrder(b: any) {
     if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
       throw new ApiError("El total no coincide con los productos del pedido.", 400);
     }
-
-    let phone: string | null = null;
-    let totalOrders = 0;
-    if (b.token) {
-      const active = await verifyActiveSession(b.token);
-      if (active) { phone = active.payload.phone; totalOrders = active.row.total_orders || 0; }
-      if (rewardId) {
-        if (!active) throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-        const reward = REWARDS[rewardId];
-        if (!reward) throw new ApiError("Recompensa inválida.");
-        if ((active.row.points || 0) < reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
-      }
-    } else if (rewardId) {
-      throw new ApiError("Debes iniciar sesión para usar una recompensa.", 401);
-    }
-    assertCartGatesAllowed(b.items, totalOrders);
 
     // Bloquea una segunda reserva concurrente del mismo número de contacto (dos
     // pestañas/dispositivos pagando el mismo carrito a la vez, o un reintento tras un fallo
@@ -609,7 +627,7 @@ export async function actPrepareOrder(b: any) {
 
     return { success: true, ref, expiresAt };
   } catch (e) {
-    if (promoCodeId) await releasePromoBestEffort(promoCodeId, contactPhone, ref);
+    if (promoCodeId) await releasePromoBestEffort(promoCodeId, promoPhone, ref);
     throw e;
   }
 }
@@ -687,7 +705,9 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
   } catch (e) {
     if (!orderInserted) {
       await restockBestEffort(codes, qtys, "confirm");
-      await releasePromoBestEffort(pc.promo_code_id, pc.contact_phone, pc.ref);
+      // Mismo identidad que se usó para reclamar en actPrepareOrder: cuenta si había
+      // sesión (customer_phone), si no contactPhone — ver comentario en actPrepareOrder.
+      await releasePromoBestEffort(pc.promo_code_id, pc.customer_phone || pc.contact_phone, pc.ref);
     }
     // La reserva ya quedó 'consumed' — si el pedido no llegó a crearse, la marcamos
     // 'cancelled' para que el registro de conciliación refleje que el cobro real no
@@ -733,6 +753,10 @@ export async function actPlaceOrder(b: any) {
   // dinero de verdad llegó) dejaría "quemado" un uso de un pedido que podría cancelarse
   // por falta de pago.
   if (manualMethod && b.promoCode) throw new ApiError("Los códigos promocionales no se pueden usar con Yape/Plin hasta confirmar el pago.", 400);
+  // Mismo criterio que combo/hora-valle (nunca se suman) — un código promocional y una
+  // recompensa de puntos tampoco deben combinarse en el mismo pedido (hallazgo de
+  // auditoría, ALTO: no había ningún guard equivalente).
+  if (rewardId && b.promoCode) throw new ApiError("Los códigos promocionales no se pueden combinar con una recompensa de puntos.", 400);
   // Yape/Plin no verifica el pago server-side al colocar el pedido (queda 'pending' hasta
   // que un operador lo confirma a mano) — y reserve_inventory más abajo descuenta stock
   // REAL de inmediato, con o sin cuenta. Sin límite, cualquiera (invitado incluido) podía
@@ -771,6 +795,18 @@ export async function actPlaceOrder(b: any) {
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+
+  // Sesión (si hay token) se resuelve ANTES del código promocional — mismo criterio y
+  // mismo motivo que en actPrepareOrder (hallazgo de auditoría, ALTO): la identidad real
+  // para el límite "una vez por cliente" es el teléfono de la CUENTA, no contactPhone.
+  let phone: string | null = null;
+  let custRow: any = null;
+  if (b.token) {
+    const active = await verifyActiveSession(b.token);
+    if (active) { phone = active.payload.phone; custRow = active.row; }
+  }
+  const promoPhone = phone || contactPhone;
+
   // Nota: manualMethod+promoCode ya se rechazó arriba (línea ~687), así que un código
   // promocional real solo llega aquí por el camino de pago inmediato (crédito/recompensa),
   // nunca por Yape/Plin pendiente.
@@ -778,7 +814,7 @@ export async function actPlaceOrder(b: any) {
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await claimPromoDiscount(promoCodeRaw, contactPhone, foodExpectedTotal, ref);
+    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }
@@ -790,13 +826,6 @@ export async function actPlaceOrder(b: any) {
     if (Math.round(expectedTotal * 100) !== Math.round(clientTotal * 100)) {
       throw new ApiError("El total no coincide con los productos del pedido.", 400);
     }
-
-    // verifyActiveSession no depende de la reserva de stock (ni viceversa) — se lanza ya
-    // mismo y se resuelve más abajo justo donde se usa, en vez de esperar a que
-    // reserve_inventory termine primero para recién empezarla.
-    const sessionPromise: Promise<{ payload: SessionPayload; row: any } | null> = b.token
-      ? verifyActiveSession(b.token)
-      : Promise.resolve(null);
 
     // Reserva de stock ANTES de registrar nada: reserve_inventory revisa Y descuenta
     // en una sola transacción atómica (con bloqueo de fila), así que dos pedidos concurrentes
@@ -827,16 +856,10 @@ export async function actPlaceOrder(b: any) {
     let orderInserted = false;
     try {
       // A partir de aquí, `total` es SIEMPRE el valor recalculado por el servidor — nunca el
-      // que mandó el cliente.
+      // que mandó el cliente. phone/custRow ya se resolvieron arriba, antes del código
+      // promocional.
       const total = expectedTotal;
 
-      let phone: string | null = null;
-      let custRow: any = null;
-      const active = await sessionPromise;
-      if (active) {
-        phone = active.payload.phone;
-        custRow = active.row;
-      }
       assertCartGatesAllowed(b.items, custRow?.total_orders || 0);
 
       let reward: { pts: number; label: string } | null = null;
@@ -891,7 +914,7 @@ export async function actPlaceOrder(b: any) {
       throw e;
     }
   } catch (e) {
-    if (promoCodeId) await releasePromoBestEffort(promoCodeId, contactPhone, ref);
+    if (promoCodeId) await releasePromoBestEffort(promoCodeId, promoPhone, ref);
     throw e;
   }
 }
@@ -1667,7 +1690,7 @@ export async function actExpirePendingCharges(b: any) {
   // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,contact_phone,ref`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -1678,8 +1701,9 @@ export async function actExpirePendingCharges(b: any) {
       // Mismo criterio que el inventario: una reserva que nunca se pagó y expira debe
       // liberar también el código promocional que claimPromoDiscount reclamó de forma
       // atómica en actPrepareOrder — si no, el código queda "gastado" para un pedido que
-      // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO).
-      if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.contact_phone, p_order_ref: pc.ref });
+      // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO). Misma
+      // identidad usada al reclamar: cuenta si había sesión, si no contactPhone.
+      if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.customer_phone || pc.contact_phone, p_order_ref: pc.ref });
       await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
       expired++;
     } catch (e) {

@@ -2257,6 +2257,11 @@ async function editItemNote(idx){
 // registradas en el pedido (recibo, ticket de cocina, WhatsApp).
 function rewardsPickerHTML(){
   if(!cust)return'';
+  // Mismo criterio que en promoCodeHTML: un código promocional y una recompensa de
+  // puntos no se combinan en el mismo pedido.
+  if(appliedPromo){
+    return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Usa tus puntos //</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No se puede combinar con el código promocional aplicado abajo — quítalo primero si prefieres usar una recompensa.</div></div>';
+  }
   var unlocked=RWDS.filter(function(r){return(cust.points||0)>=r.pts;});
   // Antes, sin ninguna recompensa desbloqueada (el caso más común en un primer o segundo
   // pedido), esta función no mostraba nada — el mismo framing "Te faltan N pts" que ya
@@ -2310,6 +2315,12 @@ function promoCodeHTML(){
   var box='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Código promocional //</div>';
   if(appliedPromo){
     return box+'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366">'+esc(appliedPromo.code)+' aplicado · ahorras '+SOLES_TXT+appliedPromo.discount+'</span><span onclick="removePromoCode()" style="cursor:pointer;flex-shrink:0;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#ff8888">Quitar</span></div></div>';
+  }
+  // Un código promocional y una recompensa de puntos no se pueden combinar en el mismo
+  // pedido (mismo criterio que combo/hora-valle: nunca se suman) — el servidor ya lo
+  // rechaza, esto solo evita que el cliente llegue a intentarlo sin saber por qué falla.
+  if(appliedReward){
+    return box+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No se puede combinar con la recompensa aplicada arriba — quítala primero si prefieres usar un código.</div></div>';
   }
   return box+'<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:13px;text-transform:uppercase"/>'
     +'<button onclick="applyPromoCode()" style="flex-shrink:0;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:8px;padding:0 16px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+GOLD+'">Aplicar</button></div>'

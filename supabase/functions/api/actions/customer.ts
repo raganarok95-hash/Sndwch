@@ -809,15 +809,18 @@ export async function actConfirmWeeklyPlan(b: any) {
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
-  const claim = await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.pending`, { status: "consumed" });
-  if (!claim.length) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-
-  await rpc("add_gifted_credit", { p_to_phone: pp.buyer_phone, p_amount: Number(pp.credit_amount) });
-  await sbInsert("credit_ledger", {
-    customer_phone: pp.buyer_phone,
-    delta: Number(pp.credit_amount),
-    reason: "Plan Semanal (pagó S/" + pp.amount_paid + ")",
-  });
+  // claim + otorgar crédito + registrar en el ledger van en una sola transacción SQL
+  // (confirm_weekly_plan_credit) — si cualquier paso falla, todo se revierte y la fila
+  // queda en "pending" en vez de "consumed a medias", así actReconcileCulqiCharges la
+  // detecta como huérfana en vez de darla por buena (ver comentario de la migración).
+  try {
+    await rpc("confirm_weekly_plan_credit", { p_plan_id: pp.id });
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("already_processed")) {
+      throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
+    }
+    throw e;
+  }
   return { success: true, creditAmount: pp.credit_amount };
 }
 
