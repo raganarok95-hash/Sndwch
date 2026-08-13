@@ -1,0 +1,31 @@
+name: Verificar PR (typecheck + build + tests)
+
+# Antes NADA corría los tests en un pull request — deploy-api.yml solo despliega en push a
+# main, y la única red de seguridad era el hook de pre-commit local (.claude/settings.json),
+# que no protege un commit hecho con --no-verify ni uno hecho desde un entorno sin ese hook
+# instalado. Este workflow corre npm run verify (typecheck+build+test, los mismos 32 tests
+# de Playwright) en cada PR contra main, sin necesitar ningún secret nuevo — los tests
+# mockean el endpoint `api` por acción (ver tests/helpers.ts), nunca pegan contra Supabase
+# real.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # playwright.config.ts usa PLAYWRIGHT_CHROMIUM_PATH con un fallback a
+      # /opt/pw-browsers/chromium (ruta fija del sandbox de Claude Code) — en un runner de
+      # GitHub Actions esa ruta no existe, así que hay que resolver la ruta real donde
+      # `playwright install` acaba de instalar Chromium y pasarla explícita.
+      - name: Resolver ruta de Chromium instalado
+        run: echo "PLAYWRIGHT_CHROMIUM_PATH=$(node -e "console.log(require('@playwright/test').chromium.executablePath())")" >> "$GITHUB_ENV"
+      - run: npm run verify
