@@ -231,7 +231,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
    contrario. Esto cubre TODO texto visible: el mensaje de cierre, pero también
    descripciones de tool calls, captions de archivos, nombres de tareas del checklist,
    preguntas de `AskUserQuestion`. Revisar cada uno antes de enviarlo, no solo el mensaje
-   principal.
+   principal. **Español con "tú", nunca voseo argentino ("vos", "tenés", "sabés",
+   "andá")** — corregido explícitamente por el usuario 2026-08-11, DOS VECES en la misma
+   conversación (la sesión aceptó la corrección la primera vez y volvió a usar "vos" en
+   el siguiente mensaje sin darse cuenta — no basta con aceptar la corrección una vez, hay
+   que revisar el propio texto de salida contra esta regla antes de cada envío, no solo
+   la primera vez que se corrige).
 2. **"Primero muéstrame/hagamos X antes de Y" es un punto de parada real para avanzar de
    verdad** (comitear, pushear, mergear, expandir el cambio a otras pantallas, gastar algo
    real) — eso espera confirmación explícita antes de tocar Y. Verificación interna sin
@@ -513,6 +518,32 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   diseño, sin IA de imagen) no tienen ningún costo ni dependencia externa — son las que
   sí se usaron para generar 6 variantes nuevas del "//" (`logo-skill-variants.html` en
   el scratchpad).
+- **`SearchMcpRegistry` solo cubre el directorio curado de Anthropic — un resultado
+  vacío ahí NO es evidencia de que un MCP no exista, sobre todo para empresas grandes
+  que ahora publican su propio servidor MCP oficial de primera mano fuera de ese
+  directorio.** Error real cometido 2026-08-11, la MISMA sesión que ya había dejado
+  escrita la lección equivalente para la skill de logos un rato antes (línea de arriba)
+  y aun así la repitió: al preguntar por un MCP oficial de "Meta Ads" y de "Higgsfield",
+  `SearchMcpRegistry` con varias tandas de keywords dio 0 resultados relevantes y se
+  concluyó (mal) "no existen". Ambos SÍ existen y son oficiales: **Meta Ads AI
+  Connectors** (`mcp.facebook.com/ads`, beta abierta desde el 29 de abril de 2026, 29
+  herramientas de campañas/reportes/catálogo vía OAuth de Meta Business) y **Higgsfield
+  MCP** (`mcp.higgsfield.ai/mcp`, oficial desde el 30 de abril de 2026, 30+ modelos de
+  imagen/video). Recién se encontraron cuando el usuario insistió en volver a buscar y
+  después pasó el link directo de la documentación de Meta. Causa raíz identificada:
+  (1) `SearchMcpRegistry` nunca iba a encontrarlos por diseño — es un directorio curado,
+  no un buscador de internet, y ninguno de los dos estaba dado de alta ahí todavía por
+  ser muy recientes; (2) el primer `WebSearch` de respaldo se sesgó con la palabra
+  "github" en la query ("Meta Ads MCP server github 'model context protocol'"), lo que
+  prioriza wrappers de terceros en GitHub sobre la página oficial de producto del propio
+  Meta/Higgsfield. **Corrección para la próxima vez**: ante "¿existe un MCP oficial de
+  X?", además de `SearchMcpRegistry`, correr un `WebSearch` SIN sesgo de "github" (ej.
+  "X official MCP server", "X model context protocol announcement") y probar el patrón
+  de dominio `mcp.<empresa>.com` o `<empresa>.com/mcp` directo — las empresas grandes
+  cada vez más hostean su propio servidor MCP de primera mano en vez de publicarlo como
+  repo de GitHub. Ninguno de los dos quedó conectado en esta sesión (no existe una
+  herramienta para registrar un MCP remoto por URL desde acá — requiere que el usuario
+  lo agregue desde Ajustes de conectores de claude.ai con su propia cuenta/OAuth).
 - **Descarga directa de assets de Figma (`www.figma.com`) y subida de archivos a Adobe
   (`at.adobe.com`) bloqueadas por el proxy de este entorno — mismo patrón que
   `checkout.culqi.com`/`docs.culqi.com`/dominios de Adobe ya documentados arriba, no es
