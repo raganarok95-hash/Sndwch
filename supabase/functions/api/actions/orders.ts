@@ -108,6 +108,43 @@ const PENDING_CHARGE_TTL_MINUTES = 10;
 const MANUAL_ORDER_RATE_LIMIT = 4;
 const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 
+// Techo de pedidos por hora de ENTREGA. El negocio lo arma una sola persona: la capacidad
+// real sostenida es de ~4-6 pedidos/hora, y baja si además reparte. Hasta ahora nada lo
+// verificaba — isWithinStoreHours solo comprueba que la hora caiga dentro del horario de
+// atención, así que el checkout aceptaba 20 pedidos programados para las 8pm sin ningún
+// freno, prometiéndole al cliente algo que la cocina no puede cumplir (hallazgo de
+// auditoría de logística). Es un tope BLANDO y configurable: cuenta los pedidos que ya
+// tienen esa misma hora comprometida y rechaza el que se pasa, sugiriendo otra hora.
+const MAX_ORDERS_PER_HOUR = 6;
+
+// Cuenta los pedidos vivos (no cancelados) cuya entrega cae en la misma hora que `when`, y
+// rechaza si ya se llegó al tope. `scheduled_for` manda cuando existe; si no, la hora de
+// creación es la hora de entrega efectiva (pedido "AHORA").
+async function assertHourCapacity(when: Date): Promise<void> {
+  const hourStart = new Date(when);
+  hourStart.setMinutes(0, 0, 0);
+  const hourEnd = new Date(hourStart.getTime() + 3600000);
+  const from = encodeURIComponent(hourStart.toISOString());
+  const to = encodeURIComponent(hourEnd.toISOString());
+  try {
+    const [scheduled, immediate] = await Promise.all([
+      sbGet("orders", `status=neq.CANCELADO&scheduled_for=gte.${from}&scheduled_for=lt.${to}&select=id&limit=100`),
+      sbGet("orders", `status=neq.CANCELADO&scheduled_for=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
+    ]);
+    if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
+      throw new ApiError(
+        "Esa hora ya está llena — la cocina no da abasto para más pedidos en esa franja. Elige otra hora, por favor.",
+        409,
+      );
+    }
+  } catch (e) {
+    // Un fallo leyendo la tabla no debe bloquear una venta real: el tope es una
+    // protección operativa, no una regla de dinero. Solo se propaga el rechazo real.
+    if (e instanceof ApiError) throw e;
+    console.error("assertHourCapacity failed:", e);
+  }
+}
+
 type FinalizeOrderParams = {
   ref: string;
   phone: string | null;
@@ -497,6 +534,9 @@ export async function actPrepareOrder(b: any) {
   } else if (!isWithinStoreHours(new Date())) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
+  // Techo de capacidad de la franja (ver assertHourCapacity) — va DESPUÉS de validar el
+  // horario y ANTES de reservar inventario o cobrar nada.
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
@@ -787,6 +827,8 @@ export async function actPlaceOrder(b: any) {
     // home, nunca un bloqueo real), y la cocina nunca lo iba a preparar.
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
+  // Mismo techo de capacidad por franja que actPrepareOrder (ver assertHourCapacity).
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
 
   const deliveryZone = String(b.deliveryZone || "");
   const deliveryFee = deliveryFeeForZone(deliveryZone);
