@@ -57,6 +57,7 @@ import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
+import { actAdminVideoScript, actAdminVideoGenerate } from "./actions/video.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 
@@ -155,6 +156,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-list-raw-uploads": actAdminListRawUploads,
   "auto-publish-calendar": actAutoPublishCalendar,
   "admin-publish-social": actAdminPublishSocial,
+  "admin-video-script": actAdminVideoScript,
+  "admin-video-generate": actAdminVideoGenerate,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "admin-set-business-launched": actAdminSetBusinessLaunched,

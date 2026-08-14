@@ -381,6 +381,40 @@ export async function loadSecretSignature(): Promise<void> {
 // P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo
 // del resto (Pollo/Cajún, Atún/House, Albóndiga/Marinara) — DEBE coincidir con PROTS.P01
 // en src/app.ts.
+// Etiquetas de pan/toppings/salsas. El servidor solo necesitaba los ids para tasar y
+// descontar inventario, así que hasta ahora los nombres legibles vivían únicamente en el
+// cliente — pero la generación automática de guiones de video (actions/video.ts) construye
+// el prompt a partir de la receta REAL, y "T03" no le dice nada a un modelo de video.
+// DEBEN coincidir con BASES/TOPS/SAUCES en src/app.ts, mismo criterio que PROT_LABEL.
+export const BASE_LABEL: Record<string, string> = {
+  B01: "Classic // White",
+  B03: "Focaccia // Artesanal",
+};
+export const TOP_LABEL: Record<string, string> = {
+  T01: "Tomate // Fresco",
+  T02: "Pepinillo // Encurtido",
+  T03: "Cebolla // Morada juliana",
+  T04: "Jalapeño // Encurtido",
+  T05: "Aceituna // Negra en rodajas",
+  T06: "Pimiento // Curado",
+  T07: "Giardiniera // Encurtido picante",
+  T08: "Apio // Picado",
+};
+export const SAUCE_LABEL: Record<string, string> = {
+  S01: "Aioli // Signature",
+  S02: "Spicy // Mayo",
+  S03: "Smoke // BBQ",
+  S04: "Honey // Mustard",
+  S05: "SNDWCH // Special",
+  S06: "Oil & Vinegar // Classic",
+  S08: "Teriyaki // Glaze",
+  S09: "Chimichurri // Piña asada",
+  S10: "Peanut // Satay",
+  S11: "Mostaza // Dijon",
+  S12: "Picante // Miel",
+  S13: "Au Jus // Para mojar",
+};
+
 export const PROT_LABEL: Record<string, string> = {
   P01: "RES // ASADO",
   P02: "POLLO // TERIYAKI",
