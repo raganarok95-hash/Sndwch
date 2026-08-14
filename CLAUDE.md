@@ -36,6 +36,32 @@ afecta cualquier decisión de precio/margen.
   consúltalo con `mcp__Supabase__execute_sql` contra `information_schema`, no busques un
   archivo `.sql` en el repo.
 
+## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
+
+**Los literales de precio de `catalog.ts` (`PROT_PRICE`, `SIG_DATA`, `SIDE_PRICE`,
+`REWARDS`) son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
+tabla `catalog_prices`**, que `loadCatalogPrices()` carga encima de esos literales en cada
+llamada. Si un código tiene fila en esa tabla, el literal del archivo NUNCA se usa para
+cobrar.
+
+Error real cometido y detectado recién el 2026-08-13: entre el 8 y el 9 de agosto se
+escribieron en código 7 decisiones de precio aprobadas por el dueño (el "+S/2 de curaduría"
+para que un Signature no cueste igual que armarlo en BYO, la corrección del precio del atún
+marcada CRÍTICO en su propio comentario, el ajuste de R03, el pDbl de P06) — y **ninguna
+tuvo efecto**, porque nadie tocó `catalog_prices`, que seguía con los valores del 8-23 de
+julio. Durante ~3 semanas el código y la producción dijeron cosas distintas, y producción
+ganaba. El caso más grave: SIG04 30CM se cobraba S/25 mientras la MISMA receta armada en
+BYO costaba S/30 — el producto curado salía más barato que su propio build, con margen real
+~39% contra el 55% objetivo. Ya sincronizado, pero la trampa sigue ahí para el próximo
+cambio.
+
+**Regla para cualquier sesión futura**: después de editar un precio en `catalog.ts`,
+verificar con `execute_sql` si ese `code` tiene fila en `catalog_prices` y, si la tiene,
+actualizarla en la misma sesión con `apply_migration`. Un cambio de precio no está
+terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive en
+`secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
+que una fila en `catalog_prices` para SIG05 sería ignorada.)
+
 ## Checklist antes de dar por terminado un cambio en el cliente
 
 1. `npm run typecheck` — cero errores.

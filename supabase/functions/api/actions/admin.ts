@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
 import { computeRankName } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
@@ -1047,16 +1047,33 @@ export async function actAdminSecretSignatureSet(b: any) {
   if (!name) throw new ApiError("Falta el nombre del sándwich del mes.", 400);
   const base = String(b.base || "").trim();
   if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.", 400);
+  // Los ingredientes exclusivos de OTRO Signature (SIG_ONLY_*, hoy P07/T07/S13 de THE
+  // CHICAGO) se rechazan acá, no solo en la UI del panel: el filtro del cliente evitaba
+  // elegirlos en pantalla, pero una llamada directa a la API (o un cambio futuro de esa
+  // UI) podía publicar un menú secreto que usara la proteína/topping/salsa exclusiva de
+  // THE CHICAGO, rompiendo en silencio esa exclusividad — que es justo lo que hace
+  // distinto a ese Signature (hallazgo de auditoría). El servidor es quien manda.
   const proteinId = String(b.proteinId || "").trim();
   if (!PROT_PRICE[proteinId]) throw new ApiError("Proteína inválida.", 400);
+  if (SIG_ONLY_PROTS.has(proteinId)) throw new ApiError("Esa proteína es exclusiva de otro Signature — elige otra.", 400);
   const tops = Array.isArray(b.tops) ? b.tops.map(String) : [];
   if (tops.length > 3 || new Set(tops).size !== tops.length || tops.some((t: string) => !VALID_TOPS.has(t))) {
     throw new ApiError("Toppings inválidos (máximo 3, sin repetir, de la lista real).", 400);
+  }
+  if (tops.some((t: string) => SIG_ONLY_TOPS.has(t))) {
+    throw new ApiError("Uno de esos toppings es exclusivo de otro Signature — elige otro.", 400);
   }
   const sauces = Array.isArray(b.sauces) ? b.sauces.map(String) : [];
   if (sauces.length > 2 || new Set(sauces).size !== sauces.length || sauces.some((sc: string) => !VALID_SAUCES.has(sc))) {
     throw new ApiError("Salsas inválidas (máximo 2, sin repetir, de la lista real).", 400);
   }
+  if (sauces.some((sc: string) => SIG_ONLY_SAUCES.has(sc))) {
+    throw new ApiError("Una de esas salsas es exclusiva de otro Signature — elige otra.", 400);
+  }
+  // Al menos una salsa: priceSigBuild usa la última salsa de la receta como la porción
+  // que se duplica al pedir SALSA EXTRA. Sin ninguna, ese extra no mapea a ningún
+  // ingrediente real (ver el comentario de canExtraSauce en catalog.ts).
+  if (!sauces.length) throw new ApiError("Elige al menos una salsa para la receta.", 400);
   const price15 = Number(b.price15);
   const price30 = Number(b.price30);
   if (!(price15 > 0) || !(price30 > 0)) throw new ApiError("Precio inválido.", 400);

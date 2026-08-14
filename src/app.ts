@@ -5669,7 +5669,11 @@ async function saveSecretSignature(){
   ssName=gv('ss-name');ssImagePath=gv('ss-img');ssP15=gv('ss-p15');ssP30=gv('ss-p30');ssMinOrders=gv('ss-min');
   if(!ssName.trim()){showToast('Falta el nombre del sándwich del mes.');return;}
   if(!ssBase||!ssProt){showToast('Elige pan y proteína.');return;}
-  if(!ssTops.length&&!ssSauces.length){showToast('Elige al menos un topping o una salsa.');return;}
+  // Al menos una salsa (no "un topping O una salsa"): el cargo de SALSA EXTRA duplica la
+  // última salsa de la receta, así que una receta sin salsas dejaba ese extra sin ningún
+  // ingrediente real detrás. El servidor ya lo rechaza; esto lo avisa antes de enviar.
+  if(!ssSauces.length){showToast('Elige al menos una salsa para la receta.');return;}
+  if(!ssTops.length){showToast('Elige al menos un topping.');return;}
   var p15=Number(ssP15),p30=Number(ssP30),minOrders=Number(ssMinOrders);
   if(!(p15>0)||!(p30>0)){showToast('Precio inválido.');return;}
   if(!Number.isInteger(minOrders)||minOrders<0){showToast('Pedidos mínimos inválido.');return;}

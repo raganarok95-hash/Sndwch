@@ -1292,6 +1292,19 @@ async function restockOrderItems(items: any): Promise<void> {
   const ingredients: string[] = [];
   for (const it of items) {
     try {
+      // Foto guardada al momento de pedir (ver snapIngredients en priceCartItem): es la
+      // única fuente fiel para un Signature cuya receta pudo cambiar después — en
+      // particular SIG05, que rota cada mes. Re-derivar con priceCartItem devolvería la
+      // receta VIGENTE, no la que se vendió. Solo se re-deriva cuando no hay foto
+      // (pedidos anteriores a este cambio) o cuando la foto viene corrupta.
+      const snap = Array.isArray((it as any)?.snapIngredients)
+        ? (it as any).snapIngredients.filter((x: any) => typeof x === "string" && x)
+        : null;
+      if (snap && snap.length) {
+        const qty = Number((it as any)?.qty) > 0 ? Math.floor(Number((it as any).qty)) : 1;
+        for (let i = 0; i < qty; i++) ingredients.push(...snap);
+        continue;
+      }
       const priced = priceCartItem(it);
       for (let i = 0; i < priced.qty; i++) ingredients.push(...priced.ingredientsPerUnit);
     } catch {

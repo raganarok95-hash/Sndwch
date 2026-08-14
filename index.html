@@ -7177,8 +7177,15 @@ async function saveSecretSignature() {
         showToast('Elige pan y proteína.');
         return;
     }
-    if (!ssTops.length && !ssSauces.length) {
-        showToast('Elige al menos un topping o una salsa.');
+    // Al menos una salsa (no "un topping O una salsa"): el cargo de SALSA EXTRA duplica la
+    // última salsa de la receta, así que una receta sin salsas dejaba ese extra sin ningún
+    // ingrediente real detrás. El servidor ya lo rechaza; esto lo avisa antes de enviar.
+    if (!ssSauces.length) {
+        showToast('Elige al menos una salsa para la receta.');
+        return;
+    }
+    if (!ssTops.length) {
+        showToast('Elige al menos un topping.');
         return;
     }
     var p15 = Number(ssP15), p30 = Number(ssP30), minOrders = Number(ssMinOrders);

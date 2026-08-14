@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/catalog
 // Exponer el catálogo de precios vigente al cliente, y la edición admin de precios
 // (ver la tabla catalog_prices y loadCatalogPrices en ../catalog.ts).
-import { sbUpdate } from "../db.ts";
+import { sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
@@ -70,7 +70,13 @@ export async function actAdminCatalogSetPrice(b: any) {
   } else {
     throw new ApiError("Categoría inválida.");
   }
-  await sbUpdate("catalog_prices", `code=eq.${encodeURIComponent(code)}`, { values, updated_at: new Date().toISOString() });
+  // sbUpsert (no sbUpdate): un PATCH de PostgREST que no encuentra ninguna fila devuelve
+  // 200 con `[]` — es decir, editar el precio de un código SIN fila previa en
+  // `catalog_prices` respondía "success" al panel admin sin haber guardado absolutamente
+  // nada, y el precio seguía saliendo del literal del código. Pasaba de verdad con P07,
+  // SIG05 y SIG08, que nunca tuvieron fila (hallazgo de auditoría de menú). Con upsert, la
+  // primera edición crea la fila y las siguientes la actualizan.
+  await sbUpsert("catalog_prices", { code, category, values, updated_at: new Date().toISOString() }, "code");
   await logAdminAction(s.phone, "catalog-set-price", code, values);
   await loadCatalogPrices();
   return { success: true };
