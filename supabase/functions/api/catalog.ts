@@ -458,11 +458,21 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
     ingredientsPerUnit.push(cheese);
   }
   // Igual que en BUILD YOUR OWN: la salsa extra es una porción doble de una de las
-  // salsas ya incluidas en la receta del Signature (todas tienen al menos una), no una
-  // salsa nueva sin especificar — antes no se descontaba ningún ingrediente real por
-  // este cargo de S/2 (hallazgo de auditoría financiera).
-  if (extraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
+  // salsas ya incluidas en la receta del Signature, no una salsa nueva sin especificar —
+  // antes no se descontaba ningún ingrediente real por este cargo de S/2 (hallazgo de
+  // auditoría financiera).
+  //
+  // El "todas tienen al menos una salsa" que este código asumía dejó de ser un invariante
+  // cuando SIG05 pasó a ser dinámico (tabla secret_signature, rotación mensual): una
+  // receta publicada con `sauces: []` hacía `sig.sauces[-1]` → undefined, que igual se
+  // empujaba a ingredientsPerUnit (SKU fantasma en la lista de preparación y en el
+  // descuento de inventario) mientras se cobraban S/2 por una salsa que no existe
+  // (hallazgo de auditoría). actAdminSecretSignatureSet ahora exige al menos una salsa al
+  // publicar, pero esto queda como defensa para cualquier fila ya guardada sin salsas: sin
+  // salsas no hay nada que duplicar, así que no se cobra ni se descuenta nada.
+  const canExtraSauce = extraSauce && sig.sauces.length > 0;
+  if (canExtraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
+  return { basePrice, dblSurcharge, sauceSurcharge: canExtraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
   base: string, prot: string, cheese: string | null, tops: string[], sauces: string[],
@@ -608,7 +618,16 @@ export function priceCartItem(raw: any): PricedItem {
     const cheese = raw.cheese ? String(raw.cheese) : null;
     const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce, cheese);
     return {
-      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, cheese, note, qty },
+      // `snapIngredients`: foto de la composición REAL al momento de pedir. A diferencia de
+      // BUILD YOUR OWN (que guarda base/prot/tops/sauces en el propio ítem, así que
+      // re-derivarlo siempre da lo mismo), un Signature guarda solo su `sigId` y su receta
+      // vive en SIG_DATA — y SIG_DATA.SIG05 CAMBIA cada mes (menú secreto con rotación,
+      // tabla secret_signature). Sin esta foto, cancelar/reponer un pedido viejo del menú
+      // secreto después de una rotación restituía al inventario los ingredientes del
+      // sándwich secreto de ESTE mes, no los del que de verdad se vendió — corrompiendo el
+      // stock en silencio (hallazgo de auditoría). restockOrderItems la prefiere cuando
+      // existe y solo re-deriva para pedidos legados anteriores a este cambio.
+      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, cheese, note, qty, snapIngredients: priced.ingredientsPerUnit },
       qty,
       unitPrice: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
       basePrice: priced.basePrice,
