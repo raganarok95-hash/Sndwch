@@ -7,7 +7,7 @@ import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { sendComplaintConfirmation, sendComplaintNotification } from "../email.ts";
+import { sendComplaintConfirmation, sendComplaintNotification, sendComplaintResponse } from "../email.ts";
 import { sendPushToAdmins } from "../push.ts";
 
 // El Libro de Reclamaciones es público por ley (ver arriba) — eso lo deja sin ningún
@@ -98,7 +98,22 @@ export async function actAdminRespondComplaint(b: any) {
     responded_by: s.phone,
   });
   await logAdminAction(s.phone, "respond-complaint", undefined, { id, claim_code: rows[0].claim_code });
-  return { success: true };
+  // La respuesta tiene que LLEGAR al consumidor: la ley obliga a responderle, no solo a
+  // dejar constancia interna. Best-effort a propósito — si el correo falla, la respuesta
+  // ya quedó guardada y el admin no debe ver un error que le haga pensar que no se
+  // registró; `emailed` en la respuesta le dice si de verdad salió.
+  let emailed = false;
+  if (rows[0].consumer_email) {
+    try {
+      emailed = await sendComplaintResponse(
+        rows[0].consumer_email, rows[0].consumer_name || "", rows[0].claim_code,
+        rows[0].kind || "reclamo", response.slice(0, 2000),
+      );
+    } catch (e) {
+      console.error("sendComplaintResponse failed for", rows[0].claim_code, e);
+    }
+  }
+  return { success: true, emailed };
 }
 
 // Antes ningún aviso avisaba que el plazo legal de 30 días calendario (Código de

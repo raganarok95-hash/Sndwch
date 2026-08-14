@@ -10,6 +10,28 @@ import { sendPushToPhone } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
+// Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
+// retención corren en producción desde antes de abrir, sin verificar que el negocio ya
+// esté operando — y ya existe al menos un dispositivo real suscrito a notificaciones. Sin
+// esta guardia, cualquier sesión de QA que cree pedidos de prueba (para probar el reto
+// mensual, por ejemplo) dispara push REALES a clientes reales anunciando promociones de un
+// negocio que todavía no abre (hallazgo de auditoría de automatización).
+//
+// Solo frena avisos al CLIENTE. Las alertas al DUEÑO (pedido estancado, stock bajo, plazo
+// de reclamo) y la limpieza de dinero (expirar cobros, conciliar Culqi) siguen corriendo
+// siempre: esas sí tienen que funcionar antes de abrir.
+async function customerRemindersEnabled(): Promise<boolean> {
+  try {
+    const rows = await sbGet("app_settings", "select=business_launched&id=eq.true");
+    return rows?.[0]?.business_launched === true;
+  } catch (e) {
+    // Ante un fallo de lectura, NO enviar: el costo de callarse un recordatorio es
+    // trivial; el de mandar promociones antes de abrir, no.
+    console.error("customerRemindersEnabled failed:", e);
+    return false;
+  }
+}
+
 // Log de campañas de marketing (`marketing_touches`) — antes ningún cron de re-enganche
 // dejaba rastro de a quién se le mandó qué, así que era imposible medir si un recordatorio
 // de verdad trae de vuelta al cliente (solo se sabía "se mandó", nunca "funcionó"). Este
@@ -20,6 +42,34 @@ async function logMarketingTouch(phone: string, campaignType: string): Promise<v
     await sbInsert("marketing_touches", { customer_phone: phone, campaign_type: campaignType, channel: "push" });
   } catch (e) {
     console.error("logMarketingTouch failed for", campaignType, phone, e);
+  }
+}
+
+// Supresión CRUZADA entre campañas. Cada cron respetaba su propio límite ("no le mandes
+// este mismo recordatorio dos veces"), pero ninguno miraba si OTRO cron ya le había
+// escrito hoy al mismo cliente. Casos reales de solapamiento: un cliente frecuente que
+// abandona un carrito en hora pico califica a la vez para "hora pico" y "carrito
+// abandonado"; el día 28 de cada mes, "aniversario" y "reto sin reclamar" corren a la
+// misma hora exacta. El resultado era varios push el mismo día, que es la forma más
+// rápida de que alguien desactive las notificaciones para siempre (hallazgo de auditoría
+// de automatización).
+//
+// Devuelve el conjunto de teléfonos que YA recibieron algún aviso hoy — se consulta una
+// sola vez por corrida de cron, no una por cliente.
+async function phonesTouchedToday(): Promise<Set<string>> {
+  try {
+    const since = limaDayStartIso(new Date());
+    const rows = await sbGet(
+      "marketing_touches",
+      `sent_at=gte.${encodeURIComponent(since)}&select=customer_phone&limit=20000`,
+    );
+    return new Set(rows.map((r: any) => String(r.customer_phone)));
+  } catch (e) {
+    // Ante un fallo de lectura se prefiere ENVIAR (perder un recordatorio útil es peor
+    // que arriesgar un segundo aviso) — el criterio opuesto al de customerRemindersEnabled,
+    // porque aquí el peor caso es un push de más, no una promoción antes de abrir.
+    console.error("phonesTouchedToday failed:", e);
+    return new Set();
   }
 }
 
@@ -312,6 +362,8 @@ export async function actPushUnsubscribe(b: any) {
 // una columna nueva en customers.
 export async function actRemindUnclaimedChallenge(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   const now = new Date();
   const thisMonth = limaMonthKey(now);
   const monthStart = limaMonthStartIso(now);
@@ -337,6 +389,7 @@ export async function actRemindUnclaimedChallenge(b: any) {
     try {
       const withinLimit = await rpc("check_rate_limit", { p_key: `challenge-reminder:${c.phone}:${thisMonth}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
       if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "¡Ya ganaste tu reto mensual! 🏆",
         body: `Hiciste ${CHALLENGE_TARGET_ORDERS} pedidos este mes — entra a tu perfil y toca "Reclamar recompensa" para sumar tus ${CHALLENGE_BONUS_POINTS} puntos antes de que termine el mes.`,
@@ -366,6 +419,8 @@ const PEAK_HOUR_COPY: Record<"lunch" | "dinner", { title: string; body: string }
 // reintenta, sin necesitar una columna nueva.
 export async function actRemindPeakHour(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   const slot: "lunch" | "dinner" = b.slot === "dinner" ? "dinner" : "lunch";
   const now = new Date();
   const windowStart = new Date(now.getTime() - FREQUENT_WINDOW_DAYS * 24 * 3600 * 1000).toISOString();
@@ -393,6 +448,7 @@ export async function actRemindPeakHour(b: any) {
     try {
       const withinLimit = await rpc("check_rate_limit", { p_key: `peak-reminder:${phone}:${dateKey}:${slot}`, p_limit: 1, p_window_minutes: 60 * 24 });
       if (!withinLimit) continue;
+      if (touchedToday.has(String(phone))) continue;
       await sendPushToPhone(phone, {
         title: copy.title,
         body: copy.body,
@@ -438,6 +494,8 @@ const ABANDONED_CART_MIN_MINUTES = 10;
 const ABANDONED_CART_MAX_MINUTES = 180;
 export async function actRemindAbandonedCart(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   const now = Date.now();
   const minCutoff = new Date(now - ABANDONED_CART_MIN_MINUTES * 60000).toISOString();
   const maxCutoff = new Date(now - ABANDONED_CART_MAX_MINUTES * 60000).toISOString();
@@ -450,6 +508,7 @@ export async function actRemindAbandonedCart(b: any) {
     const items = Array.isArray(row.items) ? row.items : [];
     if (!items.length) continue;
     try {
+      if (touchedToday.has(String(row.customer_phone))) continue;
       await sendPushToPhone(row.customer_phone, {
         title: "🛒 Tu carrito te espera",
         body: "Dejaste productos en tu carrito — termina tu pedido antes de que se te antoje otra cosa 😉",
@@ -488,6 +547,8 @@ const SECOND_ORDER_MIN_DAYS = 7;
 const SECOND_ORDER_MAX_DAYS = 10;
 export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
   // esto, PostgREST trunca en silencio a 1000 filas por defecto (hallazgo de auditoría
   // 2026-08-07).
@@ -513,6 +574,7 @@ export async function actRemindSecondOrder(b: any) {
       // del cliente para este momento específico, no algo que deba repetirse.
       const withinLimit = await rpc("check_rate_limit", { p_key: `second-order:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 60 });
       if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "¿Qué tal tu primer sándwich? 🥪",
         body: "Vuelve a pedir tu favorito — o prueba otro Signature esta vez.",
@@ -535,6 +597,8 @@ export async function actRemindSecondOrder(b: any) {
 const HIGH_RANK_INACTIVE_DAYS = 15;
 export async function actRemindHighRankWinback(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   // total_orders>=15 ya implica rango CÍRCULO INTERNO o MESA FUNDADORA (ver RANKS/env.ts)
   // — no hace falta filtrar de nuevo con computeRankName, solo usarlo para el texto.
   // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
@@ -562,6 +626,7 @@ export async function actRemindHighRankWinback(b: any) {
     try {
       const withinLimit = await rpc("check_rate_limit", { p_key: `high-rank-winback:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 20 });
       if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "Te extrañamos por acá 🎖️",
         body: `Como cliente ${computeRankName(c.total_orders || 0)}, tu próximo pedido te está esperando.`,
@@ -594,6 +659,8 @@ const NEVER_ORDERED_STAGES = [
 ];
 export async function actRemindNeverOrdered(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   let reminded = 0;
   for (const stage of NEVER_ORDERED_STAGES) {
     const minCreatedIso = new Date(Date.now() - stage.maxDays * 86400000).toISOString();
@@ -606,6 +673,7 @@ export async function actRemindNeverOrdered(b: any) {
       try {
         const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
         if (!withinLimit) continue;
+        if (touchedToday.has(String(c.phone))) continue;
         await sendPushToPhone(c.phone, {
           title: stage.title,
           body: stage.body,
@@ -630,6 +698,8 @@ export async function actRemindNeverOrdered(b: any) {
 // formas, ya que la cuenta se crea al comprar.
 export async function actAnniversaryGreeting(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
   const now = new Date();
   // Misma conversión simple a hora Lima que usa birthday-bonus (UTC-5 sin horario de
   // verano) — no hace falta la precisión de limaFields (env.ts) para comparar solo mes/día.
@@ -654,6 +724,7 @@ export async function actAnniversaryGreeting(b: any) {
     try {
       const withinLimit = await rpc("check_rate_limit", { p_key: `anniversary:${c.phone}:${year}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
       if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "🎉 ¡Feliz aniversario!",
         body: `Hace ${years} año${years === 1 ? "" : "s"} te uniste a SND//WCH. Gracias por seguir con nosotros.`,

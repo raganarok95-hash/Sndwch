@@ -89,6 +89,24 @@ export async function sendComplaintConfirmation(to: string, name: string, claimC
   return sendResend([to], `SND//WCH — Constancia de tu ${kindLabel} (${claimCode})`, html);
 }
 
+// La respuesta del proveedor, ENVIADA AL CONSUMIDOR. Antes `actAdminRespondComplaint`
+// solo guardaba la respuesta en la tabla `complaints` y la mostraba en el panel admin —
+// el consumidor nunca se enteraba por ningún canal. El Código de Protección y Defensa del
+// Consumidor obliga a RESPONDER al consumidor dentro del plazo, no solo a dejar
+// constancia interna de que se redactó una respuesta (hallazgo de auditoría legal).
+export async function sendComplaintResponse(
+  to: string, name: string, claimCode: string, kind: string, response: string,
+): Promise<boolean> {
+  const kindLabel = kind === "queja" ? "queja" : "reclamo";
+  const html = emailShell("RESPUESTA A TU RECLAMO", `
+    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Esta es nuestra respuesta a tu ${kindLabel} <b style="color:#CBA258">${escHtml(claimCode)}</b>:</p>
+    <div style="background:#1A3028;border-left:3px solid #CBA258;padding:14px 16px;margin:16px 0;font-size:14px;color:#F2F0EB;line-height:1.7;white-space:pre-wrap">${escHtml(response)}</div>
+    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Si no estás conforme con esta respuesta, puedes acudir a INDECOPI. Conserva tu código de reclamo para cualquier trámite.</p>
+  `);
+  return sendResend([to], `SND//WCH — Respuesta a tu ${kindLabel} (${claimCode})`, html);
+}
+
 // Aviso al negocio de un reclamo/queja nuevo, para que pueda contactar al consumidor y
 // responder dentro del plazo legal.
 export async function sendComplaintNotification(

@@ -1057,7 +1057,13 @@ function ordersSig(orders){return(orders||[]).map(function(o){return o.id+':'+o.
 function startPoll(){
   if(pollTimer)clearInterval(pollTimer);
   pollTimer=setInterval(async function(){
-    if(sc!=='admin_home')return;
+    // admin_focus incluido (antes solo admin_home): el modo foco está pensado justo para
+    // cocinar con las manos ocupadas mirando un pedido a la vez — y era la ÚNICA pantalla
+    // donde el poll no corría, así que ni sonaba el aviso de pedido nuevo ni se
+    // actualizaba la cola. Un pedido podía entrar sin que el dueño se enterara mientras
+    // usaba la pantalla diseñada para no tener que mirar el celular (hallazgo de
+    // auditoría de operación).
+    if(sc!=='admin_home'&&sc!=='admin_focus')return;
     try{
       var r=await api('admin-orders',{token:token});
       var total=r.orders.length;
