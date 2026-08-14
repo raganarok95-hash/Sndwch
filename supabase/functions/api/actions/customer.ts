@@ -545,6 +545,77 @@ export async function actRemindAbandonedCart(b: any) {
 // cena Lima, mismo motivo.
 const SECOND_ORDER_MIN_DAYS = 7;
 const SECOND_ORDER_MAX_DAYS = 10;
+
+// "Bounce-back" a las 24 horas de la PRIMERA entrega. Complementa (no reemplaza) el
+// recordatorio de día 7-10 de arriba: la evidencia del sector dice que el reorden mediano
+// ocurre ~día 9 —por eso ese sigue existiendo— pero también que los restaurantes que
+// contactan dentro de las primeras 24 h del primer pedido ven tasas de recompra bastante
+// mayores, y que la mayoría de los clientes se pierde en los primeros 14 días. Son dos
+// momentos distintos: este es el agradecimiento con un regalo; aquel es el recordatorio.
+//
+// Se regala una BEBIDA (puntos suficientes para canjear R05), no un descuento porcentual:
+// un add-on gratis genera ~3x más canjes que un % de descuento y sube ~18% las visitas de
+// retorno SIN bajar el ticket promedio. Costo real de honrarlo ~S/1.80 contra un LTV de
+// S/35.67 por cliente — pero es un costo real y automático, así que vive en una constante
+// única y fácil de ajustar (ponerla en 0 desactiva el regalo sin tocar el resto).
+const BOUNCE_BACK_POINTS = 220;   // = R05 "BEBIDA // GRATIS"
+const BOUNCE_BACK_MIN_HOURS = 20;
+const BOUNCE_BACK_MAX_HOURS = 48;
+
+export async function actBounceBackFirstOrder(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
+  const now = Date.now();
+  const from = new Date(now - BOUNCE_BACK_MAX_HOURS * 3600000).toISOString();
+  const to = new Date(now - BOUNCE_BACK_MIN_HOURS * 3600000).toISOString();
+  // Solo primeras entregas REALES: status ENTREGADO (no basta con haber pagado — el
+  // agradecimiento tiene sentido cuando ya probó el producto) y pago confirmado.
+  const orders = await sbGet(
+    "orders",
+    `status=eq.ENTREGADO&payment_status=eq.paid&customer_phone=not.is.null` +
+    `&created_at=gte.${encodeURIComponent(from)}&created_at=lt.${encodeURIComponent(to)}` +
+    `&select=customer_phone,created_at&limit=5000`,
+  );
+  if (!orders.length) return { success: true, sent: 0 };
+  const phones = Array.from(new Set(orders.map((o: any) => String(o.customer_phone))));
+  const phonesList = phones.map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  // total_orders=1 asegura que es su PRIMER pedido, no una entrega cualquiera.
+  const customers = await sbGet("customers", `phone=in.(${phonesList})&total_orders=eq.1&select=phone,name`);
+  let sent = 0;
+  for (const c of customers) {
+    try {
+      // Una sola vez en la vida del cliente (ventana de 1 año) — este momento no se repite.
+      const withinLimit = await rpc("check_rate_limit", { p_key: `bounce-back:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 365 });
+      if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
+      if (BOUNCE_BACK_POINTS > 0) {
+        await rpc("increment_customer_points", { p_phone: c.phone, p_delta: BOUNCE_BACK_POINTS });
+        // Mismo criterio que el bono de bienvenida: todo ingreso de puntos deja rastro en
+        // el historial del cliente, nunca se suma en silencio.
+        await sbInsert("transactions", {
+          customer_phone: c.phone,
+          type: "earn_confirmed",
+          points: BOUNCE_BACK_POINTS,
+          description: "Gracias por tu primer pedido — bebida de cortesía",
+          confirmed: true,
+        });
+      }
+      await sendPushToPhone(c.phone, {
+        title: "Gracias por tu primer pedido 🙌",
+        body: "Te dejamos una bebida de la casa lista para canjear en tus puntos. Va por nosotros.",
+        url: "./index.html",
+        tag: "sndwch-bounce-back",
+      });
+      await logMarketingTouch(c.phone, "bounce_back_first_order");
+      sent++;
+    } catch (e) {
+      console.error("bounce-back-first-order failed for", c.phone, e);
+      await debugLog({ stage: "bounce-back-first-order", phone: c.phone, error: String(e) });
+    }
+  }
+  return { success: true, sent };
+}
 export async function actRemindSecondOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
@@ -594,6 +665,69 @@ export async function actRemindSecondOrder(b: any) {
 // todos los inactivos igual), perder a un cliente CÍRCULO INTERNO o MESA FUNDADORA cuesta
 // más que perder uno nuevo, así que se avisa antes (15 días vs. 30) y de forma recurrente
 // mientras siga inactivo (no es un momento único como el nudge de segundo pedido).
+// Win-back escalonado para CUALQUIER cliente inactivo. El re-enganche que ya existía solo
+// cubría dos extremos: rango alto (15+ pedidos) y "nunca pidió" — quedaba fuera justo el
+// grueso de la base: quien pidió 1-14 veces y dejó de pedir. La evidencia del sector marca
+// dos ventanas distintas: 30-60 días es lapso TEMPRANO (todavía te recuerdan, basta
+// reconocimiento + recordatorio) y 60-90 días es lapso MEDIO (ya encontraron alternativa,
+// hace falta una razón concreta para volver). Las campañas automatizadas de este tipo
+// recuperan 10-18% de los inactivos.
+//
+// Cada etapa lidera con RECONOCIMIENTO antes que con oferta: la evidencia dice que da
+// mejor retención de largo plazo que el descuento puro, y no cuesta margen.
+const WINBACK_STAGES: { key: string; minDays: number; maxDays: number; title: string; body: string }[] = [
+  { key: "30d", minDays: 30, maxDays: 59, title: "¿Todo bien por allá? 👋",
+    body: "Hace un mes que no te vemos. Tu sándwich de siempre sigue en el menú." },
+  { key: "60d", minDays: 60, maxDays: 89, title: "Seguimos guardándote el sitio 🥪",
+    body: "Cambiamos el sándwich secreto del mes. ¿Le das una oportunidad?" },
+  { key: "90d", minDays: 90, maxDays: 180, title: "Un último recordatorio 💛",
+    body: "Tus puntos siguen ahí, intactos. Están esperando que vuelvas." },
+];
+export async function actRemindLapsedCustomers(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
+  // 1..14 pedidos: los de 15+ ya los cubre actRemindHighRankWinback con su propio mensaje
+  // de rango, y los de 0 los cubre actRemindNeverOrdered. Sin solapamiento.
+  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=gte.1&total_orders=lte.14&limit=20000");
+  if (!customers.length) return { success: true, reminded: 0 };
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
+  const lastOrderByPhone = new Map<string, number>();
+  for (const o of orders) {
+    const t = new Date(o.created_at).getTime();
+    const prev = lastOrderByPhone.get(o.customer_phone);
+    if (prev === undefined || t > prev) lastOrderByPhone.set(o.customer_phone, t);
+  }
+  const now = Date.now();
+  let reminded = 0;
+  for (const c of customers) {
+    const lastOrderAt = lastOrderByPhone.get(c.phone);
+    if (lastOrderAt === undefined) continue;
+    const daysSince = (now - lastOrderAt) / 86400000;
+    const stage = WINBACK_STAGES.find((st) => daysSince >= st.minDays && daysSince <= st.maxDays);
+    if (!stage) continue;
+    try {
+      // Una vez por etapa y por cliente: pasada la ventana de 90 días no se insiste más
+      // (más allá de eso el cliente ya no se recupera por recordatorio y solo molesta).
+      const withinLimit = await rpc("check_rate_limit", { p_key: `lapsed-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 200 });
+      if (!withinLimit) continue;
+      if (touchedToday.has(String(c.phone))) continue;
+      await sendPushToPhone(c.phone, {
+        title: stage.title,
+        body: stage.body,
+        url: "./index.html",
+        tag: "sndwch-lapsed-" + stage.key,
+      });
+      await logMarketingTouch(c.phone, "lapsed_" + stage.key);
+      reminded++;
+    } catch (e) {
+      console.error("remind-lapsed-customers failed for", c.phone, e);
+    }
+  }
+  return { success: true, reminded };
+}
+
 const HIGH_RANK_INACTIVE_DAYS = 15;
 export async function actRemindHighRankWinback(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);

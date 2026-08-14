@@ -34,6 +34,7 @@ import {
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
   actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
+  actBounceBackFirstOrder, actRemindLapsedCustomers,
   actRequestRestockNotify, actWaitlistJoin,
 } from "./actions/customer.ts";
 import {
@@ -171,6 +172,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "remind-second-order": actRemindSecondOrder,
   "remind-high-rank-winback": actRemindHighRankWinback,
   "remind-never-ordered": actRemindNeverOrdered,
+  "bounce-back-first-order": actBounceBackFirstOrder,
+  "remind-lapsed-customers": actRemindLapsedCustomers,
   "prepare-weekly-plan": actPrepareWeeklyPlan,
   "confirm-weekly-plan": actConfirmWeeklyPlan,
   "expire-pending-weekly-plans": actExpirePendingWeeklyPlans,
