@@ -27,6 +27,15 @@ var SOLES='<span style="font-size:.6em">S/</span>';
 // showPrompt escapan su mensaje a propósito por seguridad — ver esc() en renderOverlays
 // — así que el <span> de arriba salía literal, como texto crudo, en vez de dar formato).
 var SOLES_TXT='S/';
+// Redondeo de dinero a 2 decimales. Desde que el catálogo pasó a precios con decimales
+// (.90, decisión del dueño 2026-08-15) la aritmética de punto flotante de JS produce
+// basura visible: 18.90 - 3 + 8.47 da 24.369999999999997, y ESE número se le mostraba
+// al cliente y se mandaba al servidor. La app se construyó asumiendo precios enteros y
+// nunca redondeaba. Todo cálculo de dinero pasa por acá.
+function money(n){return Math.round((Number(n)||0)*100)/100;}
+// Formato para mostrar: 2 decimales cuando el monto los tiene, entero cuando no.
+// "S/18.90" y no "S/18.9" (que se lee a medio escribir), pero "S/8" y no "S/8.00".
+function pz(n){var v=money(n);return v===Math.floor(v)?String(v):v.toFixed(2);}
 // PASARELA DE PAGO — CULQI (LIVE — los cargos son reales)
 // La llave pública SÍ puede estar en el cliente — no es secreta. La llave SECRETA vive
 // solo en Supabase → Edge Functions → Secrets (CULQI_SECRET_KEY), nunca aquí.
@@ -110,25 +119,25 @@ var PROTS=[
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
   // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14,p30:22,pDbl:6},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13,p30:21,pDbl:6},
+  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:22.9,pDbl:6},
+  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:21.9,pDbl:6},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13,p30:21,pDbl:6,vaultOnly:true},
+  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:21.9,pDbl:6,vaultOnly:true},
   // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
   // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
   // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
   // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
   // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
   // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16,p30:30,pDbl:9},
+  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:9},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
   // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16,p30:30,pDbl:9},
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:30.9,pDbl:9},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -136,7 +145,7 @@ var PROTS=[
   // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
   // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
   // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14,p30:24,pDbl:6},
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:24.9,pDbl:6},
   // sigOnly: exclusiva de THE CHICAGO (SIG07) — antes SIG07 reutilizaba P01 como si fuera
   // el mismo insumo que el asado mechado normal de la casa, contradiciendo
   // RECIPE_RATIONALE.md (corte laminado tipo Chicago vs. deshilachado — el dueño confirmó
@@ -145,7 +154,7 @@ var PROTS=[
   // solo separa el código de inventario/costeo para que la cocina y el stock puedan
   // tratarlos como los dos lotes que realmente son. DEBE coincidir con PROT_PRICE.P07 en
   // supabase/functions/api/catalog.ts.
-  {id:'P07',l:'Res',  s:'Chicago',       d:'Corte fino laminado, sazón italiana, estilo Chicago',p15:14,p30:22,pDbl:6,sigOnly:true}
+  {id:'P07',l:'Res',  s:'Chicago',       d:'Corte fino laminado, sazón italiana, estilo Chicago',p15:14.9,p30:22.9,pDbl:6,sigOnly:true}
 ];
 // vaultOnly (T04) y sigOnly (T07) — mismo criterio que vaultOnly en PROTS y sigOnly en
 // SAUCES: eran seleccionables en ARMA EL TUYO pese a solo aparecer en la receta de un
@@ -240,7 +249,7 @@ var SIGS:any[]=[
   // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
   // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
   // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18,p30:24,
+  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18.9,p30:24.9,
     pitch:'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.'},
   // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
   // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
@@ -276,7 +285,7 @@ var SIGS:any[]=[
   // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
   // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
   // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19,p30:26,fixedCheese:'C01',
+  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19.9,p30:26.9,fixedCheese:'C01',
     pitch:'Albóndigas caseras bañadas en marinara, con mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad.'},
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
@@ -292,7 +301,7 @@ var SIGS:any[]=[
   // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
   // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
   // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
-  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21,p30:32,fixedCheese:'C02',
+  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21.9,p30:32.9,fixedCheese:'C02',
     pitch:'Fiambres italianos ahumados y cheddar derretido sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
@@ -322,7 +331,7 @@ var SIGS:any[]=[
   // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
   // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
   // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:18,p30:32,
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:18.9,p30:32.9,
     pitch:'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
@@ -347,7 +356,7 @@ var SIGS:any[]=[
   // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
   // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
   // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:17,p30:23,
+  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:17.9,p30:23.9,
     pitch:'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.'},
   // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
@@ -361,7 +370,7 @@ var SIGS:any[]=[
   // escasez verificable.
   // prot P01→P07: usa su propio corte (laminado, estilo Chicago), nunca el asado mechado
   // normal — ver P07 en PROTS y RECIPE_RATIONALE.md.
-  {id:'SIG07',n:'The Chicago',s:'Reserve',badge:'Al estilo Chicago',base:'B01',prot:'P07',tops:['T07'],sauces:['S13'],p15:25,p30:25,
+  {id:'SIG07',n:'The Chicago',s:'Reserve',badge:'Al estilo Chicago',base:'B01',prot:'P07',tops:['T07'],sauces:['S13'],p15:22,p30:29.9,
     // Pitch corregido de "res mechada" a "res laminada" (auditoría de menú 2026-08-07):
     // P07 usa corte fino laminado (no deshilachado, ver comentario en PROTS arriba y
     // RECIPE_RATIONALE.md) — el pitch seguía prometiendo el corte equivocado pese a que
@@ -381,7 +390,7 @@ var SIGS:any[]=[
   // no una barrera de humedad como sí lo son aioli/mayo/queso en el resto del menú) —
   // 2 asesores de forma independiente lo confirmaron como riesgo real de pan mojado. DEBE
   // coincidir con SIG_DATA.SIG08 en catalog.ts.
-  {id:'SIG08',n:'The Ember',s:'Signature',badge:'Edición de Apertura',availableUntil:'2026-10-07',base:'B03',prot:'P01',tops:['T03','T06'],sauces:['S09','S01'],p15:14,p30:22,
+  {id:'SIG08',n:'The Ember',s:'Signature',badge:'Edición de Apertura',availableUntil:'2026-10-07',base:'B03',prot:'P01',tops:['T03','T06'],sauces:['S09','S01'],p15:14.9,p30:22.9,
     pitch:'Res asada mechada de cocción lenta sobre focaccia artesanal, con un toque de aioli y un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
   // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
@@ -400,7 +409,7 @@ var SIGS:any[]=[
   // ahí esos campos de este mismo objeto se sobreescriben en memoria, igual que ya pasa
   // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
   // del mes — eso se hace desde Admin // Menú secreto.
-  {id:'SIG05',n:'Menú secreto',s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24,p30:30,
+  {id:'SIG05',n:'Menú secreto',s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24.9,p30:30.9,
     secret:true,minOrders:5,
     pitch:'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.'}
 ];
@@ -615,13 +624,13 @@ function deliveryFeeAmount(){
   var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
   var fee=z?z.fee:0;
   if(!fee)return 0;
-  return willPayWithCard()?Math.round((fee/(1-CULQI_FEE_RATE))*100)/100:fee;
+  return money(willPayWithCard()?fee/(1-CULQI_FEE_RATE):fee);
 }
 // El total que de verdad se cobra — cartFinalTotal() (comida, con descuentos/recompensa)
 // más el delivery. Los puntos ganados siguen calculándose sobre cartFinalTotal() sin
 // delivery (ver checkoutExtrasHTML) — el delivery es un pass-through al motorizado, no
 // premia con puntos igual que la comida.
-function payableTotal(){return cartFinalTotal()+deliveryFeeAmount();}
+function payableTotal(){return money(cartFinalTotal()+deliveryFeeAmount());}
 // Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, aplicado una vez por cada par sándwich+bebida en el carrito (ver
 // cartComboCount). Bajado de S/3 a S/2 — a S/3 el combo dejaba THE MIDNIGHT (D07, la
@@ -1133,7 +1142,7 @@ function total(){
   var pr=PROTS.find(function(x){return x.id===prot;});
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dbl=dblProtRef();
-  return bp+(doubleProt&&dbl?dbl.pDbl:0)+(extraSauce?2:0);
+  return money(bp+(doubleProt&&dbl?dbl.pDbl:0)+(extraSauce?2:0));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
@@ -1536,7 +1545,7 @@ function cartFinalTotal(){
     base-=rewardWaiverAmount(appliedReward,idx);
   }
   if(appliedPromo)base-=appliedPromo.discount;
-  return Math.max(0,base);
+  return money(Math.max(0,base));
 }
 // El carrito se guarda en localStorage en cada cambio y se restaura al abrir la app
 // (ver restoreCart() en INIT) — sin esto, refrescar la página, cerrar la pestaña por
@@ -1767,8 +1776,8 @@ function sOHome(){
           // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
           // cuesta más — hoy THE CHICAGO tiene el mismo precio en ambos tamaños y
           // repetirlo se leería como un error de la app.
-          +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+s.p15+'</span>'
-          +(s.p30>s.p15?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">30CM '+SOLES+s.p30+'</div>':'')
+          +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+'</span>'
+          +(s.p30>s.p15?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">30CM '+SOLES+pz(s.p30)+'</div>':'')
           +'</div></div>';
       }).join('')+'</div>';
       var byoPanel='<div style="margin-bottom:8px">'
@@ -2056,7 +2065,7 @@ function sigPreviewOverlayHTML(){
       +'<div><span style="color:'+GOLD+'">Toppings · </span>'+toppingsLbl+'</div>'
       +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
       +'</div></div>')
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+s.p15+' // '+SOLES+s.p30+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
     +'<button onclick="closeSigPreview();sigId=\''+s.id+'\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">Pedir este Signature //</button>'
     +'<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:4px">Cerrar</div>'
     +'</div></div></div>';
@@ -2212,7 +2221,7 @@ function sOItemConfirm(){
   }
   var sigNameHTML=(mode==='sig'&&sig)?'<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">'+sig.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)+'</div></div>':'';
   return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-    +'<div style="background:'+'var(--sw-card,#2D5246)'+';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px">'+(mode==='sig'?'Tu signature //':'Tu build //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+t+'</span></div></div>'
+    +'<div style="background:'+'var(--sw-card,#2D5246)'+';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px">'+(mode==='sig'?'Tu signature //':'Tu build //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span></div></div>'
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#1A3028)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:'+GOLD+'">+'+SOLES+sizeUpsellDelta+'</span></div></div>':'')
     +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dbl.pDbl,doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',2,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
@@ -2349,7 +2358,7 @@ function toggleReward(id){
 function promoCodeHTML(){
   var box='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Código promocional //</div>';
   if(appliedPromo){
-    return box+'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366">'+esc(appliedPromo.code)+' aplicado · ahorras '+SOLES_TXT+appliedPromo.discount+'</span><span onclick="removePromoCode()" style="cursor:pointer;flex-shrink:0;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#ff8888">Quitar</span></div></div>';
+    return box+'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366">'+esc(appliedPromo.code)+' aplicado · ahorras '+SOLES_TXT+pz(appliedPromo.discount)+'</span><span onclick="removePromoCode()" style="cursor:pointer;flex-shrink:0;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#ff8888">Quitar</span></div></div>';
   }
   // Un código promocional y una recompensa de puntos no se pueden combinar en el mismo
   // pedido (mismo criterio que combo/hora-valle: nunca se suman) — el servidor ya lo
@@ -2917,7 +2926,7 @@ function manualPayInstructionsHTML(t){
   var recurring=(function(){try{return localStorage.getItem('sw_yp_used')==='1';}catch(e){return false;}})();
   var mobile=isMobileUA();
   return'<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px">'
-    +'<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:2px">Monto a transferir //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:38px;font-weight:640;color:'+GOLD+'">'+SOLES+t+'</div></div>'
+    +'<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:2px">Monto a transferir //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:38px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</div></div>'
     +payStep(1,'Transfiere por Yape o Plin a','<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0)">'+esc(YAPE_PLIN_NAME)+(recurring?' · ya usaste este número antes ✓':'')+'</div></div></div>'
       // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
       // paso copia el número); en desktop no hay app que abrir, así que el único botón
@@ -2998,7 +3007,7 @@ function sOCart(){
   var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
   return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
-    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+t+'</span>'+(showCombo?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">combo aplicado: ahorras '+SOLES+comboDiscount+'</div>':'')+(showOffPeak?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras '+SOLES+offPeakDiscount+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+rewardDiscount+'</div>':'')+'</div></div>':'')
+    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span>'+(showCombo?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">combo aplicado: ahorras '+SOLES+pz(comboDiscount)+'</div>':'')+(showOffPeak?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras '+SOLES+pz(offPeakDiscount)+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+pz(rewardDiscount)+'</div>':'')+'</div></div>':'')
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
     // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
@@ -3098,7 +3107,7 @@ async function doOrder(){
     // ningún cobro real detrás que lo confirme (a diferencia de Culqi), un tap
     // accidental generaba un pedido 'pending' real que el admin tenía que revisar y
     // descartar a mano sin que el cliente hubiera transferido nada todavía.
-    if(!(await showConfirm('¿Ya transferiste '+SOLES_TXT+t+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
+    if(!(await showConfirm('¿Ya transferiste '+SOLES_TXT+pz(t)+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
       _payingInProgress=false;render();return;
     }
     payWithManualMethod();
@@ -3337,7 +3346,7 @@ function sOSent(){
       +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:#ff8888;margin-top:4px">'+esc(receiptUploadState.slice(6))+'</div>':'')
       +'</div>':'')
     +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px;line-height:1.5">Sigue el estado en Puntos → Mis Pedidos</div></div>'
-    +'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(pending?'Monto a pagar //':(window._lTot===0?'Cubierto por recompensa //':'Monto cobrado //'))+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
+    +'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(pending?'Monto a pagar //':(window._lTot===0?'Cubierto por recompensa //':'Monto cobrado //'))+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
     +(cust?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">'+(pending?'Puntos //':'Puntos ganados //')+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(pending?'12px':'32px')+';font-weight:640;color:'+GOLD+'">'+(pending?'+'+(window._lTot||0)+' pts pendientes hasta confirmar tu pago':'+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span>')+'</div></div>':'')
     +(window._lRewardLabel?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+'Recompensa aplicada //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(window._lRewardLabel)+'</div></div>':'')
     // Respaldo tappable del window.open automático de arriba — muchos navegadores
@@ -3349,7 +3358,7 @@ function sOSent(){
     // pagado es el momento de mayor intención: el cliente ya vio el valor de la app y
     // quiere saber cuándo llega SU pedido, así que se ofrece aquí de forma prominente.
     +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<div onclick="togglePushNotifications()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('notif',12,GOLD)+'No te pierdas tu pedido //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>':'')
-    +(cust?'<div onclick="shareReferral()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('heart',12,GOLD)+'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">'+esc(cust.phone)+'</b> — ambos ganan 50 puntos en su primer pedido.</div></div>':'')
+    +(cust?'<div onclick="shareReferral()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('heart',12,GOLD)+'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">'+esc(cust.phone)+'</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él arranca con 50 puntos.</div></div>':'')
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
     +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
     +(cust?'<button onclick="sc=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>':'')
@@ -3512,7 +3521,7 @@ function sWelcome(){
     // referidos o un reto mensual hasta toparse con esas pantallas por su cuenta.
     +'<div style="margin-top:20px;text-align:left;background:rgba(242,240,235,.05);border-radius:12px;padding:16px 18px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">Cómo funciona //</div>'
-    +[['cart','Gana puntos con cada pedido pagado.'],['gift','Canjéalos por salsas, upgrades y sándwiches gratis.'],['heart','Invita amigos — ambos ganan 50 puntos extra.']].map(function(x){return'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">'+icon(x[0],15,GOLD)+'<span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">'+x[1]+'</span></div>';}).join('')
+    +[['cart','Gana puntos con cada pedido pagado.'],['gift','Canjéalos por salsas, upgrades y sándwiches gratis.'],['heart','Invita a un amigo y gánate un sándwich 15CM gratis.']].map(function(x){return'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">'+icon(x[0],15,GOLD)+'<span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">'+x[1]+'</span></div>';}).join('')
     +'</div>'
     +'<div style="margin-top:20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">toca para continuar //</div>'
     +'</div></div>';
@@ -3582,7 +3591,7 @@ function sPOrders(){
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
       +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
-      +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+';flex-shrink:0">'+SOLES+o.total+'</div></div>'
+      +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+';flex-shrink:0">'+SOLES+pz(o.total)+'</div></div>'
       +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:8px">'+esc(o.summary)+'</div>'
       +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;height:3px;background:'+(dn?GOLD:'#3A6B58')+';border-radius:3px"></div>';}).join('')+'</div>'
       +stBadge(o.status)+'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
@@ -3617,7 +3626,7 @@ function sOrdDetail(){
     +'<div style="min-width:0"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.customer_name)+'</div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-top:2px">'+esc(o.ref)+'</div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.date)+'</div></div>'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:'+GOLD+'">'+SOLES+o.total+'</div></div>'
+    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(o.total)+'</div></div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Pedido //</div>'
     +'<div style="font-family:EB Garamond,serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+esc(o.summary)+'</div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Dirección //</div>'
@@ -3675,7 +3684,7 @@ function ratingHTML(o){
       // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
       // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
       // satisfacción de siempre, sin lógica nueva.
-      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link, ambos ganan 50 puntos — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
+      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un sándwich 15CM GRATIS cuando tu invitado haga su primer pedido — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
     }
     return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
   }
@@ -3801,7 +3810,7 @@ function shareReferral(){
   // en el registro. El link con ?ref= ya existe y auto-rellena ese campo (ver refCode
   // arriba); solo faltaba usarlo aquí.
   var link=location.origin+location.pathname+'?ref='+encodeURIComponent(cust.phone);
-  var text='Usa mi link para crear tu cuenta en SND//WCH y ambos ganamos 50 puntos: '+link;
+  var text='Usa mi link para crear tu cuenta en SND//WCH — tú arrancas con puntos y yo me gano un sándwich gratis: '+link;
   if(navigator.share){
     navigator.share({title:'SND//WCH',text:text,url:link}).catch(function(){});
   }else{
@@ -4726,7 +4735,7 @@ function sAdminHome(){
         +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+GOLD+'">'
         +'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
         +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
         // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
         // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
@@ -4737,7 +4746,7 @@ function sAdminHome(){
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">'+esc(o.summary)+'</div>'
         +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
-        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'#ffa500')+'<span>Cobrar '+SOLES+o.total+' al entregar</span></div>':'')
+        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
         +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
         +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#8BAF9A);margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
         // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
@@ -4833,13 +4842,13 @@ function sAdminFocus(){
     +(typeof o.lat==='number'&&typeof o.lon==='number'
       ?'<a href="https://maps.google.com/?q='+o.lat+','+o.lon+'" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+';margin-top:6px;display:inline-flex;align-items:center;gap:6px;text-decoration:none">'+icon('moto',13,GOLD)+'<span>Abrir pin exacto en Maps</span></a>'
       :'')
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:8px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:8px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
     +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('horario',13,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',13,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.6">'+esc(o.summary)+'</div>'
     +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#25D366;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('gift',13,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
-    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('cash',13,'#ffa500')+'<span>Cobrar '+SOLES+o.total+' al entregar</span></div>':'')
+    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('cash',13,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
     +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('warning',13,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
     +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
     +'<div style="display:flex;gap:10px;margin-top:20px">'
@@ -5813,7 +5822,7 @@ function sAdminCustomer(){
       +'<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Crédito</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+(c.credit_balance||0)+'</div></div>'
       +'</div></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Pedidos recientes // '+custDetail.orders.length+'</div>';
-    h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(o.ref)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin pedidos //</div>';
+    h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(o.ref)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(o.date)+' · '+SOLES+pz(o.total)+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin pedidos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Historial de puntos // '+custDetail.transactions.length+'</div>';
     h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(t.description)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:12px;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin movimientos //</div>';
     if(custDetail.ratings&&custDetail.ratings.length){
@@ -5853,7 +5862,7 @@ function sAdminSearch(){
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Resultados // '+searchResults.length+(searchTruncated?' (recortado)':'')+'</div>';
     h+=searchResults.length?searchResults.map(function(o,i){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px;margin-bottom:10px">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name||'Invitado')+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(o.ref)+' · '+esc(o.date)+' · '+SOLES+o.total+'</div></div>'+stBadge(o.status)+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name||'Invitado')+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(o.ref)+' · '+esc(o.date)+' · '+SOLES+pz(o.total)+'</div></div>'+stBadge(o.status)+'</div>'
         +((o.contact_phone||o.customer_phone)?'<button onclick="waSearchResult('+i+')" style="all:unset;cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;color:'+GOLD+'">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
         +'</div>';
     }).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);text-align:center;padding:20px 0">Sin resultados //</div>';
