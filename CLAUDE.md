@@ -252,6 +252,19 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   90% en 15CM → contribución S/10.27/pedido; 60% en 15CM → S/11.71 (21% de diferencia).
   No dar por sentado el número: reemplazarlo con la mezcla real apenas haya ventas
   (`retention_report` ya devuelve `attach.size30Pct`).
+- **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
+  fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
+  lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en
+  `src/app.ts`, deben coincidir) y ese monto se cobra dentro del mismo pago del pedido;
+  el dueño le paga al motorizado con ese dinero. El negocio no gana ni subsidia el
+  reparto. En pagos con tarjeta el fee se "engorda" por `CULQI_FEE_RATE` para que la
+  comisión de Culqi no se coma el pass-through. **Error real cometido 2026-08-15**: el
+  modelo financiero v5 metió al motorizado como costo fijo de S/1,100/mes y al reparto
+  como pérdida de S/0.60/pedido, tomando eso de la sección "opciones de reparto" del
+  informe de un agente en vez de leer `env.ts` donde ya estaba resuelto. Eso inventó un
+  "valle del motorizado" inexistente y convirtió una meta alcanzable (S/3,000 netos en el
+  mes 6, 74% de probabilidad) en imposible (mes 8). Corregido en v5.1. Antes de modelar
+  cualquier costo operativo, revisar si el código ya lo resuelve.
 - **Comisión de pago (Culqi/tarjeta)**: nunca se restaba del margen antes de esta sesión
   de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
   rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo
