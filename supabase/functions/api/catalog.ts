@@ -47,10 +47,10 @@ import { computeRankName } from "./env.ts";
 // auditoría de copy, BAJO.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
   R02: { pts: 40, label: "SALSA // EXTRA" },
-  R05: { pts: 220, label: "BEBIDA // GRATIS" },
+  R05: { pts: 120, label: "BEBIDA // GRATIS" },
   R03: { pts: 320, label: "TAMAÑO // 30CM" },
   R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
-  R06: { pts: 720, label: "SÁNDWICH // GRATIS" },
+  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
 };
 
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,

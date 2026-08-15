@@ -590,7 +590,7 @@ const SECOND_ORDER_MAX_DAYS = 10;
 // retorno SIN bajar el ticket promedio. Costo real de honrarlo ~S/1.80 contra un LTV de
 // S/35.67 por cliente — pero es un costo real y automático, así que vive en una constante
 // única y fácil de ajustar (ponerla en 0 desactiva el regalo sin tocar el resto).
-const BOUNCE_BACK_POINTS = 220;   // = R05 "BEBIDA // GRATIS"
+const BOUNCE_BACK_POINTS = 120;   // = R05 "BEBIDA // GRATIS" (bajó de 220 al recalibrar R05)
 const BOUNCE_BACK_MIN_HOURS = 20;
 const BOUNCE_BACK_MAX_HOURS = 48;
 
@@ -919,9 +919,16 @@ const GIFT_CARD_AMOUNT_MIN = 10;
 const GIFT_CARD_AMOUNT_MAX = 500;
 // Tasa de canje: mismo criterio que las recompensas (REWARDS en catalog.ts) tras la
 // recalibración contra el costo real de insumos (~45% del valor, no ~20-30% asumido
-// originalmente) — 40 pts por sol de crédito regalado, cercano a la tasa real de R06
-// (720 pts por un sándwich de ~S/18 ≈ 40 pts/sol). DEBE coincidir con
+// originalmente) — 40 pts por sol de crédito regalado. DEBE coincidir con
 // GIFT_CARD_POINTS_PER_SOL en src/app.ts.
+//
+// ⚠ PENDIENTE DE DECISIÓN DEL DUEÑO (2026-08-15): esta tasa se fijó igualando la de R06
+// cuando R06 costaba 720 pts por un sándwich de ~S/18 (≈40 pts/sol). Al bajar R06 a 400
+// pts, su tasa real pasó a ~22 pts/sol y la tarjeta de regalo quedó al doble de precio
+// que canjear la recompensa. No se cambió a propósito: bajarla a 22 casi duplica lo que
+// se regala por punto, y eso es plata real que no se aprobó. El orden actual (canjear
+// recompensas rinde más que regalar crédito) no es incoherente — solo dejó de ser el
+// mismo número, y conviene decidirlo explícitamente en vez de que se desincronice solo.
 export const GIFT_CARD_POINTS_PER_SOL = 40;
 
 export async function actGiftCardPurchase(b: any) {
