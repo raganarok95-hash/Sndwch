@@ -29,7 +29,7 @@ export const REFERRAL_BONUS_POINTS = 50;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido (decisión del dueño
 // 2026-08-15). Antes ambos lados recibían los mismos 50 puntos — unos S/1.25 de valor, el
 // 5% del ticket, muy por debajo del 10-25% que mueve la aguja en esta categoría. Ahora el
-// que invita se lleva el equivalente a un SÁNDWICH 15CM GRATIS: 720 puntos, que es
+// que invita se lleva el equivalente a un SÁNDWICH 15CM GRATIS: 400 puntos, que es
 // exactamente el precio de R06 en REWARDS (catalog.ts). Se entrega como puntos y no como
 // un cupón aparte a propósito — reusa entero el flujo de canje que ya existe y ya está
 // probado, sin inventar un mecanismo nuevo que haya que auditar.
@@ -37,7 +37,7 @@ export const REFERRAL_BONUS_POINTS = 50;
 // Costo real: el 15CM más barato del catálogo con 45% de insumos ≈ S/6.7-8 por referido
 // que de verdad llega a comprar, contra un techo pagable estimado de ~S/9.3. Si REWARDS.R06
 // cambia de precio, este número debe seguirlo.
-export const REFERRER_REWARD_POINTS = 720;
+export const REFERRER_REWARD_POINTS = 400;
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 // Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
