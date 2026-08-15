@@ -231,6 +231,27 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
+- **NO habrá acompañamientos de comida — decisión del dueño 2026-08-15.** Nada de papas
+  fritas, nachos, ni ningún side sólido. El único "acompañamiento" del catálogo son las 4
+  bebidas de la casa (que en el código viven bajo `SIDES`/`SIDE_PRICE` por razones
+  históricas — ese nombre NO significa que exista o vaya a existir comida de
+  acompañamiento). Cualquier análisis futuro que proponga subir el ticket con un side de
+  comida está proponiendo algo ya descartado: la palanca equivalente es la bebida, que
+  además tiene mejor margen.
+- **Empaque: papel manteca brandeado premium + bolsa — confirmado por el dueño
+  2026-08-15.** NO se presupuesta aparte ni se suma al costo: el 45% de insumos+empaque
+  se fijó deliberadamente por encima del costo real calculado (~26-36%) justamente para
+  financiar esto. Ya está dentro del número.
+- **Hipótesis (del dueño, 2026-08-15, explícitamente NO una decisión): el 15CM sería el
+  tamaño dominante.** Analizada con el modelo v5 y respaldada por el propio producto (la
+  app etiqueta 30CM como "Para compartir" y 15CM como "Para uno"; el delivery individual
+  es un comensal). Estimación de trabajo: 75-85% de los pedidos en 15CM. Consecuencia
+  práctica para cualquier decisión de precio: **si el 15CM es el 80% del negocio, el
+  precio de 15CM ES el precio del negocio** — SIG06 a S/17 y las proteínas BYO a S/13-14
+  gobiernan la caja mucho más que los precios de 30CM. Rango de sensibilidad medido:
+  90% en 15CM → contribución S/10.27/pedido; 60% en 15CM → S/11.71 (21% de diferencia).
+  No dar por sentado el número: reemplazarlo con la mezcla real apenas haya ventas
+  (`retention_report` ya devuelve `attach.size30Pct`).
 - **Comisión de pago (Culqi/tarjeta)**: nunca se restaba del margen antes de esta sesión
   de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
   rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo

@@ -164,7 +164,26 @@ type FinalizeOrderParams = {
   scheduledFor: string | null;
   reward: { pts: number; label: string } | null;
   useCredit: boolean;
+  lat: number | null;
+  lon: number | null;
 };
+
+// Coordenadas del pin que el cliente confirmó en el mapa del checkout. Se sanean acá y
+// no se confía en lo que llegue: cualquier cosa fuera del rango válido de lat/lon (o no
+// numérica) se guarda como null, porque una coordenada basura en el ticket de reparto es
+// peor que no tener ninguna — manda al motorizado a un lugar equivocado con la confianza
+// de un dato "preciso", en vez de hacerlo leer la dirección en texto.
+function sanitizeCoord(raw: unknown, max: number): number | null {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || Math.abs(n) > max) return null;
+  return Math.round(n * 1e6) / 1e6;
+}
+function readCoords(b: any): { lat: number | null; lon: number | null } {
+  const lat = sanitizeCoord(b?.lat, 90);
+  const lon = sanitizeCoord(b?.lon, 180);
+  // Media coordenada no ubica nada — o van las dos o no va ninguna.
+  return lat === null || lon === null ? { lat: null, lon: null } : { lat, lon };
+}
 
 // Núcleo compartido entre el pago con Culqi (confirmado desde una reserva ya validada,
 // ver actPrepareOrder/actConfirmCulqiOrder) y crédito/Yape-Plin/recompensa-gratis
@@ -201,6 +220,8 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       customer_name: p.name,
       customer_email: p.email || null,
       customer_address: p.address,
+      lat: p.lat,
+      lon: p.lon,
       summary: p.summary || "",
       notes: p.notes,
       total: p.total,
@@ -656,6 +677,7 @@ export async function actPrepareOrder(b: any) {
         expires_at: expiresAt,
         promo_code_id: promoCodeId,
         promo_discount: promoDiscount,
+        ...readCoords(b),
       });
     } catch (e) {
       await restockBestEffort(codes, qtys, "prepare-order");
@@ -722,6 +744,8 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
       scheduledFor: pc.scheduled_for,
       reward,
       useCredit: false,
+      lat: pc.lat ?? null,
+      lon: pc.lon ?? null,
     });
     orderInserted = true;
     // El código promocional (si se usó uno) ya quedó reclamado de forma atómica desde
@@ -933,6 +957,7 @@ export async function actPlaceOrder(b: any) {
         deliveryFee, deliveryZone,
         paymentStatus, paymentId: null, paymentMethod,
         items: sanitizedItems, scheduledFor, reward, useCredit,
+        ...readCoords(b),
       });
       orderInserted = true;
       // El código promocional (si se usó uno) ya quedó reclamado de forma atómica arriba

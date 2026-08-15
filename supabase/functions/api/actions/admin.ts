@@ -1105,3 +1105,33 @@ export async function actAdminSecretSignatureSet(b: any) {
   await loadSecretSignature();
   return { success: true };
 }
+
+// Reporte de retención y cohortes (RPC retention_report, ver migración
+// `retention_report_rpc`). Es la contraparte de actDashboardStats: ese mide DINERO por
+// período, este mide si los clientes VUELVEN. Hasta ahora el panel no tenía ninguna cifra
+// agregada de retención — se podía ver "clientes en riesgo de fuga" uno por uno, pero no
+// la tasa a la que el negocio pierde o conserva gente, que es lo que decide si funciona.
+//
+// Todo el cálculo vive en SQL sobre la tabla completa (no la ventana acotada que usa el
+// dashboard de ingresos): una cohorte a medias no se nota como faltante, se nota como un
+// número equivocado.
+const RETENTION_COHORT_MONTHS = 6;
+// Debajo de este % de repetición a 30 días, el negocio está adquiriendo clientes que no
+// vuelven — el panel lo marca en rojo. El umbral es un punto de referencia de la
+// categoría, no una ley: revisarlo cuando haya varios meses de historial real propio.
+const RETENTION_ALARM_PCT = 25;
+export async function actAdminRetentionReport(b: any) {
+  await requireAdmin(b.token);
+  const months = Number.isInteger(b.months) && b.months > 0 && b.months <= 24 ? b.months : RETENTION_COHORT_MONTHS;
+  const report = await rpc("retention_report", { p_cohort_months: months });
+  const rolling = report?.rolling30 || {};
+  return {
+    ...report,
+    alarm: {
+      thresholdPct: RETENTION_ALARM_PCT,
+      // Solo tiene sentido dar la alarma cuando hay clientes activos que medir; con 0
+      // activos el 0% no significa "retención pésima", significa "todavía no hay dato".
+      triggered: (rolling.active || 0) > 0 && (rolling.returningPct || 0) < RETENTION_ALARM_PCT,
+    },
+  };
+}
