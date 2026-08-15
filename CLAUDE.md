@@ -252,6 +252,36 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   90% en 15CM → contribución S/10.27/pedido; 60% en 15CM → S/11.71 (21% de diferencia).
   No dar por sentado el número: reemplazarlo con la mezcla real apenas haya ventas
   (`retention_report` ya devuelve `attach.size30Pct`).
+- **Precios con DECIMALES desde 2026-08-15 (.90) — la app se construyó asumiendo enteros.**
+  Decisión del dueño: +S/0.90 plano sobre cada precio de sándwich (Signatures y proteínas
+  BYO); bebidas y adicionales (pDbl, salsa extra) sin cambio. Excepción decidida aparte:
+  SIG07 THE CHICAGO, que cobraba S/25 en 15CM y 30CM (el cliente pedía el doble sin pagar
+  extra) → **15CM S/22 · 30CM S/29.90**. Consecuencia técnica: la aritmética de punto
+  flotante empezó a producir basura visible (18.90 − 3 + 8.47 = 24.369999999999997, y ese
+  número se le mostraba al cliente y se mandaba al servidor). Se agregaron `money()` y
+  `pz()` en `src/app.ts`: **todo cálculo de dinero pasa por `money()` y todo total visible
+  por `pz()`**. Si agregas un cálculo o un display de precio nuevo, úsalos — el servidor
+  compara con `Math.round(total*100)` y tolera el ruido, pero el cliente no.
+- **Bono de referido asimétrico (decisión del dueño 2026-08-15)**: quien INVITA recibe
+  `REFERRER_REWARD_POINTS = 720` (= un 15CM gratis, el precio de R06 en `REWARDS`), el
+  referido sigue con `REFERRAL_BONUS_POINTS = 50`. Antes ambos recibían 50 (≈S/1.25, el 5%
+  del ticket, muy debajo del 10-25% que mueve la aguja). Las RPC
+  `finalize_order_customer_update` y `reverse_referral_bonus` recibieron un parámetro nuevo
+  `p_referrer_bonus` para esto — **la reversión por cancelación tiene que descontar el monto
+  de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 720
+  otorgados y quedaban 670 puntos regalados por un pedido que nunca existió.
+- **Método de trabajo real del dueño (confirmado 2026-08-15) — no asumir otro.** (1) **Nunca
+  reparte**: el motorizado siempre es aparte y lo paga el cliente (ver punto siguiente).
+  (2) **Cocina por TANDAS 1-2 veces por semana** — proteínas, salsas y vegetales quedan
+  listos; en hora de servicio cada pedido es solo **armar** el sándwich (~4-5 min con todo
+  en mise en place), no cocinar desde cero. (3) Cocina **solo**, sin ayudante.
+  Consecuencia: el techo de capacidad NO es el de "una persona cocinando cada pedido"
+  (~9/día) sino mucho más alto (~40+/día); el cuello de botella real es la demanda, no la
+  cocina. `MAX_ORDERS_PER_HOUR` en `orders.ts` se subió de 6 a 10 por esto. Cualquier
+  modelo de capacidad futuro parte de acá.
+- **Costos fijos mensuales: menos de S/500 — opera desde casa** (confirmado por el dueño
+  2026-08-15). Sin alquiler de local. Los S/950 que usó el modelo v5 eran una estimación a
+  ojo y estaban altos por casi el doble.
 - **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
   fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
   lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en

@@ -3,7 +3,7 @@
 // cola de pedidos: avanzar estado, confirmar pago manual (Yape/Plin/COD), cancelar, y
 // la expiración automática de pagos manuales nunca confirmados.
 import {
-  CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, STALE_MANUAL_PAYMENT_HOURS,
+  CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
   CULQI_FEE_RATE,
 } from "../env.ts";
@@ -108,14 +108,22 @@ const PENDING_CHARGE_TTL_MINUTES = 10;
 const MANUAL_ORDER_RATE_LIMIT = 4;
 const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 
-// Techo de pedidos por hora de ENTREGA. El negocio lo arma una sola persona: la capacidad
-// real sostenida es de ~4-6 pedidos/hora, y baja si además reparte. Hasta ahora nada lo
-// verificaba — isWithinStoreHours solo comprueba que la hora caiga dentro del horario de
-// atención, así que el checkout aceptaba 20 pedidos programados para las 8pm sin ningún
-// freno, prometiéndole al cliente algo que la cocina no puede cumplir (hallazgo de
-// auditoría de logística). Es un tope BLANDO y configurable: cuenta los pedidos que ya
-// tienen esa misma hora comprometida y rechaza el que se pasa, sugiriendo otra hora.
-const MAX_ORDERS_PER_HOUR = 6;
+// Techo de pedidos por hora de ENTREGA. Nada lo verificaba antes — isWithinStoreHours solo
+// comprueba que la hora caiga dentro del horario de atención, así que el checkout aceptaba
+// 20 pedidos programados para las 8pm sin ningún freno, prometiéndole al cliente algo que
+// la cocina no puede cumplir (hallazgo de auditoría de logística). Es un tope BLANDO y
+// configurable: cuenta los pedidos que ya tienen esa misma hora comprometida y rechaza el
+// que se pasa, sugiriendo otra hora.
+//
+// Subido de 6 a 10 (2026-08-15) al conocer el método de trabajo real: la cocción se hace
+// por TANDAS 1-2 veces por semana (proteínas, salsas, vegetales listos), y en hora de
+// servicio cada pedido es solo ARMAR el sándwich — ~4-5 minutos con todo en mise en place,
+// no cocinar desde cero. Además el dueño NUNCA reparte: el motorizado es aparte y lo paga
+// el cliente por zona, así que armar no compite con salir a entregar. El 6 anterior venía
+// de suponer un ciclo cocinar+repartir que no es el de este negocio, y con la meta de
+// ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos reales
+// un viernes por la noche.
+const MAX_ORDERS_PER_HOUR = 10;
 
 // Cuenta los pedidos vivos (no cancelados) cuya entrega cae en la misma hora que `when`, y
 // rechaza si ya se llegó al tope. `scheduled_for` manda cuando existe; si no, la hora de
@@ -287,6 +295,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       p_total_redeemed_delta: p.reward ? 1 : 0,
       p_referrer_phone: isReferral ? c.referred_by : null,
       p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
+      p_referrer_bonus: isReferral ? REFERRER_REWARD_POINTS : 0,
     });
     const customer = safeCustomer(updated);
     customerRank = computeRankName(updated.total_orders || 0);
@@ -353,8 +362,8 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       auditInserts.push(sbInsert("transactions", {
         customer_phone: c.referred_by,
         type: "earn_confirmed",
-        points: REFERRAL_BONUS_POINTS,
-        description: "Bono por invitar a " + p.name,
+        points: REFERRER_REWARD_POINTS,
+        description: "Sándwich gratis por invitar a " + p.name,
         confirmed: true,
       }));
     }
@@ -1052,6 +1061,7 @@ async function confirmManualPayment(order: any) {
     p_total_redeemed_delta: 0,
     p_referrer_phone: referrerPhone,
     p_referral_bonus: referrerPhone ? REFERRAL_BONUS_POINTS : 0,
+    p_referrer_bonus: referrerPhone ? REFERRER_REWARD_POINTS : 0,
   });
 
   await sbInsert("transactions", {
@@ -1073,8 +1083,8 @@ async function confirmManualPayment(order: any) {
     await sbInsert("transactions", {
       customer_phone: referrerPhone,
       type: "earn_confirmed",
-      points: REFERRAL_BONUS_POINTS,
-      description: "Bono por invitar a " + order.customer_name,
+      points: REFERRER_REWARD_POINTS,
+      description: "Sándwich gratis por invitar a " + order.customer_name,
       confirmed: true,
     });
   }
@@ -1404,6 +1414,7 @@ async function reverseReferralBonus(referredPhone: string, referrerPhone: string
     p_referred_phone: referredPhone,
     p_referrer_phone: referrerPhone,
     p_bonus: REFERRAL_BONUS_POINTS,
+    p_referrer_bonus: REFERRER_REWARD_POINTS,
   });
   await Promise.all([
     sbInsert("transactions", {
@@ -1416,7 +1427,7 @@ async function reverseReferralBonus(referredPhone: string, referrerPhone: string
     sbInsert("transactions", {
       customer_phone: referrerPhone,
       type: "cancel_reversal",
-      points: -REFERRAL_BONUS_POINTS,
+      points: -REFERRER_REWARD_POINTS,
       description: "Reversión de bono de referido por cancelación " + contextLabel,
       confirmed: true,
     }),

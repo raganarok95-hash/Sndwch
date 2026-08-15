@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/auth
 // Registro, login, verificación de sesión, cierre de sesión en todos los dispositivos,
 // borrado de cuenta y recuperación de PIN.
-import { REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
+import { REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
@@ -200,6 +200,7 @@ export async function actRegister(b: any) {
             p_total_redeemed_delta: 0,
             p_referrer_phone: referredByValid,
             p_referral_bonus: referredByValid ? REFERRAL_BONUS_POINTS : 0,
+            p_referrer_bonus: referredByValid ? REFERRER_REWARD_POINTS : 0,
           });
           customer = safeCustomer(updated);
           const claimAuditInserts: Promise<unknown>[] = [
@@ -214,7 +215,7 @@ export async function actRegister(b: any) {
           ];
           if (referredByValid) {
             claimAuditInserts.push(sbInsert("transactions", { customer_phone: phone, type: "earn_confirmed", points: REFERRAL_BONUS_POINTS, description: "Bono por referido", confirmed: true }));
-            claimAuditInserts.push(sbInsert("transactions", { customer_phone: referredByValid, type: "earn_confirmed", points: REFERRAL_BONUS_POINTS, description: "Bono por invitar a " + name, confirmed: true }));
+            claimAuditInserts.push(sbInsert("transactions", { customer_phone: referredByValid, type: "earn_confirmed", points: REFERRER_REWARD_POINTS, description: "Sándwich gratis por invitar a " + name, confirmed: true }));
           }
           await Promise.all(claimAuditInserts);
         }

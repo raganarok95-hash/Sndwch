@@ -90,22 +90,22 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // en SIG_DATA y ya rentaba sano; el problema era solo la proteína suelta en BUILD YOUR
 // OWN. DEBE coincidir con PROTS en src/app.ts.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
-  P01: { p15: 14, p30: 22, pDbl: 6 },
-  P02: { p15: 13, p30: 21, pDbl: 6 },
-  P03: { p15: 13, p30: 21, pDbl: 6 },
-  P04: { p15: 16, p30: 30, pDbl: 9 },
-  P05: { p15: 16, p30: 30, pDbl: 9 },
+  P01: { p15: 14.9, p30: 22.9, pDbl: 6 },
+  P02: { p15: 13.9, p30: 21.9, pDbl: 6 },
+  P03: { p15: 13.9, p30: 21.9, pDbl: 6 },
+  P04: { p15: 16.9, p30: 30.9, pDbl: 9 },
+  P05: { p15: 16.9, p30: 30.9, pDbl: 9 },
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
-  P06: { p15: 14, p30: 24, pDbl: 6 },
+  P06: { p15: 14.9, p30: 24.9, pDbl: 6 },
   // Nueva (auditoría de menú + confirmación del dueño: "si se preparan por separado, son
   // preparaciones distintas") — antes SIG07 (THE CHICAGO) reutilizaba P01 como si fuera
   // el mismo insumo que el asado mechado normal, contradiciendo RECIPE_RATIONALE.md (corte
   // laminado tipo Chicago vs. deshilachado, nunca deben mezclarse en el mismo lote). Mismo
   // precio que P01 (no es un cambio de precio, solo separa el código de inventario/costeo)
   // — DEBE coincidir con PROTS.P07 en src/app.ts.
-  P07: { p15: 14, p30: 22, pDbl: 6 },
+  P07: { p15: 14.9, p30: 22.9, pDbl: 6 },
 };
 // Proteína/toppings/salsas exclusivas del sándwich secreto — no se pueden pedir por
 // BUILD YOUR OWN aunque sigan en PROT_PRICE/VALID_TOPS/VALID_SAUCES (deriveCart/
@@ -153,7 +153,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // quedaban EXACTAMENTE igualados al precio de armar la misma proteína+tamaño por BYO
   // (priceByoBuild cobra directo PROT_PRICE[prot].p15/p30, sin sumar nada por curaduría).
   // +S/2 solo en los puntos exactos de paridad — DEBE coincidir con SIGS en src/app.ts.
-  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18, p30: 24 },
+  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18.9, p30: 24.9 },
   // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
   // mismo cambio en src/app.ts, DEBE coincidir).
   // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
@@ -164,7 +164,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // cliente lo pida. Sin cambio de precio (costo real ~S/0.39-0.77/unidad, confirmado por
   // el dueño que no amerita subir S/19/26). base movida de B02 (retirado) a B01 — DEBE
   // coincidir con SIGS en src/app.ts.
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19, p30: 26, fixedCheese: "C01" },
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19.9, p30: 26.9, fixedCheese: "C01" },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
@@ -175,7 +175,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // fixedCheese:'C02' (Cheddar), comparable exitoso investigado (Firehouse "Smokehouse
   // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
   // categoría. Sin cambio de precio.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21, p30: 32, fixedCheese: "C02" },
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21.9, p30: 32.9, fixedCheese: "C02" },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
   // THE ORIGINAL/THE MARINARA/THE SMOKE.
@@ -192,7 +192,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
   // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
   // en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 18, p30: 32 },
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 18.9, p30: 32.9 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
@@ -200,10 +200,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // SIGS.SIG06 en src/app.ts) — queda Tomate+Pimiento. El riesgo de "doble dulce"
   // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
   // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17, p30: 23 },
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17.9, p30: 23.9 },
   // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
   // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
-  SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 25, p30: 25 },
+  SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 22, p30: 29.9 },
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
   // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
@@ -211,14 +211,14 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // vigente de la tabla `secret_signature` (ver esa función más abajo), igual que
   // loadCatalogPrices() ya hace con los precios. No editar este literal para cambiar el
   // sándwich del mes — eso se hace desde el panel admin.
-  SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24, p30: 30 },
+  SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24.9, p30: 30.9 },
   // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
   // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
   // cliente, que solo cambia el badge a "Nuevo" sin ocultar el ítem).
   // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — la receta
   // no tenía ningún componente cremoso/graso (el chimichurri es a base de aceite, no
   // barrera de humedad) — DEBE coincidir con SIGS.SIG08 en src/app.ts.
-  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09", "S01"], p15: 14, p30: 22 },
+  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09", "S01"], p15: 14.9, p30: 22.9 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
