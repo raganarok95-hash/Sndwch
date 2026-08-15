@@ -783,7 +783,16 @@ const R05_FLAT_WAIVER = 4;
 // evita que alguien elija la bebida más cara (S/6) y aun así se la regalemos completa.
 // DEBE coincidir con OFFPEAK_DRINK_PROMO_HOURS_LIMA en src/app.ts (ese lado solo informa
 // al cliente antes de pagar; este es el que de verdad aplica el descuento).
-const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[14, 18]];
+//
+// La ventana empieza a las 15:00 y no a las 14:00 (corregido 2026-08-15). El supuesto de
+// que "2pm ya es valle" venía de nuestra propia tabla PEAK_HOURS_LIMA, no de datos del
+// mercado peruano: en Perú el almuerzo por delivery se estira hasta cerca de las 16:00
+// (PedidosYa reporta un pico de pedidos entre 13:00 y 16:00). Regalar la bebida a las
+// 14:00 no crea un pedido que no existía — descuenta uno que igual iba a entrar, que es
+// exactamente lo que esta promo NO debe hacer. Empezar a las 15:00 recorta la parte de
+// la ventana que se solapa con demanda real sin tocar la franja verdaderamente muerta
+// (16:00-18:00).
+const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[15, 18]];
 const OFFPEAK_DRINK_PROMO_CAP = 4;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
