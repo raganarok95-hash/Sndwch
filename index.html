@@ -2897,13 +2897,33 @@ function pickAddr(id) {
 // solo dentro de sOCart, así que un cliente que pasa por el pago directo de UN sándwich
 // (enterConfirm/quickPayEligible, sin pisar nunca TU CARRITO — el camino más común) nunca
 // lo veía; movido a checkoutExtrasHTML (compartida por ambos flujos) para que ambos lo vean.
+// Antes esto era UNA LÍNEA DE TEXTO ("agrega una bebida y ahorra S/2") sin forma de
+// agregarla: el cliente tenía que salir del checkout, ir a BEBIDAS Y SIDES, elegir, y
+// volver. Ahora muestra las bebidas reales con su precio y las agrega de un toque.
+//
+// Por qué importa: la incidencia de bebida es ~14% más baja en pedido digital que
+// presencial, y más de la mitad de los comensales agregaría una si se le pidiera
+// explícitamente. Los prompts de add-on en checkout suben el ticket 3%+ de forma típica.
+// En este negocio vale doble, porque las infusiones tienen 61-84% de margen contra 48.5%
+// del promedio: el attach de bebida sube la CONTRIBUCIÓN más de lo que sube el ticket.
 function comboDrinkNudgeHTML() {
     var hasSandwichNoDrink = cart.some(function (it) { return it.type !== 'side'; }) && cartComboCount() < cart.reduce(function (s, it) { return s + (it.type !== 'side' ? it.qty : 0); }, 0);
     if (!hasSandwichNoDrink)
         return '';
-    return isOffPeakDrinkPromoActiveNow()
-        ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:14px">Es hora valle — agrega una bebida y te sale GRATIS (hasta ' + SOLES + OFFPEAK_DRINK_PROMO_CAP + ')</div>'
-        : '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:14px">Agrega una bebida y ahorra ' + SOLES + COMBO_DISCOUNT_PER_PAIR + ' (combo)</div>';
+    var offPeak = isOffPeakDrinkPromoActiveNow();
+    var titulo = offPeak
+        ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + OFFPEAK_DRINK_PROMO_CAP + ')'
+        : '¿Le sumas algo de tomar? Ahorras ' + SOLES_TXT + COMBO_DISCOUNT_PER_PAIR + ' en combo';
+    var chips = SIDES.map(function (d) {
+        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1;min-width:88px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">' + esc(d.s) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:4px">+' + SOLES_TXT + d.p + '</div>'
+            + '</div>';
+    }).join('');
+    return '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-bottom:9px">' + titulo + '</div>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap">' + chips + '</div></div>';
 }
 // Zona por defecto 'media' — el cliente solo toca esto si sabe que está más cerca o más
 // lejos de lo normal, nunca es un paso obligatorio. El monto ya se suma al total de abajo
@@ -4262,9 +4282,13 @@ function sWelcome() {
         + '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.25);border-radius:16px;padding:20px;margin-bottom:16px">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Tus puntos //</div>'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:72px;font-weight:640;color:' + GOLD + ';line-height:1">' + pts + '</div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados</div>'
+        // Traducción a soles: "1,240 puntos" no le dice a nadie cuánto tiene. La evidencia de
+        // programas de fidelidad dice que el problema del esquema 1:1 no es la tasa sino que
+        // el premio se SIENTE lejos — mostrar el equivalente en dinero (mismo criterio que la
+        // tarjeta de regalo, 40 pts = S/1) lo vuelve concreto de inmediato.
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados · equivalen a ' + SOLES_TXT + (pts / GIFT_CARD_POINTS_PER_SOL).toFixed(2) + '</div>'
         + (rwd ? '<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:' + GOLD + '">✓ Puedes canjear: ' + (rwd.n + ' ' + rwd.s).toUpperCase() + '</div></div>' : '')
-        + (next ? '<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">' + (next.pts - pts) + ' pts</span> para ' + next.n + ' // ' + next.s + '</div></div>' : '')
+        + (next ? '<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">' + (next.pts - pts) + ' pts</span> (' + SOLES_TXT + ((next.pts - pts) / GIFT_CARD_POINTS_PER_SOL).toFixed(2) + ' de consumo) para ' + next.n + ' // ' + next.s + '</div></div>' : '')
         + '</div>'
         + '<div style="display:flex;gap:10px;justify-content:center">'
         + '<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
