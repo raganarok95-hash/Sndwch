@@ -830,11 +830,14 @@ var R05_FLAT_WAIVER = 4;
 // se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
 // en catalog.ts.
 var RESERVE_SIGS = new Set(['SIG05', 'SIG07']);
-// Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima — DEBE coincidir con
+// Bebida gratis (hasta S/4) de 3pm a 6pm hora Lima — DEBE coincidir con
 // OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
 // quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
 // antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[14, 18]];
+// Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
+// hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
+// entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[15, 18]];
 var OFFPEAK_DRINK_PROMO_CAP = 4;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
@@ -922,6 +925,9 @@ var tops = [], sauces = [], size = null, doubleProt = false, extraSauce = false;
 // 4=salsas) — ver sOBuild/byoStepBack/byoStepNext.
 var byoStep = 0;
 var useCredit = false;
+// El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
+// el cliente dice que tiene uno.
+var promoFieldOpen = false;
 var manualPayMethod = null;
 // true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
 // pagas?" (Yape/Plin o Tarjeta) — solo controla el resaltado visual de los botones
@@ -1667,6 +1673,7 @@ function initCheckoutFields() {
     schedDay = 'today';
     schedSlot = null;
     useCredit = false;
+    promoFieldOpen = false;
     manualPayMethod = null;
     payMethodChosen = false;
     checkoutLocked = false;
@@ -2136,7 +2143,18 @@ function sOHome() {
             // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
             // sección separada, no una fila más entre los Signatures normales). Evita el
             // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-            var visibleSigs = SIGS.filter(function (s) { return !s.secret && sigAvailable(s); });
+            // Orden de exhibición del home, fijo y decidido a mano (NO ordenado dinámicamente
+            // por margen: el cliente que vuelve debe encontrar la carta donde la dejó). El
+            // orden del array SIGS es el orden en que se fueron creando, y dejaba a los dos
+            // Signatures de peor margen (SIG03 68% y SIG04 49% bruto en 15CM) justo en las
+            // posiciones 3 y 4, que son de las más miradas de una lista en móvil. Acá van al
+            // final y suben los de mejor margen, sin tocar ningún precio ni receta. Cualquier
+            // Signature nuevo que no esté listado acá se muestra al final, en su orden natural.
+            var SIG_HOME_ORDER = ['SIG01', 'SIG02', 'SIG07', 'SIG06', 'SIG08', 'SIG03', 'SIG04'];
+            var visibleSigs = SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).slice().sort(function (a, b) {
+                var ia = SIG_HOME_ORDER.indexOf(a.id), ib = SIG_HOME_ORDER.indexOf(b.id);
+                return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+            });
             var secretSig = SIGS.find(function (s) { return s.secret; });
             var tabBar = '<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
                 + '<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'sig' ? GOLD : 'transparent') + ';color:' + (homeTab === 'sig' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
@@ -2147,7 +2165,15 @@ function sOHome() {
                 var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="' + esc(s.n) + '" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
                 if (!av)
                     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
-                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + sigBadge(s) + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + ';flex-shrink:0">' + SOLES + s.p15 + '</span></div>';
+                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + sigBadge(s) + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div>'
+                    // Antes solo se veía el precio de 15CM y el de 30CM aparecía recién en la
+                    // pantalla siguiente. Mostrar los dos deja ver la escalera completa desde la
+                    // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
+                    // cuesta más — hoy THE CHICAGO tiene el mismo precio en ambos tamaños y
+                    // repetirlo se leería como un error de la app.
+                    + '<div style="text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + s.p15 + '</span>'
+                    + (s.p30 > s.p15 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">30CM ' + SOLES + s.p30 + '</div>' : '')
+                    + '</div></div>';
             }).join('') + '</div>';
             var byoPanel = '<div style="margin-bottom:8px">'
                 + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
@@ -2841,6 +2867,13 @@ function promoCodeHTML() {
     if (appliedReward) {
         return box + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No se puede combinar con la recompensa aplicada arriba — quítala primero si prefieres usar un código.</div></div>';
     }
+    // Colapsado detrás de un enlace hasta que el cliente diga que tiene un código. Un campo
+    // de cupón siempre visible es una de las fugas clásicas del checkout: le recuerda al
+    // que no tiene ninguno que "podría estar pagando menos", y se va a buscar uno a otra
+    // pestaña de la que muchas veces no vuelve. Quien sí tiene código lo busca igual.
+    if (!promoFieldOpen) {
+        return box + '<div onclick="promoFieldOpen=true;confirmRerender()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;text-underline-offset:3px">¿Tienes un código?</div></div>';
+    }
     return box + '<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:13px;text-transform:uppercase"/>'
         + '<button onclick="applyPromoCode()" style="flex-shrink:0;background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:8px;padding:0 16px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + GOLD + '">Aplicar</button></div>'
         + '<div id="o-promo-status" style="font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;margin-top:6px;min-height:14px">' + esc(promoStatus) + '</div></div>';
@@ -2971,7 +3004,7 @@ function checkoutExtrasHTML() {
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'Notas // opcional', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -3458,6 +3491,12 @@ function paymentMethodPickerHTML(t) {
         // Yape/Plin manual sigue primero y marcado "Recomendado"), pero un pedido con
         // comisión vale infinitamente más que un pedido abandonado.
         + (culqiConfigured && !manualPayMethod ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">En "Tarjeta" también puedes pagar con Yape al instante, sin subir comprobante.</div>' : '')
+        // El camino de Yape/Plin ya tenía su línea de seguridad ("nunca te pediremos tu
+        // clave") dentro de las instrucciones de transferencia; el de tarjeta no tenía
+        // ninguna. Desconfianza al momento de entregar la tarjeta es una de las causas
+        // principales de abandono en checkout, y acá el dato es verificable y real: el
+        // formulario lo renderiza Culqi, la tarjeta nunca pasa por nuestro código.
+        + (culqiConfigured && !manualPayMethod ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:flex-start;gap:6px">' + icon('lock', 12, '#A8C8B0') + '<span>Tu tarjeta la procesa Culqi — nosotros nunca la vemos ni la guardamos.</span></div>' : '')
         + cardFeeNote
         + (manualPayMethod ? manualPayInstructionsHTML(t) : '')
         + '</div>';

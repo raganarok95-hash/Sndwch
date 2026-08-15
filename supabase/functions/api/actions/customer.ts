@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS } from "../env.ts";
-import { sendPushToPhone } from "../push.ts";
+import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge } from "./orders.ts";
 
@@ -193,8 +193,31 @@ export async function actSubmitRating(b: any) {
     // sociales, web) — nunca asumido por defecto, solo si el cliente marca el checkbox.
     testimonial_consent: !!b.testimonialConsent,
   });
+  // Una calificación mala entraba a la tabla y nadie se enteraba hasta que alguien
+  // abriera la pantalla de calificaciones a mano. Ese es justo el cliente que se va en
+  // silencio: no usa el Libro de Reclamaciones (que sí alerta, pero tiene plazo legal y
+  // solo se llena cuando el cliente ya está molesto de verdad), simplemente no vuelve.
+  // Y con solo ~30% de clientes haciendo un segundo pedido, perder uno que ya pidió una
+  // vez cuesta toda su vida útil restante.
+  //
+  // Solo avisa, no compensa: cuánto y cómo se compensa lo decide el dueño desde el panel
+  // (actAdminManualCredit) mirando el caso real — un crédito automático por estrellas es
+  // trivial de abusar y no distingue "llegó frío" de "no me gustó el sabor".
+  if (stars <= LOW_RATING_ALERT_THRESHOLD) {
+    try {
+      await sendPushToAdmins({
+        title: `⚠ Calificación de ${stars} estrella${stars === 1 ? "" : "s"}`,
+        body: `Pedido ${ref}${b.comment ? ": " + String(b.comment).trim().slice(0, 90) : " — sin comentario"}`,
+        url: "./index.html",
+        tag: "sndwch-low-rating-" + ref,
+      });
+    } catch {
+      // un push fallido nunca debe hacer que la calificación del cliente se pierda
+    }
+  }
   return { success: true };
 }
+const LOW_RATING_ALERT_THRESHOLD = 2;
 
 const CHALLENGE_TARGET_ORDERS = 3;
 const CHALLENGE_BONUS_POINTS = 50;
