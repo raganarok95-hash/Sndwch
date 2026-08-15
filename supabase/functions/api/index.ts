@@ -48,6 +48,7 @@ import {
   actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete,
   actAdminWaitlistList,
   actAdminSecretSignatureGet, actAdminSecretSignatureSet,
+  actAdminRetentionReport,
 } from "./actions/admin.ts";
 import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched } from "./actions/hours.ts";
 import {

@@ -56,6 +56,15 @@ async function logMarketingTouch(phone: string, campaignType: string): Promise<v
 //
 // Devuelve el conjunto de teléfonos que YA recibieron algún aviso hoy — se consulta una
 // sola vez por corrida de cron, no una por cliente.
+//
+// ORDEN IMPORTANTE: este chequeo va SIEMPRE antes de `check_rate_limit`, nunca después.
+// La RPC `check_rate_limit` incrementa el contador y recién entonces compara contra el
+// límite, así que llamarla consume el cupo aunque el aviso no llegue a enviarse. Con el
+// orden invertido (como estaba hasta esta corrección), si el cliente ya había recibido
+// otro push ese día el cupo se gastaba igual y el aviso se perdía PARA SIEMPRE — el
+// bounce-back del primer pedido tiene ventana de 1 año, así que ese cliente nunca volvía
+// a calificar. No era teórico: el cron de carrito abandonado corre cada 10 minutos, de
+// modo que la colisión con cualquier otro recordatorio del mismo día era frecuente.
 async function phonesTouchedToday(): Promise<Set<string>> {
   try {
     const since = limaDayStartIso(new Date());
@@ -387,9 +396,9 @@ export async function actRemindUnclaimedChallenge(b: any) {
   for (const c of customers) {
     if (c.challenge_claimed_month === thisMonth) continue;
     try {
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `challenge-reminder:${c.phone}:${thisMonth}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "¡Ya ganaste tu reto mensual! 🏆",
         body: `Hiciste ${CHALLENGE_TARGET_ORDERS} pedidos este mes — entra a tu perfil y toca "Reclamar recompensa" para sumar tus ${CHALLENGE_BONUS_POINTS} puntos antes de que termine el mes.`,
@@ -446,9 +455,9 @@ export async function actRemindPeakHour(b: any) {
   let reminded = 0;
   for (const phone of targets) {
     try {
+      if (touchedToday.has(String(phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `peak-reminder:${phone}:${dateKey}:${slot}`, p_limit: 1, p_window_minutes: 60 * 24 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(phone))) continue;
       await sendPushToPhone(phone, {
         title: copy.title,
         body: copy.body,
@@ -586,9 +595,9 @@ export async function actBounceBackFirstOrder(b: any) {
   for (const c of customers) {
     try {
       // Una sola vez en la vida del cliente (ventana de 1 año) — este momento no se repite.
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `bounce-back:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 365 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       if (BOUNCE_BACK_POINTS > 0) {
         await rpc("increment_customer_points", { p_phone: c.phone, p_delta: BOUNCE_BACK_POINTS });
         // Mismo criterio que el bono de bienvenida: todo ingreso de puntos deja rastro en
@@ -643,9 +652,9 @@ export async function actRemindSecondOrder(b: any) {
     try {
       // Ventana amplia (60 días) porque este aviso solo tiene sentido UNA vez en la vida
       // del cliente para este momento específico, no algo que deba repetirse.
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `second-order:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 60 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "¿Qué tal tu primer sándwich? 🥪",
         body: "Vuelve a pedir tu favorito — o prueba otro Signature esta vez.",
@@ -710,9 +719,9 @@ export async function actRemindLapsedCustomers(b: any) {
     try {
       // Una vez por etapa y por cliente: pasada la ventana de 90 días no se insiste más
       // (más allá de eso el cliente ya no se recupera por recordatorio y solo molesta).
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `lapsed-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 200 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: stage.title,
         body: stage.body,
@@ -758,9 +767,9 @@ export async function actRemindHighRankWinback(b: any) {
     const daysSince = (now - lastOrderAt) / 86400000;
     if (daysSince < HIGH_RANK_INACTIVE_DAYS) continue;
     try {
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `high-rank-winback:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 20 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "Te extrañamos por acá 🎖️",
         body: `Como cliente ${computeRankName(c.total_orders || 0)}, tu próximo pedido te está esperando.`,
@@ -805,9 +814,9 @@ export async function actRemindNeverOrdered(b: any) {
     );
     for (const c of customers) {
       try {
+        if (touchedToday.has(String(c.phone))) continue;
         const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
         if (!withinLimit) continue;
-        if (touchedToday.has(String(c.phone))) continue;
         await sendPushToPhone(c.phone, {
           title: stage.title,
           body: stage.body,
@@ -856,9 +865,9 @@ export async function actAnniversaryGreeting(b: any) {
     const years = year - created.getUTCFullYear();
     if (years < 1) continue;
     try {
+      if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `anniversary:${c.phone}:${year}`, p_limit: 1, p_window_minutes: 60 * 24 * 31 });
       if (!withinLimit) continue;
-      if (touchedToday.has(String(c.phone))) continue;
       await sendPushToPhone(c.phone, {
         title: "🎉 ¡Feliz aniversario!",
         body: `Hace ${years} año${years === 1 ? "" : "s"} te uniste a SND//WCH. Gracias por seguir con nosotros.`,

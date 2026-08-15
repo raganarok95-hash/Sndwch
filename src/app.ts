@@ -2002,9 +2002,12 @@ function sigPreviewOverlayHTML(){
   var cheeseLbl=ch?ch.l+(ch.s?' // '+ch.s:'')+(ch.d?' — '+ch.d:''):'';
   var photo=SIG_IMG[s.id];
   var hero=photo
-    ?'<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
+    ?'<div style="position:relative;border-radius:14px 14px 0 0;overflow:hidden;height:220px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
+    // Sin foto no hay nada que rotular como "referencial" — el aviso va SOBRE la foto
+    // (ver arriba), que es donde de verdad puede diferir de lo que llega a la mesa.
+    // Estaba al revés: se mostraba solo en el placeholder sin imagen, o sea justo donde
+    // no había imagen que advertir, y nunca sobre las fotos reales.
     :'<div style="background:linear-gradient(160deg,#2D5246,#1A3028);border-radius:14px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
-    +'<div style="position:absolute;top:10px;right:14px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(242,240,235,.5);letter-spacing:.15em">Imagen referencial</div>'
     +'<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">'+icon('sandwich',56,GOLD)+'</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'
     +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>'
@@ -2817,8 +2820,16 @@ function paymentMethodPickerHTML(t){
     :'';
   return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
     +payMethodBtn('yape','Yape / Plin',true,'Recomendado')
-    +(culqiConfigured?payMethodBtn('culqi','Tarjeta',true,null):'')
+    +(culqiConfigured?payMethodBtn('culqi','Tarjeta',true,'Automático'):'')
     +'</div>'
+    // El widget de Culqi ya trae Yape integrado como pestaña (paymentMethods.yape=true,
+    // ver openCulqi) — o sea que por el camino "Tarjeta" también se puede pagar con Yape
+    // SIN subir comprobante ni esperar confirmación manual. Con la etiqueta anterior
+    // nadie lo descubría, y quien no quería la fricción del comprobante simplemente
+    // abandonaba en vez de cruzar al camino automático. Sí paga comisión (por eso
+    // Yape/Plin manual sigue primero y marcado "Recomendado"), pero un pedido con
+    // comisión vale infinitamente más que un pedido abandonado.
+    +(culqiConfigured&&!manualPayMethod?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">En "Tarjeta" también puedes pagar con Yape al instante, sin subir comprobante.</div>':'')
     +cardFeeNote
     +(manualPayMethod?manualPayInstructionsHTML(t):'')
     +'</div>';
@@ -3032,7 +3043,13 @@ async function doOrder(){
     }
   });
   _payingInProgress=true;
-  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount(),promoCode:appliedPromo?appliedPromo.code:null};
+  _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount(),promoCode:appliedPromo?appliedPromo.code:null,
+    // Coordenadas del pin que el cliente confirmó en el mapa (confirmMap()). Hasta ahora
+    // se guardaban solo en window._mLat/_mLon y se usaban únicamente para pintarle a él
+    // un link de Google Maps — nunca llegaban al servidor, así que las columnas lat/lon
+    // de `orders` quedaban siempre vacías y quien reparte recibía solo texto. En una
+    // ciudad con numeración poco confiable eso es la causa directa de entregas fallidas.
+    lat:typeof window._mLat==='number'?window._mLat:null,lon:typeof window._mLon==='number'?window._mLon:null};
   if(t===0){
     payAsRewardOnly();
   }else if(useCredit&&cust&&(cust.credit_balance||0)>=t){
@@ -3060,7 +3077,7 @@ async function placeOrderDirect(msg,extraFields){
   busy=true;busyMsg=msg;render();
   var res;
   try{
-    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode},extraFields||{}));
+    res=await api('place-order',Object.assign({token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,ingredients:po.ingredients,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,lat:po.lat,lon:po.lon},extraFields||{}));
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
@@ -4770,6 +4787,13 @@ function sAdminFocus(){
     +stBadge(o.status)
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-top:12px">'+esc(o.customer_name)+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'+esc(o.customer_address)+'</div>'
+    // Pin exacto que el cliente confirmó en el mapa al pedir. En Trujillo la dirección en
+    // texto no siempre ubica (numeración irregular, referencias en vez de número), así
+    // que abrir el punto directo en Maps es la diferencia entre entregar y dar vueltas.
+    // Solo aparece si el pedido trae coordenadas — los pedidos viejos no las tienen.
+    +(typeof o.lat==='number'&&typeof o.lon==='number'
+      ?'<a href="https://maps.google.com/?q='+o.lat+','+o.lon+'" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+';margin-top:6px;display:inline-flex;align-items:center;gap:6px;text-decoration:none">'+icon('moto',13,GOLD)+'<span>Abrir pin exacto en Maps</span></a>'
+      :'')
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:8px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+o.total+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
     +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('horario',13,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',13,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')
