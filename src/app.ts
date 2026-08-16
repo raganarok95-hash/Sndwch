@@ -3102,6 +3102,15 @@ async function doOrder(){
     if(errEl)errEl.textContent='Estamos cerrados ahora mismo. Elige "PROGRAMAR" para pedir dentro de nuestro horario.';
     return;
   }
+  // El negocio abre el 7 de septiembre. Hasta entonces NO se acepta ningún pedido, ni
+  // inmediato ni programado: el badge del home ya lo dice, pero el catálogo y Culqi
+  // seguían operativos y se podía pagar de verdad por comida que nadie iba a preparar.
+  // El servidor también lo rechaza (assertBusinessLaunched en orders.ts) — esto solo
+  // evita que el cliente descubra el bloqueo recién después de meter su tarjeta.
+  if(!businessLaunched){
+    if(errEl)errEl.textContent='Todavía no abrimos. Déjanos tu teléfono en la pantalla de inicio y te avisamos apenas arranquemos.';
+    return;
+  }
   if(errEl)errEl.textContent='';
   var ref=oref();
   var t=payableTotal();

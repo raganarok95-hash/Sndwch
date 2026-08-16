@@ -125,6 +125,36 @@ const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 // un viernes por la noche.
 const MAX_ORDERS_PER_HOUR = 10;
 
+// El negocio abre el 7 de septiembre de 2026. Hasta ese momento `app_settings
+// .business_launched` es false y el home muestra el badge "AÚN NO ABRIMOS" con la lista de
+// espera — pero el catálogo, el carrito y Culqi seguían 100% operativos: cualquiera podía
+// armar un pedido, PAGARLO DE VERDAD con tarjeta y recibir "✓ Pago confirmado" por comida
+// que nadie iba a preparar. El único guard que existía era el horario de atención, que no
+// tiene nada que ver con si el negocio ya arrancó. Encontrado por dos auditorías
+// independientes de UX el 2026-08-15; es un cobro real sin contraparte, con reembolso
+// manual y un cliente enojado antes siquiera de abrir.
+//
+// Se valida en el servidor y no solo escondiendo el botón: el cliente es reemplazable
+// (una llamada directa a la API, una pestaña vieja en caché) y esto mueve dinero real.
+async function assertBusinessLaunched(): Promise<void> {
+  let launched = false;
+  try {
+    const rows = await sbGet("app_settings", "select=business_launched&id=eq.true");
+    launched = rows?.[0]?.business_launched === true;
+  } catch (e) {
+    // Si no se puede leer la bandera, se asume NO lanzado: es preferible rechazar un
+    // pedido legítimo (recuperable) que cobrar por uno que nadie va a preparar.
+    console.error("assertBusinessLaunched failed:", e);
+    throw new ApiError("No pudimos verificar si estamos operando. Intenta en unos minutos.", 503);
+  }
+  if (!launched) {
+    throw new ApiError(
+      "Todavía no abrimos. Déjanos tu teléfono en la app y te avisamos apenas arranquemos.",
+      403,
+    );
+  }
+}
+
 // Cuenta los pedidos vivos (no cancelados) cuya entrega cae en la misma hora que `when`, y
 // rechaza si ya se llegó al tope. `scheduled_for` manda cuando existe; si no, la hora de
 // creación es la hora de entrega efectiva (pedido "AHORA").
@@ -554,6 +584,9 @@ export async function actPrepareOrder(b: any) {
   // STORE_HOURS de respaldo hardcodeado en vez del horario que el dueño configuró, y
   // podría aceptar un pedido con el negocio cerrado o rechazar uno válido en horario
   // extendido (hallazgo de auditoría de código).
+  // El negocio todavía no abre → ningún pedido se acepta, en ninguno de los dos caminos
+  // de pago (ver assertBusinessLaunched). Va ANTES de cualquier reserva o cobro.
+  await assertBusinessLaunched();
   await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   if (scheduledFor) {
@@ -847,6 +880,9 @@ export async function actPlaceOrder(b: any) {
   // Recarga el horario real configurado por el admin — sin esto, una instancia fría de
   // la función validaría contra STORE_HOURS de respaldo hardcodeado (hallazgo de
   // auditoría de código, mismo motivo que en actPrepareOrder arriba).
+  // El negocio todavía no abre → ningún pedido se acepta, en ninguno de los dos caminos
+  // de pago (ver assertBusinessLaunched). Va ANTES de cualquier reserva o cobro.
+  await assertBusinessLaunched();
   await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
   if (scheduledFor) {
