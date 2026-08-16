@@ -1224,6 +1224,27 @@ function contactFooterHTML(){
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
     +'</div>';
 }
+// Fila compacta de enlaces legales, reutilizable fuera del home. El Libro de
+// Reclamaciones vivía SOLO en el footer del home (contactFooterHTML), o sea que no era
+// alcanzable desde el carrito, el checkout ni la confirmación — justo las pantallas donde
+// nace un reclamo. Indecopi exige que el aviso esté en lugar visible y fácilmente
+// accesible, y esa obligación se extiende a apps y a cualquier canal digital. Lo mismo
+// para "Cambios y devoluciones": el consumidor tiene derecho a conocer las condiciones de
+// contratación ANTES de pagar, no después.
+//
+// Se emiten como <button> reales, no <span onclick>: son navegables con teclado y las
+// anuncia un lector de pantalla. La versión del footer usaba spans y por eso el Libro de
+// Reclamaciones era inalcanzable para quien no usa mouse — que es precisamente el
+// consumidor al que la ley más protege.
+function legalLinksHTML(backTo){
+  function lnk(label,screen,extra?){
+    return'<button type="button" onclick="bkTo=\''+backTo+'\';sc=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+  }
+  return'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;justify-content:center">'
+    +lnk('Cambios y devoluciones','p_returns')
+    +lnk('Libro de reclamaciones','p_complaints','cmplStep=\'form\';')
+    +'</div>';
+}
 function AB(t,can?,bk?,nfn?,nl?,hint?){
   var bb=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← Atrás</button>':'';
   var tt=t?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.2em">Total //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+'<span style="color:'+GOLD+'">'+t+'</span></div>':'';
@@ -1260,8 +1281,19 @@ function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-famil
 // font-size:16px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
 // la mayoría de teléfonos de los clientes.
-function INP(id,ph,type?,val?,iconName?){
+// `ac` = valor de autocomplete (name/tel/email/street-address...). Sin él el navegador no
+// puede autocompletar y se incumple WCAG 1.3.5 (identificar el propósito del campo); en un
+// checkout donde se escribe nombre, teléfono y dirección a mano en el celular, además es
+// fricción pura.
+function INP(id,ph,type?,val?,iconName?,ac?){
   var padLeft=iconName?'44px':'16px';
+  // aria-label derivado del placeholder. Ningún input de la app tenía <label> ni
+  // aria-label: el placeholder era la única etiqueta y desaparece apenas se escribe la
+  // primera letra, así que un lector de pantalla nunca sabía de qué campo se trataba. Se
+  // corta en el "//" porque los placeholders siguen el formato "Nombre // Tu nombre": la
+  // primera mitad es la etiqueta real, la segunda es la ayuda.
+  var lbl=String(ph).split('//')[0].trim()||String(ph);
+  var acAttr=ac?' autocomplete="'+ac+'"':'';
   // El único campo type="password" de toda la app es el PIN (no hay contraseñas
   // tradicionales) — antes abría el teclado QWERTY completo en móvil pese a ser siempre
   // numérico (hallazgo de auditoría UX, MEDIO). inputmode="numeric" abre el teclado
@@ -1269,7 +1301,7 @@ function INP(id,ph,type?,val?,iconName?){
   var numAttrs=type==='password'?' inputmode="numeric" pattern="[0-9]*"':'';
   return'<div style="position:relative">'
     +(iconName?'<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">'+icon(iconName,16,'#A8C8B0')+'</div>':'')
-    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+' placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
+    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+acAttr+' aria-label="'+esc(lbl)+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
     +'</div>';
 }
 // box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
@@ -1823,7 +1855,11 @@ function sOHome(){
           // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
           // cuesta más — hoy THE CHICAGO tiene el mismo precio en ambos tamaños y
           // repetirlo se leería como un error de la app.
-          +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+'</span>'
+          // El precio va en Bodoni a 22px, no en Garamond itálica a 13px. Cuando cobras S/25
+          // contra un menú del día de S/12, el precio ES el argumento de venta: escribirlo
+          // como letra chica lo vuelve una disculpa. El nombre del Signature ya iba a 16px y
+          // su precio a 13 — invertido respecto a lo que sostiene el ticket.
+          +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(s.p15)+'</span>'
           +(s.p30>s.p15?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">30CM '+SOLES+pz(s.p30)+'</div>':'')
           +'</div></div>';
       }).join('')+'</div>';
@@ -2538,7 +2574,7 @@ function checkoutExtrasHTML(){
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</b> desde que confirmamos tu pedido.</span></div></div>':'')
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -2927,6 +2963,10 @@ function paymentMethodPickerHTML(t){
     +(culqiConfigured&&!manualPayMethod?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:flex-start;gap:6px">'+icon('lock',12,'#A8C8B0')+'<span>Tu tarjeta la procesa Culqi — nosotros nunca la vemos ni la guardamos.</span></div>':'')
     +cardFeeNote
     +(manualPayMethod?manualPayInstructionsHTML(t):'')
+    // Condiciones de contratación y canal de reclamo ANTES de pagar, no después: es lo
+    // que exige el D.L. 1729 sobre información previa al consumidor en comercio
+    // electrónico, y hasta ahora solo existían en el footer del home.
+    +legalLinksHTML('o_item_confirm')
     +'</div>';
 }
 // Antes cada botón llevaba un monograma Y/P morado/turquesa (los colores propios de esas
@@ -3426,6 +3466,8 @@ function sOSent(){
     +(cust?'<button onclick="sc=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>':'')
     +'</div>'
     +(!cust?'<div onclick="atab=\'reg\';sc=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.1em">→ Crea tu cuenta y gana puntos por este pedido</div>':'')
+    // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
+    +legalLinksHTML('o_sent')
     +'</div>';
 }
 
@@ -4162,7 +4204,10 @@ function sPComplaints(){
   // Checkbox nativo del navegador — único control de toda la app que rompía con el
   // lenguaje 100% custom del resto (accent-color solo tiñe el estado marcado, el
   // desmarcado seguía siendo el default del SO) (hallazgo de auditoría de diseño, MEDIO).
-  var minorBlock='<div onclick="cmplMinor=!cmplMinor;render()" style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#3A6B58')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'#0d0d0d'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Soy menor de edad (o reclamo en representación de uno)</span></div>'
+  // <button role="checkbox"> en vez de <div onclick>: el Libro de Reclamaciones es
+  // obligatorio por ley para TODO consumidor, y con un div clickeable no era completable
+  // ni con teclado ni con lector de pantalla — justo el usuario que la norma más protege.
+  var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#3A6B58')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'#0d0d0d'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
     +(cmplMinor?INP('cq-guardian','Nombre del padre, madre o apoderado','text',undefined,'clientes'):'');
   var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#0d0d0d);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:14px;font-family:EB Garamond,serif;min-height:90px;box-sizing:border-box"></textarea>';};
   return H('LIBRO DE RECLAMACIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
@@ -4193,7 +4238,7 @@ function sPComplaints(){
     +'</div>'
     +'<div id="cq-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
     +BTN(cmplBusy?'Enviando...':'Enviar '+(cmplKind==='queja'?'queja':'reclamo')+' //',cmplBusy?'':'doSubmitComplaint()')
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:14px">Tenemos hasta 30 días calendario para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:14px">Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
     +'</div>';
 }
 function sComplaintsSuccess(bk){
@@ -4205,7 +4250,7 @@ function sComplaintsSuccess(bk){
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:#fff;margin-bottom:8px">'+(cmplKind==='queja'?'Queja':'Reclamo')+' registrad'+(cmplKind==='queja'?'a':'o')+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Tu código //</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:'+GOLD+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 30 días calendario siguientes, conforme a ley.</p>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 15 días hábiles siguientes, conforme a ley.</p>'
     +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('Volver al inicio //','sc=\'o_home\';cmplStep=\'form\';render()')+'</div>'
     +'</div>';
 }
@@ -6604,7 +6649,9 @@ function sAdminProblemAddresses(){
   return h;
 }
 
-// RECLAMACIONES — el negocio tiene 30 días calendario para responder cada reclamo/queja
+// RECLAMACIONES — el negocio tiene 15 días HÁBILES para responder cada reclamo/queja
+// (Ley 31435 + D.S. 101-2022-PCM; antes eran 30 calendario y el texto lo decía mal —
+// ver COMPLAINT_DEADLINE_BUSINESS_DAYS en supabase/functions/api/actions/complaints.ts)
 // (obligación legal, no solo buena práctica); esta pantalla es donde el operador ve la
 // cola pendiente y deja constancia de la respuesta.
 async function loadAdminComplaints(){

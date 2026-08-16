@@ -84,7 +84,7 @@ export async function sendComplaintConfirmation(to: string, name: string, claimC
     <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Registramos tu ${kindLabel}. Este es tu código:</p>
     <p style="font-size:28px;font-weight:900;color:#CBA258;letter-spacing:.05em;margin:16px 0">${claimCode}</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 30 días calendario siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
+    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 15 días hábiles siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
   `);
   return sendResend([to], `SND//WCH — Constancia de tu ${kindLabel} (${claimCode})`, html);
 }
@@ -122,7 +122,7 @@ export async function sendComplaintNotification(
     </p>
     <p style="font-size:13px;color:#A8C8B0;line-height:1.6;margin-top:14px"><b>Detalle:</b><br>${escHtml(detail)}</p>
     <p style="font-size:13px;color:#A8C8B0;line-height:1.6;margin-top:10px"><b>Pide:</b><br>${escHtml(consumerRequest)}</p>
-    <p style="font-size:11px;color:#ff8888;margin-top:20px">Tienes 30 días calendario para responder. Hazlo desde el panel admin, sección Reclamaciones.</p>
+    <p style="font-size:11px;color:#ff8888;margin-top:20px">Tienes 15 días hábiles para responder. Hazlo desde el panel admin, sección Reclamaciones.</p>
   `, { maxWidth: 520, wordmarkSize: 22 });
   return sendResend([CONTACT_EMAIL], `[${kindLabel}] ${claimCode} — ${BUSINESS_LEGAL_NAME}`, html);
 }

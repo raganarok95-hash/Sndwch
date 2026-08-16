@@ -122,22 +122,53 @@ export async function actAdminRespondComplaint(b: any) {
 // vencer el plazo en silencio (hallazgo de la re-auditoría legal/datos y de
 // automatización). Avisa cuando falten DEADLINE_WARNING_DAYS días o menos para el
 // vencimiento, una sola vez por reclamo (alerted_deadline), igual que actAlertStuckOrders.
-const COMPLAINT_DEADLINE_DAYS = 30;
-const DEADLINE_WARNING_DAYS = 7;
+// 15 días HÁBILES, no 30 calendario. La Ley 31435 y el D.S. 101-2022-PCM (vigente desde
+// mayo de 2022) redujeron el plazo del Libro de Reclamaciones de 30 días calendario a 15
+// días hábiles, y lo declararon improrrogable. Con el valor anterior (30 calendario) el
+// aviso llegaba recién sobre el día 23 — cuando el plazo legal ya se había vencido hacía
+// más de una semana. Corregido 2026-08-15.
+//
+// Solo se descuentan sábados y domingos, no los feriados nacionales. Eso hace que la
+// fecha calculada caiga ANTES que el vencimiento legal real (que también excluye
+// feriados), o sea que el aviso se adelanta. Es el error seguro: avisar de más nunca
+// cuesta una sanción, avisar tarde sí.
+const COMPLAINT_DEADLINE_BUSINESS_DAYS = 15;
+const DEADLINE_WARNING_BUSINESS_DAYS = 4;
+// Días hábiles transcurridos entre dos fechas (excluye sábado y domingo).
+function businessDaysSince(from: Date, to: Date): number {
+  let count = 0;
+  const cur = new Date(from.getTime());
+  cur.setUTCHours(0, 0, 0, 0);
+  const end = new Date(to.getTime());
+  end.setUTCHours(0, 0, 0, 0);
+  while (cur < end) {
+    cur.setUTCDate(cur.getUTCDate() + 1);
+    const d = cur.getUTCDay();
+    if (d !== 0 && d !== 6) count++;
+  }
+  return count;
+}
 export async function actAlertComplaintDeadlines(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const warningCutoff = new Date(Date.now() - (COMPLAINT_DEADLINE_DAYS - DEADLINE_WARNING_DAYS) * 86400000).toISOString();
-  const nearing = await sbGet(
+  // Se trae todo reclamo abierto sin alertar de los últimos 40 días calendario (holgura
+  // suficiente para cubrir 15 hábiles con feriados de por medio) y el filtro fino por días
+  // hábiles se hace en JS — PostgREST no sabe contar días hábiles.
+  const lookback = new Date(Date.now() - 40 * 86400000).toISOString();
+  const open = await sbGet(
     "complaints",
-    `status=neq.atendido&alerted_deadline=eq.false&created_at=lt.${encodeURIComponent(warningCutoff)}&select=id,claim_code,kind,created_at`,
+    `status=neq.atendido&alerted_deadline=eq.false&created_at=gte.${encodeURIComponent(lookback)}&select=id,claim_code,kind,created_at`,
+  );
+  const now = new Date();
+  const nearing = open.filter((c: any) =>
+    COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), now) <= DEADLINE_WARNING_BUSINESS_DAYS
   );
   let alerted = 0;
   for (const c of nearing) {
     try {
-      const daysLeft = COMPLAINT_DEADLINE_DAYS - Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000);
+      const daysLeft = COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), now);
       await sendPushToAdmins({
         title: "Reclamo por vencer ⚠️",
-        body: `${c.claim_code} (${c.kind}) — quedan ~${Math.max(0, daysLeft)} días para responder antes del plazo legal.`,
+        body: `${c.claim_code} (${c.kind}) — quedan ${Math.max(0, daysLeft)} días hábiles para responder antes del plazo legal.`,
         url: "./index.html",
         tag: "sndwch-complaint-deadline-" + c.id,
       });
