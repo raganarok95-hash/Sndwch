@@ -4,8 +4,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
+    "parity": "node scripts/parity.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run build && npm test"
+    "verify": "npm run typecheck && npm run parity && npm run build && npm test"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
