@@ -1448,6 +1448,53 @@ function itemLabel(item){
   if(item.type==='sig'){var sig=SIGS.find(function(x){return x.id===item.sigId;});return(sig?sig.n+' // '+sig.s:'')+' '+szLabel(item.size);}
   return fn(PROTS,item.prot)+' '+szLabel(item.size);
 }
+// Receta COMPLETA de un ítem, para las pantallas del operador (cola, modo foco, ticket).
+// itemLabel() de arriba está pensado para el CLIENTE, que ya sabe lo que eligió: para un
+// BUILD YOUR OWN devuelve solo "Pollo // Cajún 15CM". Eso es exactamente lo que se guarda
+// en `orders.summary`, así que el operador leía el nombre de la proteína y NADA MÁS: ni
+// pan, ni toppings, ni queso, ni salsas. Con eso es imposible armar el sándwich sin
+// adivinar (hallazgo de la auditoría de UX del panel — el más grave de todos, porque
+// rompe la operación el primer día). Los datos siempre estuvieron guardados en
+// `orders.items`; nadie los pintaba.
+//
+// Para un Signature expande la receta desde SIGS por el mismo motivo: el operador no tiene
+// por qué recordar de memoria qué lleva cada uno de los 8, y menos en hora pico.
+function itemRecipeLines(item){
+  if(item.type==='side')return[];
+  var lines=[];
+  var base,prot,tops,sauces,cheese;
+  if(item.type==='sig'){
+    var sig=SIGS.find(function(x){return x.id===item.sigId;});
+    if(!sig)return[];
+    base=sig.base;prot=sig.prot;tops=sig.tops||[];sauces=sig.sauces||[];
+    cheese=sig.fixedCheese||item.cheese||null;
+  }else{
+    base=item.base;prot=item.prot;tops=item.tops||[];sauces=item.sauces||[];
+    cheese=item.cheese||null;
+  }
+  lines.push('Pan: '+fn(BASES,base));
+  lines.push('Proteína: '+fn(PROTS,prot)+(item.doubleProt?' (DOBLE)':''));
+  if(cheese)lines.push('Queso: '+fn(CHEESE,cheese));
+  lines.push('Toppings: '+(tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'sin toppings'));
+  lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
+  if(item.note)lines.push('Nota: '+item.note);
+  return lines;
+}
+// Bloque de receta para una lista de ítems de un pedido ya guardado (o.items).
+function orderRecipeHTML(items){
+  if(!Array.isArray(items)||!items.length)return'';
+  var blocks=items.map(function(it){
+    var lines=itemRecipeLines(it);
+    if(!lines.length)return'';
+    return'<div style="margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+(it.qty>1?it.qty+'x ':'')+esc(itemLabel(it))+'</div>'
+      +lines.map(function(l){return'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(l)+'</div>';}).join('')
+      +'</div>';
+  }).filter(Boolean).join('');
+  if(!blocks)return'';
+  return'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:8px;padding:12px 14px;margin-bottom:12px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.18em;margin-bottom:8px">Para armar //</div>'
+    +blocks+'</div>';
+}
 function itemExtrasLabel(item){
   if(item.type==='side')return'';
   var parts=[];
@@ -4474,7 +4521,15 @@ function printTicket(ordId){
   var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
   if(!o)return;
   var items=Array.isArray(o.items)&&o.items.length
-    ?o.items.map(function(it){return'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #000"><span>'+(it.qty||1)+'x '+esc(it.label||it.sigId||it.prot||it.code||'ítem')+(it.note?' ('+esc(it.note)+')':'')+'</span></div>';}).join('')
+    // Antes imprimía `it.label||it.sigId||it.prot||it.code` — y los ítems del carrito NO
+    // tienen campo `label` (ver currentBuiltItem), así que el papel salía con códigos
+    // internos: "1x P01", "1x SIG03". Ahora imprime el nombre real y la receta completa,
+    // que es justo para lo que sirve un ticket de cocina.
+    ?o.items.map(function(it){
+      var lines=itemRecipeLines(it);
+      return'<div style="padding:6px 0;border-bottom:1px dashed #000"><div><b>'+(it.qty||1)+'x '+esc(itemLabel(it))+'</b></div>'
+        +lines.map(function(l){return'<div style="font-size:12px">'+esc(l)+'</div>';}).join('')+'</div>';
+    }).join('')
     :'<div style="padding:4px 0">'+esc(o.summary||'')+'</div>';
   var html='<!doctype html><html><head><meta charset="utf-8"><title>Ticket '+esc(o.ref)+'</title>'
     +'<style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;color:#000}h1{font-size:16px;margin:0 0 4px}.hr{border-top:1px dashed #000;margin:8px 0}</style></head><body>'
@@ -4745,6 +4800,9 @@ function sAdminHome(){
         +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('moto',12,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')+'</div></div>'
         +stBadge(o.status)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">'+esc(o.summary)+'</div>'
+        // Receta expandida: sin esto un BUILD YOUR OWN solo mostraba el nombre de la
+        // proteína y era imposible prepararlo (ver itemRecipeLines).
+        +orderRecipeHTML(o.items)
         +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
         +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
         +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
@@ -4847,6 +4905,9 @@ function sAdminFocus(){
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',13,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.6">'+esc(o.summary)+'</div>'
+    // Misma receta expandida que en la tarjeta de la cola: el modo foco es LA pantalla
+    // donde se arma el pedido, así que es donde más falta hacía.
+    +orderRecipeHTML(o.items)
     +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#25D366;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('gift',13,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
     +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('cash',13,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
     +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">'+icon('warning',13,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
