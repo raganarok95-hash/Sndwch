@@ -30,8 +30,10 @@ afecta cualquier decisión de precio/margen.
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
   una hora específica (ej. evitar la promo de hora valle), usa `page.clock.setFixedTime()`
   **dentro de ese test**, no en `helpers.ts`.
-- **Migraciones DB**: no hay carpeta `supabase/migrations/` trackeada en git — todas se
-  aplican directo con `mcp__Supabase__apply_migration` y solo quedan registradas en
+- **Migraciones DB**: `supabase/migrations/` existe pero solo contiene `INDEX.txt` (la
+  lista de las 109 migraciones aplicadas, con versión y nombre) y un `README.md` con el
+  comando de la CLI para traerse el SQL real (`supabase db pull`). El SQL en sí **no está
+  versionado todavía** — todas se aplican directo con `mcp__Supabase__apply_migration` y solo quedan registradas en
   Supabase (`mcp__Supabase__list_migrations`). Si necesitas ver el schema de una tabla,
   consúltalo con `mcp__Supabase__execute_sql` contra `information_schema`, no busques un
   archivo `.sql` en el repo.
