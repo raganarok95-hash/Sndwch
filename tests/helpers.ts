@@ -19,7 +19,11 @@ const OPEN_ALL_DAY_HOURS = Array.from({ length: 7 }, () => ({ open: 0, close: 24
 const DEFAULT_HANDLERS: ActionHandlers = {
   'session-check': { valid: false },
   'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {} },
-  'get-store-hours': { hours: OPEN_ALL_DAY_HOURS },
+  // businessLaunched:true — el negocio abre el 7 de septiembre y hasta entonces el
+  // servidor y el cliente rechazan cualquier pedido (assertBusinessLaunched en
+  // orders.ts). Los tests ejercitan el negocio YA operando, así que el mock lo
+  // declara abierto; sin esto todos los flujos de checkout fallarían por diseño.
+  'get-store-hours': { hours: OPEN_ALL_DAY_HOURS, businessLaunched: true },
 };
 
 // Instala el mock del backend ANTES de navegar (page.route corre para toda request que
