@@ -2,7 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!-- maximum-scale=1 y user-scalable=no quitados: bloquear el zoom incumple WCAG 1.4.4
+     (redimensionar texto) y la app usa tipografías chicas en decenas de sitios. Además
+     iOS lo ignora desde iOS 10, así que solo servía para dejar la página descuadrada
+     tras el zoom automático al enfocar un input, sin forma de volver.
+     viewport-fit=cover habilita env(safe-area-inset-*) para el notch/indicador. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,7 +105,12 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
    labels. */
 .wm-mark{display:inline-flex;align-items:center;gap:.13em;margin:0 .08em;vertical-align:-.04em}
 .wm-mark i{display:inline-block;width:.15em;height:.82em;background:linear-gradient(180deg,#E9C98A,#CBA258);transform:skewX(-16deg);border-radius:1px}
-#app{max-width:480px;margin:0 auto;min-height:100vh;background:#1E3932;position:relative;z-index:1}
+/* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
+   soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
+   Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
+   El padding inferior reserva el alto de la barra fija de navegación (49px) más el
+   área segura del indicador de inicio de iOS — antes el contenido quedaba debajo. */
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(49px + env(safe-area-inset-bottom,0px));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
 input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
@@ -148,6 +158,12 @@ input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shad
    actual (ej. tocar un topping) en vez de navegar a una nueva — así la
    animación .fi no se reproduce en cada micro-interacción. */
 body.no-fi .fi{animation:none}
+/* Con el teclado virtual abierto la barra fija de navegación tapa los campos del
+   formulario (medido: a 320x330 caía encima del campo de teléfono del checkout).
+   El listener de visualViewport en app.ts pone body.kb-open. También se quita el
+   padding inferior que reserva su alto, porque la barra ya no está ocupándolo. */
+body.kb-open .bottom-nav{display:none!important}
+body.kb-open #app{padding-bottom:0}
 /* Feedback táctil sutil en cualquier elemento interactivo (todos marcados con
    cursor:pointer en su style inline) — antes ningún botón/tarjeta daba señal
    visual al presionar, solo cambiaba de pantalla/estado sin transición. */
@@ -1230,7 +1246,13 @@ function renderOverlays() {
     // misma posición de pantalla sin importar el scroll, ahí se superponía físicamente al
     // campo TELÉFONO del formulario — un tap accidental (zona natural del pulgar) sacaba
     // al cliente de la app hacia WhatsApp a mitad de pago (hallazgo de auditoría UX, ALTO).
-    if (sc.indexOf('admin') !== 0 && sc !== 'o_item_confirm' && sc !== 'o_cart') {
+    // o_home agregado a la lista de exclusión: medido con Playwright a 390px, el botón caía
+    // exactamente encima del precio 15CM de la cuarta fila del catálogo. Mismo choque que ya
+    // había obligado a excluir el checkout y el carrito — la diferencia es que acá tapa la
+    // información que decide la compra, no un campo de formulario. En el home el cliente
+    // todavía tiene el enlace de WhatsApp del pie; el botón flotante sigue disponible en el
+    // resto de pantallas, que es donde de verdad hace falta pedir ayuda.
+    if (sc.indexOf('admin') !== 0 && sc !== 'o_item_confirm' && sc !== 'o_cart' && sc !== 'o_home') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, '#0d0d0d') + '</a>';
     }
@@ -1460,7 +1482,11 @@ function NAV() {
     // — #666 daba ~3.4:1, bajo el 4.5:1 mínimo AA para texto normal; esta barra fija aparece
     // en casi toda pantalla secundaria (auditoría UX/accesibilidad, P1). #999 da ~5.9:1.
     function nb(t, l, a) { return '<button onclick="swTab(\'' + t + '\')" style="all:unset;cursor:pointer;flex:1;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;letter-spacing:.04em;color:' + (a ? '#fff' : '#999') + '">' + l + (a ? ' <span class="cut-sep" style="color:' + GOLD + '">//</span>' : '') + '</div><div style="width:4px;height:4px;border-radius:50%;background:' + GOLD + ';opacity:' + (a ? 1 : 0) + '"></div></button>'; }
-    return '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);display:flex;z-index:100">' + nb('order', 'Pedido', oa) + nb('points', 'Puntos', !oa) + '</div>';
+    // class="bottom-nav" para poder ocultarla desde CSS cuando se abre el teclado virtual:
+    // medido a 320x330 (alto típico con teclado Android), esta barra caía justo encima del
+    // campo de teléfono del checkout y tapaba el de nombre — el primer formulario que ve un
+    // cliente nuevo. Ver el listener de visualViewport en INIT.
+    return '<div class="bottom-nav" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);display:flex;padding-bottom:calc(0px + env(safe-area-inset-bottom,0px));z-index:100">' + nb('order', 'Pedido', oa) + nb('points', 'Puntos', !oa) + '</div>';
 }
 // Pie de contacto — datos del comercio, redes sociales y links legales. Requisito de
 // Culqi para aprobar el comercio en producción (y buena práctica de por sí): un cliente
@@ -1478,9 +1504,13 @@ function contactFooterHTML() {
         + '</div>'
         + '<a href="' + BIZ_IG + '" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;justify-content:center;text-decoration:none;color:' + GOLD + '">' + igIcon + '</a>'
         + '<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
-        + '<span onclick="bkTo=\'o_home\';sc=\'p_legal\';render()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline">Términos <span class="cut-sep" style="color:' + GOLD + '">//</span></span>'
-        + '<span onclick="bkTo=\'o_home\';sc=\'p_returns\';render()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline">Cambios y devoluciones <span class="cut-sep" style="color:' + GOLD + '">//</span></span>'
-        + '<span onclick="bkTo=\'o_home\';sc=\'p_complaints\';cmplStep=\'form\';render()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline">Libro de reclamaciones <span class="cut-sep" style="color:' + GOLD + '">//</span></span>'
+        // <button> y no <span onclick>: son navegables con teclado y las anuncia un lector de
+        // pantalla. El del Libro de Reclamaciones es obligatorio por ley para TODO consumidor y
+        // medía 10px de alto con letra de 9px — inalcanzable para quien no usa mouse y apenas
+        // legible a brillo de calle. Ahora 12px de texto y 44px de área táctil.
+        + legalFooterLink('Términos', 'p_legal')
+        + legalFooterLink('Cambios y devoluciones', 'p_returns')
+        + legalFooterLink('Libro de reclamaciones', 'p_complaints', "cmplStep='form';")
         + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">' + esc(BIZ_NAME) + ' · RUC ' + BIZ_RUC + '</div>'
         + '</div>';
@@ -1497,6 +1527,9 @@ function contactFooterHTML() {
 // anuncia un lector de pantalla. La versión del footer usaba spans y por eso el Libro de
 // Reclamaciones era inalcanzable para quien no usa mouse — que es precisamente el
 // consumidor al que la ley más protege.
+function legalFooterLink(label, screen, extra) {
+    return '<button type="button" onclick="bkTo=\'o_home\';sc=\'' + screen + '\';' + (extra || '') + 'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:12px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">' + label + ' <span class="cut-sep" style="color:' + GOLD + '">//</span></button>';
+}
 function legalLinksHTML(backTo) {
     function lnk(label, screen, extra) {
         return '<button type="button" onclick="bkTo=\'' + backTo + '\';sc=\'' + screen + '\';' + (extra || '') + 'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">' + label + ' <span class="cut-sep" style="color:' + GOLD + '">//</span></button>';
@@ -1518,7 +1551,7 @@ function AB(t, can, bk, nfn, nl, hint) {
     // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
     // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
     var hintRow = (!can && hint) ? '<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:6px">' + esc(hint) + '</span></div>' : '';
-    return hintRow + '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? '#241a08' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
+    return hintRow + '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? '#241a08' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
 }
 // Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
 // selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
@@ -2259,15 +2292,20 @@ function sOHome() {
             });
             var secretSig = SIGS.find(function (s) { return s.secret; });
             var tabBar = '<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
-                + '<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'sig' ? GOLD : 'transparent') + ';color:' + (homeTab === 'sig' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
-                + '<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;border-radius:8px;background:' + (homeTab === 'byo' ? GOLD : 'transparent') + ';color:' + (homeTab === 'byo' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
+                + '<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:' + (homeTab === 'sig' ? GOLD : 'transparent') + ';color:' + (homeTab === 'sig' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
+                + '<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:' + (homeTab === 'byo' ? GOLD : 'transparent') + ';color:' + (homeTab === 'byo' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
                 + '</div>';
             var sigPanel = '<div style="margin-bottom:8px">' + visibleSigs.map(function (s, i) {
                 var av = isAvail(s.base) && isAvail(s.prot);
                 var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="' + esc(s.n) + '" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
                 if (!av)
                     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
-                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + sigBadge(s) + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div></div>'
+                // Sin el sufijo " // Signature" en la fila: la etiqueta de arriba ya dice el tipo
+                // ("Clásico · Recomendado") y, al agrandar el precio a 22px, ese sufijo empujaba el
+                // nombre hasta cortarlo con puntos suspensivos a 320px ("The Original // Sig…").
+                // Entre mostrar el nombre completo del producto y repetir su categoría, gana el
+                // nombre.
+                return '<div onclick="startOrderWithSig(\'' + s.id + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">' + thumb + '<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;letter-spacing:.02em;color:' + GOLD + '">' + sigBadge(s) + (s.recommended ? ' · Recomendado' : '') + '</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + s.n + '</div></div>'
                     // Antes solo se veía el precio de 15CM y el de 30CM aparecía recién en la
                     // pantalla siguiente. Mostrar los dos deja ver la escalera completa desde la
                     // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
@@ -2980,7 +3018,7 @@ function promoCodeHTML() {
     if (!promoFieldOpen) {
         return box + '<div onclick="promoFieldOpen=true;confirmRerender()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;text-underline-offset:3px">¿Tienes un código?</div></div>';
     }
-    return box + '<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:13px;text-transform:uppercase"/>'
+    return box + '<div style="display:flex;gap:8px"><input id="o-promo" type="text" placeholder="Opcional" oninput="promoStatus=\'\';renderPromoStatus()" style="flex:1;min-width:0;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:\'EB Garamond\',serif;font-size:16px;text-transform:uppercase"/>'
         + '<button onclick="applyPromoCode()" style="flex-shrink:0;background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:8px;padding:0 16px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + GOLD + '">Aplicar</button></div>'
         + '<div id="o-promo-status" style="font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;margin-top:6px;min-height:14px">' + esc(promoStatus) + '</div></div>';
 }
@@ -3057,7 +3095,7 @@ function comboDrinkNudgeHTML() {
         ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + OFFPEAK_DRINK_PROMO_CAP + ')'
         : '¿Le sumas algo de tomar? Ahorras ' + SOLES_TXT + COMBO_DISCOUNT_PER_PAIR + ' en combo';
     var chips = SIDES.map(function (d) {
-        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1;min-width:88px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
+        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1;min-width:72px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
             + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '</div>'
             + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">' + esc(d.s) + '</div>'
             + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:4px">+' + SOLES_TXT + d.p + '</div>'
@@ -5829,7 +5867,7 @@ function bulkBar() {
     // recomendado (~44px), justo en la barra que se usa a las apuradas en hora pico
     // (hallazgo de la re-auditoría del panel admin). Ahora los 4 botones de acción miden
     // ~44px de alto y el botón de cerrar es un cuadrado de 40x40 en vez de un ícono suelto.
-    return '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;z-index:110">'
+    return '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:110">'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';flex-shrink:0">' + n + ' sel.</div>'
         + '<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">' + iconTxt('check', 'Pago', '#0d0d0d') + '</button>'
         + '<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:' + STATUSES.PREPARANDO.c + ';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">' + STATUSES.PREPARANDO.label + '</button>'
@@ -7179,7 +7217,7 @@ async function loadAdminCatalog() {
     render();
 }
 function cpNumField(id, label, val) {
-    return '<div style="flex:1;min-width:64px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">' + label + '</div><input id="' + id + '" type="number" step="0.1" value="' + val + '" style="background:var(--sw-bg,#1E3932);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:8px 10px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;box-sizing:border-box"></div>';
+    return '<div style="flex:1;min-width:64px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">' + label + '</div><input id="' + id + '" type="number" step="0.1" value="' + val + '" style="background:var(--sw-bg,#1E3932);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:8px 10px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-sizing:border-box"></div>';
 }
 function cpRow(label, inputsHtml, fn) {
     return '<div class="cp-row" data-name="' + esc(label.toLowerCase()) + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
@@ -7205,7 +7243,7 @@ function filterAdminRows(inputId, rowClass) {
 function SEARCHBOX(id, ph, rowClass) {
     return '<div style="position:relative;margin-bottom:12px">'
         + '<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">' + icon('buscar', 16, '#A8C8B0') + '</div>'
-        + '<input id="' + id + '" type="text" placeholder="' + ph + '" oninput="filterAdminRows(\'' + id + '\',\'' + rowClass + '\')" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 16px 12px 44px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box">'
+        + '<input id="' + id + '" type="text" placeholder="' + ph + '" oninput="filterAdminRows(\'' + id + '\',\'' + rowClass + '\')" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 16px 12px 44px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-sizing:border-box">'
         + '</div>';
 }
 function sAdminCatalog() {
@@ -8575,6 +8613,20 @@ window.addEventListener('appinstalled', function () {
 });
 // Antes no había ninguna detección de modo sin conexión — cada acción fallaba por
 // separado con su propio mensaje genérico en vez de un aviso único y proactivo.
+// Teclado virtual abierto → esconder la barra fija de navegación. Medido con Playwright a
+// 320x330 (alto típico de viewport con el teclado de Android abierto): la barra quedaba
+// justo encima del campo de teléfono del checkout y tapaba el de nombre. visualViewport
+// es la única API que reporta el alto REAL disponible cuando el teclado está arriba;
+// window.innerHeight no cambia en Android. El umbral de 75% distingue "teclado abierto"
+// de la barra de URL que se contrae al hacer scroll (esa se lleva ~10-15%, no ~40%).
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+        var vv = window.visualViewport;
+        if (!vv)
+            return;
+        document.body.classList.toggle('kb-open', vv.height < window.innerHeight * 0.75);
+    });
+}
 window.addEventListener('offline', function () { isOffline = true; render(); });
 window.addEventListener('online', function () { isOffline = false; render(); });
 async function installPwa() {
