@@ -991,6 +991,11 @@ var agPhone = '', agPts = '', agMsg = '';
 var acPhone = '', acDelta = '', acMsg = '';
 var pollTimer = null, lastPollCount = 0, pollFailing = false;
 var isOffline = !navigator.onLine;
+// El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
+// abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
+// postMessage y esto levanta la barra de "actualizar". Sin este aviso, servir de caché
+// dejaría al cliente en una versión vieja del código sin manera de enterarse.
+var updateReady = false;
 var deferredInstallPrompt = null, pwaDismissed = localStorage.getItem('sw_pwa_dismissed') === '1';
 var nearStore = false, _nearCheckDone = false;
 var wlPhone = '', wlName = '', wlMsg = '', wlDone = localStorage.getItem('sw_wl_done') === '1';
@@ -6922,7 +6927,10 @@ function render() {
     // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
     // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
     var offlineBanner = isOffline ? '<div style="background:#ffa500;color:#1a1200;text-align:center;padding:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:5px">' + icon('warning', 12, '#1a1200') + '<span>SIN CONEXIÓN — reconectando…</span></div>' : '';
-    document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">' + offlineBanner + h + '</div>';
+    // Nunca mientras hay una operación en vuelo (un pago, por ejemplo): recargar en medio
+    // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
+    var updateBanner = (updateReady && !busy) ? '<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">' + icon('refresh', 13, '#1a1200') + '<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>' : '';
+    document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">' + offlineBanner + updateBanner + h + '</div>';
     window.scrollTo(0, sameScreen ? scrollY : 0);
     _lastRenderedSc = sc;
     if (sc === 'p_auth')
@@ -8601,6 +8609,57 @@ async function doRecover() {
 // propio en vez de esperar a que el navegador lo muestre por su cuenta.
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+    // El shell se sirve desde caché para que la app abra al instante; el service worker
+    // revalida en paralelo y avisa por aquí si el servidor tiene una versión distinta.
+    navigator.serviceWorker.addEventListener('message', function (ev) {
+        if (ev.data && ev.data.type === 'sw-shell-updated' && !updateReady) {
+            updateReady = true;
+            render();
+        }
+    });
+    // El mensaje solo alcanza a las pestañas ya abiertas: cuando la revalidación termina, la
+    // pestaña que acaba de navegar todavía no tiene listener. Por eso el service worker deja
+    // además una marca en la caché y aquí se consulta al arrancar.
+    checkShellUpdateFlag();
+}
+var SW_UPDATE_FLAG = '__shell-update-pending';
+async function checkShellUpdateFlag() {
+    if (!window.caches)
+        return;
+    for (var i = 0; i < 3; i++) {
+        try {
+            var hit = await caches.match(SW_UPDATE_FLAG);
+            if (hit) {
+                updateReady = true;
+                render();
+                return;
+            }
+        }
+        catch (e) {
+            return;
+        }
+        await new Promise(function (r) { setTimeout(r, 2500); });
+    }
+}
+async function applyAppUpdate() {
+    updateReady = false;
+    render();
+    // Borrar la marca ANTES de recargar: si quedara, la pestaña nueva volvería a ver el
+    // aviso al arrancar (el service worker la limpia también, pero recién cuando termina su
+    // propia revalidación, varios segundos después).
+    try {
+        if (window.caches) {
+            var ks = await caches.keys();
+            await Promise.all(ks.map(async function (k) { var c = await caches.open(k); await c.delete(SW_UPDATE_FLAG); }));
+        }
+    }
+    catch (e) { }
+    try {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller)
+            navigator.serviceWorker.controller.postMessage({ type: 'sw-skip-waiting' });
+    }
+    catch (e) { }
+    location.reload();
 }
 window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
