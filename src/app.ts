@@ -3341,6 +3341,12 @@ function finalizeOrderSuccess(res,po,chargeId){
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
   window._lTot=po.total;window._lChargeId=chargeId;
+  // Los puntos NO se ganan sobre el delivery: el servidor otorga `total - delivery_fee`
+  // (ver finalizeAndInsertOrder en orders.ts), porque el delivery es pass-through al
+  // motorizado, no consumo. La pantalla de éxito mostraba `_lTot` (con delivery) como
+  // puntos ganados, así que prometía ~8-15 pts de más y el cliente veía otro número en
+  // su perfil. El checkout ya lo calculaba bien; solo esta pantalla mentía.
+  window._lPoints=Math.round(po.total-(po.deliveryFee||0));
   window._lRewardLabel=res.order&&res.order.redeemed_reward?res.order.redeemed_reward:null;
   window._lPendingPayment=!!(res.order&&res.order.payment_status!=='paid');
   window._lPayMethod=res.order&&res.order.payment_method;
@@ -3403,7 +3409,7 @@ function sOSent(){
       +'</div>':'')
     +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px;line-height:1.5">Sigue el estado en Puntos → Mis Pedidos</div></div>'
     +'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px">'+(pending?'Monto a pagar //':(window._lTot===0?'Cubierto por recompensa //':'Monto cobrado //'))+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
-    +(cust?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">'+(pending?'Puntos //':'Puntos ganados //')+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(pending?'12px':'32px')+';font-weight:640;color:'+GOLD+'">'+(pending?'+'+(window._lTot||0)+' pts pendientes hasta confirmar tu pago':'+'+(window._lTot||0)+'<span style="font-size:14px"> pts</span>')+'</div></div>':'')
+    +(cust?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">'+(pending?'Puntos //':'Puntos ganados //')+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(pending?'12px':'32px')+';font-weight:640;color:'+GOLD+'">'+(pending?'+'+(window._lPoints||0)+' pts pendientes hasta confirmar tu pago':'+'+(window._lPoints||0)+'<span style="font-size:14px"> pts</span>')+'</div></div>':'')
     +(window._lRewardLabel?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+'Recompensa aplicada //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(window._lRewardLabel)+'</div></div>':'')
     // Respaldo tappable del window.open automático de arriba — muchos navegadores
     // móviles lo bloquean por no venir de un tap directo del usuario, y sin esto un
@@ -4396,7 +4402,16 @@ async function updateStatus(ordId,newSt){
     adminOrders=adminOrders.map(function(o){return o.id===ordId?r.order:o;});
     if(newSt==='ENTREGADO')adminOrders=adminOrders.filter(function(o){return o.id!==ordId;});
     _adminOrderActionInProgress=false;render();
-  }catch(e){_adminOrderActionInProgress=false;console.warn(e);return;}
+  }catch(e){
+    // Antes este catch solo hacía console.warn y volvía: el servidor rechaza avanzar un
+    // pedido Yape/Plin sin pago confirmado, así que el operador tocaba el botón grande,
+    // no pasaba absolutamente nada visible, y volvía a tocar. El resto de acciones de
+    // admin (confirmar pago, cancelar) sí avisan — esta era la única muda, y es la más
+    // usada de todas.
+    _adminOrderActionInProgress=false;
+    showToast(e.message||'No se pudo cambiar el estado del pedido.');
+    render();return;
+  }
   // El correo de cambio de estado ahora lo manda el propio servidor dentro de
   // admin-update-status (ver applyOrderStatusUpdate en orders.ts) — antes este cliente
   // llamaba directo a la función edge send-order-email sin ninguna autenticación (relay
@@ -4909,6 +4924,10 @@ function sAdminFocus(){
     +(typeof o.lat==='number'&&typeof o.lon==='number'
       ?'<a href="https://maps.google.com/?q='+o.lat+','+o.lon+'" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+';margin-top:6px;display:inline-flex;align-items:center;gap:6px;text-decoration:none">'+icon('moto',13,GOLD)+'<span>Abrir pin exacto en Maps</span></a>'
       :'')
+    // La referencia que escribe el cliente ("portón azul", "3er piso") viajaba como
+    // o.notes y solo se veía en el TICKET IMPRESO, etiquetada "NOTA:" — o sea en el papel
+    // de cocina, que es justo donde no sirve. Quien despacha la necesita en pantalla.
+    +(o.notes?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';margin-top:6px">Referencia: '+esc(o.notes)+'</div>':'')
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:8px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
     +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('horario',13,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',13,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min</span></div>':'')

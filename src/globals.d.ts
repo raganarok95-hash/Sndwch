@@ -16,6 +16,9 @@ interface Window {
   _lastGuestEmail?: string;
   _lWaText?: string;
   _lTot?: number;
+  // Puntos realmente otorgados por el pedido: el total SIN el delivery, que es
+  // pass-through al motorizado y no genera puntos (ver finalizeAndInsertOrder).
+  _lPoints?: number;
   _lChargeId?: string | null;
   _lRewardLabel?: string | null;
   _lPendingPayment?: boolean;
