@@ -2,7 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!-- maximum-scale=1 y user-scalable=no quitados: bloquear el zoom incumple WCAG 1.4.4
+     (redimensionar texto) y la app usa tipografías chicas en decenas de sitios. Además
+     iOS lo ignora desde iOS 10, así que solo servía para dejar la página descuadrada
+     tras el zoom automático al enfocar un input, sin forma de volver.
+     viewport-fit=cover habilita env(safe-area-inset-*) para el notch/indicador. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,7 +105,12 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
    labels. */
 .wm-mark{display:inline-flex;align-items:center;gap:.13em;margin:0 .08em;vertical-align:-.04em}
 .wm-mark i{display:inline-block;width:.15em;height:.82em;background:linear-gradient(180deg,#E9C98A,#CBA258);transform:skewX(-16deg);border-radius:1px}
-#app{max-width:480px;margin:0 auto;min-height:100vh;background:#1E3932;position:relative;z-index:1}
+/* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
+   soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
+   Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
+   El padding inferior reserva el alto de la barra fija de navegación (49px) más el
+   área segura del indicador de inicio de iOS — antes el contenido quedaba debajo. */
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(49px + env(safe-area-inset-bottom,0px));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
 input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
@@ -148,6 +158,12 @@ input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shad
    actual (ej. tocar un topping) en vez de navegar a una nueva — así la
    animación .fi no se reproduce en cada micro-interacción. */
 body.no-fi .fi{animation:none}
+/* Con el teclado virtual abierto la barra fija de navegación tapa los campos del
+   formulario (medido: a 320x330 caía encima del campo de teléfono del checkout).
+   El listener de visualViewport en app.ts pone body.kb-open. También se quita el
+   padding inferior que reserva su alto, porque la barra ya no está ocupándolo. */
+body.kb-open .bottom-nav{display:none!important}
+body.kb-open #app{padding-bottom:0}
 /* Feedback táctil sutil en cualquier elemento interactivo (todos marcados con
    cursor:pointer en su style inline) — antes ningún botón/tarjeta daba señal
    visual al presionar, solo cambiaba de pantalla/estado sin transición. */
