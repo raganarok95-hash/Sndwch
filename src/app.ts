@@ -435,7 +435,7 @@ function sigTypeTag(tag){
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg'};
+var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg',SIG08:'img/sig08.jpg'};
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
