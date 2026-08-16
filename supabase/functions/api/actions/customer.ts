@@ -635,7 +635,10 @@ export async function actBounceBackFirstOrder(b: any) {
       }
       await sendPushToPhone(c.phone, {
         title: "Gracias por tu primer pedido 🙌",
-        body: "Te dejamos una bebida de la casa lista para canjear en tus puntos. Va por nosotros.",
+        // "Va por nosotros" decía regalo y "canjear en tus puntos" decía que paga con su
+        // saldo — una de las dos era mentira. Lo que de verdad pasa es que le sumamos
+        // los puntos y él canjea, así que el texto lo dice tal cual.
+        body: "Te sumamos puntos suficientes para canjear una bebida de la casa. Entra a Recompensas y es tuya.",
         url: "./index.html",
         tag: "sndwch-bounce-back",
       });
@@ -712,7 +715,7 @@ const WINBACK_STAGES: { key: string; minDays: number; maxDays: number; title: st
     body: "Hace un mes que no te vemos. Tu sándwich de siempre sigue en el menú." },
   { key: "60d", minDays: 60, maxDays: 89, title: "Seguimos guardándote el sitio 🥪",
     body: "Cambiamos el sándwich secreto del mes. ¿Le das una oportunidad?" },
-  { key: "90d", minDays: 90, maxDays: 180, title: "Un último recordatorio 💛",
+  { key: "90d", minDays: 90, maxDays: 180, title: "Tus puntos siguen ahí 💛",
     body: "Tus puntos siguen ahí, intactos. Están esperando que vuelvas." },
 ];
 export async function actRemindLapsedCustomers(b: any) {
@@ -821,7 +824,12 @@ const NEVER_ORDERED_MAX_DAYS = 14;
 const NEVER_ORDERED_STAGES = [
   { key: "1", minDays: 2, maxDays: 3, title: "Tus " + WELCOME_BONUS_POINTS + " puntos de bienvenida te esperan", body: "Ya los ganaste al registrarte — solo falta tu primer pedido para poder usarlos.", tag: "sndwch-never-ordered-1" },
   { key: "2", minDays: 5, maxDays: 6, title: "Te falta una insignia por desbloquear", body: "Tu primer pedido en SND//WCH te da tu primera insignia de perfil. Fácil de conseguir, fácil de armar.", tag: "sndwch-never-ordered-2" },
-  { key: "3", minDays: 10, maxDays: 11, title: "Último aviso — tu cuenta SND//WCH sigue lista", body: "Arma tu primer Signature en menos de un minuto. No te lo volvemos a recordar.", tag: "sndwch-never-ordered-3" },
+  // Ni "último recordatorio" ni "no te lo volvemos a recordar" eran ciertos: después de
+  // estos avisos siguen activos los crons de hora pico, carrito abandonado, aniversario y
+  // re-enganche de rango. Prometer que es el último es una mentira que el propio cliente
+  // verifica en su pantalla de bloqueo, y es la forma más rápida de que desactive los
+  // avisos para siempre.
+  { key: "3", minDays: 10, maxDays: 11, title: "Tu cuenta SND//WCH sigue lista", body: "Arma tu primer Signature en menos de un minuto. Es el paso que falta.", tag: "sndwch-never-ordered-3" },
 ];
 export async function actRemindNeverOrdered(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
