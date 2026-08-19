@@ -24,7 +24,7 @@ afecta cualquier decisión de precio/margen.
   - **`weekly-summary`**, **`daily-summary`** — resúmenes automáticos al dueño.
   - **`birthday-bonus`**, **`winback-campaign`**, **`send-order-email`** — funciones más
     viejas, de menor cambio.
-- **Tests**: `tests/*.spec.ts` (Playwright, 12 archivos / 19 tests hoy — el número crece,
+- **Tests**: `tests/*.spec.ts` (Playwright, 20 archivos / 32 tests hoy — el número crece,
   no lo tomes como techo) — mockean el endpoint `api` por `action` (ver `tests/helpers.ts`
   → `gotoApp`/`mockBackend`) en vez de depender de red real. Nunca usan un reloj real
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
@@ -69,15 +69,21 @@ que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
 ## Checklist antes de dar por terminado un cambio en el cliente
 
-1. `npm run typecheck` — cero errores.
-2. `npm run build` — regenera `index.html` desde `src/`.
-3. `npm test` (o `npm run verify`, que encadena las tres) — deben pasar TODOS (revisa el
+1. `npm run typecheck` — cero errores (solo cubre `src/**`).
+2. `npm run typecheck:api` — `deno check` sobre las 8 edge functions
+   (`scripts/check-backend.mjs`). El backend NO tiene otra verificación estática: el CI
+   despliega sin type-check, así que un error acá llega a producción.
+3. `npm run parity` — compara las 28 constantes de dinero duplicadas entre `src/app.ts` y
+   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el cliente mostraría un
+   número y el servidor cobraría otro.
+4. `npm run build` — regenera `index.html` desde `src/`.
+5. `npm test` (o `npm run verify`, que encadena las cinco) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
-4. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
+6. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
-5. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+7. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
 
 ## Cómo desplegar el backend
 
@@ -414,6 +420,24 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
     en vez de reconstruir el mark de memoria/aproximado.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
+
+- **El service worker sirve el shell desde caché (stale-while-revalidate) desde
+  2026-08-19** — `sw.js`. Dos trampas que lo hacían fallar en silencio y que ya están
+  resueltas, pero conviene no reintroducir: sin `event.waitUntil()` el navegador apaga el
+  service worker apenas responde con la copia en caché y la revalidación queda a medias
+  (el shell viejo sobrevive a los deploys), y sin `cache:'no-cache'` en ese fetch la caché
+  HTTP del navegador contesta sola con la misma copia vieja. Cuando detecta un shell
+  distinto deja una marca en la caché (`__shell-update-pending`) y la app levanta la barra
+  de "nueva versión disponible" — **el aviso no puede depender solo de `postMessage`**:
+  la revalidación termina después de que la navegación ocurrió y la pestaña recién cargada
+  todavía no tiene listener.
+- **Deno está disponible como devDependency (`deno` en npm) y `deno check` sí funciona**
+  para type-checkear las edge functions, que antes no tenían ninguna verificación
+  estática. Dos detalles del entorno: `jsr.io` está bloqueado por el proxy (el import de
+  tipos de ambiente del entrypoint falla, por eso `scripts/check-backend.mjs` reintenta sin
+  esa línea), y **el check debe correrse sobre una copia temporal**: Deno crea su propio
+  `node_modules/.deno` al resolver `npm:web-push` y eso dejó dos copias de
+  `@playwright/test` en el árbol, con lo que el runner de tests dejó de arrancar.
 
 - **Subagentes que mezclan WebSearch con lectura de código pueden equivocarse en la parte
   de código — verificar antes de implementar, no confiar ciego.** Descubierto 2026-08-04
