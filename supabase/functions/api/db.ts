@@ -78,7 +78,11 @@ export async function storageUpload(bucket: string, path: string, bytes: Uint8Ar
   const r = await fetch(`${SB_URL}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
     headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": contentType, "x-upsert": "true" },
-    body: bytes,
+    // `as BodyInit`: fetch acepta un Uint8Array como cuerpo sin problema en runtime, pero
+    // desde TypeScript 5.7 `Uint8Array<ArrayBufferLike>` dejó de encajar en el tipo
+    // `BodyInit` de la librería DOM, y el chequeo de tipos del backend lo marcaba como
+    // error. Es un desajuste de tipos, no de comportamiento.
+    body: bytes as unknown as BodyInit,
   });
   if (!r.ok) throw new Error(`Error subiendo a storage ${bucket}/${path}: ${await r.text()}`);
 }

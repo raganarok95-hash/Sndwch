@@ -615,8 +615,8 @@ export async function actAdminAtRiskCustomers(b: any) {
       const riskScore = Math.round((daysSinceLastOrder ?? 999) * weight);
       return { phone: c.phone, name: c.name, rank, totalOrders: c.total_orders || 0, daysSinceLastOrder, riskScore };
     })
-    .filter((c) => c.daysSinceLastOrder == null || c.daysSinceLastOrder >= AT_RISK_MIN_DAYS)
-    .sort((a, b) => b.riskScore - a.riskScore)
+    .filter((c: any) => c.daysSinceLastOrder == null || c.daysSinceLastOrder >= AT_RISK_MIN_DAYS)
+    .sort((a: any, b: any) => b.riskScore - a.riskScore)
     .slice(0, AT_RISK_LIMIT);
 
   return { customers: scored };
@@ -773,7 +773,7 @@ export async function actAdminPrepList(b: any) {
   const invRows = codes.length
     ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty`)
     : [];
-  const invMap = new Map(invRows.map((r: any) => [r.product_code, r]));
+  const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
   const ingredients = codes
     .map((code) => {
       const inv = invMap.get(code);
@@ -840,7 +840,7 @@ export async function actAdminProblemAddresses(b: any) {
   for (const o of rows) {
     const addr = String(o.customer_address || "").trim();
     if (!addr) continue;
-    const entry = map.get(addr) || { count: 0, reasons: [], lastAt: o.created_at };
+    const entry = map.get(addr) || { count: 0, reasons: [] as string[], lastAt: o.created_at };
     entry.count++;
     if (o.cancel_reason && entry.reasons.length < 5) entry.reasons.push(o.cancel_reason);
     map.set(addr, entry);

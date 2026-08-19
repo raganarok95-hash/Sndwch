@@ -610,8 +610,8 @@ export async function actBounceBackFirstOrder(b: any) {
     `&select=customer_phone,created_at&limit=5000`,
   );
   if (!orders.length) return { success: true, sent: 0 };
-  const phones = Array.from(new Set(orders.map((o: any) => String(o.customer_phone))));
-  const phonesList = phones.map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const phones: string[] = Array.from(new Set(orders.map((o: any) => String(o.customer_phone))));
+  const phonesList = phones.map((p: string) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   // total_orders=1 asegura que es su PRIMER pedido, no una entrega cualquiera.
   const customers = await sbGet("customers", `phone=in.(${phonesList})&total_orders=eq.1&select=phone,name`);
   let sent = 0;

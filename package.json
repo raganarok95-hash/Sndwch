@@ -6,10 +6,12 @@
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run parity && npm run build && npm test"
+    "verify": "npm run typecheck && npm run typecheck:api && npm run parity && npm run build && npm test",
+    "typecheck:api": "node scripts/check-backend.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "deno": "^2.9.5"
   }
 }

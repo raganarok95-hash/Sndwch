@@ -15,3 +15,4 @@ skills-lock.json
 # Estado efímero de la skill impeccable (puerto/token de "modo live") — .impeccable/
 # design.json y critique/ SÍ se commitean (son artefactos durables), esto no.
 .impeccable/live/
+deno.lock
