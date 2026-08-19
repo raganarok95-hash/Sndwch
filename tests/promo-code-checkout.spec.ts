@@ -20,13 +20,13 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000005');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
@@ -82,13 +82,13 @@ test('código promocional inválido muestra el error del servidor sin bloquear e
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000006');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
   await page.locator('[onclick*="size=\'15\'"]').click();

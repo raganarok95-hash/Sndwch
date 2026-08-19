@@ -41,13 +41,13 @@ test('el organizador también puede agregar su propio sándwich al pedido grupal
     'add-group-item': { success: true },
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').click();
   await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
 
@@ -89,13 +89,13 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').click();
   await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
   await expect(page.locator('text=Beto')).toBeVisible();

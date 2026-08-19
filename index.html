@@ -1288,6 +1288,7 @@ function renderOverlays() {
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, '#0d0d0d') + '</a>';
     }
     el.innerHTML = html;
+    makeClickablesAccessible();
 }
 // API — todas las operaciones sensibles (login, pedidos, puntos, admin) pasan
 // por este Edge Function, que usa la service key en el servidor. El cliente
@@ -6962,7 +6963,44 @@ function render() {
     if (sc === 'p_auth')
         mountGoogleButton();
     renderOverlays();
+    makeClickablesAccessible();
 }
+// Toda la app se dibuja como HTML en strings, y buena parte de los controles son
+// <div onclick> (tarjetas de Signature, chips de bebida, filas de dirección...): el
+// navegador no los ve como controles, así que no se podían enfocar ni activar con teclado
+// y un lector de pantalla los leía como texto suelto. Marcarlos acá, después de cada
+// render, en vez de reescribir las ~60 etiquetas a mano: no toca ni una línea del HTML
+// generado (cero riesgo de romper una plantilla) y cubre también las que se agreguen
+// después. La regla de foco visible ya existe en shell.html para cursor:pointer.
+function makeClickablesAccessible() {
+    var nodes = document.querySelectorAll('[onclick]');
+    for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        var tag = el.tagName;
+        if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'LABEL')
+            continue;
+        if (el.hasAttribute('tabindex'))
+            continue;
+        el.setAttribute('tabindex', '0');
+        if (!el.hasAttribute('role'))
+            el.setAttribute('role', 'button');
+    }
+}
+// Enter/Espacio sobre uno de esos controles hace lo mismo que un tap. Un <button> real ya
+// lo hace solo; esto es solo para los que no lo son.
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ')
+        return;
+    var el = document.activeElement;
+    if (!el || typeof el.getAttribute !== 'function')
+        return;
+    if (el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
+        return;
+    if (el.getAttribute('role') !== 'button')
+        return;
+    e.preventDefault();
+    el.click();
+});
 // INVENTORY
 var INV_CATS = [
     { t: 'Panes', arr: BASES },

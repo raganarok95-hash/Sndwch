@@ -25,13 +25,13 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   await page.goto(APP_FILE);
   await page.waitForSelector('text=SIGNATURE');
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
 
   await expect(page.locator('text=AGOTADO')).toBeVisible();

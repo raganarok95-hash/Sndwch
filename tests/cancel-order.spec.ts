@@ -32,7 +32,7 @@ test('cliente cancela un pedido RECIBIDO pagado con crédito antes de que cocina
     },
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
