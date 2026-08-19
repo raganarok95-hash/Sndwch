@@ -435,7 +435,7 @@ function sigTypeTag(tag){
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg'};
+var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg',SIG08:'img/sig08.jpg'};
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -783,6 +783,11 @@ var agPhone='',agPts='',agMsg='';
 var acPhone='',acDelta='',acMsg='';
 var pollTimer=null,lastPollCount=0,pollFailing=false;
 var isOffline=!navigator.onLine;
+// El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
+// abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
+// postMessage y esto levanta la barra de "actualizar". Sin este aviso, servir de caché
+// dejaría al cliente en una versión vieja del código sin manera de enterarse.
+var updateReady=false;
 var deferredInstallPrompt=null,pwaDismissed=localStorage.getItem('sw_pwa_dismissed')==='1';
 var nearStore=false,_nearCheckDone=false;
 var wlPhone='',wlName='',wlMsg='',wlDone=localStorage.getItem('sw_wl_done')==='1';
@@ -941,6 +946,15 @@ function submitPrompt(){
   var inp=(document.getElementById('ui-prompt-input') as HTMLInputElement | null);
   resolvePrompt(inp?inp.value:null);
 }
+// Escape cierra el overlay de arriba. Un diálogo modal sin salida por teclado deja
+// atrapado a quien no usa el mouse: las tres capas se cerraban solo tocando un botón.
+// Cancelar es siempre la salida segura (nunca confirma nada por accidente).
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if(promptState){resolvePrompt(null);return;}
+  if(confirmState){resolveConfirm(false);return;}
+  if(adminToolsDrawerOpen){toggleAdminToolsDrawer();return;}
+});
 
 function renderOverlays(){
   var el=(document.getElementById('ui-overlays') as HTMLInputElement | null);
@@ -952,15 +966,20 @@ function renderOverlays(){
     // ~70-80px de alto con el total) que vive en la misma zona — antes el toast de
     // "agregado al carrito" la tapaba 3.2s justo en el momento en que el usuario busca
     // pagar (hallazgo P0 de crítica impeccable 2026-07-30).
-    html+='<div style="position:fixed;left:16px;right:16px;bottom:92px;z-index:400;display:flex;justify-content:center" class="fi">'
+    // role/aria-live: sin esto el aviso aparece y desaparece sin que un lector de pantalla
+    // diga nada — "agregado al carrito" o el error de un pago quedaban mudos. `alert` para
+    // los errores (interrumpe), `status` para el resto (espera a que termine la frase).
+    html+='<div role="'+(isErr?'alert':'status')+'" aria-live="'+(isErr?'assertive':'polite')+'" style="position:fixed;left:16px;right:16px;bottom:92px;z-index:400;display:flex;justify-content:center" class="fi">'
       +'<div style="max-width:420px;width:100%;background:'+(isErr?'#3a1414':'#1A3028')+';border:1px solid '+(isErr?'rgba(255,85,85,.5)':'rgba(203,162,88,.4)')+';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
       +'<div style="flex:1;font-family:\'EB Garamond\',serif;font-size:13px;color:'+(isErr?'#ffb3b3':'#F2F0EB')+';line-height:1.4">'+esc(toastMsg)+'</div>'
       +'<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:'+(isErr?'#ffb3b3':'#A8C8B0')+';font-size:16px;line-height:1;padding:0 2px">&#10005;</button>'
       +'</div></div>';
   }
   if(confirmState){
+    // role/aria-modal: sin esto un lector de pantalla sigue leyendo la pantalla de atrás
+    // como si el diálogo no existiera, y el usuario confirma a ciegas.
     html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:410;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-      +'<div style="background:var(--sw-bg,#1E3932);border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
+      +'<div role="dialog" aria-modal="true" aria-label="Confirmación" style="background:var(--sw-bg,#1E3932);border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
       +'<p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:20px;white-space:pre-line">'+esc(confirmState.msg)+'</p>'
       +'<button onclick="resolveConfirm(true)" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Confirmar //</button>'
       +'<button onclick="resolveConfirm(false)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
@@ -968,7 +987,7 @@ function renderOverlays(){
   }
   if(promptState){
     html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:420;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-      +'<div style="background:var(--sw-bg,#1E3932);border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
+      +'<div role="dialog" aria-modal="true" aria-label="Ingresa un dato" style="background:var(--sw-bg,#1E3932);border-radius:14px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
       +'<p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:14px;white-space:pre-line">'+esc(promptState.msg)+'</p>'
       +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-sizing:border-box;margin-bottom:16px">'
       +'<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Aceptar //</button>'
@@ -980,9 +999,11 @@ function renderOverlays(){
   // misma lista de secciones que el grid de admin_home, en formato de filas compactas
   // (mejor lectura vertical que el grid de 2 columnas dentro de un panel angosto).
   if(adminToolsDrawerOpen){
-    var drawerRow=function(icn,label,action){return'<div onclick="adminToolsDrawerOpen=false;'+action+'" style="display:flex;align-items:center;gap:12px;padding:12px 4px;cursor:pointer;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">'+icon(icn,17)+'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+label+'</span></div>';};
+    // Botón real, no un <div onclick>: las filas del drawer no eran alcanzables con
+    // teclado ni se anunciaban como controles.
+    var drawerRow=function(icn,label,action){return'<button type="button" onclick="adminToolsDrawerOpen=false;'+action+'" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:12px 4px;min-height:44px;cursor:pointer;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">'+icon(icn,17)+'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+label+'</span></button>';};
     html+='<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
-      +'<div style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#1E3932);border-left:1px solid var(--sw-border,#3A6B58);z-index:431;overflow-y:auto;padding:20px" class="fi">'
+      +'<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#1E3932);border-left:1px solid var(--sw-border,#3A6B58);z-index:431;overflow-y:auto;padding:20px" class="fi">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:'+GOLD+'"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:18px;padding:4px">&#10005;</button></div>'
       +drawerRow('refresh','Cola de pedidos','loadAdmin()')
       +drawerRow('reportes','Panel de negocio','loadDashboard()')
@@ -5505,7 +5526,10 @@ function render(){
   // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
   // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
   var offlineBanner=isOffline?'<div style="background:#ffa500;color:#1a1200;text-align:center;padding:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:5px">'+icon('warning',12,'#1a1200')+'<span>SIN CONEXIÓN — reconectando…</span></div>':'';
-  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+h+'</div>';
+  // Nunca mientras hay una operación en vuelo (un pago, por ejemplo): recargar en medio
+  // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
+  var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';
+  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+updateBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sc;
   if(sc==='p_auth')mountGoogleButton();
@@ -6781,6 +6805,43 @@ async function doRecover(){
 // propio en vez de esperar a que el navegador lo muestre por su cuenta.
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+  // El shell se sirve desde caché para que la app abra al instante; el service worker
+  // revalida en paralelo y avisa por aquí si el servidor tiene una versión distinta.
+  navigator.serviceWorker.addEventListener('message',function(ev){
+    if(ev.data&&ev.data.type==='sw-shell-updated'&&!updateReady){updateReady=true;render();}
+  });
+  // El mensaje solo alcanza a las pestañas ya abiertas: cuando la revalidación termina, la
+  // pestaña que acaba de navegar todavía no tiene listener. Por eso el service worker deja
+  // además una marca en la caché y aquí se consulta al arrancar.
+  checkShellUpdateFlag();
+}
+var SW_UPDATE_FLAG='__shell-update-pending';
+async function checkShellUpdateFlag(){
+  if(!window.caches)return;
+  for(var i=0;i<3;i++){
+    try{
+      var hit=await caches.match(SW_UPDATE_FLAG);
+      if(hit){updateReady=true;render();return;}
+    }catch(e){return;}
+    await new Promise(function(r){setTimeout(r,2500);});
+  }
+}
+async function applyAppUpdate(){
+  updateReady=false;render();
+  // Borrar la marca ANTES de recargar: si quedara, la pestaña nueva volvería a ver el
+  // aviso al arrancar (el service worker la limpia también, pero recién cuando termina su
+  // propia revalidación, varios segundos después).
+  try{
+    if(window.caches){
+      var ks=await caches.keys();
+      await Promise.all(ks.map(async function(k){var c=await caches.open(k);await c.delete(SW_UPDATE_FLAG);}));
+    }
+  }catch(e){}
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
+      navigator.serviceWorker.controller.postMessage({type:'sw-skip-waiting'});
+  }catch(e){}
+  location.reload();
 }
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();

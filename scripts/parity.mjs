@@ -1,0 +1,198 @@
+// Comprobación de paridad cliente ↔ servidor.
+//
+// Hay ~20 constantes que existen DOS veces en este repo: una en `src/app.ts` (para que el
+// cliente pueda mostrar precios y totales sin esperar al servidor) y otra en
+// `supabase/functions/api/` (que es la que de verdad cobra). Hasta ahora la única defensa
+// contra que se separen era un comentario "DEBE coincidir con ..." al lado de cada una, y
+// un comentario no falla el build. Cuando se separan, el cliente muestra un precio y el
+// servidor cobra otro.
+//
+// Esto compara los dos lados leyendo los archivos como texto (no se pueden importar: el
+// servidor es Deno con imports .ts y el cliente es un script plano sin exports) y devuelve
+// código 1 si hay alguna diferencia. Corre dentro de `npm run verify`.
+//
+// OJO — esto NO reemplaza la revisión de `catalog_prices` en la base de datos: en runtime
+// esa tabla se carga ENCIMA de los literales del servidor, así que dos archivos idénticos
+// pueden seguir sin coincidir con lo que se cobra de verdad (ver CLAUDE.md). Esto solo
+// garantiza que los dos lados del CÓDIGO digan lo mismo.
+
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const app = readFileSync(join(ROOT, 'src/app.ts'), 'utf8');
+const catalog = readFileSync(join(ROOT, 'supabase/functions/api/catalog.ts'), 'utf8');
+const env = readFileSync(join(ROOT, 'supabase/functions/api/env.ts'), 'utf8');
+const customer = readFileSync(join(ROOT, 'supabase/functions/api/actions/customer.ts'), 'utf8');
+
+const problems = [];
+let checks = 0;
+
+function cmp(what, clientVal, serverVal) {
+  checks++;
+  const a = JSON.stringify(clientVal);
+  const b = JSON.stringify(serverVal);
+  if (a !== b) problems.push(`${what}\n    cliente: ${a}\n    servidor: ${b}`);
+}
+
+// Falla ruidosamente si un patrón deja de encontrar nada: un regex que dejó de matchear
+// (porque alguien reformateó el archivo) se vería como "todo coincide" y sería peor que
+// no tener esta comprobación.
+function need(map, what) {
+  if (!map || Object.keys(map).length === 0) {
+    problems.push(`${what}: no se pudo extraer nada — el formato del archivo cambió y este script quedó ciego`);
+    return {};
+  }
+  return map;
+}
+
+function scalar(src, name, re, file) {
+  const m = src.match(re);
+  if (!m) {
+    problems.push(`${name}: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
+    return null;
+  }
+  return Number(m[1]);
+}
+
+// ---------- cliente ----------
+function clientObjArray(varName, idPrefix, fields) {
+  const start = app.indexOf('var ' + varName);
+  if (start < 0) return {};
+  const chunk = app.slice(start, start + 30000);
+  const out = {};
+  const re = new RegExp("\\{id:'(" + idPrefix + "\\d+)'([^}]*)\\}", 'g');
+  let m;
+  while ((m = re.exec(chunk))) {
+    const [, id, body] = m;
+    if (out[id]) break; // ya salimos del array y estamos leyendo otra estructura
+    const rec = {};
+    for (const f of fields) {
+      const fm = body.match(new RegExp('\\b' + f + ':(-?[\\d.]+)'));
+      if (fm) rec[f] = Number(fm[1]);
+    }
+    out[id] = rec;
+  }
+  return out;
+}
+
+const cProt = need(clientObjArray('PROTS', 'P', ['p15', 'p30', 'pDbl']), 'PROTS (cliente)');
+const cSide = need(clientObjArray('SIDES', 'D', ['p']), 'SIDES (cliente)');
+const cRew = need(clientObjArray('RWDS', 'R', ['pts']), 'RWDS (cliente)');
+
+// SIGS: bloques multilínea, así que se recorta por id y se leen los campos sueltos.
+const cSig = {};
+{
+  const start = app.indexOf('var SIGS');
+  const chunk = app.slice(start, start + 40000);
+  const re = /\{id:'(SIG\d+)',([\s\S]*?)\n(?=  \{id:'SIG|\];)/g;
+  let m;
+  while ((m = re.exec(chunk))) {
+    const [, id, body] = m;
+    const num = (f) => { const x = body.match(new RegExp('\\b' + f + ':(-?[\\d.]+)')); return x ? Number(x[1]) : null; };
+    const str = (f) => { const x = body.match(new RegExp('\\b' + f + ":'([^']*)'")); return x ? x[1] : null; };
+    const arr = (f) => { const x = body.match(new RegExp('\\b' + f + ':\\[([^\\]]*)\\]')); return x ? x[1].split(',').map((s) => s.trim().replace(/'/g, '')).filter(Boolean) : null; };
+    cSig[id] = { p15: num('p15'), p30: num('p30'), base: str('base'), prot: str('prot'), tops: arr('tops'), sauces: arr('sauces') };
+  }
+}
+need(cSig, 'SIGS (cliente)');
+
+const cZones = {};
+{
+  const m = app.match(/var DELIVERY_PRICE_ZONES=\[([\s\S]*?)\];/);
+  if (m) for (const z of m[1].matchAll(/\{id:'([a-z_]+)'[^}]*fee:([\d.]+)/g)) cZones[z[1]] = Number(z[2]);
+}
+need(cZones, 'DELIVERY_PRICE_ZONES (cliente)');
+
+// ---------- servidor ----------
+function serverRecord(src, name, fields) {
+  const start = src.indexOf('export const ' + name);
+  if (start < 0) return {};
+  const chunk = src.slice(start, src.indexOf('\n};', start) + 3 || start + 8000);
+  const out = {};
+  for (const m of chunk.matchAll(/^\s{2}([A-Z]\d+): \{([^}]*)\}/gm)) {
+    const rec = {};
+    for (const f of fields) {
+      const fm = m[2].match(new RegExp('\\b' + f + ': (-?[\\d.]+)'));
+      if (fm) rec[f] = Number(fm[1]);
+    }
+    out[m[1]] = rec;
+  }
+  return out;
+}
+
+const sProt = need(serverRecord(catalog, 'PROT_PRICE', ['p15', 'p30', 'pDbl']), 'PROT_PRICE (servidor)');
+const sRew = need(serverRecord(catalog, 'REWARDS', ['pts']), 'REWARDS (servidor)');
+
+const sSig = {};
+{
+  const start = catalog.indexOf('export const SIG_DATA');
+  const chunk = catalog.slice(start, catalog.indexOf('\n};', start));
+  for (const m of chunk.matchAll(/^\s{2}(SIG\d+): \{(.*)\}/gm)) {
+    const body = m[2];
+    const num = (f) => { const x = body.match(new RegExp('\\b' + f + ': (-?[\\d.]+)')); return x ? Number(x[1]) : null; };
+    const str = (f) => { const x = body.match(new RegExp('\\b' + f + ': "([^"]*)"')); return x ? x[1] : null; };
+    const arr = (f) => { const x = body.match(new RegExp('\\b' + f + ': \\[([^\\]]*)\\]')); return x ? x[1].split(',').map((s) => s.trim().replace(/"/g, '')).filter(Boolean) : null; };
+    sSig[m[1]] = { p15: num('p15'), p30: num('p30'), base: str('base'), prot: str('prot'), tops: arr('tops'), sauces: arr('sauces') };
+  }
+}
+need(sSig, 'SIG_DATA (servidor)');
+
+const sSide = {};
+{
+  const m = catalog.match(/export const SIDE_PRICE[^=]*= \{([^}]*)\}/);
+  if (m) for (const p of m[1].matchAll(/(D\d+): ([\d.]+)/g)) sSide[p[1]] = { p: Number(p[2]) };
+}
+need(sSide, 'SIDE_PRICE (servidor)');
+
+const sZones = {};
+{
+  const m = env.match(/export const DELIVERY_ZONE_FEES[^=]*= \{([\s\S]*?)\};/);
+  if (m) for (const z of m[1].matchAll(/([a-z_]+): ([\d.]+)/g)) sZones[z[1]] = Number(z[2]);
+}
+need(sZones, 'DELIVERY_ZONE_FEES (servidor)');
+
+// ---------- comparaciones ----------
+for (const id of new Set([...Object.keys(cProt), ...Object.keys(sProt)])) {
+  cmp(`Proteína ${id} (PROTS ↔ PROT_PRICE)`, cProt[id] ?? null, sProt[id] ?? null);
+}
+for (const id of new Set([...Object.keys(cSide), ...Object.keys(sSide)])) {
+  cmp(`Bebida ${id} (SIDES ↔ SIDE_PRICE)`, cSide[id] ?? null, sSide[id] ?? null);
+}
+for (const id of new Set([...Object.keys(cRew), ...Object.keys(sRew)])) {
+  cmp(`Recompensa ${id} (REWARDS)`, cRew[id] ?? null, sRew[id] ?? null);
+}
+for (const id of new Set([...Object.keys(cSig), ...Object.keys(sSig)])) {
+  // SIG05 es la excepción documentada: su composición y precio viven en la tabla
+  // `secret_signature` y se recargan en cada llamada, así que los literales de los dos
+  // lados son solo semilla y no tienen por qué coincidir entre sí.
+  if (id === 'SIG05') continue;
+  cmp(`Signature ${id} (SIGS ↔ SIG_DATA)`, cSig[id] ?? null, sSig[id] ?? null);
+}
+cmp('Zonas de delivery (DELIVERY_PRICE_ZONES ↔ DELIVERY_ZONE_FEES)', cZones, sZones);
+
+cmp('COMBO_DISCOUNT_PER_PAIR',
+  scalar(app, 'COMBO_DISCOUNT_PER_PAIR', /var COMBO_DISCOUNT_PER_PAIR=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'COMBO_DISCOUNT_PER_PAIR', /const COMBO_DISCOUNT_PER_PAIR = ([\d.]+)/, 'catalog.ts'));
+cmp('GIFT_CARD_POINTS_PER_SOL',
+  scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app.ts'),
+  scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
+cmp('CULQI_FEE_RATE',
+  scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app.ts'),
+  scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));
+
+// Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
+cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
+  scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app.ts'),
+  scalar(catalog, 'SIG_GATES.SIG05', /SIG05: \{ minOrders: (\d+) \}/, 'catalog.ts'));
+
+// ---------- salida ----------
+if (problems.length) {
+  console.error(`\n✗ Paridad cliente ↔ servidor: ${problems.length} diferencia(s) de ${checks} comprobaciones\n`);
+  for (const p of problems) console.error('  • ' + p + '\n');
+  console.error('  El cliente mostraría un número y el servidor cobraría otro. Corrige los dos lados.');
+  console.error('  Recuerda además revisar `catalog_prices` en Supabase si tocaste un precio.\n');
+  process.exit(1);
+}
+console.log(`✓ Paridad cliente ↔ servidor: ${checks} comprobaciones, todo coincide`);
