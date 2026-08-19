@@ -1,6 +1,7 @@
 # Migraciones aplicadas en Supabase (proyecto rjosezuoyngiadunfzyn)
 # Generado 2026-08-15 desde supabase_migrations.schema_migrations — 109 migraciones.
-# El SQL en sí todavía no está versionado: ver README.md para traerlo con la CLI.
+# El SQL de cada una está en esta misma carpeta (<version>_<nombre>.sql), verificado
+# con md5 contra la base. Ver README.md — 4 llevan el secreto de cron redactado.
 
 20260424021855  add_birthday_columns_to_customers
 20260424022952  add_referral_and_notes_columns

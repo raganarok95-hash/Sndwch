@@ -1,0 +1,3 @@
+
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS birthday TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS birthday_pts_year INTEGER DEFAULT 0;

@@ -30,13 +30,16 @@ afecta cualquier decisión de precio/margen.
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
   una hora específica (ej. evitar la promo de hora valle), usa `page.clock.setFixedTime()`
   **dentro de ese test**, no en `helpers.ts`.
-- **Migraciones DB**: `supabase/migrations/` existe pero solo contiene `INDEX.txt` (la
-  lista de las 109 migraciones aplicadas, con versión y nombre) y un `README.md` con el
-  comando de la CLI para traerse el SQL real (`supabase db pull`). El SQL en sí **no está
-  versionado todavía** — todas se aplican directo con `mcp__Supabase__apply_migration` y solo quedan registradas en
-  Supabase (`mcp__Supabase__list_migrations`). Si necesitas ver el schema de una tabla,
-  consúltalo con `mcp__Supabase__execute_sql` contra `information_schema`, no busques un
-  archivo `.sql` en el repo.
+- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 109 migraciones**
+  (un archivo `<version>_<nombre>.sql` cada una, extraído de
+  `supabase_migrations.schema_migrations` el 2026-08-19 y verificado archivo por archivo
+  con md5 contra la base), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
+  secreto de cron redactado a propósito** (`<CRON_SECRET_REDACTADO>`) — el valor sigue en
+  texto plano en el historial dentro de Supabase, rotarlo es tarea pendiente del dueño.
+  Una migración nueva se sigue aplicando con `mcp__Supabase__apply_migration`; para que
+  quede versionada, escribe el mismo SQL en un archivo de esa carpeta en la misma sesión.
+  Para el schema vigente de una tabla sigue siendo más confiable `mcp__Supabase__execute_sql`
+  contra `information_schema` que leer el historial.
 
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
