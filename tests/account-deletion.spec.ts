@@ -12,7 +12,7 @@ test('cliente elimina su cuenta desde el perfil', async ({ page }) => {
     'delete-account': { success: true },
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('987654321');
   await page.locator('#l-pin').fill('1234');

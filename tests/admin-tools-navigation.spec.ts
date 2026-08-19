@@ -24,7 +24,7 @@ const MOCK_ORDER = {
 };
 
 async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000000');
   await page.locator('#l-pin').fill('1234');

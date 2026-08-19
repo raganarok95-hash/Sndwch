@@ -30,7 +30,7 @@ test('admin confirma un pedido pagado y lo pasa a PREPARANDO', async ({ page }) 
     },
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000000');
   await page.locator('#l-pin').fill('1234');

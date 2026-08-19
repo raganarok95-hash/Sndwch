@@ -21,7 +21,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000002');
   await page.locator('#l-pin').fill('1234');
@@ -29,7 +29,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
 
   // El login deja al cliente en la pestaña PUNTOS (p_home) — hay que cambiar a PEDIDO
   // para llegar a startOrder().
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
   // THE ORIGINAL (SIG01) 15CM = S/18 — cualquier signature serviría, se fija uno
   // concreto solo para que el flujo sea determinista.
@@ -109,12 +109,12 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   // globalmente.
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000003');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
   // THE ORIGINAL (SIG01) 15CM = S/18.
   await page.locator('[onclick*="startOrderWithSig("]').first().click();

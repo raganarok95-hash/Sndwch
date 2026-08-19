@@ -19,13 +19,13 @@ test('cliente sube de rango a INICIADO al pagar el 5to pedido y ve la celebraci�
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
@@ -59,13 +59,13 @@ test('cliente que no cruza ningún umbral de rango no ve la celebración', async
     }),
   });
 
-  await page.getByRole('button', { name: 'PUNTOS' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-phone').fill('900000002');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.getByRole('button', { name: 'PEDIDO' }).click();
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
