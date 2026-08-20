@@ -204,6 +204,29 @@ Signature o build.
   resuelve. Panel de edición: Admin // Catálogo // Menú secreto
   (`sAdminSecretSignature()`/`admin-secret-signature-get`/`admin-secret-signature-set`).
 
+## Medición de campañas — Meta Pixel + Conversions API (2026-08-20)
+
+Apagado por completo mientras no existan los secrets, y sin ningún id hardcodeado en el
+repo: `supabase secrets set META_PIXEL_ID=... META_CAPI_TOKEN=...`. El `META_PIXEL_ID`
+viaja al cliente dentro de `get-store-hours` (es público por diseño), así que **el píxel
+se prende sin redesplegar el cliente**; el `META_CAPI_TOKEN` nunca sale del servidor.
+
+- **Navegador** (`src/app.ts`): `initMetaPixel()` inyecta el snippet solo si llegó un id,
+  y todo evento pasa por `fbTrack()`, que es un no-op si el píxel no existe. Se reportan
+  PageView, AddToCart, CompleteRegistration, Lead (lista de espera) y Purchase.
+- **Servidor** (`supabase/functions/api/meta-capi.ts`): manda la misma compra por
+  Conversions API, que no la pueden bloquear los bloqueadores de anuncios. Los dos lados
+  usan el MISMO `event_id` (la referencia del pedido) — así Meta deduplica en vez de
+  contar la venta dos veces.
+- **El valor reportado excluye el delivery** (pass-through al motorizado): incluirlo
+  inflaría el ROAS con plata que nunca fue del negocio.
+- **Un pedido Yape/Plin se reporta recién cuando el admin confirma el pago**, no cuando el
+  cliente dice "ya pagué" — si no, Meta optimizaría hacia pedidos que nadie pagó.
+- **PRIVACIDAD**: los datos personales van siempre hasheados con SHA-256 (nunca en claro),
+  pero aun así se comparten identificadores de clientes con Meta. **La Política de
+  Privacidad debería mencionarlo antes de activar los secrets en producción** — no se
+  tocó el texto legal porque eso requiere pedido explícito del dueño.
+
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
 Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrito

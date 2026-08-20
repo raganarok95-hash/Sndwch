@@ -12,6 +12,7 @@ import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
+import { sendPurchaseEvent } from "../meta-capi.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 
@@ -204,6 +205,15 @@ type FinalizeOrderParams = {
   useCredit: boolean;
   lat: number | null;
   lon: number | null;
+  /** Cookies del píxel de Meta (_fbp/_fbc) y user-agent del navegador — solo sirven para
+   *  que el evento de compra que manda el servidor se pueda atribuir al anuncio que trajo
+   *  al cliente. Opcionales: si no llegan, el evento se manda igual con lo que haya. */
+  fbp?: string | null;
+  fbc?: string | null;
+  clientUserAgent?: string | null;
+  /** Código del pedido grupal del que salió este pedido, si vino de uno. Solo sirve para
+   *  poder medir cuánta venta genera ese canal (una entrega, varios sándwiches). */
+  groupCode?: string | null;
 };
 
 // Coordenadas del pin que el cliente confirmó en el mapa del checkout. Se sanean acá y
@@ -216,6 +226,25 @@ function sanitizeCoord(raw: unknown, max: number): number | null {
   if (!Number.isFinite(n) || Math.abs(n) > max) return null;
   return Math.round(n * 1e6) / 1e6;
 }
+// Identificadores del píxel de Meta que el navegador puede mandar junto al pedido
+// (_fbp/_fbc son cookies que pone el propio píxel). No son datos personales por sí solos y
+// solo se usan para atribuir la venta al anuncio correcto. Se acotan a un largo razonable
+// para que nadie use este campo para inyectar basura en el evento.
+function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; clientUserAgent: string | null; groupCode: string | null } {
+  const clean = (v: unknown, max: number) => {
+    const s = typeof v === "string" ? v.trim().slice(0, max) : "";
+    return s || null;
+  };
+  return {
+    fbp: clean(b?.fbp, 120),
+    fbc: clean(b?.fbc, 300),
+    clientUserAgent: clean(b?.ua, 400),
+    // Se normaliza igual que en group.ts (mayúsculas, sin espacios) para que coincida con
+    // el código real del pedido grupal aunque el cliente lo mande de otra forma.
+    groupCode: (typeof b?.groupCode === "string" ? b.groupCode.trim().toUpperCase().slice(0, 24) : "") || null,
+  };
+}
+
 function readCoords(b: any): { lat: number | null; lon: number | null } {
   const lat = sanitizeCoord(b?.lat, 90);
   const lon = sanitizeCoord(b?.lon, 180);
@@ -262,6 +291,35 @@ async function notifyReferrerBonus(referrerPhone: string, referredName: string):
   }
 }
 
+// Compra reportada a Meta desde el servidor (Conversions API). El píxel del navegador ya
+// manda la suya, pero los bloqueadores se comen una parte grande justo del evento más
+// importante; los dos llevan el mismo event_id (la referencia del pedido) y Meta deduplica.
+// El valor excluye el delivery a propósito: es pass-through al motorizado, no ingreso del
+// negocio, e incluirlo inflaría el ROAS de las campañas con plata que nunca fue tuya.
+function reportPurchaseToMeta(p: FinalizeOrderParams): void {
+  // Un pedido Yape/Plin nace en "pending" y solo se vuelve una venta real cuando el admin
+  // confirma el pago — ese caso se reporta desde confirmManualPayment, no acá. Sin este
+  // guard, Meta optimizaría hacia pedidos que todavía nadie pagó.
+  if (p.paymentStatus !== "paid") return;
+  // Sin await: es telemetría de marketing y el cliente no tiene por qué esperar a Meta
+  // para ver su pedido confirmado. sendPurchaseEvent nunca lanza (traga sus propios
+  // errores), así que esto no puede dejar una promesa rechazada suelta.
+  sendPurchaseEvent({
+    eventId: p.ref,
+    value: p.total - (p.deliveryFee || 0),
+    phone: p.contactPhone || p.phone,
+    email: p.email,
+    name: p.name,
+    fbp: p.fbp,
+    fbc: p.fbc,
+    clientUserAgent: p.clientUserAgent,
+    contents: p.items.map((it: any) => ({
+      id: String(it.sigId || it.prot || it.sideId || it.type || "item"),
+      quantity: Number(it.qty) || 1,
+    })),
+  });
+}
+
 async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
   // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
   // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
@@ -278,6 +336,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       customer_address: p.address,
       lat: p.lat,
       lon: p.lon,
+      group_code: p.groupCode || null,
       summary: p.summary || "",
       notes: p.notes,
       total: p.total,
@@ -417,11 +476,13 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     }
     await Promise.all(auditInserts);
     if (isReferral && c.referred_by) await notifyReferrerBonus(c.referred_by, p.name);
+    reportPurchaseToMeta(p);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
   }
 
   const orderRows = await insertOrder();
+  reportPurchaseToMeta(p);
   await sendConfirmationEmailSafely(p);
   return { order: orderRows[0], customer: null };
 }
@@ -739,6 +800,7 @@ export async function actPrepareOrder(b: any) {
         promo_code_id: promoCodeId,
         promo_discount: promoDiscount,
         ...readCoords(b),
+        ...readMetaAttribution(b),
       });
     } catch (e) {
       await restockBestEffort(codes, qtys, "prepare-order");
@@ -1022,6 +1084,7 @@ export async function actPlaceOrder(b: any) {
         paymentStatus, paymentId: null, paymentMethod,
         items: sanitizedItems, scheduledFor, reward, useCredit,
         ...readCoords(b),
+        ...readMetaAttribution(b),
       });
       orderInserted = true;
       // El código promocional (si se usó uno) ya quedó reclamado de forma atómica arriba
@@ -1144,6 +1207,17 @@ async function confirmManualPayment(order: any) {
     });
     await notifyReferrerBonus(referrerPhone, order.customer_name);
   }
+
+  // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el
+  // dinero llegó), así que este es el momento de reportarlo a Meta — no cuando el cliente
+  // dijo "ya pagué". Mismo event_id que usaría el píxel: la referencia del pedido.
+  sendPurchaseEvent({
+    eventId: order.ref,
+    value: (Number(order.total) || 0) - (Number(order.delivery_fee) || 0),
+    phone: order.contact_phone || order.customer_phone,
+    email: order.customer_email,
+    name: order.customer_name,
+  });
 
   // Antes esta función nunca avisaba al cliente que su pago Yape/Plin/COD ya se había
   // confirmado — se enteraba recién cuando el pedido avanzara a PREPARANDO (si el admin

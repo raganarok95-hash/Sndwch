@@ -182,6 +182,18 @@ cmp('CULQI_FEE_RATE',
   scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app.ts'),
   scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));
 
+cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
+  scalar(app, 'REFERRAL_BONUS_POINTS', /var REFERRAL_BONUS_POINTS=(\d+)/, 'src/app.ts'),
+  scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'));
+
+// Invariante, no duplicación: lo que recibe QUIEN INVITA es "un 15CM gratis" entregado
+// como puntos, así que tiene que valer exactamente lo mismo que la recompensa R06. Si R06
+// se recalibra y este número se queda, el que invita recibe de más o de menos sin que
+// nadie lo note (ya pasó una vez: R06 bajó de 720 a 400 y hubo que seguirlo a mano).
+cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
+  scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'),
+  sRew.R06 ? sRew.R06.pts : null);
+
 // Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
 cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
   scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app.ts'),
