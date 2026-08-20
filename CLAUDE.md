@@ -296,14 +296,18 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `pz()` en `src/app.ts`: **todo cálculo de dinero pasa por `money()` y todo total visible
   por `pz()`**. Si agregas un cálculo o un display de precio nuevo, úsalos — el servidor
   compara con `Math.round(total*100)` y tolera el ruido, pero el cliente no.
-- **Bono de referido asimétrico (decisión del dueño 2026-08-15)**: quien INVITA recibe
-  `REFERRER_REWARD_POINTS = 720` (= un 15CM gratis, el precio de R06 en `REWARDS`), el
-  referido sigue con `REFERRAL_BONUS_POINTS = 50`. Antes ambos recibían 50 (≈S/1.25, el 5%
-  del ticket, muy debajo del 10-25% que mueve la aguja). Las RPC
+- **Bono de referido asimétrico (decisión del dueño 2026-08-15, recalibrado 2026-08-20)**:
+  quien INVITA recibe `REFERRER_REWARD_POINTS = 400` (= un 15CM gratis: DEBE valer siempre
+  lo mismo que R06 en `REWARDS`, y el chequeo `npm run parity` ahora lo verifica). El
+  invitado recibe `REFERRAL_BONUS_POINTS = 120` (= una bebida gratis, R05), subido desde 50
+  el 2026-08-20 porque él es quien tiene que decidir comprar y S/1.25 no le dicen nada a
+  alguien que nunca pidió. Antes ambos recibían 50 (≈S/1.25, el 5% del ticket, muy debajo
+  del 10-25% que mueve la aguja). **Los 720/50 que decía esta sección hasta el 2026-08-20
+  eran valores muertos**: R06 bajó a 400 el 2026-08-15 y el doc no lo siguió. Las RPC
   `finalize_order_customer_update` y `reverse_referral_bonus` recibieron un parámetro nuevo
   `p_referrer_bonus` para esto — **la reversión por cancelación tiene que descontar el monto
-  de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 720
-  otorgados y quedaban 670 puntos regalados por un pedido que nunca existió.
+  de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 400
+  otorgados y quedaban 350 puntos regalados por un pedido que nunca existió.
 - **Método de trabajo real del dueño (confirmado 2026-08-15) — no asumir otro.** (1) **Nunca
   reparte**: el motorizado siempre es aparte y lo paga el cliente (ver punto siguiente).
   (2) **Cocina por TANDAS 1-2 veces por semana** — proteínas, salsas y vegetales quedan
