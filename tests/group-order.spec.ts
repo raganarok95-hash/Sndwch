@@ -48,7 +48,7 @@ test('el organizador también puede agregar su propio sándwich al pedido grupal
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="doCreateGroupOrder"]').click();
+  await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
   await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
 
   // Antes esta sección (agregar mi pedido) solo aparecía para quien NO organizaba —
@@ -96,7 +96,7 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="doCreateGroupOrder"]').click();
+  await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
   await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
   await expect(page.locator('text=Beto')).toBeVisible();
   await expect(page.locator('text=Caro')).toBeVisible();

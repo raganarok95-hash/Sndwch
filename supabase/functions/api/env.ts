@@ -25,7 +25,14 @@ export const SESSION_SECRET = Deno.env.get("SESSION_SECRET");
 export const TOKEN_TTL_SECONDS = 30 * 24 * 3600;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
-export const REFERRAL_BONUS_POINTS = 50;
+// Lo que recibe EL INVITADO al pagar su primer pedido. Subido de 50 a 120 puntos
+// (decisión del dueño 2026-08-20): 50 puntos son S/1.25 de valor percibido — nada para
+// alguien que todavía no ha pedido nunca, y es justo el lado que tiene que decidir
+// comprar. 120 puntos = una bebida gratis (R05), un premio concreto y nombrable ("tu
+// primera bebida va por cuenta de quien te invitó"). Cuesta ~S/1.20 de insumo real contra
+// un cliente que deja ~S/24 de contribución en 90 días: con que suba la conversión de la
+// invitación un 2.7% ya se paga. DEBE coincidir con REFERRAL_BONUS_POINTS en src/app.ts.
+export const REFERRAL_BONUS_POINTS = 120;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido (decisión del dueño
 // 2026-08-15). Antes ambos lados recibían los mismos 50 puntos — unos S/1.25 de valor, el
 // 5% del ticket, muy por debajo del 10-25% que mueve la aguja en esta categoría. Ahora el
@@ -98,6 +105,15 @@ export const META_PAGE_ACCESS_TOKEN = Deno.env.get("META_PAGE_ACCESS_TOKEN");
 export const META_PAGE_ID = Deno.env.get("META_PAGE_ID");
 export const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID");
 export const META_GRAPH_VERSION = "v21.0";
+// Píxel de Meta + Conversions API (medición de campañas). Opcionales e independientes de
+// la publicación en redes de arriba: mientras no existan, la app no carga ningún píxel y
+// el servidor no manda ningún evento — no hay medición, pero nada se rompe.
+//   supabase secrets set META_PIXEL_ID=... META_CAPI_TOKEN=...
+// META_PIXEL_ID además viaja al cliente por get-store-hours (es público por diseño: el
+// píxel se ve en el HTML de cualquier sitio que lo use). META_CAPI_TOKEN NUNCA sale del
+// servidor.
+export const META_PIXEL_ID = Deno.env.get("META_PIXEL_ID");
+export const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN");
 
 // Identidad legal del negocio — persona natural con negocio (RUC 10). Usada en el
 // Libro de Reclamaciones (obligatorio por el Código de Protección y Defensa del

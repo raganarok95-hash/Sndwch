@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/hours
 // Horario de atención editable desde el panel admin (antes era un array hardcodeado en
 // env.ts que exigía redesplegar la función para cambiar un horario feriado o de temporada).
-import { STORE_HOURS, loadStoreHours } from "../env.ts";
+import { STORE_HOURS, loadStoreHours, META_PIXEL_ID } from "../env.ts";
 import { sbGet, sbUpdate, sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
@@ -17,6 +17,9 @@ export async function actGetStoreHours(_b: any) {
   return {
     hours: STORE_HOURS.map((range) => (range ? { open: range[0], close: range[1], closed: false } : { open: null, close: null, closed: true })),
     businessLaunched: settings?.[0]?.business_launched === true,
+    // El píxel de Meta se activa solo si el secret existe — así se prende sin redesplegar
+    // el cliente, y mientras no esté configurado la app no carga ningún script de terceros.
+    metaPixelId: META_PIXEL_ID || null,
   };
 }
 

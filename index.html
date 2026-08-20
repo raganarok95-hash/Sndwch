@@ -899,6 +899,62 @@ var WEEKLY_PLAN_CREDIT = 100;
 // supabase/functions/api/actions/customer.ts, el servidor es quien de verdad debita los
 // puntos y acredita el saldo.
 var GIFT_CARD_POINTS_PER_SOL = 40;
+// Lo que recibe EL INVITADO al pagar su primer pedido — 120 pts = una bebida gratis (R05).
+// Subido de 50 el 2026-08-20: el invitado es quien tiene que decidir comprar y 50 puntos
+// (S/1.25) no le dicen nada a alguien que nunca pidió. Solo se usa para el copy — quien
+// otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
+// supabase/functions/api/env.ts.
+var REFERRAL_BONUS_POINTS = 120;
+// Píxel de Meta — el id llega del servidor (get-store-hours) y no está en el código: si el
+// dueño todavía no configuró el secret, la app no carga NINGÚN script de terceros. Todo lo
+// de medición pasa por fbq(), que es un no-op mientras el píxel no exista, así que ningún
+// llamador necesita preguntar si está activo.
+var metaPixelId = null, _metaPixelLoaded = false;
+function initMetaPixel(id) {
+    if (_metaPixelLoaded || !id)
+        return;
+    _metaPixelLoaded = true;
+    /* Snippet oficial del píxel de Meta (sin modificar su lógica de cola). */
+    (function (f, b, e, v, n, t, s) {
+        if (f.fbq)
+            return;
+        n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+        if (!f._fbq)
+            f._fbq = n;
+        n.push = n;
+        n.loaded = !0;
+        n.version = '2.0';
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = !0;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+    })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    window.fbq('init', id);
+    window.fbq('track', 'PageView');
+}
+// Envoltorio único: si el píxel no está configurado no hace nada, y un error dentro de
+// fbq nunca puede tumbar el flujo de compra que lo llamó.
+function fbTrack(event, params, eventId) {
+    try {
+        var fbq = window.fbq;
+        if (!fbq)
+            return;
+        if (eventId)
+            fbq('track', event, params || {}, { eventID: eventId });
+        else
+            fbq('track', event, params || {});
+    }
+    catch (e) { }
+}
+// Cookies que pone el propio píxel; viajan con el pedido para que el evento de compra que
+// manda el SERVIDOR se pueda atribuir al mismo anuncio (si no, Meta lo ve como una venta
+// sin origen y no puede optimizar).
+function metaAttribution() {
+    var get = function (n) { var m = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; };
+    return { fbp: get('_fbp') || '', fbc: get('_fbc') || '', ua: navigator.userAgent || '', groupCode: pendingGroupCode || '' };
+}
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
 // DEBE coincidir con RANKS en supabase/functions/api/env.ts.
@@ -1122,6 +1178,8 @@ var groupCodeFromUrl = null;
 // Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
 // sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).
 var groupCode = null, groupData = null, groupJoinName = '', groupMsg = '', groupSize = '15';
+// Código del pedido grupal del que salió el carrito actual (solo para medir el canal).
+var pendingGroupCode = null;
 // Signatures para los que ya se pidió "avísame cuando vuelva" en esta sesión — solo
 // para no dejar tocar el botón dos veces mientras se está en la app; el servidor ya
 // deduplica con un unique (customer_phone, sig_id) si igual llega a repetirse.
@@ -2120,6 +2178,7 @@ function addSandwichToCart() {
     resetBuilder();
     mode = null;
     saveCart();
+    fbTrack('AddToCart', { currency: 'PEN', value: money(itemUnitPrice(cart[cart.length - 1])) });
     go('o_cart');
     showToast('¡Agregado al carrito! //', 'success');
 }
@@ -2137,6 +2196,7 @@ function addSideToCart(code) {
     saveCart();
     render();
     var d = SIDES.find(function (x) { return x.id === code; });
+    fbTrack('AddToCart', { currency: 'PEN', value: d ? d.p : 0 });
     showToast('¡' + (d ? d.l : 'Producto') + ' agregado! //', 'success');
 }
 function sideQtyChange(code, delta) {
@@ -2244,6 +2304,7 @@ async function joinWaitlist() {
         wlPhone = '';
         wlName = '';
         wlMsg = '';
+        fbTrack('Lead', { content_name: 'lista_de_espera' });
         showToast('¡Listo! Te avisamos apenas abramos.', 'success');
     }
     catch (e) {
@@ -2375,9 +2436,19 @@ function sOHome() {
                     + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + secretSig.p15 : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
                     + '</div></div>';
             })() : '';
-            return tabBar + (homeTab === 'byo' ? byoPanel : sigPanel) + (homeTab === 'sig' ? vaultCard : '');
+            // Pedido de oficina — el canal con mejor economía del negocio: una sola entrega para
+            // 4-8 sándwiches, así que el delivery por persona baja a una fracción. Antes solo
+            // aparecía DENTRO del carrito y solo para quien ya tenía sesión iniciada: quien
+            // llegaba por primera vez no se enteraba nunca de que existía. Acá lo ve todo el
+            // mundo; si no tiene cuenta, doCreateGroupOrder lo manda a crearla.
+            var officeCard = '<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
+                + icon('clientes', 18, GOLD)
+                + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">¿Piden en grupo<span class="cut-sep" style="color:' + GOLD + '"> // </span>en la oficina?</div>'
+                + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div></div>'
+                + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';flex-shrink:0">Armar →</span></div>';
+            return tabBar + (homeTab === 'byo' ? byoPanel : sigPanel) + (homeTab === 'sig' ? vaultCard : '') + officeCard;
         })()
-        + (cust ? '<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:' + GOLD + '"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien agrega su sándwich, pagas todo junto</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Organizar →</span></div>' : '')
+        + (cust ? '<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:' + GOLD + '"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien arma el suyo y el delivery se divide entre todos</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Organizar →</span></div>' : '')
         + (cust && myFavorites.length ? '<div onclick="sc=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">' + icon('estrella', 15, '#FFFFFF') + '<span>Mis<span class="cut-sep" style="color:' + GOLD + '"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>' : '')
         + pc
         + contactFooterHTML()
@@ -2505,6 +2576,10 @@ async function doCloseGroupOrder() {
     }
     stopGroupPoll();
     busy = false;
+    // Se recuerda de qué grupo salió este carrito para marcar el pedido resultante: sin esto
+    // el pedido de una oficina de 6 sándwiches es indistinguible de uno normal y el canal no
+    // se puede medir. Se limpia al confirmar (ver doOrder) para que no se pegue al siguiente.
+    pendingGroupCode = groupCode;
     loadCart(res.items); // ya navega a o_cart y renderiza
 }
 async function doCancelGroupOrder() {
@@ -4006,7 +4081,7 @@ async function placeOrderDirect(msg, extraFields) {
     render();
     var res;
     try {
-        res = await api('place-order', Object.assign({ token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, ingredients: po.ingredients, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode, lat: po.lat, lon: po.lon }, extraFields || {}));
+        res = await api('place-order', Object.assign({ token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, ingredients: po.ingredients, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode, lat: po.lat, lon: po.lon }, metaAttribution(), extraFields || {}));
     }
     catch (e) {
         busy = false;
@@ -4054,7 +4129,7 @@ async function prepareThenPayWithCulqi(amountSoles, email) {
     busyMsg = 'Verificando tu pedido...';
     render();
     try {
-        await api('prepare-order', { token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode });
+        await api('prepare-order', { token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode, ...metaAttribution() });
     }
     catch (e) {
         busy = false;
@@ -4178,7 +4253,7 @@ async function chargeAndFinalize(culqiToken) {
         // falta reenviarlos ni confiar de nuevo en lo que diga el cliente en este paso).
         var res;
         try {
-            res = await api('place-order', { token: token, chargeId: data.chargeId, ref: po.ref });
+            res = await api('place-order', Object.assign({ token: token, chargeId: data.chargeId, ref: po.ref }, metaAttribution()));
         }
         catch (e) {
             // El cobro ya se hizo pero el pedido no quedó registrado — bloqueamos un reintento
@@ -4241,6 +4316,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     window._lRef = po.ref;
     receiptUploadState = null;
     cart = [];
+    pendingGroupCode = null;
     resetBuilder();
     mode = null;
     useCredit = false;
@@ -4263,6 +4339,12 @@ function finalizeOrderSuccess(res, po, chargeId) {
     busy = false;
     sc = 'o_sent';
     render();
+    // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
+    // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
+    // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
+    // y el servidor lo reportará cuando el admin confirme que el dinero llegó.
+    if (!window._lPendingPayment)
+        fbTrack('Purchase', { currency: 'PEN', value: money(po.total - (po.deliveryFee || 0)) }, po.ref);
     if (cust)
         loadUserExtras();
 }
@@ -4320,7 +4402,7 @@ function sOSent() {
         // pagado es el momento de mayor intención: el cliente ya vio el valor de la app y
         // quiere saber cuándo llega SU pedido, así que se ofrece aquí de forma prominente.
         + (cust && cust.total_orders === 1 && !pushSubscribed && ('serviceWorker' in navigator) && ('PushManager' in window) ? '<div onclick="togglePushNotifications()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('notif', 12, GOLD) + 'No te pierdas tu pedido //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:' + GOLD + ';margin-top:6px">' + esc(pushMsg) + '</div>' : '') + '</div>' : '')
-        + (cust ? '<div onclick="shareReferral()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('heart', 12, GOLD) + 'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">' + esc(cust.phone) + '</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él arranca con 50 puntos.</div></div>' : '')
+        + (cust ? '<div onclick="shareReferral()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('heart', 12, GOLD) + 'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">' + esc(cust.phone) + '</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él estrena con una BEBIDA GRATIS.</div></div>' : '')
         + '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
         + '<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
         + (cust ? '<button onclick="sc=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>' : '')
@@ -4400,6 +4482,7 @@ async function doReg() {
         return;
     }
     clearGoogleLink();
+    fbTrack('CompleteRegistration', { content_name: referredBy ? 'referido' : 'directo' });
     localStorage.setItem('sw_ph', phone);
     localStorage.setItem('sw_tok', token);
     savedPh = phone;
@@ -4890,7 +4973,7 @@ function shareReferral() {
     // en el registro. El link con ?ref= ya existe y auto-rellena ese campo (ver refCode
     // arriba); solo faltaba usarlo aquí.
     var link = location.origin + location.pathname + '?ref=' + encodeURIComponent(cust.phone);
-    var text = 'Usa mi link para crear tu cuenta en SND//WCH — tú arrancas con puntos y yo me gano un sándwich gratis: ' + link;
+    var text = 'Usa mi link para crear tu cuenta en SND//WCH — tu primera bebida va por mi cuenta y yo me gano un sándwich: ' + link;
     if (navigator.share) {
         navigator.share({ title: 'SND//WCH', text: text, url: link }).catch(function () { });
     }
@@ -7081,6 +7164,10 @@ async function loadStoreHoursBackground() {
             STORE_HOURS = r.hours.map(function (d) { return d.closed ? null : [d.open, d.close]; });
         }
         businessLaunched = r.businessLaunched === true;
+        if (r.metaPixelId) {
+            metaPixelId = r.metaPixelId;
+            initMetaPixel(r.metaPixelId);
+        }
     }
     catch (e) { }
 }
