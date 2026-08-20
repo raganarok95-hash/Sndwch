@@ -244,6 +244,24 @@ async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void
   }
 }
 
+// El bono al que invita cae recién cuando su referido hace el PRIMER PEDIDO PAGADO — pero
+// hasta ahora nadie se lo decía: se enteraba solo si abría la app y miraba sus puntos. Ese
+// es justo el momento de máxima motivación para volver a invitar a alguien, y se estaba
+// desperdiciando. Un push fallido nunca debe tumbar el pedido, así que va todo en try.
+async function notifyReferrerBonus(referrerPhone: string, referredName: string): Promise<void> {
+  try {
+    await sendPushToPhone(referrerPhone, {
+      title: "🥪 ¡Te ganaste un sándwich!",
+      body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
+      url: "./index.html",
+      tag: "sndwch-referral-reward",
+      vibrate: [120, 60, 120, 60, 240],
+    });
+  } catch {
+    // sin conexión, sin suscripción push o token vencido — el bono ya está otorgado igual
+  }
+}
+
 async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
   // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
   // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
@@ -398,6 +416,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       }));
     }
     await Promise.all(auditInserts);
+    if (isReferral && c.referred_by) await notifyReferrerBonus(c.referred_by, p.name);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
   }
@@ -1123,6 +1142,7 @@ async function confirmManualPayment(order: any) {
       description: "Sándwich gratis por invitar a " + order.customer_name,
       confirmed: true,
     });
+    await notifyReferrerBonus(referrerPhone, order.customer_name);
   }
 
   // Antes esta función nunca avisaba al cliente que su pago Yape/Plin/COD ya se había
