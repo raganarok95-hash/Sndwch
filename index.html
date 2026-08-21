@@ -1076,7 +1076,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // contestar a distancia: "¿qué versión está corriendo realmente en tu teléfono?". Sin
 // esto, un shell viejo pegado en caché y un bug real de código se ven idénticos desde
 // afuera, y no hay forma de distinguirlos sin tener el dispositivo en la mano.
-var APP_BUILD = 'f57f10b · 2026-08-21 07:41 UTC';
+var APP_BUILD = 'ef5a383 · 2026-08-21 07:54 UTC';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6948,6 +6948,12 @@ function render() {
             console.error('sndScreen fue sobrescrito por un script externo — reponiendo a o_home');
             sndScreen = 'o_home';
         }
+        // Repone cualquier función nuestra que un bundle de terceros haya pisado desde el
+        // render anterior (ver el bloque "BLINDAJE DE FUNCIONES GLOBALES" más abajo). Va acá
+        // porque render() corre antes de pintar cada pantalla: si Culqi acaba de pisar `go`,
+        // los onclick del HTML que estamos por generar ya salen apuntando a la función buena.
+        if (typeof sndRestoreOwnedFns === 'function')
+            sndRestoreOwnedFns();
         renderScreen();
     }
     catch (e) {
@@ -9159,6 +9165,67 @@ async function togglePushNotifications() {
 // — session-check sigue corriendo en segundo plano para confirmar/corregir en silencio.
 // Solo se bloquea con el spinner cuando no hay nada que mostrar todavía (primer login en
 // este dispositivo tras limpiar datos, por ejemplo).
+// ─── BLINDAJE DE FUNCIONES GLOBALES ────────────────────────────────────────────────
+//
+// Este archivo se sirve como <script> inline, así que cada función de nivel superior es
+// una propiedad de `window`. `src/shell.html` carga además dos bundles minificados de
+// terceros — `checkout.culqi.com/js/v4` (una app Vue) y `accounts.google.com/gsi/client`
+// — ambos con `defer`/`async`, o sea que corren DESPUÉS del nuestro. Si alguno declara
+// una función de nivel superior con un nombre que también usamos nosotros, gana el
+// último: nuestra función deja de existir y el `onclick` que la llama muere en silencio.
+//
+// No es hipotético. El 2026-08-21 pasó DOS veces el mismo día: primero Culqi pisó `sc`
+// (era el `createComponentInstance` de Vue) y reventó cada render con
+// "sc.indexOf is not a function"; renombrada esa, apareció "go is not a function" — otra
+// función nuestra pisada por el mismo bundle. Renombrar de a una es un juego perdido:
+// hay ~305 nombres nuestros expuestos y el que colisione mañana depende de qué elija
+// Culqi o Google en su próxima actualización, sin avisarnos.
+//
+// Esto lo resuelve de raíz, sin tocar los 147 `onclick` en línea. Se toma una foto de
+// TODAS las funciones que hay en `window` al terminar nuestro script — momento en que
+// solo están las nuestras y las del navegador, porque los scripts diferidos todavía no
+// corrieron— y se repone cualquiera que haya cambiado de identidad.
+//
+// Solo se protegen FUNCIONES, nunca variables de estado: nuestras funciones jamás se
+// reasignan en runtime, así que si una cambió de identidad es porque alguien la pisó.
+// El estado (sndScreen, cart, base...) sí cambia legítimamente y no se toca acá.
+// Una propiedad nueva de un tercero (`window.Culqi`, `window.google`) no está en la foto,
+// así que nunca se borra: solo se repone lo que ya era nuestro.
+var _sndOwnedFns = (function () {
+    var snap = {};
+    try {
+        Object.getOwnPropertyNames(window).forEach(function (k) {
+            try {
+                var d = Object.getOwnPropertyDescriptor(window, k);
+                if (!d || !d.writable || typeof d.value !== 'function')
+                    return;
+                snap[k] = d.value;
+            }
+            catch (_) { }
+        });
+    }
+    catch (_) { }
+    return snap;
+})();
+function sndRestoreOwnedFns() {
+    var fixed = [];
+    for (var k in _sndOwnedFns) {
+        try {
+            if (window[k] !== _sndOwnedFns[k]) {
+                window[k] = _sndOwnedFns[k];
+                fixed.push(k);
+            }
+        }
+        catch (_) { }
+    }
+    if (fixed.length)
+        console.warn('Un script externo pisó estas funciones y se repusieron:', fixed.join(', '));
+    return fixed;
+}
+// Los dos momentos en que un tercero puede haber pisado algo: cuando termina de cargar
+// la página (ahí ya corrieron los scripts con defer/async) y en cada render (Culqi
+// también inyecta código al abrir su formulario de pago, después del load).
+window.addEventListener('load', function () { sndRestoreOwnedFns(); });
 (async function () {
     var haveCachedCust = false;
     if (token) {
