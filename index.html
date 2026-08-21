@@ -1939,21 +1939,37 @@ function itemRecipeLines(item) {
     return lines;
 }
 // Bloque de receta para una lista de ítems de un pedido ya guardado (o.items).
-function orderRecipeHTML(items) {
+//
+// `big` = escala de cocina (modo foco). El dueño arma los pedidos de pie, con las manos
+// ocupadas y el celular apoyado a medio metro: a 11px la receta era ilegible justo en la
+// pantalla donde SÓLO existe para leerse mientras se arma. En esa escala cada línea
+// separa etiqueta y valor ("Salsas:" tenue, "Aioli + Dijon" grande) para poder barrerla
+// de un vistazo en vez de leerla palabra por palabra. La escala compacta se mantiene tal
+// cual para la cola de pedidos y el ticket impreso, donde sí conviene que entre todo.
+function orderRecipeHTML(items, big) {
     if (!Array.isArray(items) || !items.length)
         return '';
+    var fTitle = big ? 19 : 12, fLine = big ? 17 : 11, pad = big ? '16px 18px' : '12px 14px', gapB = big ? 16 : 8;
     var blocks = items.map(function (it) {
         var lines = itemRecipeLines(it);
         if (!lines.length)
             return '';
-        return '<div style="margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + (it.qty > 1 ? it.qty + 'x ' : '') + esc(itemLabel(it)) + '</div>'
-            + lines.map(function (l) { return '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + esc(l) + '</div>'; }).join('')
+        return '<div style="margin-bottom:' + gapB + 'px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:' + fTitle + 'px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:' + (big ? 6 : 0) + 'px">' + (it.qty > 1 ? it.qty + 'x ' : '') + esc(itemLabel(it)) + '</div>'
+            + lines.map(function (l) {
+                if (!big)
+                    return '<div style="font-family:\'EB Garamond\',serif;font-size:' + fLine + 'px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + esc(l) + '</div>';
+                // En escala de cocina se parte "Etiqueta: valor" para que el valor domine.
+                var i = l.indexOf(': '), k = i > 0 ? l.slice(0, i + 1) : '', v = i > 0 ? l.slice(i + 2) : l;
+                return '<div style="font-family:\'EB Garamond\',serif;font-size:' + fLine + 'px;line-height:1.55;margin-bottom:2px">'
+                    + (k ? '<span style="color:var(--sw-text-muted,#A8C8B0)">' + esc(k) + ' </span>' : '')
+                    + '<span style="color:var(--sw-text-body,#F2F0EB);font-weight:600">' + esc(v) + '</span></div>';
+            }).join('')
             + '</div>';
     }).filter(Boolean).join('');
     if (!blocks)
         return '';
-    return '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:8px;padding:12px 14px;margin-bottom:12px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.18em;margin-bottom:8px">Para armar //</div>'
+    return '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,' + (big ? '.55' : '.3') + ');border-radius:' + (big ? 10 : 8) + 'px;padding:' + pad + ';margin-bottom:' + (big ? 16 : 12) + 'px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:' + (big ? 11 : 8) + 'px;color:' + GOLD + ';letter-spacing:.18em;margin-bottom:' + (big ? 12 : 8) + 'px">Para armar //</div>'
         + blocks + '</div>';
 }
 function itemExtrasLabel(item) {
@@ -6309,9 +6325,9 @@ function focusStep(delta) {
 function sAdminFocus() {
     var ao = sortedActiveOrders();
     var barBg = 'var(--sw-bg,#1E3932)';
-    var topBar = '<div style="padding:16px 20px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
-        + '<button onclick="exitFocusMode()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:' + GOLD + '">← Salir de modo foco</button>'
-        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">Modo<span class="cut-sep" style="color:' + GOLD + '"> // </span>foco</span>'
+    var topBar = '<div style="padding:10px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
+        + '<button onclick="exitFocusMode()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';min-height:44px;display:inline-flex;align-items:center;padding-right:12px">← Salir</button>'
+        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Modo<span class="cut-sep" style="color:' + GOLD + '"> // </span>cocina</span>'
         + '</div>';
     if (!ao.length) {
         return '<div style="min-height:100vh;display:flex;flex-direction:column;background:' + barBg + '">' + topBar
@@ -6327,43 +6343,53 @@ function sAdminFocus() {
     var minsDue = minutesAgo(orderDueTime(o));
     var isScheduledAhead = o.scheduled_for && new Date(o.scheduled_for).getTime() > Date.now();
     var isStale = (o.status === 'RECIBIDO' || manualPending) && !isScheduledAhead && minsDue !== null && minsDue >= 10;
-    var nav = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
-        + '<button onclick="focusStep(-1)" aria-label="Pedido anterior" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:20px;color:' + (ao.length > 1 ? GOLD : 'var(--sw-text-muted3,#3A4A44)') + ';padding:4px 10px">‹</button>'
-        + '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em">Pedido ' + (focusIdx + 1) + ' de ' + ao.length + '</span>'
-        + '<button onclick="focusStep(1)" aria-label="Pedido siguiente" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:20px;color:' + (ao.length > 1 ? GOLD : 'var(--sw-text-muted3,#3A4A44)') + ';padding:4px 10px">›</button>'
+    // Flechas de 56px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar.
+    // Antes eran 20px de glifo con 4px de padding — un blanco de ~28px, muy por debajo del
+    // mínimo de 44px, en la única pantalla que se usa con las manos sucias.
+    var navBtn = function (delta, glyph, label) {
+        return '<button onclick="focusStep(' + delta + ')" aria-label="' + label + '" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:30px;line-height:1;color:' + (ao.length > 1 ? GOLD : 'var(--sw-text-muted3,#3A4A44)') + ';width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px">' + glyph + '</button>';
+    };
+    var nav = '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
+        + navBtn(-1, '‹', 'Pedido anterior')
+        + '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">Pedido ' + (focusIdx + 1) + ' de ' + ao.length + '</span>'
+        + navBtn(1, '›', 'Pedido siguiente')
         + '</div>';
-    var body = '<div style="flex:1;padding:24px 20px 180px;overflow-y:auto" class="fi">'
+    // ORDEN DE LECTURA EN COCINA: primero QUÉ SE ARMA, después a quién se le manda.
+    // Antes el cuerpo abría con nombre + dirección + pin + referencia + línea de ref, y la
+    // receta —lo único que se necesita mientras se arma— quedaba debajo del pliegue, en
+    // 11px. Dirección, pin y teléfono importan al DESPACHAR, no al armar; bajan.
+    var body = '<div style="flex:1;padding:20px 18px 180px;overflow-y:auto" class="fi">'
         + stBadge(o.status)
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-top:12px">' + esc(o.customer_name) + '</div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">' + esc(o.customer_address) + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:6px;margin-bottom:16px;display:flex;align-items:center;gap:6px">' + (isStale ? '<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
+        // La receta, en escala de cocina, arriba de todo lo demás.
+        + orderRecipeHTML(o.items, true)
+        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('horario', 16, GOLD) + '<span>Programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
+        + (manualPending ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#ffa500;margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('warning', 16, '#ffa500') + '<span>Pago ' + manualLabel + ' sin confirmar — revisa tu app antes de continuar</span></div>' : '')
+        + (o.redeemed_reward ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#25D366;margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('gift', 16, '#25D366') + '<span>' + esc(o.redeemed_reward) + '</span></div>' : '')
+        + '<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.18em;margin-bottom:10px">Para entregar //</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + esc(o.customer_address) + '</div>'
         // Pin exacto que el cliente confirmó en el mapa al pedir. En Trujillo la dirección en
         // texto no siempre ubica (numeración irregular, referencias en vez de número), así
         // que abrir el punto directo en Maps es la diferencia entre entregar y dar vueltas.
         // Solo aparece si el pedido trae coordenadas — los pedidos viejos no las tienen.
         + (typeof o.lat === 'number' && typeof o.lon === 'number'
-            ? '<a href="https://maps.google.com/?q=' + o.lat + ',' + o.lon + '" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:12px;color:' + GOLD + ';margin-top:6px;display:inline-flex;align-items:center;gap:6px;text-decoration:none">' + icon('moto', 13, GOLD) + '<span>Abrir pin exacto en Maps</span></a>'
+            ? '<a href="https://maps.google.com/?q=' + o.lat + ',' + o.lon + '" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-top:10px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;min-height:44px;align-items:center">' + icon('moto', 16, GOLD) + '<span>Abrir pin exacto en Maps</span></a>'
             : '')
         // La referencia que escribe el cliente ("portón azul", "3er piso") viajaba como
         // o.notes y solo se veía en el TICKET IMPRESO, etiquetada "NOTA:" — o sea en el papel
         // de cocina, que es justo donde no sirve. Quien despacha la necesita en pantalla.
-        + (o.notes ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';margin-top:6px">Referencia: ' + esc(o.notes) + '</div>' : '')
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:8px;display:flex;align-items:center;gap:6px">' + (isStale ? '<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
-        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-top:6px;display:flex;align-items:center;gap:6px">' + icon('horario', 13, GOLD) + '<span>programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
-        + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px;cursor:pointer">' + icon('moto', 13, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '')
-        + '<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.6">' + esc(o.summary) + '</div>'
-        // Misma receta expandida que en la tarjeta de la cola: el modo foco es LA pantalla
-        // donde se arma el pedido, así que es donde más falta hacía.
-        + orderRecipeHTML(o.items)
-        + (o.redeemed_reward ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#25D366;margin-top:12px;display:flex;align-items:center;gap:6px">' + icon('gift', 13, '#25D366') + '<span>' + esc(o.redeemed_reward) + '</span></div>' : '')
-        + (o.payment_method === 'cod' && o.payment_status !== 'paid' ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">' + icon('cash', 13, '#ffa500') + '<span>Cobrar ' + SOLES + pz(o.total) + ' al entregar</span></div>' : '')
-        + (manualPending ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:6px">' + icon('warning', 13, '#ffa500') + '<span>Pago ' + manualLabel + ' sin confirmar — revisa tu app antes de continuar</span></div>' : '')
-        + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
-        + '<div style="display:flex;gap:10px;margin-top:20px">'
-        + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.04em;padding:16px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#A8C8B0') + '</button>'
-        + ((o.contact_phone || o.customer_phone) ? '<button onclick="waAdmin(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.04em;padding:16px 4px;border-radius:8px">' + iconTxt('chat', 'WhatsApp', GOLD) + '</button>' : '')
+        + (o.notes ? '<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:' + GOLD + ';margin-top:8px">Referencia: ' + esc(o.notes) + '</div>' : '')
+        + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">' + icon('moto', 16, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '')
+        + (o.payment_method === 'cod' && o.payment_status !== 'paid' ? '<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:8px">' + icon('cash', 16, '#ffa500') + '<span>Cobrar ' + SOLES + pz(o.total) + ' al entregar</span></div>' : '')
+        + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">' + esc(o.date) + ' · ' + esc(o.summary) + '</div>'
+        + '<div style="display:flex;gap:10px;margin-top:22px">'
+        + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#A8C8B0') + '</button>'
+        + ((o.contact_phone || o.customer_phone) ? '<button onclick="waAdmin(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('chat', 'WhatsApp', GOLD) + '</button>' : '')
         + '</div>'
-        + '<button onclick="cancelOrder(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.06em;padding:11px 0;border-radius:8px;text-align:center;margin-top:10px">' + iconTxt('close', 'Cancelar pedido' + (manualPending ? ' (nunca pagó)' : ''), '#ff8888') + '</button>'
+        + '<button onclick="cancelOrder(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.06em;padding:15px 0;border-radius:8px;text-align:center;margin-top:12px">' + iconTxt('close', 'Cancelar pedido' + (manualPending ? ' (nunca pagó)' : ''), '#ff8888') + '</button>'
         + '</div>';
     // El botón real anclado a la zona del pulgar: position:fixed sobre todo el viewport,
     // no relativo a la tarjeta. Con env(safe-area-inset-bottom) para no quedar tapado por
