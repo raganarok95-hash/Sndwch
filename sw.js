@@ -1,4 +1,10 @@
-const VERSION = 'v2';
+// Subir este número invalida la caché del shell en TODOS los dispositivos a la vez: el
+// `activate` de abajo borra cualquier caché que no esté en `keep`, y con skipWaiting() +
+// clients.claim() el service worker nuevo toma control de inmediato en vez de esperar a
+// que se cierren todas las pestañas. Es la palanca para cuando un shell viejo se quedó
+// pegado en la app instalada, en el navegador del celular y en el de la PC al mismo
+// tiempo — que es exactamente lo que se reportó el 2026-08-21 con ARMA EL TUYO.
+const VERSION = 'v3';
 const SHELL_CACHE = 'sndwch-shell-' + VERSION;
 const IMG_CACHE = 'sndwch-img-' + VERSION;
 const SHELL_URLS = ['./', './index.html'];
