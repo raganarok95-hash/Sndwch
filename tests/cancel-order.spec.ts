@@ -38,7 +38,7 @@ test('cliente cancela un pedido RECIBIDO pagado con crédito antes de que cocina
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.locator('[onclick*="sc=\'p_orders\';loadMyOrders()"]').click();
+  await page.locator('[onclick*="sndScreen=\'p_orders\';loadMyOrders()"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('text=' + MOCK_ORDER.ref).click();
 

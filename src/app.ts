@@ -757,7 +757,25 @@ function dblStockWarn(protId){
 }
 
 // STATE
-var sc='o_home',tab='order',busy=false,busyMsg='';
+// `sndScreen` (antes `sc`) y `sndTab` (antes `tab`) llevan prefijo A PROPÓSITO — no es
+// estilo, es un bug real de producción del 2026-08-21 que dejó la app entera inservible.
+//
+// Todo este archivo se sirve como un <script> inline, así que cada `var` de nivel
+// superior es una propiedad de `window`. `src/shell.html` carga además
+// `checkout.culqi.com/js/v4`, que es una app Vue, y su bundle minificado declara una
+// función de nivel superior llamada `sc` (el `createComponentInstance` de Vue). Como ese
+// script va con `defer`, corre DESPUÉS del nuestro y pisaba nuestra variable: a partir de
+// ahí `sc` dejaba de ser el nombre de la pantalla y pasaba a ser una función de Vue, y la
+// primera línea de renderScreen() —`sc.indexOf('admin')`— lanzaba
+// "sc.indexOf is not a function" en cada render. La app quedaba muerta en TODAS las
+// plataformas a la vez (app instalada, navegador del celular, PC), sin relación con la
+// caché, y sin mensaje visible hasta que se agregó el capturador de errores.
+//
+// Regla para cualquier variable global nueva de este archivo: nombre largo y específico,
+// nunca de 1-3 letras. Compartimos el objeto `window` con Culqi y con Google Sign-In, y
+// los dos son bundles minificados que pueden declarar globales de cualquier nombre corto
+// en cualquier actualización suya, sin avisarnos.
+var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
 var homeTab='sig';
@@ -794,7 +812,7 @@ var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 // usa por sí solo para crear una cuenta: el servidor lo vuelve a verificar en actRegister.
 // _googleLinkedEmail es SOLO para mostrar (banner en sPAuth) — nunca se manda al servidor.
 // En un dispositivo compartido, alguien podría tocar "Continuar con Google" y abandonar el
-// formulario sin enviarlo; sin este banner visible, un segundo cliente en el mismo tab que
+// formulario sin enviarlo; sin este banner visible, un segundo cliente en el mismo sndTab que
 // llena el registro con SUS propios datos terminaría vinculando sin saberlo la cuenta de la
 // primera persona (doReg() adjunta _googleIdToken a cualquier envío mientras siga activo).
 // clearGoogleLink() se llama en cada punto donde cambia quién está usando el formulario
@@ -1063,7 +1081,7 @@ function renderOverlays(){
   // información que decide la compra, no un campo de formulario. En el home el cliente
   // todavía tiene el enlace de WhatsApp del pie; el botón flotante sigue disponible en el
   // resto de pantallas, que es donde de verdad hace falta pedir ayuda.
-  if(sc.indexOf('admin')!==0&&sc!=='o_item_confirm'&&sc!=='o_cart'&&sc!=='o_home'){
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'#0d0d0d')+'</a>';
   }
@@ -1128,7 +1146,7 @@ function toggleAdminLight(){
 // nada desde el último poll, no tocamos el DOM. Evita reconstruir toda la
 // pantalla cada 25s cuando no hay novedades, que es el caso más común.
 function ordersSig(orders){return(orders||[]).map(function(o){return o.id+':'+o.status+':'+(o.eta_minutes||'');}).join('|');}
-// El poll de 25s solo actualiza mientras sc==='admin_home' (abajo) — antes, las 14
+// El poll de 25s solo actualiza mientras sndScreen==='admin_home' (abajo) — antes, las 14
 // pantallas secundarias (Inventario, Catálogo, Ficha de cliente, etc.) volvían a
 // admin_home con un simple render() sin recargar nada, dejando la cola congelada con el
 // estado de ANTES de salir hasta el próximo tick del poll (hasta 25s más) — justo en el
@@ -1144,7 +1162,7 @@ function startPoll(){
     // actualizaba la cola. Un pedido podía entrar sin que el dueño se enterara mientras
     // usaba la pantalla diseñada para no tener que mirar el celular (hallazgo de
     // auditoría de operación).
-    if(sc!=='admin_home'&&sc!=='admin_focus')return;
+    if(sndScreen!=='admin_home'&&sndScreen!=='admin_focus')return;
     try{
       var r=await api('admin-orders',{token:token});
       var total=r.orders.length;
@@ -1250,17 +1268,17 @@ function H(sub?,bk?,showCart?){
   // cliente, etc.) tenía que volver a la cola primero para cambiar de tema (hallazgo de
   // auditoría visual, ALTO). H() es el header compartido de esas 14 pantallas — agregarlo
   // acá, condicionado a estar en una pantalla admin, lo hace alcanzable desde cualquiera.
-  var lightToggle=sc.indexOf('admin')===0?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
+  var lightToggle=sndScreen.indexOf('admin')===0?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
   // Mismo criterio que lightToggle arriba: antes saltar de una herramienta admin a otra
   // (ej. Inventario → Reportes) exigía volver primero a admin_home. No se muestra en
   // admin_home mismo porque esa pantalla ya tiene el grid completo visible arriba de la
   // cola (ver adminToolsGridHTML/reordenamiento en sAdminHome) — hallazgo de auditoría
   // UX, confirmado por el dueño.
-  var toolsNav=(sc.indexOf('admin')===0&&sc!=='admin_home')?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
+  var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
   return'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="line-height:1">'+WORDMARK(sz)+'</div>'+s2+'</div>'+cartIcon+toolsNav+lightToggle+'</div>';
 }
 function NAV(){
-  var oa=tab==='order';
+  var oa=sndTab==='order';
   // Pestaña inactiva subida de #666 a #999 sobre este fondo casi negro (rgba(11,11,11,.97))
   // — #666 daba ~3.4:1, bajo el 4.5:1 mínimo AA para texto normal; esta barra fija aparece
   // en casi toda pantalla secundaria (auditoría UX/accesibilidad, P1). #999 da ~5.9:1.
@@ -1315,11 +1333,11 @@ function contactFooterHTML(){
 // Reclamaciones era inalcanzable para quien no usa mouse — que es precisamente el
 // consumidor al que la ley más protege.
 function legalFooterLink(label,screen,extra?){
-  return'<button type="button" onclick="bkTo=\'o_home\';sc=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:12px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+  return'<button type="button" onclick="bkTo=\'o_home\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:12px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
 }
 function legalLinksHTML(backTo){
   function lnk(label,screen,extra?){
-    return'<button type="button" onclick="bkTo=\''+backTo+'\';sc=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
   }
   return'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;justify-content:center">'
     +lnk('Cambios y devoluciones','p_returns')
@@ -1402,8 +1420,8 @@ function skeletonCards(n,heightPx){
 }
 
 // NAV
-function go(s){sc=s;render();}
-function swTab(t){tab=t;sc=t==='order'?'o_home':(cust?'p_home':'p_auth');aErr='';render();}
+function go(s){sndScreen=s;render();}
+function swTab(t){sndTab=t;sndScreen=t==='order'?'o_home':(cust?'p_home':'p_auth');aErr='';render();}
 
 // Reconstruye el estado global del builder a partir de un "build" guardado
 // (viene de un pedido pasado o de un favorito) y salta directo a confirmar.
@@ -1545,8 +1563,8 @@ function itemUnitPrice(item){
     var pr=PROTS.find(function(x){return x.id===sig.prot;});
     var bp=item.size==='15'?sig.p15:sig.p30;
     var dbl=(item.doubleProt&&pr)?pr.pDbl:0;
-    var sc=item.extraSauce?2:0;
-    return bp+dbl+sc;
+    var extraSauceFee=item.extraSauce?2:0;
+    return bp+dbl+extraSauceFee;
   }
   var pr2=PROTS.find(function(x){return x.id===item.prot;});
   if(!pr2)return 0;
@@ -2010,7 +2028,7 @@ function sOHome(){
       return tabBar+(homeTab==='byo'?byoPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
     })()
     +(cust?'<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:'+GOLD+'"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien arma el suyo y el delivery se divide entre todos</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Organizar →</span></div>':'')
-    +(cust&&myFavorites.length?'<div onclick="sc=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
+    +(cust&&myFavorites.length?'<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
     +pc
     +contactFooterHTML()
     +'</div>'+NAV();
@@ -2035,7 +2053,7 @@ async function doCreateGroupOrder(){
   try{res=await api('create-group-order',{token:token});}
   catch(e){busy=false;render();showToast(e.message);return;}
   groupCode=res.code;groupData=null;groupMsg='';
-  busy=false;sc='group_order';render();
+  busy=false;sndScreen='group_order';render();
   loadGroupOrder();
   startGroupPoll();
 }
@@ -2045,11 +2063,11 @@ async function loadGroupOrder(){
     var res=await api('get-group-order',{token:token,code:groupCode});
     groupData=res;
     render();
-  }catch(e){stopGroupPoll();showToast(e.message);sc='o_home';render();}
+  }catch(e){stopGroupPoll();showToast(e.message);sndScreen='o_home';render();}
 }
 function startGroupPoll(){
   stopGroupPoll();
-  _groupPollTimer=setInterval(function(){if(sc==='group_order')loadGroupOrder();else stopGroupPoll();},5000);
+  _groupPollTimer=setInterval(function(){if(sndScreen==='group_order')loadGroupOrder();else stopGroupPoll();},5000);
 }
 function stopGroupPoll(){if(_groupPollTimer){clearInterval(_groupPollTimer);_groupPollTimer=null;}}
 async function submitGroupItem(item,okMsg){
@@ -2095,11 +2113,11 @@ async function doCancelGroupOrder(){
   try{await api('cancel-group-order',{token:token,code:groupCode});}
   catch(e){showToast(e.message);return;}
   stopGroupPoll();
-  sc='o_home';render();
+  sndScreen='o_home';render();
 }
 function sGroupOrder(){
   var g=groupData;
-  var bk="stopGroupPoll();sc='o_home';render()";
+  var bk="stopGroupPoll();sndScreen='o_home';render()";
   if(!g){
     return H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px" class="fi">'+skeletonCards(3,64)+'</div>'+NAV();
   }
@@ -2237,7 +2255,7 @@ function sigPreviewOverlayHTML(){
   // de la interfaz porque BUILD YOUR OWN (el único paso que sí muestra `d`) los excluye
   // por diseño (hallazgo de auditoría de menú).
   var toppingsLbl=s.tops.map(function(id){var t:any=TOPS.find(function(x){return x.id===id;});return t?t.l+' // '+t.s+(t.d?' — '+t.d:''):'';}).join(' · ');
-  var saucesLbl=s.sauces.map(function(id){var sc=SAUCES.find(function(x){return x.id===id;});return sc?sc.l+' // '+sc.s+(sc.d?' — '+sc.d:''):'';}).join(' + ');
+  var saucesLbl=s.sauces.map(function(id){var sauce=SAUCES.find(function(x){return x.id===id;});return sauce?sauce.l+' // '+sauce.s+(sauce.d?' — '+sauce.d:''):'';}).join(' + ');
   // fixedCheese (SIG02 Mozzarella, SIG03 Cheddar, ver comentario junto a esas entradas en
   // SIGS) — a diferencia de toppings/salsas, no es una elección del cliente, siempre va.
   var ch:any=s.fixedCheese?CHEESE.find(function(x){return x.id===s.fixedCheese;}):null;
@@ -2458,13 +2476,13 @@ async function doSaveFavorite(){
 
 // SIDES/BEBIDAS
 function sOSides(){
-  var h=H('BEBIDAS Y SIDES',"sc='o_cart';render()",true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+ST('01','Elige','Se agregan a tu carrito.');
+  var h=H('BEBIDAS Y SIDES',"sndScreen='o_cart';render()",true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+ST('01','Elige','Se agregan a tu carrito.');
   h+=SIDES.map(function(d){
     var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
     var qty=inCart?inCart.qty:0;
     return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1"><div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">'+icon(d.icon,17,GOLD)+'</div><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+d.p+'</div></div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>')+'</div>';
   }).join('');
-  h+='</div>'+AB(null,true,null,"sc='o_cart';render()",'Ver carrito //');
+  h+='</div>'+AB(null,true,null,"sndScreen='o_cart';render()",'Ver carrito //');
   return h;
 }
 
@@ -3216,13 +3234,13 @@ function sOCart(){
   var showOffPeak=offPeakDiscount>0&&offPeakDiscount>comboDiscount;
   var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
   var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
-  return H('TU CARRITO',"syncConfirmFields();sc='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
+  return H('TU CARRITO',"syncConfirmFields();sndScreen='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
     +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span>'+(showCombo?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">combo aplicado: ahorras '+SOLES+pz(comboDiscount)+'</div>':'')+(showOffPeak?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras '+SOLES+pz(offPeakDiscount)+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">recompensa: ahorras '+SOLES+pz(rewardDiscount)+'</div>':'')+'</div></div>':'')
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
     // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
-    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="syncConfirmFields();go(\'o_home\')" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Sándwich</div><div onclick="syncConfirmFields();sc=\'o_sides\';render()" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Bebida/side</div></div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="syncConfirmFields();go(\'o_home\')" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Sándwich</div><div onclick="syncConfirmFields();sndScreen=\'o_sides\';render()" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Bebida/side</div></div>'
     +(empty?'':checkoutExtrasHTML())
     +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#ff8888;letter-spacing:.1em">Vaciar carrito</div>':'')
     +'</div>'
@@ -3527,7 +3545,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   appliedReward=null;
   saveCart();
   _pendingOrder=null;
-  busy=false;sc='o_sent';render();
+  busy=false;sndScreen='o_sent';render();
   // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
   // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
   // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -3592,10 +3610,10 @@ function sOSent(){
     +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<div onclick="togglePushNotifications()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('notif',12,GOLD)+'No te pierdas tu pedido //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>':'')
     +(cust?'<div onclick="shareReferral()" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('heart',12,GOLD)+'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">'+esc(cust.phone)+'</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él estrena con una BEBIDA GRATIS.</div></div>':'')
     +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
-    +'<button onclick="sc=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
-    +(cust?'<button onclick="sc=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>':'')
+    +'<button onclick="sndScreen=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
+    +(cust?'<button onclick="sndScreen=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>':'')
     +'</div>'
-    +(!cust?'<div onclick="atab=\'reg\';sc=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.1em">→ Crea tu cuenta y gana puntos por este pedido</div>':'')
+    +(!cust?'<div onclick="atab=\'reg\';sndScreen=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.1em">→ Crea tu cuenta y gana puntos por este pedido</div>':'')
     // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
     +legalLinksHTML('o_sent')
     +'</div>';
@@ -3607,7 +3625,7 @@ function sOSent(){
 // (hallazgo de auditoría, BAJO). DEBE coincidir con WELCOME_BONUS_POINTS en
 // supabase/functions/api/env.ts.
 function sPAuth(){
-  return H()+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:23px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:'+GOLD+'"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +40 pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','Crear cuenta'],['login','Ingresar']].map(function(x){return'<button onclick="clearGoogleLink();atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?GOLD:'transparent')+';color:'+(atab===x[0]?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(googleConfigured()?'<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>':'')+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+(_googleIdToken?'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>'+esc(_googleLinkedEmail||'')+'</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>':'')+INP('r-name','Nombre // Tu nombre completo','text',window._lastGuestName||'','clientes')+INP('r-phone','Teléfono // 9XXXXXXXX','tel',window._lastGuestPhone||'','phone')+INP('r-pin','PIN personal // Mínimo 4 dígitos','password',undefined,'lock')+INP('r-email','Correo // Para recuperar tu cuenta','email',window._lastGuestEmail||'','mail')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text',undefined,'card')+INP('r-bday','Fecha de nacimiento // DD/MM/AAAA (obligatorio)','text',undefined,'calendar')+INP('r-ref','Código de referido // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+'<p style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sc=\'p_legal\';render()" style="color:'+GOLD+';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>'+BTN('Crear cuenta //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','Teléfono // 9XXXXXXXX','tel',savedPh,'phone')+INP('l-pin','PIN personal','password',undefined,'lock')+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('Ingresar //','doLogin()')+' '+`<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sc='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+r.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+r.s+'</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
+  return H()+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:23px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:'+GOLD+'"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +40 pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','Crear cuenta'],['login','Ingresar']].map(function(x){return'<button onclick="clearGoogleLink();atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?GOLD:'transparent')+';color:'+(atab===x[0]?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(googleConfigured()?'<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>':'')+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+(_googleIdToken?'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>'+esc(_googleLinkedEmail||'')+'</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>':'')+INP('r-name','Nombre // Tu nombre completo','text',window._lastGuestName||'','clientes')+INP('r-phone','Teléfono // 9XXXXXXXX','tel',window._lastGuestPhone||'','phone')+INP('r-pin','PIN personal // Mínimo 4 dígitos','password',undefined,'lock')+INP('r-email','Correo // Para recuperar tu cuenta','email',window._lastGuestEmail||'','mail')+INP('r-dni','DNI // 8 dígitos (obligatorio)','text',undefined,'card')+INP('r-bday','Fecha de nacimiento // DD/MM/AAAA (obligatorio)','text',undefined,'calendar')+INP('r-ref','Código de referido // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+'<p style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sndScreen=\'p_legal\';render()" style="color:'+GOLD+';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>'+BTN('Crear cuenta //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+INP('l-phone','Teléfono // 9XXXXXXXX','tel',savedPh,'phone')+INP('l-pin','PIN personal','password',undefined,'lock')+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px">'+aErr+'</div>'+BTN('Ingresar //','doLogin()')+' '+`<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sndScreen='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`+'</div>')+'<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+r.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+r.s+'</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
 }
 async function doReg(){
   var name=gv('r-name').trim(),
@@ -3649,7 +3667,7 @@ async function doReg(){
   catch(e){aErr=e.message;busy=false;render();return;}
   clearGoogleLink();
   fbTrack('CompleteRegistration',{content_name:referredBy?'referido':'directo'});
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_welcome';render();loadUserExtras();setTimeout(function(){sc='p_home';render();},6500);
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sndScreen='p_welcome';render();loadUserExtras();setTimeout(function(){sndScreen='p_home';render();},6500);
 }
 async function doLogin(){
   var phone=gv('l-phone').trim(),pin=gv('l-pin').trim();
@@ -3662,7 +3680,7 @@ async function doLogin(){
   busy=true;busyMsg='Verificando...';render();
   try{var r=await api('login',{phone:phone,pin:pin});cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);}
   catch(e){aErr=e.message;busy=false;render();return;}
-  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sc='p_home';render();loadUserExtras();
+  localStorage.setItem('sw_ph',phone);localStorage.setItem('sw_tok',token);savedPh=phone;busy=false;sndScreen='p_home';render();loadUserExtras();
 }
 // Callback global de Google Identity Services (google.accounts.id.initialize) — recibe un
 // credential (id_token JWT) que NUNCA se usa para iniciar sesión directamente acá: se manda
@@ -3687,7 +3705,7 @@ async function onGoogleCredential(resp){
     }
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
     localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
-    busy=false;sc='p_home';render();loadUserExtras();
+    busy=false;sndScreen='p_home';render();loadUserExtras();
   }catch(e){
     aErr=e.message;busy=false;render();
   }
@@ -3721,12 +3739,12 @@ function sWelcome(){
   var nm=cust?cust.name.split(' ')[0]:'';
   var rwd=RWDS.slice().reverse().find(function(r){return pts>=r.pts;});
   var next=RWDS.find(function(r){return r.pts>pts;});
-  return'<div onclick="sc=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#1E3932);padding:48px 24px;position:relative;overflow:hidden">'
+  return'<div onclick="sndScreen=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#1E3932);padding:48px 24px;position:relative;overflow:hidden">'
     +'<div style="position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(203,162,88,.06)"></div>'
     +'<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
     +'<div style="margin-bottom:28px">'+WORDMARK(24,true)+'</div>'
-    // sc='p_welcome' solo se dispara al final de doReg() — doLogin() va directo a p_home
+    // sndScreen='p_welcome' solo se dispara al final de doReg() — doLogin() va directo a p_home
     // sin pasar por aquí — así que esta pantalla SIEMPRE es un registro nuevo, nunca un
     // login de alguien que vuelve. "de vuelta" era simplemente incorrecto en todos los casos.
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.28em;margin-bottom:10px">Bienvenido //</div>'
@@ -3795,14 +3813,14 @@ function sPHome(){
     +ringHTML
     +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+GOLD+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:'+GOLD+'">'+next.n+' // '+next.s+'</span></div>':'')
     +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['Pedidos',cust.total_orders||0],['Canjeados',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+x[1]+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['Canjear','Recompensa','sc=\'p_rewards\';render()'],['Mis','Pedidos','sc=\'p_orders\';loadMyOrders()'],['Historial','Puntos','loadHist()'],['Mi','Perfil','sc=\'p_profile\';render()'],['Mis','Direcciones','loadAddresses()'],['Mis','Favoritos','loadFavorites()']].concat(isAdmin?[['Panel','Admin','sc=\'admin_home\';loadAdmin()']]:[]).map(function(x){return'<div onclick="'+x[2]+'" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);letter-spacing:.03em">'+x[0]+'<span style="color:'+GOLD+'"> //</span></div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['Canjear','Recompensa','sndScreen=\'p_rewards\';render()'],['Mis','Pedidos','sndScreen=\'p_orders\';loadMyOrders()'],['Historial','Puntos','loadHist()'],['Mi','Perfil','sndScreen=\'p_profile\';render()'],['Mis','Direcciones','loadAddresses()'],['Mis','Favoritos','loadFavorites()']].concat(isAdmin?[['Panel','Admin','sndScreen=\'admin_home\';loadAdmin()']]:[]).map(function(x){return'<div onclick="'+x[2]+'" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);letter-spacing:.03em">'+x[0]+'<span style="color:'+GOLD+'"> //</span></div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
     +(unlocked.length?'<div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Listas para usar //</div>'+unlocked.map(function(r){return'<div style="background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+r.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+r.s+'</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">se usa al pedir</span></div>';}).join('')+'</div>':'')
     +'</div>'+NAV();
 }
 
 // MY ORDERS — client side
 async function loadMyOrders(){
-  sc='p_orders';listLoading=true;render();
+  sndScreen='p_orders';listLoading=true;render();
   // Timeout safety — never stay stuck more than 8 seconds
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;listLoading=false;render();}},8000);
@@ -3822,7 +3840,7 @@ function sPOrders(){
   var done=myOrders.filter(function(o){return o.status==='ENTREGADO';});
   function card(o){
     var ci=STEPS.indexOf(o.status);
-    return'<div onclick="_od=\''+o.id+'\';rtStars=0;rtMsg=\'\';sc=\'p_ord_detail\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
+    return'<div onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
       +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
       +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
@@ -3831,7 +3849,7 @@ function sPOrders(){
       +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;height:3px;background:'+(dn?GOLD:'#3A6B58')+';border-radius:3px"></div>';}).join('')+'</div>'
       +stBadge(o.status)+'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
   }
-  var h=H('MIS PEDIDOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
+  var h=H('MIS PEDIDOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(listLoading){
     h+=skeletonCards(3,132);
   }else{
@@ -3850,12 +3868,12 @@ function sPOrders(){
   h+='<div style="margin-top:14px">'+BTN('Actualizar //','loadMyOrders()',true)+'</div></div>'+NAV();
   return h;
 }
-var _od=null;
+var _sndOd=null;
 function sOrdDetail(){
-  var o=myOrders.find(function(x){return x.id==_od||x.id===_od;});
+  var o=myOrders.find(function(x){return x.id==_sndOd||x.id===_sndOd;});
   if(!o)return sPOrders();
   var ci=STEPS.indexOf(o.status);
-  return H('DETALLE',"sc='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
+  return H('DETALLE',"sndScreen='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px;margin-bottom:12px">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
     +'<div style="min-width:0"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.customer_name)+'</div>'
@@ -3946,7 +3964,7 @@ async function doSubmitRating(ref){
 }
 
 async function loadHist(){
-  sc='p_history';listLoading=true;render();
+  sndScreen='p_history';listLoading=true;render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;listLoading=false;render();}},8000);
   try{
@@ -3959,7 +3977,7 @@ async function loadHist(){
 }
 function sPHistory(){
   var txns=(cust&&cust._txns)||[];
-  var h=H('HISTORIAL DE PUNTOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
+  var h=H('HISTORIAL DE PUNTOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(listLoading){
     h+=skeletonCards(5,48);
   }else if(!txns.length){
@@ -3976,7 +3994,7 @@ function sPHistory(){
 
 function sPRewards(){
   var pts=cust.points||0;
-  return H('RECOMPENSAS','sc=\'p_home\';render()')+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Tu balance //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:48px;font-weight:640;color:#fff;margin-bottom:12px;line-height:1">'+pts+'<span style="color:'+GOLD+';font-size:22px"> pts</span></div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>'// La tarjeta bloqueada usaba una paleta gris propia (#141C19/#666/#555/#444/#1a1a1a/
+  return H('RECOMPENSAS','sndScreen=\'p_home\';render()')+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Tu balance //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:48px;font-weight:640;color:#fff;margin-bottom:12px;line-height:1">'+pts+'<span style="color:'+GOLD+';font-size:22px"> pts</span></div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>'// La tarjeta bloqueada usaba una paleta gris propia (#141C19/#666/#555/#444/#1a1a1a/
 // #2a2a2a) en vez de los tokens ya establecidos para "no disponible ahora" (CARDOFF/
 // TOPOFF: var(--sw-card2)+var(--sw-text-muted)) — se unifica aquí, pero SIN el
 // opacity:.35 de esas dos porque esta tarjeta sigue siendo accionable (barra de
@@ -4021,8 +4039,8 @@ function sPProfile(){
   // ningún cobro) — quedó con la copy vieja de antes de ese rediseño (hallazgo de
   // auditoría UX, ALTO — confirmado en vivo, la pantalla de compra en sí ya decía bien
   // "REGALAR CON PUNTOS", solo este teaser quedó desactualizado).
-  var giftCardHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Tarjeta<span class="cut-sep" style="color:'+GOLD+'"> // </span>de regalo</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('Comprar y regalar //',"sc='gift_card';render()",true)+'</div>';
-  var weeklyPlanHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga '+SOLES+WEEKLY_PLAN_PRICE+' hoy y recibe '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo para pedir cuando quieras esta semana. Bono de '+SOLES+(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)+' de regalo.</div>'+BTN('Activar plan semanal //',"sc='weekly_plan';render()")+'</div>';
+  var giftCardHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Tarjeta<span class="cut-sep" style="color:'+GOLD+'"> // </span>de regalo</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('Comprar y regalar //',"sndScreen='gift_card';render()",true)+'</div>';
+  var weeklyPlanHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga '+SOLES+WEEKLY_PLAN_PRICE+' hoy y recibe '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo para pedir cuando quieras esta semana. Bono de '+SOLES+(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)+' de regalo.</div>'+BTN('Activar plan semanal //',"sndScreen='weekly_plan';render()")+'</div>';
   var challengeHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:'+GOLD+'"> // </span>mensual</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('Reclamar recompensa //','doClaimChallenge()',true)+'</div>';
   var discoveryHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:'+GOLD+'"> // </span>descubrimiento</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+discChalMsg+'</div>'+BTN('Reclamar recompensa //','doClaimDiscoveryChallenge()',true)+'</div>';
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(pushSubscribed?GOLD:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:'+(pushSubscribed?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Notificaciones<span class="cut-sep" style="color:'+GOLD+'"> // </span>push</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(pushSubscribed?GOLD:'#A8C8B0')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
@@ -4033,12 +4051,12 @@ function sPProfile(){
   // demás, que solo mueven saldo/puntos propios — hallazgo de auditoría visual, MEDIO.
   var sectionLabel=function(t){return'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:20px 0 10px">'+t+'</div>';};
   weeklyPlanHTML=weeklyPlanHTML.replace('Plan<span class="cut-sep"','<span style="float:right;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em">Pago con tarjeta</span>Plan<span class="cut-sep"');
-  return H('MI PERFIL','sc=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'+heroHTML
+  return H('MI PERFIL','sndScreen=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'+heroHTML
     +badgesHTML(cust)
     +pushHTML
     +sectionLabel('Retos y referidos //')+referralHTML+challengeHTML+discoveryHTML
     +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+giftCardHTML+weeklyPlanHTML
-    +'<div onclick="sc=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
+    +'<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
   // Antes solo mandaba el número como "código" — el amigo tenía que escribirlo a mano
@@ -4091,7 +4109,7 @@ async function doCreditGift(){
 function sGiftCard(){
   var amt=parseFloat(gcAmt)||0;
   var ptsCost=amt>0?Math.round(amt*GIFT_CARD_POINTS_PER_SOL):0;
-  return H('TARJETA DE REGALO','sc=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
+  return H('TARJETA DE REGALO','sndScreen=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Tarjeta<span class="cut-sep" style="color:'+GOLD+'"> // </span>de regalo</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px;line-height:1.5">Usa tus puntos para regalarle crédito SND//WCH a otro cliente al instante. Monto entre S/10 y S/500.</p>'
     +'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.05em;margin-bottom:18px">Tienes '+(cust.points||0)+' pts // '+GIFT_CARD_POINTS_PER_SOL+' pts = S/1</p>'
@@ -4129,7 +4147,7 @@ async function doGiftCardBuy(){
     busy=false;_giftBuyInProgress=false;
     gcPhone='';gcAmt='';
     showToast('¡Regalaste crédito a '+(res.toName||name)+'!');
-    sc='p_profile';render();
+    sndScreen='p_profile';render();
   }catch(e){
     busy=false;_giftBuyInProgress=false;gcMsg=e.message;render();
   }
@@ -4142,7 +4160,7 @@ var wpCritical=false;
 var _weeklyPlanBuyInProgress=false;
 var _pendingWeeklyPlan=null;
 function sWeeklyPlan(){
-  return H('PLAN SEMANAL','sc=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
+  return H('PLAN SEMANAL','sndScreen=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga '+SOLES+WEEKLY_PLAN_PRICE+' hoy con tu tarjeta y recibe '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+WEEKLY_PLAN_PRICE+'</span></div>'
@@ -4219,7 +4237,7 @@ async function chargeAndFinalizeWeeklyPlan(culqiToken){
     wpEmail='';
     _pendingWeeklyPlan=null;
     showToast('¡Listo! Recibiste '+SOLES+pw.creditAmount+' en saldo.');
-    sc='p_profile';render();
+    sndScreen='p_profile';render();
   }catch(e){
     // Mismo riesgo que el catch de arriba (confirm-weekly-plan falló): no sabemos si el
     // cargo llegó a ejecutarse antes de que se cortara la conexión.
@@ -4274,7 +4292,7 @@ function doLogout(){
   calendarData=null;calDate='';calChannel='instagram';calTitle='';calCaption='';calWhatsapp='';calPhoto='';calTag='';calMsg='';waitlistData=null;
   calImageUploadingId=null;calPublishingId=null;
   adminOrders=[];bulkSelected={};focusIdx=0;
-  sc='p_auth';render();
+  sndScreen='p_auth';render();
 }
 
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
@@ -4282,7 +4300,7 @@ function doLogout(){
 // de operar de cara al público — esto es un punto de partida razonable, no asesoría legal.
 function sPLegal(){
   var bk=(bkTo||(cust?'p_profile':'p_auth'));bkTo=null;
-  return H('TÉRMINOS Y PRIVACIDAD',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  return H('TÉRMINOS Y PRIVACIDAD',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Términos<span class="cut-sep" style="color:'+GOLD+'"> // </span>y privacidad</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px">Última actualización: 2026</div>'
     +providerBlockHTML()
@@ -4311,7 +4329,7 @@ function providerBlockHTML(){
 // llega mal. ⚠️ Revisa estos plazos/condiciones con el negocio real antes de operar.
 function sPReturns(){
   var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
-  return H('CAMBIOS Y DEVOLUCIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  return H('CAMBIOS Y DEVOLUCIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Cambios<span class="cut-sep" style="color:'+GOLD+'"> // </span>y devoluciones</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px">Última actualización: 2026</div>'
     +providerBlockHTML()
@@ -4341,7 +4359,7 @@ function sPComplaints(){
   var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#3A6B58')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'#0d0d0d'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
     +(cmplMinor?INP('cq-guardian','Nombre del padre, madre o apoderado','text',undefined,'clientes'):'');
   var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:14px;font-family:EB Garamond,serif;min-height:90px;box-sizing:border-box"></textarea>';};
-  return H('LIBRO DE RECLAMACIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  return H('LIBRO DE RECLAMACIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Libro de<span class="cut-sep" style="color:'+GOLD+'"> // </span>reclamaciones</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</p>'
     +providerBlockHTML()
@@ -4373,7 +4391,7 @@ function sPComplaints(){
     +'</div>';
 }
 function sComplaintsSuccess(bk){
-  return H('LIBRO DE RECLAMACIONES',"sc='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
+  return H('LIBRO DE RECLAMACIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
     // Antes un carácter Unicode "✓" suelto a font-size:44px — sin relación con el
     // tratamiento de éxito ya establecido en la app (círculo con ícono propio, ver
     // pantalla de confirmación de pedido) — hallazgo de auditoría visual, MEDIO.
@@ -4382,7 +4400,7 @@ function sComplaintsSuccess(bk){
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Tu código //</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:'+GOLD+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 15 días hábiles siguientes, conforme a ley.</p>'
-    +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('Volver al inicio //','sc=\'o_home\';cmplStep=\'form\';render()')+'</div>'
+    +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('Volver al inicio //','sndScreen=\'o_home\';cmplStep=\'form\';render()')+'</div>'
     +'</div>';
 }
 async function doSubmitComplaint(){
@@ -4401,12 +4419,12 @@ async function doSubmitComplaint(){
 
 // FAVORITOS
 async function loadFavorites(){
-  sc='p_favorites';busy=true;busyMsg='Cargando favoritos...';render();
+  sndScreen='p_favorites';busy=true;busyMsg='Cargando favoritos...';render();
   try{myFavorites=(await api('favorites-list',{token:token})).favorites;}catch(e){myFavorites=[];}
   busy=false;render();
 }
 function sPFavorites(){
-  var h=H('MIS FAVORITOS',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
+  var h=H('MIS FAVORITOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(!myFavorites.length){
     h+='<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('heart',32,'#A8C8B0')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em">Sin favoritos //</div><p style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
   }else{
@@ -4439,7 +4457,7 @@ async function doDeleteFavorite(id){
 
 // DIRECCIONES
 async function loadAddresses(){
-  sc='p_addresses';busy=true;busyMsg='Cargando direcciones...';render();
+  sndScreen='p_addresses';busy=true;busyMsg='Cargando direcciones...';render();
   try{myAddresses=(await api('addresses-list',{token:token})).addresses;}catch(e){myAddresses=[];}
   busy=false;render();
 }
@@ -4450,7 +4468,7 @@ async function loadAddresses(){
 var editingAddrId=null;
 function sPAddresses(){
   var editing=editingAddrId?myAddresses.find(function(a){return a.id===editingAddrId;}):null;
-  var h=H('MIS DIRECCIONES',"sc='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
+  var h=H('MIS DIRECCIONES',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(myAddresses.length){
     h+=myAddresses.map(function(a){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:10px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:EB Garamond,serif;font-style:italic;font-size:10px">Eliminar</button></div></div>';
@@ -4519,7 +4537,7 @@ async function doDeleteAccount(){
 }
 
 async function loadAdmin(){
-  sc='admin_home';busy=true;busyMsg='Cargando...';render();
+  sndScreen='admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;lastPollCount=adminOrders.length;}
@@ -4528,7 +4546,7 @@ async function loadAdmin(){
 }
 
 // Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para
-// poder reusarse también desde resultados de búsqueda (sc='admin_search', ver #95), que
+// poder reusarse también desde resultados de búsqueda (sndScreen='admin_search', ver #95), que
 // no viven en adminOrders.
 // contact_phone es el teléfono que el cliente escribió en ESTE pedido — antes solo se
 // usaba customer_phone (el de la cuenta), así que un pedido de invitado nunca mostraba
@@ -4895,9 +4913,9 @@ function sortedActiveOrders(){
 function adminToolsSections(){
   return[
     ['Clientes y ventas //',[
-      ['clientes','Clientes','sc=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
-      ['buscar','Buscar pedidos','sc=\'admin_search\';searchResults=null;render()'],
-      ['reportes','Reportes','sc=\'admin_report\';reportData=null;render()'],
+      ['clientes','Clientes','sndScreen=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
+      ['buscar','Buscar pedidos','sndScreen=\'admin_search\';searchResults=null;render()'],
+      ['reportes','Reportes','sndScreen=\'admin_report\';reportData=null;render()'],
       ['estrella','Calificaciones','loadRatingsList()'],
       ['reclamo','Reclamaciones','loadAdminComplaints()'],
     ]],
@@ -4915,7 +4933,7 @@ function adminToolsSections(){
       ['lock','Menú secreto','loadSecretSignatureAdmin()'],
     ]],
     ['Cuenta //',[
-      ['puntos','Puntos manuales','sc=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
+      ['puntos','Puntos manuales','sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
       ['admins','Administradores','loadAdminMgr()'],
       ['auditoria','Auditoría','loadAuditLog()'],
     ]],
@@ -4945,7 +4963,7 @@ function sAdminHome(){
     +(badge>0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+STATUSES.RECIBIDO.c+';letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' Acción requerida</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">todo en orden //</div>')
     +'</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('refresh',16)+'</button>'
     +'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:16px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>'
-    +'<button onclick="stopPoll();sc=\'o_home\';tab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+'">← salir</button></div>'
+    +'<button onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:12px;color:'+GOLD+'">← salir</button></div>'
     +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';display:flex;align-items:center;gap:5px">'+icon('warning',12,GOLD)+'<span>Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</span></div>':'')
     // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
     // un estado desactualizado sin ninguna señal de que la actualización automática dejó
@@ -5069,8 +5087,8 @@ function sAdminHome(){
 // botón agrandado de la tarjeta normal de admin_home no podía lograr — ver comentario en
 // esa tarjeta: con varias tarjetas en la cola, un botón fijo de viewport no tiene un solo
 // pedido al que apuntar; acá sí, porque solo se muestra uno).
-function enterFocusMode(){focusIdx=0;sc='admin_focus';render();}
-function exitFocusMode(){sc='admin_home';render();}
+function enterFocusMode(){focusIdx=0;sndScreen='admin_focus';render();}
+function exitFocusMode(){sndScreen='admin_home';render();}
 function focusStep(delta){
   var ao=sortedActiveOrders();
   if(!ao.length)return;
@@ -5159,7 +5177,7 @@ function sAdminFocus(){
 
 // ADMIN DASHBOARD — vista de negocio (ventas, productos, clientes, puntos)
 async function loadDashboard(){
-  sc='admin_dashboard';busy=true;busyMsg='Calculando métricas...';render();
+  sndScreen='admin_dashboard';busy=true;busyMsg='Calculando métricas...';render();
   try{
     var results=await Promise.all([api('dashboard-stats',{token:token}),api('admin-at-risk-customers',{token:token})]);
     dashStats=results[0];atRiskCustomers=results[1].customers;
@@ -5394,7 +5412,7 @@ async function exportCsv(action,filename){
 // Antes armaba su propio header a mano (flecha + título grande, sin wordmark) en vez de
 // usar H() como las otras 14 pantallas de detalle — se sentía "de otra app" sin ninguna
 // razón funcional (hallazgo de auditoría visual, MEDIO). H() también trae el toggle
-// claro/oscuro y sc='admin_home' vía loadAdmin() (no solo render()), que esta pantalla no
+// claro/oscuro y sndScreen='admin_home' vía loadAdmin() (no solo render()), que esta pantalla no
 // tenía.
 function sAdminGen(){return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+H('Puntos manuales','loadAdmin()')+'<div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">'+INP('ag-ph','Teléfono del cliente // 9XXXXXXXX','tel',agPhone,'phone')+INP('ag-pts','Puntos a otorgar // Ej: 25','number',agPts)+BTN('Otorgar puntos //','doManualPts()')+'</div><div id="ag-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';min-height:20px">'+agMsg+'</div>'
   +'<div style="height:1px;background:var(--sw-card,#2D5246);margin:28px 0 24px"></div>'
@@ -5543,10 +5561,20 @@ var _lastRenderedSc=null;
 // Ahora el error se pinta en pantalla, con la versión del build y la pantalla que falló.
 function render(){
   try{
+    // Red de seguridad contra el bug de Culqi (ver el comentario largo junto a la
+    // declaración de sndScreen): si un script de terceros vuelve a pisar la variable de
+    // pantalla con algo que no es un string, la reponemos en vez de dejar que reviente
+    // cada render y la app quede muerta. Renombrarla ya lo previene; esto es el cinturón
+    // además de los tirantes, porque el costo es una comparación por render y el costo de
+    // equivocarse es la app entera caída sin que nadie se entere.
+    if(typeof sndScreen!=='string'){
+      console.error('sndScreen fue sobrescrito por un script externo — reponiendo a o_home');
+      sndScreen='o_home';
+    }
     renderScreen();
   }catch(e){
     try{
-      console.error('render() falló en la pantalla "'+sc+'":',e);
+      console.error('render() falló en la pantalla "'+sndScreen+'":',e);
       var appEl=(document.getElementById('app') as HTMLElement | null);
       if(appEl){
         appEl.innerHTML='<div style="min-height:100vh;background:#1E3932;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#F2F0EB">'
@@ -5554,7 +5582,7 @@ function render(){
           +'<p style="font-size:15px;line-height:1.55;color:#A8C8B0;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
           +'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
           +'<div style="color:'+GOLD+';font-weight:600;letter-spacing:.14em;font-size:10px;margin-bottom:8px">DETALLE //</div>'
-          +'<div>Pantalla: '+esc(String(sc))+'</div><div>Versión: '+esc(APP_BUILD)+'</div><div>Error: '+esc(String((e&&(e as any).message)||e))+'</div></div>'
+          +'<div>Pantalla: '+esc(String(sndScreen))+'</div><div>Versión: '+esc(APP_BUILD)+'</div><div>Error: '+esc(String((e&&(e as any).message)||e))+'</div></div>'
           +'<button onclick="applyAppUpdate()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-size:16px;font-weight:700;padding:18px 0;border-radius:10px;text-align:center">Recargar la app</button></div>';
       }
     }catch(_){}
@@ -5567,7 +5595,7 @@ function renderScreen(){
     // dashboard, inventario, etc.) mostraba el splash de pantalla completa (logo +
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
-    if(sc.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
+    if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
@@ -5580,7 +5608,7 @@ function renderScreen(){
   // variables JS reasignables (mismo mecanismo ya usado antes solo para el modo claro),
   // así que todo lo que ya concatena '+GOLD+'/lee STATUSES[x].c en sAdmin*/DTILE/etc.
   // recoge el valor correcto sin tocar cada aparición individual.
-  var adminScope=sc.indexOf('admin')===0;
+  var adminScope=sndScreen.indexOf('admin')===0;
   var adminLight=adminScope&&adminLightMode;
   var _prevGold=GOLD;
   if(adminScope)GOLD=adminLight?'#8A5000':'#FFB020';
@@ -5606,7 +5634,7 @@ function renderScreen(){
       STATUSES.CANCELADO.c='#8A8A8A';
     }
   }
-  switch(sc){
+  switch(sndScreen){
     case'o_home':      h=sOHome();break;
     case'o_sig':       h=sOSig();break;
     case'o_build':     h=sOBuild();break;
@@ -5658,7 +5686,7 @@ function renderScreen(){
   }
   GOLD=_prevGold;
   if(_prevStatusColors)Object.keys(_prevStatusColors).forEach(function(k){STATUSES[k].c=_prevStatusColors[k];});
-  var sameScreen=sc===_lastRenderedSc,scrollY=window.scrollY;
+  var sameScreen=sndScreen===_lastRenderedSc,scrollY=window.scrollY;
   document.body.classList.toggle('no-fi',sameScreen);
   // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
   // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
@@ -5668,8 +5696,8 @@ function renderScreen(){
   var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';
   (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+updateBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
-  _lastRenderedSc=sc;
-  if(sc==='p_auth')mountGoogleButton();
+  _lastRenderedSc=sndScreen;
+  if(sndScreen==='p_auth')mountGoogleButton();
   renderOverlays();
   makeClickablesAccessible();
 }
@@ -5752,7 +5780,7 @@ async function loadCatalogBackground(){
       // el sándwich secreto de este mes reserva para sí, ni más ni menos.
       PROTS.forEach(function(p){p.vaultOnly=(secret.vaultOnlyProts||[]).indexOf(p.id)>=0;});
       TOPS.forEach(function(t){t.vaultOnly=(secret.vaultOnlyTops||[]).indexOf(t.id)>=0;});
-      SAUCES.forEach(function(sc){sc.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sc.id)>=0;});
+      SAUCES.forEach(function(sauce){sauce.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sauce.id)>=0;});
     }
   }catch(e){}
 }
@@ -5773,7 +5801,7 @@ async function loadStoreHoursBackground(){
   }catch(e){}
 }
 async function loadInventory(){
-  sc='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
+  sndScreen='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
     var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
     invStock={};invQty={};
@@ -5876,7 +5904,7 @@ async function saveAllInventoryChanges(){
 }
 
 var _adminList=[];
-async function loadAdminMgr(){sc='admin_mgr';busy=true;busyMsg='Cargando...';render();try{var r=await api('admin-accounts-list',{token:token});_adminList=r.accounts;}catch(e){_adminList=[];}busy=false;render();}
+async function loadAdminMgr(){sndScreen='admin_mgr';busy=true;busyMsg='Cargando...';render();try{var r=await api('admin-accounts-list',{token:token});_adminList=r.accounts;}catch(e){_adminList=[];}busy=false;render();}
 async function addAdmin(){
   var ph=(document.getElementById('aa-ph') as HTMLInputElement | null)&&gv('aa-ph').trim();
   var nm=(document.getElementById('aa-nm') as HTMLInputElement | null)&&gv('aa-nm').trim();
@@ -5919,7 +5947,7 @@ function sAdminMgr(){
 // del lado servidor).
 var catalogMsg='';
 async function loadAdminCatalog(){
-  sc='admin_catalog';busy=true;busyMsg='Cargando precios...';render();
+  sndScreen='admin_catalog';busy=true;busyMsg='Cargando precios...';render();
   await loadCatalogBackground();
   busy=false;render();
 }
@@ -6009,7 +6037,7 @@ async function saveCatalogPrice(category,code){
     return;
   }
   busy=false;render();
-  setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2500);
+  setTimeout(function(){catalogMsg='';if(sndScreen==='admin_catalog')render();},2500);
 }
 // Guardado en lote — antes cada fila (22+ entre proteínas/signatures/bebidas/
 // recompensas) solo se podía guardar una por una, sin indicador de qué quedó sin
@@ -6035,7 +6063,7 @@ async function saveAllCatalogChanges(){
     var v=catalogFormValues('reward',rw.id);
     if(v.pts!==rw.pts)jobs.push({category:'reward',code:rw.id,values:v});
   });
-  if(!jobs.length){catalogMsg='No hay cambios sin guardar.';render();setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2000);return;}
+  if(!jobs.length){catalogMsg='No hay cambios sin guardar.';render();setTimeout(function(){catalogMsg='';if(sndScreen==='admin_catalog')render();},2000);return;}
   busy=true;busyMsg='Guardando '+jobs.length+' cambio(s)...';render();
   try{
     for(var i=0;i<jobs.length;i++){
@@ -6049,7 +6077,7 @@ async function saveAllCatalogChanges(){
     return;
   }
   busy=false;render();
-  setTimeout(function(){catalogMsg='';if(sc==='admin_catalog')render();},2500);
+  setTimeout(function(){catalogMsg='';if(sndScreen==='admin_catalog')render();},2500);
 }
 
 // MENÚ SECRETO — rotación mensual (decisión del dueño, 2026-08-10, reemplaza "The Vault"
@@ -6058,7 +6086,7 @@ async function saveAllCatalogChanges(){
 // vigente, así queda historial de sándwiches secretos anteriores gratis.
 var ssName='',ssBase='',ssProt='',ssTops:string[]=[],ssSauces:string[]=[],ssVaultIds:string[]=[],ssP15='',ssP30='',ssMinOrders='',ssImagePath='',ssMsg='',ssHistory:any[]=[];
 async function loadSecretSignatureAdmin(){
-  sc='admin_secret';busy=true;busyMsg='Cargando menú secreto...';render();
+  sndScreen='admin_secret';busy=true;busyMsg='Cargando menú secreto...';render();
   try{
     var r=await api('admin-secret-signature-get',{token:token});
     var cur=r.current;
@@ -6140,7 +6168,7 @@ async function saveSecretSignature(){
     return;
   }
   await loadSecretSignatureAdmin();
-  setTimeout(function(){ssMsg='';if(sc==='admin_secret')render();},2500);
+  setTimeout(function(){ssMsg='';if(sndScreen==='admin_secret')render();},2500);
 }
 
 // FICHA DE CLIENTE (#94) — historial completo de un cliente (pedidos, puntos,
@@ -6224,7 +6252,7 @@ function sAdminSearch(){
 // AUDITORÍA (#96) — visor de admin_action_log (antes solo consultable desde el
 // dashboard de Supabase).
 async function loadAuditLog(){
-  sc='admin_audit';busy=true;busyMsg='Cargando auditoría...';render();
+  sndScreen='admin_audit';busy=true;busyMsg='Cargando auditoría...';render();
   try{var r=await api('admin-audit-log',{token:token,limit:50});auditLog=r.log;}
   catch(e){auditLog=[];}
   busy=false;render();
@@ -6264,7 +6292,7 @@ function sAdminAudit(){
 // horario era un array hardcodeado que exigía redesplegar la función para cambiarlo.
 var DOW_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 async function loadStoreHoursForm(){
-  sc='admin_hours';busy=true;busyMsg='Cargando horario...';render();
+  sndScreen='admin_hours';busy=true;busyMsg='Cargando horario...';render();
   try{var r=await api('get-store-hours',{});storeHoursForm=r.hours;businessLaunched=r.businessLaunched===true;}
   catch(e){storeHoursForm=DOW_NAMES.map(function(){return{open:11,close:22,closed:false};});}
   busy=false;render();
@@ -6280,7 +6308,7 @@ async function pauseStore(minutes){
     storePausedUntil=r.pausedUntil||null;
     storeHoursMsg=minutes>0?'Pausado. Volvemos solos a las '+new Date(r.pausedUntil).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+'.':'Pedidos reactivados.';
     render();
-    setTimeout(function(){storeHoursMsg='';if(sc==='admin_hours')render();},3500);
+    setTimeout(function(){storeHoursMsg='';if(sndScreen==='admin_hours')render();},3500);
   }catch(e){showToast(e.message);}
 }
 async function toggleBusinessLaunched(){
@@ -6316,7 +6344,7 @@ async function saveStoreHours(){
     storeHoursMsg='Horario actualizado.';
   }catch(e){showToast('Error: '+e.message);}
   busy=false;render();
-  setTimeout(function(){storeHoursMsg='';if(sc==='admin_hours')render();},2500);
+  setTimeout(function(){storeHoursMsg='';if(sndScreen==='admin_hours')render();},2500);
 }
 function sAdminHours(){
   var h=H('HORARIO DE ATENCIÓN',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
@@ -6401,7 +6429,7 @@ function sAdminReport(){
 // CALIFICACIONES (#99) — antes solo se veían resumidas (promedio + últimos 5 comentarios)
 // en el dashboard; esto expone el listado completo con filtros.
 async function loadRatingsList(){
-  sc='admin_ratings';busy=true;busyMsg='Cargando calificaciones...';render();
+  sndScreen='admin_ratings';busy=true;busyMsg='Cargando calificaciones...';render();
   try{var r=await api('admin-ratings-list',{token:token,limit:50,minStars:ratingsMinStars||undefined,onlyWithComments:ratingsOnlyComments,onlyConsented:ratingsOnlyConsented});ratingsList=r.ratings;}
   catch(e){ratingsList=[];}
   busy=false;render();
@@ -6445,7 +6473,7 @@ function sAdminRatings(){
 // las próximas 24h en un solo resumen, para que la cocina prepare antes de que entren
 // en cola (antes cada pedido programado se preparaba recién cuando llegaba su hora).
 async function loadPrepList(){
-  sc='admin_prep';busy=true;busyMsg='Calculando preparación...';render();
+  sndScreen='admin_prep';busy=true;busyMsg='Calculando preparación...';render();
   try{prepListData=await api('admin-prep-list',{token:token});}
   catch(e){prepListData=null;}
   busy=false;render();
@@ -6484,7 +6512,7 @@ function sAdminPrepList(){
 // conectada a este sistema, así que el dueño sigue siendo quien pega y publica —
 // esto solo le ahorra la parte de redactar cada semana.
 async function loadMarketingContent(){
-  sc='admin_marketing';busy=true;busyMsg='Cargando contenido...';render();
+  sndScreen='admin_marketing';busy=true;busyMsg='Cargando contenido...';render();
   try{marketingContentData=await api('admin-marketing-content',{token:token});}
   catch(e){marketingContentData=null;}
   busy=false;render();
@@ -6521,7 +6549,7 @@ function sAdminMarketing(){
 }
 
 async function loadPromoCodes(){
-  sc='admin_promo';busy=true;busyMsg='Cargando códigos...';render();
+  sndScreen='admin_promo';busy=true;busyMsg='Cargando códigos...';render();
   try{var res=await api('admin-promo-list',{token:token});promoCodesData=res.promoCodes;}
   catch(e){promoCodesData=null;}
   busy=false;render();
@@ -6581,7 +6609,7 @@ function sAdminPromo(){
 }
 
 async function loadCampaignPerformance(){
-  sc='admin_campaign_perf';busy=true;busyMsg='Calculando rendimiento...';render();
+  sndScreen='admin_campaign_perf';busy=true;busyMsg='Calculando rendimiento...';render();
   try{campaignPerfData=await api('admin-campaign-performance',{token:token});}
   catch(e){campaignPerfData=null;}
   busy=false;render();
@@ -6615,7 +6643,7 @@ var CAL_CHANNEL_LABEL={};CAL_CHANNELS.forEach(function(c){CAL_CHANNEL_LABEL[c[0]
 var CAL_STATUS_LABEL={draft:'Borrador',scheduled:'Programado',publishing:'Publicando...',posted:'Publicado'};
 var CAL_STATUS_COLOR={draft:'#A8C8B0',scheduled:GOLD,publishing:GOLD,posted:'#25D366'};
 async function loadCalendar(){
-  sc='admin_calendar';busy=true;busyMsg='Cargando calendario...';render();
+  sndScreen='admin_calendar';busy=true;busyMsg='Cargando calendario...';render();
   try{var res=await api('admin-calendar-list',{token:token});calendarData=res.entries;}
   catch(e){calendarData=null;}
   try{var ru=await api('admin-list-raw-uploads',{token:token});rawUploads=ru.uploads;}
@@ -6818,7 +6846,7 @@ function sAdminCalendar(){
 // sesión) para el lado del cliente. El negocio aún no abre, así que hoy esta es la única
 // forma de captación real que existe (checklist de lanzamiento, semana 5-6).
 async function loadWaitlist(){
-  sc='admin_waitlist';busy=true;busyMsg='Cargando lista de espera...';render();
+  sndScreen='admin_waitlist';busy=true;busyMsg='Cargando lista de espera...';render();
   try{var res=await api('admin-waitlist-list',{token:token});waitlistData=res.waitlist;}
   catch(e){waitlistData=null;}
   busy=false;render();
@@ -6845,7 +6873,7 @@ function sAdminWaitlist(){
 // que esto no mide personal: agrupa pedidos por hora del día para ver si hay una franja
 // con más cancelaciones o entregas más lentas que el resto.
 async function loadTimeWindowReport(){
-  sc='admin_time_report';busy=true;busyMsg='Calculando franjas horarias...';render();
+  sndScreen='admin_time_report';busy=true;busyMsg='Calculando franjas horarias...';render();
   try{timeReportData=await api('admin-time-window-report',{token:token});}
   catch(e){timeReportData=null;}
   busy=false;render();
@@ -6869,7 +6897,7 @@ function sAdminTimeReport(){
 // DIRECCIONES CON ENTREGAS FALLIDAS REPETIDAS — si una dirección acumula 2+
 // cancelaciones vale la pena revisarla antes del próximo pedido a ese mismo lugar.
 async function loadProblemAddresses(){
-  sc='admin_problem_addresses';busy=true;busyMsg='Buscando direcciones...';render();
+  sndScreen='admin_problem_addresses';busy=true;busyMsg='Buscando direcciones...';render();
   try{problemAddressesData=await api('admin-problem-addresses',{token:token});}
   catch(e){problemAddressesData=null;}
   busy=false;render();
@@ -6897,7 +6925,7 @@ function sAdminProblemAddresses(){
 // (obligación legal, no solo buena práctica); esta pantalla es donde el operador ve la
 // cola pendiente y deja constancia de la respuesta.
 async function loadAdminComplaints(){
-  sc='admin_complaints';busy=true;busyMsg='Cargando reclamaciones...';render();
+  sndScreen='admin_complaints';busy=true;busyMsg='Cargando reclamaciones...';render();
   try{var r=await api('admin-list-complaints',{token:token,status:cmplFilterStatus||undefined});adminComplaints=r.complaints;}
   catch(e){adminComplaints=[];}
   busy=false;render();
@@ -6950,7 +6978,7 @@ async function doRespondComplaint(id){
 function sPRecover(){
   var pinBox=recNewPin?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:36px;font-weight:640;color:'+GOLD+(recPinRevealed?'':';filter:blur(9px);user-select:none')+'">'+recNewPin+'</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">'+icon(recPinRevealed?'lock':'camera',11,GOLD)+(recPinRevealed?'OCULTAR':'TOCA PARA VER')+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
     :(recEmailMasked?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:'+GOLD+'">'+esc(recEmailMasked)+'</b></div></div>':'');
-  return H('RECUPERAR CUENTA',"sc='p_auth';render()")
+  return H('RECUPERAR CUENTA',"sndScreen='p_auth';render()")
     +'<div style="flex:1;padding:24px 20px 40px" class="fi">'
     +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#F2F0EB);margin-bottom:6px">RECUPERAR PIN //</div>'
     +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
@@ -6961,7 +6989,7 @@ function sPRecover(){
     // auditoría UX, ALTO). Ahora, con un PIN/correo ya generado, el formulario se oculta y
     // se reemplaza por un solo botón directo a Ingresar.
     +((recNewPin||recEmailMasked)
-      ?BTN('Ir a ingresar //',"atab='login';sc='p_auth';render()")
+      ?BTN('Ir a ingresar //',"atab='login';sndScreen='p_auth';render()")
       :'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
         +INP('rec-phone','Teléfono // 9XXXXXXXX','tel',recPhone,'phone')
         +INP('rec-dni','DNI // Tu número de 8 dígitos','text',recDni,'card')
@@ -6988,9 +7016,9 @@ async function doRecover(){
     // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
     // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
     savedPh=phone;
-    busy=false;sc='p_recover';render();
+    busy=false;sndScreen='p_recover';render();
   }catch(e){
-    busy=false;sc='p_recover';render();
+    busy=false;sndScreen='p_recover';render();
     var m2=(document.getElementById('rec-msg') as HTMLInputElement | null);
     if(m2)m2.textContent=e.message;
   }
@@ -7016,12 +7044,16 @@ function showRuntimeError(msg){
       document.body.appendChild(bar);
     }
     bar.innerHTML='<div style="font-weight:600;margin-bottom:4px">Algo falló en esta pantalla — mándanos esta foto</div>'
-      +'<div style="opacity:.9;word-break:break-word">Pantalla: '+esc(String(sc))+' · Versión: '+esc(APP_BUILD)+'</div>'
+      +'<div style="opacity:.9;word-break:break-word">Pantalla: '+esc(String(sndScreen))+' · Versión: '+esc(APP_BUILD)+'</div>'
       +'<div style="opacity:.9;word-break:break-word">'+esc(String(msg))+'</div>'
       +'<button onclick="document.getElementById(\'rt-err\').remove();lastRuntimeError=\'\'" style="all:unset;cursor:pointer;margin-top:8px;color:#FFB3B3;text-decoration:underline;font-size:12px">cerrar</button>';
   }catch(_){}
 }
-window.addEventListener('error',function(ev){showRuntimeError((ev&&ev.message)||'Error desconocido');});
+// Solo errores REALES de JavaScript. Un `<img>` o una fuente que no carga también dispara
+// un evento 'error', y mostrarle al cliente una barra roja porque no bajó una foto sería
+// una falsa alarma peor que el problema: se filtra exigiendo que haya un mensaje de error
+// de verdad (los fallos de recurso llegan sin `message`).
+window.addEventListener('error',function(ev){if(ev&&ev.message)showRuntimeError(ev.message);});
 window.addEventListener('unhandledrejection',function(ev: any){
   var r=ev&&ev.reason;showRuntimeError((r&&r.message)||String(r||'Promesa rechazada'));
 });
@@ -7214,7 +7246,7 @@ async function togglePushNotifications(){
   // ?group=CODE (link compartido de un pedido grupal) — no exige cuenta para entrar y
   // contribuir, solo para organizar/cerrar, así que se abre para cualquiera.
   if(groupCodeFromUrl){
-    groupCode=groupCodeFromUrl;sc='group_order';render();
+    groupCode=groupCodeFromUrl;sndScreen='group_order';render();
     loadGroupOrder();
     startGroupPoll();
   }

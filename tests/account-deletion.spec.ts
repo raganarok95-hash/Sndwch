@@ -18,7 +18,7 @@ test('cliente elimina su cuenta desde el perfil', async ({ page }) => {
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.locator('[onclick*="sc=\'p_profile\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
   await expect(page.locator('text=Eliminar mi cuenta permanentemente')).toBeVisible();
   await page.locator('text=Eliminar mi cuenta permanentemente').click();
 
