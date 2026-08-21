@@ -131,7 +131,14 @@ var PROTS=[
   // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
   // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
   // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:9},
+  // noDouble: el atún es la ÚNICA proteína sin opción de doble (decisión del dueño
+  // 2026-08-21). El recargo pDbl es plano pero la porción que agrega escala con el tamaño:
+  // en 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — pérdida real de S/2.39
+  // por unidad, la única operación del catálogo con margen negativo. `pDbl` se deja en 9
+  // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
+  // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
+  // en supabase/functions/api/catalog.ts.
+  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:9,noDouble:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -208,6 +215,14 @@ var SAUCES=[
   {id:'S05',l:'SNDWCH',  s:'Special',  d:'Salada, con carácter umami. Receta exclusiva de la casa.'},
   {id:'S06',l:'Oil & Vinegar',s:'Classic', d:'Aceite de oliva y vinagre, estilo italiano'},
   {id:'S08',l:'Teriyaki',s:'Glaze',    d:'Dulce, soja, jengibre'},
+  // S09 vuelve (decisión del dueño 2026-08-21) tras haberse retirado el mismo día junto
+  // con The Ember (SIG08), su único consumidor. Vuelve CAMBIADA: ahora lleva ají y es
+  // picante. Eso tapa el hueco más grave que encontró el council de salsas — S02 y S12,
+  // las 2 únicas picantes, son exclusivas del menú secreto, así que ARMA EL TUYO no tenía
+  // ninguna opción picante para el público general. En un negocio de comida en Perú, eso
+  // se lee como carta incompleta, no como menú secreto. DEBE coincidir con SAUCE_LABEL.S09
+  // y VALID_SAUCES en supabase/functions/api/catalog.ts.
+  {id:'S09',l:'Chimichurri',s:'Piña y Ají',d:'Piña asada y ají, dulce-ahumado con picor',spicy:true},
   // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
   // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
   // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
@@ -1216,10 +1231,21 @@ function protPrice(p){return !p||!size?0:(size==='15'?p.p15:p.p30);}
 function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
 // Proteína "de referencia" para el precio de doble proteína: la del signature
 // elegido, o la elegida en Build Your Own.
+// Devolver null aquí apaga la doble proteína ENTERA para esa proteína: total() deja de
+// sumar el recargo, la fila "Doble" no se pinta y el upsell de confirmación pasa de largo
+// a la salsa extra. Un solo punto de corte en vez de tres condiciones repetidas.
+//
+// P04 (atún) queda fuera por decisión del dueño (2026-08-21), y el número lo respalda: el
+// recargo `pDbl` es plano pero la porción que agrega SÍ escala con el tamaño, así que en
+// un 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — el negocio PERDÍA S/2.39
+// en cada doble de atún. Además 170g de ensalada de atún en un pan de 30CM es un sándwich
+// que se desarma. El servidor lo rechaza también (NO_DOUBLE_PROTS en catalog.ts): esto
+// solo evita ofrecerlo en la UI.
 function dblProtRef(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
   var protId=mode==='sig'?(sig?sig.prot:null):prot;
-  return PROTS.find(function(x){return x.id===protId;});
+  var p: any=PROTS.find(function(x){return x.id===protId;});
+  return (p&&p.noDouble)?undefined:p;
 }
 function total(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
