@@ -910,6 +910,8 @@ var REFERRAL_BONUS_POINTS = 120;
 // de medición pasa por fbq(), que es un no-op mientras el píxel no exista, así que ningún
 // llamador necesita preguntar si está activo.
 var metaPixelId = null, _metaPixelLoaded = false;
+// Pausa temporal de la tienda (se reanuda sola). Llega en get-store-hours.
+var storePausedUntil = null;
 function initMetaPixel(id) {
     if (_metaPixelLoaded || !id)
         return;
@@ -5731,18 +5733,36 @@ async function viewReceipt(ordId) {
         showToast(e.message);
     }
 }
+// La ETA ahora la pone el servidor según la zona (ver DEFAULT_ETA_BY_ZONE en orders.ts),
+// pero hay pedidos que se salen de la norma: tráfico, una dirección difícil, un motorizado
+// que se demora. Esto deja corregirla en un tap sin cambiar el estado del pedido.
+async function editEta(ordId, currentEta) {
+    var etaStr = await showPrompt('¿Cuántos minutos le dices al cliente?', String(currentEta || 30), 'number');
+    if (etaStr === null)
+        return;
+    var eta = parseInt(etaStr, 10);
+    if (!eta || eta <= 0) {
+        showToast('Pon un número de minutos válido.');
+        return;
+    }
+    try {
+        var r = await api('admin-update-status', { token: token, orderId: ordId, status: 'EN CAMINO', etaMinutes: eta });
+        adminOrders = adminOrders.map(function (o) { return o.id === ordId ? r.order : o; });
+        showToast('ETA actualizada a ' + eta + ' min //', 'success');
+        render();
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+}
 async function updateStatus(ordId, newSt) {
     if (_adminOrderActionInProgress)
         return;
+    // Ya no se pregunta la ETA en cada pedido: el servidor pone la de la zona si no llega
+    // ninguna (ver DEFAULT_ETA_BY_ZONE en orders.ts). Eran 10 prompts al día escribiendo casi
+    // siempre el mismo número. Para cambiarla en un pedido puntual está el botón de editar
+    // ETA de la tarjeta, que sigue mandando etaMinutes explícito.
     var eta = null;
-    if (newSt === 'EN CAMINO') {
-        var etaStr = await showPrompt('¿Tiempo estimado de entrega en minutos?', '20', 'number');
-        if (etaStr === null)
-            return; // admin canceló
-        eta = parseInt(etaStr, 10);
-        if (!eta || eta <= 0)
-            eta = 20;
-    }
     _adminOrderActionInProgress = true;
     try {
         var r = await api('admin-update-status', { token: token, orderId: ordId, status: newSt, etaMinutes: eta });
@@ -6224,7 +6244,7 @@ function sAdminHome() {
                 // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
                 // panel admin: el operador no tenía forma de recordar qué ETA le prometió a cada
                 // cliente sin abrir el detalle del pedido).
-                + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('moto', 12, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min</span></div>' : '') + '</div></div>'
+                + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px;cursor:pointer">' + icon('moto', 12, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '') + '</div></div>'
                 + stBadge(o.status) + '</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">' + esc(o.summary) + '</div>'
                 // Receta expandida: sin esto un BUILD YOUR OWN solo mostraba el nombre de la
@@ -6333,7 +6353,7 @@ function sAdminFocus() {
         + (o.notes ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';margin-top:6px">Referencia: ' + esc(o.notes) + '</div>' : '')
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:8px;display:flex;align-items:center;gap:6px">' + (isStale ? '<span class="pulse" style="width:7px;height:7px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
         + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-top:6px;display:flex;align-items:center;gap:6px">' + icon('horario', 13, GOLD) + '<span>programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
-        + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px">' + icon('moto', 13, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min</span></div>' : '')
+        + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#3A86FF;margin-top:6px;display:flex;align-items:center;gap:6px;cursor:pointer">' + icon('moto', 13, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '')
         + '<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-body,#F2F0EB);line-height:1.6">' + esc(o.summary) + '</div>'
         // Misma receta expandida que en la tarjeta de la cola: el modo foco es LA pantalla
@@ -7168,6 +7188,7 @@ async function loadStoreHoursBackground() {
             metaPixelId = r.metaPixelId;
             initMetaPixel(r.metaPixelId);
         }
+        storePausedUntil = r.pausedUntil || null;
     }
     catch (e) { }
 }
@@ -7828,6 +7849,24 @@ async function loadStoreHoursForm() {
     render();
 }
 var _launchToggleInProgress = false;
+// Pausa temporal: cierra la tienda un rato y se reabre SOLA. Antes esto obligaba a editar
+// el horario semanal y acordarse de revertirlo — si se olvidaba, se perdía ese mismo día
+// de la semana siguiente entero.
+async function pauseStore(minutes) {
+    if (minutes > 0 && !(await showConfirm('¿Pausar los pedidos por ' + (minutes >= 60 ? (minutes / 60) + ' hora(s)' : minutes + ' minutos') + '?\nLa tienda se reabre sola, no tienes que acordarte de nada.')))
+        return;
+    try {
+        var r = await api('admin-pause-store', { token: token, minutes: minutes });
+        storePausedUntil = r.pausedUntil || null;
+        storeHoursMsg = minutes > 0 ? 'Pausado. Volvemos solos a las ' + new Date(r.pausedUntil).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) + '.' : 'Pedidos reactivados.';
+        render();
+        setTimeout(function () { storeHoursMsg = ''; if (sc === 'admin_hours')
+            render(); }, 3500);
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+}
 async function toggleBusinessLaunched() {
     if (_launchToggleInProgress)
         return;
@@ -7890,6 +7929,19 @@ function sAdminHours() {
         + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + (businessLaunched ? 'El negocio ya abrió //' : 'Aún no hemos abierto //') + '</div>'
         + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + (businessLaunched ? 'La tarjeta de lista de espera ya no aparece en el Home.' : 'Actívalo el día real de lanzamiento para retirar la lista de espera.') + '</div></div>'
         + '<button onclick="toggleBusinessLaunched()" style="all:unset;cursor:pointer;flex-shrink:0;background:' + (businessLaunched ? 'transparent' : GOLD) + ';border:1px solid ' + (businessLaunched ? 'rgba(255,85,85,.4)' : GOLD) + ';color:' + (businessLaunched ? '#ff8888' : '#241a08') + ';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:9px 14px;border-radius:8px;text-align:center">' + (businessLaunched ? 'Revertir' : 'Ya abrimos →') + '</button>'
+        + '</div>';
+    // Pausa temporal — separada del horario semanal a propósito: esto es "hoy no puedo",
+    // no "los martes cerramos". Se reanuda sola.
+    var pausaActiva = storePausedUntil && new Date(storePausedUntil).getTime() > Date.now();
+    h += '<div style="background:' + (pausaActiva ? 'rgba(255,170,0,.12)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (pausaActiva ? 'rgba(255,170,0,.5)' : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:14px 16px;margin-bottom:18px">'
+        + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + (pausaActiva ? 'Pedidos en pausa //' : 'Pausa temporal //') + '</div>'
+        + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;margin-bottom:10px">'
+        + (pausaActiva ? 'Se reactivan solos a las ' + new Date(storePausedUntil).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) + '. No tienes que hacer nada.' : 'Si te quedaste sin insumos o no puedes atender un rato. Se reabre sola.') + '</div>'
+        + (pausaActiva
+            ? '<button onclick="pauseStore(0)" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;background:' + GOLD + ';color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px;text-align:center;min-height:44px">Reactivar ahora</button>'
+            : '<div style="display:flex;gap:8px">' + [[30, '30 min'], [60, '1 hora'], [180, '3 horas'], [600, 'Resto del día']].map(function (x) {
+                return '<button onclick="pauseStore(' + x[0] + ')" style="all:unset;cursor:pointer;flex:1;box-sizing:border-box;background:transparent;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:11px;padding:10px 4px;border-radius:8px;text-align:center;min-height:44px">' + x[1] + '</button>';
+            }).join('') + '</div>')
         + '</div>';
     var days = storeHoursForm || [];
     h += DOW_NAMES.map(function (name, i) {

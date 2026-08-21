@@ -11,15 +11,30 @@ import { logAdminAction } from "../logging.ts";
 // tarjeta "Avísame cuando abramos" del Home se condiciona a esta bandera real en vez de
 // solo cust/wlDone, para que desaparezca sola el día del lanzamiento sin tocar código
 // (hallazgo P1 de crítica impeccable 2026-07-30). El admin la togglea desde el panel.
+// Pausa temporal: "hoy ya no puedo" / "vuelvo en 2 horas". Se compara contra la hora
+// actual al leer, así que la tienda se reabre SOLA — nadie tiene que acordarse de
+// revertirla. Antes esto obligaba a editar el horario semanal recurrente, y si se olvidaba
+// revertirlo el negocio perdía ese mismo día de la semana siguiente entero.
+export async function storePausedUntil(): Promise<string | null> {
+  const rows = await sbGet("app_settings", "select=paused_until&id=eq.true");
+  const until = rows?.[0]?.paused_until;
+  if (!until) return null;
+  return new Date(until).getTime() > Date.now() ? until : null;
+}
+
 export async function actGetStoreHours(_b: any) {
   await loadStoreHours();
-  const settings = await sbGet("app_settings", "select=business_launched&id=eq.true");
+  const settings = await sbGet("app_settings", "select=business_launched,paused_until&id=eq.true");
+  const pausedUntilRaw = settings?.[0]?.paused_until;
+  const pausedUntil = pausedUntilRaw && new Date(pausedUntilRaw).getTime() > Date.now() ? pausedUntilRaw : null;
   return {
     hours: STORE_HOURS.map((range) => (range ? { open: range[0], close: range[1], closed: false } : { open: null, close: null, closed: true })),
     businessLaunched: settings?.[0]?.business_launched === true,
     // El píxel de Meta se activa solo si el secret existe — así se prende sin redesplegar
     // el cliente, y mientras no esté configurado la app no carga ningún script de terceros.
     metaPixelId: META_PIXEL_ID || null,
+    // El cliente lo usa para mostrar "volvemos a las X" en vez de un genérico "cerrado".
+    pausedUntil,
   };
 }
 
@@ -29,6 +44,17 @@ export async function actAdminSetBusinessLaunched(b: any) {
   await sbUpdate("app_settings", "id=eq.true", { business_launched: launched, updated_at: new Date().toISOString() });
   await logAdminAction(s.phone, "set-business-launched", undefined, { launched });
   return { success: true, launched };
+}
+
+export async function actAdminPauseStore(b: any) {
+  const s = await requireAdmin(b.token);
+  // minutes = 0 (o ausente) significa reanudar ahora mismo.
+  const minutes = Number(b.minutes) || 0;
+  if (minutes < 0 || minutes > 60 * 24 * 7) throw new ApiError("Duración de pausa inválida.", 400);
+  const until = minutes > 0 ? new Date(Date.now() + minutes * 60000).toISOString() : null;
+  await sbUpdate("app_settings", "id=eq.true", { paused_until: until, updated_at: new Date().toISOString() });
+  await logAdminAction(s.phone, "pause-store", undefined, { minutes, until });
+  return { success: true, pausedUntil: until };
 }
 
 export async function actAdminSetStoreHours(b: any) {
