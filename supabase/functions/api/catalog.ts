@@ -67,7 +67,21 @@ export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T0
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S10", "S11", "S12", "S13"]);
+// Proteínas que NO admiten doble porción. El atún es la única (decisión del dueño
+// 2026-08-21) y el número lo respalda: `pDbl` es un recargo PLANO pero la porción que
+// agrega escala con el tamaño, así que en un 30CM se cobraban S/9 por 170g de atún que
+// cuestan S/11.39 — la única operación del catálogo con margen NEGATIVO (−26.6%). El
+// cliente ya no la ofrece (bandera `noDouble` en PROTS), pero el servidor tiene que
+// rechazarla igual: nunca confía en lo que manda el cliente.
+export const NO_DOUBLE_PROTS = new Set(["P04"]);
+
+// S09 vuelve al catálogo (decisión del dueño 2026-08-21) después de haberse retirado el
+// mismo día junto con The Ember (SIG08), que era su único consumidor. Vuelve CAMBIADA:
+// ahora lleva ají y es picante. Eso resuelve de paso el hueco más grave que encontró el
+// council de salsas — las 2 únicas salsas picantes (S02, S12) son exclusivas del menú
+// secreto, así que ARMA EL TUYO no tenía NINGUNA opción picante para el público general,
+// en un negocio de comida en Perú. S09 es ahora esa opción.
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -401,6 +415,7 @@ export const SAUCE_LABEL: Record<string, string> = {
   S05: "SNDWCH // Special",
   S06: "Oil & Vinegar // Classic",
   S08: "Teriyaki // Glaze",
+  S09: "Chimichurri // Piña y Ají",
   S10: "Peanut // Satay",
   S11: "Mostaza // Dijon",
   S12: "Picante // Miel",
@@ -467,6 +482,7 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   if (!sig) throw new ApiError("Signature inválida.");
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
+  if (doubleProt && NO_DOUBLE_PROTS.has(sig ? sig.prot : "")) throw new ApiError("Esa proteína no admite doble porción.");
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
@@ -524,6 +540,7 @@ function priceByoBuild(
   // salsa (hallazgo de auditoría financiera).
   if (extraSauce && !sauces.length) throw new ApiError("Selecciona al menos una salsa antes de pedir salsa extra.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
+  if (doubleProt && NO_DOUBLE_PROTS.has(prot)) throw new ApiError("Esa proteína no admite doble porción.");
   const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
