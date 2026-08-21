@@ -67,7 +67,7 @@ export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T0
 export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S10", "S11", "S12", "S13"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -212,13 +212,6 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // loadCatalogPrices() ya hace con los precios. No editar este literal para cambiar el
   // sándwich del mes — eso se hace desde el panel admin.
   SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24.9, p30: 30.9 },
-  // Variante de temporada de apertura — DEBE coincidir con SIGS.SIG08 en src/app.ts.
-  // Expira de verdad vía SIG_AVAILABILITY abajo (a diferencia de `newUntil` en el
-  // cliente, que solo cambia el badge a "Nuevo" sin ocultar el ítem).
-  // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — la receta
-  // no tenía ningún componente cremoso/graso (el chimichurri es a base de aceite, no
-  // barrera de humedad) — DEBE coincidir con SIGS.SIG08 en src/app.ts.
-  SIG08: { base: "B03", prot: "P01", tops: ["T03", "T06"], sauces: ["S09", "S01"], p15: 14.9, p30: 22.9 },
 };
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
@@ -243,14 +236,15 @@ export function sigGateError(sigId: string, totalOrders: number): string | null 
   // umbral bajó a 5 pedidos (ese número corresponde a "INICIADO", no a Círculo Interno).
   return `Ese sabor es exclusivo de ${computeRankName(gate.minOrders)} — sigue pidiendo para desbloquearlo.`;
 }
-// Variantes de temporada real (hoy solo SIG08 "THE EMBER", edición de apertura) — a
+// Variantes de temporada real — hoy no hay ninguna (THE EMBER se retiró antes de abrir:
+// era THE ORIGINAL con otra salsa, misma proteína, S/4 menos, y su chimichurri de piña
+// era la salsa más lenta del catálogo para el Signature de menor precio). El mecanismo se
+// conserva porque la próxima edición limitada solo tiene que agregar una línea acá — a
 // diferencia de SIG_GATES (acceso que se ABRE con el tiempo/rango), esto es acceso que
 // se CIERRA en una fecha fija. Vencido el `until`, el ítem deja de poder pedirse aunque
 // alguien arme el request a mano contra la API sin pasar por la UI (que ya lo oculta,
 // ver sigAvailable() en src/app.ts) — el servidor es quien de verdad lo rechaza.
-export const SIG_AVAILABILITY: Record<string, { until: string }> = {
-  SIG08: { until: "2026-10-07" },
-};
+export const SIG_AVAILABILITY: Record<string, { until: string }> = {};
 export function sigAvailabilityError(sigId: string): string | null {
   const avail = SIG_AVAILABILITY[sigId];
   if (!avail) return null;
@@ -300,7 +294,6 @@ export const SIG_LABEL: Record<string, string> = {
   SIG05: "MENÚ SECRETO // RESERVE",
   SIG06: "THE TERIYAKI // SIGNATURE",
   SIG07: "THE CHICAGO // RESERVE",
-  SIG08: "THE EMBER // SIGNATURE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
@@ -408,7 +401,6 @@ export const SAUCE_LABEL: Record<string, string> = {
   S05: "SNDWCH // Special",
   S06: "Oil & Vinegar // Classic",
   S08: "Teriyaki // Glaze",
-  S09: "Chimichurri // Piña asada",
   S10: "Peanut // Satay",
   S11: "Mostaza // Dijon",
   S12: "Picante // Miel",

@@ -212,7 +212,6 @@ var SAUCES=[
   // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
   // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
   // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
-  {id:'S09',l:'Chimichurri',s:'Piña asada',d:'Herbal, ajo, ácido, con piña asada'},
   {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní, soya, jengibre'},
   // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
   // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
@@ -383,15 +382,6 @@ var SIGS:any[]=[
   // `availableUntil` (distinto de `newUntil`, que solo cambia el badge a "Nuevo" pero
   // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
   // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
-  // el ítem completo desaparezca de la lista (sigAvailable()) y del backend
-  // (SIG_AVAILABILITY en catalog.ts) al pasar la fecha — expira solo, no es una palabra.
-  // Aioli (S01) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — esta
-  // receta no tenía NINGÚN componente cremoso/graso (el chimichurri es a base de aceite,
-  // no una barrera de humedad como sí lo son aioli/mayo/queso en el resto del menú) —
-  // 2 asesores de forma independiente lo confirmaron como riesgo real de pan mojado. DEBE
-  // coincidir con SIG_DATA.SIG08 en catalog.ts.
-  {id:'SIG08',n:'The Ember',s:'Signature',badge:'Edición de Apertura',availableUntil:'2026-10-07',base:'B03',prot:'P01',tops:['T03','T06'],sauces:['S09','S01'],p15:14.9,p30:22.9,
-    pitch:'Res asada mechada de cocción lenta sobre focaccia artesanal, con un toque de aioli y un chimichurri de piña asada que le suma un golpe dulce-ahumado al final. Nuestra receta del primer mes — disponible solo hasta el 7 de octubre.'},
   // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
   // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
   // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
@@ -435,7 +425,7 @@ function sigTypeTag(tag){
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg',SIG08:'img/sig08.jpg'};
+var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg',SIG07:'img/sig07.jpg'};
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -1884,7 +1874,13 @@ function sOHome(){
   var showOpenBadge=ss.open&&businessLaunched;
   // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
   // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'#25D366':'#ff8888'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'#25D366':'#ff8888'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</span>':'')+'</div>';
+  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'#25D366':'#ff8888'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'#25D366':'#ff8888'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</span>':'')+'</div>'
+  // El costo de envío ya se mostraba en el checkout, pero recién ahí: el cliente armaba
+  // todo el pedido y se enteraba del delivery al final. Esa sorpresa al final es la causa
+  // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
+  // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
+  // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
+  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+DELIVERY_PRICE_ZONES[0].fee+' según tu zona — lo cobra el motorizado, ~'+SOLES_TXT+'2 por km.</div>';
   var lastOrd=cust?lastPaidOrder():null;
   var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
@@ -1919,7 +1915,7 @@ function sOHome(){
       // posiciones 3 y 4, que son de las más miradas de una lista en móvil. Acá van al
       // final y suben los de mejor margen, sin tocar ningún precio ni receta. Cualquier
       // Signature nuevo que no esté listado acá se muestra al final, en su orden natural.
-      var SIG_HOME_ORDER=['SIG01','SIG02','SIG07','SIG06','SIG08','SIG03','SIG04'];
+      var SIG_HOME_ORDER=['SIG01','SIG02','SIG07','SIG06','SIG03','SIG04'];
       var visibleSigs=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).slice().sort(function(a,b){
         var ia=SIG_HOME_ORDER.indexOf(a.id),ib=SIG_HOME_ORDER.indexOf(b.id);
         return (ia<0?99:ia)-(ib<0?99:ib);
