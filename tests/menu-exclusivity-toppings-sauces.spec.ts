@@ -46,13 +46,13 @@ test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no apar
   // Otras salsas siguen disponibles normalmente.
   await expect(page.locator('text=Aioli').first()).toBeVisible();
 
-  // Desde 2026-08-21 la sección "Picantes //" SÍ debe aparecer: S09 (Chimichurri // Piña
-  // y Ají) volvió al catálogo marcada como picante y es pública. Hasta esa fecha las 2
-  // únicas salsas picantes eran S02/S12, ambas exclusivas del menú secreto, así que la
-  // sección nunca se renderizaba y ARMA EL TUYO no tenía NINGUNA opción picante para el
-  // público general — el hueco más grave que encontró el council de salsas.
-  await expect(page.locator('text=Picantes //')).toBeVisible();
+  // S09 (Chimichurri // Piña y Ají) es pública y picante, pero va en la MISMA lista que
+  // el resto: el picor se marca con el ícono de ají al costado, no con una sección propia
+  // (decisión del dueño 2026-08-21 — una sección "Picantes //" encabezando la pantalla
+  // presentaba el picante como la categoría principal en vez de como un atributo).
   await expect(page.locator('text=Chimichurri').first()).toBeVisible();
+  await expect(page.locator('text=Picantes //')).not.toBeVisible();
+  await expect(page.locator('text=Otras salsas //')).not.toBeVisible();
 
   // Pero las dos del menú secreto siguen ocultas: que exista picante público no debe
   // filtrar las exclusivas.
