@@ -27,8 +27,8 @@ test('cliente regala una tarjeta de regalo con puntos a otro cliente', async ({ 
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.locator('[onclick*="sc=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sc=\'gift_card\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'gift_card\'"]').click();
   await expect(page.getByRole('button', { name: 'REGALAR CON PUNTOS //' })).toBeVisible();
 
   await page.locator('#gc-phone').fill('911111111');
@@ -75,8 +75,8 @@ test('cliente sin puntos suficientes ve el error sin llegar a confirmar', async 
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.locator('[onclick*="sc=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sc=\'gift_card\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'gift_card\'"]').click();
 
   await page.locator('#gc-phone').fill('911111111');
   await page.locator('#gc-amt').fill('50');

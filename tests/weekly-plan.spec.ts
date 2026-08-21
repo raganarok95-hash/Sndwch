@@ -54,8 +54,8 @@ test('cliente activa el Plan Semanal y recibe saldo con bono', async ({ page }) 
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 
-  await page.locator('[onclick*="sc=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sc=\'weekly_plan\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
+  await page.locator('[onclick*="sndScreen=\'weekly_plan\'"]').click();
   await expect(page.getByRole('button', { name: 'ACTIVAR PLAN SEMANAL //' })).toBeVisible();
 
   await page.locator('#wp-email').fill('ana@test.com');
