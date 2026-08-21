@@ -50,7 +50,7 @@ import {
   actAdminSecretSignatureGet, actAdminSecretSignatureSet,
   actAdminRetentionReport,
 } from "./actions/admin.ts";
-import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched } from "./actions/hours.ts";
+import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched, actAdminPauseStore } from "./actions/hours.ts";
 import {
   actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
 } from "./actions/complaints.ts";
@@ -162,6 +162,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,
   "admin-set-business-launched": actAdminSetBusinessLaunched,
+  "admin-pause-store": actAdminPauseStore,
   "submit-complaint": actSubmitComplaint,
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,

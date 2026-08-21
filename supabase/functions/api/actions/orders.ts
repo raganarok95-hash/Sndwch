@@ -13,6 +13,7 @@ import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verify
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
+import { storePausedUntil } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 
@@ -153,6 +154,15 @@ async function assertBusinessLaunched(): Promise<void> {
       "Todavía no abrimos. Déjanos tu teléfono en la app y te avisamos apenas arranquemos.",
       403,
     );
+  }
+  // Pausa temporal ("hoy ya no puedo", "vuelvo en 2 horas"). Va dentro del mismo guard que
+  // ya atraviesan los DOS caminos de cobro, así que ningún pedido puede colarse por un
+  // lado mientras el otro rechaza. Se reanuda sola comparando contra la hora actual: no
+  // hay nada que acordarse de revertir.
+  const pausedUntil = await storePausedUntil();
+  if (pausedUntil) {
+    const hora = new Date(pausedUntil).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+    throw new ApiError("Estamos con una pausa breve — volvemos a las " + hora + ". Gracias por la paciencia.", 503);
   }
 }
 
@@ -1249,9 +1259,25 @@ const VALID_ORDER_STATUSES = new Set(STATUS_SEQUENCE);
 // (varios a la vez, ver #113) — mismo guard de pago pendiente, mismo otorgamiento de
 // puntos al entregar COD, y mismo push de seguimiento, sin duplicar la lógica en dos
 // lugares que inevitablemente terminarían divergiendo.
+// Cuánto se le promete al cliente cuando el pedido sale, si el operador no escribe un
+// número. Antes la app le preguntaba los minutos EN CADA pedido — 10 veces al día
+// escribiendo lo mismo. Estos valores salen de la promesa que el propio cliente ya vio
+// antes de pagar (ESTIMATED_DELIVERY_RANGE = 25-40 min en src/app.ts) más el tramo extra
+// que agrega cada zona. El operador la puede seguir sobrescribiendo cuando sabe que ese
+// pedido va a tardar distinto: esto solo elimina el caso normal, no la decisión.
+const DEFAULT_ETA_BY_ZONE: Record<string, number> = {
+  cerca: 25,
+  media: 30,
+  lejos: 40,
+  muy_lejos: 50,
+};
+const DEFAULT_ETA_FALLBACK = 30;
+
 async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
-  const upd: Record<string, unknown> = { status };
+  // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
+  // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
+  const upd: Record<string, unknown> = { status, status_changed_at: new Date().toISOString(), alerted_stuck_progress: false };
   // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
   // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
   // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
@@ -1262,9 +1288,16 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,delivery_zone,eta_minutes`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
+
+  // Si el pedido sale y nadie escribió una ETA, se pone la de su zona en vez de dejar al
+  // cliente sin ningún número. Solo aplica cuando el pedido todavía no tiene una: una ETA
+  // ya puesta a mano nunca se pisa.
+  if (status === "EN CAMINO" && upd.eta_minutes === undefined && !order.eta_minutes) {
+    upd.eta_minutes = DEFAULT_ETA_BY_ZONE[String(order.delivery_zone || "")] ?? DEFAULT_ETA_FALLBACK;
+  }
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
 
   // Antes esto no revisaba el estado actual del pedido — la acción en lote
@@ -1892,6 +1925,33 @@ export async function actAlertStuckOrders(b: any) {
       console.error("alert-stuck-orders failed for order", order.id, e);
     }
   }
+  // Segundo barrido: pedidos colgados DESPUÉS de RECIBIDO. El barrido de arriba solo mira
+  // el primer estado, así que un pedido que se quedó en PREPARANDO porque el dueño se
+  // distrajo cocinando —o en EN CAMINO porque nadie marcó la entrega— no avisaba nada. Es
+  // exactamente el pedido que termina en una calificación de 1 estrella, porque el cliente
+  // sí está mirando el reloj. Se usa el DOBLE del umbral de RECIBIDO: preparar y repartir
+  // legítimamente toman más que aceptar.
+  const progressCutoff = new Date(Date.now() - stuckMinutes * 2 * 60000).toISOString();
+  const inProgress = await sbGet(
+    "orders",
+    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status`,
+  );
+  for (const order of inProgress) {
+    try {
+      await sendPushToAdmins({
+        title: "Pedido sin avanzar ⏳",
+        body: order.ref + " (" + (order.customer_name || "cliente") + ") lleva más de " + stuckMinutes * 2
+          + " min en " + order.status + ". El cliente está esperando.",
+        url: "./index.html",
+        tag: "sndwch-stuck-progress-" + order.id,
+      });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { alerted_stuck_progress: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-stuck-orders (en progreso) failed for order", order.id, e);
+    }
+  }
+
   return { success: true, alerted };
 }
 
