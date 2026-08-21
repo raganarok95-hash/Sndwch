@@ -21,8 +21,22 @@ function main() {
   rmSync(distDir, { recursive: true, force: true });
   execFileSync('npx', ['tsc', '-p', 'tsconfig.build.json'], { cwd: root, stdio: 'inherit' });
 
-  const appJs = readFileSync(path.join(distDir, 'app.js'), 'utf8');
+  let appJs = readFileSync(path.join(distDir, 'app.js'), 'utf8');
   const shell = readFileSync(path.join(root, 'src/shell.html'), 'utf8');
+
+  // Sello de build: SHA corto de git + fecha. Se inyecta acá y no se escribe a mano en
+  // src/app.ts para que no haya forma de que quede desactualizado. Es lo que permite
+  // saber, mirando la app en el teléfono del dueño, si está corriendo el código que
+  // acabamos de desplegar o un shell viejo servido por el service worker.
+  let sha = 'desconocido';
+  try {
+    sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  } catch { /* sin git (ej. tarball) — el sello queda como "desconocido", no rompe el build */ }
+  const stamp = sha + ' · ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  if (!appJs.includes('__APP_BUILD__')) {
+    throw new Error('src/app.ts ya no tiene el marcador __APP_BUILD__ — el sello de versión dejaría de actualizarse en silencio.');
+  }
+  appJs = appJs.split('__APP_BUILD__').join(stamp);
 
   if (!shell.includes('__APP_JS__')) {
     throw new Error('src/shell.html no tiene el placeholder __APP_JS__ — revisa que no se haya borrado por error.');

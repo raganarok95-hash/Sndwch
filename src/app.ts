@@ -812,6 +812,12 @@ var _adminOrderActionInProgress=false;
 var agPhone='',agPts='',agMsg='';
 var acPhone='',acDelta='',acMsg='';
 var pollTimer=null,lastPollCount=0,pollFailing=false;
+// Sello del build: scripts/build.mjs reemplaza este literal por el SHA corto de git + la
+// fecha al regenerar index.html. Sirve para una pregunta que hasta ahora no se podía
+// contestar a distancia: "¿qué versión está corriendo realmente en tu teléfono?". Sin
+// esto, un shell viejo pegado en caché y un bug real de código se ven idénticos desde
+// afuera, y no hay forma de distinguirlos sin tener el dispositivo en la mano.
+var APP_BUILD='__APP_BUILD__';
 var isOffline=!navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -1290,6 +1296,10 @@ function contactFooterHTML(){
     +legalFooterLink('Libro de reclamaciones','p_complaints',"cmplStep='form';")
     +'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
+    // Sello del build al pie. Deliberadamente discreto (8px, gris del pie) — no le dice
+    // nada a un cliente, pero contesta de un vistazo "¿qué versión tienes tú instalada?"
+    // sin necesitar la consola del navegador ni tener el teléfono en la mano.
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:#3E4C46;margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
     +'</div>';
 }
 // Fila compacta de enlaces legales, reutilizable fuera del home. El Libro de
@@ -5524,7 +5534,33 @@ function confirmMap(){
 // Esto evita el salto visible al tope cada vez que algo se actualiza solo
 // (poll del panel admin) o con cada toque al armar un pedido.
 var _lastRenderedSc=null;
+// render() envuelve a renderScreen() para que un error al pintar UNA pantalla no deje la
+// app muda. Antes, si cualquier función de pantalla lanzaba, `render()` moría antes de
+// tocar el DOM: la pantalla anterior se quedaba intacta y tocar el botón "no hacía nada",
+// sin ningún mensaje, ni en la app instalada ni en el navegador. Eso es exactamente lo
+// que se reportó el 2026-08-21 con ARMA EL TUYO, y lo que hizo imposible diagnosticarlo
+// a distancia: un fallo silencioso no deja rastro que el dueño pueda leerme.
+// Ahora el error se pinta en pantalla, con la versión del build y la pantalla que falló.
 function render(){
+  try{
+    renderScreen();
+  }catch(e){
+    try{
+      console.error('render() falló en la pantalla "'+sc+'":',e);
+      var appEl=(document.getElementById('app') as HTMLElement | null);
+      if(appEl){
+        appEl.innerHTML='<div style="min-height:100vh;background:#1E3932;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#F2F0EB">'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-size:20px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
+          +'<p style="font-size:15px;line-height:1.55;color:#A8C8B0;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
+          +'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
+          +'<div style="color:'+GOLD+';font-weight:600;letter-spacing:.14em;font-size:10px;margin-bottom:8px">DETALLE //</div>'
+          +'<div>Pantalla: '+esc(String(sc))+'</div><div>Versión: '+esc(APP_BUILD)+'</div><div>Error: '+esc(String((e&&(e as any).message)||e))+'</div></div>'
+          +'<button onclick="applyAppUpdate()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-size:16px;font-weight:700;padding:18px 0;border-radius:10px;text-align:center">Recargar la app</button></div>';
+      }
+    }catch(_){}
+  }
+}
+function renderScreen(){
   if(busy){
     var appElBusy=(document.getElementById('app') as HTMLInputElement | null);
     // El admin navega decenas de veces por turno — antes cada navegación (cola,
@@ -6959,6 +6995,36 @@ async function doRecover(){
     if(m2)m2.textContent=e.message;
   }
 }
+
+// Red de seguridad global. Casi toda la interacción de la app son handlers `onclick`
+// en línea que llaman funciones globales; si una de ellas lanza, el navegador se traga
+// el error en la consola y para el usuario simplemente "no pasa nada al tocar" — sin
+// mensaje, sin pista, idéntico a un botón muerto. Eso hizo indiagnosticable a distancia
+// el reporte del 2026-08-21 sobre ARMA EL TUYO. Ahora cualquier error suelto levanta una
+// barra visible con la pantalla, el build y el mensaje: el dueño puede mandarnos una foto
+// y sabemos exactamente qué pasó, en vez de adivinar.
+var lastRuntimeError='';
+function showRuntimeError(msg){
+  if(!msg||lastRuntimeError===msg)return;
+  lastRuntimeError=msg;
+  try{
+    var bar=document.getElementById('rt-err');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.id='rt-err';
+      bar.setAttribute('style','position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#5A1414;color:#FFE8E8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;box-shadow:0 -6px 20px rgba(0,0,0,.35)');
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML='<div style="font-weight:600;margin-bottom:4px">Algo falló en esta pantalla — mándanos esta foto</div>'
+      +'<div style="opacity:.9;word-break:break-word">Pantalla: '+esc(String(sc))+' · Versión: '+esc(APP_BUILD)+'</div>'
+      +'<div style="opacity:.9;word-break:break-word">'+esc(String(msg))+'</div>'
+      +'<button onclick="document.getElementById(\'rt-err\').remove();lastRuntimeError=\'\'" style="all:unset;cursor:pointer;margin-top:8px;color:#FFB3B3;text-decoration:underline;font-size:12px">cerrar</button>';
+  }catch(_){}
+}
+window.addEventListener('error',function(ev){showRuntimeError((ev&&ev.message)||'Error desconocido');});
+window.addEventListener('unhandledrejection',function(ev: any){
+  var r=ev&&ev.reason;showRuntimeError((r&&r.message)||String(r||'Promesa rechazada'));
+});
 
 // PWA — registro del service worker (habilita instalación + apertura offline del
 // shell) y captura del prompt nativo de instalación para ofrecerlo desde un botón
