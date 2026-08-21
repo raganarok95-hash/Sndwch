@@ -1076,7 +1076,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // contestar a distancia: "¿qué versión está corriendo realmente en tu teléfono?". Sin
 // esto, un shell viejo pegado en caché y un bug real de código se ven idénticos desde
 // afuera, y no hay forma de distinguirlos sin tener el dispositivo en la mano.
-var APP_BUILD = 'ef5a383 · 2026-08-21 07:54 UTC';
+var APP_BUILD = '62cbeda · 2026-08-21 08:07 UTC';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2958,18 +2958,17 @@ function sOBuild() {
             var sel = sauces.indexOf(s.id) >= 0, full = !sel && sL >= 3, suggested = sauceSuggest.indexOf(s.id) >= 0;
             return '<div onclick="var i=sauces.indexOf(\'' + s.id + '\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\'' + s.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (full ? 'not-allowed' : 'pointer') + ';opacity:' + (full ? .3 : 1) + ';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</span>' + (s.spicy ? icon('chili', 14, '#ff8a5c') : '') + (suggested ? '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';border:1px solid ' + GOLD + ';border-radius:20px;padding:1px 8px;margin-left:auto">Sugerida</span>' : '') + '</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + s.d + '</p></div>';
         };
+        // UNA sola lista, en el orden del catálogo. El picante se marca con el ícono de ají al
+        // costado del nombre y nada más — que es lo que ya hace sauceCard.
+        //
+        // Antes esto se partía en dos secciones, "Picantes //" arriba y "Otras salsas //"
+        // debajo. Eso le daba a una sola salsa un encabezado propio y el primer lugar de la
+        // pantalla: el picante quedaba presentado como la categoría principal en vez de como
+        // un atributo más (decisión del dueño 2026-08-21, "Ají está demasiado priorizado,
+        // debe estar con las demás salsas solo al costado indicar que es picante"). Con una
+        // sola salsa picante en el catálogo el agrupamiento además no ordenaba nada.
         var byoSauces = SAUCES.filter(function (s) { return !s.sigOnly && !s.vaultOnly; });
-        var spicySauces = byoSauces.filter(function (s) { return s.spicy; });
-        var otherSauces = byoSauces.filter(function (s) { return !s.spicy; });
-        // Las 2 salsas picantes (Spicy Mayo/Picante Miel) ahora son vaultOnly — sin este
-        // guard, "Picantes //" quedaba como encabezado huérfano sin ninguna tarjeta debajo
-        // (hallazgo propio al agregar la exclusividad T07/T04/S02/S12, no del subagente).
-        if (spicySauces.length) {
-            h += '<div style="display:flex;align-items:center;gap:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">' + icon('chili', 11, '#ff8a5c') + '<span>Picantes //</span></div>';
-            h += spicySauces.map(sauceCard).join('');
-            h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:16px 0 8px">Otras salsas //</div>';
-        }
-        h += otherSauces.map(sauceCard).join('');
+        h += byoSauces.map(sauceCard).join('');
     }
     h += AB(size ? total() : null, byoStepCanContinue(), 'byoStepBack()', 'byoStepNext()', byoStep < 4 ? 'Siguiente →' : 'Continuar //', byoStepHint());
     return h;
