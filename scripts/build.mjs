@@ -10,6 +10,7 @@
 // sí los conserva tal cual (ver tsconfig.build.json).
 import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -24,18 +25,27 @@ function main() {
   let appJs = readFileSync(path.join(distDir, 'app.js'), 'utf8');
   const shell = readFileSync(path.join(root, 'src/shell.html'), 'utf8');
 
-  // Sello de build: SHA corto de git + fecha. Se inyecta acá y no se escribe a mano en
-  // src/app.ts para que no haya forma de que quede desactualizado. Es lo que permite
-  // saber, mirando la app en el teléfono del dueño, si está corriendo el código que
-  // acabamos de desplegar o un shell viejo servido por el service worker.
-  let sha = 'desconocido';
-  try {
-    sha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-  } catch { /* sin git (ej. tarball) — el sello queda como "desconocido", no rompe el build */ }
-  const stamp = sha + ' · ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  // Sello de build. Se inyecta acá y no se escribe a mano en src/app.ts para que no haya
+  // forma de que quede desactualizado. Es lo que permite saber, mirando la app en el
+  // teléfono del dueño, si está corriendo el código que acabamos de desplegar o un shell
+  // viejo servido por el service worker.
+  //
+  // Es el HASH DEL CONTENIDO COMPILADO, no el SHA de git ni la hora del build — y eso es
+  // deliberado. La primera versión usaba `git rev-parse HEAD` + timestamp, y tenía un
+  // defecto que se ve recién al usarla: el build corre ANTES de que exista el commit que
+  // lo va a contener, así que index.html se sellaba con el SHA del commit ANTERIOR y
+  // quedaba modificado inmediatamente después de cada commit. Regresión infinita: cada
+  // commit ensuciaba el árbol de nuevo. El timestamp agregaba lo suyo, cambiando el
+  // archivo aunque el código fuera idéntico.
+  //
+  // El hash del contenido no tiene ninguno de los dos problemas: mismo código fuente →
+  // mismo sello → cero diffs espurios. Y además identifica mejor lo que se quiere
+  // identificar: los bytes que de verdad se están sirviendo, no el commit desde el que
+  // se compilaron.
   if (!appJs.includes('__APP_BUILD__')) {
     throw new Error('src/app.ts ya no tiene el marcador __APP_BUILD__ — el sello de versión dejaría de actualizarse en silencio.');
   }
+  const stamp = createHash('sha256').update(appJs).digest('hex').slice(0, 10);
   appJs = appJs.split('__APP_BUILD__').join(stamp);
 
   if (!shell.includes('__APP_JS__')) {

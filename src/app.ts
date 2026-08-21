@@ -845,11 +845,13 @@ var _adminOrderActionInProgress=false;
 var agPhone='',agPts='',agMsg='';
 var acPhone='',acDelta='',acMsg='';
 var pollTimer=null,lastPollCount=0,pollFailing=false;
-// Sello del build: scripts/build.mjs reemplaza este literal por el SHA corto de git + la
-// fecha al regenerar index.html. Sirve para una pregunta que hasta ahora no se podía
-// contestar a distancia: "¿qué versión está corriendo realmente en tu teléfono?". Sin
-// esto, un shell viejo pegado en caché y un bug real de código se ven idénticos desde
-// afuera, y no hay forma de distinguirlos sin tener el dispositivo en la mano.
+// Sello del build: scripts/build.mjs reemplaza este literal por el hash del contenido
+// compilado al regenerar index.html (ver el comentario largo en ese script sobre por qué
+// es el hash del contenido y no el SHA de git). Sirve para una pregunta que hasta ahora
+// no se podía contestar a distancia: "¿qué versión está corriendo realmente en tu
+// teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
+// idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
+// mano. Se pinta al pie del home, en gris tenue.
 var APP_BUILD='__APP_BUILD__';
 var isOffline=!navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
