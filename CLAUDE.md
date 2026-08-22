@@ -171,10 +171,11 @@ Signature o build.
   `prepare-order`+cobro+`place-order`), Yape/Plin (manual, queda `pending` hasta que un
   admin confirma), crédito propio, o recompensa que cubre el 100%. Puede programarse
   para más tarde (`scheduledFor`, dentro de horario de atención).
-- **Combo + hora valle**: sándwich+bebida = -S/2 (una vez por par). Bebida gratis
-  (hasta S/4) de 2pm-6pm hora Lima si el pedido se prepara en esa ventana (usa la hora de
-  entrega si es programado, no la hora en que se arma el pedido). **Los dos nunca se
-  suman** — solo se aplica el mayor de los dos.
+- **Combo + hora valle**: sándwich+bebida = **-S/1** (una vez por par; bajado de S/2 el
+  2026-08-22, ver abajo). Bebida gratis (**hasta S/6**, subido de S/4 en la misma ronda)
+  de 3pm-6pm hora Lima si el pedido se prepara en esa ventana (usa la hora de entrega si
+  es programado, no la hora en que se arma el pedido). **Los dos nunca se suman** — solo
+  se aplica el mayor de los dos.
 - **Recompensas (R02-R06, puntos)**: 4ta salsa gratis, sube a 30CM gratis (tope plano
   S/8), doble proteína gratis, bebida gratis, sándwich 15CM gratis. Recalibradas contra
   el costo real de insumos (~45%, ver contexto de negocio).
@@ -272,6 +273,16 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Cualquier proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
   referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
   datos reales apenas el negocio esté operando y haya volumen real que medir.
+- **⚠ EL COSTEO IGNORABA LA MERMA DE COCCIÓN HASTA EL 2026-08-22 — no repitas el error.**
+  Cuando compras 1 kg de carne cruda NO salen 1 kg de porciones. Rendimientos reales
+  medidos contra referencias (ver `recetas/detalle-res.md` y `recetas/detalle-pollo.md`,
+  con fuentes): **res 0.54** (limpieza 10% + cocción 40%), **pollo 0.64-0.69**,
+  **res del corte laminado 0.567**. El costo real de la proteína terminada es **~1.85x**
+  el que daba el cálculo anterior (85 g × precio/kg del insumo crudo). Costos por porción
+  YA con merma: P01 S/3.15/S/6.30 · P02 S/2.47/S/4.95 · P03 S/2.49/S/4.97. Los de P04
+  (atún ~S/4.82/S/9.64), P05 (embutido ~S/4.29/S/8.59) y P06 (albóndiga ~S/1.34/S/2.68)
+  son **estimados sin cotizar**. Cualquier cálculo de margen parte de estos números, no
+  del precio del insumo crudo.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
   de venta — deliberadamente conservador/alto a propósito. Un cálculo directo con precios
   reales de Perú investigados dio ~26-36% según el producto; el dueño pidió trabajar con
@@ -362,6 +373,36 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
   rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo
   preferencia operativa.
+- **Subida de margen del 2026-08-22 (decisión del dueño, ya aplicada en código Y en
+  `catalog_prices`).** Se hizo DESPUÉS de recostear todo el menú con la merma real; los 5
+  Signatures ya cumplían el techo de 45% y esta subida es para ganar margen, no para tapar
+  un hueco. Cuatro cambios:
+  1. **+S/2 en los 5 Signatures**, en AMBOS tamaños (subir solo uno habría cambiado el
+     valor de R03, que perdona la diferencia p30-p15). Quedan: The Original 20.90/26.90 ·
+     The Marinara 21.90/28.90 · The Smoke 23.90/34.90 · The Fresh 20.90/34.90 ·
+     The Teriyaki 19.90/25.90. **Las proteínas de ARMA EL TUYO NO se tocaron** — el dueño
+     autorizó los Signatures, no el BYO. Consecuencia a vigilar: las combinaciones más
+     ajustadas del catálogo ahora son BYO 30CM de res (43.7%) y de atún (43.2%).
+  2. **`pDbl` deja de ser plano**: ahora hay `pDbl` (15CM) y `pDbl30` (30CM). El recargo
+     no escalaba con la porción que agrega, así que en 30CM costaba más de lo que cobraba
+     en 3 de 4 proteínas (res 105%, embutido 95%, pollo 83% del precio). Es el MISMO
+     defecto que ya había obligado a apagar el doble de atún (`noDouble`), solo que ahí se
+     apagó el producto en vez de corregir la estructura. Se subió solo donde pasaba el 45%.
+  3. **Bebidas +S/2 (y +S/3 el chai)**: 6/5/6/9. El margen de 61-84% que se venía usando
+     costeaba SOLO el insumo, nunca el envase — con botella con tapa a rosca a ~S/1
+     (estimado, **falta cotizar**) el margen real era 56-66%.
+  4. **Combo bajado de S/2 a S/1** y **topes de bebida gratis (R05_FLAT_WAIVER y
+     OFFPEAK_DRINK_PROMO_CAP) subidos de 4 a 6**. Lo primero porque a S/2 el combo se comía
+     del 58% al 118% de lo que deja una bebida (THE MIDNIGHT en combo dejaba −S/0.31); lo
+     segundo porque con bebidas a S/5-9 un tope de S/4 dejaba "BEBIDA // GRATIS" sin cubrir
+     una sola bebida del catálogo — promesa falsa, la misma clase que ya obligó a retirar
+     los badges MÁS PEDIDO y EDICIÓN LIMITADA. Los puntos de R05 NO cambian (120): a S/6 de
+     tope quedan en 20 pts/sol, justo donde ya está R06.
+  **Efecto medido**: contribución neta por pedido **S/13.82 → S/16.68** (+21%), asumiendo
+  mezcla 80% en 15CM, 25% de pedidos con bebida y 60% pagando con tarjeta.
+  **Pendiente detectado y NO resuelto**: la "tasa de cambio" del programa de puntos quedó
+  invertida — R03 cuesta 40 pts/sol y R04 53 pts/sol, contra 20 pts/sol de R05 y R06. Las
+  recompensas caras salen más baratas en puntos que las baratas. Revisar con datos reales.
 - **Programa de puntos**: recompensas (R02-R06 en `catalog.ts`) recalibradas para que el
   costo real de honrar cada canje sea consistente con el 45% de insumos de arriba — si
   ese % cambia de nuevo (ej. con datos reales de proveedor), estos puntos deberían

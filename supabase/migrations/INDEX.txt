@@ -112,3 +112,4 @@
 20260815134532  referrer_bonus_separate_amount
 20260815134612  reverse_referral_bonus_separate_amount
 20260815185105  rewards_recalibrated_2026_08_15
+20260822044102  precios_2026_08_22_margen_pdbl_por_tamano

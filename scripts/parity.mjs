@@ -77,7 +77,7 @@ function clientObjArray(varName, idPrefix, fields) {
   return out;
 }
 
-const cProt = need(clientObjArray('PROTS', 'P', ['p15', 'p30', 'pDbl']), 'PROTS (cliente)');
+const cProt = need(clientObjArray('PROTS', 'P', ['p15', 'p30', 'pDbl', 'pDbl30']), 'PROTS (cliente)');
 const cSide = need(clientObjArray('SIDES', 'D', ['p']), 'SIDES (cliente)');
 const cRew = need(clientObjArray('RWDS', 'R', ['pts']), 'RWDS (cliente)');
 
@@ -122,7 +122,7 @@ function serverRecord(src, name, fields) {
   return out;
 }
 
-const sProt = need(serverRecord(catalog, 'PROT_PRICE', ['p15', 'p30', 'pDbl']), 'PROT_PRICE (servidor)');
+const sProt = need(serverRecord(catalog, 'PROT_PRICE', ['p15', 'p30', 'pDbl', 'pDbl30']), 'PROT_PRICE (servidor)');
 const sRew = need(serverRecord(catalog, 'REWARDS', ['pts']), 'REWARDS (servidor)');
 
 const sSig = {};

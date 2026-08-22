@@ -1,5 +1,77 @@
 # SND//WCH — Análisis de menú + proyección financiera
 
+> # ⚠ VERSIÓN 6 — LEE ESTO ANTES QUE NADA (2026-08-22)
+>
+> **Todas las cifras de margen, COGS y utilidad de las secciones de abajo (v1 a v5.1) están
+> SUPERADAS y son OPTIMISTAS.** Costeaban la proteína como `gramos servidos × precio/kg del
+> insumo crudo`, lo que ignora la merma de cocción: de 1 kg de res cruda salen 540 g de
+> mechado, no 1 kg. **El costo real de la proteína terminada es ~1.85x** el que usan esas
+> tablas. Por eso ahí aparecen márgenes de 77-84% que no existen.
+>
+> Se conservan sin borrar porque la metodología (Monte Carlo, porciones por tamaño,
+> benchmarks de demanda anclados en Perú) sigue siendo válida — lo que hay que reemplazar
+> son los costos de proteína de entrada. **No cites un número de las secciones 2 a 11 sin
+> recalcularlo con los rendimientos de abajo.**
+>
+> ## Rendimientos reales (con fuentes en `recetas/detalle-res.md` y `recetas/detalle-pollo.md`)
+>
+> | Proteína | Limpieza | Cocción | Rendimiento | Costo/porción 85 g | 170 g |
+> |---|---|---|---|---|---|
+> | P01 res mechada | 10% | 40% | **0.54** | S/3.15 | S/6.30 |
+> | P02 pollo teriyaki | 8% | 25% | **0.690** | S/2.47 | S/4.95 |
+> | P03 pollo cajún | 8% | 30% | **0.644** | S/2.49 | S/4.97 |
+> | P04 atún *(estimado)* | — | — | — | S/4.82 | S/9.64 |
+> | P05 embutido *(estimado)* | 5% laminado | — | 0.95 | S/4.29 | S/8.59 |
+> | P06 albóndiga *(estimado)* | — | 25% | 0.75 | S/1.34 | S/2.68 |
+>
+> P01/P02/P03 vienen de investigación con fuentes citadas. **P04/P05/P06 son estimación
+> sin cotizar** — el atún es el más débil (usa ~S/67/kg investigado online, sin cotización
+> real de proveedor).
+>
+> ## Margen real por Signature, con los precios del 2026-08-22
+>
+> | Signature | 15CM | costo | % | contribuye | 30CM | costo | % | contribuye |
+> |---|---|---|---|---|---|---|---|---|
+> | The Original | 20.90 | 5.82 | 27.9% | 15.08 | 26.90 | 10.55 | 39.2% | 16.35 |
+> | The Marinara | 21.90 | 4.13 | 18.9% | 17.77 | 28.90 | 7.16 | 24.8% | 21.74 |
+> | The Smoke | 23.90 | 7.08 | 29.6% | 16.82 | 34.90 | 13.07 | 37.5% | 21.83 |
+> | The Fresh | 20.90 | 7.23 | 34.6% | 13.67 | 34.90 | 13.35 | 38.3% | 21.55 |
+> | The Teriyaki | 19.90 | 5.14 | 25.8% | 14.76 | 25.90 | 9.20 | 35.5% | 16.70 |
+>
+> Los diez pasan el techo de 45% de insumos+empaque. THE CHICAGO (SIG07) salió del catálogo
+> el 2026-08-22 por costo de producción, no por margen.
+>
+> ## Contribución por pedido y punto de equilibrio
+>
+> - Contribución media por sándwich (mezcla 80% en 15CM): **S/16.42**
+> - Bebida: contribución media **S/4.79**; en combo (−S/1) deja **S/3.79**
+> - Comisión Culqi estimada: **−S/0.69/pedido** (60% paga con tarjeta, ~5%)
+> - **Contribución neta por pedido: S/16.68** (asumiendo 25% de pedidos con bebida)
+> - Costos fijos < S/500/mes → **punto de equilibrio ~30 pedidos/mes = 1.2 al día**
+>
+> ## Rentabilidad esperada a 3 meses (sep-nov 2026) — SIMULACIÓN, no pronóstico
+>
+> **Cero ventas reales.** Las curvas de pedidos/día son supuestos elegidos a mano, no un
+> modelo de demanda. Reemplazar con datos reales apenas haya volumen.
+>
+> | Escenario | sep (24 d) | oct (26 d) | nov (26 d) | Neto 3 meses |
+> |---|---|---|---|---|
+> | Pesimista | 3/día → S/701 | 5/día → S/1,668 | 7/día → S/2,536 | **S/4,905** |
+> | Base | 6/día → S/1,902 | 10/día → S/3,837 | 15/día → S/6,005 | **S/11,744** |
+> | Optimista | 10/día → S/3,503 | 18/día → S/7,306 | 28/día → S/11,643 | **S/22,452** |
+>
+> Neto = contribución − S/500 de costos fijos. **Mano de obra = S/0**: el dueño cocina y
+> arma él mismo. Eso no es un hecho, es una decisión contable — el recetario estima
+> **14-16 h semanales solo de preparación**, antes de atender un pedido. En el escenario
+> Base de noviembre, el negocio le estaría pagando ~S/6,000/mes por unas 35-40 h semanales.
+>
+> ## Lo que falta para que esto deje de ser una simulación
+>
+> 1. Cotizar de verdad: atún, embutido (los tres por separado), envase de bebida, pan.
+> 2. Pesar crudo vs. cocido en la primera tanda real y validar los rendimientos de arriba.
+> 3. Medir la mezcla real 15CM/30CM (`retention_report` ya devuelve `attach.size30Pct`).
+> 4. Medir la tasa real de bebida por pedido — es la palanca más grande sin usar.
+
 Fecha: 2026-07-31. Versión 4 — punto medio pedido por el dueño: **se restauran todos los
 precios de insumos ya documentados en CLAUDE.md, excepto atún y embutido premium**, que
 usan los precios investigados online en la ronda "desde cero" (v2) — porque esos dos eran

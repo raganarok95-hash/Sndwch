@@ -118,18 +118,29 @@ var BASES=[
 // filtros `!x.sigOnly` de sOBuild/sAdminSecretSignature dejan de compilar — o sea que
 // borrar el último ingrediente exclusivo borraría también el mecanismo. Es el tipo el que
 // lo mantiene vivo, sin necesidad de inventar un dato falso en el array.
-var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean}[]=[
+// `pDbl` es el recargo de doble proteína en 15CM y `pDbl30` el de 30CM. Antes había UN
+// solo `pDbl` plano para los dos tamaños, y eso cobraba mal: la porción que agrega el
+// doble escala con el tamaño (85 g en 15CM, 170 g en 30CM) pero el recargo no. Con los
+// costos reales YA CON MERMA del recetario (2026-08-22), el doble en 30CM costaba más de
+// lo que cobraba en 3 de 4 proteínas: res S/6.30 de insumo por S/6 cobrados (105%),
+// embutido S/8.59 por S/9 (95%), pollo S/4.95 por S/6 (83%). Es el mismo defecto que ya
+// había obligado a apagar el doble de atún (`noDouble` abajo), solo que ahí se apagó el
+// producto en vez de corregir la estructura.
+// Los valores nuevos suben SOLO donde el costo pasaba el techo de 45%; donde ya estaba
+// sano no se toca (P06 15CM sigue en 6, que es 22% de costo — el 45% es un techo, no una
+// meta a la que haya que subir). DEBEN coincidir con PROT_PRICE en catalog.ts.
+var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;pDbl30:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean}[]=[
   // l/s invertidos (antes 'Asado // Res') — rompía la convención genérico+estilo que
   // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Albóndiga/Marinara): "Res" es
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
   // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:22.9,pDbl:6},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:21.9,pDbl:6},
+  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:22.9,pDbl:7,pDbl30:14},
+  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:21.9,pDbl:6,pDbl30:11},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:21.9,pDbl:6,vaultOnly:true},
+  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:21.9,pDbl:6,pDbl30:11,vaultOnly:true},
   // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
   // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
   // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -143,13 +154,13 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
   // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
   // en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:9,noDouble:true},
+  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
   // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:30.9,pDbl:9},
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:30.9,pDbl:9.9,pDbl30:19.9},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -157,7 +168,7 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
   // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
   // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:24.9,pDbl:6}
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:24.9,pDbl:6,pDbl30:6}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -254,6 +265,12 @@ var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boole
   // catalog.ts.
 ];
 var SIGS:any[]=[
+  // PRECIOS +S/2 en los 5 Signatures del menú de apertura (decisión del dueño,
+  // 2026-08-22, en AMBOS tamaños para no alterar la diferencia p30-p15 de la que depende
+  // R03). Se subió DESPUÉS de recostear todo el menú con la merma de cocción real del
+  // recetario: los cinco ya cumplían el techo de 45% de insumos y esta subida es para
+  // ganar margen, no para tapar un hueco. DEBEN coincidir con SIG_DATA en catalog.ts y
+  // con la tabla catalog_prices, que es la que de verdad cobra.
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): SIG01/02/03/06 p30 y SIG04 p15+p30 estaban EXACTAMENTE igualados al precio
   // de armar la misma proteína+tamaño por BUILD YOUR OWN (ver itemUnitPrice — BYO cobra
@@ -271,7 +288,7 @@ var SIGS:any[]=[
   // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
   // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
   // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:18.9,p30:24.9,
+  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:20.9,p30:26.9,
     pitch:'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.'},
   // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
   // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
@@ -307,7 +324,7 @@ var SIGS:any[]=[
   // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
   // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
   // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:19.9,p30:26.9,fixedCheese:'C01',
+  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:21.9,p30:28.9,fixedCheese:'C01',
     pitch:'Albóndigas caseras bañadas en marinara, con mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad.'},
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
@@ -323,7 +340,7 @@ var SIGS:any[]=[
   // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
   // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
   // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
-  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:21.9,p30:32.9,fixedCheese:'C02',
+  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:23.9,p30:34.9,fixedCheese:'C02',
     pitch:'Fiambres italianos ahumados y cheddar derretido sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
@@ -353,7 +370,7 @@ var SIGS:any[]=[
   // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
   // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
   // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:18.9,p30:32.9,
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:20.9,p30:34.9,
     pitch:'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
@@ -378,7 +395,7 @@ var SIGS:any[]=[
   // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
   // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
   // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:17.9,p30:23.9,
+  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:19.9,p30:25.9,
     pitch:'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.'},
   // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
@@ -489,12 +506,18 @@ var RWDS=[
 // `icon` distingue visualmente las 4 infusiones en BEBIDAS Y SIDES — antes eran
 // idénticas salvo el texto (hallazgo de auditoría UX), sin nada que distinguirlas de un
 // vistazo en una lista donde se comparan una junto a otra.
+// PRECIOS +S/2 (y +S/3 en el chai) el 2026-08-22, decisión del dueño. El margen de
+// 61-84% que el negocio venía usando para las bebidas costeaba SOLO el insumo, nunca el
+// envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen
+// real era 56-66%, no 84%. El chai lleva +S/3 y no +S/2 porque es el único con costo de
+// insumo alto de verdad (leche, cardamomo, jengibre: ~S/1.55 por vaso contra S/0.31-0.62
+// de las infusiones). DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
 var SIDES=[
   // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
-  {id:'D06',l:'The Bloom',    s:'Hibiscus',p:4,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
-  {id:'D07',l:'The Midnight', s:'Brew',    p:3,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
-  {id:'D08',l:'The Cool',     s:'Mint',    p:4,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'},
-  {id:'D09',l:'The Spice',    s:'Chai',    p:6,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.',icon:'vapor'}
+  {id:'D06',l:'The Bloom',    s:'Hibiscus',p:6,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
+  {id:'D07',l:'The Midnight', s:'Brew',    p:5,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
+  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'},
+  {id:'D09',l:'The Spice',    s:'Chai',    p:9,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.',icon:'vapor'}
 ];
 
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
@@ -651,7 +674,13 @@ function payableTotal(){return money(cartFinalTotal()+deliveryFeeAmount());}
 // porque regalar margen fuera de esa ventana no es "casi puro margen incremental"
 // (hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR en
 // supabase/functions/api/catalog.ts, el servidor es quien de verdad cobra.
-var COMBO_DISCOUNT_PER_PAIR=2;
+// Bajado de S/2 a S/1 el 2026-08-22 (decisión del dueño, misma ronda que la subida de
+// bebidas). A S/2 el combo se comía entre el 58% y el 118% de lo que deja una bebida ya
+// contado el envase — THE MIDNIGHT en combo dejaba −S/0.31, o sea que el par sándwich+
+// bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle
+// (que sí puede crear un pedido que no existía), este descuento se le aplica a alguien
+// que YA decidió comprar la bebida: es margen regalado, no adquisición.
+var COMBO_DISCOUNT_PER_PAIR=1;
 // Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
 // que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
 var R03_FLAT_WAIVER=8;
@@ -659,7 +688,15 @@ var R03_FLAT_WAIVER=8;
 // cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
 // más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
 var R04_FLAT_WAIVER=6;
-var R05_FLAT_WAIVER=4;
+// Subido de 4 a 6 el 2026-08-22, junto con la subida de precio de las bebidas. NO es
+// generosidad nueva: es lo que mantiene cierto el nombre de la recompensa. Con las
+// bebidas a S/5-9 y el tope en S/4, "BEBIDA // GRATIS" habría dejado de cubrir una sola
+// bebida del catálogo — la misma clase de promesa falsa que ya obligó a retirar los
+// badges MÁS PEDIDO y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE
+// COOL y deja THE SPICE parcial, exactamente la misma relación que había antes con el
+// tope en S/4. Los puntos de R05 NO cambian (120): a S/6 de tope quedan en 20 pts/sol,
+// que es justo donde ya está R06, así que el programa sigue internamente coherente.
+var R05_FLAT_WAIVER=6;
 // Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
 // se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
 // en catalog.ts.
@@ -672,7 +709,9 @@ var RESERVE_SIGS=new Set(['SIG05']);
 // hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
 // entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
 var OFFPEAK_DRINK_PROMO_HOURS_LIMA=[[15,18]];
-var OFFPEAK_DRINK_PROMO_CAP=4;
+// Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
+// a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
+var OFFPEAK_DRINK_PROMO_CAP=6;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -1255,12 +1294,16 @@ function dblProtRef(){
   var p: any=PROTS.find(function(x){return x.id===protId;});
   return (p&&p.noDouble)?undefined:p;
 }
+// Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
+// pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
+// DEBE coincidir con dblFee() en supabase/functions/api/catalog.ts.
+function dblFee(pr,sz){return !pr?0:(sz==='30'?pr.pDbl30:pr.pDbl);}
 function total(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
   var pr=PROTS.find(function(x){return x.id===prot;});
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dbl=dblProtRef();
-  return money(bp+(doubleProt&&dbl?dbl.pDbl:0)+(extraSauce?2:0));
+  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?2:0));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
@@ -1596,14 +1639,14 @@ function itemUnitPrice(item){
     if(!sig)return 0;
     var pr=PROTS.find(function(x){return x.id===sig.prot;});
     var bp=item.size==='15'?sig.p15:sig.p30;
-    var dbl=(item.doubleProt&&pr)?pr.pDbl:0;
+    var dbl=item.doubleProt?dblFee(pr,item.size):0;
     var extraSauceFee=item.extraSauce?2:0;
     return bp+dbl+extraSauceFee;
   }
   var pr2=PROTS.find(function(x){return x.id===item.prot;});
   if(!pr2)return 0;
   var bp2=item.size==='15'?pr2.p15:pr2.p30;
-  var dbl2=item.doubleProt?pr2.pDbl:0;
+  var dbl2=item.doubleProt?dblFee(pr2,item.size):0;
   var sc2=item.extraSauce?2:0;
   return bp2+dbl2+sc2;
 }
@@ -1753,7 +1796,7 @@ function rewardWaiverAmount(rewardId,targetIdx){
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
     var pr=PROTS.find(function(x){return x.id===protCode;});
-    return pr?Math.min(pr.pDbl,R04_FLAT_WAIVER):0;
+    return pr?Math.min(dblFee(pr,it.size),R04_FLAT_WAIVER):0;
   }
   if(rewardId==='R05')return it.type==='side'?Math.min(itemUnitPrice(it),R05_FLAT_WAIVER):0;
   if(rewardId==='R06'){
@@ -2447,7 +2490,7 @@ function sOItemConfirm(){
   var bk=mode==='sig'?'o_sig':'o_build',rows=[];
   var dbl=dblProtRef();
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
-  var dblSurcharge=(doubleProt&&dbl)?dbl.pDbl:0;
+  var dblSurcharge=doubleProt?dblFee(dbl,size):0;
   var sauceSurcharge=extraSauce?2:0;
   var t=quickPayEligible?payableTotal():total();
   rows.push({k:'Tamaño',v:szLabel(size)});
@@ -2455,7 +2498,7 @@ function sOItemConfirm(){
   // solo repite lo que ya dice el nombre del sándwich. Solo BUILD YOUR OWN (donde el
   // cliente sí eligió cada ingrediente) muestra ese desglose completo.
   if(mode!=='sig'){rows.push({k:'Pan',v:fn(BASES,base)});rows.push({k:'Proteína',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'Toppings',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'Queso',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'Salsas',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
-  if(doubleProt&&dbl)rows.push({k:'Doble',v:'Doble '+dbl.l+' // '+dbl.s,p:dbl.pDbl});
+  if(doubleProt&&dbl)rows.push({k:'Doble',v:'Doble '+dbl.l+' // '+dbl.s,p:dblFee(dbl,size)});
   if(extraSauce)rows.push({k:'Salsa extra',v:'Salsa adicional a tu elección',p:2});
   // Queso opcional — mecanismo para un futuro Signature que lo ofrezca a elección (ver
   // cheeseOptional en SIGS). SIG02 lo usó hasta 2026-08-08; ahora tiene queso FIJO
@@ -2467,7 +2510,7 @@ function sOItemConfirm(){
   // "Extra" es más de una salsa que ya elegiste — en BUILD YOUR OWN no tiene sentido
   // ofrecerla (ni el servidor la acepta) si el cliente no seleccionó ninguna salsa base.
   var sauceExtraAllowed=mode==='sig'||sauces.length>0;
-  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dbl.pDbl}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:2}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
+  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dblFee(dbl,size)}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:2}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
   // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
   // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
   // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (hoy ningún ítem) —
@@ -2484,7 +2527,7 @@ function sOItemConfirm(){
     +'<div style="background:'+'var(--sw-card,#2D5246)'+';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px">'+(mode==='sig'?'Tu signature //':'Tu build //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+r.p+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span></div></div>'
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#1A3028)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:'+GOLD+'">+'+SOLES+sizeUpsellDelta+'</span></div></div>':'')
     +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
-    +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dbl.pDbl,doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',2,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
+    +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dblFee(dbl,size),doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',2,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
     +(cust?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('estrella',11,GOLD)+'<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
         ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
@@ -5796,7 +5839,7 @@ async function loadInvBackground(){
 async function loadCatalogBackground(){
   try{
     var r=await api('get-catalog',{});
-    PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;}});
+    PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;if(typeof v.pDbl30==='number')p.pDbl30=v.pDbl30;}});
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
@@ -6030,7 +6073,7 @@ function sAdminCatalog(){
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Proteínas //</div>'
     +PROTS.map(function(p){
       return cpRow(p.l+' '+p.s,
-        cpNumField('cp-protein-'+p.id+'-p15','15CM',p.p15)+cpNumField('cp-protein-'+p.id+'-p30','30CM',p.p30)+cpNumField('cp-protein-'+p.id+'-pDbl','Doble +',p.pDbl),
+        cpNumField('cp-protein-'+p.id+'-p15','15CM',p.p15)+cpNumField('cp-protein-'+p.id+'-p30','30CM',p.p30)+cpNumField('cp-protein-'+p.id+'-pDbl','Doble 15CM +',p.pDbl)+cpNumField('cp-protein-'+p.id+'-pDbl30','Doble 30CM +',p.pDbl30),
         "saveCatalogPrice('protein','"+p.id+"')");
     }).join('')
     +'<div style="height:1px;background:var(--sw-bg,#1E3932);margin:16px 0"></div>'
@@ -6057,7 +6100,7 @@ function sAdminCatalog(){
     +'</div>';
 }
 function catalogFormValues(category,code){
-  if(category==='protein')return{p15:Number(gv('cp-protein-'+code+'-p15')),p30:Number(gv('cp-protein-'+code+'-p30')),pDbl:Number(gv('cp-protein-'+code+'-pDbl'))};
+  if(category==='protein')return{p15:Number(gv('cp-protein-'+code+'-p15')),p30:Number(gv('cp-protein-'+code+'-p30')),pDbl:Number(gv('cp-protein-'+code+'-pDbl')),pDbl30:Number(gv('cp-protein-'+code+'-pDbl30'))};
   if(category==='sig')return{p15:Number(gv('cp-sig-'+code+'-p15')),p30:Number(gv('cp-sig-'+code+'-p30'))};
   if(category==='side')return{price:Number(gv('cp-side-'+code+'-price'))};
   if(category==='reward')return{pts:Number(gv('cp-reward-'+code+'-pts'))};
@@ -6089,7 +6132,7 @@ async function saveAllCatalogChanges(){
   var jobs: {category:string;code:string;values:any}[]=[];
   PROTS.forEach(function(p){
     var v=catalogFormValues('protein',p.id);
-    if(v.p15!==p.p15||v.p30!==p.p30||v.pDbl!==p.pDbl)jobs.push({category:'protein',code:p.id,values:v});
+    if(v.p15!==p.p15||v.p30!==p.p30||v.pDbl!==p.pDbl||v.pDbl30!==p.pDbl30)jobs.push({category:'protein',code:p.id,values:v});
   });
   SIGS.forEach(function(s){
     var v=catalogFormValues('sig',s.id);

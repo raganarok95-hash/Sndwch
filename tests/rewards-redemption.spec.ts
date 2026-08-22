@@ -31,7 +31,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // para llegar a startOrder().
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
-  // THE ORIGINAL (SIG01) 15CM = S/18 — cualquier signature serviría, se fija uno
+  // THE ORIGINAL (SIG01) 15CM = S/20.90 — cualquier signature serviría, se fija uno
   // concreto solo para que el flujo sea determinista.
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -54,13 +54,15 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   await expect(page.getByText('The Bloom // Hibiscus', { exact: true })).toBeVisible();
 
   // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la
-  // bebida (S/4) — antes de esta sesión este número siempre era S/0 (recompensa rota).
+  // bebida (S/6, THE BLOOM tras la subida de precios del 2026-08-22) — antes de aquella
+  // sesión este número siempre era S/0 (recompensa rota). El tope R05_FLAT_WAIVER subió
+  // de 4 a 6 en la misma ronda, así que sigue cubriendo la bebida entera.
   await page.locator("[onclick*=\"toggleReward('R05')\"]").click();
   // El bug de auditoría (HTML crudo visible al aplicar cualquier recompensa con
   // ahorro) hacía que este texto SOLO apareciera bien renderizado en el resumen de
   // TOTAL, nunca en la fila de la recompensa misma — ahora aparece en ambos lugares
   // (arreglado), así que el locator debe apuntar específicamente a la fila del picker.
-  await expect(page.locator("[onclick*=\"toggleReward('R05')\"] >> text=ahorras S/4")).toBeVisible();
+  await expect(page.locator("[onclick*=\"toggleReward('R05')\"] >> text=ahorras S/6")).toBeVisible();
 
   await page.locator('#o-nom').fill('Bruno Cliente');
   await page.locator('#o-phone').fill('987654323');
@@ -116,7 +118,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
-  // THE ORIGINAL (SIG01) 15CM = S/18.
+  // THE ORIGINAL (SIG01) 15CM = S/20.90.
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
@@ -129,11 +131,11 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
 
   await page.locator("[onclick*=\"toggleReward('R06')\"]").click();
 
-  // El ahorro de la recompensa debe ser el precio COMPLETO del sándwich (S/18) — y el
-  // combo NO debe aparecer, porque ese sándwich ya no cuenta para el combo (fix de esta
-  // sesión). Si el combo se colara de nuevo, la bebida quedaría gratis sin que nadie lo
-  // decidiera.
-  await expect(page.locator('text=recompensa: ahorras S/18')).toBeVisible();
+  // El ahorro de la recompensa debe ser el precio COMPLETO del sándwich (S/20.90) — y el
+  // combo NO debe aparecer, porque ese sándwich ya no cuenta para el combo (fix de una
+  // sesión anterior). Si el combo se colara de nuevo, la bebida quedaría gratis sin que
+  // nadie lo decidiera.
+  await expect(page.locator('text=recompensa: ahorras S/20.9')).toBeVisible();
   await expect(page.locator('text=combo aplicado')).not.toBeVisible();
 
   await page.locator('#o-nom').fill('Carla Cliente');

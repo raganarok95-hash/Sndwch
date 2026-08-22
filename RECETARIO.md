@@ -1,7 +1,13 @@
 # SND//WCH — RECETARIO DE PRODUCCIÓN
 
-**Versión 2 · 2026-08-22 · para arrancar tandas de prueba antes de la apertura (lun 7 sep 2026)**
+**Versión 3 · 2026-08-22 · para arrancar tandas de prueba antes de la apertura (lun 7 sep 2026)**
 
+> **Cambio de la v3:** subida de margen — los 5 Signatures suben S/2 (ambos tamaños), las
+> bebidas suben S/2 (el chai S/3) y el recargo de doble proteína deja de ser plano
+> (`pDbl` para 15CM, `pDbl30` para 30CM). Todo ya está aplicado en el código Y en la
+> tabla `catalog_prices`, que es la que de verdad cobra. Los costos y gramajes de este
+> recetario NO cambian: lo que cambió es el precio de venta.
+>
 > **Cambio de la v2:** THE CHICAGO **sale del menú de apertura** (decisión del dueño,
 > 2026-08-22) por costo de producción, no por el producto. Con él salen su corte propio
 > (P07), el au jus (S13) y la giardiniera (T07). Sus recetas **no se borraron**: están
@@ -538,28 +544,28 @@ precio de un sándwich.**
 D07 y D08, y **300 ml** para D09 (el chai es más denso y más caro). Botella o vaso **con tapa a
 rosca** — en moto, la tapa a presión se sale.
 
-## D06 · THE BLOOM // Hibiscus — S/4
+## D06 · THE BLOOM // Hibiscus — S/6
 **Tanda 3 L (≈8 vasos de 350 ml):** flor de jamaica seca 60 g · agua 3 L · canela 2 ramas ·
 azúcar 250 g.
 Hierve el agua, apaga, echa la flor y la canela, **infusiona tapada 15 min y cuela**.
 **No la hiervas con la flor dentro más de 5 min** — se pone astringente y áspera.
 Azúcar en caliente, enfría rápido. **5 días refrigerada.**
 
-## D07 · THE MIDNIGHT // Brew — S/3 — la de mejor margen
+## D07 · THE MIDNIGHT // Brew — S/5 — la de mejor margen
 **Tanda 3 L:** té negro a granel 40 g · agua fría 3 L. **En frío, refrigerado, 8-12 h. Cuela.**
 **El "sin amargor" del pitch viene exactamente de esto:** en frío no se extraen los taninos que
 amargan. **Si lo haces en caliente y lo enfrías, el pitch deja de ser cierto.** No hay atajo — hay
 que preverlo con 12 h de anticipación.
 Azúcar aparte, al gusto (es la que mejor funciona sin azúcar). **7 días refrigerada.**
 
-## D08 · THE COOL // Mint — S/4
+## D08 · THE COOL // Mint — S/6
 **Tanda 3 L:** hierba luisa 40 g · menta fresca 30 g · agua 3 L · azúcar 200 g.
 Agua hirviendo, apaga, **infusiona tapada solo 10 min y cuela de inmediato**. Pasados 15 min la menta
 se pone amarga y pierde el aroma, que es todo lo que estás vendiendo.
 **Enfría rápido** (la olla en un lavadero con agua fría). **4 días** — es la de vida más corta porque
 es la más aromática y el aroma se va antes que la seguridad.
 
-## D09 · THE SPICE // Chai — S/6
+## D09 · THE SPICE // Chai — S/9
 **La leche no se puede stockear** (alta humedad, pH casi neutro: el peor perfil microbiológico del
 catálogo). **Solución: concentrado sin leche, y la leche se agrega al momento.**
 
