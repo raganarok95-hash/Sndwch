@@ -30,7 +30,7 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
-  // SIG01 (THE ORIGINAL) 15CM = S/18.90 — primer Signature del catálogo, precio conocido.
+  // SIG01 (THE ORIGINAL) 15CM = S/20.90 — primer Signature del catálogo, precio conocido.
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
@@ -45,10 +45,10 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await page.getByRole('button', { name: 'Aplicar' }).click();
   await expect(page.locator('text=PROMO10 aplicado')).toBeVisible();
 
-  // 18.90 (comida) - 3 (promo) = 15.90, más el delivery de zona 'media'. Todavía no se
+  // 20.90 (comida) - 3 (promo) = 17.90, más el delivery de zona 'media'. Todavía no se
   // eligió método de pago, así que el fee va engordado para tarjeta (8/(1-0.055)=8.47):
-  // total mostrado = 24.37. Prueba de que el descuento ya se restó client-side.
-  await expect(page.locator('text=S/24.37').first()).toBeVisible({ timeout: 10000 });
+  // total mostrado = 26.37. Prueba de que el descuento ya se restó client-side.
+  await expect(page.locator('text=S/26.37').first()).toBeVisible({ timeout: 10000 });
 
   await page.locator('[onclick*="useCredit=!useCredit"]').click();
   await expect(page.getByRole('button', { name: 'Confirmar con crédito //' })).toBeVisible();
@@ -59,13 +59,13 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await expect(page.locator('text=Pago confirmado')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=Monto cobrado')).toBeVisible();
   // Al pagar con crédito el pedido deja de ir por Culqi, así que el delivery vuelve a
-  // su fee real (S/8) y el cobro baja a 15.90 + 8 = 23.90.
-  await expect(page.locator('text=S/23.90').first()).toBeVisible();
+  // su fee real (S/8) y el cobro baja a 17.90 + 8 = 25.90.
+  await expect(page.locator('text=S/25.90').first()).toBeVisible();
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
   expect(placeOrderCall!.body.promoCode).toBe('PROMO10');
-  expect(placeOrderCall!.body.total).toBe(23.9);
+  expect(placeOrderCall!.body.total).toBe(25.9);
   expect(placeOrderCall!.body.useCredit).toBe(true);
 });
 

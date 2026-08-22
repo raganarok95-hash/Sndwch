@@ -55,7 +55,12 @@ export async function actAdminCatalogSetPrice(b: any) {
   // en el panel guarde un jsonb con campos faltantes/de más que luego rompa el pricing.
   if (category === "protein") {
     if (!PROT_PRICE[code]) throw new ApiError("Proteína desconocida.");
-    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || typeof values.pDbl !== "number" || values.p15 < 0 || values.p30 < 0 || values.pDbl < 0) {
+    // pDbl30 se agregó el 2026-08-22 (el recargo de doble proteína dejó de ser plano, ver
+    // PROT_PRICE en catalog.ts). Se valida igual que los otros tres — sin esto, el panel
+    // admin podría guardar una fila sin pDbl30 y loadCatalogPrices dejaría el 30CM con el
+    // literal del código mientras el 15CM sí se actualiza: precios de dos épocas en la
+    // misma proteína.
+    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || typeof values.pDbl !== "number" || typeof values.pDbl30 !== "number" || values.p15 < 0 || values.p30 < 0 || values.pDbl < 0 || values.pDbl30 < 0) {
       throw new ApiError("Precio inválido.");
     }
   } else if (category === "sig") {

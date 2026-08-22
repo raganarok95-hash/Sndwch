@@ -71,13 +71,13 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
 
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
-  await expect(page.locator('text=S/21.9').first()).toBeVisible();
+  await expect(page.locator('text=S/23.9').first()).toBeVisible();
 
-  // Cambiar a 30CM sube el precio (S/21.90 → S/32.90) sin desmarcar el Signature elegido —
+  // Cambiar a 30CM sube el precio (S/23.90 → S/34.90) sin desmarcar el Signature elegido —
   // el bug original dejaba ambos tamaños al mismo precio, y esa fuga es lo que este test
   // evita que vuelva.
   await page.locator('[onclick*="size=\'30\'"]').click();
-  await expect(page.locator('text=S/32.9').first()).toBeVisible();
+  await expect(page.locator('text=S/34.9').first()).toBeVisible();
 
   // Vuelve a 15CM antes de continuar, para no depender de cuál tamaño quedó seleccionado.
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -103,8 +103,8 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
   expect(placeOrderCall2!.body.items).toHaveLength(1);
   expect(placeOrderCall2!.body.items[0].sigId).toBe('SIG03');
   expect(placeOrderCall2!.body.items[0].size).toBe('15');
-  // SIG03 15CM (S/21.90) + delivery por defecto (zona 'media', S/8) = S/29.90.
-  expect(placeOrderCall2!.body.total).toBe(29.9);
+  // SIG03 15CM (S/23.90) + delivery por defecto (zona 'media', S/8) = S/31.90.
+  expect(placeOrderCall2!.body.total).toBe(31.9);
 });
 
 // Regresión del bug crítico de esta sesión: un cliente que nunca toca el selector
@@ -140,8 +140,8 @@ test('invitado paga sin tocar el selector de método (camino rápido) y el total
     .poll(() => calls.find((c) => c.action === 'prepare-order'), { timeout: 10000 })
     .toBeTruthy();
   const prepareOrderCall = calls.find((c) => c.action === 'prepare-order')!;
-  // SIG03 15CM = S/21.90, zona 'media' = S/8 reales, pero engordado para tarjeta:
-  // 8/(1-0.055) = 8.47 → total = 30.37, no 29.90 (el fee sin engordar).
-  expect(prepareOrderCall.body.total).toBe(30.37);
+  // SIG03 15CM = S/23.90, zona 'media' = S/8 reales, pero engordado para tarjeta:
+  // 8/(1-0.055) = 8.47 → total = 32.37, no 31.90 (el fee sin engordar).
+  expect(prepareOrderCall.body.total).toBe(32.37);
   expect(prepareOrderCall.body.deliveryZone).toBe('media');
 });

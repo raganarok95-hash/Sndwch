@@ -107,16 +107,27 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive aparte
 // en SIG_DATA y ya rentaba sano; el problema era solo la proteína suelta en BUILD YOUR
 // OWN. DEBE coincidir con PROTS en src/app.ts.
-export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number }> = {
-  P01: { p15: 14.9, p30: 22.9, pDbl: 6 },
-  P02: { p15: 13.9, p30: 21.9, pDbl: 6 },
-  P03: { p15: 13.9, p30: 21.9, pDbl: 6 },
-  P04: { p15: 16.9, p30: 30.9, pDbl: 9 },
-  P05: { p15: 16.9, p30: 30.9, pDbl: 9 },
+// `pDbl` es el recargo de doble proteína en 15CM y `pDbl30` el de 30CM. Antes había UN
+// solo `pDbl` plano para los dos tamaños y eso cobraba mal: la porción que agrega el doble
+// escala con el tamaño (85 g en 15CM, 170 g en 30CM) pero el recargo no. Con los costos
+// reales YA CON MERMA del recetario (2026-08-22), el doble en 30CM costaba más de lo que
+// cobraba en 3 de 4 proteínas: res S/6.30 de insumo por S/6 cobrados (105%), embutido
+// S/8.59 por S/9 (95%), pollo S/4.95 por S/6 (83%). Es el mismo defecto que ya había
+// obligado a apagar el doble de atún (NO_DOUBLE_PROTS), solo que ahí se apagó el producto
+// en vez de corregir la estructura.
+// Se sube SOLO donde el costo pasaba el techo de 45%: P06 se queda en 6/6 porque ya estaba
+// sano (22% y 45%) — el 45% es un techo, no una meta a la que haya que subir.
+// DEBEN coincidir con PROTS en src/app.ts.
+export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number; pDbl30: number }> = {
+  P01: { p15: 14.9, p30: 22.9, pDbl: 7, pDbl30: 14 },
+  P02: { p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11 },
+  P03: { p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11 },
+  P04: { p15: 16.9, p30: 30.9, pDbl: 10.9, pDbl30: 21.9 },
+  P05: { p15: 16.9, p30: 30.9, pDbl: 9.9, pDbl30: 19.9 },
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
-  P06: { p15: 14.9, p30: 24.9, pDbl: 6 },
+  P06: { p15: 14.9, p30: 24.9, pDbl: 6, pDbl30: 6 },
   // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
   // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
@@ -158,6 +169,13 @@ export const SIG_ONLY_PROTS = new Set<string>([]);
 // resto del catálogo — mismo criterio que R03_FLAT_WAIVER. SIG07 salió de este Set al
 // retirarse del catálogo el 2026-08-22.
 export const RESERVE_SIGS = new Set(["SIG05"]);
+// Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
+// pDbl30 en el servidor — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
+// DEBE coincidir con dblFee() en src/app.ts.
+export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "15" | "30"): number {
+  if (!pr) return 0;
+  return size === "30" ? pr.pDbl30 : pr.pDbl;
+}
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
@@ -165,7 +183,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // quedaban EXACTAMENTE igualados al precio de armar la misma proteína+tamaño por BYO
   // (priceByoBuild cobra directo PROT_PRICE[prot].p15/p30, sin sumar nada por curaduría).
   // +S/2 solo en los puntos exactos de paridad — DEBE coincidir con SIGS en src/app.ts.
-  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 18.9, p30: 24.9 },
+  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 20.9, p30: 26.9 },
   // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
   // mismo cambio en src/app.ts, DEBE coincidir).
   // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
@@ -176,7 +194,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // cliente lo pida. Sin cambio de precio (costo real ~S/0.39-0.77/unidad, confirmado por
   // el dueño que no amerita subir S/19/26). base movida de B02 (retirado) a B01 — DEBE
   // coincidir con SIGS en src/app.ts.
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 19.9, p30: 26.9, fixedCheese: "C01" },
+  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 21.9, p30: 28.9, fixedCheese: "C01" },
   // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
   // (ver mismo cambio en src/app.ts, DEBE coincidir).
   // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
@@ -187,7 +205,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // fixedCheese:'C02' (Cheddar), comparable exitoso investigado (Firehouse "Smokehouse
   // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
   // categoría. Sin cambio de precio.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 21.9, p30: 32.9, fixedCheese: "C02" },
+  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 23.9, p30: 34.9, fixedCheese: "C02" },
   // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
   // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
   // THE ORIGINAL/THE MARINARA/THE SMOKE.
@@ -204,7 +222,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
   // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
   // en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 18.9, p30: 32.9 },
+  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 20.9, p30: 34.9 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
@@ -212,7 +230,7 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // SIGS.SIG06 en src/app.ts) — queda Tomate+Pimiento. El riesgo de "doble dulce"
   // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
   // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17.9, p30: 23.9 },
+  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 19.9, p30: 25.9 },
   // SIG07 (THE CHICAGO) retirado del catálogo de apertura el 2026-08-22 por costo de
   // producción, no por el producto — ver el comentario completo en SIGS de src/app.ts.
   // Para restaurarlo:
@@ -285,7 +303,12 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
 // items[] siguen mostrando bien (ver statItemLabel/statUnitPrice más abajo, y el
 // try/catch en restockOrderItems de orders.ts que ya contemplaba ítems legados que no
 // encajan en el catálogo actual) — solo dejan de poder pedirse de nuevo.
-export const SIDE_PRICE: Record<string, number> = { D06: 4, D07: 3, D08: 4, D09: 6 };
+// PRECIOS +S/2 (y +S/3 en el chai) el 2026-08-22, decisión del dueño. El margen de
+// 61-84% que el negocio venía usando para las bebidas costeaba SOLO el insumo, nunca el
+// envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen real
+// era 56-66%. El chai lleva +S/3 porque es el único con costo de insumo alto de verdad.
+// DEBEN coincidir con SIDES en src/app.ts.
+export const SIDE_PRICE: Record<string, number> = { D06: 6, D07: 5, D08: 6, D09: 9 };
 export const SIDE_LABEL: Record<string, string> = {
   // Catálogo de bebidas de la casa — sin jugos a propósito (decisión de negocio: los
   // jugos ya los vende cualquier juguería del barrio, esto busca diferenciarse).
@@ -326,6 +349,7 @@ export async function loadCatalogPrices(): Promise<void> {
         if (typeof v.p15 === "number") PROT_PRICE[row.code].p15 = v.p15;
         if (typeof v.p30 === "number") PROT_PRICE[row.code].p30 = v.p30;
         if (typeof v.pDbl === "number") PROT_PRICE[row.code].pDbl = v.pDbl;
+        if (typeof v.pDbl30 === "number") PROT_PRICE[row.code].pDbl30 = v.pDbl30;
       } else if (row.category === "sig" && SIG_DATA[row.code]) {
         if (typeof v.p15 === "number") SIG_DATA[row.code].p15 = v.p15;
         if (typeof v.p30 === "number") SIG_DATA[row.code].p30 = v.p30;
@@ -479,7 +503,7 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
   if (doubleProt && NO_DOUBLE_PROTS.has(sig ? sig.prot : "")) throw new ApiError("Esa proteína no admite doble porción.");
-  const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+  const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
@@ -537,7 +561,7 @@ function priceByoBuild(
   if (extraSauce && !sauces.length) throw new ApiError("Selecciona al menos una salsa antes de pedir salsa extra.");
   const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
   if (doubleProt && NO_DOUBLE_PROTS.has(prot)) throw new ApiError("Esa proteína no admite doble porción.");
-  const dblSurcharge = doubleProt ? protInfo.pDbl : 0;
+  const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
@@ -746,7 +770,13 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
 // abajo; hallazgo de auditoría financiera). DEBE coincidir con COMBO_DISCOUNT_PER_PAIR
 // en src/app.ts (ese lado solo calcula el estimado que ve el cliente antes de pagar;
 // este es el que de verdad determina cuánto se cobra).
-const COMBO_DISCOUNT_PER_PAIR = 2;
+// Bajado de S/2 a S/1 el 2026-08-22 (decisión del dueño, misma ronda que la subida de
+// bebidas). A S/2 el combo se comía entre el 58% y el 118% de lo que deja una bebida ya
+// contado el envase — THE MIDNIGHT en combo dejaba −S/0.31, o sea que el par sándwich+
+// bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle (que
+// sí puede crear un pedido que no existía), este descuento se le aplica a alguien que YA
+// decidió comprar la bebida: es margen regalado, no adquisición.
+const COMBO_DISCOUNT_PER_PAIR = 1;
 
 // Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
 // EXACTA de la proteína elegida (S/8 en P01/P02/P04, pero S/10 en P05/P06), lo que
@@ -778,7 +808,14 @@ const R04_FLAT_WAIVER = 6;
 // valle (OFFPEAK_DRINK_PROMO_CAP=4) — incluso fuera de esa ventana, una bebida gratis no
 // debería valer más que en la ventana en la que el negocio ya la regala gratis. DEBE
 // coincidir con R05_FLAT_WAIVER en src/app.ts.
-const R05_FLAT_WAIVER = 4;
+// Subido de 4 a 6 el 2026-08-22, junto con la subida de precio de las bebidas. NO es
+// generosidad nueva: es lo que mantiene cierto el nombre de la recompensa. Con las bebidas
+// a S/5-9 y el tope en S/4, "BEBIDA // GRATIS" habría dejado de cubrir una sola bebida del
+// catálogo — la misma clase de promesa falsa que ya obligó a retirar los badges MÁS PEDIDO
+// y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE COOL y deja THE SPICE
+// parcial, la misma relación que había antes con el tope en S/4. Los puntos de R05 NO
+// cambian (120): a S/6 de tope quedan en 20 pts/sol, justo donde ya está R06.
+const R05_FLAT_WAIVER = 6;
 
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima, la ventana de menor demanda entre el
 // almuerzo y la cena (ver PEAK_HOURS_LIMA en orders.ts: [12,14] y [19,21]) — el costo
@@ -798,7 +835,9 @@ const R05_FLAT_WAIVER = 4;
 // la ventana que se solapa con demanda real sin tocar la franja verdaderamente muerta
 // (16:00-18:00).
 const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[15, 18]];
-const OFFPEAK_DRINK_PROMO_CAP = 4;
+// Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
+// a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
+const OFFPEAK_DRINK_PROMO_CAP = 6;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
 // pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en
@@ -899,12 +938,12 @@ export function statUnitPrice(it: any): number {
       if (!sig) return 0;
       const pr = PROT_PRICE[sig.prot];
       const base = size === "15" ? sig.p15 : sig.p30;
-      return base + (it.doubleProt && pr ? pr.pDbl : 0) + (it.extraSauce ? 2 : 0);
+      return base + (it.doubleProt ? dblFee(pr, size) : 0) + (it.extraSauce ? 2 : 0);
     }
     const pr2 = PROT_PRICE[it.prot];
     if (!pr2) return 0;
     const base2 = size === "15" ? pr2.p15 : pr2.p30;
-    return base2 + (it.doubleProt ? pr2.pDbl : 0) + (it.extraSauce ? 2 : 0);
+    return base2 + (it.doubleProt ? dblFee(pr2, size) : 0) + (it.extraSauce ? 2 : 0);
   } catch (e) {
     // Los códigos de producto desconocidos ya devuelven 0 explícitamente arriba (ítems
     // legados) — si esto revienta es por algo inesperado (ej. it no es un objeto), y
