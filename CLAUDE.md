@@ -317,12 +317,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
   volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
   para necesitar contratar).
+- **⚠ EL PAN SE COTIZA POR UNIDAD, NO POR KILO — precio real del proveedor confirmado por
+  el dueño 2026-08-22.** **Pan sub S/2 la unidad**, y **el 15CM usa MEDIO pan** → S/1.00 el
+  15CM, S/2.00 el 30CM. El análisis financiero venía usando un proxy de S/11/kg × 71 g =
+  S/0.78 (15CM) / S/1.56 (30CM), o sea el pan estaba **28% subcosteado**. Ya recalculado en
+  `MENU_FINANCIAL_ANALYSIS.md`. Efecto: contribución por pedido S/16.68 → **S/16.42**, y
+  **BYO 30CM de res cruzó el techo de 45%** (43.7% → 45.6%), la única combinación del
+  catálogo que lo hace. Los 5 Signatures siguen holgados en los dos tamaños.
+  **Focaccia: S/13 la entera, pero FALTA el dato de cuántas porciones salen de una** — sin
+  eso no se puede costear. Sensibilidad: empata con el pan sub recién a 13 porciones de
+  15CM por focaccia; a 8 porciones cuesta S/1.62 (+S/0.62 por sándwich). Importa porque
+  **el tipo de pan es una elección GRATUITA del cliente** (`BASES` en `src/app.ts` y
+  `VALID_BASES` en `catalog.ts` no tienen precio), así que todo sobrecosto de la focaccia
+  sale del margen sin que el cliente pague nada extra.
 - **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
   **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
   `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
-  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según
-  tipo. **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
+  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg.
+  **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
   el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
   conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
