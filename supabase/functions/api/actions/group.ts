@@ -8,7 +8,7 @@
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, priceCartItem, assertCartGatesAllowed } from "../catalog.ts";
+import { loadCatalogPrices, priceCartItem, assertCartGatesAllowed, ORGANIZER_FREE_MIN_SANDWICHES } from "../catalog.ts";
 import { sendPushToPhone } from "../push.ts";
 
 // Ventana corta a propósito (pedido rápido de oficina, no algo para dejar abierto todo
@@ -67,11 +67,11 @@ export async function actGetGroupOrder(b: any) {
   const items = rows.map((row: any) => {
     try {
       const priced = priceCartItem(row.item);
-      return { id: row.id, contributorName: row.contributor_name, label: priced.label, qty: priced.qty, unitPrice: priced.unitPrice };
+      return { id: row.id, contributorName: row.contributor_name, label: priced.label, qty: priced.qty, unitPrice: priced.unitPrice, isSandwich: row.item?.type !== "side" };
     } catch {
       // Un producto que dejó de existir (cambio de catálogo) no debe tumbar toda la
       // pantalla del grupo — se muestra marcado en vez de desaparecer en silencio.
-      return { id: row.id, contributorName: row.contributor_name, label: "Producto no disponible", qty: 0, unitPrice: 0 };
+      return { id: row.id, contributorName: row.contributor_name, label: "Producto no disponible", qty: 0, unitPrice: 0, isSandwich: false };
     }
   });
   const total = items.reduce((sum: number, it: any) => sum + it.unitPrice * it.qty, 0);
@@ -80,7 +80,15 @@ export async function actGetGroupOrder(b: any) {
     const active = await verifyActiveSession(b.token);
     if (active && active.payload.phone === g.organizer_phone) isOrganizer = true;
   }
-  return { code: g.code, status: g.status, organizerName: g.organizer_name, expiresAt: g.expires_at, items, total, isOrganizer };
+  // sandwichQty/organizerFreeAt alimentan el avance del sándwich gratis del organizador
+  // en la pantalla del grupo ("faltan 2 para que uno vaya gratis"). Se calculan acá y no
+  // en el cliente para que el número que ve el que está juntando al grupo sea el mismo
+  // que el servidor va a usar al cobrar.
+  const sandwichQty = items.reduce((n: number, it: any) => n + (it.isSandwich ? it.qty : 0), 0);
+  return {
+    code: g.code, status: g.status, organizerName: g.organizer_name, expiresAt: g.expires_at,
+    items, total, isOrganizer, sandwichQty, organizerFreeAt: ORGANIZER_FREE_MIN_SANDWICHES,
+  };
 }
 
 export async function actAddGroupItem(b: any) {
@@ -137,6 +145,35 @@ export async function actCancelGroupOrder(b: any) {
   if (g.organizer_phone !== s.phone) throw new ApiError("Solo quien organizó el pedido puede cancelarlo.", 403);
   await sbUpdate("group_orders", `id=eq.${g.id}`, { status: "cancelled" });
   return { success: true };
+}
+
+// ¿Corresponde el sándwich gratis del organizador para este carrito?
+// Devuelve true SOLO si las cuatro cosas son ciertas, todas verificadas contra la base:
+//   1. el código existe,
+//   2. quien está pagando es el mismo que organizó el grupo,
+//   3. el grupo tiene al menos ORGANIZER_FREE_MIN_SANDWICHES sándwiches (no ítems: un
+//      grupo de 5 bebidas no destraba nada),
+//   4. NINGÚN pedido se cobró todavía con ese código de grupo — sin esto, el organizador
+//      podría pasar el mismo carrito por el checkout varias veces y farmear el descuento.
+// El cliente manda `groupCode` en el cuerpo del pedido, pero eso es solo una pista de
+// atribución: acá se vuelve a comprobar todo desde cero.
+export async function organizerFreeSandwichApplies(code: string, phone: string | null): Promise<boolean> {
+  if (!code || !phone) return false;
+  try {
+    const rows = await sbGet("group_orders", `code=eq.${encodeURIComponent(code)}&select=id,organizer_phone&limit=1`);
+    const g = rows[0];
+    if (!g || g.organizer_phone !== phone) return false;
+    const items = await sbGet("group_order_items", `group_order_id=eq.${g.id}&select=item`);
+    const sandwiches = items.filter((r: any) => r.item && r.item.type !== "side").length;
+    if (sandwiches < ORGANIZER_FREE_MIN_SANDWICHES) return false;
+    const yaCobrado = await sbGet("orders", `group_code=eq.${encodeURIComponent(code)}&select=id&limit=1`);
+    return !yaCobrado.length;
+  } catch (e) {
+    // Ante cualquier duda, NO se regala nada. Un fallo de red no puede convertirse en un
+    // descuento que el negocio no decidió.
+    console.error("organizerFreeSandwichApplies failed:", e);
+    return false;
+  }
 }
 
 export async function actCloseGroupOrder(b: any) {

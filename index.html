@@ -914,6 +914,15 @@ var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[15, 18]];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 var OFFPEAK_DRINK_PROMO_CAP = 6;
+// INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22). Quien junta al grupo se lleva
+// un sándwich gratis a partir de este número de sándwiches. Convierte al cliente en el
+// vendedor del canal de oficinas — el de mejor economía del negocio y el único que el
+// dueño no puede trabajar él mismo, porque sus mañanas están cocinando.
+// DEBE coincidir con ORGANIZER_FREE_MIN_SANDWICHES en supabase/functions/api/catalog.ts.
+// Ojo: esto es solo el espejo para que el cliente muestre el mismo número; quien de
+// verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
+// base (organizerFreeSandwichApplies en actions/group.ts).
+var ORGANIZER_FREE_MIN_SANDWICHES = 5;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -1123,7 +1132,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '13e9ead586';
+var APP_BUILD = 'a0ee5b89b6';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -1235,6 +1244,11 @@ var previewSigId = null;
 var newAddrMsg = '', favMsg = '';
 var cart = [];
 var groupCodeFromUrl = null;
+// ?grupo=1 — el QR de la tarjeta que va dentro de cada bolsa. Un pedido individual
+// entregado a las 12:30 en una oficina YA es una muestra gratis repartida adentro del
+// cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
+// entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
+var wantsNewGroup = false;
 (function () {
     try {
         var qp = new URLSearchParams(location.search);
@@ -1244,6 +1258,9 @@ var groupCodeFromUrl = null;
         var gc = qp.get('group');
         if (gc)
             groupCodeFromUrl = gc.trim().toUpperCase();
+        var ng = qp.get('grupo');
+        if (ng)
+            wantsNewGroup = true;
         // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
         // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
         // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
@@ -2114,6 +2131,11 @@ function cartComboCount() {
                 sd -= 1;
         }
     }
+    // El sándwich gratis del organizador tampoco cuenta: si contara, el combo terminaría
+    // regalando también la bebida emparejada con un sándwich que ya no se está cobrando —
+    // exactamente el bug que ya se corrigió una vez para R06.
+    if (organizerFreeIdx() >= 0)
+        sw -= 1;
     return Math.min(sw, sd);
 }
 function cartComboDiscount() { return cartComboCount() * COMBO_DISCOUNT_PER_PAIR; }
@@ -2152,6 +2174,57 @@ function itemSizeUpgradeDiff(it) {
 // una línea con doble proteína activada, R05 una línea de bebida/side, R06 una línea
 // 15CM. El resto de recompensas no tiene requisito propio (basta con que el carrito no
 // esté vacío).
+// 15CM y no RESERVE — la misma regla que usan R06 ("SÁNDWICH GRATIS") y el sándwich
+// gratis del organizador. Excluir los RESERVE evita que cualquiera de los dos se gamee
+// eligiendo el menú secreto, que es el ítem más caro del catálogo.
+function isFreeSandwichEligible(it) {
+    return it.type !== 'side' && it.size === '15' && !(it.type === 'sig' && RESERVE_SIGS.has(it.sigId));
+}
+// Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
+function cartSandwichQty() {
+    var n = 0;
+    cart.forEach(function (it) { if (it.type !== 'side')
+        n += it.qty; });
+    return n;
+}
+// Índice del 15CM más barato que se regala al organizador, o -1 si no corresponde.
+// Espejo exacto de deriveCart en el servidor: solo si el carrito viene de un pedido
+// grupal (pendingGroupCode) y llega al mínimo de sándwiches; nunca sobre la misma línea
+// que ya está regalando una recompensa.
+function organizerFreeIdx() {
+    if (!pendingGroupCode)
+        return -1;
+    if (cartSandwichQty() < ORGANIZER_FREE_MIN_SANDWICHES)
+        return -1;
+    var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
+    var best = Infinity, bi = -1;
+    cart.forEach(function (it, idx) {
+        if (idx === rewardIdx)
+            return;
+        if (!isFreeSandwichEligible(it))
+            return;
+        var pr = itemBasePrice(it);
+        if (pr < best) {
+            best = pr;
+            bi = idx;
+        }
+    });
+    return bi;
+}
+function itemBasePrice(it) {
+    if (it.type === 'side')
+        return itemUnitPrice(it);
+    if (it.type === 'sig') {
+        var sig = SIGS.find(function (x) { return x.id === it.sigId; });
+        return sig ? (it.size === '15' ? sig.p15 : sig.p30) : 0;
+    }
+    var pr = PROTS.find(function (x) { return x.id === it.prot; });
+    return pr ? (it.size === '15' ? pr.p15 : pr.p30) : 0;
+}
+function organizerFreeAmount() {
+    var i = organizerFreeIdx();
+    return i < 0 ? 0 : itemBasePrice(cart[i]);
+}
 function findRewardTargetIndex(rewardId) {
     // En BUILD YOUR OWN, R02 ("4TA SALSA GRATIS") solo aplica si ya llegó al tope de 3
     // salsas base antes de pagar por la extra — un Signature no tiene ese tope (sus salsas
@@ -2187,7 +2260,7 @@ function findRewardTargetIndex(rewardId) {
     }
     if (rewardId === 'R06') {
         for (var n = 0; n < cart.length; n++) {
-            if (cart[n].type !== 'side' && cart[n].size === '15' && !(cart[n].type === 'sig' && RESERVE_SIGS.has(cart[n].sigId)))
+            if (isFreeSandwichEligible(cart[n]))
                 return n;
         }
         return -1;
@@ -2225,6 +2298,7 @@ function rewardWaiverAmount(rewardId, targetIdx) {
 function cartStackedDiscount() { return Math.max(cartComboDiscount(), cartOffPeakDrinkDiscount()); }
 function cartFinalTotal() {
     var base = cartBaseTotal() - cartStackedDiscount();
+    base -= organizerFreeAmount();
     if (appliedReward) {
         var idx = findRewardTargetIndex(appliedReward);
         base -= rewardWaiverAmount(appliedReward, idx);
@@ -2591,6 +2665,16 @@ function shareGroupOrder() {
         window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
     }
 }
+// Se llama después de un login/registro exitoso: si el cliente llegó por el QR de la
+// tarjeta (?grupo=1) sin sesión, esto retoma lo que venía a hacer en vez de dejarlo
+// parado en la pantalla de puntos sin ninguna pista.
+function resumeWantedGroup() {
+    if (!wantsNewGroup || !cust)
+        return false;
+    wantsNewGroup = false;
+    doCreateGroupOrder();
+    return true;
+}
 async function doCreateGroupOrder() {
     if (!cust) {
         showToast('Inicia sesión para organizar un pedido grupal.');
@@ -2741,6 +2825,22 @@ function sGroupOrder() {
         return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(it.label) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">' + esc(it.contributorName) + '</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + it.unitPrice + '</div></div>';
     }).join('') : '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:14px">Nadie agregó su pedido todavía.</div>');
     h += '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:' + GOLD + '">' + SOLES + g.total + '</span></div>';
+    // Avance del sándwich gratis del organizador. Es el motor del canal de oficinas: le
+    // da a quien está juntando al grupo una razón concreta para insistirle a un compañero
+    // más, y esa insistencia es la venta que el dueño no puede hacer él mismo.
+    var freeAt = g.organizerFreeAt || ORGANIZER_FREE_MIN_SANDWICHES;
+    var swQty = typeof g.sandwichQty === 'number' ? g.sandwichQty : 0;
+    if (g.status === 'open') {
+        var falta = Math.max(0, freeAt - swQty);
+        var pctFree = Math.min(100, Math.round(swQty / freeAt * 100));
+        h += '<div style="background:var(--sw-card2,#1A3028);border:1px solid ' + (falta ? 'var(--sw-border,#3A6B58)' : GOLD) + ';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + (falta ? 'var(--sw-text,#FFFFFF)' : GOLD) + '">'
+            + (falta ? ('Faltan ' + falta + ' sándwich' + (falta === 1 ? '' : 'es') + ' para que uno vaya gratis') : '¡Un sándwich va gratis!') + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'
+            + (falta ? ('Con ' + freeAt + ' o más, el 15CM más barato del grupo no se cobra.') : 'Se descuenta el 15CM más barato al cerrar y pagar.') + '</div>'
+            + '<div style="height:4px;background:var(--sw-bg,#1E3932);border-radius:2px;margin-top:10px;overflow:hidden"><div style="height:100%;width:' + pctFree + '%;background:' + GOLD + '"></div></div>'
+            + '</div>';
+    }
     if (g.status !== 'open') {
         h += '<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">' + (g.status === 'cancelled' ? 'Este pedido grupal fue cancelado' : 'Este pedido grupal ya se cerró') + '</div>';
     }
@@ -4025,9 +4125,10 @@ function sOCart() {
     var showOffPeak = offPeakDiscount > 0 && offPeakDiscount > comboDiscount;
     var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
     var rewardDiscount = appliedReward ? rewardWaiverAmount(appliedReward, rewardIdx) : 0;
+    var orgDiscount = organizerFreeAmount();
     return H('TU CARRITO', "syncConfirmFields();sndScreen='o_home';render()") + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
         + cartItemsHTML()
-        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span>' + (showCombo ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">combo aplicado: ahorras ' + SOLES + pz(comboDiscount) + '</div>' : '') + (showOffPeak ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras ' + SOLES + pz(offPeakDiscount) + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + pz(rewardDiscount) + '</div>' : '') + '</div></div>' : '')
+        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span>' + (showCombo ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">combo aplicado: ahorras ' + SOLES + pz(comboDiscount) + '</div>' : '') + (showOffPeak ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">bebida gratis (hora valle): ahorras ' + SOLES + pz(offPeakDiscount) + '</div>' : '') + (orgDiscount > 0 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">sándwich del organizador: ahorras ' + SOLES + pz(orgDiscount) + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366">recompensa: ahorras ' + SOLES + pz(rewardDiscount) + '</div>' : '') + '</div></div>' : '')
         // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
         // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
         // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
@@ -4610,7 +4711,13 @@ async function doReg() {
     sndScreen = 'p_welcome';
     render();
     loadUserExtras();
-    setTimeout(function () { sndScreen = 'p_home'; render(); }, 6500);
+    // La bienvenida dura 6.5s y recién ahí se va a p_home — si venía por el QR de la
+    // tarjeta (?grupo=1), el grupo se crea al terminar esa pantalla, no antes, para no
+    // pisarla a mitad de camino.
+    setTimeout(function () { if (!resumeWantedGroup()) {
+        sndScreen = 'p_home';
+        render();
+    } }, 6500);
 }
 async function doLogin() {
     var phone = gv('l-phone').trim(), pin = gv('l-pin').trim();
@@ -4647,6 +4754,8 @@ async function doLogin() {
     sndScreen = 'p_home';
     render();
     loadUserExtras();
+    // Si llegó por el QR de la tarjeta (?grupo=1), retoma lo que venía a hacer.
+    resumeWantedGroup();
 }
 // Callback global de Google Identity Services (google.accounts.id.initialize) — recibe un
 // credential (id_token JWT) que NUNCA se usa para iniciar sesión directamente acá: se manda
@@ -9336,6 +9445,21 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
         render();
         loadGroupOrder();
         startGroupPoll();
+    }
+    // ?grupo=1 (QR de la tarjeta de la bolsa). A diferencia de ?group=CODE, organizar SÍ
+    // exige cuenta — el servidor necesita saber a quién cobrarle al cerrar. Si ya hay
+    // sesión se crea el grupo de una; si no, se deja el intento anotado y se lleva a la
+    // pantalla de cuenta: doCreateGroupOrder() se dispara solo apenas entre (ver
+    // resumeWantedGroup, llamado desde el login/registro).
+    if (wantsNewGroup) {
+        if (cust)
+            doCreateGroupOrder();
+        else {
+            sndScreen = 'p_home';
+            sndTab = 'points';
+            showToast('Inicia sesión para organizar el pedido de tu oficina.');
+            render();
+        }
     }
 })();
 

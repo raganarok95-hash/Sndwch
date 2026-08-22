@@ -192,9 +192,36 @@ Signature o build.
     un cobro Culqi que no encajaba con la intención original).
   - **Plan Semanal** (`prepare-weekly-plan`+`confirm-weekly-plan`): paga S/95 hoy con
     tarjeta (Culqi vía `create-credit-charge`), recibe S/100 en saldo propio al instante.
-- **Pedido grupal** (`create-group-order`/`add-group-item`/`close-group-order`): un
-  organizador crea un código, cualquiera con el link agrega su propio sándwich sin
-  necesitar cuenta, el organizador cierra y paga todo junto por el checkout normal.
+- **Pedido grupal / canal de oficinas** (`create-group-order`/`add-group-item`/
+  `close-group-order`): un organizador crea un código, cualquiera con el link agrega su
+  propio sándwich sin necesitar cuenta, el organizador cierra y paga todo junto por el
+  checkout normal.
+  **Es el canal con mejor economía del negocio y desde el 2026-08-22 tiene incentivo
+  propio**: a partir de `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más
+  barato del grupo va gratis**. Un pedido de 6 sándwiches contribuye casi lo mismo que 6
+  pedidos individuales pero cuesta UN cliente en vez de seis, y el cuello de botella del
+  negocio no es la cocina (techo 40/día) ni el mercado (Trujillo tiene 1.1M) sino adquirir
+  clientes — con el agravante de que el dueño **no puede vender puerta a puerta porque sus
+  mañanas están cocinando**. Este incentivo convierte al cliente en el vendedor: comprar
+  una cuenta de oficina entera cuesta el insumo de un sándwich (~S/6) contra ~S/128-141 por
+  publicidad o por muestra dirigida.
+  Detalles que no hay que romper: se perdona el **más barato del carrito, no "el del
+  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado
+  las líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que
+  R06** (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el
+  sándwich regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo
+  regalaría también la bebida emparejada con algo que ya es gratis. El servidor lo verifica
+  entero contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código
+  válido, quien paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese
+  código de grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces).
+  El `groupCode` que manda el cliente es solo atribución, nunca autorización.
+- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Un pedido individual
+  entregado a las 12:30 en una oficina YA es una muestra gratis repartida dentro del
+  cliente objetivo; lo que faltaba era el puente hacia un pedido grupal. Ese parámetro
+  abre uno directo (pide sesión, porque el servidor necesita saber a quién cobrarle al
+  cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
+  login/registro). Distinto de `?group=CODE`, que es unirse a uno existente y NO pide
+  cuenta.
 - **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
   (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
