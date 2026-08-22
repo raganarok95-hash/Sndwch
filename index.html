@@ -1132,7 +1132,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'a0ee5b89b6';
+var APP_BUILD = '3dd4f2c266';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2639,11 +2639,19 @@ function sOHome() {
             var officeCard = '<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
                 + icon('clientes', 18, GOLD)
                 + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">¿Piden en grupo<span class="cut-sep" style="color:' + GOLD + '"> // </span>en la oficina?</div>'
-                + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div></div>'
+                + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div>'
+                // El sándwich gratis solo se anunciaba DENTRO del pedido grupal, o sea después de
+                // que la persona ya decidió organizarlo. La decisión se toma acá, en la puerta.
+                + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:5px">Desde ' + ORGANIZER_FREE_MIN_SANDWICHES + ' sándwiches, uno va gratis.</div></div>'
                 + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';flex-shrink:0">Armar →</span></div>';
             return tabBar + (homeTab === 'byo' ? byoPanel : sigPanel) + (homeTab === 'sig' ? vaultCard : '') + officeCard;
         })()
-        + (cust ? '<div onclick="doCreateGroupOrder()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pedido<span class="cut-sep" style="color:' + GOLD + '"> // </span>grupal</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Para la oficina — cada quien arma el suyo y el delivery se divide entre todos</div></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Organizar →</span></div>' : '')
+        // Acá había una SEGUNDA tarjeta de pedido grupal ("Pedido // grupal · Organizar →"),
+        // con el mismo onclick y el mismo destino que officeCard de arriba. Era la versión
+        // vieja, de cuando el canal solo se ofrecía a quien ya tenía sesión; al agregar
+        // officeCard (visible también para invitados) nadie borró esta, así que un cliente
+        // logueado veía dos puertas al mismo sitio, una encima de la otra — reportado por el
+        // dueño con captura. Queda solo officeCard.
         + (cust && myFavorites.length ? '<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">' + icon('estrella', 15, '#FFFFFF') + '<span>Mis<span class="cut-sep" style="color:' + GOLD + '"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>' : '')
         + pc
         + contactFooterHTML()
