@@ -838,6 +838,27 @@ const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[15, 18]];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 const OFFPEAK_DRINK_PROMO_CAP = 6;
+
+// INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22).
+// El canal de oficinas es el de mejor economía del negocio: un pedido de 6 sándwiches
+// contribuye casi lo mismo que 6 pedidos individuales pero cuesta UN cliente en vez de
+// seis. El cuello de botella del negocio no es la cocina ni el mercado: es adquirir
+// clientes, y el dueño no puede salir a vender puerta a puerta porque sus mañanas están
+// cocinando. Este incentivo convierte al cliente en el vendedor: quien junta al grupo se
+// lleva un sándwich gratis, y con eso el negocio compra una cuenta de oficina entera por
+// el costo de insumo de un solo sándwich (~S/6 contra los ~S/128-141 que cuesta la misma
+// cuenta por publicidad o por muestra dirigida).
+//
+// Se perdona el 15CM MÁS BARATO del carrito, no "el del organizador": el organizador paga
+// la cuenta completa, así que económicamente es lo mismo y evita tener que adivinar cuál
+// de las líneas del grupo es suya (en el carrito cerrado todas vienen mezcladas con una
+// nota "De: <nombre>"). Además así la promesa es literal y verificable.
+//
+// Usa la misma elegibilidad que R06 (`eligibleR06`: 15CM y no RESERVE) para que no se
+// pueda gamear con el menú secreto, y se excluye del conteo de combo igual que R06 — si
+// no, el combo terminaría regalando también la bebida emparejada con un sándwich que ya
+// es gratis (es exactamente el bug que ya se corrigió una vez para R06).
+export const ORGANIZER_FREE_MIN_SANDWICHES = 5;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
 // pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en
@@ -849,7 +870,16 @@ function isOffPeakDrinkPromoActiveLima(refDate: Date): boolean {
   return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
 }
 
-export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?: string | null): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
+export function deriveCart(
+  rawItems: any,
+  rewardId: string | null,
+  scheduledFor?: string | null,
+  // Solo lo pasa en true quien ya VERIFICÓ contra la base que este carrito viene de un
+  // pedido grupal cerrado por esta misma sesión y que todavía no se cobró (ver
+  // organizerFreeSandwichApplies en actions/group.ts). Nunca se toma del cuerpo del
+  // request: el cliente no puede declararse acreedor de un descuento.
+  organizerFreeSandwich = false,
+): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
   if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
   if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
 
@@ -886,6 +916,21 @@ export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?
   let sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
   if (fullyWaivedSandwich) sandwichQty -= 1;
   if (fullyWaivedSide) sideQty -= 1;
+
+  // Incentivo al organizador: el 15CM más barato va gratis a partir de
+  // ORGANIZER_FREE_MIN_SANDWICHES sándwiches. Se resuelve acá arriba, junto con la
+  // recompensa, porque también regala una unidad COMPLETA y por lo tanto esa unidad no
+  // puede seguir contando para el combo.
+  let organizerWaivedIdx = -1;
+  if (organizerFreeSandwich && sandwichQty >= ORGANIZER_FREE_MIN_SANDWICHES) {
+    let best = Infinity;
+    priced.forEach((p, idx) => {
+      if (idx === rewardTargetIdx) return; // no se apila con R06 sobre la misma línea
+      if (!p.eligibleR06) return;          // misma elegibilidad: 15CM y no RESERVE
+      if (p.basePrice < best) { best = p.basePrice; organizerWaivedIdx = idx; }
+    });
+    if (organizerWaivedIdx >= 0) sandwichQty -= 1;
+  }
   const comboCount = Math.min(sandwichQty, sideQty);
   const comboDiscount = comboCount * COMBO_DISCOUNT_PER_PAIR;
 
@@ -911,6 +956,10 @@ export function deriveCart(rawItems: any, rewardId: string | null, scheduledFor?
   // mismo criterio en src/app.ts.
   const stackedDiscount = Math.max(comboDiscount, offPeakDrinkDiscount);
   total = Math.max(0, total - stackedDiscount);
+
+  if (organizerWaivedIdx >= 0) {
+    total = Math.max(0, total - priced[organizerWaivedIdx].basePrice);
+  }
 
   if (rewardId && reward) {
     const target = priced[rewardTargetIdx];

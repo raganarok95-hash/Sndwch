@@ -11,6 +11,7 @@ import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from 
 import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
+import { organizerFreeSandwichApplies } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil } from "./hours.ts";
@@ -240,6 +241,24 @@ function sanitizeCoord(raw: unknown, max: number): number | null {
 // (_fbp/_fbc son cookies que pone el propio píxel). No son datos personales por sí solos y
 // solo se usan para atribuir la venta al anuncio correcto. Se acotan a un largo razonable
 // para que nadie use este campo para inyectar basura en el evento.
+// ¿Este carrito se cobra con el sándwich gratis del organizador de un pedido grupal?
+// Se resuelve ANTES de deriveCart porque el descuento entra en el precio, y se verifica
+// entero contra la base (ver organizerFreeSandwichApplies): el `groupCode` que manda el
+// cliente es solo una pista, nunca una autorización.
+//
+// Verifica la sesión por su cuenta en vez de reusar la que estas funciones resuelven más
+// abajo: ese bloque corre DESPUÉS de deriveCart a propósito (el orden está documentado
+// por el fix de identidad del código promocional) y moverlo para ahorrar una consulta
+// sería tocar el camino del dinero por una razón cosmética. Es una verificación extra
+// solo en pedidos grupales, que son el camino menos frecuente.
+async function organizerWaiverFor(b: any): Promise<boolean> {
+  const code = typeof b?.groupCode === "string" ? b.groupCode.trim().toUpperCase().slice(0, 24) : "";
+  if (!code || !b?.token) return false;
+  const active = await verifyActiveSession(b.token);
+  if (!active) return false;
+  return await organizerFreeSandwichApplies(code, active.payload.phone);
+}
+
 function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; clientUserAgent: string | null; groupCode: string | null } {
   const clean = (v: unknown, max: number) => {
     const s = typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -623,7 +642,10 @@ export async function actValidatePromoCode(b: any) {
   if (rewardId) throw new ApiError("Los códigos promocionales no se pueden combinar con una recompensa de puntos.", 400);
   await loadCatalogPrices();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
-  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor);
+  // Mismo cálculo que el cobro real, incluido el sándwich gratis del organizador — si el
+  // preview lo ignorara, alguien con un pedido grupal vería un descuento distinto acá que
+  // el que termina pagando.
+  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
   const result = await computePromoDiscount(code, phone, foodTotal);
   return { valid: true, code: result.code, discount: result.discount };
 }
@@ -692,7 +714,7 @@ export async function actPrepareOrder(b: any) {
   await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
 
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — el teléfono de la
   // CUENTA autenticada (no contactPhone, campo de texto libre del checkout que un
@@ -996,7 +1018,7 @@ export async function actPlaceOrder(b: any) {
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — mismo criterio y
   // mismo motivo que en actPrepareOrder (hallazgo de auditoría, ALTO): la identidad real
