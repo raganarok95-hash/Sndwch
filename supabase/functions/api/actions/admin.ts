@@ -1047,12 +1047,16 @@ export async function actAdminSecretSignatureSet(b: any) {
   if (!name) throw new ApiError("Falta el nombre del sándwich del mes.", 400);
   const base = String(b.base || "").trim();
   if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.", 400);
-  // Los ingredientes exclusivos de OTRO Signature (SIG_ONLY_*, hoy P07/T07/S13 de THE
-  // CHICAGO) se rechazan acá, no solo en la UI del panel: el filtro del cliente evitaba
-  // elegirlos en pantalla, pero una llamada directa a la API (o un cambio futuro de esa
-  // UI) podía publicar un menú secreto que usara la proteína/topping/salsa exclusiva de
-  // THE CHICAGO, rompiendo en silencio esa exclusividad — que es justo lo que hace
-  // distinto a ese Signature (hallazgo de auditoría). El servidor es quien manda.
+  // Los ingredientes exclusivos de OTRO Signature (SIG_ONLY_*) se rechazan acá, no solo en
+  // la UI del panel: el filtro del cliente evita elegirlos en pantalla, pero una llamada
+  // directa a la API (o un cambio futuro de esa UI) podría publicar un menú secreto que
+  // usara la proteína/topping/salsa exclusiva de otro Signature, rompiendo en silencio esa
+  // exclusividad — que es justo lo que hace distinto a ese Signature (hallazgo de
+  // auditoría). El servidor es quien manda.
+  // Los 3 Sets están VACÍOS desde que se retiró THE CHICAGO (2026-08-22, era el único
+  // Signature público con ingredientes propios), así que hoy estas guardas no rechazan
+  // nada. Se quedan a propósito: vuelven a tener efecto solo, sin tocar este archivo, en
+  // cuanto SIG_ONLY_* deje de estar vacío.
   const proteinId = String(b.proteinId || "").trim();
   if (!PROT_PRICE[proteinId]) throw new ApiError("Proteína inválida.", 400);
   if (SIG_ONLY_PROTS.has(proteinId)) throw new ApiError("Esa proteína es exclusiva de otro Signature — elige otra.", 400);

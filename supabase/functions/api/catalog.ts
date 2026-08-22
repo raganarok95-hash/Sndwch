@@ -58,7 +58,9 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 export const VALID_BASES = new Set(["B01", "B03"]);
 // T08 (Apio) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — ver el mismo
 // cambio en TOPS en src/app.ts.
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08"]);
+// T07 (Giardiniera) fuera desde el 2026-08-22: se retiró con THE CHICAGO (SIG07), su
+// único consumidor. Ver el comentario del retiro en SIG_DATA más abajo.
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T08"]);
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
@@ -81,7 +83,9 @@ export const NO_DOUBLE_PROTS = new Set(["P04"]);
 // council de salsas — las 2 únicas salsas picantes (S02, S12) son exclusivas del menú
 // secreto, así que ARMA EL TUYO no tenía NINGUNA opción picante para el público general,
 // en un negocio de comida en Perú. S09 es ahora esa opción.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12", "S13"]);
+// S13 (Au Jus) fuera desde el 2026-08-22: salía de la cocción de P07 y solo se servía en
+// THE CHICAGO (SIG07); los dos se retiraron.
+export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12"]);
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -113,13 +117,8 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
   P06: { p15: 14.9, p30: 24.9, pDbl: 6 },
-  // Nueva (auditoría de menú + confirmación del dueño: "si se preparan por separado, son
-  // preparaciones distintas") — antes SIG07 (THE CHICAGO) reutilizaba P01 como si fuera
-  // el mismo insumo que el asado mechado normal, contradiciendo RECIPE_RATIONALE.md (corte
-  // laminado tipo Chicago vs. deshilachado, nunca deben mezclarse en el mismo lote). Mismo
-  // precio que P01 (no es un cambio de precio, solo separa el código de inventario/costeo)
-  // — DEBE coincidir con PROTS.P07 en src/app.ts.
-  P07: { p15: 14.9, p30: 22.9, pDbl: 6 },
+  // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
+  // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
 // Proteína/toppings/salsas exclusivas del sándwich secreto — no se pueden pedir por
 // BUILD YOUR OWN aunque sigan en PROT_PRICE/VALID_TOPS/VALID_SAUCES (deriveCart/
@@ -141,25 +140,24 @@ export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
 // loadSecretSignature() lo reasigna en cada refresco (a diferencia de los Sets de
 // arriba, un string no se puede mutar in-place).
 export let SECRET_SIGNATURE_NAME = "Menú secreto";
-// Salsas exclusivas de un signature público, no secreto (hoy solo S13 "Au Jus" → SIG07
-// "THE CHICAGO") — mismo criterio que VAULT_ONLY_PROTS: no se pueden pedir por BUILD YOUR
-// OWN aunque sigan en VALID_SAUCES (SIG_DATA/priceCartItem las siguen necesitando para
-// tasar SIG07). El caldo de cocción de res mechada no tiene sentido como salsa suelta
-// fuera de ese sándwich.
-export const SIG_ONLY_SAUCES = new Set(["S13"]);
-// Topping exclusivo de un signature público (hoy solo T07 "Giardiniera" → SIG07 "THE
-// CHICAGO") — mismo criterio que SIG_ONLY_SAUCES.
-export const SIG_ONLY_TOPS = new Set(["T07"]);
-// Proteína exclusiva de un signature público (hoy solo P07 "corte Chicago" → SIG07 "THE
-// CHICAGO") — mismo criterio que SIG_ONLY_TOPS/SIG_ONLY_SAUCES: existe en PROT_PRICE
-// para que SIG_DATA/priceCartItem la puedan tasar, pero no es seleccionable por BUILD
+// Ingredientes exclusivos de un signature PÚBLICO (no del menú secreto, que usa los
+// VAULT_ONLY_* de arriba): existen en PROT_PRICE/VALID_TOPS/VALID_SAUCES para que
+// SIG_DATA/priceCartItem puedan tasar ese Signature, pero no son seleccionables por BUILD
 // YOUR OWN (ver priceByoBuild más abajo).
-export const SIG_ONLY_PROTS = new Set(["P07"]);
+// Los tres quedan VACÍOS desde el 2026-08-22, cuando se retiró THE CHICAGO (SIG07) —
+// era el único Signature público con ingredientes exclusivos (S13 Au Jus, T07
+// Giardiniera, P07 corte Chicago). El mecanismo se queda intacto a propósito: es el
+// mismo que va a hacer falta cuando SIG07 vuelva, o cuando aparezca otro Signature con
+// un ingrediente propio.
+export const SIG_ONLY_SAUCES = new Set<string>([]);
+export const SIG_ONLY_TOPS = new Set<string>([]);
+export const SIG_ONLY_PROTS = new Set<string>([]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
-// Signature más caro disponible (SIG05 (menú secreto) S/24, SIG07 THE CHICAGO S/25)
-// muy por encima del resto del catálogo (S/16-21) — mismo criterio que R03_FLAT_WAIVER.
-export const RESERVE_SIGS = new Set(["SIG05", "SIG07"]);
+// Signature más caro disponible (SIG05, el menú secreto, S/24.90) muy por encima del
+// resto del catálogo — mismo criterio que R03_FLAT_WAIVER. SIG07 salió de este Set al
+// retirarse del catálogo el 2026-08-22.
+export const RESERVE_SIGS = new Set(["SIG05"]);
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
@@ -215,9 +213,13 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
   // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
   SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 17.9, p30: 23.9 },
-  // prot P01→P07: THE CHICAGO usa un corte propio (laminado, estilo Chicago Italian Beef),
-  // nunca el asado mechado normal — ver SIG_ONLY_PROTS y RECIPE_RATIONALE.md.
-  SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 22, p30: 29.9 },
+  // SIG07 (THE CHICAGO) retirado del catálogo de apertura el 2026-08-22 por costo de
+  // producción, no por el producto — ver el comentario completo en SIGS de src/app.ts.
+  // Para restaurarlo:
+  //   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 22, p30: 29.9 },
+  // más P07 en PROT_PRICE/PROT_LABEL/SIG_ONLY_PROTS, T07 en VALID_TOPS/TOP_LABEL/
+  // SIG_ONLY_TOPS, S13 en VALID_SAUCES/SAUCE_LABEL/SIG_ONLY_SAUCES, SIG_LABEL.SIG07 y
+  // SIG07 en RESERVE_SIGS.
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
   // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
@@ -307,7 +309,6 @@ export const SIG_LABEL: Record<string, string> = {
   SIG04: "THE FRESH // SIGNATURE",
   SIG05: "MENÚ SECRETO // RESERVE",
   SIG06: "THE TERIYAKI // SIGNATURE",
-  SIG07: "THE CHICAGO // RESERVE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
@@ -404,7 +405,6 @@ export const TOP_LABEL: Record<string, string> = {
   T04: "Jalapeño // Encurtido",
   T05: "Aceituna // Negra en rodajas",
   T06: "Pimiento // Curado",
-  T07: "Giardiniera // Encurtido picante",
   T08: "Apio // Picado",
 };
 export const SAUCE_LABEL: Record<string, string> = {
@@ -419,7 +419,6 @@ export const SAUCE_LABEL: Record<string, string> = {
   S10: "Peanut // Satay",
   S11: "Mostaza // Dijon",
   S12: "Picante // Miel",
-  S13: "Au Jus // Para mojar",
 };
 
 export const PROT_LABEL: Record<string, string> = {
@@ -432,9 +431,6 @@ export const PROT_LABEL: Record<string, string> = {
   // inglés entre las 6 proteínas, ni coincidía con su propia descripción en español —
   // DEBE coincidir con PROTS.P06 en src/app.ts.
   P06: "ALBÓNDIGA // MARINARA",
-  // Exclusiva de THE CHICAGO (SIG07) — ver SIG_ONLY_PROTS. DEBE coincidir con PROTS.P07
-  // en src/app.ts.
-  P07: "RES // CHICAGO",
 };
 
 // priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo
@@ -467,7 +463,7 @@ type PricedBuild = {
   // Diferencia real p30-p15 de este mismo producto — solo tiene sentido cuando size es
   // "15" (¿cuánto costaría subir ESTE sándwich a 30CM?) y cuando esa diferencia es
   // positiva; queda en 0 si ya es 30CM o si el producto cobra lo mismo en ambos tamaños
-  // (ej. SIG07, precio único). Usado por R03 ("SUBE A 30CM // GRATIS", ver deriveCart).
+  // (hoy ningún ítem del catálogo). Usado por R03 ("SUBE A 30CM // GRATIS", ver deriveCart).
   sizeUpgradeDiff: number;
   ingredientsPerUnit: string[];
   label: string;
@@ -687,7 +683,7 @@ export function priceCartItem(raw: any): PricedItem {
       eligibleR03: priced.sizeUpgradeDiff > 0,
       eligibleR04: doubleProt,
       eligibleR05: false,
-      // Excluye Signatures RESERVE (SIG05/SIG07) para que R06 no pueda gamearse eligiendo
+      // Excluye Signatures RESERVE (hoy solo SIG05) para que R06 no pueda gamearse eligiendo
       // el sándwich más caro del catálogo — ver comentario de RESERVE_SIGS arriba.
       eligibleR06: size === "15" && !RESERVE_SIGS.has(String(raw.sigId || "")),
     };
