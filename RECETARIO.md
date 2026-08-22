@@ -1,6 +1,16 @@
 # SND//WCH — RECETARIO DE PRODUCCIÓN
 
-**Versión 1 · 2026-08-21 · para arrancar tandas de prueba antes de la apertura (lun 7 sep 2026)**
+**Versión 2 · 2026-08-22 · para arrancar tandas de prueba antes de la apertura (lun 7 sep 2026)**
+
+> **Cambio de la v2:** THE CHICAGO **sale del menú de apertura** (decisión del dueño,
+> 2026-08-22) por costo de producción, no por el producto. Con él salen su corte propio
+> (P07), el au jus (S13) y la giardiniera (T07). Sus recetas **no se borraron**: están
+> completas al final, en la PARTE 7, listas para cuando vuelva.
+>
+> El **menú secreto (SIG05) se queda en el catálogo**, pero **no cocines P03 hasta que
+> alguien lo desbloquee** — se abre a los 5 pedidos pagados y nadie va a tenerlos en la
+> primera semana. Cocinar 4 kg de pollo cajún para la apertura es cocinar algo que nadie
+> puede comprar todavía.
 
 Escrito para **una persona sola**, cocinando **en casa**, **por tandas**, sin cocina industrial.
 En hora de servicio no se cocina: solo se **arma**.
@@ -9,7 +19,7 @@ En hora de servicio no se cocina: solo se **arma**.
 
 | Sección | Estado de la información |
 |---|---|
-| **P01, P07, S13 (res)** y **P02, P03 (pollo)** | **Investigadas a fondo**: corte peruano real, precio con fuente citada, merma medida contra referencias, seguridad alimentaria. Confiables. |
+| **P01 (res)** y **P02, P03 (pollo)** — más P07/S13 en la PARTE 7 | **Investigadas a fondo**: corte peruano real, precio con fuente citada, merma medida contra referencias, seguridad alimentaria. Confiables. |
 | **Todo lo demás** (salsas, atún, embutido, albóndigas, pan, toppings, bebidas, armado) | **Propuesta mía, técnicamente sólida pero SIN cotización de precios en Trujillo.** Las recetas funcionan; los costos son estimados. Hay que confirmarlos comprando. |
 
 **Dos hallazgos que cambian los números del negocio y que están confirmados:**
@@ -19,8 +29,8 @@ En hora de servicio no se cocina: solo se **arma**.
    pierde ~31-36% (rinde 0.64-0.69). El costo real de la proteína terminada es **~1.85x** lo que
    dice el costeo de hoy.
 2. **El "doble proteína" de res en 30CM pierde plata.** A +S/6 fijos por 170 g extra de mechado
-   que cuestan S/6.30, y S/8.98 si es el corte de P07. Ya se apagó el doble de atún por la misma
-   razón; **la res en 30CM tiene el mismo problema y sigue activa.**
+   que cuestan S/6.30. Ya se apagó el doble de atún por la misma razón; **la res en 30CM tiene el
+   mismo problema y sigue activa.**
 
 ---
 
@@ -48,7 +58,8 @@ Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda 
 **Sazón por kg de carne limpia:** 12 g de sal (1.2%), pimienta negra gruesa, poco comino, ajo picado.
 
 1. **Limpia (20 min).** Recorta nervio y grasa que pase de 5 mm — **deja ~5 mm, no la quites toda**.
-   **Guarda todos los recortes**: van al au jus de P07. Corta en trozos de 600-800 g.
+   Los recortes iban al au jus de THE CHICAGO, que está en pausa: guárdalos si vas a hacer un
+   caldo, o descártalos. Corta en trozos de 600-800 g.
 2. **Sala.** Si puedes, la noche anterior, destapado en el refri.
 3. **Sella (15 min).** Olla muy caliente, aceite, de pocos trozos a la vez. **Marrón oscuro, no
    dorado pálido** — ahí está la mitad del sabor. Si llenas la olla, se hierve.
@@ -81,67 +92,6 @@ Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda 
   armas otros pedidos · (3) microondas **solo al 50-60%**, tapado, tramos de 40 s. A potencia máxima
   el mechado es estopa en 60 segundos.
 - **Nunca recalientes en seco.** Descongela **siempre en refrigeración**, la noche anterior.
-
----
-
-## P07 · RES // CHICAGO (laminada) — SIG07 The Chicago
-
-**Preparación físicamente distinta de P01. Otro corte, otra técnica, otra tanda. Nunca se mezclan.**
-
-**Corte: ASADO PEJERREY.** Segunda opción: bola de lomo. Tercera: cadera. Son los magros de pierna
-de fibra larga, el equivalente peruano del *top round* del Italian Beef.
-**Precio real: S/28-34/kg.** ⚠ **El brief costea toda la res a S/20/kg y P07 no se puede hacer a
-ese precio** — el corte que exige la técnica cuesta 40-70% más.
-
-**Rinde 0.567** (limpieza 8% · cocción 35% · recorte de laminado 5%).
-**Costo real: S/4.49 la porción de 85 g · S/8.98 la de 170 g.**
-
-### Tanda: 4 kg de asado pejerrey (2 piezas de ~2 kg, no una de 4) → 26 porciones de 85 g + ~2.2 L de au jus
-
-**Esto no cabe en un solo día.** Son 3 días de calendario, ~2 h 15 de trabajo activo total.
-
-**Sazón italiana seca, para 4 kg:** 2 cdas orégano seco · 1 cda albahaca seca · 1 cda ajo en polvo ·
-2 cdtas pimienta negra gruesa · 1 cdta semillas de hinojo machacadas · 1 cdta ají en escamas ·
-1 cdta tomillo · 60 g de sal (1.5%). Al jus: 2 hojas de laurel + 6 dientes de ajo frescos.
-
-**Día 1 (25 min):** limpia la telilla plateada (guarda recortes), frota toda la mezcla seca,
-envuelve, **refri 12-24 h**.
-
-**Día 2 (30 min + horno):**
-1. **Jus base:** los recortes de P07 **+ los recortes de la limpieza de P01** (acá se usan), 2 cebollas,
-   1 cabeza de ajo, sofritos hasta dorar. 3 L de agua, laurel, orégano, hinojo, sal. **Hierve suave
-   1 h 30 y cuela.** Que salga de recortes propios es lo que hace literalmente cierto el pitch.
-2. Saca la carne del refri **45 min antes** de asar.
-3. **Sella** en sartén muy caliente, 6-8 min en total, marrón oscuro.
-4. **Asa a 160°C** con 2-3 dedos de jus en el fondo de la bandeja hasta **52-55°C internos**
-   (~1 h 45 - 2 h 15 por pieza de 2 kg). **Tiene que quedar cruda-media a propósito**: se termina de
-   cocinar en el jus caliente al armar cada sándwich. Si la sacas a punto, el sándwich sale recocido.
-5. **Reposo 30 min**, luego **sumerge la pieza entera en el jus y al refri 8-12 h. Sin excepción.**
-
-**Día 3 (1 h 15):**
-6. **Desgrasa el jus** — la grasa se solidificó arriba. Retírala. Este paso decide si el au jus se ve
-   bien o mal cuando llegue tibio al cliente.
-7. **Congelado parcial: 45-60 min.** Firme, no dura: no debes poder doblarla, pero sí atravesarla.
-8. **Lamina** contra la fibra, cuchillo largo bien afilado. **Objetivo real a mano: 1.5-2.5 mm**
-   (con rebanadora se llega a 0.5-1 mm; a mano no). Porciona a 85/170 g con jus y al congelador.
-
-> ⚠ **Para P07 el termómetro de pincho NO es opcional.** P01 se controla con el tenedor porque su
-> punto tiene un rango enorme; P07 sale a 52-55°C y el margen es de pocos grados. 5°C de más y la
-> lámina sale gris. Cuesta S/25-60 y es la mejor compra de equipo de todo este documento.
-
-**Sin horno confiable:** olla tapada a fuego mínimo con difusor, la pieza medio sumergida en el jus,
-1 h 15 - 1 h 45, con termómetro. **Lo que NO funciona: olla a presión** — te convierte P07 en P01.
-
----
-
-## S13 · AU JUS — solo SIG07
-
-Sale de la cocción de P07 (paso 1 y 5 de arriba), desgrasado en frío. Subproducto, costo marginal.
-- **Ración: 70 ml por pedido.** Una tanda de P07 deja ~2.2 L = 31 raciones. Lo que sobre, congélalo.
-- **Envase aparte, con tapa a rosca** — nada de tapa a presión en una moto. El riesgo real no es que
-  se enfríe, es que se derrame dentro de la bolsa y empape el sándwich.
-- Se manda **caliente, no hirviendo** (el vapor levanta tapas). A los 30 min llega tibio, y eso está
-  bien: el au jus tibio sigue funcionando; el au jus derramado arruina el pedido.
 
 ---
 
@@ -565,7 +515,6 @@ En láminas, **debajo de la proteína caliente** para que derrita con su calor (
 | T04 | Jalapeño | Rodajas de 3 mm | 12 g | **Comprar** en frasco |
 | T05 | Aceituna negra | Rodajas de 3 mm | 12 g | **Comprar** ya deshuesada |
 | T06 | Pimiento curado | Tiras de 1 cm | 18 g | Comprar en frasco, o asar y pelar tú |
-| T07 | **Giardiniera** | Picado grueso | 25 g | **Hacer** — no se consigue en Trujillo. Receta ⬇ |
 | T08 | Apio | Picado de 3-4 mm | 12 g | Comprar fresco. **Se pica al día**, no antes |
 
 **El tomate merece atención aparte** — va en 5 de los 7 Signatures y es el que más agua suelta:
@@ -577,19 +526,6 @@ barbaridad de agua y ese es exactamente el agua que si no, va a tu pan.
 
 **La cebolla morada**, si te parece agresiva: remójala 10 min en agua con hielo y un chorro de
 vinagre. Pierde el filo y gana crocancia. Escúrrela bien.
-
-### T07 · Giardiniera — receta (2 frascos, ~1.5 kg)
-Coliflor 400 g · zanahoria 250 g · apio 200 g · pimiento rojo 200 g · **ají limo o rocoto 60 g** ·
-aceitunas verdes picadas 100 g (opcional, es la versión de Chicago).
-1. Pica todo en trozos de 1 cm. **Salmuera: 2 L de agua + 120 g de sal.** Sumerge 24-48 h en el refri.
-2. Escurre y **enjuaga bien** (si no, queda incomible de salada).
-3. Cubre con: aceite vegetal 400 ml + aceite de oliva 100 ml + vinagre de vino 150 ml + orégano 10 g +
-   ajo 20 g + pimienta.
-4. **Reposa 3 días antes de usarla.** Recién ahí sabe a giardiniera.
-**Vida útil: 1 mes refrigerada, sumergida en su aceite.**
-
-**Es el ingrediente que hace auténtico a SIG07** y el único topping que tienes que producir. Hazla
-con anticipación: si la haces el sábado 5 de septiembre no estará lista para el lunes 7.
 
 ---
 
@@ -660,7 +596,6 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 | **SIG03** The Smoke | B03 tostado | **C02 fijo** | 34 jamón + 30 cabanossi + 21 paté | Cebolla 12 · Pepinillo 15 · Tomate 25 | S03 14/28 g | Humedad + sabor cargado |
 | **SIG04** The Fresh | B01 | — | P04 85/170 g | Tomate 25 · Pepinillo 15 · **Apio 12 al momento** | S11 14/28 g **+ limón exprimido** | **Temperatura. El más sensible** |
 | **SIG06** The Teriyaki | B01 tostado | — | P02 85/170 g **+ reglaseado 90 s** | Tomate 25 · Pimiento 18 | S10 + S05, 14/28 g | **Doble dulce sin ácido** ⬇ |
-| **SIG07** The Chicago | B01 | — | P07 85/170 g mojado en jus | Giardiniera 25 | **S13 70 ml APARTE** | **Derrame del au jus** |
 | **SIG05** Menú secreto | B03 | — | P03 85/170 g + cubo de jugo | Jalapeño 12 · Pimiento 18 · Cebolla 12 | S02 + S12, 14/28 g | Tres picantes apilados |
 
 **Tiempo objetivo: 4-5 min por sándwich.** Con el reglaseado de SIG06, ~6 min.
@@ -673,10 +608,8 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
    ya hace SIG04.** Cuesta cero. Es decisión tuya.
 2. **SIG04 no tiene ningún elemento dulce.** Dijon + limón apilan ácido sobre una base de mayonesa.
    Se sostiene, pero es un sándwich de un solo registro.
-3. **SIG07 lleva un solo topping y su única salsa va aparte.** Al precio más alto del catálogo
-   público (S/22 / S/29.90), al abrirlo se ve más vacío que un SIG01 de tres toppings. **Es
-   auténtico** (así es el Italian Beef de verdad) **pero el cliente que no conoce el plato no sabe
-   eso.** O se comunica bien en la foto y el pitch, o se le agrega algo.
+*(La tercera tensión de la v1 era que THE CHICAGO se veía vacío con un solo topping al precio más
+alto del catálogo. Se resolvió sola al sacarlo del menú de apertura.)*
 
 ---
 
@@ -685,7 +618,7 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 | Equipo | ¿Imprescindible? | Costo aprox. | Por qué |
 |---|---|---|---|
 | **Balanza de cocina digital** | **SÍ** | S/40-80 | Sin ella no puedes porcionar a 85/170 g y **todo el costeo de este documento deja de ser cierto** |
-| **Termómetro de pincho digital** | **SÍ** | S/25-60 | P07 sale a 52-55°C con margen de pocos grados. Y es el único control real de seguridad del pollo (74°C) |
+| **Termómetro de pincho digital** | **SÍ** | S/25-60 | Es el único control real de seguridad del pollo (74°C), la proteína de mayor riesgo del catálogo |
 | **Olla a presión 8-10 L** | Muy recomendable | S/150-300 | Convierte la tanda de P01 de 7 h de cocina ocupada a 4 h |
 | Botellas dosificadoras para salsas | Recomendable | S/5-10 c/u | "N apretones = X gramos", control de porción sin pesar en servicio |
 | Cucharas de porción (dishers) | Recomendable | S/20-40 c/u | Una por proteína, calibrada una vez |
@@ -693,6 +626,9 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 
 **Los dos primeros no son opcionales.** Suman menos de S/150 y son la diferencia entre un producto
 consistente y uno que varía tanda a tanda.
+
+**Rebanadora (cortafiambres):** no hace falta hoy. Es la compra que destraba el regreso de THE
+CHICAGO — a cuchillo el laminado llega a 1.5-2.5 mm y la técnica pide 0.5-1 mm.
 
 ---
 
@@ -716,3 +652,99 @@ Ninguna de estas la puedo contestar solo, y varias cambian las recetas:
 8. **El doble proteína de res en 30CM pierde plata.** ¿Lo subes de precio o lo apagas como ya se
    apagó el de atún?
 9. **¿Qué envase de bebida vas a usar?** Sin eso no se puede cerrar el costo de las 4 bebidas.
+
+---
+
+# PARTE 7 — EN PAUSA: THE CHICAGO (SIG07)
+
+**Retirado del menú de apertura el 2026-08-22.** No por el producto: es el único plato que nadie
+más vende en Trujillo y el naming mejor resuelto del catálogo. Es por lo que cuesta producirlo con
+una persona sola cocinando en casa:
+
+- **3 días de calendario** (marinar → asar → enfriar toda la noche EN el jus → laminar).
+- **Su propio corte a S/28-34/kg**, en tanda separada que nunca se puede mezclar con P01.
+- **Margen de cocción de pocos grados** (52-55°C): el único ítem donde equivocarte 5°C arruina la
+  tanda entera.
+- **Laminado fino**: a cuchillo llegas a 1.5-2.5 mm; la técnica pide 0.5-1 mm de rebanadora.
+- **La giardiniera es el único topping de producción propia**, con 5 días de anticipación.
+- **El au jus va en envase aparte**, con riesgo real de derrame en moto.
+
+**Qué destraba su regreso:** rodaje (que la semana de producción ya funcione sin sobresaltos) y,
+sobre todo, **una rebanadora**. Todo lo de abajo queda listo para ese día — y su regreso es
+contenido de marketing gratis: un plato que la gente ya vio y no pudo pedir.
+
+## P07 · RES // CHICAGO (laminada) — SIG07 The Chicago
+
+**Preparación físicamente distinta de P01. Otro corte, otra técnica, otra tanda. Nunca se mezclan.**
+
+**Corte: ASADO PEJERREY.** Segunda opción: bola de lomo. Tercera: cadera. Son los magros de pierna
+de fibra larga, el equivalente peruano del *top round* del Italian Beef.
+**Precio real: S/28-34/kg.** ⚠ **El brief costea toda la res a S/20/kg y P07 no se puede hacer a
+ese precio** — el corte que exige la técnica cuesta 40-70% más.
+
+**Rinde 0.567** (limpieza 8% · cocción 35% · recorte de laminado 5%).
+**Costo real: S/4.49 la porción de 85 g · S/8.98 la de 170 g.**
+
+### Tanda: 4 kg de asado pejerrey (2 piezas de ~2 kg, no una de 4) → 26 porciones de 85 g + ~2.2 L de au jus
+
+**Esto no cabe en un solo día.** Son 3 días de calendario, ~2 h 15 de trabajo activo total.
+
+**Sazón italiana seca, para 4 kg:** 2 cdas orégano seco · 1 cda albahaca seca · 1 cda ajo en polvo ·
+2 cdtas pimienta negra gruesa · 1 cdta semillas de hinojo machacadas · 1 cdta ají en escamas ·
+1 cdta tomillo · 60 g de sal (1.5%). Al jus: 2 hojas de laurel + 6 dientes de ajo frescos.
+
+**Día 1 (25 min):** limpia la telilla plateada (guarda recortes), frota toda la mezcla seca,
+envuelve, **refri 12-24 h**.
+
+**Día 2 (30 min + horno):**
+1. **Jus base:** los recortes de P07 **+ los recortes de la limpieza de P01** (acá se usan), 2 cebollas,
+   1 cabeza de ajo, sofritos hasta dorar. 3 L de agua, laurel, orégano, hinojo, sal. **Hierve suave
+   1 h 30 y cuela.** Que salga de recortes propios es lo que hace literalmente cierto el pitch.
+2. Saca la carne del refri **45 min antes** de asar.
+3. **Sella** en sartén muy caliente, 6-8 min en total, marrón oscuro.
+4. **Asa a 160°C** con 2-3 dedos de jus en el fondo de la bandeja hasta **52-55°C internos**
+   (~1 h 45 - 2 h 15 por pieza de 2 kg). **Tiene que quedar cruda-media a propósito**: se termina de
+   cocinar en el jus caliente al armar cada sándwich. Si la sacas a punto, el sándwich sale recocido.
+5. **Reposo 30 min**, luego **sumerge la pieza entera en el jus y al refri 8-12 h. Sin excepción.**
+
+**Día 3 (1 h 15):**
+6. **Desgrasa el jus** — la grasa se solidificó arriba. Retírala. Este paso decide si el au jus se ve
+   bien o mal cuando llegue tibio al cliente.
+7. **Congelado parcial: 45-60 min.** Firme, no dura: no debes poder doblarla, pero sí atravesarla.
+8. **Lamina** contra la fibra, cuchillo largo bien afilado. **Objetivo real a mano: 1.5-2.5 mm**
+   (con rebanadora se llega a 0.5-1 mm; a mano no). Porciona a 85/170 g con jus y al congelador.
+
+> ⚠ **Para P07 el termómetro de pincho NO es opcional.** P01 se controla con el tenedor porque su
+> punto tiene un rango enorme; P07 sale a 52-55°C y el margen es de pocos grados. 5°C de más y la
+> lámina sale gris. Cuesta S/25-60 y es la mejor compra de equipo de todo este documento.
+
+**Sin horno confiable:** olla tapada a fuego mínimo con difusor, la pieza medio sumergida en el jus,
+1 h 15 - 1 h 45, con termómetro. **Lo que NO funciona: olla a presión** — te convierte P07 en P01.
+
+---
+
+## S13 · AU JUS — solo SIG07
+
+Sale de la cocción de P07 (paso 1 y 5 de arriba), desgrasado en frío. Subproducto, costo marginal.
+- **Ración: 70 ml por pedido.** Una tanda de P07 deja ~2.2 L = 31 raciones. Lo que sobre, congélalo.
+- **Envase aparte, con tapa a rosca** — nada de tapa a presión en una moto. El riesgo real no es que
+  se enfríe, es que se derrame dentro de la bolsa y empape el sándwich.
+- Se manda **caliente, no hirviendo** (el vapor levanta tapas). A los 30 min llega tibio, y eso está
+  bien: el au jus tibio sigue funcionando; el au jus derramado arruina el pedido.
+
+---
+
+---
+
+### T07 · Giardiniera — receta (2 frascos, ~1.5 kg)
+Coliflor 400 g · zanahoria 250 g · apio 200 g · pimiento rojo 200 g · **ají limo o rocoto 60 g** ·
+aceitunas verdes picadas 100 g (opcional, es la versión de Chicago).
+1. Pica todo en trozos de 1 cm. **Salmuera: 2 L de agua + 120 g de sal.** Sumerge 24-48 h en el refri.
+2. Escurre y **enjuaga bien** (si no, queda incomible de salada).
+3. Cubre con: aceite vegetal 400 ml + aceite de oliva 100 ml + vinagre de vino 150 ml + orégano 10 g +
+   ajo 20 g + pimienta.
+4. **Reposa 3 días antes de usarla.** Recién ahí sabe a giardiniera.
+**Vida útil: 1 mes refrigerada, sumergida en su aceite.**
+
+**Es el ingrediente que hace auténtico a SIG07** y el único topping que tienes que producir. Hazla
+con anticipación: si la haces el sábado 5 de septiembre no estará lista para el lunes 7.

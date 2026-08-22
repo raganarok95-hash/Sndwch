@@ -1,30 +1,18 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
-// Extiende el mismo criterio de AU JUS (S13, chicago-exclusive-sauce.spec.ts) y POLLO
-// CAJÚN (P03, vault-exclusive-protein.spec.ts) a los ingredientes que el subagente de
-// menú marcó como candidatos y el dueño confirmó tratar igual: GIARDINIERA (T07, solo
-// aparecía en THE CHICAGO/SIG07) y JALAPEÑO (T04) + SPICY MAYO/PICANTE MIEL (S02/S12,
-// solo aparecían en el menú secreto/SIG05) — sigOnly/vaultOnly en TOPS/SAUCES (src/app.ts) +
-// SIG_ONLY_TOPS/VAULT_ONLY_TOPS/VAULT_ONLY_SAUCES en el backend (catalog.ts).
-
-test('GIARDINIERA (topping exclusivo de THE CHICAGO) no aparece en ARMA EL TUYO', async ({ page }) => {
-  await gotoApp(page, {});
-
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="base="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  await page.locator('[onclick^="prot="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-
-  // Otros toppings siguen disponibles normalmente.
-  await expect(page.locator('text=Tomate').first()).toBeVisible();
-  // Giardiniera es exclusiva de THE CHICAGO — no debe listarse como opción de ARMA EL TUYO.
-  await expect(page.locator('text=Giardiniera')).not.toBeVisible();
-});
+// Extiende el mismo criterio de POLLO CAJÚN (P03, vault-exclusive-protein.spec.ts) a
+// JALAPEÑO (T04) + SPICY MAYO/PICANTE MIEL (S02/S12), que solo aparecen en el menú
+// secreto (SIG05) — vaultOnly en TOPS/SAUCES (src/app.ts) + VAULT_ONLY_TOPS/
+// VAULT_ONLY_SAUCES en el backend (catalog.ts).
+//
+// Antes este archivo cubría también GIARDINIERA (T07) y su gemelo cubría AU JUS (S13),
+// los dos exclusivos de THE CHICAGO (SIG07). Los tres se retiraron del catálogo el
+// 2026-08-22 (ver el comentario del retiro en SIGS de src/app.ts), así que esas dos
+// pruebas se borraron junto con chicago-exclusive-sauce.spec.ts: verificar que un
+// ingrediente que ya no existe en ningún array no se muestre no prueba nada. El
+// mecanismo sigOnly/SIG_ONLY_* sigue vivo en el código y vuelve a tener cobertura en
+// cuanto SIG07 (u otro Signature con ingrediente propio) regrese.
 
 test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no aparecen en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});

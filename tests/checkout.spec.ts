@@ -48,12 +48,16 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
   expect(placeOrderCall!.body.address).toContain('Trujillo');
 });
 
-// SIG07 "THE CHICAGO" usa el corte exclusivo P07 y es el Signature con el salto de tamaño
-// más grande del menú (15CM S/22 → 30CM S/29.90). Hasta el 2026-08-15 cobraba S/25 en
-// AMBOS tamaños — el cliente pedía el doble de sándwich sin pagar nada extra, y la tarjeta
-// de upsell ni se mostraba porque el delta era cero. Este test cubre que elegirlo, cambiar
-// de tamaño (que ahora SÍ cambia el precio) y completar el pago funcione.
-test('invitado pide THE CHICAGO (SIG07) y el cambio de tamaño sí cambia el precio', async ({ page }) => {
+// Este test cubre que elegir un Signature, cambiar de tamaño (que SÍ cambia el precio) y
+// completar el pago funcione. Existe por un bug real: hasta el 2026-08-15 THE CHICAGO
+// cobraba S/25 en AMBOS tamaños — el cliente pedía el doble de sándwich sin pagar nada
+// extra, y la tarjeta de upsell ni se mostraba porque el delta era cero.
+// Usaba SIG07 THE CHICAGO, el producto donde ocurrió ese bug; se retiró del catálogo el
+// 2026-08-22 (ver el comentario del retiro en SIGS de src/app.ts). Ahora usa SIG03 THE
+// SMOKE, elegido porque su precio de 15CM (S/21.90) es único en el catálogo — así, si el
+// clic en el Signature fallara, la aserción de precio no puede pasar por accidente con el
+// Signature que quedó seleccionado por defecto.
+test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el precio', async ({ page }) => {
   const calls = await gotoApp(page, {
     'place-order': (body: any) => ({
       success: true,
@@ -66,14 +70,14 @@ test('invitado pide THE CHICAGO (SIG07) y el cambio de tamaño sí cambia el pre
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG07\'"]').click();
-  await expect(page.locator('text=S/22').first()).toBeVisible();
+  await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
+  await expect(page.locator('text=S/21.9').first()).toBeVisible();
 
-  // Cambiar a 30CM ahora SÍ sube el precio (S/22 → S/29.90) sin desmarcar el Signature
-  // elegido — antes ambos tamaños costaban lo mismo y esa fuga es lo que este test evita
-  // que vuelva.
+  // Cambiar a 30CM sube el precio (S/21.90 → S/32.90) sin desmarcar el Signature elegido —
+  // el bug original dejaba ambos tamaños al mismo precio, y esa fuga es lo que este test
+  // evita que vuelva.
   await page.locator('[onclick*="size=\'30\'"]').click();
-  await expect(page.locator('text=S/29.9').first()).toBeVisible();
+  await expect(page.locator('text=S/32.9').first()).toBeVisible();
 
   // Vuelve a 15CM antes de continuar, para no depender de cuál tamaño quedó seleccionado.
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -81,7 +85,7 @@ test('invitado pide THE CHICAGO (SIG07) y el cambio de tamaño sí cambia el pre
 
   // Carrito vacío → modo "pago rápido" inline (ver checkout.spec.ts arriba).
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
-  await page.locator('#o-nom').fill('Cliente Chicago');
+  await page.locator('#o-nom').fill('Cliente Signature');
   await page.locator('#o-phone').fill('987654322');
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
 
@@ -97,10 +101,10 @@ test('invitado pide THE CHICAGO (SIG07) y el cambio de tamaño sí cambia el pre
   const placeOrderCall2 = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall2).toBeTruthy();
   expect(placeOrderCall2!.body.items).toHaveLength(1);
-  expect(placeOrderCall2!.body.items[0].sigId).toBe('SIG07');
+  expect(placeOrderCall2!.body.items[0].sigId).toBe('SIG03');
   expect(placeOrderCall2!.body.items[0].size).toBe('15');
-  // SIG07 15CM (S/22) + delivery por defecto (zona 'media', S/8) = S/30.
-  expect(placeOrderCall2!.body.total).toBe(30);
+  // SIG03 15CM (S/21.90) + delivery por defecto (zona 'media', S/8) = S/29.90.
+  expect(placeOrderCall2!.body.total).toBe(29.9);
 });
 
 // Regresión del bug crítico de esta sesión: un cliente que nunca toca el selector
@@ -121,7 +125,7 @@ test('invitado paga sin tocar el selector de método (camino rápido) y el total
   await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG07\'"]').click();
+  await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
@@ -136,8 +140,8 @@ test('invitado paga sin tocar el selector de método (camino rápido) y el total
     .poll(() => calls.find((c) => c.action === 'prepare-order'), { timeout: 10000 })
     .toBeTruthy();
   const prepareOrderCall = calls.find((c) => c.action === 'prepare-order')!;
-  // SIG07 15CM = S/22, zona 'media' = S/8 reales, pero engordado para tarjeta:
-  // 8/(1-0.055) = 8.47 → total = 30.47, no 30 (el fee sin engordar).
-  expect(prepareOrderCall.body.total).toBe(30.47);
+  // SIG03 15CM = S/21.90, zona 'media' = S/8 reales, pero engordado para tarjeta:
+  // 8/(1-0.055) = 8.47 → total = 30.37, no 29.90 (el fee sin engordar).
+  expect(prepareOrderCall.body.total).toBe(30.37);
   expect(prepareOrderCall.body.deliveryZone).toBe('media');
 });

@@ -127,12 +127,37 @@ intento manual sea carísimo en tokens y fácil de arruinar a medias.
 
 ## Flujos y funcionalidades actuales del cliente
 
-Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 7 Signatures
-(6 públicos + `SIG05`, menú secreto de **rotación mensual** — ya no se llama "The Vault",
+Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 6 Signatures
+(5 públicos + `SIG05`, menú secreto de **rotación mensual** — ya no se llama "The Vault",
 decisión del dueño 2026-08-10, ver detalle abajo), 6 proteínas build-your-own (una puede
 quedar exclusiva del menú secreto según el ciclo vigente, no se puede armar por BYO), 4
 bebidas de la casa (sin gaseosas de reventa, decisión de marca), tamaños 15CM/30CM, doble
 proteína, salsa extra.
+
+**THE CHICAGO (SIG07) está retirado del menú de apertura desde el 2026-08-22** (decisión
+del dueño), junto con sus tres ingredientes exclusivos: `P07` (corte laminado), `T07`
+(giardiniera) y `S13` (au jus). No fue por el producto — era el naming mejor resuelto del
+catálogo y el único plato que nadie más vende en Trujillo — sino por costo de producción
+para una persona sola: 3 días de calendario, corte propio a S/28-34/kg en tanda separada,
+punto de cocción con margen de pocos grados, laminado que a cuchillo no llega al grosor
+que pide la técnica, la giardiniera como único topping de producción propia (5 días de
+anticipación) y el au jus en envase aparte con riesgo de derrame en moto. **La receta
+completa quedó guardada en la PARTE 7 de `RECETARIO.md`**; lo que destraba su regreso es
+rodaje + una rebanadora. En el código, cada punto donde se retiró tiene un comentario con
+las instrucciones exactas para restaurarlo — buscar `SIG07`.
+
+Consecuencia estructural a no olvidar: `SIG_ONLY_PROTS`/`SIG_ONLY_TOPS`/`SIG_ONLY_SAUCES`
+quedaron **vacíos** (SIG07 era el único Signature público con ingredientes propios) y
+`sigOnly` ya no aparece en ningún literal de `PROTS`/`TOPS`/`SAUCES`. El mecanismo sigue
+vivo a propósito: en `src/app.ts` los tres arrays llevan **anotación de tipo explícita**
+que declara `sigOnly?:boolean` justamente para que los filtros `!x.sigOnly` sigan
+compilando sin inventar un dato falso. No borres esa anotación "porque nadie la usa".
+
+**El menú secreto (SIG05) no se cocina hasta que alguien lo desbloquee** (decisión del
+dueño, 2026-08-22): se abre a los 5 pedidos pagados, así que en la primera semana de
+operación nadie puede pedirlo y preparar una tanda de `P03` sería cocinar algo que no se
+puede vender. El Signature sigue en el catálogo; lo que cambia es solo cuándo se produce
+su proteína. No es un cambio de código.
 
 **Formato de pan (fotografía/generación de producto):** el sándwich SIEMPRE es un pan
 tipo sub/hoagie alargado (formato "Subway"), sin importar el nombre del `BASES` elegido
@@ -289,7 +314,7 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Precios con DECIMALES desde 2026-08-15 (.90) — la app se construyó asumiendo enteros.**
   Decisión del dueño: +S/0.90 plano sobre cada precio de sándwich (Signatures y proteínas
   BYO); bebidas y adicionales (pDbl, salsa extra) sin cambio. Excepción decidida aparte:
-  SIG07 THE CHICAGO, que cobraba S/25 en 15CM y 30CM (el cliente pedía el doble sin pagar
+  SIG07 THE CHICAGO (ya retirado, ver arriba), que cobraba S/25 en 15CM y 30CM (el cliente pedía el doble sin pagar
   extra) → **15CM S/22 · 30CM S/29.90**. Consecuencia técnica: la aritmética de punto
   flotante empezó a producir basura visible (18.90 − 3 + 8.47 = 24.369999999999997, y ese
   número se le mostraba al cliente y se mandaba al servidor). Se agregaron `money()` y

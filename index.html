@@ -299,6 +299,11 @@ var BASES = [
     { id: 'B01', l: 'Classic', s: 'White', d: 'Masa suave básica' },
     { id: 'B03', l: 'Focaccia', s: 'Artesanal', d: 'Masa de focaccia artesanal' }
 ];
+// `sigOnly` se declara en el tipo aunque HOY ningún ítem lo use (se fue con THE CHICAGO,
+// ver abajo). Sin la declaración TypeScript infiere el tipo desde los literales y los
+// filtros `!x.sigOnly` de sOBuild/sAdminSecretSignature dejan de compilar — o sea que
+// borrar el último ingrediente exclusivo borraría también el mecanismo. Es el tipo el que
+// lo mantiene vivo, sin necesidad de inventar un dato falso en el array.
 var PROTS = [
     // l/s invertidos (antes 'Asado // Res') — rompía la convención genérico+estilo que
     // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Albóndiga/Marinara): "Res" es
@@ -338,23 +343,27 @@ var PROTS = [
     // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
     // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
     // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 24.9, pDbl: 6 },
-    // sigOnly: exclusiva de THE CHICAGO (SIG07) — antes SIG07 reutilizaba P01 como si fuera
-    // el mismo insumo que el asado mechado normal de la casa, contradiciendo
-    // RECIPE_RATIONALE.md (corte laminado tipo Chicago vs. deshilachado — el dueño confirmó
-    // que se preparan y almacenan por separado, así que son preparaciones distintas de
-    // verdad, no solo en el papel). Mismo precio que P01 — esto no es un cambio de precio,
-    // solo separa el código de inventario/costeo para que la cocina y el stock puedan
-    // tratarlos como los dos lotes que realmente son. DEBE coincidir con PROT_PRICE.P07 en
-    // supabase/functions/api/catalog.ts.
-    { id: 'P07', l: 'Res', s: 'Chicago', d: 'Corte fino laminado, sazón italiana, estilo Chicago', p15: 14.9, p30: 22.9, pDbl: 6, sigOnly: true }
+    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 24.9, pDbl: 6 }
+    // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
+    // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
+    // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
+    // restaurar la entrada P07 — label "Res" / "Chicago", descripción "Corte fino laminado,
+    // sazón italiana, estilo Chicago", p15 14.9, p30 22.9, pDbl 6, sigOnly — más
+    // PROT_PRICE.P07/PROT_LABEL.P07/SIG_ONLY_PROTS en catalog.ts. (Se describe en prosa a
+    // propósito: scripts/parity.mjs parsea este array con regex y tomaría un literal
+    // comentado como si fuera una proteína viva, reportando una falsa diferencia con el
+    // servidor.)
 ];
-// vaultOnly (T04) y sigOnly (T07) — mismo criterio que vaultOnly en PROTS y sigOnly en
-// SAUCES: eran seleccionables en ARMA EL TUYO pese a solo aparecer en la receta de un
-// Signature (T04 en el menú secreto, T07 en THE CHICAGO) — confirmado por el dueño para tratarlos
-// igual que Au Jus (S13). No se pueden pedir por BUILD YOUR OWN aunque sigan en este array
-// (SIG_DATA/priceSigBuild los siguen necesitando para tasar esos Signatures) — filtro real
-// en byoTops() más abajo. DEBEN coincidir con VAULT_ONLY_TOPS/SIG_ONLY_TOPS en catalog.ts.
+// vaultOnly (T04): seleccionable en ARMA EL TUYO pese a solo aparecer en la receta del
+// menú secreto — confirmado por el dueño para tratarlo como exclusivo. No se puede pedir
+// por BUILD YOUR OWN aunque siga en este array (SIG_DATA/priceSigBuild lo sigue
+// necesitando para tasar ese Signature) — filtro real en byoTops() más abajo. DEBE
+// coincidir con VAULT_ONLY_TOPS en catalog.ts.
+// T07 (Giardiniera) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su topping
+// exclusivo y, además, el ÚNICO topping del catálogo que había que producir en casa
+// (salmuera de 24-48 h + 3 días de reposo). Si SIG07 vuelve, restaurar la entrada T07 —
+// "Giardiniera" / "Encurtido picante", spicy, sigOnly — más T07 en VALID_TOPS/TOP_LABEL/
+// SIG_ONLY_TOPS en catalog.ts.
 var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco' },
     { id: 'T02', l: 'Pepinillo', s: 'Encurtido' },
@@ -362,7 +371,6 @@ var TOPS = [
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
     { id: 'T06', l: 'Pimiento', s: 'Curado' },
-    { id: 'T07', l: 'Giardiniera', s: 'Encurtido picante', spicy: true, sigOnly: true },
     // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
     // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
     // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
@@ -423,13 +431,13 @@ var SAUCES = [
     // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
     // aparezca en BUILD YOUR OWN.
     { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Ácida y filosa, sin dulzor' },
-    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true, vaultOnly: true },
-    // sigOnly: exclusiva de THE CHICAGO (SIG07) — mismo criterio que vaultOnly en PROTS
-    // (P03/CAJUN): no seleccionable en BUILD YOUR OWN aunque siga en SAUCES (SIGS/deriveOrder
-    // la siguen necesitando para tasar SIG07). El caldo de cocción de res mechada no tiene
-    // sentido como salsa suelta fuera de ese sándwich — antes se podía elegir en cualquier
-    // build sin relación con el Italian Beef (hallazgo del dueño).
-    { id: 'S13', l: 'Au Jus', s: 'Para mojar', d: 'Caldo de la cocción de la carne, servido aparte para mojar cada bocado', sigOnly: true }
+    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true, vaultOnly: true }
+    // S13 (Au Jus) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su salsa exclusiva
+    // y salía de la cocción de P07, que también se fue. Sin ese Signature no hay de dónde
+    // sacarla ni dónde servirla. Si SIG07 vuelve, restaurar la entrada S13 — "Au Jus" /
+    // "Para mojar", descripción "Caldo de la cocción de la carne, servido aparte para mojar
+    // cada bocado", sigOnly — más S13 en VALID_SAUCES/SAUCE_LABEL/SIG_ONLY_SAUCES en
+    // catalog.ts.
 ];
 var SIGS = [
     // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
@@ -460,7 +468,7 @@ var SIGS = [
     // molida, el insumo más barato del catálogo por kilo) y contradecía el propio pitch
     // ("el clásico de toda la vida"). ITALIANO describe el estilo real (marinara +
     // vinagreta al estilo italiano) sin implicar sobreprecio — mismo patrón descriptivo que
-    // ya usan AHUMADO (SIG03) y AL ESTILO CHICAGO (SIG07). Explícitamente NO se usa
+    // ya usa AHUMADO (SIG03). Explícitamente NO se usa
     // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
     // como compañía consolidada, no como negocio local/casero).
     // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
@@ -562,20 +570,21 @@ var SIGS = [
     // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
     // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
     // auditoría de producción).
-    // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): EDICIÓN
-    // LIMITADA implica una escasez real (tanda limitada, stock tope, ventana de tiempo)
-    // que no existe — no hay ningún mecanismo de inventario/tope detrás de este badge, y
-    // el negocio aún no ha abierto (riesgo de publicidad engañosa). AL ESTILO CHICAGO
-    // describe el origen del plato (coincide con el nombre), no una afirmación de
-    // escasez verificable.
-    // prot P01→P07: usa su propio corte (laminado, estilo Chicago), nunca el asado mechado
-    // normal — ver P07 en PROTS y RECIPE_RATIONALE.md.
-    { id: 'SIG07', n: 'The Chicago', s: 'Reserve', badge: 'Al estilo Chicago', base: 'B01', prot: 'P07', tops: ['T07'], sauces: ['S13'], p15: 22, p30: 29.9,
-        // Pitch corregido de "res mechada" a "res laminada" (auditoría de menú 2026-08-07):
-        // P07 usa corte fino laminado (no deshilachado, ver comentario en PROTS arriba y
-        // RECIPE_RATIONALE.md) — el pitch seguía prometiendo el corte equivocado pese a que
-        // el resto del catálogo (código de inventario, `d` de P07) ya reflejaba el correcto.
-        pitch: 'Nuestro Italian Beef al estilo Chicago: res laminada fina sobre nuestro pan clásico, con giardiniera picante y el au jus de la cocción servido aparte para mojar cada bocado. Una sola versión, la clásica.' },
+    // THE CHICAGO (SIG07) se retiró del catálogo de apertura el 2026-08-22 (decisión del
+    // dueño). NO es un problema de producto — su naming por procedencia real era el mejor
+    // resuelto del catálogo y es el único plato que nadie más vende en Trujillo. Es puro
+    // costo de producción para una persona sola cocinando en casa, según el recetario que
+    // se escribió el mismo día (ver RECETARIO.md): 3 días de calendario (marinar → asar →
+    // enfriar toda la noche EN el jus → laminar), su propio corte a S/28-34/kg en tanda
+    // separada que nunca se puede mezclar con el mechado de P01, un margen de cocción de
+    // pocos grados (52-55°C, el único ítem donde equivocarse 5°C arruina la tanda), un
+    // laminado fino que a cuchillo llega a 1.5-2.5 mm cuando la técnica pide 0.5-1 mm de
+    // rebanadora, la giardiniera como ÚNICO topping de producción propia (5 días de
+    // anticipación), y el au jus en envase aparte con riesgo real de derrame en moto.
+    // Con él salen sus tres ingredientes exclusivos: P07, T07 y S13 (ver arriba).
+    // Vuelve cuando haya rodaje y ojalá una rebanadora. Para restaurarlo: reponer las 3
+    // entradas de arriba, esta entrada, SIG_IMG.SIG07, SIG07 en RESERVE_SIGS y en
+    // SIG_HOME_ORDER, y del lado servidor SIG_DATA.SIG07/SIG_LABEL.SIG07/RESERVE_SIGS.
     // Variante de temporada de apertura (aprobada 2026-08-07, investigación de menú §10.8/
     // §11.4): S08 (Teriyaki Glaze) y S09 (Chimichurri Piña Asada) eran las únicas 2 salsas
     // del catálogo sin ninguna receta fija detrás. Reutiliza la proteína más preparada del
@@ -618,16 +627,13 @@ function sigTypeTag(tag) {
 }
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
-// SIG07 (THE CHICAGO) usa una foto de stock real (Adobe Stock, licenciada,
-// categoría gratuita) recortada para no mostrar las papas del plato original — no
-// vendemos papas, así que mostrarlas confundiría al cliente sobre qué incluye el pedido.
-// Las 7 fotos se re-recortaron a un mismo tamaño/aspect ratio (640x440) en esta ronda —
-// antes iban de 900x620 a 438x500, con 2 verticales (SIG02/SIG07) en riesgo real de mal
+// Las fotos se re-recortaron a un mismo tamaño/aspect ratio (640x440) en una ronda de
+// auditoría — antes iban de 900x620 a 438x500, con verticales en riesgo real de mal
 // recorte por object-fit:cover en el banner horizontal (hallazgo de auditoría V3). SIG04
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG06: 'img/sig06.jpg', SIG07: 'img/sig07.jpg' };
+var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG06: 'img/sig06.jpg' };
 // Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -859,7 +865,7 @@ var R05_FLAT_WAIVER = 4;
 // Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
 // se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
 // en catalog.ts.
-var RESERVE_SIGS = new Set(['SIG05', 'SIG07']);
+var RESERVE_SIGS = new Set(['SIG05']);
 // Bebida gratis (hasta S/4) de 3pm a 6pm hora Lima — DEBE coincidir con
 // OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
 // quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
@@ -1078,7 +1084,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '24458e7c54';
+var APP_BUILD = '3ad553739f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2085,7 +2091,9 @@ function cartOffPeakDrinkDiscount() {
     return Math.min(Math.min.apply(null, sidePrices), OFFPEAK_DRINK_PROMO_CAP);
 }
 // Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM — 0 si ya es 30CM o si el
-// producto cobra lo mismo en ambos tamaños (ej. SIG07, precio único). Usado por R03.
+// producto cobra lo mismo en ambos tamaños. Hoy ningún ítem del catálogo está en ese
+// caso, pero la guarda se queda: es lo que evita regalar un canje que no vale nada si
+// alguna vez vuelve a haber uno. Usado por R03.
 function itemSizeUpgradeDiff(it) {
     if (it.type === 'side' || it.size !== '15')
         return 0;
@@ -2448,7 +2456,7 @@ function sOHome() {
             // posiciones 3 y 4, que son de las más miradas de una lista en móvil. Acá van al
             // final y suben los de mejor margen, sin tocar ningún precio ni receta. Cualquier
             // Signature nuevo que no esté listado acá se muestra al final, en su orden natural.
-            var SIG_HOME_ORDER = ['SIG01', 'SIG02', 'SIG07', 'SIG06', 'SIG03', 'SIG04'];
+            var SIG_HOME_ORDER = ['SIG01', 'SIG02', 'SIG06', 'SIG03', 'SIG04'];
             var visibleSigs = SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).slice().sort(function (a, b) {
                 var ia = SIG_HOME_ORDER.indexOf(a.id), ib = SIG_HOME_ORDER.indexOf(b.id);
                 return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
@@ -3016,7 +3024,7 @@ function sOItemConfirm() {
     var recU = (!doubleProt && dbl) ? { k: 'doubleProt', e: icon('dumbbell', 18, GOLD), l: 'Doble proteína', d: 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), p: dbl.pDbl } : (!extraSauce && sauceExtraAllowed) ? { k: 'sauce', e: icon('chili', 18, GOLD), l: 'Salsa extra', d: 'Salsa adicional a tu elección', p: 2 } : (cheeseSigAllowed && !cheese) ? { k: 'cheese', e: icon('queso', 18, GOLD), l: 'Queso', d: 'Cheddar derretido, opcional y gratis', p: 0 } : null;
     // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
     // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
-    // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (ej. SIG07, precio único) —
+    // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (hoy ningún ítem) —
     // no tiene sentido "sugerir" un upgrade que no mueve el ticket.
     var sizeUpsellDelta = size === '15' ? (mode === 'sig' ? (sig ? sig.p30 - sig.p15 : 0) : (pr ? pr.p30 - pr.p15 : 0)) : 0;
     function uSel(k) { return k === 'doubleProt' ? doubleProt : k === 'sauce' ? extraSauce : k === 'cheese' ? !!cheese : false; }
@@ -3138,7 +3146,7 @@ function rewardsPickerHTML() {
         var eligible = targetIdx >= 0;
         var savings = selected ? rewardWaiverAmount(r.id, targetIdx) : 0;
         var targetLabel = selected && targetIdx >= 0 ? itemLabel(cart[targetIdx]) : '';
-        // R03 en una línea 15CM cuyo precio no cambia en 30CM (ej. SIG07, precio único)
+        // R03 en una línea 15CM cuyo precio no cambia en 30CM (hoy ningún ítem del catálogo)
         // antes mostraba el mismo mensaje genérico que "no tienes ningún 15CM" — confuso
         // cuando el cliente SÍ tiene uno en el carrito, solo que ese producto no tiene nada
         // que perdonar (hallazgo de auditoría UX).
