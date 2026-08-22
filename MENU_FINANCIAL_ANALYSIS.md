@@ -49,21 +49,103 @@
 > - **Contribución neta por pedido: S/16.68** (asumiendo 25% de pedidos con bebida)
 > - Costos fijos < S/500/mes → **punto de equilibrio ~30 pedidos/mes = 1.2 al día**
 >
-> ## Rentabilidad esperada a 3 meses (sep-nov 2026) — SIMULACIÓN, no pronóstico
+> ## Rentabilidad mes a mes — modelo de cohortes v7 (2026-08-22)
 >
-> **Cero ventas reales.** Las curvas de pedidos/día son supuestos elegidos a mano, no un
-> modelo de demanda. Reemplazar con datos reales apenas haya volumen.
+> **Los tres escenarios a 3 meses que estuvieron acá antes quedaron ANULADOS.** Sorteaban
+> pedidos/día de rangos elegidos a mano (el "optimista" asumía 28 pedidos/día en el mes 3),
+> que es el mismo defecto que este documento le critica a las versiones v1-v5. Reemplazados
+> por un modelo de cohortes de 40,000 corridas donde los pedidos **se derivan de clientes**:
 >
-> | Escenario | sep (24 d) | oct (26 d) | nov (26 d) | Neto 3 meses |
-> |---|---|---|---|---|
-> | Pesimista | 3/día → S/701 | 5/día → S/1,668 | 7/día → S/2,536 | **S/4,905** |
-> | Base | 6/día → S/1,902 | 10/día → S/3,837 | 15/día → S/6,005 | **S/11,744** |
-> | Optimista | 10/día → S/3,503 | 18/día → S/7,306 | 28/día → S/11,643 | **S/22,452** |
+> ```
+> activos_m = activos_(m-1) × retención + nuevos_m
+> pedidos_m = activos_m × pedidos_por_cliente_activo
+> ```
 >
-> Neto = contribución − S/500 de costos fijos. **Mano de obra = S/0**: el dueño cocina y
-> arma él mismo. Eso no es un hecho, es una decisión contable — el recetario estima
-> **14-16 h semanales solo de preparación**, antes de atender un pedido. En el escenario
-> Base de noviembre, el negocio le estaría pagando ~S/6,000/mes por unas 35-40 h semanales.
+> ### El hallazgo estructural: la meseta es aritmética
+>
+> Una base de clientes con retención `r` y `n` clientes nuevos por mes **no crece para
+> siempre**: converge a `activos* = n / (1 − r)`. No es un supuesto del modelo, es álgebra.
+>
+> | nuevos/mes | r=0.25 | r=0.38 | r=0.50 | r=0.65 | r=0.75 |
+> |---|---|---|---|---|---|
+> | 37 | 2.6/día | 3.1/día | 3.8/día | 5.5/día | 7.7/día |
+> | 100 | 6.9/día | 8.4/día | 10.4/día | 14.8/día | 20.8/día |
+> | 150 | 10.4/día | 12.6/día | 15.6/día | 22.3/día | 31.2/día |
+> | 250 | 17.3/día | 20.9/día | 26.0/día | 37.1/día | 51.9/día |
+>
+> Con marketing FIJO de S/300/mes el negocio produce ~37 clientes nuevos al mes y **se
+> estanca en ~3 pedidos/día para siempre** — 99% de probabilidad de ser rentable, pero
+> rentable en ~S/550/mes. Subir el presupuesto a S/800 fijos tampoco lo rompe: mueve la
+> meseta, no la elimina. Lo único que produce crecimiento compuesto es que el marketing
+> **crezca con el negocio** (reinversión de un % de la contribución).
+>
+> ### Escenario base: reinvertir 35% de la contribución en adquisición
+>
+> | Mes | ped/día (P50) | neto P10 | neto P50 | neto P90 | P(neto>0) |
+> |---|---|---|---|---|---|
+> | sep-26 | 2.0 | −374 | **−125** | 77 | **23%** |
+> | oct-26 | 2.2 | −55 | 137 | 361 | 82% |
+> | nov-26 | 2.6 | 35 | 270 | 625 | 93% |
+> | dic-26 | 3.0 | 87 | 378 | 924 | 96% |
+> | mar-27 | 4.3 | 232 | 785 | 2,302 | 99% |
+> | jun-27 | 5.8 | 339 | 1,174 | 4,562 | 99% |
+> | dic-27 | 8.2 | 450 | 1,840 | 10,334 | 99% |
+> | jun-28 | 10.2 | 498 | 2,360 | 10,830 | 99% |
+> | ago-28 | 10.8 | 506 | **2,514** | 10,885 | 99% |
+>
+> **El mes de lanzamiento pierde plata en 3 de cada 4 corridas** (mediana −S/125). Es
+> normal y no es una señal de alarma: son S/125, no S/12,000.
+>
+> ### Llegar a S/10,000 NETOS en un solo mes
+>
+> Requiere **~647 pedidos al mes = 25 pedidos/día = ~480 clientes activos**, sostenidos.
+> Eso es el **62% del techo físico** del dueño (40 pedidos/día), así que es alcanzable sin
+> contratar a nadie — pero no es un problema de cocina, es un problema de adquisición:
+> exige **~250 clientes nuevos por mes de forma sostenida**, contra los ~37 que produce el
+> plan de marketing actual.
+>
+> | Política de marketing | Llega a S/10k en 30 meses | Primer mes (P50) |
+> |---|---|---|
+> | S/300 fijos | **0%** | nunca |
+> | Reinvertir 20% | 1% | — |
+> | Reinvertir 35% | **27%** | ene-28 |
+> | Reinvertir 50% | 15% | may-27 |
+>
+> La fila del 50% muestra la tensión real: reinvertir más hace el negocio **más grande y
+> más rápido** (mediana may-27 contra ene-28), pero **menos corridas llegan a S/10k netos**,
+> porque esa plata se está gastando en crecer en vez de quedarse en el bolsillo. Los
+> S/10,000 de utilidad y el crecimiento máximo son objetivos que compiten entre sí.
+>
+> ### Qué mueve la aguja, en orden
+>
+> 1. **Retención.** En la tabla de arriba, a 150 clientes nuevos/mes, pasar de r=0.38 a
+>    r=0.65 lleva de 12.6 a 22.3 pedidos/día. Ninguna otra palanca da ese salto. Es la
+>    razón de ser del programa de puntos, los rangos y el menú secreto — ya construidos.
+> 2. **Volumen de adquisición.** No el CAC: el volumen. 250 nuevos/mes es el número.
+> 3. **Contribución por pedido.** +S/2 mueve poco comparado con las dos de arriba.
+>
+> ### Anclas externas usadas (no hay datos de este negocio, no existe aún)
+>
+> - **~70% de los clientes primerizos de un restaurante nunca vuelven**; recompra en
+>   delivery 30-40% a 30-90 días ([Restroworks](https://www.restroworks.com/blog/customer-retention-statistics-restaurants/),
+>   [Propel](https://www.trypropel.ai/resources/blogs/retention-benchmarks-by-vertical-2026)).
+> - **Un comercio nuevo en DoorDash tiene >20% de pedidos de repetidores el mes 1 y ~40%
+>   al mes 3** ([DoorDash](https://merchants.doordash.com/en-us/blog/restaurant-customer-retention))
+>   — por eso la retención del modelo mejora con el tiempo en vez de ser plana.
+> - **2-5% de los seguidores de un negocio de comida casero se vuelven clientes**
+>   ([Truffle Nation](https://trufflenationonline.com/blog/instagram-for-home-bakers/)).
+> - **Los benchmarks de "15-25 pedidos/día el mes 1" de una dark kitchen NO aplican acá**
+>   ([DoorDash](https://merchants.doordash.com/en-us/blog/ghost-kitchen)): son de negocios
+>   enchufados a un marketplace que ya trae el tráfico. SND//WCH no está en Rappi ni
+>   PedidosYa — cada pedido hay que traerlo desde cero. Este es el supuesto que más
+>   inflaba los modelos anteriores.
+> - Trujillo metropolitano ~1.1M de habitantes, 89% de manzanas en NSE medio-alto/alto
+>   ([comoes.pe](https://comoes.pe/trujillo/trujillo/)). Los 480 clientes activos que exige
+>   la meta son el **0.04% de la ciudad**: el mercado no es la restricción.
+>
+> **Mano de obra = S/0**: el dueño cocina y arma él mismo. Eso no es un hecho, es una
+> decisión contable — el recetario estima 14-16 h semanales solo de preparación, antes de
+> atender un pedido.
 >
 > ## Lo que falta para que esto deje de ser una simulación
 >
