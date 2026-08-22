@@ -116,6 +116,53 @@
 > porque esa plata se está gastando en crecer en vez de quedarse en el bolsillo. Los
 > S/10,000 de utilidad y el crecimiento máximo son objetivos que compiten entre sí.
 >
+> ### El canal de oficinas: la única vía que acerca los S/10,000 (2026-08-22)
+>
+> Pregunta del dueño: "¿cómo llego a los 10 mil en 3 meses?". Respuesta corta: **en 3 meses
+> no se llega**, pero el canal equivocado es lo que hacía la meta imposible, no la meta.
+>
+> **El cambio de unidad que lo decide: la contribución es POR SÁNDWICH, no por pedido.**
+> Un pedido de oficina de 6 sándwiches contribuye casi lo mismo que 6 pedidos individuales,
+> pero cuesta UN cliente en vez de seis. Y el cuello de botella no es la cocina (techo 40/día)
+> ni el mercado (Trujillo tiene 1.1M): es adquirir clientes.
+>
+> Para S/10,000 netos con S/1,500 de marketing hacen falta **731 sándwiches/mes** (28/día,
+> 70% del techo). Los mismos 731 sándwiches, según el canal:
+>
+> | Canal | sw/pedido | pedidos/día | clientes activos | nuevos/mes por 3 meses |
+> |---|---|---|---|---|
+> | Solo individuales | 1.0 | 28.1 | 541 | **408** (15.7/día, S/19,573 de ads) |
+> | Mixto 70/30 oficinas | 2.1 | 13.4 | 258 | ~195 |
+> | **Mixto 50/50 oficinas** | **3.5** | **8.0** | **155** | **117** (4.5/día, S/5,592 de ads) |
+> | Mayoría oficinas | 5.0 | 5.6 | 108 | ~82 |
+>
+> Convencer a 1,223 individuos en 3 meses no es realista para una persona sola sin marca.
+> Convencer a 350 oficinas es un trabajo de puerta, medible y concentrado geográficamente.
+>
+> **Probabilidad de llegar a S/10,000 en nov-26 (mes 3), 20,000 corridas:**
+>
+> | Escenario | neto P50 nov-26 | P(≥10k) |
+> |---|---|---|
+> | Solo individuales, marketing S/300 (plan actual) | S/314 | **0%** |
+> | Solo individuales, marketing S/3,000/mes | S/2,221 | 0% |
+> | Oficinas 50/50, 40 clientes nuevos/mes | S/2,112 | 0% |
+> | Oficinas 50/50, 80 clientes nuevos/mes | S/6,223 | 8% |
+> | **Oficinas mayoría, 60 clientes nuevos/mes** | **S/6,585** | **13%** |
+>
+> Con el canal de oficinas la meta se corre de "mes 24+ o nunca" a **P25 nov-26 · P50 ene-27**,
+> y llega el 54% de las corridas. El mes 3 da ~S/6,600 de mediana: no son 10,000, pero son
+> **24x** los S/270 que da el plan actual.
+>
+> **La restricción real es el tiempo del dueño, no el mercado.** 60 oficinas nuevas al mes
+> son 2.3 cierres por día operativo; a 20% de tasa de cierre, ~12 visitas de puerta al día.
+> Eso es media jornada de ventas, y sus mañanas ya están comprometidas cocinando (14-16 h
+> semanales solo de preparación, según el recetario). **El plan de 3 meses no falla por
+> demanda: falla porque una sola persona no puede cocinar y vender puerta a puerta a la vez.**
+>
+> El canal ya está construido en el producto (`actCreateGroupOrder`/`add-group-item`/
+> `close-group-order`, y el código lo llama "el canal con mejor economía del negocio"). Lo
+> que falta no es software: es que alguien salga a vender.
+>
 > ### Qué mueve la aguja, en orden
 >
 > 1. **Retención.** En la tabla de arriba, a 150 clientes nuevos/mes, pasar de r=0.38 a
