@@ -610,8 +610,14 @@ var SIGS = [
     // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
     // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
-    // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
-    // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
+    // minOrders (ver sOSig). Bajado 15 → 5 → 3 pedidos (decisiones de negocio; el paso a 3 es
+    // del 2026-08-26). Este literal es solo la SEMILLA: el valor real vive en la columna
+    // `min_orders` de la tabla `secret_signature` y se edita desde Admin // Menú secreto sin
+    // tocar código. Cambiar solo acá no cambia nada, igual que con `catalog_prices`.
+    // OJO: el umbral ya NO coincide con ningún rango de RANKS (INICIADO sigue en 5). Por eso
+    // ni la tarjeta bloqueada ni la celebración post-pedido derivan su texto de rankName() —
+    // hablan de pedidos, que es lo que el mecanismo realmente mide. Ver sOSig y _lSecretUnlock.
+    // DEBE coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
     // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
     // elegir en la UI antes de intentarlo.
     // Pitch sin ingredientes explícitos (pedido del dueño) — el sándwich secreto lo es de
@@ -627,7 +633,7 @@ var SIGS = [
     // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
     // del mes — eso se hace desde Admin // Menú secreto.
     { id: 'SIG05', n: 'Menú secreto', s: 'Reserve', badge: 'Secreto', base: 'B03', prot: 'P03', tops: ['T04', 'T06', 'T03'], sauces: ['S02', 'S12'], p15: 24.9, p30: 30.9,
-        secret: true, minOrders: 5,
+        secret: true, minOrders: 3,
         pitch: 'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.' }
 ];
 // Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
@@ -1132,7 +1138,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '3dd4f2c266';
+var APP_BUILD = '6ac7304c1d';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2898,7 +2904,7 @@ function sOSig() {
             var myTotal = cust.total_orders || 0;
             if (myTotal < s.minOrders) {
                 var missing = s.minOrders - myTotal;
-                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:8px">' + icon('lock', 15, '#A8C8B0') + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea en ' + esc(rankName(s.minOrders)) + ' — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
+                return '<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:8px">' + icon('lock', 15, '#A8C8B0') + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con ' + s.minOrders + ' pedidos — te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's') + '.</div></div>';
             }
         }
         var sel = sigId === s.id, pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });
@@ -4511,12 +4517,22 @@ function finalizeOrderSuccess(res, po, chargeId) {
     // justo después de que el servidor confirme este pedido (fuente real: total_orders que
     // ya devuelve el propio res.customer, no un cálculo local que podría desincronizarse).
     var prevRank = cust ? rankName(cust.total_orders) : null;
+    var prevTot = cust ? (cust.total_orders || 0) : null;
     if (res.customer) {
         cust = res.customer;
         cacheCust(cust, isAdmin);
     }
     var newRank = cust ? rankName(cust.total_orders) : null;
     window._lRankUp = (prevRank && newRank && prevRank !== newRank) ? newRank : null;
+    // Desbloqueo del menú secreto — evento PROPIO, no derivado del rango. Antes la
+    // celebración decía "Ya puedes ver el menú secreto" solo al llegar a INICIADO, porque el
+    // umbral del secreto y ese rango coincidían en 5. Desde que el umbral bajó a 3 dejaron de
+    // coincidir, y atarlo al rango avisaría dos pedidos tarde. Se compara contra el umbral
+    // real del sándwich secreto vigente (que además es editable desde el panel, así que
+    // cualquier valor futuro sigue funcionando sin tocar esto).
+    var secretGate = (SIGS.find(function (s) { return s.secret; }) || {}).minOrders;
+    window._lSecretUnlock = (prevTot !== null && typeof secretGate === 'number'
+        && prevTot < secretGate && (cust.total_orders || 0) >= secretGate);
     if (!cust) {
         window._lastGuestName = po.nom;
         window._lastGuestPhone = po.phone;
@@ -4596,7 +4612,9 @@ function sOSent() {
     // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
     // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
     var rankUp = window._lRankUp;
-    var rankPerk = rankUp === 'INICIADO' ? 'Ya puedes ver el menú secreto.' : null;
+    // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
+    // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
+    var rankPerk = window._lSecretUnlock ? 'Ya puedes ver el menú secreto.' : null;
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
         + '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>'
         // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
@@ -4604,6 +4622,12 @@ function sOSent() {
         + (pending ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>' : (window._lTot === 0 ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
         + (window._lRef ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-bottom:20px">Pedido ' + esc(window._lRef) + '</div>' : '<div style="margin-bottom:20px"></div>')
         + (rankUp ? '<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid ' + GOLD + ';border-radius:14px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:' + SHADOW_GOLD + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + esc(rankUp) + '</div>' + (rankPerk ? '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">' + rankPerk + '</div>' : '') + '</div>' : '')
+        // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
+        // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral
+        // del secreto (5) caía justo sobre INICIADO. Al bajarlo a 3 dejaron de coincidir: quien
+        // pasa de 2 a 3 pedidos desbloquea el menú secreto y no cambia de rango, así que se
+        // habría enterado por ningún lado. Esta tarjeta cubre ese caso.
+        + ((rankPerk && !rankUp) ? '<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid ' + GOLD + ';border-radius:14px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:' + SHADOW_GOLD + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">¡Desbloqueaste algo! //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + rankPerk + '</div></div>' : '')
         + '<p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);max-width:260px;line-height:1.6;margin-bottom:16px">' + (pending ? 'Verificaremos tu pago por ' + methodLabel + ' y tu pedido pasará a preparación en cuanto lo confirmemos.' : 'Tu pago fue procesado y tu pedido ya está en preparación.') + '</p>'
         + '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Estado del pedido //</div>'

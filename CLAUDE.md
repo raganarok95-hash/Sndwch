@@ -154,7 +154,7 @@ que declara `sigOnly?:boolean` justamente para que los filtros `!x.sigOnly` siga
 compilando sin inventar un dato falso. No borres esa anotación "porque nadie la usa".
 
 **El menú secreto (SIG05) no se cocina hasta que alguien lo desbloquee** (decisión del
-dueño, 2026-08-22): se abre a los 5 pedidos pagados, así que en la primera semana de
+dueño, 2026-08-22): se abre a los 3 pedidos pagados (bajado de 5 el 2026-08-26), así que en la primera semana de
 operación nadie puede pedirlo y preparar una tanda de `P03` sería cocinar algo que no se
 puede vender. El Signature sigue en el catálogo; lo que cambia es solo cuándo se produce
 su proteína. No es un cambio de código.
@@ -183,8 +183,16 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → INICIADO (5, desbloquea el menú secreto) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
+  **El menú secreto YA NO cuelga de los rangos** (2026-08-26): su umbral bajó a 3 pedidos y
+  dejó de coincidir con INICIADO. Antes la tarjeta bloqueada decía "Se desbloquea en
+  <RANGO>" derivando el nombre con `rankName(minOrders)` y la celebración post-pedido se
+  disparaba con `rankUp==='INICIADO'` — con el umbral en 3 eso habría dicho "se desbloquea
+  en REGULAR" (rango que se alcanza al primer pedido, o sea contradictorio) y habría avisado
+  dos pedidos tarde. Ahora los dos textos hablan de PEDIDOS y el desbloqueo es un evento
+  propio (`_lSecretUnlock`), así que el umbral se puede mover desde el panel admin a
+  cualquier valor sin volver a tocar código.
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).
   - **Tarjeta de regalo** (`gift-card-purchase`): comprar crédito para OTRO cliente

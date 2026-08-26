@@ -258,7 +258,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
 // loadSecretSignature(), que sobreescribe SIG_GATES.SIG05.minOrders igual que sobreescribe
 // SIG_DATA.SIG05 arriba.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
-  SIG05: { minOrders: 5 },
+  // Bajado 15 → 5 → 3 pedidos (el paso a 3 es del 2026-08-26). SEMILLA únicamente: el valor
+  // real vive en `secret_signature.min_orders` y loadSecretSignature() lo sobreescribe en
+  // cada refresco, así que se edita desde Admin // Menú secreto sin desplegar nada.
+  SIG05: { minOrders: 3 },
 };
 export function sigGateError(sigId: string, totalOrders: number): string | null {
   const gate = SIG_GATES[sigId];
