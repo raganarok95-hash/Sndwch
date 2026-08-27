@@ -42,6 +42,16 @@ test('admin confirma un pedido pagado y lo pasa a PREPARANDO', async ({ page }) 
 
   await page.getByRole('button', { name: /marcar como preparando/i }).click();
 
+  // El clic dispara un fetch. Leer `calls` en el tick siguiente es una CARRERA: no hay nada
+  // que garantice que la petición ya se registró. Los demás specs (checkout, cancel-order,
+  // restock-notify) se salvan por accidente porque antes esperan un texto que solo aparece
+  // DESPUÉS de la respuesta, y esa espera hace de barrera; acá no había ninguna.
+  // Se hizo visible en CI, donde este test corre en ~2s contra los ~14s de un entorno local:
+  // no es un test "flaky", es que el timing relativo cambia y destapa el defecto.
+  // Se espera explícitamente a la llamada, igual que en admin-catalog-items.spec.ts.
+  await expect
+    .poll(() => calls.filter((c) => c.action === 'admin-update-status').length)
+    .toBeGreaterThan(0);
   const updateCall = calls.find((c) => c.action === 'admin-update-status');
   expect(updateCall).toBeTruthy();
   expect(updateCall!.body.orderId).toBe(MOCK_ORDER.id);
