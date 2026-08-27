@@ -7,6 +7,11 @@
 // un comentario no falla el build. Cuando se separan, el cliente muestra un precio y el
 // servidor cobra otro.
 //
+// Desde el 2026-08-26 también compara los NOMBRES de todo el catálogo (ver la sección al
+// final del archivo). Antes solo cubría dinero y composición, así que un nombre podía
+// quedar distinto entre lo que ve el cliente y lo que sale impreso en su recibo sin que
+// nada lo detectara.
+//
 // Esto compara los dos lados leyendo los archivos como texto (no se pueden importar: el
 // servidor es Deno con imports .ts y el cliente es un script plano sin exports) y devuelve
 // código 1 si hay alguna diferencia. Corre dentro de `npm run verify`.
@@ -198,6 +203,66 @@ cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
 cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
   scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app.ts'),
   scalar(catalog, 'SIG_GATES.SIG05', /SIG05: \{ minOrders: (\d+) \}/, 'catalog.ts'));
+
+// ---------- NOMBRES (agregado 2026-08-26) ----------
+//
+// Hasta acá todo lo comparado era DINERO y composición. Los NOMBRES no se comparaban nunca,
+// y son la otra mitad que se puede desincronizar sin que nada avise: el cliente arma la
+// etiqueta desde `l`/`n` + `s` de cada array, y el servidor tiene su propio mapa *_LABEL,
+// que es el que sale impreso en el recibo, el correo de confirmación y la push. Si se
+// separan, el cliente ve "The Marinara" y el comprobante dice otra cosa. Ya pasó con P06,
+// que era "MEATBALL // MARINARA" en el servidor y "Albóndiga" en el cliente — se detectó a
+// ojo en una auditoría, no por una comprobación automática.
+//
+// Convención: la etiqueta del servidor es (l + " // " + s). Se compara SIN distinguir
+// mayúsculas a propósito: el servidor no es uniforme (SIG_LABEL y PROT_LABEL van en
+// mayúsculas, SAUCE_LABEL/TOP_LABEL/BASE_LABEL en capitalización normal) y esa diferencia
+// es de presentación, no un desajuste. Lo que importa es que las PALABRAS sean las mismas.
+function clientLabels(varName, idPrefix, nameField) {
+  const start = app.indexOf('var ' + varName);
+  if (start < 0) return {};
+  const chunk = app.slice(start, start + 40000);
+  const out = {};
+  // Una entrada por línea en todos estos arrays, así que leer por línea es mucho más
+  // robusto que intentar delimitar objetos con lookaheads sobre texto multilínea.
+  const re = new RegExp("^\\s*\\{id:'(" + idPrefix + "\\d+)'(.*)$", 'gm');
+  let m;
+  while ((m = re.exec(chunk))) {
+    const [, id, body] = m;
+    if (out[id]) break; // ya salimos de este array y estamos leyendo otra estructura
+    const g = (f) => { const x = body.match(new RegExp("\\b" + f + ":\\s*'([^']*)'")); return x ? x[1] : null; };
+    const l = g(nameField), sub = g('s');
+    if (l && sub) out[id] = (l + ' // ' + sub).toUpperCase();
+  }
+  return out;
+}
+
+function serverLabels(name) {
+  const start = catalog.indexOf('export const ' + name);
+  if (start < 0) return {};
+  const chunk = catalog.slice(start, catalog.indexOf('\n};', start) + 3 || start + 8000);
+  const out = {};
+  for (const m of chunk.matchAll(/^\s{2}([A-Z]+\d+):\s*"([^"]*)"/gm)) out[m[1]] = m[2].toUpperCase();
+  return out;
+}
+
+for (const [varName, prefix, nameField, serverMap, humano] of [
+  ['SIGS', 'SIG', 'n', 'SIG_LABEL', 'Signature'],
+  ['PROTS', 'P', 'l', 'PROT_LABEL', 'Proteína'],
+  ['TOPS', 'T', 'l', 'TOP_LABEL', 'Topping'],
+  ['SAUCES', 'S', 'l', 'SAUCE_LABEL', 'Salsa'],
+  ['SIDES', 'D', 'l', 'SIDE_LABEL', 'Bebida'],
+  ['BASES', 'B', 'l', 'BASE_LABEL', 'Pan'],
+]) {
+  const c = need(clientLabels(varName, prefix, nameField), varName + ' — nombres (cliente)');
+  const sv = need(serverLabels(serverMap), serverMap + ' (servidor)');
+  for (const id of new Set([...Object.keys(c), ...Object.keys(sv)])) {
+    // El menú secreto cambia de nombre cada mes desde `secret_signature`, así que sus
+    // literales son semilla y no tienen por qué coincidir (misma excepción que arriba).
+    if (id === 'SIG05') continue;
+    cmp(humano + ' ' + id + ' — nombre (' + varName + ' ↔ ' + serverMap + ')', c[id] ?? null, sv[id] ?? null);
+  }
+}
 
 // ---------- salida ----------
 if (problems.length) {
