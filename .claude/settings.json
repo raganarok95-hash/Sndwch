@@ -33,7 +33,7 @@
           {
             "type": "command",
             "if": "Bash(git commit *)",
-            "command": "cd /home/user/Sndwch && npm run verify || { echo 'npm run verify (typecheck+build+test) fallo -- commit bloqueado. Revisa la salida arriba antes de reintentar.' >&2; exit 2; }",
+            "command": "cd /home/user/Sndwch && export PATH=\"/opt/node22/bin:$PATH\" && npm run verify || { echo 'npm run verify (typecheck+build+test) fallo -- commit bloqueado. Revisa la salida arriba antes de reintentar.' >&2; exit 2; }",
             "timeout": 900,
             "statusMessage": "Verificando (typecheck+build+test) antes de comitear..."
           }
