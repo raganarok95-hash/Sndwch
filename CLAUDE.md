@@ -41,6 +41,34 @@ afecta cualquier decisión de precio/margen.
   Para el schema vigente de una tabla sigue siendo más confiable `mcp__Supabase__execute_sql`
   contra `information_schema` que leer el historial.
 
+## El menú se edita desde el panel, no desde el código (2026-08-27)
+
+Los 5 Signatures públicos viven en la tabla **`catalog_items`** (append-only: publicar
+inserta fila nueva, la de mayor `id` por `item_id` es la vigente — historial gratis, igual
+que `secret_signature`). `loadCatalogItems()` en `catalog.ts` sobreescribe en cada refresco
+`SIG_DATA`, `SIG_LABEL` y el nuevo `SIG_CONTENT` (nombre, subtítulo, badge, pitch, foto,
+activo). El cliente lo recibe resuelto por `get-catalog` (campo `sigItems`) y lo vuelca
+sobre `SIGS`.
+
+**Los literales de `SIGS` (src/app.ts) y `SIG_DATA`/`SIG_LABEL`/`SIG_CONTENT` (catalog.ts)
+son SEMILLA**: el primer render antes de que resuelva el fetch, y el respaldo si la base no
+responde. Editarlos no cambia el menú.
+
+Qué se puede hacer ahora sin desplegar: renombrar, cambiar badge/pitch/foto, cambiar
+composición (pan, proteína, toppings, salsas, queso fijo), cambiar precio, y **retirar un
+Signature** publicando `active=false` — lo que con THE CHICAGO costó una sesión de código
+entera, conservando la receta en la tabla para cuando vuelva.
+
+**El precio de un Signature ya NO se toca desde `catalog_prices`.** Las filas de categoría
+`sig` se borraron en la migración y `admin-catalog-set-price` rechaza esa categoría con un
+error que apunta al panel nuevo. Si no, habría dos sitios fijando el mismo número y uno
+ganando en silencio — el mismo defecto que costó 3 semanas de precios fantasma. Para
+proteínas, bebidas y recompensas `catalog_prices` sigue siendo la fuente (ver la sección de
+abajo, que sigue vigente para ellas).
+
+SIG05 no está en `catalog_items`: el menú secreto tiene su propia tabla y su propio panel.
+`loadCatalogItems()` ignora ese id explícitamente.
+
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
 **Los literales de precio de `catalog.ts` (`PROT_PRICE`, `SIG_DATA`, `SIDE_PRICE`,

@@ -5,7 +5,7 @@ import { sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, PROT_PRICE, SIG_DATA, SIG_GATES, SIDE_PRICE, REWARDS, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME } from "../catalog.ts";
+import { loadCatalogPrices, PROT_PRICE, SIG_DATA, SIG_CONTENT, SIG_GATES, SIDE_PRICE, REWARDS, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME } from "../catalog.ts";
 
 // Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
 // que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
@@ -23,9 +23,27 @@ export async function actGetCatalog(_b: any) {
   // línea de carrito, mostrar el nombre del mes, ni saber qué proteína/tops/salsas quedan
   // excluidas de ARMA EL TUYO este ciclo. El nombre se manda aparte (SIG_LABEL.SIG05 trae
   // el sufijo " // RESERVE" pegado, que no es el que se muestra en la tarjeta del cliente).
+  // Signatures públicos editables desde el panel (ver loadCatalogItems en ../catalog.ts).
+  // Se manda el contenido COMPLETO — nombre, subtítulo, badge, pitch, foto, composición y
+  // si sigue activo — porque desde el 2026-08-27 el array SIGS de src/app.ts pasó a ser
+  // semilla: el cliente lo sobreescribe con esto apenas resuelve el fetch. Sin mandar el
+  // contenido, cambiar un nombre desde el panel no se vería hasta el próximo despliegue,
+  // que es exactamente lo que este cambio viene a eliminar.
+  const items: Record<string, unknown> = {};
+  for (const code of Object.keys(SIG_CONTENT)) {
+    const d = SIG_DATA[code];
+    if (!d) continue;
+    const c = SIG_CONTENT[code];
+    items[code] = {
+      n: c.n, s: c.s, badge: c.badge, pitch: c.pitch, img: c.img, active: c.active,
+      base: d.base, prot: d.prot, tops: d.tops, sauces: d.sauces, p15: d.p15, p30: d.p30,
+      fixedCheese: d.fixedCheese ?? null, cheeseOptional: d.cheeseOptional === true,
+    };
+  }
   return {
     proteins: PROT_PRICE,
     sigs,
+    sigItems: items,
     sides: SIDE_PRICE,
     rewardPts,
     secretSignature: SIG_DATA.SIG05
@@ -64,8 +82,12 @@ export async function actAdminCatalogSetPrice(b: any) {
       throw new ApiError("Precio inválido.");
     }
   } else if (category === "sig") {
-    if (!SIG_DATA[code]) throw new ApiError("Signature desconocida.");
-    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || values.p15 < 0 || values.p30 < 0) throw new ApiError("Precio inválido.");
+    // Desde el 2026-08-27 el precio de un Signature vive en `catalog_items`, junto con su
+    // composición, su nombre y su foto. Aceptarlo acá guardaría una fila en catalog_prices
+    // que loadCatalogItems() pisa un instante después: el panel diría "guardado" y el
+    // precio no cambiaría. Es exactamente el fallo silencioso que ya costó tres semanas de
+    // precios fantasma, así que se rechaza con un mensaje que dice a dónde ir.
+    throw new ApiError("El precio de un Signature se edita en Admin // Catálogo // Signatures, no acá.");
   } else if (category === "side") {
     if (!(code in SIDE_PRICE)) throw new ApiError("Bebida/side desconocido.");
     if (typeof values.price !== "number" || values.price < 0) throw new ApiError("Precio inválido.");

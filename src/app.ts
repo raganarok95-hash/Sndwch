@@ -5961,6 +5961,44 @@ async function loadCatalogBackground(){
     var r=await api('get-catalog',{});
     PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;if(typeof v.pDbl30==='number')p.pDbl30=v.pDbl30;}});
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
+    // Signatures públicos editables desde el panel (2026-08-27). Antes de esto, `r.sigs`
+    // solo traía precios: el nombre, el badge, el pitch, la foto y la composición vivían
+    // como literales en el array SIGS de arriba, así que cambiar cualquiera de esos exigía
+    // recompilar y desplegar. Ahora `r.sigItems` trae el ítem COMPLETO desde la tabla
+    // `catalog_items` y este bloque lo vuelca sobre la entrada que ya existe en SIGS —
+    // exactamente el mismo mecanismo que ya usaba el menú secreto abajo.
+    //
+    // El literal de SIGS pasa a ser SEMILLA: lo que se ve en el primer render, antes de que
+    // este fetch resuelva, y el respaldo si el servidor no responde. Nunca lo edites para
+    // cambiar el menú.
+    if(r.sigItems){
+      Object.keys(r.sigItems).forEach(function(id){
+        var v=r.sigItems[id];if(!v)return;
+        var sig=SIGS.find(function(x){return x.id===id;});
+        if(!sig)return;
+        if(v.n)sig.n=v.n;
+        if(v.s)sig.s=v.s;
+        // badge y pitch pueden quedar vacíos a propósito (un Signature sin badge), así que
+        // se copian aunque vengan en blanco — usar `if(v.badge)` haría imposible QUITAR un
+        // badge desde el panel, que es justo una de las cosas que se quiere poder hacer.
+        if(typeof v.badge==='string')sig.badge=v.badge;
+        if(typeof v.pitch==='string'&&v.pitch)sig.pitch=v.pitch;
+        if(v.base)sig.base=v.base;
+        if(v.prot)sig.prot=v.prot;
+        if(Array.isArray(v.tops))sig.tops=v.tops;
+        if(Array.isArray(v.sauces))sig.sauces=v.sauces;
+        if(typeof v.p15==='number')sig.p15=v.p15;
+        if(typeof v.p30==='number')sig.p30=v.p30;
+        if(v.img)SIG_IMG[id]=v.img;
+        // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
+        // ahora es publicar active=false desde el panel. La receta queda guardada en la
+        // tabla para cuando vuelva.
+        sig.retired=(v.active===false);
+      });
+      // Los retirados salen de la carta. Se filtra acá y no en cada pantalla para que
+      // ninguna vista tenga que acordarse de hacerlo.
+      for(var i=SIGS.length-1;i>=0;i--)if(SIGS[i].retired)SIGS.splice(i,1);
+    }
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
     // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05

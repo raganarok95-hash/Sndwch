@@ -176,6 +176,22 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
   if (!pr) return 0;
   return size === "30" ? pr.pDbl30 : pr.pDbl;
 }
+// Contenido editable de cada Signature público (nombre, subtítulo, badge, pitch, foto y
+// si está activo). Antes esto vivía SOLO en el array SIGS de src/app.ts, o sea que cambiar
+// el nombre o el texto de un sándwich exigía editar el cliente y redesplegar. Ahora la fila
+// vigente de `catalog_items` lo sobreescribe, igual que loadSecretSignature() ya hace con
+// SIG05, y el cliente lo recibe resuelto por `get-catalog`.
+//
+// Estos literales son SEMILLA: valen para el primer arranque de cada instancia y como
+// respaldo si la base no responde. Nunca edites acá para cambiar el menú — eso se hace
+// desde Admin // Catálogo // Signatures.
+export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = {
+  SIG01: { n: "The Original", s: "Signature", badge: "Clásico", pitch: "", img: "img/sig01.jpg", active: true },
+  SIG02: { n: "The Marinara", s: "Signature", badge: "Italiano", pitch: "", img: "img/sig02.jpg", active: true },
+  SIG03: { n: "The Smoke", s: "Signature", badge: "Ahumado", pitch: "", img: "img/sig03.jpg", active: true },
+  SIG04: { n: "The Fresh", s: "Signature", badge: "Cítrico", pitch: "", img: "img/sig04.jpg", active: true },
+  SIG06: { n: "The Teriyaki", s: "Signature", badge: "Asiático", pitch: "", img: "img/sig06.jpg", active: true },
+};
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
@@ -367,7 +383,64 @@ export async function loadCatalogPrices(): Promise<void> {
     // debe bloquear un pedido por un problema leyendo la tabla de precios.
     console.error("loadCatalogPrices failed:", e);
   }
+  // Se llama DESPUÉS del bucle de catalog_prices a propósito: para los Signatures,
+  // `catalog_items` es la fuente única y gana. Las filas de categoría 'sig' de
+  // catalog_prices se borraron en la misma migración, y el editor viejo de precios ahora
+  // rechaza esa categoría — si no, habría dos sitios fijando el mismo precio y uno
+  // ganando en silencio, que es justo el defecto que esto viene a eliminar.
+  await loadCatalogItems();
   await loadSecretSignature();
+}
+// Signatures públicos editables desde el panel admin (2026-08-27). Antes, cambiar un
+// sándwich del menú exigía tocar SEIS lugares: SIGS (src/app.ts), SIG_DATA, SIG_LABEL,
+// SIG_IMG, la tabla catalog_prices y los documentos de receta/costeo. Ahora la fila más
+// reciente de `catalog_items` para cada item_id sobreescribe los cuatro primeros de una
+// sola vez, con el mismo patrón append-only que ya usa el menú secreto.
+export async function loadCatalogItems(): Promise<void> {
+  try {
+    // Se piden TODAS las filas ordenadas por id descendente y se conserva la primera de
+    // cada item_id: es la vigente. Hacerlo en una sola consulta evita N llamadas (una por
+    // Signature) en una función que corre en cada refresco de catálogo.
+    const rows = await sbGet("catalog_items", "select=*&order=id.desc");
+    const vistos = new Set<string>();
+    for (const row of rows) {
+      const id = String(row.item_id || "");
+      if (!id || vistos.has(id)) continue;
+      vistos.add(id);
+      // SIG05 tiene su propia tabla y su propio ciclo: si alguien insertara una fila acá
+      // con ese id, loadSecretSignature() la pisaría después y el resultado sería
+      // impredecible. Se ignora explícitamente en vez de dejarlo al orden de las llamadas.
+      if (id === "SIG05") continue;
+      const tops = Array.isArray(row.tops) ? row.tops : [];
+      const sauces = Array.isArray(row.sauces) ? row.sauces : [];
+      SIG_DATA[id] = {
+        base: String(row.base),
+        prot: String(row.protein_id),
+        tops,
+        sauces,
+        p15: Number(row.price_15),
+        p30: Number(row.price_30),
+        ...(row.fixed_cheese ? { fixedCheese: String(row.fixed_cheese) } : {}),
+        ...(row.cheese_optional ? { cheeseOptional: true } : {}),
+      };
+      const nombre = String(row.name || "").trim();
+      const sub = String(row.subtitle || "Signature").trim();
+      SIG_CONTENT[id] = {
+        n: nombre,
+        s: sub,
+        badge: String(row.badge || "").trim(),
+        pitch: String(row.pitch || "").trim(),
+        img: row.image_path ? String(row.image_path) : null,
+        active: row.active !== false,
+      };
+      SIG_LABEL[id] = `${nombre.toUpperCase()} // ${sub.toUpperCase()}`;
+    }
+  } catch (e) {
+    // Mismo criterio que loadCatalogPrices/loadSecretSignature: si la tabla no responde se
+    // sigue con lo que haya en memoria (el literal en el primer arranque, o la última
+    // carga buena) en vez de bloquear un pedido.
+    console.error("loadCatalogItems failed:", e);
+  }
 }
 // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — reemplaza el
 // "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA.SIG05/SIG_GATES.SIG05/
