@@ -1138,7 +1138,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '3cdd3e8db6';
+var APP_BUILD = 'ab6edafe4c';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6410,6 +6410,7 @@ function adminToolsSections() {
                 ['precios', 'Precios', 'loadAdminCatalog()'],
                 ['horario', 'Horario', 'loadStoreHoursForm()'],
                 ['lock', 'Menú secreto', 'loadSecretSignatureAdmin()'],
+                ['precios', 'Signatures', 'loadCatalogItemsAdmin()'],
             ]],
         ['Cuenta //', [
                 ['puntos', 'Puntos manuales', 'sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
@@ -7309,6 +7310,9 @@ function renderScreen() {
         case 'admin_secret':
             h = sAdminSecretSignature();
             break;
+        case 'admin_items':
+            h = sAdminCatalogItems();
+            break;
         case 'admin_dashboard':
             h = sAdminDashboard();
             break;
@@ -7997,6 +8001,145 @@ function sAdminSecretSignature() {
         + (ssHistory.length ? '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
             + ssHistory.map(function (h) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + esc(h.name) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
         + '</div>';
+}
+// ── Signatures editables desde el panel (2026-08-27) ──────────────────────────────────
+//
+// Contraparte de escritura de `catalog_items`. Antes, cambiar el nombre, el pitch, el
+// badge, la composición o el precio de un Signature exigía editar SIGS/SIG_DATA/SIG_LABEL/
+// SIG_IMG + catalog_prices y desplegar; retirar uno costaba una sesión de código entera.
+//
+// Se calca deliberadamente el panel del menú secreto de arriba (mismos chips, mismos
+// helpers, mismo flujo publicar→recargar): quien ya sabe usar aquel sabe usar este, y
+// cualquier arreglo futuro en esos helpers vale para los dos.
+var ciCur = {}, ciSel = '', ciName = '', ciSub = '', ciBadge = '', ciPitch = '', ciBase = '', ciProt = '', ciTops = [], ciSauces = [], ciCheese = '', ciP15 = '', ciP30 = '', ciImg = '', ciActive = true, ciMsg = '', ciHistory = [];
+async function loadCatalogItemsAdmin() {
+    sndScreen = 'admin_items';
+    busy = true;
+    busyMsg = 'Cargando Signatures...';
+    render();
+    try {
+        var r = await api('admin-catalog-items-get', { token: token });
+        ciCur = r.current || {};
+        ciHistory = r.history || [];
+        // Se abre el primero por defecto para que la pantalla no arranque vacía.
+        if (!ciSel || !ciCur[ciSel]) {
+            var ks = Object.keys(ciCur).sort();
+            ciSel = ks.length ? ks[0] : '';
+        }
+        ciLoadForm();
+    }
+    catch (e) {
+        showToast('Error: ' + e.message);
+    }
+    busy = false;
+    render();
+}
+function ciLoadForm() {
+    var c = ciCur[ciSel];
+    ciName = c ? c.name : '';
+    ciSub = c ? (c.subtitle || 'Signature') : 'Signature';
+    ciBadge = c && c.badge ? c.badge : '';
+    ciPitch = c && c.pitch ? c.pitch : '';
+    ciBase = c ? c.base : 'B01';
+    ciProt = c ? c.protein_id : '';
+    ciTops = c && Array.isArray(c.tops) ? c.tops.slice() : [];
+    ciSauces = c && Array.isArray(c.sauces) ? c.sauces.slice() : [];
+    ciCheese = c && c.fixed_cheese ? c.fixed_cheese : '';
+    ciP15 = c ? String(c.price_15) : '';
+    ciP30 = c ? String(c.price_30) : '';
+    ciImg = c && c.image_path ? c.image_path : '';
+    ciActive = c ? c.active !== false : true;
+}
+function ciPick(id) {
+    // Se guarda lo escrito en los campos de texto antes de cambiar de ítem: sin esto,
+    // tocar otro Signature perdía en silencio lo que estabas editando.
+    ciSyncInputs();
+    ciSel = id;
+    ciLoadForm();
+    render();
+}
+function ciSyncInputs() {
+    if (document.getElementById('ci-name')) {
+        ciName = gv('ci-name');
+        ciSub = gv('ci-sub');
+        ciBadge = gv('ci-badge');
+        ciPitch = gv('ci-pitch');
+        ciImg = gv('ci-img');
+        ciP15 = gv('ci-p15');
+        ciP30 = gv('ci-p30');
+    }
+}
+function ciToggle(arr, id, max) {
+    var i = arr.indexOf(id);
+    if (i >= 0)
+        arr.splice(i, 1);
+    else if (arr.length < max)
+        arr.push(id);
+    ciSyncInputs();
+    render();
+}
+function sAdminCatalogItems() {
+    var ids = Object.keys(ciCur).sort();
+    return H('SIGNATURES', "loadAdmin()")
+        + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
+        + (ciMsg ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">' + esc(ciMsg) + '</div>' : '')
+        + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">Cambia nombre, texto, receta o precio de cualquier Signature sin tocar código. Cada publicación queda guardada: puedes ver qué se cobraba antes. Para sacar uno de la carta, apaga <b>Activo</b> — su receta se conserva.</p>'
+        + '<div style="margin-bottom:16px">' + ids.map(function (id) {
+        var c = ciCur[id];
+        return ssChip(ciSel === id, (c.active === false ? '○ ' : '') + esc(c.name), "ciPick('" + id + "')");
+    }).join('') + '</div>'
+        + (ciSel ? '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:0 0 16px"></div>'
+            + '<div style="margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Nombre</div>' + INP('ci-name', 'ej. The Original', 'text', ciName) + '</div>'
+            + '<div style="display:flex;gap:8px;margin-bottom:12px">'
+            + '<div style="flex:1"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Subtítulo</div>' + INP('ci-sub', 'Signature', 'text', ciSub) + '</div>'
+            + '<div style="flex:1"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Badge (puede ir vacío)</div>' + INP('ci-badge', 'ej. Clásico', 'text', ciBadge) + '</div>'
+            + '</div>'
+            + '<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Pitch (lo que lee el cliente)</div>' + INP('ci-pitch', 'Describe el sándwich', 'text', ciPitch) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
+            + '<div style="margin-bottom:14px">' + BASES.map(function (bs) { return ssChip(ciBase === bs.id, bs.l + ' ' + bs.s, "ciSyncInputs();ciBase='" + bs.id + "';render()"); }).join('') + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
+            + '<div style="margin-bottom:14px">' + PROTS.filter(function (pr) { return !pr.vaultOnly; }).map(function (pr) { return ssChip(ciProt === pr.id, pr.l + ' ' + pr.s, "ciSyncInputs();ciProt='" + pr.id + "';render()"); }).join('') + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 (' + ciTops.length + '/3)</div>'
+            + '<div style="margin-bottom:14px">' + TOPS.filter(function (t) { return !t.vaultOnly; }).map(function (t) { return ssChip(ciTops.indexOf(t.id) >= 0, t.l + ' ' + t.s, "ciToggle(ciTops,'" + t.id + "',3)"); }).join('') + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 (' + ciSauces.length + '/2)</div>'
+            + '<div style="margin-bottom:14px">' + SAUCES.filter(function (sc) { return !sc.vaultOnly; }).map(function (sc) { return ssChip(ciSauces.indexOf(sc.id) >= 0, sc.l + ' ' + sc.s, "ciToggle(ciSauces,'" + sc.id + "',2)"); }).join('') + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Queso fijo // opcional</div>'
+            + '<div style="margin-bottom:14px">' + ssChip(!ciCheese, 'Sin queso fijo', "ciSyncInputs();ciCheese='';render()")
+            + CHEESE.map(function (ch) { return ssChip(ciCheese === ch.id, ch.l + ' ' + ch.s, "ciSyncInputs();ciCheese='" + ch.id + "';render()"); }).join('') + '</div>'
+            + '<div style="display:flex;gap:8px;margin-bottom:14px">' + cpNumField('ci-p15', '15CM', ciP15) + cpNumField('ci-p30', '30CM', ciP30) + '</div>'
+            + '<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Foto (ruta/URL)</div>' + INP('ci-img', 'ej. img/sig01.jpg', undefined, ciImg) + '</div>'
+            + '<div style="margin-bottom:20px">' + ssChip(ciActive, (ciActive ? '✓ ' : '') + 'Activo en la carta', "ciSyncInputs();ciActive=!ciActive;render()") + '</div>'
+            + BTN('Publicar cambios //', 'saveCatalogItem()')
+            : '<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">No hay Signatures publicados todavía.</p>')
+        + (ciHistory.length ? '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+            + ciHistory.map(function (h) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + esc(h.item_id) + ' · ' + esc(h.name) + ' · ' + SOLES_TXT + h.price_15 + '/' + SOLES_TXT + h.price_30 + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
+        + '</div>';
+}
+async function saveCatalogItem() {
+    ciSyncInputs();
+    if (!ciSel)
+        return;
+    busy = true;
+    busyMsg = 'Publicando...';
+    render();
+    try {
+        await api('admin-catalog-items-set', { token: token, itemId: ciSel, name: ciName.trim(), subtitle: ciSub.trim(),
+            badge: ciBadge.trim(), pitch: ciPitch.trim(), base: ciBase, proteinId: ciProt, tops: ciTops, sauces: ciSauces,
+            fixedCheese: ciCheese || null, price15: Number(ciP15), price30: Number(ciP30),
+            imagePath: ciImg.trim() || null, active: ciActive });
+        ciMsg = 'Publicado. Los clientes lo ven en su próxima carga.';
+        // Se recarga el catálogo del propio panel para que lo que se ve en pantalla sea lo que
+        // quedó guardado, no lo que se escribió — si el servidor normalizó algo, se nota acá.
+        await loadCatalogItemsAdmin();
+        await loadCatalogBackground();
+    }
+    catch (e) {
+        showToast('Error: ' + e.message);
+    }
+    busy = false;
+    render();
+    setTimeout(function () { ciMsg = ''; if (sndScreen === 'admin_items')
+        render(); }, 2500);
 }
 async function saveSecretSignature() {
     ssName = gv('ss-name');

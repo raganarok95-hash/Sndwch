@@ -13,7 +13,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // solo hace más fácil ubicar y tocar una sola pieza sin tener que releer todo el archivo.
 
 import { actPing } from "./actions/health.ts";
-import { actGetCatalog, actAdminCatalogSetPrice } from "./actions/catalog.ts";
+import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
   actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
   actGoogleAuth,
@@ -124,6 +124,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
+  // Signatures editables desde el panel (ver loadCatalogItems / tabla catalog_items).
+  "admin-catalog-items-get": actAdminCatalogItemsGet,
+  "admin-catalog-items-set": actAdminCatalogItemsSet,
   "admin-secret-signature-get": actAdminSecretSignatureGet,
   "admin-secret-signature-set": actAdminSecretSignatureSet,
   "dashboard-stats": actDashboardStats,
