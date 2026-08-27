@@ -228,46 +228,53 @@ Signature o build.
     un cobro Culqi que no encajaba con la intención original).
   - **Plan Semanal** (`prepare-weekly-plan`+`confirm-weekly-plan`): paga S/95 hoy con
     tarjeta (Culqi vía `create-credit-charge`), recibe S/100 en saldo propio al instante.
-- **Pedido grupal / canal de oficinas** (`create-group-order`/`add-group-item`/
-  `close-group-order`): un organizador crea un código, cualquiera con el link agrega su
-  propio sándwich sin necesitar cuenta, el organizador cierra y paga todo junto por el
-  checkout normal.
-  **Es el canal con mejor economía del negocio y desde el 2026-08-22 tiene incentivo
-  propio**: a partir de `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más
-  barato del grupo va gratis**. Un pedido de 6 sándwiches contribuye casi lo mismo que 6
-  pedidos individuales pero cuesta UN cliente en vez de seis, y el cuello de botella del
-  negocio no es la cocina (techo 40/día) ni el mercado (Trujillo tiene 1.1M) sino adquirir
-  clientes — con el agravante de que el dueño **no puede vender puerta a puerta porque sus
-  mañanas están cocinando**. Este incentivo convierte al cliente en el vendedor: comprar
-  una cuenta de oficina entera cuesta el insumo de un sándwich (~S/6) contra ~S/128-141 por
-  publicidad o por muestra dirigida.
-  **⚠ CORREGIDO 2026-08-27 — el "~S/128-141" de la línea de arriba NUNCA tuvo fuente.** Era
-  una estimación interna que se escribió como si fuera dato y después se usó en dos modelos
-  financieros como si estuviera medida. El CAC real de Meta Ads en Perú para rubro
-  restaurantes, derivado de CPM S/5-12 + CTR 2.97% + CVR 1.89% + IGV 18%, es de
-  **S/10.51 a S/25.23** — entre 5 y 13 veces menor. El costo real de los otros dos canales
-  también está calculado: **referido S/7.65** (el insumo del 15CM de R06 + la bebida de R05,
-  no su precio de carta) y **pedido grupal S/1.19** por persona. Ver `PREDICCION_V7.md` y
-  `modelo/modelo_v7.py`, donde cada número lleva etiqueta de origen. **No vuelvas a usar el
-  S/128-141**: con él, cualquier modelo concluye que la publicidad destruye valor, que es
-  justo lo contrario de lo que dicen los datos con fuente.
+- **Pedido grupal** (`create-group-order`/`add-group-item`/`close-group-order`): un
+  organizador crea un código, cualquiera con el link agrega su propio sándwich sin necesitar
+  cuenta, el organizador cierra y paga todo junto por el checkout normal.
+  **NO es un canal B2B y el dueño NO sale a conseguir cuentas** (corregido explícitamente por
+  el dueño 2026-08-27, ver la advertencia de más abajo): es **el pedido de cualquier cliente**
+  que compra para varias personas — una oficina, un grupo de amigos, una familia. Llega por la
+  app como cualquier otro pedido y ese cliente se adquiere por la misma vía que todos los
+  demás. **Nunca proyectes "N oficinas conseguidas al mes"**: nadie las va a conseguir.
+  Lo que sí es cierto y medible: un pedido grupal trae **más sándwiches en un solo pedido**,
+  así que sube la contribución por pedido y reparte el costo de adquisición entre más gente
+  alcanzada. Desde el 2026-08-22 tiene incentivo propio: a partir de
+  `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más barato del grupo va gratis**.
   Detalles que no hay que romper: se perdona el **más barato del carrito, no "el del
-  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado
-  las líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que
-  R06** (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el
-  sándwich regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo
-  regalaría también la bebida emparejada con algo que ya es gratis. El servidor lo verifica
-  entero contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código
-  válido, quien paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese
-  código de grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces).
-  El `groupCode` que manda el cliente es solo atribución, nunca autorización.
-- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Un pedido individual
-  entregado a las 12:30 en una oficina YA es una muestra gratis repartida dentro del
-  cliente objetivo; lo que faltaba era el puente hacia un pedido grupal. Ese parámetro
-  abre uno directo (pide sesión, porque el servidor necesita saber a quién cobrarle al
+  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado las
+  líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que R06**
+  (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el sándwich
+  regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo regalaría
+  también la bebida emparejada con algo que ya es gratis. El servidor lo verifica entero
+  contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código válido, quien
+  paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese código de
+  grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces). El
+  `groupCode` que manda el cliente es solo atribución, nunca autorización.
+  **⚠ DOS ERRORES REALES COMETIDOS SOBRE ESTE CANAL — no los repitas.**
+  1. **El marco "canal de oficinas" / "comprar una cuenta de oficina entera" que este archivo
+     usó hasta el 2026-08-27 era falso.** Daba por hecho una venta B2B que el dueño nunca dijo
+     que haría, y que además contradice el hecho ya documentado de que sus mañanas están
+     cocinando. Sobre ese marco se construyó un titular de "10 oficinas dejan S/3,000 netos al
+     mes" que hubo que retirar entero. Un pedido grupal se modela como **más sándwiches en una
+     fracción de los pedidos normales**, nunca como cuentas que se adquieren aparte.
+  2. **El "~S/128-141 por publicidad" que decía este archivo NUNCA tuvo fuente.** Era una
+     estimación interna escrita como si fuera dato, y después se usó en dos modelos
+     financieros como si estuviera medida — con ella cualquier modelo concluye que la
+     publicidad destruye valor, que es lo contrario de lo que dicen los datos con fuente. El
+     CAC real de Meta Ads en Perú para rubro restaurantes (CPM S/5-12 + CTR 2.97% + CVR 1.89%
+     + IGV 18%) es de **S/10.51 a S/25.23**, entre 5 y 13 veces menor. El referido cuesta
+     **S/7.65** (el insumo del 15CM de R06 + la bebida de R05, no su precio de carta). Ver
+     `PREDICCION_V7.md`, `modelo/modelo_v7.py` y `modelo/FUENTES.md`, donde cada número lleva
+     etiqueta de origen y está la lista de lo que NO se pudo fundamentar.
+  **Sin B2B ni puerta a puerta, la publicidad pagada es prácticamente el único canal de
+  adquisición**, junto con los referidos de clientes que ya existen. Cualquier plan de
+  crecimiento parte de ahí.
+- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Promoción **pasiva** dentro
+  de un pedido que ya entregaste: la tarjeta va en la bolsa y quien la escanea abre un pedido
+  grupal directo. No exige ningún trabajo de venta del dueño — por eso sigue vigente aunque
+  no exista canal B2B. Pide sesión, porque el servidor necesita saber a quién cobrarle al
   cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
-  login/registro). Distinto de `?group=CODE`, que es unirse a uno existente y NO pide
-  cuenta.
+  login/registro. Distinto de `?group=CODE`, que es unirse a uno existente y NO pide cuenta.
 - **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
   (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),

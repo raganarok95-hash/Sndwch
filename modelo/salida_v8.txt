@@ -1,0 +1,149 @@
+==============================================================================================
+              1 — LA CONDICIÓN DE RENTABILIDAD MENSUAL, EN UNA SOLA DESIGUALDAD               
+==============================================================================================
+
+  Un mes cualquiera:   neto = pedidos × contribución − S/500 de fijos − publicidad
+  Y en régimen los pedidos los paga la publicidad:   pedidos ≈ presupuesto / CAC
+
+  Sustituyendo:        neto = presupuesto × (contribución/CAC − 1) − 500
+
+  De ahí salen las DOS condiciones, y la primera manda sobre todo lo demás:
+
+    (A) La contribución por pedido tiene que ser MAYOR que el CAC.
+        Si no, cada cliente nuevo nace perdiendo y gastar más solo pierde más rápido.
+    (B) Cumplida (A), hace falta un mínimo de escala:
+        presupuesto  >  500 × CAC / (contribución − CAC)
+
+  Escenario            CAC  contrib/pedido  ¿cumple (A)?   presupuesto mínimo
+  ---------------------------------------------------------------------------
+  Muy pesimista      25.23           16.42            NO ningún monto alcanza
+  Pesimista          19.00           16.42            NO ningún monto alcanza
+  Base               13.50           16.42            sí          S/2,312/mes
+  Optimista          11.00           16.42            sí          S/1,015/mes
+  Muy optimista      10.51           16.42            sí            S/889/mes
+
+  ►► El "Muy pesimista" NO se arregla con presupuesto. Con CAC S/25.23 contra S/16.42 de
+     contribución, cada cliente nuevo pierde S/8.81 el día que llega. Gastar más empeora el
+     resultado. Ese escenario solo se arregla moviendo el CAC o la contribución.
+
+==============================================================================================
+               2 — CÓMO SE ARREGLA EL ESCENARIO QUE NINGÚN PRESUPUESTO ARREGLA                
+==============================================================================================
+
+  Hay exactamente tres palancas, y dos están en tus manos hoy:
+
+  (i)  SUBIR LA CONTRIBUCIÓN POR PEDIDO — pedidos grupales.
+       Acá está el valor real del incentivo del organizador, ahora que sabemos que NO es un
+       canal de venta: no trae clientes, pero hace que los pedidos que ya tienes valgan más.
+
+  % de pedidos que son grupales            0%         5%        10%        20%
+  --------------------------------------------------------------------------
+  Contribución media por pedido         16.42      20.15      23.88      31.34
+  Presupuesto mínimo · Muy pesimista          —          —          —      2,065
+  Presupuesto mínimo · Pesimista            —      8,261      1,947        770
+  Presupuesto mínimo · Base             2,312      1,015        650        378
+  Presupuesto mínimo · Optimista        1,015        601        427        270
+  Presupuesto mínimo · Muy optimista        889        545        393        252
+
+  Para que "Muy pesimista" deje de ser imposible hacen falta 12% de pedidos grupales (contribución sube a S/25.37 y supera el CAC de S/25.23).
+  Para que "Pesimista" deje de ser imposible hacen falta 4% de pedidos grupales (contribución sube a S/19.40 y supera el CAC de S/19.00).
+
+  Ese es el hallazgo de esta tabla: el pedido grupal NO trae clientes, pero es lo que decide
+  si los dos peores escenarios son viables o no. Sube la contribución sin subir el CAC.
+
+  (ii) BAJAR EL CAC — referidos. Cuestan S/7.65 (el insumo del 15CM de R06 más la bebida
+       de R05), no su precio de carta. Ya están programados.
+
+  % de clientes que llegan por referido          0%        20%        40%        60%
+  ------------------------------------------------------------------------------
+  CAC mezclado · Muy pesimista                25.23      21.71      18.20      14.68
+  CAC mezclado · Pesimista                    19.00      16.73      14.46      12.19
+  CAC mezclado · Base                         13.50      12.33      11.16       9.99
+  CAC mezclado · Optimista                    11.00      10.33       9.66       8.99
+  CAC mezclado · Muy optimista                10.51       9.94       9.37       8.79
+
+  (iii) BAJAR LOS FIJOS — ya están por debajo de S/500 y sin local. No hay mucho que sacar.
+
+==============================================================================================
+               3 — ¿S/1,500 AL MES? BARRIDO DE PRESUPUESTOS, SIN LÍMITE DE CAJA               
+==============================================================================================
+
+  La fórmula de arriba era conservadora: solo contaba el PRIMER pedido de cada cliente. Acá
+  cada cohorte recorre su curva completa, así que los meses posteriores acumulan a los que
+  vuelven. Con 5% de pedidos grupales (contribución S/20.15).
+
+  Presupuesto     Muy pesimista      Pesimista           Base      Optimista  Muy optimista
+  -----------------------------------------------------------------------------------------
+  S/500                  -2,795         -1,745            376          2,373          3,363
+  S/1,000                -2,591           -489          3,752          7,746          9,726
+  S/1,500                -2,386            766          7,128         13,119         16,089
+  S/2,000                -2,182          2,021         10,504         18,492         22,452
+  S/3,000                -1,773          4,532         17,256         29,237         35,178
+  S/4,000                -1,364          7,042         24,008         39,983         47,904
+  ·························································································
+  (neto acumulado a 6 meses)
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+  ¿RENTABLE TODOS LOS MESES? — mes a mes con S/1,500 y 5% de pedidos grupales
+──────────────────────────────────────────────────────────────────────────────────────────────
+  Escenario               Set        Oct        Nov        Dic        Ene        Feb     6 meses
+  -----------------------------------------------------------------------------------------
+  Muy pesimista          -802       -531       -386       -289       -217       -160      -2,386
+  Pesimista              -409        -50        143        272        367        443         766
+  Base                    239        866      1,211      1,443      1,616      1,753       7,128
+  Optimista               748      1,682      2,213      2,575      2,844      3,057      13,119
+  Muy optimista           876      2,026      2,704      3,170      3,519      3,794      16,089
+
+──────────────────────────────────────────────────────────────────────────────────────────────
+  LO QUE DE VERDAD LIMITA EL PRESUPUESTO: LA CAJA, NO EL ÓPTIMO
+──────────────────────────────────────────────────────────────────────────────────────────────
+
+  Cumplida la condición (A), la ganancia CRECE de forma lineal con el presupuesto: no existe
+  un "monto ideal" interior donde la curva dé la vuelta. Más publicidad es siempre mejor
+  hasta que choca con una de tres paredes: la caja que tienes, el techo de 40 pedidos/día, o
+  la saturación de la audiencia local (que encarece el CAC — y para eso NO hay dato con
+  fuente, hay que medirlo).
+
+  Por eso la pregunta correcta no es "cuánto es lo ideal" sino "cuánto puedo sostener".
+  Escenario Base, 5% grupales, arrancando con distinto capital propio:
+
+  Capital inicial     presupuesto objetivo    neto 6 meses    ped/día en feb
+  --------------------------------------------------------------------------
+  S/1,000                          S/1,500           5,531               7.5
+  S/3,000                          S/1,500           7,128               7.8
+  S/5,000                          S/1,500           7,128               7.8
+  S/10,000                         S/1,500           7,128               7.8
+
+==============================================================================================
+          4 — LA RECETA PARA QUE NINGÚN MES CIERRE EN ROJO, NI EN EL PEOR ESCENARIO           
+==============================================================================================
+
+  Se buscan las dos palancas mínimas —% de pedidos grupales y % de clientes por referido—
+  que dejan a los CINCO escenarios en positivo TODOS los meses, con S/1,500 de publicidad.
+
+  grupales →             5%        10%        15%        20%
+  --------------------------------------------------------
+  referidos   0%       -802       -580       -359       -137
+  referidos  20%       -608       -350        -93        165
+  referidos  40%       -339        -32        276        583
+  referidos  60%         59        440        821      1,202
+  (peor mes del peor escenario, en soles)
+
+  ►► NO HAY UN ÚNICO PUNTO MÍNIMO: la tabla de arriba es una FRONTERA. Todo lo que esté en
+     positivo sirve, y se puede llegar por más grupales o por más referidos. Abajo se
+     desarrolla una combinación equilibrada: 20% de pedidos grupales + 20% de clientes por
+     referido, con S/1,500/mes de publicidad — el peor mes del PEOR escenario cierra en
+     +S/165. Otra ruta igual de válida es 60% de referidos con solo 5% de grupales.
+
+  Escenario               Set        Oct        Nov        Dic        Ene        Feb     6 meses
+  -----------------------------------------------------------------------------------------
+  Muy pesimista           165        654        916      1,092      1,222      1,324       5,373
+  Pesimista               810      1,445      1,785      2,013      2,182      2,315      10,549
+  Base                  1,813      2,880      3,468      3,864      4,158      4,390      20,573
+  Optimista             2,551      4,098      4,978      5,577      6,023      6,375      29,602
+  Muy optimista         2,730      4,622      5,737      6,504      7,078      7,530      34,202
+
+  Las dos palancas ya están construidas y desplegadas: el sándwich gratis al organizador a
+  partir de 5 (`ORGANIZER_FREE_MIN_SANDWICHES`) y el bono de referido de 400+120 puntos
+  (`REFERRER_REWARD_POINTS`/`REFERRAL_BONUS_POINTS`). No hay que programar nada: hay que
+  lograr que se usen. Y ninguna de las dos exige que salgas a vender.
