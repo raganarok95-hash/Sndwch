@@ -922,8 +922,11 @@ const OFFPEAK_DRINK_PROMO_CAP = 6;
 // clientes, y el dueño no puede salir a vender puerta a puerta porque sus mañanas están
 // cocinando. Este incentivo convierte al cliente en el vendedor: quien junta al grupo se
 // lleva un sándwich gratis, y con eso el negocio compra una cuenta de oficina entera por
-// el costo de insumo de un solo sándwich (~S/6 contra los ~S/128-141 que cuesta la misma
-// cuenta por publicidad o por muestra dirigida).
+// el costo de insumo de un solo sándwich contra lo que cuesta la misma cuenta por
+// publicidad. Los números, ya con fuente (ver PREDICCION_V7.md): pedido grupal S/1.19 por
+// persona, referido S/7.65, Meta Ads en Perú S/10.51-25.23. El "~S/128-141" que decía este
+// comentario hasta el 2026-08-27 no tenía ninguna fuente y estaba entre 5 y 13 veces por
+// encima del costo real — no lo reintroduzcas.
 //
 // Se perdona el 15CM MÁS BARATO del carrito, no "el del organizador": el organizador paga
 // la cuenta completa, así que económicamente es lo mismo y evita tener que adivinar cuál

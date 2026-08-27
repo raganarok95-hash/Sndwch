@@ -1,0 +1,298 @@
+============================================================================================
+              1 — LO QUE VALE UN CLIENTE, CONSTRUIDO SOLO CON DATOS CON FUENTE              
+============================================================================================
+
+  De cada 100 clientes que hacen su primer pedido, 22.6 hacen un segundo   [FUENTE Bloom]
+  Quien hace el segundo termina promediando 6.93 pedidos en total          [FUENTE Bloom]
+
+  Esas dos cifras determinan la curva completa. No hay nada que elegir:
+
+     Pedidos esperados por cliente adquirido = 2.34                       [DERIVADO]
+     Contribución por pedido                 = S/16.42                    [MEDIDO]
+     ─────────────────────────────────────────────────────────
+     VALOR DE VIDA (LTV) por cliente         = S/38.43
+
+  Sensibilidad a la única cifra discutible (el 22.6% de segundo pedido):
+
+    P(2º pedido)   pedidos/cliente         LTV   CAC máx 3:1   CAC máx 2:1
+  ------------------------------------------------------------------------
+           22.6%              2.34       38.43         12.81         19.21
+           28.0%              2.66       43.68         14.56         21.84
+           34.0%              3.02       49.53         16.51         24.76
+           40.0%              3.37       55.37         18.46         27.68
+
+  ►► EL NÚMERO QUE PEDISTE NO ES ARBITRARIO. Con la regla estándar LTV/CAC = 3:1, el CAC
+     máximo que este negocio tolera es S/12.81 en el escenario más conservador y
+     S/18.46 en el más favorable. Tu objetivo de S/13-14 cae exactamente ahí.
+
+============================================================================================
+                2 — CUÁNTO CUESTA DE VERDAD UN CLIENTE POR META ADS EN PERÚ                 
+============================================================================================
+
+  1,000 impresiones cuestan S/5 a S/12            [FUENTE ibo.pe, Perú, rubro restaurantes]
+  CTR 2.97% → 29.7 clics                        [FUENTE get-ryze / Two Minute Reports 2026]
+  CVR 1.89% → 0.561 pedidos                    [FUENTE misma]
+  + IGV 18% sobre el gasto de Meta          [FUENTE Paradero Digital, Perú]
+  ─────────────────────────────────────────────────────────────
+  CAC de PRIMER PEDIDO = S/10.51 a S/25.23      [DERIVADO]
+
+  Contraste de sanidad: el CPC que sale de esta cadena (S/0.168-0.404) cae dentro del
+  CPC S/0.20-0.70 que la MISMA agencia peruana mide por separado. Los dos datos se validan
+  entre sí — no es una cadena que se sostiene sola.
+
+  ►► ESTO CORRIGE EL S/134 QUE USÉ ANTES. Aquel número no tenía fuente: aparecía una sola
+     vez en CLAUDE.md y una vez en un comentario de código, ambos del mismo commit, sin
+     cita. El CAC real documentado para Perú es entre 2 y 13 veces menor.
+
+============================================================================================
+         3 — PROYECCIÓN A 6 MESES: LA PUBLICIDAD ES UNA DECISIÓN, NO UN PRONÓSTICO          
+============================================================================================
+
+  Días abiertos reales, leídos del horario del código (cerrado los lunes):
+  sep-26 20d · oct-26 27d · nov-26 25d · dic-26 27d · ene-27 27d · feb-27 24d
+
+
+  ── PRESUPUESTO DE PUBLICIDAD: S/0/mes  [DECISIÓN del dueño] ──
+  mes         nuevos   pedidos  ped/día    contrib    gasto       NETO       acum
+  -------------------------------------------------------------------------------
+  (sin publicidad no entra ningún cliente pagado — ver bloque 4)                 
+
+  ── PRESUPUESTO DE PUBLICIDAD: S/300/mes  [DECISIÓN del dueño] ──
+  mes         nuevos   pedidos  ped/día    contrib    gasto       NETO       acum
+  -------------------------------------------------------------------------------
+  CAC óptimo S/11
+  sep-26          29        29      1.4        469      300       -331       -331
+  oct-26          29        35      1.3        575      300       -225       -557
+  nov-26          29        38      1.5        631      300       -169       -725
+  dic-26          29        41      1.5        669      300       -131       -856
+  ene-27          29        42      1.6        697      300       -103       -959
+  feb-27          29        44      1.8        720      300        -80      -1039
+
+  CAC malo S/25
+  sep-26          12        12      0.6        195      300       -605       -605
+  oct-26          12        15      0.5        239      300       -561      -1165
+  nov-26          12        16      0.6        263      300       -537      -1702
+  dic-26          12        17      0.6        279      300       -521      -2223
+  ene-27          12        18      0.7        291      300       -509      -2733
+  feb-27          12        18      0.8        300      300       -500      -3233
+
+
+  ── PRESUPUESTO DE PUBLICIDAD: S/600/mes  [DECISIÓN del dueño] ──
+  mes         nuevos   pedidos  ped/día    contrib    gasto       NETO       acum
+  -------------------------------------------------------------------------------
+  CAC óptimo S/11
+  sep-26          57        57      2.9        937      600       -163       -163
+  oct-26          57        70      2.6       1149      600         49       -114
+  nov-26          57        77      3.1       1263      600        163         49
+  dic-26          57        82      3.0       1339      600        239        288
+  ene-27          57        85      3.1       1395      600        295        583
+  feb-27          57        88      3.7       1439      600        339        922
+
+  CAC malo S/25
+  sep-26          24        24      1.2        391      600       -709       -709
+  oct-26          24        29      1.1        479      600       -621      -1331
+  nov-26          24        32      1.3        526      600       -574      -1905
+  dic-26          24        34      1.3        558      600       -542      -2447
+  ene-27          24        35      1.3        581      600       -519      -2966
+  feb-27          24        37      1.5        600      600       -500      -3466
+
+
+  ── PRESUPUESTO DE PUBLICIDAD: S/1200/mes  [DECISIÓN del dueño] ──
+  mes         nuevos   pedidos  ped/día    contrib    gasto       NETO       acum
+  -------------------------------------------------------------------------------
+  CAC óptimo S/11
+  sep-26         114       114      5.7       1875     1200        175        175
+  oct-26         114       140      5.2       2298     1200        598        773
+  nov-26         114       154      6.2       2525     1200        825       1598
+  dic-26         114       163      6.0       2677     1200        977       2575
+  ene-27         114       170      6.3       2790     1200       1090       3665
+  feb-27         114       175      7.3       2879     1200       1179       4844
+
+  CAC malo S/25
+  sep-26          48        48      2.4        781     1200       -919       -919
+  oct-26          48        58      2.2        958     1200       -742      -1661
+  nov-26          48        64      2.6       1052     1200       -648      -2309
+  dic-26          48        68      2.5       1115     1200       -585      -2894
+  ene-27          48        71      2.6       1162     1200       -538      -3431
+  feb-27          48        73      3.0       1199     1200       -501      -3932
+
+
+============================================================================================
+      4 — CÓMO LLEGAR A UN CAC DE S/13-14: LAS TRES PALANCAS QUE YA ESTÁN EN EL CÓDIGO      
+============================================================================================
+
+  Ninguna de estas tres hay que construirla. Las tres ya están programadas y desplegadas.
+  Lo que faltaba era saber cuánto cuesta cada una en efectivo real, no en precio de carta.
+
+  Canal                               costo real por cliente       de dónde sale el número
+  ----------------------------------------------------------------------------------------
+  Meta Ads (mejor CPM de Perú)                       S/10.51     CPM S/5 + CTR + CVR + IGV
+  Meta Ads (peor CPM de Perú)                        S/25.23    CPM S/12 + CTR + CVR + IGV
+  Referido (400 pts + 120 pts)                        S/7.65   insumo del 15CM + la bebida
+  Pedido grupal de oficina (5+)                       S/1.19      un 15CM entre 5 personas
+
+  El referido y el grupo NO cuestan lo que dice la carta. Regalar un 15CM de S/20.90 le
+  cuesta al negocio S/5.94 de insumo y empaque. Esa diferencia es exactamente lo que
+  hace que el objetivo de S/13-14 sea alcanzable.
+
+  MEZCLAS QUE ATERRIZAN EN S/13-14 (con el CAC de ads en su PEOR valor, S/25.23):
+
+    % por ads  % referido   % grupo   CAC mezcla   LTV/CAC   ¿objetivo?
+  ---------------------------------------------------------------------
+         100%          0%        0%        25.23       1.5           no
+          70%         20%       10%        19.31       2.0           no
+          50%         30%       20%        15.15       2.5           no
+          40%         30%       30%        12.74       3.0           SÍ
+          30%         40%       30%        10.98       3.5        mejor
+          20%         40%       40%         8.58       4.5        mejor
+           0%         50%       50%         4.42       8.7        mejor
+
+  ►► RESPUESTA DIRECTA A TU EXIGENCIA. Con el CAC de publicidad en su PEOR valor documentado
+     (S/25.23), basta con que el 56% de los clientes nuevos entre por referido o por
+     pedido grupal para que el CAC de la mezcla caiga a S/13.94. Si Meta rinde en el
+     buen extremo (S/10.51), el objetivo se cumple SOLO con publicidad, sin mezcla.
+
+============================================================================================
+                     5 — PROYECCIÓN CENTRAL A 6 MESES CON CAC = S/13.5                      
+============================================================================================
+
+  presupuesto    nuevos/mes  ped sep  ped feb  ped/día feb   neto feb    neto 6m
+  ------------------------------------------------------------------------------
+  S/300                  22       22       34          1.4       -240     -1,872
+  S/600                  44       44       68          2.8         21       -744
+  S/1,000                74       74      114          4.7        368        761
+  S/1,500               111      111      171          7.1        802      2,641
+  S/2,000               148      148      227          9.5      1,235      4,521
+
+  Punto de equilibrio del mes: 30 pedidos/mes sin publicidad
+  (1.2 al día). Con S/1,000 de publicidad sube a
+  91 pedidos/mes (3.5 al día).
+  Techo físico de capacidad: 40 pedidos/día = 1,040 al mes. Ningún escenario de
+  arriba lo roza: el mayor llega al 24% del techo.
+
+────────────────────────────────────────────────────────────────────────────────────────────
+  MISMA TABLA, CON LA CORRECCIÓN DE OPTIMISMO APLICADA (÷2.06)  [FUENTE Flyvbjerg]
+────────────────────────────────────────────────────────────────────────────────────────────
+  presupuesto    nuevos/mes  ped feb  ped/día feb   neto feb    neto 6m
+  ---------------------------------------------------------------------
+  S/300                  11       17          0.7       -528     -3,379
+  S/600                  22       33          1.4       -556     -3,757
+  S/1,000                36       55          2.3       -593     -4,262
+  S/1,500                54       83          3.5       -640     -4,893
+  S/2,000                72      110          4.6       -687     -5,524
+
+  Leer esto bien: la corrección NO dice que la publicidad rinda menos. Dice que un dueño
+  proyectando su propio negocio sobreestima la demanda un 106% en promedio (9 de cada 10
+  casos). Es una corrección al PRONOSTICADOR, no al negocio. Si el gasto es real y el CAC
+  es el medido, los clientes entran; lo que la corrección castiga es dar por hecho que
+  todos harán pedidos al ritmo del benchmark.
+
+============================================================================================
+               6 — LA REGLA DE UNA LÍNEA QUE REEMPLAZA A TODOS LOS ESCENARIOS               
+============================================================================================
+
+  Contribución del PRIMER pedido de un cliente:  S/16.42   [MEDIDO]
+
+  Si el CAC está por debajo de esa cifra, cada cliente se paga solo el día que pide por
+  primera vez, y todo lo que haga después es ganancia. Si está por encima, el negocio
+  financia clientes con la esperanza de que vuelvan — y solo 23 de cada 100 vuelve.
+
+  CAC                            ¿lo paga el 1er pedido?    pedidos para recuperarlo
+  ----------------------------------------------------------------------------------
+  Pedido grupal                     S/1.19            sí                0.07
+  Referido                          S/7.65            sí                0.47
+  TU OBJETIVO S/13.50              S/13.50            sí                0.82
+  Meta Ads, buen CPM               S/10.51            sí                0.64
+  Punto de quiebre                 S/16.42            sí                1.00
+  Meta Ads, mal CPM                S/25.23            NO                1.54
+  El S/134 sin fuente             S/134.00            NO                8.16  ← más de los que hace un cliente
+
+  Un cliente promedio hace 2.34 pedidos en toda su vida. Cualquier CAC por encima de
+  S/38.43 destruye valor con certeza. El S/134 que usé en el análisis anterior estaba
+  3.5 veces por encima de ese límite — por eso aquel modelo concluía que la
+  publicidad nunca se paga. La conclusión era correcta PARA ESE NÚMERO; el número estaba mal.
+
+============================================================================================
+                  7 — POR QUÉ CADA MODELO ANTERIOR DIO UN NÚMERO DISTINTO                   
+============================================================================================
+
+  Los cinco modelos anteriores no discrepaban sobre el negocio. Discrepaban sobre UNA
+  variable cada uno, y ninguna de esas variables tenía fuente. El negocio siempre fue el
+  mismo; lo que cambiaba era qué número se tecleaba a mano.
+
+  modelo   qué se tecleó a mano                          efecto sobre el resultado
+  ────────────────────────────────────────────────────────────────────────────────────────
+  v1-v4    "pedidos/día" sorteados de un rango elegido    define el resultado entero; el
+           (el optimista asumía 28/día en el mes 3)       modelo solo lo multiplica
+  v5       costos fijos S/950 y motorizado como costo     inventó un "valle" inexistente;
+           fijo de S/1,100/mes                            el delivery es pass-through
+  v6       retención mensual elegida (0.38) + S/300 de    la meseta activos = n/(1-r) queda
+           publicidad supuesta                            fijada por dos números sin fuente
+  v6b      igual que v6 + reinversión como % de ventas    crecimiento compuesto que no se
+                                                          apoyaba en ningún CAC medido
+  socio    CERO costo de adquisición                      infló todos los escenarios, y más
+           (neto = contribución − fijos)                  los optimistas que los pesimistas
+  socio3/4 CAC = S/134, sin fuente                        invirtió la conclusión: hizo ver
+                                                          la publicidad como destructora
+  ────────────────────────────────────────────────────────────────────────────────────────
+  v7       nada. Los 3 números externos (22.6%, 6.93,     el resultado es una consecuencia,
+  (este)   33 días) tienen cita, y el resto es aritmética no una elección
+
+  Los dos errores fueron simétricos y los cometí yo en la misma sesión: primero cobrar S/0
+  por cada cliente, después cobrar S/134. Con S/0 todo escenario era rentable; con S/134
+  ninguno lo era. El negocio no cambió entre una tabla y la otra.
+
+============================================================================================
+    8 — QUÉ HAY QUE MEDIR DESDE EL 7 DE SEPTIEMBRE PARA QUE ESTO DEJE DE SER SIMULACIÓN     
+============================================================================================
+
+  Este modelo descansa en 3 números prestados de estudios de EE.UU. Cada uno se puede
+  reemplazar con dato propio en pocas semanas, y el orden importa:
+
+  1. P(2º pedido) — hoy 22.6% prestado. Medible al 2º mes con el propio panel admin.
+     Es la variable a la que TODO el modelo es más sensible: entre 22.6% y 40% el LTV
+     pasa de S/38.43 a S/55.37 (+44%).
+  2. CAC real de Meta — hoy un rango de S/10.51 a S/25.23. Medible en la PRIMERA semana
+     de campaña, y ya está el Pixel + Conversions API programado para capturarlo.
+     Falta correr `supabase secrets set META_PIXEL_ID=... META_CAPI_TOKEN=...`.
+  3. Días entre pedidos — hoy 33 prestado. Medible al 3er mes.
+
+  Advertencia que no se puede omitir: el ticket de este negocio (S/20.90-34.90 el sándwich, más S/6-15 de reparto)
+  está por encima del único ticket de delivery con fuente para provincia peruana (S/15,
+  Rappi vía Gestión, 2022). Eso no invalida el modelo — SND//WCH no compite por precio —
+  pero sí significa que el CVR de 1.89% usado arriba podría ser optimista para este precio
+  en este mercado. Es el supuesto más frágil de todo el cálculo.
+
+============================================================================================
+                   9 — POR QUÉ EL CANAL DE OFICINAS CAMBIA LA ARITMÉTICA                    
+============================================================================================
+
+  Una cuenta de oficina de 6 personas que pide 4 veces al mes:
+
+     4 pedidos × 6 sándwiches × S/16.16      = S/  387.84 de contribución
+     menos el 15CM regalado al organizador cada vez  = S/   23.76
+     ─────────────────────────────────────────────────────────────
+     CONTRIBUCIÓN NETA DE UNA SOLA OFICINA           = S/  364.08 AL MES
+
+  Eso es 22 pedidos individuales de contribución, con UN solo cliente que
+  atender y UNA sola entrega. Y 70% de quienes prueban un restaurante por una comida
+  del trabajo después piden por su cuenta [FUENTE ezCater], así que cada oficina siembra
+  hasta 4 clientes individuales adicionales sin costo de adquisición extra.
+
+    oficinas activas   contrib/mes    neto/mes   pedidos/día  % del techo
+  -----------------------------------------------------------------------
+                 1           364        -136           0.2           0%
+                 3         1,092         592           0.5           1%
+                 5         1,820       1,320           0.8           2%
+                 8         2,913       2,413           1.2           3%
+                12         4,369       3,869           1.8           5%
+                20         7,282       6,782           3.1           8%
+
+  ►► 2 oficinas cubren TODOS los costos fijos del negocio. 10 oficinas dejan
+     S/3,000 netos al mes usando el 4% del techo de cocina. Ese es el camino más
+     corto que existe en este negocio, y el incentivo que lo activa ya está desplegado.
+
+  Lo que este bloque NO demuestra: cuántas oficinas se consiguen al mes. La conversión del
+  QR de la tarjeta de la bolsa no tiene benchmark publicado — el agente buscó y no encontró
+  ninguna cifra citable de costo por cuenta corporativa adquirida. Ese número solo puede
+  salir de medirlo desde el 7 de septiembre.

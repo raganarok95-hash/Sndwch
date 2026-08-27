@@ -241,6 +241,16 @@ Signature o build.
   mañanas están cocinando**. Este incentivo convierte al cliente en el vendedor: comprar
   una cuenta de oficina entera cuesta el insumo de un sándwich (~S/6) contra ~S/128-141 por
   publicidad o por muestra dirigida.
+  **⚠ CORREGIDO 2026-08-27 — el "~S/128-141" de la línea de arriba NUNCA tuvo fuente.** Era
+  una estimación interna que se escribió como si fuera dato y después se usó en dos modelos
+  financieros como si estuviera medida. El CAC real de Meta Ads en Perú para rubro
+  restaurantes, derivado de CPM S/5-12 + CTR 2.97% + CVR 1.89% + IGV 18%, es de
+  **S/10.51 a S/25.23** — entre 5 y 13 veces menor. El costo real de los otros dos canales
+  también está calculado: **referido S/7.65** (el insumo del 15CM de R06 + la bebida de R05,
+  no su precio de carta) y **pedido grupal S/1.19** por persona. Ver `PREDICCION_V7.md` y
+  `modelo/modelo_v7.py`, donde cada número lleva etiqueta de origen. **No vuelvas a usar el
+  S/128-141**: con él, cualquier modelo concluye que la publicidad destruye valor, que es
+  justo lo contrario de lo que dicen los datos con fuente.
   Detalles que no hay que romper: se perdona el **más barato del carrito, no "el del
   organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado
   las líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que
