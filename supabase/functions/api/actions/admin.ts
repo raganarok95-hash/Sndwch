@@ -196,6 +196,79 @@ export async function actAdminInventorySetStock(b: any) {
 //
 // Un insumo sin fila en `inventory` nunca se marcó agotado: arranca de 0 y queda con lo
 // que se acaba de producir, que es lo correcto — antes de la tanda no había nada.
+// C1 + C2 — Vigilancia del propio sistema, en un solo cron horario.
+//
+// Los dos chequeos comparten un mismo agujero: cuando algo se rompe DENTRO de la
+// automatización, no hay nadie mirando. La app no deja de responder, el cliente no se
+// queja, y el dueño está cocinando — así que un cron muerto o un pico de errores puede
+// durar días sin que nadie lo note. Todo lo que hay hoy son los logs del panel de
+// Supabase, que solo miras si ya sospechas que algo anda mal.
+//
+// C1 — CRONS MUERTOS. pg_cron guarda si DISPARÓ cada job, pero net.http_post() vuelve al
+// instante: "succeeded" ahí significa "se encoló la petición", no "la edge function hizo
+// su trabajo". Si el secreto de cron rota, o `api` empieza a responder 500, los 20 jobs
+// siguen marcando "succeeded" para siempre mientras nada de lo automatizado ocurre.
+// dead_cron_jobs() cruza los disparos de pg_cron con los latidos que anota `api`
+// (record_cron_heartbeat, ver index.ts) y devuelve los que dispararon 3+ veces sin un solo
+// latido bueno. El umbral es proporcional por construcción: un job de cada 3 minutos avisa
+// a los ~9 minutos, uno diario recién al tercer día — sin escribir un plazo por job.
+//
+// C2 — PICO DE ERRORES. debug_logs recibe todo fallo interno de `api`; en operación normal
+// son unos pocos por día. error_spike() compara la última hora contra el promedio horario
+// de los 7 días previos (excluyendo esa misma hora, para que el pico no se diluya solo) y
+// exige además un piso absoluto: con un promedio cercano a cero, cualquier factor se
+// dispara con 2 errores sueltos y la alerta deja de significar algo.
+//
+// Cada job muerto se avisa UNA vez (mark_cron_alerted); el aviso se rearma solo cuando ese
+// job vuelve a latir bien. Sin eso, un cron roto un fin de semana manda 48 notificaciones
+// idénticas y el dueño aprende a ignorarlas — que es peor que no tener alerta.
+export async function actAlertSystemHealth(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+
+  let deadAlerted = 0;
+  const dead: any[] = await rpc("dead_cron_jobs", { p_min_misses: 3 });
+  for (const job of dead || []) {
+    if (job.alerted_at) continue; // ya se avisó y todavía no volvió a latir
+    try {
+      const desde = job.last_ok_at
+        ? "Último latido: " + new Date(job.last_ok_at).toISOString().slice(0, 16).replace("T", " ") + " UTC."
+        : "Nunca ha latido.";
+      await sendPushToAdmins({
+        title: "Automatización caída ⚠️",
+        body: job.jobname + " disparó " + job.fired_since + " veces sin responder. " + desde
+          + (job.last_error ? " Último error: " + String(job.last_error).slice(0, 120) : ""),
+        url: "./index.html",
+        tag: "sndwch-deadcron-" + job.action,
+      });
+      await rpc("mark_cron_alerted", { p_action: job.action });
+      deadAlerted++;
+    } catch (e) {
+      console.error("alert-system-health: fallo avisando cron muerto", job.action, e);
+    }
+  }
+
+  let spikeAlerted = 0;
+  const spike: any[] = await rpc("error_spike", { p_min_errors: 10, p_factor: 4 });
+  if (spike && spike.length) {
+    try {
+      await sendPushToAdmins({
+        title: "Pico de errores 🔴",
+        body: spike[0].last_hour + " errores en la última hora (lo normal es ~"
+          + spike[0].baseline_per_hour + " por hora). Algo se rompió recién.",
+        url: "./index.html",
+        // Sin id en el tag a propósito: si el pico sigue una hora después, el aviso nuevo
+        // REEMPLAZA al anterior en la bandeja en vez de apilarse.
+        tag: "sndwch-error-spike",
+      });
+      spikeAlerted = 1;
+    } catch (e) {
+      console.error("alert-system-health: fallo avisando pico de errores", e);
+    }
+  }
+
+  return { checked: (dead || []).length, deadAlerted, spikeAlerted };
+}
+
 const RESTOCK_MAX_ITEMS = 100;
 export async function actAdminInventoryRestock(b: any) {
   const s = await requireAdmin(b.token);

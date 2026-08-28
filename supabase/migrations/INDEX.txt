@@ -1,8 +1,3 @@
-# Migraciones aplicadas en Supabase (proyecto rjosezuoyngiadunfzyn)
-# Generado 2026-08-15 desde supabase_migrations.schema_migrations — 109 migraciones.
-# El SQL de cada una está en esta misma carpeta (<version>_<nombre>.sql), verificado
-# con md5 contra la base. Ver README.md — 4 llevan el secreto de cron redactado.
-
 20260424021855  add_birthday_columns_to_customers
 20260424022952  add_referral_and_notes_columns
 20260628123903  add_email_dni_to_customers
@@ -112,4 +107,16 @@
 20260815134532  referrer_bonus_separate_amount
 20260815134612  reverse_referral_bonus_separate_amount
 20260815185105  rewards_recalibrated_2026_08_15
+20260820161453  orders_add_group_code
+20260821005337  alert_stuck_in_progress_and_store_pause
+20260821005417  orders_status_changed_at
 20260822044102  precios_2026_08_22_margen_pdbl_por_tamano
+20260826123155  menu_secreto_min_orders_5_a_3
+20260827014941  catalog_items_signatures_editables
+20260827015121  catalog_prices_sig_rows_muertas
+20260828123551  fix_referral_reversal_loop_and_inventory_in_stock
+20260828131316  hardening_complaints_grants_appendonly_indexes
+20260828162829  revert_dni_not_null_bloqueaba_cuenta_existente
+20260828164122  dni_del_dueno_escala_de_dinero_y_ledger_completo
+20260828164151  credit_ledger_usa_related_phone
+20260828183910  cron_heartbeats_dead_man_switch_y_pico_de_errores

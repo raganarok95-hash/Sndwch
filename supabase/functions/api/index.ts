@@ -39,7 +39,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAlertSystemHealth, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -61,6 +61,7 @@ import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVi
 import { actAdminVideoScript, actAdminVideoGenerate } from "./actions/video.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
+import { rpc } from "./db.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -124,6 +125,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-inventory-restock": actAdminInventoryRestock,
+  "alert-system-health": actAlertSystemHealth,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
   // Signatures editables desde el panel (ver loadCatalogItems / tabla catalog_items).
   "admin-catalog-items-get": actAdminCatalogItemsGet,
@@ -216,11 +218,38 @@ Deno.serve(async (req: Request) => {
 
   try {
     const result = await handler(body);
+    await recordCronHeartbeat(body, action, true);
     return json(result);
   } catch (e) {
+    // El latido se anota también cuando falla: un cron que llega y revienta todas las
+    // veces es exactamente lo que hay que detectar, y sin registrar el fallo se vería
+    // igual que uno que nunca llegó.
+    await recordCronHeartbeat(body, action, false, e);
     if (e instanceof ApiError) return json({ error: e.message }, e.status);
     console.error(e);
     await debugLog({ stage: "exception", action, error: String(e) });
     return json({ error: "Error interno del servidor." }, 500);
   }
 });
+
+// C1 — Latido del dead-man switch de crons. pg_cron ya guarda si DISPARÓ cada job, pero
+// net.http_post() vuelve al instante: "succeeded" ahí significa "se encoló la petición",
+// no "la edge function hizo su trabajo". Si el secreto de cron rota, o `api` empieza a
+// responder 500, los 20 jobs siguen marcando "succeeded" para siempre mientras nada de lo
+// automatizado ocurre. Esto anota, del lado de `api`, que la corrida llegó de verdad;
+// dead_cron_jobs() (migración) cruza las dos fuentes.
+//
+// Se dispara solo con peticiones que traen cronSecret — un cliente no puede escribir acá
+// porque no lo tiene, y aunque mandara basura en ese campo, verifyCronSecret ya habría
+// rechazado la acción y esto anotaría un fallo, que es justo lo que se quiere ver.
+// Es best-effort: nunca puede tumbar la respuesta real de la acción.
+async function recordCronHeartbeat(body: any, action: string, ok: boolean, err?: unknown) {
+  if (!body?.cronSecret) return;
+  try {
+    await rpc("record_cron_heartbeat", {
+      p_action: action,
+      p_ok: ok,
+      p_error: ok ? null : String(err instanceof Error ? err.message : err).slice(0, 400),
+    });
+  } catch (_e) { /* el latido nunca vale más que la corrida en sí */ }
+}

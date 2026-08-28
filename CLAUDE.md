@@ -30,10 +30,15 @@ afecta cualquier decisión de precio/margen.
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
   una hora específica (ej. evitar la promo de hora valle), usa `page.clock.setFixedTime()`
   **dentro de ese test**, no en `helpers.ts`.
-- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 109 migraciones**
+- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 122 migraciones**
   (un archivo `<version>_<nombre>.sql` cada una, extraído de
   `supabase_migrations.schema_migrations` el 2026-08-19 y verificado archivo por archivo
-  con md5 contra la base), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
+  con md5 contra la base; reconciliado de nuevo el 2026-08-28 — **el nombre del archivo
+  DEBE llevar la `version` exacta que quedó registrada en la base, no la hora en que lo
+  escribiste**: al aplicar con `apply_migration` y escribir el archivo unos minutos
+  después se habían colado 8 desfases y 2 migraciones sin archivo. Verificar con
+  `select version from supabase_migrations.schema_migrations` contra `ls` antes de dar por
+  cerrada una sesión que aplicó migraciones), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
   secreto de cron redactado a propósito** (`<CRON_SECRET_REDACTADO>`) — el valor sigue en
   texto plano en el historial dentro de Supabase, rotarlo es tarea pendiente del dueño.
   Una migración nueva se sigue aplicando con `mcp__Supabase__apply_migration`; para que
