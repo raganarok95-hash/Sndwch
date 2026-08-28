@@ -12,6 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # PUERTA DE TIPOS ANTES DE DESPLEGAR (2026-08-27).
+      # Antes este workflow desplegaba directo: nada acá comprobaba que el backend
+      # compilara. verify-pr.yml solo corre en pull_request, así que un push directo a
+      # main —o un merge sin que la protección de rama exija ese check, que es
+      # configuración fuera del repo— mandaba a producción un backend que ni siquiera
+      # pasa `deno check`. El propio CLAUDE.md ya advertía "el CI despliega sin
+      # type-check, así que un error acá llega a producción"; esto lo cierra.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck:api
       - uses: supabase/setup-cli@v1
         with:
           version: latest

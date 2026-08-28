@@ -1138,7 +1138,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4afc07ad50';
+var APP_BUILD = '513f82424d';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2431,7 +2431,14 @@ function cartRemove(idx) {
     saveCart();
     render();
 }
-function clearCart() { cart = []; appliedReward = null; appliedPromo = null; promoStatus = ''; saveCart(); go('o_home'); }
+// pendingGroupCode se limpia acá y en doLogout() a propósito (2026-08-27). Antes solo se
+// limpiaba tras un pedido pagado con éxito, así que sobrevivía a un abandono: el
+// organizador cerraba un grupo de 5+, no pagaba, vaciaba el carrito, armaba un pedido
+// PERSONAL que también llegara a 5 sándwiches, y metaAttribution() seguía mandando ese
+// groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
+// cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
+// regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
+function clearCart() { cart = []; appliedReward = null; appliedPromo = null; promoStatus = ''; pendingGroupCode = null; saveCart(); go('o_home'); }
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 function loadCart(items) {
@@ -5566,6 +5573,7 @@ function doLogout() {
     token = '';
     aErr = '';
     clearGoogleLink();
+    pendingGroupCode = null;
     localStorage.removeItem('sw_ph');
     localStorage.removeItem('sw_tok');
     cacheCust(null);

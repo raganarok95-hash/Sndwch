@@ -9,6 +9,7 @@ import {
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
 } from "../session.ts";
 import { sendRecoveryEmail, maskEmail } from "../email.ts";
+import { pointsFor } from "./orders.ts";
 
 // Verifica un id_token de Google Identity Services contra el propio endpoint de Google
 // (tokeninfo) en vez de validar la firma RS256/JWKS localmente — mismo criterio que
@@ -169,7 +170,7 @@ export async function actRegister(b: any) {
     try {
       const orderRows = await sbGet(
         "orders",
-        `ref=eq.${encodeURIComponent(claimOrderRef)}&customer_phone=is.null&select=id,ref,total,payment_status,customer_address`,
+        `ref=eq.${encodeURIComponent(claimOrderRef)}&customer_phone=is.null&select=id,ref,total,delivery_fee,payment_status,customer_address`,
       );
       const order = orderRows[0];
       if (order) {
@@ -193,7 +194,14 @@ export async function actRegister(b: any) {
           // confirmManualPayment ya funciona sola cuando el admin confirme el pago.
           const updated = await rpc("finalize_order_customer_update", {
             p_phone: phone,
-            p_points_delta: order.total,
+            // Los puntos NUNCA se ganan sobre el delivery: es pass-through al motorizado,
+            // el negocio no se queda con ese margen. Este camino (vincular un pedido de
+            // invitado ya pagado al crear la cuenta) usaba `order.total` completo y ni
+            // siquiera traía `delivery_fee` en el select, así que regalaba el monto del
+            // reparto en puntos — S/6 a S/15 según zona — en cada conversión de
+            // invitado a cuenta. Se detectó al revisar por qué `pointsFor` no se estaba
+            // usando en todos los sitios que calculan puntos desde un total.
+            p_points_delta: pointsFor(order.total, order.delivery_fee),
             p_credit_delta: 0,
             p_total_orders_delta: 1,
             p_last_address: order.customer_address,
@@ -207,7 +215,9 @@ export async function actRegister(b: any) {
             sbInsert("transactions", {
               customer_phone: phone,
               type: "earn_confirmed",
-              points: order.total,
+              // Mismo criterio que el delta de arriba, y además `transactions.points` es
+              // `integer`: con un total decimal esto reventaba con 22P02.
+              points: pointsFor(order.total, order.delivery_fee),
               description: "Pedido SND//WCH (vinculado tras crear cuenta)",
               order_ref: order.ref,
               confirmed: true,
