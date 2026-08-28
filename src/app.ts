@@ -2966,6 +2966,52 @@ function comboDrinkNudgeHTML(){
 // checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
 // ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
 // no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
+// C4 — Distancia máxima (km) que cubre cada zona de PRECIO, derivada del único dato de
+// tarifa que el propio negocio publica al cliente: "~S/2 por km" (ver el texto bajo el
+// home). Con esa tarifa el fee de cada zona describe su alcance: S/6 → 3 km, S/8 → 4 km,
+// S/12 → 6 km, y de ahí para arriba MUY LEJOS. No es una geocerca ni una validación:
+// existe solo para AVISAR cuando la zona elegida y el pin del mapa no cuadran. Nunca
+// bloquea el pedido — un pin puede caer mal (GPS en interiores, mapa arrastrado a ojo) y
+// el cliente conoce su dirección mejor que el navegador. El cobro real lo sigue fijando
+// la zona que él eligió.
+var DELIVERY_ZONE_MAX_KM={cerca:3,media:4,lejos:6};
+function zoneForKm(km){
+  if(km<=DELIVERY_ZONE_MAX_KM.cerca)return'cerca';
+  if(km<=DELIVERY_ZONE_MAX_KM.media)return'media';
+  if(km<=DELIVERY_ZONE_MAX_KM.lejos)return'lejos';
+  return'muy_lejos';
+}
+// Distancia entre el pin que el cliente confirmó en el mapa y el punto de despacho.
+// Devuelve null si nunca tocó el mapa/GPS — sin pin no hay nada que comparar y no se
+// muestra ningún aviso (la mayoría de los pedidos escriben la dirección a mano).
+function pinDistanceKm(){
+  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
+  return haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
+}
+function applySuggestedZone(z){deliveryZone=z;confirmRerender();}
+// Aviso de zona vs. pin. Las dos direcciones del desajuste importan, por motivos
+// distintos: si el cliente eligió una zona más BARATA de lo que dice el pin, el dueño
+// pone la diferencia de su bolsillo (el delivery es pass-through, no tiene margen del
+// que salga); si eligió una más CARA, está pagando de más y avisarle es lo honesto.
+// Por eso los dos casos se avisan, con texto distinto.
+function deliveryZoneMismatchHTML(){
+  var km=pinDistanceKm();
+  if(km===null)return'';
+  var sug=zoneForKm(km);
+  if(sug===deliveryZone)return'';
+  var zSel=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
+  var zSug=DELIVERY_PRICE_ZONES.find(function(x){return x.id===sug;});
+  if(!zSel||!zSug)return'';
+  var masCaro=zSug.fee>zSel.fee;
+  var txt=masCaro
+    ?'Tu pin está a ~'+km.toFixed(1)+' km, que corresponde a '+zSug.l.toUpperCase()+'. Si dejas '+zSel.l.toUpperCase()+', puede que el motorizado te pida la diferencia al llegar.'
+    :'Tu pin está a ~'+km.toFixed(1)+' km: te alcanza '+zSug.l.toUpperCase()+' ('+SOLES_TXT+zSug.fee+') y estás pagando '+SOLES_TXT+zSel.fee+'.';
+  var color=masCaro?'#ffb84d':GOLD;
+  return'<div style="margin-top:10px;background:rgba(203,162,88,.08);border:1px solid '+color+';border-radius:8px;padding:10px 12px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.45">'+esc(txt)+'</div>'
+    +'<button onclick="applySuggestedZone(\''+sug+'\')" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:8px;background:transparent;border:1px solid '+color+';color:'+color+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar a '+esc(zSug.l.toUpperCase())+' // '+SOLES_TXT+zSug.fee+'</button>'
+    +'</div>';
+}
 function districtPickerHTML(){
   var opts=DELIVERY_DISTRICTS.map(function(d){
     var sel=deliveryDistrict===d.id;
@@ -3001,7 +3047,7 @@ function deliveryZonePickerHTML(){
     var shownFee=sel?deliveryFeeAmount():z.fee;
     return'<div onclick="deliveryZone=\''+z.id+'\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+z.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?GOLD:'#A8C8B0')+';margin-top:2px">'+SOLES_TXT+shownFee+'</div></div>';
   }).join('');
-  h+='</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
+  h+='</div>'+deliveryZoneMismatchHTML()+'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
   return h;
 }
 function checkoutExtrasHTML(){
@@ -5906,8 +5952,23 @@ function confirmMap(){
   }
   if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat;window._mLon=c.lng;}
   closeMap();
+  // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
+  // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
+  // porque el aviso de zona vs. pin (deliveryZoneMismatchHTML) vive en el picker de zona
+  // y sin un render no aparecería hasta que el cliente tocara cualquier otra cosa — o
+  // sea, justo cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
+  // que nada de lo escrito se pierda; addrText se fija después porque la dirección que
+  // vale es la que se acaba de elegir en el mapa, no la que había en el input.
+  syncConfirmFields();
+  addrText=a;
+  // Si el pin cae claramente en otro distrito del que estaba elegido, no tiene sentido
+  // dejar el anterior: el mapa es un dato más fuerte que un selector que el cliente
+  // quizá ni tocó.
+  var inferred=districtFromAddress(a);
+  if(inferred)deliveryDistrict=inferred;
+  render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
-  if(el){el.value=a;el.style.borderColor='#3A86FF';el.focus();}
+  if(el){el.style.borderColor='#3A86FF';el.focus();}
   var h=(document.getElementById('gps-hint') as HTMLInputElement | null);
   if(h)h.innerHTML='<a href="https://maps.google.com/?q='+window._mLat+','+window._mLon+'" target="_blank" style="color:'+GOLD+';font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
   setTimeout(function(){var e=(document.getElementById('o-addr') as HTMLInputElement | null);if(e)e.style.borderColor='#0d0d0d';},3000);
@@ -6244,6 +6305,19 @@ async function loadStoreHoursBackground(){
     storePausedUntil=r.pausedUntil||null;
   }catch(e){}
 }
+// C7 — El panel de inventario tiene dos modos que hacen cosas distintas con el MISMO
+// número escrito en cada fila:
+//  · 'fijar'  → el número ES el stock (lo que había desde siempre; sirve para corregir un
+//               conteo, o para apagar el rastreo dejándolo vacío).
+//  · 'tanda'  → el número es lo que se acaba de PRODUCIR y se SUMA a lo que quedaba.
+// El segundo existe porque el dueño cocina por tandas 1-2 veces por semana y al terminar
+// sabe cuánto hizo, no cuánto suma con el sobrante. Hacer esa cuenta a mano por cada
+// insumo, recién salido de cocinar, es donde se equivoca — y un stock mal puesto apaga un
+// producto en la tienda o vende algo que ya no hay. La suma la hace el servidor
+// (admin-inventory-restock) leyendo la fila fresca, no el navegador con el número que
+// cargó cuando abrió la pantalla.
+var invMode='fijar';
+function setInvMode(m){invMode=m;render();}
 async function loadInventory(){
   sndScreen='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
@@ -6286,7 +6360,19 @@ function sAdminInventory(){
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Control de stock //</div>';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
   h+=SEARCHBOX('inv-search','Buscar producto','inv-row');
-  h+='<div style="margin-bottom:20px">'+BTN('Guardar todos los cambios de stock //','saveAllInventoryChanges()',true)+'</div>';
+  h+='<div style="display:flex;gap:8px;margin:14px 0 10px">'
+    +['fijar','tanda'].map(function(m){
+      var sel=invMode===m;
+      var l=m==='fijar'?'Fijar cantidad':'Sumar tanda';
+      return'<div onclick="setInvMode(\''+m+'\')" style="flex:1;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+l+'</div>';
+    }).join('')
+    +'</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">'
+    +(invMode==='tanda'
+      ?'Escribe cuánto PRODUJISTE de cada insumo en esta tanda. Se suma a lo que quedaba — no tienes que calcular el total tú.'
+      :'El número que escribas ES el stock final. Déjalo vacío para volver al control manual, sin rastreo de cantidad.')
+    +'</div>';
+  h+='<div style="margin-bottom:20px">'+BTN(invMode==='tanda'?'Registrar la tanda //':'Guardar todos los cambios de stock //','saveAllInventoryChanges()',true)+'</div>';
   INV_CATS.forEach(function(cat){
     h+='<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);margin:18px 0 10px;text-wrap:balance">'+cat.t+'<span class="cut-sep" style="color:'+GOLD+'"> //</span></div>';
     h+=cat.arr.map(function(item){
@@ -6301,8 +6387,11 @@ function sAdminInventory(){
         +'<button onclick="toggleStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:'+(av?'rgba(255,85,85,.12)':'rgba(37,211,102,.15)')+';border:1px solid '+(av?'rgba(255,85,85,.4)':'rgba(37,211,102,.4)')+';color:'+(av?'#ff8888':'#25D366')+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.08em;padding:15px 14px;border-radius:8px;text-align:center;flex-shrink:0">'+(av?'Marcar agotado':'Reactivar')+'</button>'
         +'</div>'
         +'<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">'
-        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="Sin rastreo de cantidad" value="'+(tracked?qty:'')+'" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
-        +'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>'
+        // En modo tanda el campo arranca VACÍO y no precargado con el stock actual: si
+        // mostrara el número de ahora, escribir encima se leería como "fijar" y sumaría
+        // el doble sin que se note.
+        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="'+(invMode==='tanda'?'Producido en esta tanda':'Sin rastreo de cantidad')+'" value="'+(invMode==='tanda'?'':(tracked?qty:''))+'" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
+        +(invMode==='tanda'?'':'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>')
         +'</div>'
         +'</div>';
     }).join('');
@@ -6316,6 +6405,7 @@ function sAdminInventory(){
 // después), detecta cuáles de verdad cambiaron, y reutiliza admin-inventory-set-stock
 // por cada uno — mismo endpoint que ya usaba el guardado fila por fila.
 async function saveAllInventoryChanges(){
+  if(invMode==='tanda')return registerBatchRestock();
   var jobs: {code:string;name:string;qty:number|null}[]=[];
   INV_CATS.forEach(function(cat){
     cat.arr.forEach(function(item){
@@ -6344,6 +6434,42 @@ async function saveAllInventoryChanges(){
   }
   busy=false;render();
   showToast(jobs.length+' producto(s) actualizado(s).');
+}
+// Registra una tanda: manda solo cuánto se PRODUJO de cada insumo y deja que el servidor
+// haga la suma sobre la fila fresca (admin-inventory-restock). Va en UNA sola llamada, a
+// diferencia del guardado fila por fila: una tanda es un evento, y si se corta a la mitad
+// el dueño no tiene forma de saber qué insumos ya se sumaron y cuáles no — reponerlos
+// "por si acaso" duplicaría el stock de los que sí pasaron.
+async function registerBatchRestock(){
+  var items: {code:string;name:string;add:number}[]=[];
+  var invalid=false;
+  INV_CATS.forEach(function(cat){
+    cat.arr.forEach(function(item){
+      var el=(document.getElementById('qty-'+item.id) as HTMLInputElement | null);
+      if(!el)return;
+      var raw=el.value.trim();
+      if(raw==='')return; // insumo que no entró en esta tanda
+      var add=parseInt(raw,10);
+      if(!isFinite(add)||add<=0){invalid=true;return;}
+      items.push({code:item.id,name:item.l+(item.s&&item.s!=='//'?' // '+item.s:''),add:add});
+    });
+  });
+  if(invalid){showToast('Una tanda solo suma: escribe cantidades mayores a 0, o deja vacío lo que no cocinaste.');return;}
+  if(!items.length){showToast('Escribe cuánto produjiste de al menos un insumo.');return;}
+  if(!(await showConfirm('¿Registrar la tanda? Se sumarán las cantidades de '+items.length+' insumo(s) a lo que ya había en stock.')))return;
+  busy=true;busyMsg='Registrando la tanda...';render();
+  try{
+    var r=await api('admin-inventory-restock',{token:token,items:items});
+    // El servidor devuelve el stock resultante de cada insumo — se toma de ahí y no del
+    // cálculo local, así lo que muestra la pantalla es lo que de verdad quedó guardado.
+    (r.applied||[]).forEach(function(a){invQty[a.code]=a.to;invStock[a.code]=a.to>0;});
+  }catch(e){
+    busy=false;render();
+    showToast('Error al registrar la tanda: '+e.message);
+    return;
+  }
+  busy=false;invMode='fijar';render();
+  showToast('Tanda registrada: '+items.length+' insumo(s) repuesto(s).');
 }
 
 var _adminList=[];

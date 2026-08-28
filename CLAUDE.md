@@ -306,7 +306,10 @@ Signature o build.
   con/sin reembolso reconocido), dashboard de negocio (ingresos, tendencia 14 días, top
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
-  gestión de inventario/cuentas admin/horario editable, exportar CSV, log de auditoría,
+  gestión de inventario/cuentas admin/horario editable (con **modo tanda**: se escribe
+  cuánto se PRODUJO y `admin-inventory-restock` lo SUMA server-side a lo que quedaba, en
+  una sola llamada — el modo normal sigue fijando el valor absoluto), exportar CSV, log de
+  auditoría,
   contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una

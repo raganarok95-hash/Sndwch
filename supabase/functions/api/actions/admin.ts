@@ -182,6 +182,59 @@ export async function actAdminInventorySetStock(b: any) {
   return { success: true };
 }
 
+// C7 — Reposición de una TANDA. El dueño cocina por tandas 1-2 veces por semana: cuando
+// termina no sabe (ni tiene por qué calcular) el total nuevo de cada insumo, sabe cuánto
+// PRODUJO. Hasta ahora el único endpoint de stock fijaba un valor absoluto, así que
+// después de cada tanda había que hacer a mano "lo que quedaba + lo que cociné" por cada
+// insumo, que es justo donde se equivoca alguien que acaba de cocinar 4 horas — y un
+// número de stock mal puesto apaga un producto en la tienda o vende algo que ya no hay.
+//
+// Acá se manda cuánto se AGREGÓ y el servidor hace la suma leyendo la fila fresca. La
+// lectura y la escritura no son una transacción única (PostgREST no expone un incremento
+// atómico sin una RPC dedicada), pero el hueco pasa de "todo el rato que el panel estuvo
+// abierto" a los milisegundos de esta llamada, con un solo operador de por medio.
+//
+// Un insumo sin fila en `inventory` nunca se marcó agotado: arranca de 0 y queda con lo
+// que se acaba de producir, que es lo correcto — antes de la tanda no había nada.
+const RESTOCK_MAX_ITEMS = 100;
+export async function actAdminInventoryRestock(b: any) {
+  const s = await requireAdmin(b.token);
+  const raw = Array.isArray(b.items) ? b.items : [];
+  if (!raw.length) throw new ApiError("No hay insumos que reponer.");
+  if (raw.length > RESTOCK_MAX_ITEMS) throw new ApiError("Demasiados insumos en una sola reposición.");
+
+  const items = raw.map((it: any) => {
+    const code = String(it?.code || "").trim();
+    if (!code) throw new ApiError("Falta el código de un insumo.");
+    const add = Math.floor(Number(it?.add));
+    // Solo suma: para corregir un número hacia abajo está la edición normal de stock, que
+    // fija el valor exacto. Aceptar negativos acá convertiría "reponer una tanda" en una
+    // forma silenciosa de descontar.
+    if (!Number.isFinite(add) || add <= 0) throw new ApiError("La cantidad producida debe ser un número mayor a 0.");
+    return { code, name: String(it?.name || "").trim(), add };
+  });
+
+  const applied: { code: string; from: number; to: number }[] = [];
+  for (const it of items) {
+    const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(it.code)}&select=stock_qty`);
+    const from = existing.length && existing[0].stock_qty != null ? Number(existing[0].stock_qty) : 0;
+    const to = from + it.add;
+    if (existing.length) {
+      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true });
+    } else {
+      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true });
+    }
+    // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
+    // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
+    await notifyRestockedSignatures(it.code);
+    applied.push({ code: it.code, from, to });
+  }
+  // Una sola entrada de auditoría por tanda, no una por insumo: el log se lee para
+  // reconstruir qué pasó, y 20 líneas idénticas del mismo minuto lo entierran.
+  await logAdminAction(s.phone, "inventory-restock", undefined, { items: applied });
+  return { success: true, applied };
+}
+
 const EXPORT_LIMIT = 5000;
 export async function actAdminExportOrders(b: any) {
   const s = await requireAdmin(b.token);
