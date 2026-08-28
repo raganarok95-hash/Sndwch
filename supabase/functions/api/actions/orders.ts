@@ -1661,6 +1661,39 @@ async function restockOrderItems(items: any): Promise<void> {
 // que este cancelación lo baje a 0) como el mejor indicador disponible de "este pedido
 // fue el que lo otorgó" — debe leerse ANTES de que finalize_order_customer_update
 // decremente total_orders, nunca después.
+// Lo que hay que DESHACER en la cuenta del cliente al cancelar un pedido. Es la misma
+// aritmética para la cancelación del cliente (actCancelMyOrder) y la del admin
+// (actAdminCancelOrder) — estaba escrita dos veces palabra por palabra, que es justo
+// cómo dos copias empiezan a divergir: cada corrección futura tenía que acordarse de la
+// otra. Se extrae además porque es exactamente la clase de defecto que ya llegó a
+// producción una vez (revertir un monto distinto del que se otorgó, ver el caso de los
+// 350 puntos regalados) y sin extraerla no había forma de probarla: el resto de las dos
+// funciones toca la base y no se puede ejecutar en `npm run test:api`.
+//
+// Reglas, todas con una razón concreta detrás:
+// · Nada se revierte si el pedido nunca se pagó — un Yape/Plin todavía `pending` nunca
+//   pasó por finalize_order_customer_update, no hay nada que deshacer.
+// · Los puntos GANADOS fueron sobre total − delivery_fee (el delivery es pass-through al
+//   motorizado y nunca premió), así que la reversión resta exactamente eso; los puntos
+//   que el cliente GASTÓ en una recompensa se le devuelven. El neto puede quedar en
+//   cualquier signo y así debe mandarse.
+// · El crédito solo se devuelve si se pagó con crédito interno: el dinero real de una
+//   tarjeta no se reembolsa desde acá (eso lo coordina el dueño a mano).
+export function cancellationDeltas(order: {
+  payment_status?: string | null;
+  payment_method?: string | null;
+  total: number;
+  delivery_fee?: number | null;
+  redeemed_reward_pts?: number | null;
+}): { creditToRefund: number; pointsToRefund: number; totalOrdersDelta: number; totalRedeemedDelta: number } {
+  const paid = order.payment_status === "paid";
+  return {
+    creditToRefund: paid && order.payment_method === "credit" ? order.total : 0,
+    pointsToRefund: paid ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee || 0) : 0,
+    totalOrdersDelta: paid ? -1 : 0,
+    totalRedeemedDelta: paid && order.redeemed_reward_pts ? -1 : 0,
+  };
+}
 async function referrerPhoneToReverse(phone: string): Promise<string | null> {
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=referred_by,referral_bonus_granted,total_orders`);
   const c = rows[0];
@@ -1746,13 +1779,7 @@ export async function actAdminCancelOrder(b: any) {
   // tarjeta/Yape/Plin y se reembolsó por fuera de la app, el cliente igual conservaba
   // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
   // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone
@@ -1882,13 +1909,7 @@ export async function actCancelMyOrder(b: any) {
   // (y por tanto la cancelación) si el cliente ya gastó esos puntos en otra parte antes
   // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
   // insuficiente" en vez de perder la cuenta en silencio.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone

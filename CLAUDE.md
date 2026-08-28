@@ -109,7 +109,13 @@ que una fila en `catalog_prices` para SIG05 sería ignorada.)
    contra una columna `integer` (reventaba DESPUÉS del cobro de Culqi) y
    `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
    **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
-   `jsr:@std/assert`: jsr.io está bloqueado por el proxy, el archivo trae su propio assert.
+   `jsr:@std/assert`: jsr.io está bloqueado por el proxy, cada archivo trae su propio assert.
+   Hoy son 3 archivos / 23 pruebas: `dinero.test.ts` (`pointsFor`), `carrito.test.ts`
+   (`deriveCart` — combo vs. hora valle, recompensas, sándwich del organizador) y
+   `cancelacion.test.ts` (`cancellationDeltas`, la reversión al cancelar). El patrón para
+   que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
+   `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
+   palabra por palabra.
 4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
    `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
    cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
