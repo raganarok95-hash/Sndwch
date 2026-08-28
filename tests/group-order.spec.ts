@@ -115,6 +115,7 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();

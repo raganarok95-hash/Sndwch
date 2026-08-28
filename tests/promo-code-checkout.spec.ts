@@ -37,6 +37,7 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
 
   // El campo de código arranca colapsado en el checkout (evita recordarle un cupón a
   // quien no tiene ninguno) — hay que abrirlo antes de escribir.
@@ -97,6 +98,7 @@ test('código promocional inválido muestra el error del servidor sin bloquear e
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
 
   // El campo de código arranca colapsado en el checkout (evita recordarle un cupón a
   // quien no tiene ninguno) — hay que abrirlo antes de escribir.

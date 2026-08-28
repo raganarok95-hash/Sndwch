@@ -461,6 +461,18 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Costos fijos mensuales: menos de S/500 — opera desde casa** (confirmado por el dueño
   2026-08-15). Sin alquiler de local. Los S/950 que usó el modelo v5 eran una estimación a
   ojo y estaban altos por casi el doble.
+- **Distrito y zona de precio son DOS cosas distintas en el checkout (desde 2026-08-28).**
+  El **distrito** (`DELIVERY_DISTRICTS` en `src/app.ts`) es obligatorio y decide si el
+  pedido se puede entregar: los que están fuera de cobertura salen listados pero
+  deshabilitados ("todavía no llegamos aquí"), y el distrito elegido se ADJUNTA al texto de
+  la dirección que va al servidor (no hay columna propia; el motorizado igual lo necesita
+  impreso). La **zona** (`DELIVERY_PRICE_ZONES`) solo fija cuánto cobra el motorizado y
+  tiene default. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
+  texto libre de la dirección: quien no lo escribía pasaba sin querer y quien sí lo escribía
+  se enteraba recién al tocar PAGAR. Ese substring (`DELIVERY_EXCLUDED_ZONES`, duplicado en
+  `src/app.ts` y `env.ts`) sigue siendo **la única defensa real** — `assertAddressAllowed`
+  en el servidor no ve el selector — así que recortar cobertura exige tocar los DOS lados,
+  no solo marcar `out:true` en la lista de distritos.
 - **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
   fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
   lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en

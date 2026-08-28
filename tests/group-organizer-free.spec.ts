@@ -110,6 +110,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();

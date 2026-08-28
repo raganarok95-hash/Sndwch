@@ -717,19 +717,35 @@ var SIDES = [
 // en el panel admin). [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
 // índice 1 (lunes) en null = día de descanso, coincide con store_hours en la base.
 var STORE_HOURS = [[11, 22], null, [11, 22], [11, 22], [11, 22], [11, 22], [11, 22]];
+// El horario SIEMPRE se evalúa en hora de Lima, nunca en la del aparato (2026-08-28).
+// Antes se usaban getDay()/getHours(), que devuelven la zona del dispositivo. Perú tiene
+// una sola zona y sin horario de verano, así que un celular bien configurado dentro del
+// país acertaba — pero el bug no depende de dónde ESTÁ el usuario sino de cómo está
+// CONFIGURADO su aparato: alguien pidiendo desde el extranjero para entregar en Trujillo,
+// un Android con la zona mal después de un reinicio, o un navegador que arranca en UTC.
+// En esos casos el cliente mostraba ABIERTO/CERRADO al revés y dejaba elegir horas que el
+// servidor después rechazaba, o bloqueaba horas perfectamente válidas.
+// Espejo exacto de limaFields() en supabase/functions/api/env.ts.
+function limaDayHour(d) {
+    var parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Lima', weekday: 'short', hour: 'numeric', minute: 'numeric', hourCycle: 'h23'
+    }).formatToParts(d);
+    var get = function (t) { var p = parts.find(function (x) { return x.type === t; }); return p ? p.value : '0'; };
+    var W = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { weekday: W[get('weekday')], hour: Number(get('hour')) + Number(get('minute')) / 60 };
+}
 function storeStatus() {
-    var now = new Date(), h = now.getHours() + now.getMinutes() / 60, range = STORE_HOURS[now.getDay()];
+    var lima = limaDayHour(new Date()), range = STORE_HOURS[lima.weekday];
     if (!range)
         return { open: false, label: 'CERRADO HOY' };
-    var open = h >= range[0] && h < range[1];
+    var open = lima.hour >= range[0] && lima.hour < range[1];
     return open ? { open: true, label: 'ABIERTO AHORA · cierra ' + String(range[1]).padStart(2, '0') + ':00' } : { open: false, label: 'CERRADO · abre ' + String(range[0]).padStart(2, '0') + ':00' };
 }
 function isWithinStoreHours(d) {
-    var range = STORE_HOURS[d.getDay()];
+    var lima = limaDayHour(d), range = STORE_HOURS[lima.weekday];
     if (!range)
         return false;
-    var h = d.getHours() + d.getMinutes() / 60;
-    return h >= range[0] && h < range[1];
+    return lima.hour >= range[0] && lima.hour < range[1];
 }
 // Picker de "pedir para más tarde" — antes era un <input type="datetime-local"> nativo,
 // que en varios navegadores/webviews móviles (ej. el navegador embebido de YouTube)
@@ -745,7 +761,7 @@ var SCHED_LEAD_MINUTES = 20;
 function schedDateForDay(dayKey) { var d = new Date(); if (dayKey === 'tomorrow')
     d.setDate(d.getDate() + 1); return d; }
 function schedSlots(dayKey) {
-    var d = schedDateForDay(dayKey), range = STORE_HOURS[d.getDay()];
+    var d = schedDateForDay(dayKey), range = STORE_HOURS[limaDayHour(d).weekday];
     if (!range)
         return [];
     var out = [], now = new Date(), isToday = dayKey === 'today';
@@ -782,7 +798,7 @@ function pickSchedSlot(hhmm) { schedSlot = hhmm; confirmRerender(); }
 function scheduleTimePickerHTML() {
     var days = [{ key: 'today', l: 'HOY' }, { key: 'tomorrow', l: 'MAÑANA' }];
     var dayChips = days.map(function (dd) {
-        var d = schedDateForDay(dd.key), closed = !STORE_HOURS[d.getDay()], sel = schedDay === dd.key;
+        var d = schedDateForDay(dd.key), closed = !STORE_HOURS[limaDayHour(d).weekday], sel = schedDay === dd.key;
         var sub = d.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
         return '<div onclick="' + (closed ? '' : 'pickSchedDay(\'' + dd.key + '\')') + '" style="flex:1;text-align:center;background:' + (closed ? '#162922' : (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)')) + ';border:1px solid ' + (sel && !closed ? GOLD : '#3A6B58') + ';border-radius:8px;padding:9px 6px;cursor:' + (closed ? 'not-allowed' : 'pointer') + ';opacity:' + (closed ? .4 : 1) + '"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">' + dd.l + '</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">' + (closed ? 'CERRADO' : esc(sub)) + '</div></div>';
     }).join('');
@@ -812,6 +828,55 @@ var DELIVERY_EXCLUDED_ZONES = ['el milagro', 'el porvenir'];
 function addressInExcludedZone(addr) {
     var a = (addr || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return DELIVERY_EXCLUDED_ZONES.some(function (z) { return a.indexOf(z) >= 0; });
+}
+// Distritos de la provincia de Trujillo que el checkout ofrece explícitamente. NO es una
+// lista de cobertura nueva: es exactamente lo que el servidor ya acepta hoy
+// (assertAddressAllowed rechaza únicamente DELIVERY_EXCLUDED_ZONES, todo lo demás pasa),
+// puesto por delante para que el cliente ELIJA en vez de que el sistema adivine su zona
+// leyendo el texto libre de la dirección. Los que están fuera de cobertura se muestran
+// igual pero deshabilitados — enterarse ANTES de llenar todo el checkout es mucho mejor
+// que un error al final, y además comunica que el negocio existe pero todavía no llega.
+// Si el dueño decide recortar cobertura (ej. dejar de repartir a Salaverry), se marca
+// `out:true` acá Y se agrega el nombre a DELIVERY_EXCLUDED_ZONES en los DOS lados
+// (este archivo y supabase/functions/api/env.ts) — el substring del servidor sigue siendo
+// la única defensa real, este selector es la capa de experiencia, no la de autorización.
+var DELIVERY_DISTRICTS = [
+    { id: 'trujillo', l: 'Trujillo (Centro)' },
+    { id: 'victor_larco', l: 'Víctor Larco Herrera' },
+    { id: 'la_esperanza', l: 'La Esperanza' },
+    { id: 'huanchaco', l: 'Huanchaco' },
+    { id: 'laredo', l: 'Laredo' },
+    { id: 'moche', l: 'Moche' },
+    { id: 'salaverry', l: 'Salaverry' },
+    { id: 'florencia_de_mora', l: 'Florencia de Mora' },
+    { id: 'el_porvenir', l: 'El Porvenir', out: true },
+    { id: 'el_milagro', l: 'El Milagro', out: true },
+    { id: 'otro', l: 'Otro / no está en la lista' }
+];
+// Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
+// zona de precio, que sí tiene default porque solo mueve el monto del motorizado.
+var deliveryDistrict = '';
+function districtById(id) { return DELIVERY_DISTRICTS.find(function (d) { return d.id === id; }); }
+// El distrito elegido se ADJUNTA al texto de la dirección que se manda al servidor (no
+// viaja como campo propio: no hay columna para él y el motorizado necesita el distrito
+// dentro de la dirección impresa de todos modos). Si el cliente ya lo escribió a mano, no
+// se duplica.
+function addressWithDistrict(addr, districtId) {
+    var d = districtById(districtId);
+    if (!d || d.id === 'otro')
+        return addr;
+    var norm = function (x) { return (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    if (norm(addr).indexOf(norm(d.l)) >= 0)
+        return addr;
+    return addr + ', ' + d.l;
+}
+// Si el cliente elige una dirección guardada, se intenta deducir el distrito de su texto
+// para no obligarlo a volver a elegir algo que ya está escrito ahí.
+function districtFromAddress(addr) {
+    var norm = function (x) { return (x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    var a = norm(addr);
+    var hit = DELIVERY_DISTRICTS.find(function (d) { return d.id !== 'otro' && a.indexOf(norm(d.l)) >= 0; });
+    return hit ? hit.id : '';
 }
 // El delivery lo hacen motorizados que el dueño coordina por pedido — antes se pagaba
 // aparte, directo al motorizado, sin ningún monto fijo ("todas las apps indican un
@@ -1143,7 +1208,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '85f892f2cb';
+var APP_BUILD = '9f45dcd1e7';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3454,6 +3519,11 @@ function pickAddr(id) {
     syncConfirmFields();
     pickedAddrId = id;
     addrText = a.address;
+    // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
+    // tiene que volver a elegir algo que ya escribió cuando la guardó.
+    var inferred = districtFromAddress(a.address);
+    if (inferred)
+        deliveryDistrict = inferred;
     render();
 }
 // Bloque de campos de checkout (puntos a ganar, recompensas, direcciones guardadas,
@@ -3496,6 +3566,38 @@ function comboDrinkNudgeHTML() {
 // Zona por defecto 'media' — el cliente solo toca esto si sabe que está más cerca o más
 // lejos de lo normal, nunca es un paso obligatorio. El monto ya se suma al total de abajo
 // (ver payableTotal) — no hace falta un aviso aparte de "cuánto cuesta el delivery".
+// Selector de DISTRITO — obligatorio, y separado a propósito de la "zona de entrega" de
+// abajo (esa solo fija el precio del motorizado; esta decide si el pedido se puede
+// entregar). Antes la cobertura se resolvía adivinando: se buscaba el nombre del distrito
+// dentro del texto libre que el cliente escribía, así que quien no lo escribía pasaba el
+// filtro sin querer y quien sí lo escribía se enteraba recién al tocar PAGAR, con todo el
+// checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
+// ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
+// no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
+function districtPickerHTML() {
+    var opts = DELIVERY_DISTRICTS.map(function (d) {
+        var sel = deliveryDistrict === d.id;
+        return '<option value="' + d.id + '"' + (sel ? ' selected' : '') + (d.out ? ' disabled' : '') + '>' + esc(d.l) + (d.out ? ' — todavía no llegamos aquí' : '') + '</option>';
+    }).join('');
+    var out = DELIVERY_DISTRICTS.filter(function (d) { return d.out; }).map(function (d) { return d.l; }).join(' y ');
+    return '<div>'
+        + '<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Distrito //</label>'
+        + '<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-shadow:' + SHADOW_SM + ';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
+        + '<option value=""' + (deliveryDistrict ? '' : ' selected') + '>Elige tu distrito</option>' + opts + '</select>'
+        + '<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">' + esc('Por ahora no llegamos a ' + out + '.') + '</div>'
+        + '</div>';
+}
+// No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
+// tenga escrito a medias en los inputs de arriba (nombre/dirección/referencia solo se
+// vuelcan a las variables en syncConfirmFields).
+function pickDistrict(id) {
+    deliveryDistrict = id || '';
+    var hint = document.getElementById('o-district-hint');
+    if (hint)
+        hint.textContent = deliveryDistrict && deliveryDistrict !== 'otro'
+            ? 'Entregamos en ' + ((districtById(deliveryDistrict) || {}).l || '') + '.'
+            : 'Por ahora no llegamos a ' + DELIVERY_DISTRICTS.filter(function (d) { return d.out; }).map(function (d) { return d.l; }).join(' y ') + '.';
+}
 function deliveryZonePickerHTML() {
     var h = '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
     h += DELIVERY_PRICE_ZONES.map(function (z) {
@@ -3536,7 +3638,7 @@ function checkoutExtrasHTML() {
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -4218,6 +4320,17 @@ async function doOrder() {
             errEl.textContent = 'Ingresa tu nombre y dirección.';
         return;
     }
+    // El distrito es obligatorio: es lo que decide si el pedido se puede entregar (los que
+    // están fuera de cobertura ni siquiera son seleccionables, ver districtPickerHTML). Se
+    // adjunta al texto de la dirección antes de validar y de mandarlo, así el motorizado lo
+    // ve impreso y el chequeo por substring de abajo lo cubre igual que si el cliente lo
+    // hubiera escrito a mano.
+    if (!deliveryDistrict) {
+        if (errEl)
+            errEl.textContent = 'Elige tu distrito para poder llevarte el pedido.';
+        return;
+    }
+    addr = addressWithDistrict(addr, deliveryDistrict);
     // Solo se avisa recién al intentar pagar, no mientras el cliente todavía está
     // escribiendo la dirección — un aviso en vivo mientras tipea se siente como un
     // rechazo prematuro antes de que termine de escribir. El servidor vuelve a validar

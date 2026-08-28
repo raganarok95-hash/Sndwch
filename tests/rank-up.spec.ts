@@ -40,6 +40,7 @@ test('cliente sube de rango a INICIADO al 5to pedido, sin repetir el aviso del m
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
@@ -79,6 +80,7 @@ test('al 3er pedido se desbloquea el menú secreto aunque no haya subida de rang
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
