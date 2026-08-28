@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
@@ -105,7 +105,7 @@ export async function actAdminManualCredit(b: any) {
 
 export async function actAdminAccountsList(b: any) {
   await requireAdmin(b.token);
-  return { accounts: await sbGet("admin_accounts", "order=created_at.asc") };
+  return { accounts: await sbGet("admin_accounts", "order=created_at.asc&limit=200") };
 }
 // Agregar un admin nuevo es tan sensible como quitarle el acceso a uno (otorga acceso
 // administrativo total y persistente) — antes solo exigía requireAdmin, sin reconfirmar
@@ -257,13 +257,13 @@ export async function actDashboardStats(b: any) {
       // registros/conversión, nunca cuánto dinero trajo cada canal.
       `select=total,payment_status,created_at,items,product_key,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
-    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
-    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
+    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=500"),
+    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=500"),
     // Para medir si una campaña paga (?src=... en el link del anuncio) se está pagando
     // sola — agrupado en JS en vez de SQL porque el volumen de clientes de un negocio así
     // nunca justifica una función RPC nueva solo para este conteo. `phone` se agregó para
     // poder cruzar contra `orders` y calcular ingresos/ticket promedio por fuente.
-    sbGet("customers", "select=phone,acquisition_source,total_orders&acquisition_source=not.is.null"),
+    sbGet("customers", "select=phone,acquisition_source,total_orders&acquisition_source=not.is.null&limit=20000"),
   ]);
   // trend/topProducts se calculan sobre esta ventana reciente (no toda la tabla, ver
   // comentario arriba) — si algún día hay más de DASHBOARD_WINDOW_LIMIT pedidos en los
@@ -1098,6 +1098,30 @@ export async function actAdminSecretSignatureSet(b: any) {
   const allowedIds = new Set([proteinId, ...tops, ...sauces]);
   if (vaultOnlyIds.some((id: string) => !allowedIds.has(id))) {
     throw new ApiError("Solo puedes marcar como exclusivo un ingrediente que sea parte de esta receta.", 400);
+  }
+  // GUARDA SIMÉTRICA (2026-08-28). El panel de Signatures ya impide publicar uno público
+  // con un ingrediente reservado al menú secreto, pero la comprobación INVERSA no existía:
+  // se podía reservar como exclusivo un ingrediente que un Signature público ya usa (por
+  // ejemplo T01 Tomate, que lleva The Original). El efecto no es visible desde este panel
+  // pero sí para el cliente: priceByoBuild empieza a rechazar ese ingrediente en ARMA EL
+  // TUYO mientras el Signature público lo sigue llevando, así que se le quita un topping
+  // base al catálogo sin que nadie lo haya decidido.
+  const usadosEnPublicos = new Set<string>();
+  for (const code of Object.keys(SIG_DATA)) {
+    if (code === "SIG05") continue;
+    if (SIG_CONTENT[code] && SIG_CONTENT[code].active === false) continue;
+    const d = SIG_DATA[code];
+    usadosEnPublicos.add(d.prot);
+    for (const t of d.tops) usadosEnPublicos.add(t);
+    for (const sa of d.sauces) usadosEnPublicos.add(sa);
+  }
+  const enConflicto = vaultOnlyIds.filter((id: string) => usadosEnPublicos.has(id));
+  if (enConflicto.length) {
+    throw new ApiError(
+      "No puedes reservar al menú secreto un ingrediente que un Signature de la carta ya usa (" +
+        enConflicto.join(", ") + "). Retíralo de esa receta primero, o elige otro.",
+      400,
+    );
   }
   const imagePath = b.imagePath ? String(b.imagePath).trim().slice(0, 300) : null;
   await sbInsert("secret_signature", {

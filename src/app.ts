@@ -6053,7 +6053,15 @@ async function loadCatalogBackground(){
       Object.keys(r.sigItems).forEach(function(id){
         var v=r.sigItems[id];if(!v)return;
         var sig=SIGS.find(function(x){return x.id===id;});
-        if(!sig)return;
+        // Un item_id que no está en la semilla de SIGS se AGREGA en vez de descartarse.
+        // Antes se hacía `if(!sig)return;`, así que publicar un Signature nuevo desde el
+        // panel lo dejaba pedible por API pero invisible en la carta: existía para el
+        // servidor y no para el cliente. Que el panel pueda publicar un ítem nuevo es
+        // justamente lo que hace que cambiar el menú no requiera desplegar.
+        if(!sig){
+          sig={id:id,n:'',s:'',badge:'',pitch:'',img:'',base:'B01',prot:'',tops:[],sauces:[],p15:0,p30:0};
+          SIGS.push(sig);
+        }
         if(v.n)sig.n=v.n;
         if(v.s)sig.s=v.s;
         // badge y pitch pueden quedar vacíos a propósito (un Signature sin badge), así que

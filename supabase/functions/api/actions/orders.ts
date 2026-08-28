@@ -2113,7 +2113,7 @@ export async function actExpirePendingCharges(b: any) {
   // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref&limit=500`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -2151,7 +2151,7 @@ export async function actAlertScheduledOrders(b: any) {
   const windowEnd = new Date(Date.now() + SCHEDULED_REMINDER_LEAD_MINUTES * 60000).toISOString();
   const upcoming = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time`,
+    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time&limit=500`,
   );
   let alerted = 0;
   for (const order of upcoming) {

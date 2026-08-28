@@ -37,6 +37,11 @@ export async function sbInsert(table: string, data: unknown) {
       if (table === "customers") throw new ApiError("Ya existe una cuenta con ese teléfono o DNI.", 409);
       if (table === "orders" && text.includes("payment_id")) throw new ApiError("Este pago ya fue usado en otro pedido.", 409);
       if (table === "ratings") throw new ApiError("Este pedido ya fue calificado.", 409);
+      // Un código promocional de un solo uso por cliente: la restricción
+      // promo_code_redemptions_promo_phone_key es la que de verdad impide el segundo
+      // canje (el chequeo previo en JS tiene una ventana de carrera). Sin traducirla, el
+      // cliente veía un 500 genérico en vez de entender que ya lo había usado.
+      if (table === "promo_code_redemptions") throw new ApiError("Ya usaste este código promocional.", 409);
     }
     throw new Error(`Error creando en ${table}: ${text}`);
   }
