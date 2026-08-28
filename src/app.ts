@@ -1670,7 +1670,10 @@ function itemUnitPrice(item){
   var sc2=item.extraSauce?2:0;
   return bp2+dbl2+sc2;
 }
-function itemLineTotal(item){return itemUnitPrice(item)*item.qty;}
+// money() acá y pz() en los dos displays: sin esto, 3 x The Original 15CM daba
+// 20.9*3 = 62.699999999999996 y ESE número se le mostraba al cliente en el carrito y en
+// el mensaje de WhatsApp. Es exactamente el defecto que money()/pz() existen para evitar.
+function itemLineTotal(item){return money(itemUnitPrice(item)*item.qty);}
 function itemLabel(item){
   if(item.type==='side'){var d=SIDES.find(function(x){return x.id===item.code;});return d?d.l+' // '+d.s:'';}
   if(item.type==='sig'){var sig=SIGS.find(function(x){return x.id===item.sigId;});return(sig?sig.n+' // '+sig.s:'')+' '+szLabel(item.size);}
@@ -2672,7 +2675,7 @@ function cartItemsHTML(){
   return cart.map(function(it,idx){
     var extras=itemExtrasLabel(it);
     var canEdit=it.type!=='side';
-    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+itemLineTotal(it)+'</span></div></div>';
+    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(itemLineTotal(it))+'</span></div></div>';
   }).join('');
 }
 // Edita un producto ya en el carrito: lo saca y precarga el builder con su
@@ -2795,8 +2798,23 @@ async function applyPromoCode(){
   if(!phone){promoStatus='Ingresa tu teléfono de contacto primero.';renderPromoStatus();return;}
   promoStatus='Verificando...';renderPromoStatus();
   try{
+    // El preview tiene que tasar EXACTAMENTE igual que el cobro, o el descuento que se
+    // muestra no es el que se aplica y el checkout se rechaza por total que no coincide.
+    // Faltaban tres cosas:
+    //  · `token` y `groupCode`, sin los cuales el servidor no puede saber que el carrito
+    //    trae el sándwich gratis del organizador, así que calculaba el % sobre un
+    //    subtotal más alto que el real.
+    //  · el ISO de la hora programada. Antes se mandaba `schedEl.value` crudo
+    //    ("2026-08-28T15:30", sin zona): el servidor corre en UTC, así que esa cadena
+    //    naive se interpretaba como 15:30 UTC = 10:30 en Lima, y el preview no veía la
+    //    promo de hora valle que el pedido real sí iba a aplicar.
     var schedEl=(document.getElementById('o-sched') as HTMLInputElement|null);
-    var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:scheduleMode==='later'&&schedEl?schedEl.value:null});
+    var promoSchedIso=null;
+    if(scheduleMode==='later'&&schedEl&&schedEl.value){
+      var pd=new Date(schedEl.value);
+      if(!isNaN(pd.getTime()))promoSchedIso=pd.toISOString();
+    }
+    var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:promoSchedIso,token:token,groupCode:pendingGroupCode||''});
     appliedPromo={code:res.code,discount:res.discount};
     promoStatus='';
   }catch(e){
@@ -3484,7 +3502,7 @@ async function doOrder(){
   var lines=['*PEDIDO SND//WCH*','Ref: '+ref,'','👤 '+nom,'📱 '+phone,'📍 '+addr,''];
   cart.forEach(function(it,idx){
     var extras=itemExtrasLabel(it);
-    lines.push((idx+1)+') '+it.qty+'x '+itemLabel(it)+(extras?' — '+extras:'')+' — S/'+itemLineTotal(it));
+    lines.push((idx+1)+') '+it.qty+'x '+itemLabel(it)+(extras?' — '+extras:'')+' — S/'+pz(itemLineTotal(it)));
     if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
   });
   if(notes)lines.push('','📝 '+notes);
@@ -5961,11 +5979,22 @@ var INV_CATS=[
   {t:'Salsas',arr:SAUCES}
 ];
 var invQty={};
+// El inventario llega dentro de get-catalog (ver actGetCatalog), NO por PostgREST directo.
+// Antes esta función hacía sbG('inventory',...) con la anon key, pero esa tabla tiene RLS
+// activada sin políticas: PostgREST responde 200 [] — no un error — así que el catch nunca
+// veía nada y invStock quedaba vacío para todos. Con el objeto vacío, isAvail() daba true
+// siempre, y lo que el dueño marcaba SIN STOCK se seguía mostrando disponible.
+function applyInventory(inv){
+  invStock={};invQty={};
+  if(!inv)return;
+  Object.keys(inv).forEach(function(code){
+    invStock[code]=inv[code].inStock;invQty[code]=inv[code].qty;
+  });
+}
 async function loadInvBackground(){
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
-    invStock={};invQty={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
+    var r=await api('get-catalog',{});
+    applyInventory(r.inventory);
   }catch(e){}
 }
 // Precios vigentes desde el panel admin (tabla catalog_prices vía get-catalog) — antes
@@ -5975,6 +6004,9 @@ async function loadInvBackground(){
 async function loadCatalogBackground(){
   try{
     var r=await api('get-catalog',{});
+    // El inventario viaja en la misma respuesta, así que el arranque no necesita una
+    // segunda llamada para saber qué está agotado.
+    applyInventory(r.inventory);
     PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;if(typeof v.pDbl30==='number')p.pDbl30=v.pDbl30;}});
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
     // Signatures públicos editables desde el panel (2026-08-27). Antes de esto, `r.sigs`
@@ -6060,9 +6092,8 @@ async function loadStoreHoursBackground(){
 async function loadInventory(){
   sndScreen='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
-    invStock={};invQty={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
+    var r=await api('get-catalog',{});
+    applyInventory(r.inventory);
   }catch(e){}
   busy=false;render();
 }

@@ -164,7 +164,15 @@ export async function organizerFreeSandwichApplies(code: string, phone: string |
     const g = rows[0];
     if (!g || g.organizer_phone !== phone) return false;
     const items = await sbGet("group_order_items", `group_order_id=eq.${g.id}&select=item`);
-    const sandwiches = items.filter((r: any) => r.item && r.item.type !== "side").length;
+    // Se suman UNIDADES (item.qty), no filas. `actAddGroupItem` acepta qty de 1 a 20, así
+    // que una sola fila puede traer 3 sándwiches: contando filas, dos personas con qty 3 y
+    // qty 2 dan 5 sándwiches en la pantalla del grupo (que sí suma qty, línea ~87) pero
+    // solo 2 acá, y el pedido se rechazaba por "el total no coincide" justo en el caso que
+    // el incentivo busca atraer.
+    const sandwiches = items.reduce(
+      (n: number, r: any) => n + (r.item && r.item.type !== "side" ? Number(r.item.qty) || 0 : 0),
+      0,
+    );
     if (sandwiches < ORGANIZER_FREE_MIN_SANDWICHES) return false;
     const yaCobrado = await sbGet("orders", `group_code=eq.${encodeURIComponent(code)}&select=id&limit=1`);
     return !yaCobrado.length;

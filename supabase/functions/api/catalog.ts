@@ -993,6 +993,13 @@ export function deriveCart(
 
   let sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
   let sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
+  // El umbral del organizador se mide sobre los sándwiches que el cliente REALMENTE pidió,
+  // antes de descontar la unidad que regala R06. Restar R06 primero hacía que un grupo de
+  // 5 con la recompensa canjeada cayera a 4 y perdiera el sándwich del organizador solo en
+  // el servidor: el cliente descontaba los dos y el checkout se rechazaba por total que no
+  // coincide. Es también lo que ya miden organizerFreeSandwichApplies y la pantalla del
+  // grupo, así que las tres cuentas quedan alineadas.
+  const sandwichQtyForOrganizerGate = sandwichQty;
   if (fullyWaivedSandwich) sandwichQty -= 1;
   if (fullyWaivedSide) sideQty -= 1;
 
@@ -1001,7 +1008,7 @@ export function deriveCart(
   // recompensa, porque también regala una unidad COMPLETA y por lo tanto esa unidad no
   // puede seguir contando para el combo.
   let organizerWaivedIdx = -1;
-  if (organizerFreeSandwich && sandwichQty >= ORGANIZER_FREE_MIN_SANDWICHES) {
+  if (organizerFreeSandwich && sandwichQtyForOrganizerGate >= ORGANIZER_FREE_MIN_SANDWICHES) {
     let best = Infinity;
     priced.forEach((p, idx) => {
       if (idx === rewardTargetIdx) return; // no se apila con R06 sobre la misma línea

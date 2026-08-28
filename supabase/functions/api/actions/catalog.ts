@@ -40,11 +40,35 @@ export async function actGetCatalog(_b: any) {
       fixedCheese: d.fixedCheese ?? null, cheeseOptional: d.cheeseOptional === true,
     };
   }
+  // Disponibilidad de ingredientes. El cliente la leía por PostgREST DIRECTO contra
+  // `inventory` con la anon key, pero esa tabla tiene RLS activada sin políticas: PostgREST
+  // responde `200 []` — no un error — así que el catch del cliente nunca veía nada y
+  // `invStock` quedaba vacío para todos. Con el objeto vacío, `isAvail()` daba true
+  // siempre: lo que el dueño marcaba SIN STOCK desde el panel se seguía mostrando
+  // disponible y se seguía pudiendo pedir. Se manda desde acá, que corre con service role.
+  let inventory: Record<string, { inStock: boolean; qty: number | null }> = {};
+  try {
+    const rows = await sbGet("inventory", "select=product_code,in_stock,stock_qty&limit=500");
+    for (const r of rows) {
+      inventory[String(r.product_code)] = {
+        inStock: r.in_stock !== false,
+        qty: r.stock_qty === null || r.stock_qty === undefined ? null : Number(r.stock_qty),
+      };
+    }
+  } catch (e) {
+    // Un fallo leyendo inventario no puede tumbar el catálogo entero: sin el dato, el
+    // cliente muestra todo disponible y el servidor igual rechaza al pedir
+    // (reserve_inventory valida in_stock y stock_qty). Peor experiencia, nunca venta mal
+    // cobrada.
+    console.error("actGetCatalog inventory failed:", e);
+    inventory = {};
+  }
   return {
     proteins: PROT_PRICE,
     sigs,
     sigItems: items,
     sides: SIDE_PRICE,
+    inventory,
     rewardPts,
     secretSignature: SIG_DATA.SIG05
       ? {
