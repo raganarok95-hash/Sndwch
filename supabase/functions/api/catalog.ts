@@ -651,7 +651,7 @@ function priceByoBuild(
   // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
   // especificar) — se descuenta del inventario real de esa misma salsa.
   if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
+  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? EXTRA_SAUCE_PRICE : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
 // Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,
@@ -945,6 +945,12 @@ const OFFPEAK_DRINK_PROMO_CAP = 6;
 // no, el combo terminaría regalando también la bebida emparejada con un sándwich que ya
 // es gratis (es exactamente el bug que ya se corrigió una vez para R06).
 export const ORGANIZER_FREE_MIN_SANDWICHES = 5;
+
+// Recargo por SALSA EXTRA. Era el único precio del catálogo que vivía como literal `2`
+// suelto — 4 veces acá y 5 en src/app.ts — y además el único que NO se puede editar desde
+// `catalog_prices`. Cambiarlo en un solo lado rompía todo checkout que lo usara, sin que
+// nada avisara: `npm run parity` no podía vigilar un número sin nombre.
+export const EXTRA_SAUCE_PRICE = 2;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
 // pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en

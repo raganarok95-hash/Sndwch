@@ -727,6 +727,11 @@ var OFFPEAK_DRINK_PROMO_CAP=6;
 // verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
 // base (organizerFreeSandwichApplies en actions/group.ts).
 var ORGANIZER_FREE_MIN_SANDWICHES=5;
+// Recargo por salsa extra. DEBE coincidir con EXTRA_SAUCE_PRICE en
+// supabase/functions/api/catalog.ts — lo verifica `npm run parity`. Antes era un literal
+// `2` repetido 5 veces acá y 4 en el servidor, y es el único precio del catálogo que no se
+// puede editar desde el panel, así que la única defensa posible es esta comparación.
+var EXTRA_SAUCE_PRICE=2;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -1323,7 +1328,7 @@ function total(){
   var pr=PROTS.find(function(x){return x.id===prot;});
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dbl=dblProtRef();
-  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?2:0));
+  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?EXTRA_SAUCE_PRICE:0));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
@@ -1660,14 +1665,14 @@ function itemUnitPrice(item){
     var pr=PROTS.find(function(x){return x.id===sig.prot;});
     var bp=item.size==='15'?sig.p15:sig.p30;
     var dbl=item.doubleProt?dblFee(pr,item.size):0;
-    var extraSauceFee=item.extraSauce?2:0;
+    var extraSauceFee=item.extraSauce?EXTRA_SAUCE_PRICE:0;
     return bp+dbl+extraSauceFee;
   }
   var pr2=PROTS.find(function(x){return x.id===item.prot;});
   if(!pr2)return 0;
   var bp2=item.size==='15'?pr2.p15:pr2.p30;
   var dbl2=item.doubleProt?dblFee(pr2,item.size):0;
-  var sc2=item.extraSauce?2:0;
+  var sc2=item.extraSauce?EXTRA_SAUCE_PRICE:0;
   return bp2+dbl2+sc2;
 }
 // money() acá y pz() en los dos displays: sin esto, 3 x The Original 15CM daba
@@ -1855,7 +1860,7 @@ function findRewardTargetIndex(rewardId){
 function rewardWaiverAmount(rewardId,targetIdx){
   if(targetIdx<0)return 0;
   var it=cart[targetIdx];
-  if(rewardId==='R02')return it.extraSauce?2:0;
+  if(rewardId==='R02')return it.extraSauce?EXTRA_SAUCE_PRICE:0;
   if(rewardId==='R03')return Math.min(itemSizeUpgradeDiff(it),R03_FLAT_WAIVER);
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
@@ -2607,7 +2612,7 @@ function sOItemConfirm(){
   var dbl=dblProtRef();
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dblSurcharge=doubleProt?dblFee(dbl,size):0;
-  var sauceSurcharge=extraSauce?2:0;
+  var sauceSurcharge=extraSauce?EXTRA_SAUCE_PRICE:0;
   var t=quickPayEligible?payableTotal():total();
   rows.push({k:'Tamaño',v:szLabel(size)});
   // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
@@ -2626,7 +2631,7 @@ function sOItemConfirm(){
   // "Extra" es más de una salsa que ya elegiste — en BUILD YOUR OWN no tiene sentido
   // ofrecerla (ni el servidor la acepta) si el cliente no seleccionó ninguna salsa base.
   var sauceExtraAllowed=mode==='sig'||sauces.length>0;
-  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dblFee(dbl,size)}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:2}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
+  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dblFee(dbl,size)}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:EXTRA_SAUCE_PRICE}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
   // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
   // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
   // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (hoy ningún ítem) —

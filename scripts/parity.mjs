@@ -199,6 +199,50 @@ cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'),
   sRew.R06 ? sRew.R06.pts : null);
 
+// ---------- TOPES, UMBRALES Y EL PRECIO SIN TABLA (agregado 2026-08-28) ----------
+//
+// Estas 7 constantes estaban duplicadas en los dos lados y NINGUNA se comparaba. Cambiar
+// cualquiera en un solo lado hacía que el cliente mostrara un total y el servidor cobrara
+// otro, y el checkout se rechazara con "el total no coincide" sin ninguna pista de por qué.
+// EXTRA_SAUCE_PRICE es el caso más grave: es el único precio del catálogo que no vive en
+// `catalog_prices`, así que esta comparación es su ÚNICA defensa.
+cmp('R03_FLAT_WAIVER (tope de "sube a 30CM gratis")',
+  scalar(app, 'R03_FLAT_WAIVER', /var R03_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'R03_FLAT_WAIVER', /const R03_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
+cmp('R04_FLAT_WAIVER (tope de doble proteína gratis)',
+  scalar(app, 'R04_FLAT_WAIVER', /var R04_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'R04_FLAT_WAIVER', /const R04_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
+cmp('R05_FLAT_WAIVER (tope de bebida gratis)',
+  scalar(app, 'R05_FLAT_WAIVER', /var R05_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'R05_FLAT_WAIVER', /const R05_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
+cmp('OFFPEAK_DRINK_PROMO_CAP (tope de la bebida de hora valle)',
+  scalar(app, 'OFFPEAK_DRINK_PROMO_CAP', /var OFFPEAK_DRINK_PROMO_CAP=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'OFFPEAK_DRINK_PROMO_CAP', /const OFFPEAK_DRINK_PROMO_CAP = ([\d.]+)/, 'catalog.ts'));
+cmp('ORGANIZER_FREE_MIN_SANDWICHES (umbral del sándwich gratis del organizador)',
+  scalar(app, 'ORGANIZER_FREE_MIN_SANDWICHES', /var ORGANIZER_FREE_MIN_SANDWICHES=(\d+)/, 'src/app.ts'),
+  scalar(catalog, 'ORGANIZER_FREE_MIN_SANDWICHES', /export const ORGANIZER_FREE_MIN_SANDWICHES = (\d+)/, 'catalog.ts'));
+cmp('EXTRA_SAUCE_PRICE (el único precio que NO vive en catalog_prices)',
+  scalar(app, 'EXTRA_SAUCE_PRICE', /var EXTRA_SAUCE_PRICE=([\d.]+)/, 'src/app.ts'),
+  scalar(catalog, 'EXTRA_SAUCE_PRICE', /export const EXTRA_SAUCE_PRICE = ([\d.]+)/, 'catalog.ts'));
+cmp('WEEKLY_PLAN_PRICE (lo que paga hoy)',
+  scalar(app, 'WEEKLY_PLAN_PRICE', /var WEEKLY_PLAN_PRICE=([\d.]+)/, 'src/app.ts'),
+  scalar(customer, 'WEEKLY_PLAN_PRICE', /const WEEKLY_PLAN_PRICE = ([\d.]+)/, 'customer.ts'));
+cmp('WEEKLY_PLAN_CREDIT (el saldo que recibe)',
+  scalar(app, 'WEEKLY_PLAN_CREDIT', /var WEEKLY_PLAN_CREDIT=([\d.]+)/, 'src/app.ts'),
+  scalar(customer, 'WEEKLY_PLAN_CREDIT', /const WEEKLY_PLAN_CREDIT = ([\d.]+)/, 'customer.ts'));
+
+// Zonas EXCLUIDAS del reparto. No es dinero, pero desincronizarlas es peor que un precio
+// distinto: el cliente cree que le llega y el servidor le rechaza el pedido ya pagado, o al
+// revés. `parity` ya comparaba las zonas con precio pero nunca estas.
+function excludedZones(src, re, where) {
+  const m = src.match(re);
+  if (!m) { console.error(`✗ No se encontró DELIVERY_EXCLUDED_ZONES en ${where}`); process.exitCode = 1; return null; }
+  return m[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean).sort().join('|');
+}
+cmp('DELIVERY_EXCLUDED_ZONES (zonas sin reparto)',
+  excludedZones(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app.ts'),
+  excludedZones(env, /export const DELIVERY_EXCLUDED_ZONES = \[([^\]]*)\]/, 'env.ts'));
+
 // Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
 cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
   scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app.ts'),

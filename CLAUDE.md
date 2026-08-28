@@ -101,17 +101,29 @@ que una fila en `catalog_prices` para SIG05 sería ignorada.)
 2. `npm run typecheck:api` — `deno check` sobre las 8 edge functions
    (`scripts/check-backend.mjs`). El backend NO tiene otra verificación estática: el CI
    despliega sin type-check, así que un error acá llega a producción.
-3. `npm run parity` — compara las 28 constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el cliente mostraría un
-   número y el servidor cobraría otro.
-4. `npm run build` — regenera `index.html` desde `src/`.
-5. `npm test` (o `npm run verify`, que encadena las cinco) — deben pasar TODOS (revisa el
+3. `npm run test:api` — pruebas de COMPORTAMIENTO del backend, ejecutando el código real
+   (`tests-api/`, corridas por `scripts/check-money.mjs`). Existe porque había un hueco
+   estructural: los specs de Playwright mockean el endpoint `api` entero y nunca ejecutan
+   una línea del servidor, y `typecheck:api` solo mira tipos. Por ese hueco pasaron dos
+   defectos reales a producción con todo en verde — `pointsFor` devolviendo decimales
+   contra una columna `integer` (reventaba DESPUÉS del cobro de Culqi) y
+   `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
+   **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
+   `jsr:@std/assert`: jsr.io está bloqueado por el proxy, el archivo trae su propio assert.
+4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
+   `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
+   cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
+   recompensa, umbrales, zonas de delivery (con precio y excluidas), nombres, y
+   `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
+   que esta comparación es su única defensa.
+5. `npm run build` — regenera `index.html` desde `src/`.
+6. `npm test` (o `npm run verify`, que encadena las seis) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
-6. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
+7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
-7. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
 
 ## Cómo desplegar el backend
 
