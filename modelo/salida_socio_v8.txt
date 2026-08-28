@@ -1,0 +1,87 @@
+==================================================================================================
+                     1 — QUÉ COMPRA EL APORTE: LO MISMO CON Y SIN LOS S/5,000                     
+==================================================================================================
+
+  Se corre cada escenario dos veces con el MISMO objetivo de publicidad (S/2,800/mes):
+  una arrancando solo con capital propio (S/1,000) y otra con ese capital más el aporte.
+  La diferencia entre las dos columnas es TODO lo que el dinero del amigo produce.
+
+  Escenario           sin aporte    con aporte    diferencia   5% del amigo   ¿recupera?
+  ----------------------------------------------------------------------------------------
+  Muy pesimista          -11,783        -8,584         3,199              0      no (0%)
+  Pesimista               23,542        52,486        28,944          2,624     no (52%)
+  Base                   144,936       154,293         9,358          7,715     sí ×1.54
+  Optimista              290,601       303,142        12,541         15,157     sí ×3.03
+  Muy optimista          402,012       415,815        13,804         20,791     sí ×4.16
+
+  (utilidad neta acumulada a 24 meses, en soles)
+
+==================================================================================================
+                2 — LO QUE EL TRATO LE CUESTA AL DUEÑO POR CADA SOL QUE LE APORTA                 
+==================================================================================================
+
+  Escenario           aporta    se lleva    costo neto   por cada S/1 aportado
+  ----------------------------------------------------------------------------
+  Muy pesimista        5,000           0        -3,199                   0.00x
+  Pesimista            5,000       2,624       -26,320                   0.52x
+  Base                 5,000       7,715        -1,643                   1.54x
+  Optimista            5,000      15,157         2,616                   3.03x
+  Muy optimista        5,000      20,791         6,987                   4.16x
+
+  "Costo neto" = lo que el amigo se lleva MENOS el valor que su dinero generó de verdad.
+  Si sale positivo, el dueño paga más de lo que el aporte produjo.
+
+==================================================================================================
+                      3 — LA PREGUNTA QUE NADIE HIZO: ¿HACE FALTA EL DINERO?                      
+==================================================================================================
+
+  Capital propio inicial         neto 24m (Base)    vs. con aporte
+  ----------------------------------------------------------------
+  S/500                                  128,825            -16.5%
+  S/1,000                                144,936             -6.1%
+  S/2,000                                151,920             -1.5%
+  S/3,000                                154,293              0.0%
+  S/5,000                                154,293              0.0%
+  S/6,000                                154,293              0.0%
+
+  El negocio es rentable desde el primer mes en el escenario Base, así que la caja se
+  alimenta sola muy rápido. El aporte solo acelera los primeros meses — y a partir de
+  cierto capital propio, deja de cambiar nada.
+
+==================================================================================================
+                          4 — ADVERTENCIA: ¿EL TECHO DE COCINA SE LLENA?                          
+==================================================================================================
+
+  Si el techo de 40 pedidos/día se llena, el dueño está PAGANDO publicidad para traer
+  clientes que después no puede atender. Eso no es crecimiento: es tirar plata y quemar
+  reputación. Se revisa mes por mes.
+
+  Escenario          mes en que se llena   demanda pico vs techo
+  --------------------------------------------------------------
+  Muy pesimista                    nunca                     14%
+  Pesimista                        nunca                     29%
+  Base                             nunca                     45%
+  Optimista                        nunca                     64%
+  Muy optimista                    nunca                     74%
+
+==================================================================================================
+                      5 — ESTRUCTURAS ALTERNATIVAS, MISMO APORTE DE S/5,000                       
+==================================================================================================
+
+  El problema del trato propuesto no es que sea abusivo: es que NO TIENE TOPE. El aporte
+  del amigo es fijo (S/5,000) pero su participación crece sin límite. Por eso sale barato
+  si al negocio le va mal y caro si le va bien — exactamente al revés de lo que uno quiere.
+
+  Estructura                              Muy pesimis    Pesimista         Base    Optimista  Muy optimis
+  -------------------------------------------------------------------------------------------------------
+  A) 5% de 24 meses (lo propuesto)                  0        2,624        7,715       15,157       20,791
+  B) 5% con tope de 2x (S/10,000)                   0        2,624        7,715       10,000       10,000
+  C) 5% de 12 meses en vez de 24                    0          919        2,700        5,305        7,277
+  D) Préstamo 20% anual a 24 meses              2,200        2,200        2,200        2,200        2,200
+  E) 3% de 24 meses con tope de 3x                  0        1,575        4,629        9,094       12,474
+
+  (lo que se lleva el amigo en cada escenario, en soles)
+
+  La opción C es aproximada: usa el 35% del neto de 24 meses como proxy de los primeros 12,
+  porque el negocio crece — no es la mitad. Es una estimación, no un cálculo exacto.
+
