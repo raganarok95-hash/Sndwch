@@ -178,8 +178,12 @@ async function assertHourCapacity(when: Date): Promise<void> {
   const to = encodeURIComponent(hourEnd.toISOString());
   try {
     const [scheduled, immediate] = await Promise.all([
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=gte.${from}&scheduled_for=lt.${to}&select=id&limit=100`),
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
+      // La columna se llama `delivery_time`, NO `scheduled_for` (verificado contra
+      // information_schema: `orders` no tiene `scheduled_for`; ese nombre solo existe en
+      // `pending_charges`). Con el nombre equivocado PostgREST devolvía 42703, el catch de
+      // abajo se lo tragaba, y el tope NUNCA se aplicó desde que se introdujo.
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=gte.${from}&delivery_time=lt.${to}&select=id&limit=100`),
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
     ]);
     if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
       throw new ApiError(
@@ -191,8 +195,31 @@ async function assertHourCapacity(when: Date): Promise<void> {
     // Un fallo leyendo la tabla no debe bloquear una venta real: el tope es una
     // protección operativa, no una regla de dinero. Solo se propaga el rechazo real.
     if (e instanceof ApiError) throw e;
+    // Se sigue sin bloquear la venta (el tope es operativo, no una regla de dinero), pero
+    // ahora queda registrado: el fallo anterior era invisible porque solo iba a la consola
+    // de la función, que nadie mira. Así un error de esquema se ve en el resumen diario.
     console.error("assertHourCapacity failed:", e);
+    void debugLog({ stage: "assert-hour-capacity", error: String(e) });
   }
+}
+
+// PUNTOS SIEMPRE ENTEROS (2026-08-27).
+// `customers.points` y `transactions.points` son `integer` en la base. Desde que los
+// precios llevan decimales (+S/0.90 el 2026-08-15) la resta `total − delivery` dejó de
+// dar enteros: un pedido de S/27.25 con delivery S/6.35 da 20.900000000000002, y ese
+// valor viaja como `p_points_delta` a un parámetro `integer`. PostgREST castea con la
+// función de entrada del tipo, así que revienta con 22P02 (invalid input syntax for type
+// integer) — DESPUÉS de que Culqi ya cobró.
+//
+// Es el mismo mecanismo que ya obligó a ensanchar las columnas de dinero a numeric
+// (migración 20260730210447): ahí se corrigieron las de dinero, pero las de puntos
+// quedaron integer y nadie las volvió a mirar hasta que los precios cambiaron.
+//
+// No se ha disparado en producción sólo porque los pedidos existentes son de julio, con
+// totales enteros y delivery 0. Con el catálogo de hoy fallaría en el 100% de los pedidos
+// de un cliente con cuenta.
+export function pointsFor(total: number, deliveryFee: number): number {
+  return Math.round(total - (deliveryFee || 0));
 }
 
 type FinalizeOrderParams = {
@@ -413,7 +440,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // un pass-through al motorizado (el negocio no se queda con ese margen), así que
     // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
     // que haya ingreso real detrás.
-    const basePoints = p.total - p.deliveryFee;
+    const basePoints = pointsFor(p.total, p.deliveryFee);
     let pointsDelta = basePoints;
     if (p.reward) pointsDelta -= p.reward.pts;
 
@@ -1190,7 +1217,7 @@ async function confirmManualPayment(order: any) {
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
   // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
   // sobre el delivery (pass-through al motorizado, sin margen real detrás).
-  const earnedPoints = order.total - (order.delivery_fee || 0);
+  const earnedPoints = pointsFor(order.total, order.delivery_fee);
 
   // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
   // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
@@ -1677,7 +1704,7 @@ export async function actAdminCancelOrder(b: any) {
   // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
   // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
   // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee) : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
@@ -1791,7 +1818,7 @@ export async function actCancelMyOrder(b: any) {
   // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
   // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
   // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
+  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee) : 0;
   const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
   const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa

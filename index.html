@@ -1138,7 +1138,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'ab6edafe4c';
+var APP_BUILD = '4afc07ad50';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6371,9 +6371,15 @@ function orderPriority(o) {
 // hora en que se creó — antes el triage y el aviso de "atascado" leían siempre created_at,
 // así que un pedido programado para las 8pm creado a las 9am se veía tan urgente/viejo
 // como uno inmediato apenas pasaban 10 min desde que se creó (hallazgo de la re-auditoría
-// del panel admin: scheduled_for existe en la fila pero la cola nunca lo miraba).
+// del panel admin: la hora programada existe en la fila pero la cola nunca la miraba).
+// CORREGIDO 2026-08-27: se leía `o.scheduled_for`, columna que NO existe en `orders`
+// (verificado contra information_schema; ese nombre solo vive en `pending_charges`).
+// Siempre daba undefined, así que el badge "programado para HH:MM" nunca se mostró y
+// esta misma corrección de urgencia estaba muerta desde que se escribió. La columna
+// real es `delivery_time`, que es lo que escribe actPlaceOrder y lo que ya usan los
+// crons de la misma tabla.
 function orderDueTime(o) {
-    return o.scheduled_for || o.created_at;
+    return o.delivery_time || o.created_at;
 }
 // Extraído para que admin_home y "modo foco" (sAdminFocus) ordenen la cola exactamente
 // igual — antes este sort vivía solo inline dentro de sAdminHome.
@@ -6484,7 +6490,7 @@ function sAdminHome() {
             // que es la info que le interesa al operador.
             var mins = minutesAgo(o.created_at);
             var minsDue = minutesAgo(orderDueTime(o));
-            var isScheduledAhead = o.scheduled_for && new Date(o.scheduled_for).getTime() > Date.now();
+            var isScheduledAhead = o.delivery_time && new Date(o.delivery_time).getTime() > Date.now();
             var isStale = (o.status === 'RECIBIDO' || manualPending) && !isScheduledAhead && minsDue !== null && minsDue >= 10;
             // Antes toda la tarjeta pulsaba (class="pulse" en el contenedor completo), lo que
             // atenúa TODO al 35% de opacidad en cada ciclo — incluido el botón de acción, que
@@ -6498,7 +6504,7 @@ function sAdminHome() {
                 + '<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(o.customer_name) + '</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + esc(o.customer_address) + '</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:4px;display:flex;align-items:center;gap:5px">' + (isStale ? '<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
-                + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('horario', 12, GOLD) + '<span>programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
+                + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('horario', 12, GOLD) + '<span>programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
                 // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
                 // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
                 // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
@@ -6589,7 +6595,7 @@ function sAdminFocus() {
     var manualLabel = 'Yape/Plin';
     var mins = minutesAgo(o.created_at);
     var minsDue = minutesAgo(orderDueTime(o));
-    var isScheduledAhead = o.scheduled_for && new Date(o.scheduled_for).getTime() > Date.now();
+    var isScheduledAhead = o.delivery_time && new Date(o.delivery_time).getTime() > Date.now();
     var isStale = (o.status === 'RECIBIDO' || manualPending) && !isScheduledAhead && minsDue !== null && minsDue >= 10;
     // Flechas de 56px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar.
     // Antes eran 20px de glifo con 4px de padding — un blanco de ~28px, muy por debajo del
@@ -6612,7 +6618,7 @@ function sAdminFocus() {
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#A8C8B0)') + ';margin-top:6px;margin-bottom:16px;display:flex;align-items:center;gap:6px">' + (isStale ? '<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
         // La receta, en escala de cocina, arriba de todo lo demás.
         + orderRecipeHTML(o.items, true)
-        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('horario', 16, GOLD) + '<span>Programado para ' + esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
+        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('horario', 16, GOLD) + '<span>Programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
         + (manualPending ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#ffa500;margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('warning', 16, '#ffa500') + '<span>Pago ' + manualLabel + ' sin confirmar — revisa tu app antes de continuar</span></div>' : '')
         + (o.redeemed_reward ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#25D366;margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('gift', 16, '#25D366') + '<span>' + esc(o.redeemed_reward) + '</span></div>' : '')
         + '<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
