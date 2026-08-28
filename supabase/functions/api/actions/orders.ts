@@ -1768,6 +1768,12 @@ export async function actAdminCancelOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {
@@ -1898,6 +1904,12 @@ export async function actCancelMyOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {

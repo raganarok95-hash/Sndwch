@@ -6,7 +6,7 @@
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
-import { logAdminAction } from "../logging.ts";
+import { logAdminAction, debugLog } from "../logging.ts";
 import { sendComplaintConfirmation, sendComplaintNotification, sendComplaintResponse } from "../email.ts";
 import { sendPushToAdmins } from "../push.ts";
 
@@ -91,17 +91,23 @@ export async function actAdminRespondComplaint(b: any) {
   if (!id || !response) throw new ApiError("Falta el reclamo o la respuesta.");
   const rows = await sbGet("complaints", `id=eq.${encodeURIComponent(id)}`);
   if (!rows.length) throw new ApiError("Reclamo no encontrado.", 404);
-  await sbUpdate("complaints", `id=eq.${encodeURIComponent(id)}`, {
-    status: "atendido",
+  // El texto se guarda SIEMPRE (es la constancia interna), pero el estado "atendido" se
+  // fija DESPUÉS y solo si la respuesta de verdad salió.
+  //
+  // Antes se marcaba "atendido" acá arriba, antes de intentar el correo. Si Resend fallaba
+  // en ese momento —una caída, un rate limit— el reclamo quedaba cerrado sin que el
+  // consumidor recibiera nada, Y desaparecía para siempre de actAlertComplaintDeadlines,
+  // que filtra `status=neq.atendido`. O sea: nadie volvía a enterarse de que faltaba
+  // responder, con un plazo legal de 30 días corriendo. El único rastro era el campo
+  // `emailed` de la respuesta HTTP, que nadie está obligado a mirar.
+  const baseUpdate: Record<string, unknown> = {
     provider_response: response.slice(0, 2000),
     responded_at: new Date().toISOString(),
     responded_by: s.phone,
-  });
+  };
+  await sbUpdate("complaints", `id=eq.${encodeURIComponent(id)}`, baseUpdate);
   await logAdminAction(s.phone, "respond-complaint", undefined, { id, claim_code: rows[0].claim_code });
-  // La respuesta tiene que LLEGAR al consumidor: la ley obliga a responderle, no solo a
-  // dejar constancia interna. Best-effort a propósito — si el correo falla, la respuesta
-  // ya quedó guardada y el admin no debe ver un error que le haga pensar que no se
-  // registró; `emailed` en la respuesta le dice si de verdad salió.
+
   let emailed = false;
   if (rows[0].consumer_email) {
     try {
@@ -111,9 +117,20 @@ export async function actAdminRespondComplaint(b: any) {
       );
     } catch (e) {
       console.error("sendComplaintResponse failed for", rows[0].claim_code, e);
+      await debugLog({ stage: "complaint-response-email", claimCode: rows[0].claim_code, error: String(e) });
     }
   }
-  return { success: true, emailed };
+  // Sin correo registrado no hay nada que entregar por esta vía: el reclamo se cierra
+  // igual, porque el consumidor eligió no dejar correo y la constancia queda guardada.
+  const deliveredOrNoEmail = emailed || !rows[0].consumer_email;
+  if (deliveredOrNoEmail) {
+    await sbUpdate("complaints", `id=eq.${encodeURIComponent(id)}`, { status: "atendido" });
+  } else {
+    // Se queda fuera de "atendido" a propósito, para que la alerta de plazo lo siga viendo
+    // y el dueño lo reintente antes de que venza.
+    await debugLog({ stage: "complaint-response-not-delivered", claimCode: rows[0].claim_code });
+  }
+  return { success: true, emailed, closed: deliveredOrNoEmail };
 }
 
 // Antes ningún aviso avisaba que el plazo legal de 30 días calendario (Código de
@@ -134,6 +151,9 @@ export async function actAdminRespondComplaint(b: any) {
 // cuesta una sanción, avisar tarde sí.
 const COMPLAINT_DEADLINE_BUSINESS_DAYS = 15;
 const DEADLINE_WARNING_BUSINESS_DAYS = 4;
+// Segundo aviso, ya en zona roja: el primero avisa con margen para responder con calma,
+// este avisa que se acaba el tiempo.
+const FINAL_WARNING_BUSINESS_DAYS = 1;
 // Días hábiles transcurridos entre dos fechas (excluye sábado y domingo).
 function businessDaysSince(from: Date, to: Date): number {
   let count = 0;
@@ -156,23 +176,29 @@ export async function actAlertComplaintDeadlines(b: any) {
   const lookback = new Date(Date.now() - 40 * 86400000).toISOString();
   const open = await sbGet(
     "complaints",
-    `status=neq.atendido&alerted_deadline=eq.false&created_at=gte.${encodeURIComponent(lookback)}&select=id,claim_code,kind,created_at`,
+    `status=neq.atendido&created_at=gte.${encodeURIComponent(lookback)}&select=id,claim_code,kind,created_at,alerted_deadline,alerted_deadline_final&limit=500`,
   );
   const now = new Date();
   const nearing = open.filter((c: any) =>
     COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), now) <= DEADLINE_WARNING_BUSINESS_DAYS
   );
+  // DOS avisos, no uno. Antes solo existía el primero (a 4 días hábiles del vencimiento) y
+  // `alerted_deadline` no se reseteaba nunca: si el dueño no actuaba sobre ESE único push,
+  // el reclamo se quedaba callado hasta vencer, con una multa de por medio. Ahora hay un
+  // segundo aviso, más fuerte, cuando quedan FINAL_WARNING_BUSINESS_DAYS o menos.
   let alerted = 0;
   for (const c of nearing) {
     try {
       const daysLeft = COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), now);
+      const isFinal = daysLeft <= FINAL_WARNING_BUSINESS_DAYS;
+      if (isFinal ? c.alerted_deadline_final : c.alerted_deadline) continue;
       await sendPushToAdmins({
-        title: "Reclamo por vencer ⚠️",
+        title: isFinal ? "Reclamo VENCE YA 🚨" : "Reclamo por vencer ⚠️",
         body: `${c.claim_code} (${c.kind}) — quedan ${Math.max(0, daysLeft)} días hábiles para responder antes del plazo legal.`,
         url: "./index.html",
-        tag: "sndwch-complaint-deadline-" + c.id,
+        tag: "sndwch-complaint-deadline-" + (isFinal ? "final-" : "") + c.id,
       });
-      await sbUpdate("complaints", `id=eq.${c.id}`, { alerted_deadline: true });
+      await sbUpdate("complaints", `id=eq.${c.id}`, isFinal ? { alerted_deadline_final: true } : { alerted_deadline: true });
       alerted++;
     } catch (e) {
       console.error("alert-complaint-deadlines failed for", c.id, e);
