@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
@@ -228,10 +228,15 @@ export async function actDashboardStats(b: any) {
 
   const now = Date.now();
   const DAY = 86400000;
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const todayStart = startOfDay(new Date(now));
+  // Los cortes de "hoy" y "este mes" se calculan en HORA LIMA, no en la del servidor.
+  // `new Date(y, m, d)` usa la zona local del proceso, que en Deno Deploy es UTC: toda
+  // venta entre las 19:00 y las 24:00 de Lima caía en el día siguiente — justo la cena,
+  // que es el pico. El RPC dashboard_aggregates ya usaba `at time zone 'America/Lima'`;
+  // el desalineado era solo de este lado. limaDayStartIso/limaMonthStartIso ya existían
+  // en env.ts y las usa el recordatorio de hora pico, pero acá nadie las había traído.
+  const todayStart = new Date(limaDayStartIso(new Date(now))).getTime();
   const weekStart = todayStart - 6 * DAY;
-  const monthStart = startOfDay(new Date(new Date(now).getFullYear(), new Date(now).getMonth(), 1));
+  const monthStart = new Date(limaMonthStartIso(new Date(now))).getTime();
   // Los pedidos solo se necesitan en JS para las métricas de ventana reciente
   // (hoy/semana/mes/tendencia de 14 días/top productos) — todo lo que es una cifra de
   // "toda la tabla" (ingresos históricos, clientes, puntos, ratings) se calcula en SQL
@@ -696,7 +701,10 @@ export async function actAdminRangeReport(b: any) {
 
   const byDayMap: Record<string, { count: number; revenue: number }> = {};
   paid.forEach((o: any) => {
-    const day = String(o.created_at).slice(0, 10);
+    // slice(0,10) sobre el ISO da el día UTC, no el de Lima: un pedido de las 20:00 de
+    // Lima (01:00 UTC del día siguiente) se contaba en el día equivocado, así que la
+    // tendencia de 14 días partía la cena de cada noche entre dos barras.
+    const day = new Date(o.created_at).toLocaleDateString("en-CA", { timeZone: "America/Lima" });
     if (!byDayMap[day]) byDayMap[day] = { count: 0, revenue: 0 };
     byDayMap[day].count++;
     byDayMap[day].revenue += o.total || 0;

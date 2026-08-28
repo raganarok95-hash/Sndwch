@@ -218,6 +218,9 @@ async function assertHourCapacity(when: Date): Promise<void> {
 // No se ha disparado en producción sólo porque los pedidos existentes son de julio, con
 // totales enteros y delivery 0. Con el catálogo de hoy fallaría en el 100% de los pedidos
 // de un cliente con cuenta.
+// Anticipación máxima de un pedido programado. El cliente ya ofrece solo HOY/MAÑANA.
+const MAX_SCHEDULE_AHEAD_HOURS = 48;
+
 export function pointsFor(total: number, deliveryFee: number): number {
   return Math.round(total - (deliveryFee || 0));
 }
@@ -732,6 +735,13 @@ export async function actPrepareOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
@@ -1029,6 +1039,13 @@ export async function actPlaceOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     // Antes solo se validaba el horario para pedidos programados — uno "AHORA" con la
@@ -1324,20 +1341,18 @@ const DEFAULT_ETA_FALLBACK = 30;
 
 async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
-  // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
-  // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
-  const upd: Record<string, unknown> = { status, status_changed_at: new Date().toISOString(), alerted_stuck_progress: false };
-  // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
-  // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
-  // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
-  if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  // status_changed_at, alerted_stuck_progress y delivered_at se fijan MÁS ABAJO, solo si el
+  // estado cambia de verdad. Acá el objeto arranca sin ellos: editar la ETA de un pedido
+  // manda su mismo estado sobre sí mismo, y antes eso reiniciaba el reloj de "pedido
+  // estancado" y reescribía la hora de entrega.
+  const upd: Record<string, unknown> = { status };
   if (etaMinutes) {
     const eta = Number(etaMinutes);
     if (!Number.isFinite(eta) || eta < 0 || eta > 240) throw new ApiError("ETA inválida.", 400);
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,delivery_zone,eta_minutes`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,delivery_zone,eta_minutes`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
 
@@ -1348,6 +1363,16 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     upd.eta_minutes = DEFAULT_ETA_BY_ZONE[String(order.delivery_zone || "")] ?? DEFAULT_ETA_FALLBACK;
   }
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+  if (status !== order.status) {
+    // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
+    // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
+    upd.status_changed_at = new Date().toISOString();
+    upd.alerted_stuck_progress = false;
+    // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
+    // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
+    // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
+    if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  }
 
   // Antes esto no revisaba el estado actual del pedido — la acción en lote
   // (actAdminBulkUpdateStatus) podía seleccionar pedidos RECIBIDO recién llegados junto
@@ -1376,9 +1401,30 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     if (claim.length) await confirmManualPayment(order);
   }
 
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, upd);
+  // El filtro por el estado que se leyó arriba hace de reclamo atómico. Sin él, este
+  // UPDATE podía pisar un CANCELADO: si "avanzar" y "cancelar" llegaban casi juntos, la
+  // cancelación reclamaba la fila, restockeaba, reembolsaba el crédito y decrementaba
+  // total_orders, y este UPDATE la reescribía como ENTREGADO — quedaba un pedido
+  // "entregado" ya reembolsado y con el stock devuelto. actAdminCancelOrder y el cron de
+  // pagos vencidos ya usaban este mismo patrón; esta ruta era la única sin él.
+  const rows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(orderId)}&status=eq.${encodeURIComponent(order.status)}`,
+    upd,
+  );
+  if (!rows.length) {
+    throw new ApiError("El pedido cambió de estado mientras lo actualizabas. Vuelve a cargar la cola.", 409);
+  }
 
-  if (order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
+  // Las notificaciones y el reinicio del reloj de "pedido estancado" SOLO cuando el estado
+  // cambia de verdad. Editar la ETA de un pedido que ya está EN CAMINO manda
+  // status:'EN CAMINO' sobre sí mismo: antes eso reenviaba el push "¡Tu pedido va en
+  // camino!" (con renotify:true) y el correo de estado por segunda vez, y además reescribía
+  // status_changed_at y alerted_stuck_progress, o sea CORREGIR la hora de un pedido que iba
+  // tarde reiniciaba justo la alarma que debía avisar que iba tarde.
+  const statusChanged = status !== order.status;
+
+  if (statusChanged && order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
     const msg = STATUS_PUSH_MESSAGES[status];
     // En "EN CAMINO" con ETA cargada, reemplazamos el cuerpo genérico por una ventana de
     // hora real (ej. "9:20 - 9:40") en vez de solo "ya casi llega" — mismo tipo de dato que
@@ -1404,7 +1450,7 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   // sendOrderStatusEmail en email.ts). rows[0] (no `order`, que se seleccionó sin
   // customer_email) trae la fila completa tras el update.
   const updatedOrder = rows[0];
-  if (updatedOrder?.customer_email) {
+  if (statusChanged && updatedOrder?.customer_email) {
     try {
       await sendOrderStatusEmail(updatedOrder.customer_email, updatedOrder.customer_name || "", updatedOrder.ref, status, upd.eta_minutes as number | undefined);
     } catch {
@@ -1469,7 +1515,7 @@ export async function actAdminConfirmPayment(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (!["yape", "plin", "cod"].includes(order.payment_method)) {
@@ -1746,6 +1792,22 @@ export async function actAdminCancelOrder(b: any) {
     await Promise.all(refundAudits);
   }
 
+  // Avisarle al cliente. Antes cancelar no mandaba nada: se enteraba abriendo la app, o no
+  // se enteraba. Es el único cambio de estado que deja a alguien esperando comida que no va
+  // a llegar, así que no puede pasar en silencio.
+  if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+    try {
+      await sendPushToPhone(order.customer_phone, {
+        title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+        body: STATUS_PUSH_MESSAGES.CANCELADO.body + " Ref: " + order.ref,
+        url: "./index.html",
+        tag: "sndwch-order-" + order.ref,
+        renotify: true,
+      });
+    } catch {
+      // un push fallido no puede tumbar una cancelación que ya se ejecutó en la base
+    }
+  }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
   return { success: true, order: claimRows[0] };
 }
@@ -1903,7 +1965,7 @@ export async function actExpireStaleManualPayments(b: any) {
   const cutoff = new Date(Date.now() - STALE_MANUAL_PAYMENT_HOURS * 3600000).toISOString();
   const stale = await sbGet(
     "orders",
-    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items`,
+    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items,ref,customer_phone&limit=500`,
   );
   let cancelled = 0;
   for (const order of stale) {
@@ -1922,6 +1984,19 @@ export async function actExpireStaleManualPayments(b: any) {
       if (rows.length) {
         await restockOrderItems(order.items);
         cancelled++;
+        // Mismo criterio que la cancelación del admin: nadie se puede quedar esperando un
+        // pedido que el sistema canceló solo, sin enterarse.
+        if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+          try {
+            await sendPushToPhone(order.customer_phone, {
+              title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+              body: "No recibimos la confirmación de tu pago. Ref: " + order.ref,
+              url: "./index.html",
+              tag: "sndwch-order-" + order.ref,
+              renotify: true,
+            });
+          } catch { /* un push fallido no revierte la expiración */ }
+        }
       }
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);
@@ -1953,9 +2028,15 @@ export async function actAlertStuckOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const stuckMinutes = isPeakHourNowLima() ? STUCK_ORDER_MINUTES_PEAK : STUCK_ORDER_MINUTES_OFFPEAK;
   const cutoff = new Date(Date.now() - stuckMinutes * 60000).toISOString();
+  // Un pedido PROGRAMADO no está estancado: está esperando su hora. Antes esto filtraba
+  // solo por created_at, así que un pedido hecho a las 9am para las 8pm disparaba "Pedido
+  // estancado ⏰" a los pocos minutos, todos los días. El filtro correcto es sobre la hora
+  // en que el pedido DEBÍA empezar: delivery_time si lo tiene, created_at si no.
   const stuck = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}&select=id,ref,customer_name,payment_method,payment_status`,
+    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}` +
+      `&or=(delivery_time.is.null,delivery_time.lt.${encodeURIComponent(cutoff)})` +
+      `&select=id,ref,customer_name,payment_method,payment_status&limit=500`,
   );
   let alerted = 0;
   for (const order of stuck) {
@@ -1983,7 +2064,7 @@ export async function actAlertStuckOrders(b: any) {
   const progressCutoff = new Date(Date.now() - stuckMinutes * 2 * 60000).toISOString();
   const inProgress = await sbGet(
     "orders",
-    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status`,
+    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status&limit=500`,
   );
   for (const order of inProgress) {
     try {

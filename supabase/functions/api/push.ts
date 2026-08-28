@@ -20,6 +20,11 @@ export const STATUS_PUSH_MESSAGES: Record<string, { title: string; body: string 
   PREPARANDO: { title: "¡Tu pedido está en preparación!", body: "Ya estamos armando tu pedido." },
   "EN CAMINO": { title: "¡Tu pedido va en camino! 🛵", body: "Prepárate, ya casi llega." },
   ENTREGADO: { title: "¡Pedido entregado! ✅", body: "Gracias por tu compra. ¡Buen provecho!" },
+  // Cancelar no avisaba nada: el cliente se enteraba abriendo la app. Es el único cambio de
+  // estado que NO puede pasar en silencio — alguien está esperando comida que no va a
+  // llegar. No entra por applyOrderStatusUpdate (CANCELADO está fuera de STATUS_SEQUENCE a
+  // propósito): lo mandan actAdminCancelOrder y el cron de pagos vencidos.
+  CANCELADO: { title: "Tu pedido fue cancelado", body: "Escríbenos si necesitas ayuda." },
 };
 
 // Ventana de hora estimada de llegada (estilo "9:20 - 9:40" tipo apps de delivery) a partir
