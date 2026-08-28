@@ -1208,7 +1208,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '33e91f27c1';
+var APP_BUILD = '31f586759d';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6625,6 +6625,153 @@ function sortedActiveOrders() {
 // reusarlas tanto en el grid de admin_home como en el drawer de navegación lateral
 // (adminToolsDrawerOpen/toggleAdminToolsDrawer), alcanzable ahora desde cualquiera de
 // las 14 pantallas secundarias del admin sin tener que volver primero a admin_home.
+// C5 — SALUD DEL NEGOCIO. Una pantalla que responde "¿hay algo que atender ahora mismo?".
+// El panel de negocio (ingresos, productos top, retención) ya existe y es bueno, pero
+// contesta otra pregunta — "¿cómo va el negocio?" — y para saber si hay ALGO PENDIENTE hoy
+// había que entrar a la cola, al inventario, a reclamaciones y al dashboard por separado y
+// deducirlo. Cocinando solo, eso no pasa.
+//
+// El veredicto de cada señal lo calcula el SERVIDOR (actAdminHealth): acá solo se pinta.
+// Si cada pantalla decidiera por su cuenta qué es "problema", dos versiones de la app
+// mostrarían distinto el mismo estado del negocio.
+var healthData = null, healthErr = '';
+async function loadHealth() {
+    sndScreen = 'admin_health';
+    busy = true;
+    busyMsg = 'Revisando el negocio...';
+    healthErr = '';
+    render();
+    try {
+        healthData = await api('admin-health', { token: token });
+    }
+    catch (e) {
+        healthData = null;
+        healthErr = e.message;
+    }
+    busy = false;
+    render();
+}
+var HEALTH_LEVELS = {
+    ok: { c: '#25D366', l: 'OK' },
+    atencion: { c: '#ffb84d', l: 'ATENCIÓN' },
+    problema: { c: '#ff8888', l: 'PROBLEMA' }
+};
+function sAdminHealth() {
+    var h = H('SALUD DEL NEGOCIO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (healthErr) {
+        return h + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">' + esc(healthErr) + '</div>'
+            + '<div style="margin-top:14px">' + BTN('Reintentar //', 'loadHealth()', true) + '</div></div>';
+    }
+    if (!healthData)
+        return h + '</div>';
+    var ov = HEALTH_LEVELS[healthData.overall] || HEALTH_LEVELS.ok;
+    var resumen = healthData.overall === 'ok'
+        ? 'Nada pendiente. Todo lo que este panel vigila está en orden.'
+        : healthData.overall === 'atencion'
+            ? 'Nada urgente, pero hay cosas que conviene mirar antes de la próxima tanda.'
+            : 'Hay algo que atender ahora — abajo está qué y dónde.';
+    h += '<div style="background:var(--sw-card2,#1A3028);border:1px solid ' + ov.c + ';border-radius:12px;padding:18px;margin-bottom:18px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + ov.c + ';letter-spacing:.2em">● ' + ov.l + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-top:6px">' + esc(resumen) + '</div>'
+        + '</div>';
+    h += healthData.signals.map(function (sg) {
+        var lv = HEALTH_LEVELS[sg.level] || HEALTH_LEVELS.ok;
+        // Las señales en verde se muestran igual, no se ocultan: una lista que solo aparece
+        // cuando hay problemas no dice nada sobre lo que sí se está vigilando, y entonces el
+        // silencio se lee como "no hay chequeo" en vez de "está bien".
+        var clickable = sg.screen && sg.level !== 'ok';
+        return '<div' + (clickable ? ' onclick="goHealthTarget(\'' + sg.screen + '\')"' : '') + ' style="background:var(--sw-card,#2D5246);border:1px solid ' + (sg.level === 'ok' ? 'var(--sw-border-soft,#1c1c1c)' : lv.c) + ';border-radius:10px;padding:13px 16px;margin-bottom:8px' + (clickable ? ';cursor:pointer' : '') + '">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(sg.label) + '</div>'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:' + lv.c + ';font-variant-numeric:tabular-nums">' + sg.count + '</div>'
+            + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px;line-height:1.4">' + esc(sg.hint) + (clickable ? ' →' : '') + '</div>'
+            + '</div>';
+    }).join('');
+    h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:14px">Revisado: ' + esc(new Date(healthData.checkedAt).toLocaleString('es-PE')) + '</div>';
+    h += '<div style="margin-top:14px">' + BTN('Volver a revisar //', 'loadHealth()', true) + '</div>';
+    return h + '</div>';
+}
+// Cada señal en rojo/ámbar lleva a la pantalla donde de verdad se arregla — el valor de
+// esta vista es acortar el camino entre enterarse y resolver, no solo enterarse.
+function goHealthTarget(sc) {
+    if (sc === 'admin_inventory')
+        return loadInventory();
+    if (sc === 'admin_complaints')
+        return loadAdminComplaints();
+    return loadAdmin();
+}
+// C6 — PLAN DE TANDA. Proyecta cuánto cocinar de cada insumo para cubrir los próximos N
+// días, a partir del consumo real de los pedidos ya pagados.
+//
+// La pantalla trata la FIABILIDAD como el dato principal, no como una nota al pie: con
+// pocas semanas de ventas, una proyección es un número inventado con aspecto de dato — y
+// el aspecto de dato es lo que hace que se le crea. Mientras el servidor diga
+// `reliable:false`, lo primero que se ve es por qué todavía no se le puede creer, y las
+// cantidades quedan explícitamente marcadas como referencia.
+var batchPlan = null, batchErr = '', batchCoverDays = 4;
+async function loadBatchPlan() {
+    sndScreen = 'admin_batch';
+    busy = true;
+    busyMsg = 'Calculando la tanda...';
+    batchErr = '';
+    render();
+    try {
+        batchPlan = await api('admin-batch-plan', { token: token, coverDays: batchCoverDays });
+    }
+    catch (e) {
+        batchPlan = null;
+        batchErr = e.message;
+    }
+    busy = false;
+    render();
+}
+function setBatchCoverDays(d) { batchCoverDays = d; loadBatchPlan(); }
+function sAdminBatchPlan() {
+    var h = H('PLAN DE TANDA', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (batchErr) {
+        return h + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">' + esc(batchErr) + '</div>'
+            + '<div style="margin-top:14px">' + BTN('Reintentar //', 'loadBatchPlan()', true) + '</div></div>';
+    }
+    if (!batchPlan)
+        return h + '</div>';
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cuántos días cubre esta tanda? //</div>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+        + [2, 3, 4, 7].map(function (d) {
+            var sel = batchCoverDays === d;
+            return '<div onclick="setBatchCoverDays(' + d + ')" style="flex:1;min-width:64px;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 6px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + d + ' días</div>';
+        }).join('')
+        + '</div>';
+    if (!batchPlan.reliable) {
+        // Primero el motivo, antes que cualquier cantidad: si las cifras aparecieran arriba,
+        // se leerían como una indicación y el aviso quedaría como letra chica.
+        h += '<div style="background:rgba(255,184,77,.1);border:1px solid #ffb84d;border-radius:10px;padding:14px;margin-bottom:16px">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:#ffb84d">Todavía es una referencia, no una indicación</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-top:6px">Hay ' + batchPlan.ordersConsidered + ' pedido(s) en ' + batchPlan.daysOfData + ' día(s) de historial. Para proyectar de verdad hacen falta al menos ' + batchPlan.minOrders + ' pedidos y ' + batchPlan.minDaysOfData + ' días. Úsalo como punto de partida y corrígelo con lo que veas en cocina.</div>'
+            + '</div>';
+    }
+    if (!batchPlan.items.length) {
+        return h + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Todavía no hay consumo registrado ni pedidos programados: no hay nada que proyectar.</div></div>';
+    }
+    h += '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Consumo de los últimos ' + batchPlan.daysOfData + ' día(s) proyectado a ' + batchPlan.coverDays + ', con un margen de ' + Math.round((batchPlan.safetyFactor - 1) * 100) + '% para no quedarte corto. Los pedidos ya programados se cuentan como piso.</div>';
+    h += batchPlan.items.map(function (it) {
+        var cocinar = it.toCook;
+        return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:13px 16px;margin-bottom:8px">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(it.name) + '</div>'
+            + '<div style="text-align:right;flex-shrink:0">'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:' + GOLD + ';font-variant-numeric:tabular-nums;line-height:1">' + (cocinar == null ? '—' : cocinar) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.1em">COCINAR</div>'
+            + '</div></div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px;line-height:1.45">'
+            + 'Necesitas ' + it.needed + ' · ' + (it.stockTracked ? 'tienes ' + it.stock : 'sin rastreo de cantidad — ponle un número en Inventario para saber cuánto falta')
+            + ' · usaste ' + it.usedInWindow + ' en ' + batchPlan.daysOfData + ' día(s) (' + it.perDay + '/día)'
+            + (it.committed ? ' · ' + it.committed + ' ya pedido(s) para esos días' : '')
+            + '</div></div>';
+    }).join('');
+    h += '<div style="margin-top:14px">' + BTN('Registrar la tanda en Inventario //', 'loadInventory();setInvMode(\'tanda\')', true) + '</div>';
+    return h + '</div>';
+}
 function adminToolsSections() {
     return [
         ['Clientes y ventas //', [
@@ -6654,7 +6801,9 @@ function adminToolsSections() {
                 ['auditoria', 'Auditoría', 'loadAuditLog()'],
             ]],
         ['Cocina y operación //', [
+                ['warning', 'Salud del negocio', 'loadHealth()'],
                 ['prep', 'Preparación', 'loadPrepList()'],
+                ['inventario', 'Plan de tanda', 'loadBatchPlan()'],
                 ['franjas', 'Franjas horarias', 'loadTimeWindowReport()'],
                 ['direccion', 'Direcciones', 'loadProblemAddresses()'],
             ]],
@@ -7545,6 +7694,12 @@ function renderScreen() {
             break;
         case 'admin_home':
             h = sAdminHome();
+            break;
+        case 'admin_health':
+            h = sAdminHealth();
+            break;
+        case 'admin_batch':
+            h = sAdminBatchPlan();
             break;
         case 'admin_gen':
             h = sAdminGen();
@@ -8548,9 +8703,14 @@ async function saveSecretSignature() {
     busyMsg = 'Publicando...';
     render();
     try {
-        await api('admin-secret-signature-set', { token: token, name: ssName.trim(), base: ssBase, proteinId: ssProt, tops: ssTops, sauces: ssSauces, vaultOnlyIds: ssVaultIds, price15: p15, price30: p30, minOrders: minOrders, imagePath: ssImagePath.trim() || null });
+        var pubRes = await api('admin-secret-signature-set', { token: token, name: ssName.trim(), base: ssBase, proteinId: ssProt, tops: ssTops, sauces: ssSauces, vaultOnlyIds: ssVaultIds, price15: p15, price30: p30, minOrders: minOrders, imagePath: ssImagePath.trim() || null });
         await loadCatalogBackground();
-        ssMsg = 'Sándwich del mes publicado.';
+        // El servidor avisa por push a quienes ya desbloquearon el menú secreto y devuelve a
+        // cuántos les llegó. Se muestra el número porque el dueño no tiene otra forma de saber
+        // si el aviso salió: es 0 tanto si nadie calificaba como si se corrigió una publicación
+        // reciente (hay una ventana de 12 h para no mandar dos push por arreglar una tilde).
+        var av = pubRes && pubRes.announced;
+        ssMsg = 'Sándwich del mes publicado.' + (av ? ' Avisamos a ' + av + ' cliente(s) que ya lo desbloquearon.' : ' (Sin aviso push esta vez.)');
     }
     catch (e) {
         busy = false;

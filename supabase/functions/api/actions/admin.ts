@@ -7,6 +7,7 @@ import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso } from "../env.ts";
+import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
@@ -1265,7 +1266,329 @@ export async function actAdminSecretSignatureSet(b: any) {
   });
   await logAdminAction(s.phone, "secret-signature-set", name, { proteinId, tops, sauces, price15, price30, minOrders, vaultOnlyIds });
   await loadSecretSignature();
-  return { success: true };
+  // C3 — El menú secreto rota cada mes y el cliente que ya lo desbloqueó no tiene forma de
+  // enterarse: hay que abrir la app y mirar. Un sándwich que solo existe un mes y que solo
+  // ve quien se lo ganó pierde todo su efecto si nadie sabe que cambió.
+  const announced = await announceSecretDrop(name, minOrders, b.announce !== false);
+  return { success: true, announced };
+}
+
+// Aviso del sándwich secreto del mes a quienes YA lo desbloquearon.
+//
+// Tres reglas que no se pueden aflojar:
+// · Solo a quien alcanzó el umbral de pedidos. Avisarle a alguien que todavía no puede
+//   pedirlo convierte el mecanismo en publicidad de algo que no puede comprar, que es lo
+//   contrario de una recompensa.
+// · NUNCA se nombra un ingrediente. La composición no revelada es el mecanismo entero; el
+//   push lleva el nombre del sándwich y nada más.
+// · Un solo aviso por rotación. Publicar es append-only, así que corregir un typo inserta
+//   otra fila: sin esta guarda, arreglar una tilde manda un segundo push a todo el mundo.
+//   Se mira `marketing_touches` (la misma tabla que ya deduplica los crons de re-enganche)
+//   en vez de agregar una columna nueva.
+const SECRET_DROP_CAMPAIGN = "secret-menu-drop";
+const SECRET_DROP_COOLDOWN_HOURS = 12;
+const SECRET_DROP_MAX_RECIPIENTS = 2000;
+async function announceSecretDrop(name: string, minOrders: number, wanted: boolean): Promise<number> {
+  if (!wanted) return 0;
+  try {
+    // Antes de abrir no hay a quién avisarle y sí hay mucho que ensayar: mismo criterio
+    // que customerRemindersEnabled usa para todos los crons de marketing.
+    const settings = await sbGet("app_settings", "select=business_launched&id=eq.true");
+    if (settings?.[0]?.business_launched !== true) return 0;
+
+    const since = new Date(Date.now() - SECRET_DROP_COOLDOWN_HOURS * 3600000).toISOString();
+    const reciente = await sbGet(
+      "marketing_touches",
+      `campaign_type=eq.${SECRET_DROP_CAMPAIGN}&sent_at=gte.${encodeURIComponent(since)}&select=id&limit=1`,
+    );
+    if (reciente.length) return 0;
+
+    const destinatarios = await sbGet(
+      "customers",
+      `total_orders=gte.${minOrders}&select=phone&limit=${SECRET_DROP_MAX_RECIPIENTS}`,
+    );
+    let enviados = 0;
+    for (const c of destinatarios) {
+      try {
+        await sendPushToPhone(String(c.phone), {
+          title: "Menú secreto nuevo 🔓",
+          body: name + " ya está disponible este mes. Solo para quienes lo desbloquearon.",
+          url: "./index.html",
+          // Mismo tag para toda la rotación: si por lo que sea llegaran dos, el segundo
+          // reemplaza al primero en la bandeja en vez de apilarse.
+          tag: "sndwch-secret-drop",
+        });
+        await sbInsert("marketing_touches", { customer_phone: c.phone, campaign_type: SECRET_DROP_CAMPAIGN, channel: "push" });
+        enviados++;
+      } catch (e) {
+        console.error("announceSecretDrop: fallo avisando a", c.phone, e);
+      }
+    }
+    return enviados;
+  } catch (e) {
+    // El aviso NUNCA vale más que la publicación en sí: el sándwich ya quedó publicado y
+    // visible en la app, esto es solo el empujón para que se enteren antes.
+    console.error("announceSecretDrop failed:", e);
+    return 0;
+  }
+}
+
+// C6 — PLAN DE TANDA. El dueño cocina por tandas 1-2 veces por semana y hoy decide
+// cuánto hacer de memoria. Esto proyecta el consumo real de cada insumo y dice cuánto
+// cocinar para cubrir los próximos N días.
+//
+// ⚠ ADVERTENCIA QUE VIAJA EN LA PROPIA RESPUESTA, no solo en este comentario. Una
+// proyección sobre 3 días de ventas no es una proyección, es un número inventado con
+// aspecto de dato — y el aspecto de dato es justamente lo que hace que se le crea. Por eso
+// la respuesta trae `daysOfData`, `ordersConsidered` y `reliable`, y la pantalla muestra
+// el aviso cuando `reliable` es falso en vez de mostrar las cantidades a secas. Con el
+// negocio recién abierto esto va a ser poco fiable durante unas 3-4 semanas; sirve igual
+// desde el día uno porque va acumulando, pero se lee como referencia, no como orden.
+//
+// El cálculo, entero: consumo por insumo en la ventana de historial ÷ días transcurridos
+// = consumo diario; × días a cubrir × margen = lo que hace falta; menos el stock que ya
+// hay = lo que toca cocinar. Los pedidos ya PROGRAMADOS dentro del horizonte se toman como
+// piso: son demanda comprometida, no un promedio.
+const BATCH_LOOKBACK_DAYS = 28;
+const BATCH_MIN_DAYS_OF_DATA = 14;
+const BATCH_MIN_ORDERS = 20;
+// Cocinar exactamente el promedio significa quedarse corto la mitad de los días. Este
+// margen es un colchón, no una predicción: con datos reales de varianza se puede afinar.
+const BATCH_SAFETY_FACTOR = 1.25;
+export async function actAdminBatchPlan(b: any) {
+  await requireAdmin(b.token);
+  await loadCatalogPrices();
+  const coverDays = Number.isInteger(b.coverDays) && b.coverDays > 0 && b.coverDays <= 14 ? b.coverDays : 4;
+  const now = Date.now();
+  const since = new Date(now - BATCH_LOOKBACK_DAYS * 86400000).toISOString();
+  const horizonEnd = new Date(now + coverDays * 86400000).toISOString();
+
+  const [historial, programados] = await Promise.all([
+    // Solo pedidos PAGADOS y no cancelados: un pedido que nunca se cobró no consumió
+    // insumos, y contarlo haría cocinar de más todas las semanas.
+    sbGet(
+      "orders",
+      `payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(since)}&select=created_at,items&order=created_at.asc&limit=5000`,
+    ),
+    sbGet(
+      "orders",
+      `delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(new Date(now).toISOString())}&delivery_time=lte.${encodeURIComponent(horizonEnd)}` +
+        `&status=neq.CANCELADO&status=neq.ENTREGADO&select=items&limit=500`,
+    ),
+  ]);
+
+  function contar(rows: any[], into: Map<string, number>) {
+    for (const o of rows) {
+      if (!Array.isArray(o.items)) continue;
+      for (const it of o.items) {
+        try {
+          const priced = priceCartItem(it);
+          for (const code of priced.ingredientsPerUnit) into.set(code, (into.get(code) || 0) + priced.qty);
+        } catch {
+          // Ítem legado que ya no encaja en el catálogo — se omite solo ese, el resto del
+          // plan sigue siendo útil (mismo criterio que la lista de preparación).
+        }
+      }
+    }
+  }
+  const consumo = new Map<string, number>();
+  contar(historial, consumo);
+  const comprometido = new Map<string, number>();
+  contar(programados, comprometido);
+
+  // Días transcurridos desde el primer pedido de la ventana, no los 28 completos: si el
+  // negocio lleva 6 días abierto, dividir entre 28 daría un consumo diario cuatro veces
+  // menor que el real y la tanda saldría corta.
+  const primero = historial.length ? new Date(historial[0].created_at).getTime() : now;
+  const daysOfData = Math.max(1, Math.min(BATCH_LOOKBACK_DAYS, Math.ceil((now - primero) / 86400000)));
+  const reliable = daysOfData >= BATCH_MIN_DAYS_OF_DATA && historial.length >= BATCH_MIN_ORDERS;
+
+  const codes = new Set<string>([...consumo.keys(), ...comprometido.keys()]);
+  const invRows = codes.size
+    ? await sbGet(
+        "inventory",
+        `product_code=in.(${[...codes].map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,stock_qty,in_stock`,
+      )
+    : [];
+  const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
+
+  const items = [...codes]
+    .map((code) => {
+      const usado = consumo.get(code) || 0;
+      const porDia = usado / daysOfData;
+      const proyectado = Math.ceil(porDia * coverDays * BATCH_SAFETY_FACTOR);
+      const yaPedido = comprometido.get(code) || 0;
+      // Los pedidos ya programados son demanda comprometida: si superan la proyección,
+      // manda el compromiso — no se puede "promediar" algo que ya está vendido.
+      const necesario = Math.max(proyectado, yaPedido);
+      const inv = invMap.get(code);
+      // Sin cantidad rastreada no se puede restar nada: se informa el total necesario y se
+      // deja claro que el stock actual es desconocido, en vez de asumir cero (haría
+      // cocinar de más) o asumir que alcanza (haría quedarse corto).
+      const stock = inv?.stock_qty ?? null;
+      return {
+        code,
+        name: inv?.product_name || code,
+        usedInWindow: usado,
+        perDay: Math.round(porDia * 100) / 100,
+        committed: yaPedido,
+        needed: necesario,
+        stock,
+        toCook: stock == null ? null : Math.max(0, necesario - stock),
+        stockTracked: stock != null,
+      };
+    })
+    .filter((x) => x.needed > 0)
+    .sort((a, b) => b.needed - a.needed);
+
+  return {
+    coverDays,
+    lookbackDays: BATCH_LOOKBACK_DAYS,
+    daysOfData,
+    ordersConsidered: historial.length,
+    scheduledConsidered: programados.length,
+    safetyFactor: BATCH_SAFETY_FACTOR,
+    // Cuando esto es falso la pantalla NO muestra las cantidades como una indicación:
+    // muestra primero por qué todavía no se les puede creer.
+    reliable,
+    minDaysOfData: BATCH_MIN_DAYS_OF_DATA,
+    minOrders: BATCH_MIN_ORDERS,
+    items,
+  };
+}
+
+// C5 — SALUD DEL NEGOCIO. Una sola pantalla que responde "¿hay algo que atender ahora
+// mismo?", que es la pregunta que el dueño se hace cuando abre la app entre tandas.
+//
+// No es otro tablero de cifras: el dashboard de ingresos, el reporte de retención y la
+// cola de pedidos ya existen y son buenos, pero están repartidos en 3 pantallas distintas
+// y ninguno responde esa pregunta — hay que entrar a cada uno y deducirlo. Acá cada señal
+// viene con un veredicto (ok / atención / problema) y con lo único que importa: cuántos y
+// dónde tocar. Cocinando solo, ese es el formato que se puede leer entre dos sándwiches.
+//
+// Todas las señales son cosas que se pueden ARREGLAR hoy. Deliberadamente NO entran acá
+// las métricas de tendencia (ingresos del mes, ticket promedio, productos más vendidos):
+// son para sentarse a pensar, no para actuar en el momento, y mezclarlas haría que esta
+// pantalla se lea como "informe" y deje de mirarse a diario.
+const HEALTH_STUCK_MINUTES = 45;
+export async function actAdminHealth(b: any) {
+  await requireAdmin(b.token);
+  const now = Date.now();
+  const stuckCutoff = new Date(now - HEALTH_STUCK_MINUTES * 60000).toISOString();
+
+  const [pagosPendientes, estancados, agotados, bajoStock, reclamos, cronsMuertos, pico] = await Promise.all([
+    // Yape/Plin que el cliente dice haber pagado y nadie confirmó: la cocina no puede
+    // avanzarlos, así que cada uno es un cliente esperando comida que no se está haciendo.
+    sbGet("orders", "payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&select=id&limit=200"),
+    // Pedidos parados en el mismo estado más de HEALTH_STUCK_MINUTES. El cron ya manda un
+    // push por cada uno, pero un push se pierde: acá queda el conteo hasta que se resuelva.
+    sbGet(
+      "orders",
+      `status=in.(RECIBIDO,PREPARANDO,EN CAMINO)&status_changed_at=lt.${encodeURIComponent(stuckCutoff)}&select=id&limit=200`,
+    ),
+    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=200"),
+    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=200"),
+    // Plazo legal del Libro de Reclamaciones: es el único de esta lista con consecuencia
+    // regulatoria, no solo comercial.
+    sbGet("complaints", "status=neq.atendido&select=id,claim_code,created_at&limit=200"),
+    // Las dos señales de C1/C2: si la automatización está caída, TODO lo de arriba se
+    // deja de vigilar solo, así que corresponde verlo en la misma pantalla.
+    rpc("dead_cron_jobs", { p_min_misses: 3 }).catch(() => []),
+    rpc("error_spike", { p_min_errors: 10, p_factor: 4 }).catch(() => []),
+  ]);
+
+  const bajos = (bajoStock as any[]).filter((r) => r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
+  const porVencer = (reclamos as any[]).filter(
+    (c) => COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), new Date(now)) <= DEADLINE_WARNING_BUSINESS_DAYS,
+  );
+
+  // El veredicto se calcula en el SERVIDOR, no en la pantalla: si cada cliente decidiera
+  // por su cuenta qué es "problema", dos versiones de la app pintarían distinto el mismo
+  // estado del negocio. Acá también es donde se cambia un umbral una sola vez.
+  const señales = [
+    {
+      id: "pagos",
+      label: "Pagos por confirmar",
+      count: pagosPendientes.length,
+      // Cualquiera bloquea a un cliente, así que no hay zona amarilla.
+      level: pagosPendientes.length > 0 ? "problema" : "ok",
+      hint: pagosPendientes.length ? "La cocina no puede avanzarlos hasta que confirmes que llegó el pago." : "Ninguno esperando.",
+      screen: "admin_home",
+    },
+    {
+      id: "estancados",
+      label: "Pedidos parados +" + HEALTH_STUCK_MINUTES + " min",
+      count: estancados.length,
+      level: estancados.length > 0 ? "problema" : "ok",
+      hint: estancados.length ? "Alguien está esperando y mirando el reloj." : "Todo avanzando.",
+      screen: "admin_home",
+    },
+    {
+      id: "agotados",
+      label: "Insumos agotados",
+      count: agotados.length,
+      // Un agotado no rompe nada — el cliente simplemente no lo ve — pero si es la
+      // proteína de un Signature, ese producto desaparece de la carta sin avisar.
+      level: agotados.length > 0 ? "atencion" : "ok",
+      hint: agotados.length
+        ? (agotados as any[]).map((r) => r.product_name || r.product_code).slice(0, 4).join(", ")
+        : "Nada marcado como agotado.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "bajo_stock",
+      label: "Insumos por acabarse",
+      count: bajos.length,
+      level: bajos.length > 0 ? "atencion" : "ok",
+      hint: bajos.length
+        ? bajos.map((r) => (r.product_name || r.product_code) + " (" + r.stock_qty + ")").slice(0, 4).join(", ")
+        : "Stock cómodo en todo lo que se rastrea.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "reclamos",
+      label: "Reclamos por vencer",
+      count: porVencer.length,
+      // El único con consecuencia legal: se marca como problema apenas hay uno.
+      level: porVencer.length > 0 ? "problema" : "ok",
+      hint: porVencer.length
+        ? "Quedan " + DEADLINE_WARNING_BUSINESS_DAYS + " días hábiles o menos para responder."
+        : "Ninguno cerca del plazo.",
+      screen: "admin_complaints",
+    },
+    {
+      id: "automatizacion",
+      label: "Automatización",
+      count: (cronsMuertos as any[]).length,
+      level: (cronsMuertos as any[]).length > 0 ? "problema" : "ok",
+      hint: (cronsMuertos as any[]).length
+        ? (cronsMuertos as any[]).map((j) => j.jobname).slice(0, 3).join(", ") + " no responde(n)."
+        : "Todos los procesos automáticos respondiendo.",
+      screen: null,
+    },
+    {
+      id: "errores",
+      label: "Errores del sistema",
+      count: (pico as any[]).length ? Number((pico as any[])[0].last_hour) : 0,
+      level: (pico as any[]).length ? "problema" : "ok",
+      hint: (pico as any[]).length
+        ? "Pico en la última hora (lo normal es ~" + (pico as any[])[0].baseline_per_hour + " por hora)."
+        : "Sin picos de error.",
+      screen: null,
+    },
+  ];
+
+  return {
+    checkedAt: new Date(now).toISOString(),
+    // "problema" gana sobre "atencion": el resumen de arriba tiene que reflejar lo peor
+    // que hay, no el promedio.
+    overall: señales.some((s) => s.level === "problema")
+      ? "problema"
+      : señales.some((s) => s.level === "atencion")
+      ? "atencion"
+      : "ok",
+    signals: señales,
+  };
 }
 
 // Reporte de retención y cohortes (RPC retention_report, ver migración

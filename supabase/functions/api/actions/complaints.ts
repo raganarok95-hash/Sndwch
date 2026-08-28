@@ -149,13 +149,13 @@ export async function actAdminRespondComplaint(b: any) {
 // fecha calculada caiga ANTES que el vencimiento legal real (que también excluye
 // feriados), o sea que el aviso se adelanta. Es el error seguro: avisar de más nunca
 // cuesta una sanción, avisar tarde sí.
-const COMPLAINT_DEADLINE_BUSINESS_DAYS = 15;
-const DEADLINE_WARNING_BUSINESS_DAYS = 4;
+export const COMPLAINT_DEADLINE_BUSINESS_DAYS = 15;
+export const DEADLINE_WARNING_BUSINESS_DAYS = 4;
 // Segundo aviso, ya en zona roja: el primero avisa con margen para responder con calma,
 // este avisa que se acaba el tiempo.
 const FINAL_WARNING_BUSINESS_DAYS = 1;
 // Días hábiles transcurridos entre dos fechas (excluye sábado y domingo).
-function businessDaysSince(from: Date, to: Date): number {
+export function businessDaysSince(from: Date, to: Date): number {
   let count = 0;
   const cur = new Date(from.getTime());
   cur.setUTCHours(0, 0, 0, 0);

@@ -315,7 +315,13 @@ Signature o build.
   cuánto se PRODUJO y `admin-inventory-restock` lo SUMA server-side a lo que quedaba, en
   una sola llamada — el modo normal sigue fijando el valor absoluto), exportar CSV, log de
   auditoría,
-  contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
+  contenido de marketing semanal listo para copiar, **Salud del negocio**
+  (`admin-health`: una sola pantalla con lo que hay que atender HOY — pagos por confirmar,
+  pedidos parados, insumos agotados/por acabarse, reclamos cerca del plazo legal, crons
+  caídos y picos de error; el VEREDICTO de cada señal lo calcula el servidor, la pantalla
+  solo lo pinta), **Plan de tanda** (`admin-batch-plan`: cuánto cocinar de cada insumo para
+  cubrir N días, con `reliable:false` mientras no haya ~14 días y 20 pedidos de historial —
+  la pantalla muestra el motivo ANTES que las cantidades), y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
   sesión de código, ver detalle técnico abajo).
@@ -365,7 +371,17 @@ Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrit
 abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas),
 aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
-contenido de marketing semanal. Limpieza/expiración: pagos manuales sin confirmar,
+contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
+crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`).
+**Dead-man switch de crons (2026-08-28)**: `api` anota un latido por cada corrida de cron
+que llega (`record_cron_heartbeat`, en `index.ts`, best-effort). Existe porque pg_cron
+guarda si DISPARÓ el job, pero `net.http_post()` vuelve al instante: "succeeded" ahí
+significa "se encoló la petición", no "la edge function hizo su trabajo" — si el secreto de
+cron rota o `api` responde 500, los 20 jobs siguen en verde para siempre mientras nada
+ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido. Cubre
+solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
+2 de SQL puro) quedan fuera a propósito y documentados en la migración.
+Limpieza/expiración: pagos manuales sin confirmar,
 cargos Culqi pendientes, Plan Semanal sin confirmar, conciliación de cargos Culqi
 huérfanos (cobro real sin pedido/Plan Semanal detrás). Ver el mapa completo de acciones
 en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
