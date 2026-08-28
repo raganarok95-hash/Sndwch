@@ -576,6 +576,13 @@ type PricedBuild = {
 function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, extraSauce: boolean, cheese: string | null = null): PricedBuild {
   const sig = SIG_DATA[sigId];
   if (!sig) throw new ApiError("Signature inválida.");
+  // `active:false` se guardaba en SIG_CONTENT pero NINGÚN camino de tasación lo miraba, así
+  // que retirar un Signature desde el panel lo sacaba de la carta y nada más: se seguía
+  // pudiendo pedir por llamada directa a la API, desde un favorito o repitiendo un pedido
+  // viejo. Retirar algo tiene que retirarlo de verdad.
+  if (SIG_CONTENT[sigId] && SIG_CONTENT[sigId].active === false) {
+    throw new ApiError("Ese Signature ya no está disponible.", 400);
+  }
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
   if (doubleProt && NO_DOUBLE_PROTS.has(sig ? sig.prot : "")) throw new ApiError("Esa proteína no admite doble porción.");

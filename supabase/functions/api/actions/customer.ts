@@ -309,11 +309,27 @@ export async function actClaimDiscoveryChallenge(b: any) {
 // sin ninguna forma de verificar antes de confirmar (hallazgo de la auditoría de flujo de
 // pedidos). El cliente llama esto primero para mostrar "¿Enviar S/X a NOMBRE?" antes de
 // llamar a actCreditGift.
+// Esta acción es un oráculo de teléfono → NOMBRE REAL: dice si existe cuenta con ese número
+// y cómo se llama su titular. Basta registrarse una vez para consultar números arbitrarios,
+// y a diferencia de actCreditGift/actGiftCardPurchase no cuesta puntos ni crédito, así que
+// no tenía ningún freno: se podía barrer el padrón de números de Trujillo con un script.
+// Login y recuperación de PIN ya tienen bloqueo por teléfono justamente para no delatar qué
+// cuentas existen; esta quedó fuera de ese criterio. El límite es por quien CONSULTA (la
+// sesión), no por el número consultado — si no, el atacante solo tendría que cambiar de
+// objetivo para seguir barriendo.
+const CREDIT_LOOKUP_RATE_LIMIT = 20;
+const CREDIT_LOOKUP_RATE_WINDOW_MINUTES = 60;
 export async function actCreditLookup(b: any) {
   const s = await requireSession(b.token);
   const toPhone = String(b.toPhone || "").trim();
   if (!toPhone) throw new ApiError("Ingresa un teléfono.");
   if (toPhone === s.phone) throw new ApiError("No puedes regalarte crédito a ti mismo.");
+  const withinLimit = await rpc("check_rate_limit", {
+    p_key: `credit-lookup:${s.phone}`,
+    p_limit: CREDIT_LOOKUP_RATE_LIMIT,
+    p_window_minutes: CREDIT_LOOKUP_RATE_WINDOW_MINUTES,
+  });
+  if (!withinLimit) throw new ApiError("Demasiadas búsquedas. Espera un momento.", 429);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(toPhone)}&select=name`);
   if (!rows.length) throw new ApiError("No encontramos una cuenta con ese teléfono.", 404);
   return { name: rows[0].name };

@@ -1920,11 +1920,22 @@ function scheduleCartSync(){
 function isValidCartItem(it){
   return it&&typeof it==='object'&&(it.type==='byo'||it.type==='sig'||it.type==='side')&&typeof it.qty==='number'&&it.qty>0;
 }
+// Además de la forma (isValidCartItem), hay que comprobar que los IDS sigan existiendo en
+// el catálogo. El carrito vive 24h en localStorage y el catálogo se edita desde el panel:
+// si en ese lapso se retira un Signature o cambia una proteína, itemUnitPrice() devuelve 0
+// y itemLabel() cadena vacía para la línea huérfana. El cliente veía una fila en blanco a
+// S/0 y recién al pagar el servidor la rechazaba con un error genérico.
+function cartItemStillExists(it){
+  if(it.type==='side')return SIDES.some(function(x){return x.id===it.code;});
+  if(it.type==='sig')return SIGS.some(function(x){return x.id===it.sigId;});
+  return PROTS.some(function(x){return x.id===it.prot;});
+}
 function restoreCart(){
   try{
     var raw=JSON.parse(localStorage.getItem('sw_cart')||'null');
     if(raw&&Array.isArray(raw.items)&&raw.items.length&&raw.items.every(isValidCartItem)&&Date.now()-(raw.ts||0)<24*3600*1000){
-      cart=raw.items;
+      cart=raw.items.filter(cartItemStillExists);
+      if(!cart.length){cart=[];return;}
       initCheckoutFields();
       appliedReward=raw.reward||null;
     }
@@ -4480,20 +4491,34 @@ async function doRequestRestockNotify(sigId){
     showToast('Te avisamos apenas vuelva.','success');
   }catch(e){showToast(e.message);}
 }
+// Guardias de reentrada, como ya tienen doCreditGift/doGiftCardBuy/doWeeklyPlanBuy. BTN()
+// no genera `disabled`, así que el botón sigue clickeable durante la llamada. El servidor
+// rechaza el segundo reclamo de forma atómica (RPC claim_monthly_challenge), así que no se
+// duplican puntos — pero si la respuesta de error llega DESPUÉS que la de éxito, el mensaje
+// termina diciendo "Ya reclamaste el reto de este mes" encima de un reclamo que sí
+// funcionó. Un mensaje que contradice lo que acaba de pasar erosiona la confianza.
+var _challengeClaimInProgress=false;
+var _discChallengeClaimInProgress=false;
 async function doClaimChallenge(){
+  if(_challengeClaimInProgress)return;
+  _challengeClaimInProgress=true;
   try{
     var res=await api('claim-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
+  _challengeClaimInProgress=false;
   render();
 }
 async function doClaimDiscoveryChallenge(){
+  if(_discChallengeClaimInProgress)return;
+  _discChallengeClaimInProgress=true;
   try{
     var res=await api('claim-discovery-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     discChalMsg='¡Reto completado! +50 pts';
   }catch(e){discChalMsg=e.message;}
+  _discChallengeClaimInProgress=false;
   render();
 }
 // Limpia todo el estado en memoria específico del cliente/admin que acaba de cerrar
@@ -6046,6 +6071,17 @@ async function loadCatalogBackground(){
       // Los retirados salen de la carta. Se filtra acá y no en cada pantalla para que
       // ninguna vista tenga que acordarse de hacerlo.
       for(var i=SIGS.length-1;i>=0;i--)if(SIGS[i].retired)SIGS.splice(i,1);
+      // Y hay que volver a limpiar el carrito guardado: restoreCart() corre en INIT, antes
+      // de que este fetch resuelva, así que ahí SIGS todavía era la semilla del código y un
+      // Signature retirado pasaba el filtro. Sin esto, quien tuviera uno en el carrito veía
+      // una línea en blanco a S/0 y el servidor le rechazaba el pago.
+      if(cart.length){
+        var quedan=cart.filter(cartItemStillExists);
+        if(quedan.length!==cart.length){
+          cart=quedan;saveCart();
+          if(!cart.length)appliedReward=null;
+        }
+      }
     }
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
