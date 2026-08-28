@@ -13,6 +13,11 @@ alter table public.complaints add column if not exists alerted_deadline_final bo
 drop function if exists public.finalize_order_customer_update(text, int, numeric, int, text, int, text, int);
 
 -- 3. El DNI obligatorio solo vivía en auth.ts.
+-- ⚠ REVERTIDA EL MISMO DÍA — ver la migración
+--   *_revert_dni_not_null_bloqueaba_cuenta_existente.sql.
+--   `NOT VALID` solo evita validar las filas EXISTENTES al crear la restricción; cualquier
+--   UPDATE posterior sobre una de ellas SÍ la re-evalúa. La cuenta del dueño tiene dni null
+--   y es la única admin: con esto activo no podía ni cerrar un pedido suyo.
 -- Es una regla no negociable del proyecto pero la base aceptaba NULL, y `customers_dni_key`
 -- UNIQUE admite N nulos. NOT VALID a propósito: hay al menos una fila histórica con dni
 -- nulo y no se toca dato existente — la restricción aplica de acá en adelante.
