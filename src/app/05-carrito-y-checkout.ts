@@ -345,6 +345,9 @@ function checkoutExtrasHTML(){
     +(payingWithCreditFully||payT===0?'':paymentMethodPickerHTML(payT))
     +(checkoutLocked?'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;margin-top:12px;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:12px">'+esc(lockedMsg)+'</div>':'')
     +'<div id="o-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;margin-top:8px;min-height:16px"></div>'
+    // #25 — Hueco para el botón "programar para la siguiente hora libre". Va acá, pegado al
+    // error, y no dentro del mensaje: el error es texto y esto es una acción.
+    +'<div id="o-alt-slot"></div>'
     // Los clientes en su primer pedido reciben este mismo ofrecimiento, más prominente,
     // justo después de que el pago se confirma (ver sOSent) — no se les pregunta dos
     // veces en la misma compra.
@@ -852,6 +855,25 @@ function sOCart(){
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
     +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="syncConfirmFields();go(\'o_home\')" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Sándwich</div><div onclick="syncConfirmFields();sndScreen=\'o_sides\';render()" style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Bebida/side</div></div>'
     +(empty?'':checkoutExtrasHTML())
+    // #60 — Dejar el carrito como pedido fijo. Solo se ofrece con sesión iniciada porque la
+    // recurrencia cuelga del teléfono del cliente; a un invitado no habría dónde guardarla
+    // ni a quién avisarle. El texto dice explícitamente que no se cobra solo: prometer un
+    // cobro automático que Culqi no permite (el token es de un solo uso) sería la clase de
+    // promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
+    +(cart.length&&cust?'<details style="margin-top:18px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">↻ Dejarlo fijo cada semana //</summary>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px;line-height:1.5">Te avisamos una hora antes con este mismo carrito armado. <b style="color:var(--sw-text-body,#F2F0EB)">No te cobramos sin que confirmes.</b></div>'
+      +'<div style="display:flex;gap:8px;margin-top:12px">'
+      +'<select id="rec-day" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:\'EB Garamond\',serif">'
+      +DIAS_SEMANA.map(function(d,i){return'<option value="'+i+'"'+(i===new Date().getDay()?' selected':'')+'>'+d+'</option>';}).join('')
+      +'</select>'
+      +'<select id="rec-slot" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:\'EB Garamond\',serif">'
+      // Franjas de media hora dentro del horario más amplio de la semana: la recurrencia es
+      // para un día futuro, así que acotarla al horario de HOY escondería franjas válidas.
+      +recurringSlotOptions().map(function(s){return'<option value="'+s+'">'+s+'</option>';}).join('')
+      +'</select>'
+      +'</div>'
+      +'<button onclick="saveCartAsRecurring()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.14);border:1px solid rgba(203,162,88,.45);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:13px 0;border-radius:8px;margin-top:10px">Guardar como fijo //</button>'
+      +'</details>':'')
     +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#ff8888;letter-spacing:.1em">Vaciar carrito</div>':'')
     +'</div>'
     +AB(cart.length?t:null,cart.length>0&&!checkoutLocked,null,'doOrder()',payButtonLabel(t,'Pagar y enviar //'));
@@ -909,7 +931,19 @@ async function doOrder(){
     // (`assertHourCapacity`), pero hasta ahora el cliente se enteraba con la tarjeta ya
     // metida en la pantalla de Culqi. Se le manda a PROGRAMAR, donde las franjas libres
     // están a la vista, en vez de dejarlo con un error sin salida.
-    if(errEl)errEl.textContent='Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Elige "PROGRAMAR" y te mostramos las horas libres.';
+    // #25 — Rechazar sin ofrecer una alternativa manda al cliente a adivinar cuándo volver,
+    // y la mayoría no vuelve. Se nombra la siguiente franja libre concreta y se deja a un
+    // toque de distancia.
+    var libre=nextFreeSlot();
+    if(errEl){
+      errEl.textContent=libre
+        ? 'Esta hora ya está completa. La más cercana libre es '+libre.label+' a las '+libre.slot+'.'
+        : 'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Prueba con otro día.';
+    }
+    var alt=document.getElementById('o-alt-slot');
+    if(alt)alt.innerHTML=libre
+      ? '<button onclick="useNextFreeSlot()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.14);border:1px solid rgba(203,162,88,.45);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.04em;padding:15px 0;border-radius:8px;margin-top:10px">Programar para '+libre.label+' a las '+libre.slot+' //</button>'
+      : '';
     return;
   }
   // El negocio abre el 7 de septiembre. Hasta entonces NO se acepta ningún pedido, ni

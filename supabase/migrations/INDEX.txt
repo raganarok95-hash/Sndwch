@@ -135,3 +135,6 @@
 20260829221313  pending_charges_decline_reason
 20260829221412  pending_weekly_plans_decline_reason
 20260829221548  cron_alert_card_declines
+20260829224633  recurring_orders
+20260829224802  cron_remind_recurring_orders
+20260829225046  cron_remind_points_nudge

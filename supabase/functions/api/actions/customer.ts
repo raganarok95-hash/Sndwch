@@ -4,7 +4,7 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError } from "../catalog.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS } from "../catalog.ts";
 import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
@@ -113,6 +113,202 @@ async function phonesTouchedToday(): Promise<Set<string>> {
 async function assertUnderLimit(table: string, phone: string, max: number, label: string): Promise<void> {
   const existing = await sbGet(table, `customer_phone=eq.${encodeURIComponent(phone)}&select=id`);
   if (existing.length >= max) throw new ApiError(`Ya tienes el máximo de ${label} (${max}).`, 400);
+}
+
+// ── #60: pedido recurrente ──────────────────────────────────────────────────────────────
+//
+// "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
+// falta a un negocio nuevo.
+//
+// ⚠ NO COBRA SOLO, Y NO PUEDE. El token de tarjeta de Culqi es de un solo uso y vive 5
+// minutos, así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta
+// otra vez; hacerlo exigiría guardar la tarjeta (One Click), o sea decidir guardar medios de
+// pago de los clientes — decisión del dueño. Y tampoco cobra solo contra el crédito interno,
+// aunque técnicamente se podría: sacarle plata a alguien sin una decisión fresca suya es la
+// clase de sorpresa que cuesta el cliente entero.
+//
+// Lo que sí hace: a la hora elegida le llega el aviso con el carrito ya armado y confirma en
+// un toque.
+const MAX_RECURRING = 3;
+
+export async function actRecurringList(b: any) {
+  const s = await requireSession(b.token);
+  return {
+    recurring: await sbGet(
+      "recurring_orders",
+      `customer_phone=eq.${encodeURIComponent(s.phone)}&active=eq.true&select=id,items,weekday,slot,label,last_notified_at&order=weekday.asc,slot.asc&limit=${MAX_RECURRING * 2}`,
+    ),
+  };
+}
+
+export async function actRecurringAdd(b: any) {
+  const s = await requireSession(b.token);
+  const weekday = Math.floor(Number(b.weekday));
+  if (!Number.isFinite(weekday) || weekday < 0 || weekday > 6) throw new ApiError("Elige un día de la semana.");
+  const slot = String(b.slot || "").trim();
+  if (!/^[0-2][0-9]:[0-5][0-9]$/.test(slot)) throw new ApiError("Elige una hora válida.");
+  const items = Array.isArray(b.items) ? b.items : [];
+  if (!items.length) throw new ApiError("Tu carrito está vacío — arma el pedido antes de dejarlo fijo.");
+
+  // Se re-tasa con el catálogo VIGENTE antes de guardar, por dos motivos. Uno: valida que
+  // cada ítem siga existiendo, en vez de guardar un carrito que el día de mañana no se puede
+  // reconstruir. Dos: es donde se rechazaría un ítem armado a mano contra la API. Lo que NO
+  // se guarda es el precio — el aviso re-tasa con los precios de ese día.
+  await loadCatalogPrices();
+  for (const it of items) priceCartItem(it);
+
+  await assertUnderLimit("recurring_orders", s.phone, MAX_RECURRING, "pedidos fijos");
+  const existing = await sbGet(
+    "recurring_orders",
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&weekday=eq.${weekday}&slot=eq.${encodeURIComponent(slot)}&active=eq.true&select=id`,
+  );
+  if (existing.length) throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
+
+  await sbInsert("recurring_orders", {
+    customer_phone: s.phone,
+    items,
+    weekday,
+    slot,
+    label: String(b.label || "").trim().slice(0, 40) || null,
+  });
+  return { success: true };
+}
+
+export async function actRecurringDelete(b: any) {
+  const s = await requireSession(b.token);
+  const id = String(b.id || "").trim();
+  if (!id) throw new ApiError("Falta el pedido fijo.");
+  // El filtro por teléfono no es cosmético: sin él, cualquiera con una sesión válida podría
+  // borrar la recurrencia de otro cliente mandando su id.
+  await sbUpdate(
+    "recurring_orders",
+    `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
+    { active: false },
+  );
+  return { success: true };
+}
+
+// Cuánto antes de la hora elegida llega el aviso. Una hora: suficiente para decidir y para
+// que el pedido entre a una franja que todavía tiene lugar, sin ser tan temprano que se
+// olvide.
+const RECURRING_LEAD_MINUTES = 60;
+
+export async function actRemindRecurringOrders(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+
+  // La franja objetivo es la de dentro de una hora, en hora de LIMA — la recurrencia la
+  // eligió el cliente sobre el mismo reloj con el que ve el horario de la tienda.
+  const objetivo = new Date(Date.now() + RECURRING_LEAD_MINUTES * 60000);
+  const enLima = new Date(objetivo.toLocaleString("en-US", { timeZone: "America/Lima" }));
+  const weekday = enLima.getDay();
+  const hh = String(enLima.getHours()).padStart(2, "0");
+  // Se buscan las dos franjas de media hora que caen dentro de esta hora, porque el cron
+  // corre cada 30 minutos y las recurrencias se guardan en :00 o :30.
+  const slots = [`${hh}:00`, `${hh}:30`];
+
+  const rows = await sbGet(
+    "recurring_orders",
+    `active=eq.true&weekday=eq.${weekday}&slot=in.(${slots.join(",")})&select=id,customer_phone,items,slot,label,last_notified_at&limit=${MAX_PUSH_PER_RUN}`,
+  );
+  let avisados = 0;
+  for (const r of rows) {
+    try {
+      // Una vez por semana por recurrencia: el cron corre cada media hora y sin esto
+      // mandaría el mismo aviso varias veces en la misma tarde.
+      const last = r.last_notified_at ? new Date(r.last_notified_at).getTime() : 0;
+      if (Date.now() - last < 20 * 3600 * 1000) continue;
+      await sendPushToPhone(String(r.customer_phone), {
+        title: "¿Va lo de siempre? 🥪",
+        body: `${r.label || "Tu pedido fijo"} para las ${r.slot} — ya está armado, confirmas en un toque.`,
+        url: "./index.html",
+        tag: "sndwch-recurring-" + r.id,
+      });
+      await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(r.id))}`, { last_notified_at: new Date().toISOString() });
+      avisados++;
+    } catch (e) {
+      console.error("remind-recurring-orders failed for", r.id, e);
+    }
+  }
+  return { success: true, avisados, revisadas: rows.length };
+}
+
+// ── #64: "te faltan N puntos" ───────────────────────────────────────────────────────────
+//
+// Empujar a alguien que está CERCA de una recompensa es distinto de recordarle que tiene
+// puntos: el que está a 30 puntos de un sándwich gratis tiene un motivo concreto para pedir
+// esta semana, y el que está a 300 no. Con la tasa ya pareja a 20 pts/sol (D7) el número
+// que se le muestra significa lo mismo para todas las recompensas.
+//
+// Solo se avisa de la recompensa MÁS CERCANA que todavía no puede canjear: listarle todas
+// convierte un empujón en un estado de cuenta, y un estado de cuenta no mueve a nadie.
+const POINTS_NUDGE_MAX_MISSING = 60;
+// Una vez al mes por cliente: los puntos suben despacio y repetir "te faltan 40" cada semana
+// es la forma más rápida de que deje de leer las notificaciones.
+const POINTS_NUDGE_COOLDOWN_DAYS = 30;
+
+// Cálculo puro: cuál es la recompensa más cercana a la que le falta poco, si es que hay una.
+// Extraído porque decidir mal acá no da error — da un aviso que no sale, o uno que sale a
+// quien no le sirve.
+export function nextRewardNudge(
+  points: number,
+  rewards: Record<string, { pts: number; label: string }>,
+  maxMissing = POINTS_NUDGE_MAX_MISSING,
+): { code: string; label: string; missing: number } | null {
+  let mejor: { code: string; label: string; missing: number } | null = null;
+  for (const [code, r] of Object.entries(rewards || {})) {
+    const missing = r.pts - points;
+    // `missing <= 0` = ya la puede canjear: eso no es un empujón, es un recordatorio, y para
+    // eso está el otro cron. Acá interesa solo lo que todavía NO alcanza.
+    if (missing <= 0 || missing > maxMissing) continue;
+    if (!mejor || missing < mejor.missing) mejor = { code, label: r.label, missing };
+  }
+  return mejor;
+}
+
+export async function actRemindPointsNudge(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  await loadCatalogPrices();
+  const touchedToday = await phonesTouchedToday();
+  const menorRecompensa = Math.min(...Object.values(REWARDS).map((r) => r.pts));
+  // El filtro por puntos se hace en la base y no en JS: sin él esto leería la tabla entera
+  // de clientes para descartar casi todos. `gte` al mínimo menos el margen es el piso real
+  // por debajo del cual nadie puede estar cerca de nada.
+  const candidatos = await sbGet(
+    "customers",
+    `points=gte.${Math.max(0, menorRecompensa - POINTS_NUDGE_MAX_MISSING)}&select=phone,name,points&limit=20000`,
+  );
+  let avisados = 0;
+  for (const c of candidatos) {
+    if (avisados >= MAX_PUSH_PER_RUN) {
+      await capReached("te-faltan-puntos", avisados, candidatos.length - avisados);
+      break;
+    }
+    const phone = String(c.phone || "");
+    if (!phone || touchedToday.has(phone)) continue;
+    const nudge = nextRewardNudge(Number(c.points) || 0, REWARDS);
+    if (!nudge) continue;
+    try {
+      const withinLimit = await rpc("check_rate_limit", {
+        p_key: `points-nudge:${phone}`,
+        p_limit: 1,
+        p_window_minutes: 60 * 24 * POINTS_NUDGE_COOLDOWN_DAYS,
+      });
+      if (!withinLimit) continue;
+      await sendPushToPhone(phone, {
+        title: `Te faltan ${nudge.missing} puntos ⭐`,
+        body: `Un pedido más y canjeas ${nudge.label.replace(/ \/\/ /g, " ")}. Tienes ${c.points}.`,
+        url: "./index.html",
+        tag: "sndwch-points-nudge",
+      });
+      await logMarketingTouch(phone, "points_nudge");
+      avisados++;
+    } catch (e) {
+      console.error("remind-points-nudge failed for", phone, e);
+    }
+  }
+  return { success: true, avisados };
 }
 
 const MAX_ADDRESSES = 6;

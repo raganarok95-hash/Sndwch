@@ -498,6 +498,7 @@ function renderScreen(){
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
+    case'p_recurring': h=sPRecurring();break;
     case'gift_card':   h=sGiftCard();break;
     case'weekly_plan': h=sWeeklyPlan();break;
     case'group_order': h=sGroupOrder();break;
