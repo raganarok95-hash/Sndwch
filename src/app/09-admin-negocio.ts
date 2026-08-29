@@ -716,7 +716,6 @@ async function loadStoreHoursBackground(){
     businessLaunched=r.businessLaunched===true;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
     storePausedUntil=r.pausedUntil||null;
-    googleReviewUrl=r.googleReviewUrl||null;
   }catch(e){}
 }
 // C7 — El panel de inventario tiene dos modos que hacen cosas distintas con el MISMO
@@ -1387,7 +1386,7 @@ function sAdminAudit(){
 var DOW_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 async function loadStoreHoursForm(){
   sndScreen='admin_hours';busy=true;busyMsg='Cargando horario...';render();
-  try{var r=await api('get-store-hours',{});storeHoursForm=r.hours;businessLaunched=r.businessLaunched===true;googleReviewUrl=r.googleReviewUrl||null;}
+  try{var r=await api('get-store-hours',{});storeHoursForm=r.hours;businessLaunched=r.businessLaunched===true;}
   catch(e){storeHoursForm=DOW_NAMES.map(function(){return{open:11,close:22,closed:false};});}
   busy=false;render();
 }
@@ -1476,31 +1475,8 @@ function sAdminHours(){
       +'</div>';
   }).join('');
   h+=BTN('Guardar horario //','saveStoreHours()');
-  // Enlace de reseña de Google. Vive acá y no en el código porque es un dato REAL del
-  // negocio: nadie puede inventarlo, y así se cambia sin redesplegar (mismo criterio que
-  // el píxel de Meta). Mientras esté vacío, la app no le muestra nada a nadie.
-  h+='<div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--sw-border,#3A6B58)">'
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Reseñas de Google //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:10px">Pega el enlace para pedir reseñas de tu perfil de Google Business. Se lo mostramos a cada cliente justo después de que califica su pedido — a todos, pongan la nota que pongan.</div>'
-    +'<input id="grv-url" type="url" placeholder="https://g.page/r/..." value="'+esc(googleReviewUrl||'')+'" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:11px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;font-family:EB Garamond,serif;font-style:italic;box-sizing:border-box;margin-bottom:10px">'
-    +BTN('Guardar enlace de reseñas //','saveGoogleReviewUrl()',true)
-    +'</div>';
   h+='</div>';
   return h;
-}
-async function saveGoogleReviewUrl(){
-  var el=(document.getElementById('grv-url') as HTMLInputElement | null);
-  var url=el?el.value.trim():'';
-  busy=true;busyMsg='Guardando...';render();
-  try{
-    var r=await api('admin-set-google-review-url',{token:token,url:url});
-    googleReviewUrl=r.url||null;
-    storeHoursMsg=r.url?'Enlace de reseñas guardado.':'Enlace de reseñas quitado.';
-  }catch(e){
-    busy=false;render();showToast(e.message);return;
-  }
-  busy=false;render();
-  setTimeout(function(){storeHoursMsg='';if(sndScreen==='admin_hours')render();},2500);
 }
 
 // REPORTE POR FECHAS (#98) — el dashboard normal solo cubre hoy/semana/mes fijos; esto

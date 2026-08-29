@@ -314,12 +314,7 @@ Signature o build.
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
   cerrar sesión en todos los dispositivos, borrar cuenta (anonimiza pedidos/ratings,
   borra datos estrictamente personales).
-- **Otros**: direcciones guardadas, favoritos, calificación post-entrega (que ahora ofrece
-  el **enlace de reseña de Google** — `app_settings.google_review_url`, editable desde
-  Admin // Horario, viaja en `get-store-hours` como el píxel de Meta. **Se muestra a TODOS
-  los que califican, sin mirar la nota**: filtrar por estrellas es *review gating*, viola
-  las políticas de Google y fabrica un promedio falso. Nunca condicionar ese bloque a
-  `rtStars`), "avísame cuando
+- **Otros**: direcciones guardadas, favoritos, calificación post-entrega, "avísame cuando
   vuelva" para un Signature agotado, Libro de Reclamaciones Virtual (público, exigido por
   ley — nunca modificar su texto legal), notificaciones push (Web Push/VAPID) para
   cambios de estado de pedido.

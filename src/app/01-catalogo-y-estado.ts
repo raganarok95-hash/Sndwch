@@ -1087,12 +1087,6 @@ var gcPhone='',gcAmt='',gcMsg='';
 var _giftBuyInProgress=false;
 var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
 var rtConsent=false,justRatedRef=null;
-// URL de reseña de Google, servida por get-store-hours (ver actGetStoreHours). Null
-// mientras el dueño no la haya pegado en el panel: sin URL no se muestra nada, porque un
-// botón que no lleva a ninguna parte es peor que no tener botón. Vive en la base y no en
-// el código porque es un dato REAL del negocio — no se inventa, y así se cambia sin
-// redesplegar el cliente (mismo criterio que el píxel de Meta).
-var googleReviewUrl=null;
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
 var addrText='',scheduleMode='now',schedDay='today',schedSlot=null;
