@@ -26,6 +26,9 @@ interface Window {
   _lOrderCreatedAt?: number;
   _lRef?: string;
   _lRankUp?: string | null;
+  // Desbloqueo del menú secreto — evento propio, independiente del rango. El umbral es
+  // editable desde el panel admin y ya no coincide con ningún rango de RANKS.
+  _lSecretUnlock?: boolean;
   _mLat?: number;
   _mLon?: number;
 }

@@ -178,8 +178,12 @@ async function assertHourCapacity(when: Date): Promise<void> {
   const to = encodeURIComponent(hourEnd.toISOString());
   try {
     const [scheduled, immediate] = await Promise.all([
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=gte.${from}&scheduled_for=lt.${to}&select=id&limit=100`),
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
+      // La columna se llama `delivery_time`, NO `scheduled_for` (verificado contra
+      // information_schema: `orders` no tiene `scheduled_for`; ese nombre solo existe en
+      // `pending_charges`). Con el nombre equivocado PostgREST devolvía 42703, el catch de
+      // abajo se lo tragaba, y el tope NUNCA se aplicó desde que se introdujo.
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=gte.${from}&delivery_time=lt.${to}&select=id&limit=100`),
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
     ]);
     if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
       throw new ApiError(
@@ -191,8 +195,34 @@ async function assertHourCapacity(when: Date): Promise<void> {
     // Un fallo leyendo la tabla no debe bloquear una venta real: el tope es una
     // protección operativa, no una regla de dinero. Solo se propaga el rechazo real.
     if (e instanceof ApiError) throw e;
+    // Se sigue sin bloquear la venta (el tope es operativo, no una regla de dinero), pero
+    // ahora queda registrado: el fallo anterior era invisible porque solo iba a la consola
+    // de la función, que nadie mira. Así un error de esquema se ve en el resumen diario.
     console.error("assertHourCapacity failed:", e);
+    void debugLog({ stage: "assert-hour-capacity", error: String(e) });
   }
+}
+
+// PUNTOS SIEMPRE ENTEROS (2026-08-27).
+// `customers.points` y `transactions.points` son `integer` en la base. Desde que los
+// precios llevan decimales (+S/0.90 el 2026-08-15) la resta `total − delivery` dejó de
+// dar enteros: un pedido de S/27.25 con delivery S/6.35 da 20.900000000000002, y ese
+// valor viaja como `p_points_delta` a un parámetro `integer`. PostgREST castea con la
+// función de entrada del tipo, así que revienta con 22P02 (invalid input syntax for type
+// integer) — DESPUÉS de que Culqi ya cobró.
+//
+// Es el mismo mecanismo que ya obligó a ensanchar las columnas de dinero a numeric
+// (migración 20260730210447): ahí se corrigieron las de dinero, pero las de puntos
+// quedaron integer y nadie las volvió a mirar hasta que los precios cambiaron.
+//
+// No se ha disparado en producción sólo porque los pedidos existentes son de julio, con
+// totales enteros y delivery 0. Con el catálogo de hoy fallaría en el 100% de los pedidos
+// de un cliente con cuenta.
+// Anticipación máxima de un pedido programado. El cliente ya ofrece solo HOY/MAÑANA.
+const MAX_SCHEDULE_AHEAD_HOURS = 48;
+
+export function pointsFor(total: number, deliveryFee: number): number {
+  return Math.round(total - (deliveryFee || 0));
 }
 
 type FinalizeOrderParams = {
@@ -413,7 +443,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // un pass-through al motorizado (el negocio no se queda con ese margen), así que
     // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
     // que haya ingreso real detrás.
-    const basePoints = p.total - p.deliveryFee;
+    const basePoints = pointsFor(p.total, p.deliveryFee);
     let pointsDelta = basePoints;
     if (p.reward) pointsDelta -= p.reward.pts;
 
@@ -705,6 +735,13 @@ export async function actPrepareOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
@@ -1002,6 +1039,13 @@ export async function actPlaceOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     // Antes solo se validaba el horario para pedidos programados — uno "AHORA" con la
@@ -1190,7 +1234,7 @@ async function confirmManualPayment(order: any) {
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
   // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
   // sobre el delivery (pass-through al motorizado, sin margen real detrás).
-  const earnedPoints = order.total - (order.delivery_fee || 0);
+  const earnedPoints = pointsFor(order.total, order.delivery_fee);
 
   // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
   // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
@@ -1297,20 +1341,18 @@ const DEFAULT_ETA_FALLBACK = 30;
 
 async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
-  // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
-  // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
-  const upd: Record<string, unknown> = { status, status_changed_at: new Date().toISOString(), alerted_stuck_progress: false };
-  // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
-  // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
-  // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
-  if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  // status_changed_at, alerted_stuck_progress y delivered_at se fijan MÁS ABAJO, solo si el
+  // estado cambia de verdad. Acá el objeto arranca sin ellos: editar la ETA de un pedido
+  // manda su mismo estado sobre sí mismo, y antes eso reiniciaba el reloj de "pedido
+  // estancado" y reescribía la hora de entrega.
+  const upd: Record<string, unknown> = { status };
   if (etaMinutes) {
     const eta = Number(etaMinutes);
     if (!Number.isFinite(eta) || eta < 0 || eta > 240) throw new ApiError("ETA inválida.", 400);
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,delivery_zone,eta_minutes`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,delivery_zone,eta_minutes`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
 
@@ -1321,6 +1363,16 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     upd.eta_minutes = DEFAULT_ETA_BY_ZONE[String(order.delivery_zone || "")] ?? DEFAULT_ETA_FALLBACK;
   }
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+  if (status !== order.status) {
+    // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
+    // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
+    upd.status_changed_at = new Date().toISOString();
+    upd.alerted_stuck_progress = false;
+    // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
+    // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
+    // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
+    if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  }
 
   // Antes esto no revisaba el estado actual del pedido — la acción en lote
   // (actAdminBulkUpdateStatus) podía seleccionar pedidos RECIBIDO recién llegados junto
@@ -1349,9 +1401,30 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     if (claim.length) await confirmManualPayment(order);
   }
 
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, upd);
+  // El filtro por el estado que se leyó arriba hace de reclamo atómico. Sin él, este
+  // UPDATE podía pisar un CANCELADO: si "avanzar" y "cancelar" llegaban casi juntos, la
+  // cancelación reclamaba la fila, restockeaba, reembolsaba el crédito y decrementaba
+  // total_orders, y este UPDATE la reescribía como ENTREGADO — quedaba un pedido
+  // "entregado" ya reembolsado y con el stock devuelto. actAdminCancelOrder y el cron de
+  // pagos vencidos ya usaban este mismo patrón; esta ruta era la única sin él.
+  const rows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(orderId)}&status=eq.${encodeURIComponent(order.status)}`,
+    upd,
+  );
+  if (!rows.length) {
+    throw new ApiError("El pedido cambió de estado mientras lo actualizabas. Vuelve a cargar la cola.", 409);
+  }
 
-  if (order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
+  // Las notificaciones y el reinicio del reloj de "pedido estancado" SOLO cuando el estado
+  // cambia de verdad. Editar la ETA de un pedido que ya está EN CAMINO manda
+  // status:'EN CAMINO' sobre sí mismo: antes eso reenviaba el push "¡Tu pedido va en
+  // camino!" (con renotify:true) y el correo de estado por segunda vez, y además reescribía
+  // status_changed_at y alerted_stuck_progress, o sea CORREGIR la hora de un pedido que iba
+  // tarde reiniciaba justo la alarma que debía avisar que iba tarde.
+  const statusChanged = status !== order.status;
+
+  if (statusChanged && order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
     const msg = STATUS_PUSH_MESSAGES[status];
     // En "EN CAMINO" con ETA cargada, reemplazamos el cuerpo genérico por una ventana de
     // hora real (ej. "9:20 - 9:40") en vez de solo "ya casi llega" — mismo tipo de dato que
@@ -1377,7 +1450,7 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   // sendOrderStatusEmail en email.ts). rows[0] (no `order`, que se seleccionó sin
   // customer_email) trae la fila completa tras el update.
   const updatedOrder = rows[0];
-  if (updatedOrder?.customer_email) {
+  if (statusChanged && updatedOrder?.customer_email) {
     try {
       await sendOrderStatusEmail(updatedOrder.customer_email, updatedOrder.customer_name || "", updatedOrder.ref, status, upd.eta_minutes as number | undefined);
     } catch {
@@ -1442,7 +1515,7 @@ export async function actAdminConfirmPayment(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (!["yape", "plin", "cod"].includes(order.payment_method)) {
@@ -1588,6 +1661,39 @@ async function restockOrderItems(items: any): Promise<void> {
 // que este cancelación lo baje a 0) como el mejor indicador disponible de "este pedido
 // fue el que lo otorgó" — debe leerse ANTES de que finalize_order_customer_update
 // decremente total_orders, nunca después.
+// Lo que hay que DESHACER en la cuenta del cliente al cancelar un pedido. Es la misma
+// aritmética para la cancelación del cliente (actCancelMyOrder) y la del admin
+// (actAdminCancelOrder) — estaba escrita dos veces palabra por palabra, que es justo
+// cómo dos copias empiezan a divergir: cada corrección futura tenía que acordarse de la
+// otra. Se extrae además porque es exactamente la clase de defecto que ya llegó a
+// producción una vez (revertir un monto distinto del que se otorgó, ver el caso de los
+// 350 puntos regalados) y sin extraerla no había forma de probarla: el resto de las dos
+// funciones toca la base y no se puede ejecutar en `npm run test:api`.
+//
+// Reglas, todas con una razón concreta detrás:
+// · Nada se revierte si el pedido nunca se pagó — un Yape/Plin todavía `pending` nunca
+//   pasó por finalize_order_customer_update, no hay nada que deshacer.
+// · Los puntos GANADOS fueron sobre total − delivery_fee (el delivery es pass-through al
+//   motorizado y nunca premió), así que la reversión resta exactamente eso; los puntos
+//   que el cliente GASTÓ en una recompensa se le devuelven. El neto puede quedar en
+//   cualquier signo y así debe mandarse.
+// · El crédito solo se devuelve si se pagó con crédito interno: el dinero real de una
+//   tarjeta no se reembolsa desde acá (eso lo coordina el dueño a mano).
+export function cancellationDeltas(order: {
+  payment_status?: string | null;
+  payment_method?: string | null;
+  total: number;
+  delivery_fee?: number | null;
+  redeemed_reward_pts?: number | null;
+}): { creditToRefund: number; pointsToRefund: number; totalOrdersDelta: number; totalRedeemedDelta: number } {
+  const paid = order.payment_status === "paid";
+  return {
+    creditToRefund: paid && order.payment_method === "credit" ? order.total : 0,
+    pointsToRefund: paid ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee || 0) : 0,
+    totalOrdersDelta: paid ? -1 : 0,
+    totalRedeemedDelta: paid && order.redeemed_reward_pts ? -1 : 0,
+  };
+}
 async function referrerPhoneToReverse(phone: string): Promise<string | null> {
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=referred_by,referral_bonus_granted,total_orders`);
   const c = rows[0];
@@ -1673,13 +1779,7 @@ export async function actAdminCancelOrder(b: any) {
   // tarjeta/Yape/Plin y se reembolsó por fuera de la app, el cliente igual conservaba
   // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
   // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone
@@ -1695,6 +1795,12 @@ export async function actAdminCancelOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {
@@ -1719,6 +1825,22 @@ export async function actAdminCancelOrder(b: any) {
     await Promise.all(refundAudits);
   }
 
+  // Avisarle al cliente. Antes cancelar no mandaba nada: se enteraba abriendo la app, o no
+  // se enteraba. Es el único cambio de estado que deja a alguien esperando comida que no va
+  // a llegar, así que no puede pasar en silencio.
+  if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+    try {
+      await sendPushToPhone(order.customer_phone, {
+        title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+        body: STATUS_PUSH_MESSAGES.CANCELADO.body + " Ref: " + order.ref,
+        url: "./index.html",
+        tag: "sndwch-order-" + order.ref,
+        renotify: true,
+      });
+    } catch {
+      // un push fallido no puede tumbar una cancelación que ya se ejecutó en la base
+    }
+  }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
   return { success: true, order: claimRows[0] };
 }
@@ -1787,13 +1909,7 @@ export async function actCancelMyOrder(b: any) {
   // (y por tanto la cancelación) si el cliente ya gastó esos puntos en otra parte antes
   // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
   // insuficiente" en vez de perder la cuenta en silencio.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone
@@ -1809,6 +1925,12 @@ export async function actCancelMyOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {
@@ -1876,7 +1998,7 @@ export async function actExpireStaleManualPayments(b: any) {
   const cutoff = new Date(Date.now() - STALE_MANUAL_PAYMENT_HOURS * 3600000).toISOString();
   const stale = await sbGet(
     "orders",
-    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items`,
+    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items,ref,customer_phone&limit=500`,
   );
   let cancelled = 0;
   for (const order of stale) {
@@ -1895,6 +2017,19 @@ export async function actExpireStaleManualPayments(b: any) {
       if (rows.length) {
         await restockOrderItems(order.items);
         cancelled++;
+        // Mismo criterio que la cancelación del admin: nadie se puede quedar esperando un
+        // pedido que el sistema canceló solo, sin enterarse.
+        if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+          try {
+            await sendPushToPhone(order.customer_phone, {
+              title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+              body: "No recibimos la confirmación de tu pago. Ref: " + order.ref,
+              url: "./index.html",
+              tag: "sndwch-order-" + order.ref,
+              renotify: true,
+            });
+          } catch { /* un push fallido no revierte la expiración */ }
+        }
       }
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);
@@ -1926,9 +2061,15 @@ export async function actAlertStuckOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const stuckMinutes = isPeakHourNowLima() ? STUCK_ORDER_MINUTES_PEAK : STUCK_ORDER_MINUTES_OFFPEAK;
   const cutoff = new Date(Date.now() - stuckMinutes * 60000).toISOString();
+  // Un pedido PROGRAMADO no está estancado: está esperando su hora. Antes esto filtraba
+  // solo por created_at, así que un pedido hecho a las 9am para las 8pm disparaba "Pedido
+  // estancado ⏰" a los pocos minutos, todos los días. El filtro correcto es sobre la hora
+  // en que el pedido DEBÍA empezar: delivery_time si lo tiene, created_at si no.
   const stuck = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}&select=id,ref,customer_name,payment_method,payment_status`,
+    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}` +
+      `&or=(delivery_time.is.null,delivery_time.lt.${encodeURIComponent(cutoff)})` +
+      `&select=id,ref,customer_name,payment_method,payment_status&limit=500`,
   );
   let alerted = 0;
   for (const order of stuck) {
@@ -1956,7 +2097,7 @@ export async function actAlertStuckOrders(b: any) {
   const progressCutoff = new Date(Date.now() - stuckMinutes * 2 * 60000).toISOString();
   const inProgress = await sbGet(
     "orders",
-    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status`,
+    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status&limit=500`,
   );
   for (const order of inProgress) {
     try {
@@ -1993,7 +2134,7 @@ export async function actExpirePendingCharges(b: any) {
   // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref&limit=500`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -2031,7 +2172,7 @@ export async function actAlertScheduledOrders(b: any) {
   const windowEnd = new Date(Date.now() + SCHEDULED_REMINDER_LEAD_MINUTES * 60000).toISOString();
   const upcoming = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time`,
+    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time&limit=500`,
   );
   let alerted = 0;
   for (const order of upcoming) {

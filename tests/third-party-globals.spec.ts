@@ -27,7 +27,11 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
   );
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.goto(APP_FILE);
-  await page.waitForTimeout(1200);
+  // Esperar la condición real (el blindaje ya instalado y el home pintado) en vez de un
+  // número de milisegundos: una espera fija o se queda corta en una máquina lenta (CI) o
+  // desperdicia tiempo en una rápida, y en los dos casos el test deja de decir la verdad.
+  await page.waitForFunction(() => typeof (window as any).sndRestoreOwnedFns === 'function');
+  await expect(page.locator('text=/ARMA EL TUYO/i').first()).toBeVisible();
 
   // Un bundle de terceros pisa tres funciones nuestras, igual que hizo Culqi.
   const pisadas = await page.evaluate(() => {
@@ -57,9 +61,9 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
 
   // Y la app tiene que seguir navegando de verdad, no solo tener las funciones bien.
   await page.locator('text=/ARMA EL TUYO/i').first().click();
-  await page.waitForTimeout(400);
-  await page.locator('text=/Ver el paso a paso completo/i').first().click();
-  await page.waitForTimeout(600);
+  const paso = page.locator('text=/Ver el paso a paso completo/i').first();
+  await expect(paso).toBeVisible();
+  await paso.click();
   await expect(page.locator('text=Paso 1 // 5')).toBeVisible();
 
   expect(errores, 'no debe quedar ningún error de JavaScript sin manejar').toEqual([]);
@@ -74,7 +78,8 @@ test('un sndScreen corrupto no deja la app muerta', async ({ page }) => {
   );
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.goto(APP_FILE);
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => typeof (window as any).render === 'function');
+  await expect(page.locator('text=/ARMA EL TUYO|Signatures/i').first()).toBeVisible();
 
   await page.evaluate(() => {
     const w = window as any;

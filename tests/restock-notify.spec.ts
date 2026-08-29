@@ -9,18 +9,19 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   const calls = await mockBackend(page, {
     login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
     'request-restock-notify': { success: true },
+    'get-catalog': {
+      proteins: {}, sigs: {}, sides: {}, rewardPts: {},
+      inventory: { P02: { inStock: false, qty: 0 } },
+    },
   });
 
   // P02 (Pollo Teriyaki, la proteína de SIG06 "THE TERIYAKI" — la única signature
-  // pública que la usa) sin stock — registrada DESPUÉS de mockBackend (que deja
-  // inventario vacío = todo disponible) y ANTES de navegar, porque Playwright resuelve
-  // rutas que hacen match en orden LIFO: la última registrada gana. Si se registrara
-  // después de goto(), loadInvBackground() ya habría corrido con el mock por defecto.
+  // pública que la usa) sin stock. Desde el 2026-08-27 el inventario NO viaja por
+  // PostgREST: llega dentro de get-catalog, porque `inventory` tiene RLS sin políticas y
+  // la lectura directa con la anon key devolvía 200 [] en silencio — el cliente creía que
+  // todo estaba disponible. El mock va en el handler de esa acción.
   // No se usa P01 (Res // Asado) porque la comparten THE ORIGINAL y ARMA EL TUYO, y
   // marcarla sin stock mostraría dos tarjetas AGOTADO a la vez.
-  await page.route('**/rest/v1/inventory*', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ product_code: 'P02', in_stock: false, stock_qty: 0 }]) }),
-  );
   await stubWindowOpen(page);
   await page.goto(APP_FILE);
   await page.waitForSelector('text=SIGNATURE');

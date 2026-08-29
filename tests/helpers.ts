@@ -18,7 +18,7 @@ const OPEN_ALL_DAY_HOURS = Array.from({ length: 7 }, () => ({ open: 0, close: 24
 
 const DEFAULT_HANDLERS: ActionHandlers = {
   'session-check': { valid: false },
-  'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {} },
+  'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {} },
   // businessLaunched:true — el negocio abre el 7 de septiembre y hasta entonces el
   // servidor y el cliente rechazan cualquier pedido (assertBusinessLaunched en
   // orders.ts). Los tests ejercitan el negocio YA operando, así que el mock lo
@@ -60,6 +60,27 @@ export async function mockBackend(page: Page, handlers: ActionHandlers = {}) {
   // Está envuelta en try/catch en el cliente así que un fallo no rompe nada, pero
   // abortarla explícitamente evita el timeout de red innecesario en cada test.
   await page.route('**/rest/v1/inventory*', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+  // Los dos <script> de terceros de src/shell.html NUNCA deben cargarse en un test.
+  //
+  // `checkout.culqi.com/js/v4` define `window.Culqi`, que es justo lo que weekly-plan.spec.ts
+  // sustituye por un stub para poder simular un pago sin widget real. Ese script va con
+  // `defer`, o sea que corre DESPUÉS del nuestro: donde la red lo alcanza, pisa el stub, y
+  // `Culqi.open()` abre el widget de verdad en vez de disparar `window.culqi()`. El flujo
+  // se queda ahí y el test falla esperando un mensaje que nunca llega.
+  //
+  // Esto no se veía en desarrollo: el proxy de este sandbox bloquea `checkout.culqi.com`,
+  // así que el stub sobrevivía por accidente y el test pasaba 20 de 20 veces. En el runner
+  // de GitHub el dominio SÍ es alcanzable y el mismo test falló 2 de 2. No era una prueba
+  // intermitente — era determinista en ambos lados, con el resultado opuesto en cada uno,
+  // y la diferencia era la red, no la temporización.
+  //
+  // Abortarlos deja el resultado igual en cualquier entorno, con o sin salida a internet,
+  // que es el mismo criterio que ya sigue todo este archivo: un test no depende de red real.
+  // Ojo: NO debilita third-party-globals.spec.ts, que se inyecta su propio script para
+  // probar la resiliencia y no depende de que estos dos carguen.
+  await page.route('**/checkout.culqi.com/**', (route) => route.abort());
+  await page.route('**/accounts.google.com/**', (route) => route.abort());
 
   return calls;
 }

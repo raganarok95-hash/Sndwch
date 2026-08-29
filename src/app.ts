@@ -424,8 +424,14 @@ var SIGS:any[]=[
   // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
   // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
   // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
-  // minOrders (ver sOSig/rankName). Bajado de 15 a 5 pedidos (decisión de negocio) — DEBE
-  // coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
+  // minOrders (ver sOSig). Bajado 15 → 5 → 3 pedidos (decisiones de negocio; el paso a 3 es
+  // del 2026-08-26). Este literal es solo la SEMILLA: el valor real vive en la columna
+  // `min_orders` de la tabla `secret_signature` y se edita desde Admin // Menú secreto sin
+  // tocar código. Cambiar solo acá no cambia nada, igual que con `catalog_prices`.
+  // OJO: el umbral ya NO coincide con ningún rango de RANKS (INICIADO sigue en 5). Por eso
+  // ni la tarjeta bloqueada ni la celebración post-pedido derivan su texto de rankName() —
+  // hablan de pedidos, que es lo que el mecanismo realmente mide. Ver sOSig y _lSecretUnlock.
+  // DEBE coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
   // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
   // elegir en la UI antes de intentarlo.
   // Pitch sin ingredientes explícitos (pedido del dueño) — el sándwich secreto lo es de
@@ -441,7 +447,7 @@ var SIGS:any[]=[
   // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
   // del mes — eso se hace desde Admin // Menú secreto.
   {id:'SIG05',n:'Menú secreto',s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24.9,p30:30.9,
-    secret:true,minOrders:5,
+    secret:true,minOrders:3,
     pitch:'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.'}
 ];
 // Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
@@ -525,17 +531,33 @@ var SIDES=[
 // en el panel admin). [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
 // índice 1 (lunes) en null = día de descanso, coincide con store_hours en la base.
 var STORE_HOURS=[[11,22],null,[11,22],[11,22],[11,22],[11,22],[11,22]];
+// El horario SIEMPRE se evalúa en hora de Lima, nunca en la del aparato (2026-08-28).
+// Antes se usaban getDay()/getHours(), que devuelven la zona del dispositivo. Perú tiene
+// una sola zona y sin horario de verano, así que un celular bien configurado dentro del
+// país acertaba — pero el bug no depende de dónde ESTÁ el usuario sino de cómo está
+// CONFIGURADO su aparato: alguien pidiendo desde el extranjero para entregar en Trujillo,
+// un Android con la zona mal después de un reinicio, o un navegador que arranca en UTC.
+// En esos casos el cliente mostraba ABIERTO/CERRADO al revés y dejaba elegir horas que el
+// servidor después rechazaba, o bloqueaba horas perfectamente válidas.
+// Espejo exacto de limaFields() en supabase/functions/api/env.ts.
+function limaDayHour(d){
+  var parts=new Intl.DateTimeFormat('en-US',{
+    timeZone:'America/Lima',weekday:'short',hour:'numeric',minute:'numeric',hourCycle:'h23'
+  }).formatToParts(d);
+  var get=function(t){var p=parts.find(function(x){return x.type===t;});return p?p.value:'0';};
+  var W={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+  return {weekday:W[get('weekday')],hour:Number(get('hour'))+Number(get('minute'))/60};
+}
 function storeStatus(){
-  var now=new Date(),h=now.getHours()+now.getMinutes()/60,range=STORE_HOURS[now.getDay()];
+  var lima=limaDayHour(new Date()),range=STORE_HOURS[lima.weekday];
   if(!range)return{open:false,label:'CERRADO HOY'};
-  var open=h>=range[0]&&h<range[1];
+  var open=lima.hour>=range[0]&&lima.hour<range[1];
   return open?{open:true,label:'ABIERTO AHORA · cierra '+String(range[1]).padStart(2,'0')+':00'}:{open:false,label:'CERRADO · abre '+String(range[0]).padStart(2,'0')+':00'};
 }
 function isWithinStoreHours(d){
-  var range=STORE_HOURS[d.getDay()];
+  var lima=limaDayHour(d),range=STORE_HOURS[lima.weekday];
   if(!range)return false;
-  var h=d.getHours()+d.getMinutes()/60;
-  return h>=range[0]&&h<range[1];
+  return lima.hour>=range[0]&&lima.hour<range[1];
 }
 // Picker de "pedir para más tarde" — antes era un <input type="datetime-local"> nativo,
 // que en varios navegadores/webviews móviles (ej. el navegador embebido de YouTube)
@@ -550,7 +572,7 @@ function isWithinStoreHours(d){
 var SCHED_LEAD_MINUTES=20;
 function schedDateForDay(dayKey){var d=new Date();if(dayKey==='tomorrow')d.setDate(d.getDate()+1);return d;}
 function schedSlots(dayKey){
-  var d=schedDateForDay(dayKey),range=STORE_HOURS[d.getDay()];
+  var d=schedDateForDay(dayKey),range=STORE_HOURS[limaDayHour(d).weekday];
   if(!range)return[];
   var out=[],now=new Date(),isToday=dayKey==='today';
   for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
@@ -578,7 +600,7 @@ function pickSchedSlot(hhmm){schedSlot=hhmm;confirmRerender();}
 function scheduleTimePickerHTML(){
   var days=[{key:'today',l:'HOY'},{key:'tomorrow',l:'MAÑANA'}];
   var dayChips=days.map(function(dd){
-    var d=schedDateForDay(dd.key),closed=!STORE_HOURS[d.getDay()],sel=schedDay===dd.key;
+    var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
     var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
     return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)'))+';border:1px solid '+(sel&&!closed?GOLD:'#3A6B58')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
@@ -608,6 +630,53 @@ var DELIVERY_EXCLUDED_ZONES=['el milagro','el porvenir'];
 function addressInExcludedZone(addr){
   var a=(addr||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return DELIVERY_EXCLUDED_ZONES.some(function(z){return a.indexOf(z)>=0;});
+}
+// Distritos de la provincia de Trujillo que el checkout ofrece explícitamente. NO es una
+// lista de cobertura nueva: es exactamente lo que el servidor ya acepta hoy
+// (assertAddressAllowed rechaza únicamente DELIVERY_EXCLUDED_ZONES, todo lo demás pasa),
+// puesto por delante para que el cliente ELIJA en vez de que el sistema adivine su zona
+// leyendo el texto libre de la dirección. Los que están fuera de cobertura se muestran
+// igual pero deshabilitados — enterarse ANTES de llenar todo el checkout es mucho mejor
+// que un error al final, y además comunica que el negocio existe pero todavía no llega.
+// Si el dueño decide recortar cobertura (ej. dejar de repartir a Salaverry), se marca
+// `out:true` acá Y se agrega el nombre a DELIVERY_EXCLUDED_ZONES en los DOS lados
+// (este archivo y supabase/functions/api/env.ts) — el substring del servidor sigue siendo
+// la única defensa real, este selector es la capa de experiencia, no la de autorización.
+var DELIVERY_DISTRICTS=[
+  {id:'trujillo',l:'Trujillo (Centro)'},
+  {id:'victor_larco',l:'Víctor Larco Herrera'},
+  {id:'la_esperanza',l:'La Esperanza'},
+  {id:'huanchaco',l:'Huanchaco'},
+  {id:'laredo',l:'Laredo'},
+  {id:'moche',l:'Moche'},
+  {id:'salaverry',l:'Salaverry'},
+  {id:'florencia_de_mora',l:'Florencia de Mora'},
+  {id:'el_porvenir',l:'El Porvenir',out:true},
+  {id:'el_milagro',l:'El Milagro',out:true},
+  {id:'otro',l:'Otro / no está en la lista'}
+];
+// Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
+// zona de precio, que sí tiene default porque solo mueve el monto del motorizado.
+var deliveryDistrict='';
+function districtById(id){return DELIVERY_DISTRICTS.find(function(d){return d.id===id;});}
+// El distrito elegido se ADJUNTA al texto de la dirección que se manda al servidor (no
+// viaja como campo propio: no hay columna para él y el motorizado necesita el distrito
+// dentro de la dirección impresa de todos modos). Si el cliente ya lo escribió a mano, no
+// se duplica.
+function addressWithDistrict(addr,districtId){
+  var d=districtById(districtId);
+  if(!d||d.id==='otro')return addr;
+  var norm=function(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+  if(norm(addr).indexOf(norm(d.l))>=0)return addr;
+  return addr+', '+d.l;
+}
+// Si el cliente elige una dirección guardada, se intenta deducir el distrito de su texto
+// para no obligarlo a volver a elegir algo que ya está escrito ahí.
+function districtFromAddress(addr){
+  var norm=function(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');};
+  var a=norm(addr);
+  var hit=DELIVERY_DISTRICTS.find(function(d){return d.id!=='otro'&&a.indexOf(norm(d.l))>=0;});
+  return hit?hit.id:'';
 }
 // El delivery lo hacen motorizados que el dueño coordina por pedido — antes se pagaba
 // aparte, directo al motorizado, sin ningún monto fijo ("todas las apps indican un
@@ -721,6 +790,11 @@ var OFFPEAK_DRINK_PROMO_CAP=6;
 // verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
 // base (organizerFreeSandwichApplies en actions/group.ts).
 var ORGANIZER_FREE_MIN_SANDWICHES=5;
+// Recargo por salsa extra. DEBE coincidir con EXTRA_SAUCE_PRICE en
+// supabase/functions/api/catalog.ts — lo verifica `npm run parity`. Antes era un literal
+// `2` repetido 5 veces acá y 4 en el servidor, y es el único precio del catálogo que no se
+// puede editar desde el panel, así que la única defensa posible es esta comparación.
+var EXTRA_SAUCE_PRICE=2;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -1317,7 +1391,7 @@ function total(){
   var pr=PROTS.find(function(x){return x.id===prot;});
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dbl=dblProtRef();
-  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?2:0));
+  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?EXTRA_SAUCE_PRICE:0));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
@@ -1654,17 +1728,20 @@ function itemUnitPrice(item){
     var pr=PROTS.find(function(x){return x.id===sig.prot;});
     var bp=item.size==='15'?sig.p15:sig.p30;
     var dbl=item.doubleProt?dblFee(pr,item.size):0;
-    var extraSauceFee=item.extraSauce?2:0;
+    var extraSauceFee=item.extraSauce?EXTRA_SAUCE_PRICE:0;
     return bp+dbl+extraSauceFee;
   }
   var pr2=PROTS.find(function(x){return x.id===item.prot;});
   if(!pr2)return 0;
   var bp2=item.size==='15'?pr2.p15:pr2.p30;
   var dbl2=item.doubleProt?dblFee(pr2,item.size):0;
-  var sc2=item.extraSauce?2:0;
+  var sc2=item.extraSauce?EXTRA_SAUCE_PRICE:0;
   return bp2+dbl2+sc2;
 }
-function itemLineTotal(item){return itemUnitPrice(item)*item.qty;}
+// money() acá y pz() en los dos displays: sin esto, 3 x The Original 15CM daba
+// 20.9*3 = 62.699999999999996 y ESE número se le mostraba al cliente en el carrito y en
+// el mensaje de WhatsApp. Es exactamente el defecto que money()/pz() existen para evitar.
+function itemLineTotal(item){return money(itemUnitPrice(item)*item.qty);}
 function itemLabel(item){
   if(item.type==='side'){var d=SIDES.find(function(x){return x.id===item.code;});return d?d.l+' // '+d.s:'';}
   if(item.type==='sig'){var sig=SIGS.find(function(x){return x.id===item.sigId;});return(sig?sig.n+' // '+sig.s:'')+' '+szLabel(item.size);}
@@ -1846,7 +1923,7 @@ function findRewardTargetIndex(rewardId){
 function rewardWaiverAmount(rewardId,targetIdx){
   if(targetIdx<0)return 0;
   var it=cart[targetIdx];
-  if(rewardId==='R02')return it.extraSauce?2:0;
+  if(rewardId==='R02')return it.extraSauce?EXTRA_SAUCE_PRICE:0;
   if(rewardId==='R03')return Math.min(itemSizeUpgradeDiff(it),R03_FLAT_WAIVER);
   if(rewardId==='R04'){
     var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
@@ -1911,11 +1988,22 @@ function scheduleCartSync(){
 function isValidCartItem(it){
   return it&&typeof it==='object'&&(it.type==='byo'||it.type==='sig'||it.type==='side')&&typeof it.qty==='number'&&it.qty>0;
 }
+// Además de la forma (isValidCartItem), hay que comprobar que los IDS sigan existiendo en
+// el catálogo. El carrito vive 24h en localStorage y el catálogo se edita desde el panel:
+// si en ese lapso se retira un Signature o cambia una proteína, itemUnitPrice() devuelve 0
+// y itemLabel() cadena vacía para la línea huérfana. El cliente veía una fila en blanco a
+// S/0 y recién al pagar el servidor la rechazaba con un error genérico.
+function cartItemStillExists(it){
+  if(it.type==='side')return SIDES.some(function(x){return x.id===it.code;});
+  if(it.type==='sig')return SIGS.some(function(x){return x.id===it.sigId;});
+  return PROTS.some(function(x){return x.id===it.prot;});
+}
 function restoreCart(){
   try{
     var raw=JSON.parse(localStorage.getItem('sw_cart')||'null');
     if(raw&&Array.isArray(raw.items)&&raw.items.length&&raw.items.every(isValidCartItem)&&Date.now()-(raw.ts||0)<24*3600*1000){
-      cart=raw.items;
+      cart=raw.items.filter(cartItemStillExists);
+      if(!cart.length){cart=[];return;}
       initCheckoutFields();
       appliedReward=raw.reward||null;
     }
@@ -1971,7 +2059,14 @@ function cartRemove(idx){
   saveCart();
   render();
 }
-function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';saveCart();go('o_home');}
+// pendingGroupCode se limpia acá y en doLogout() a propósito (2026-08-27). Antes solo se
+// limpiaba tras un pedido pagado con éxito, así que sobrevivía a un abandono: el
+// organizador cerraba un grupo de 5+, no pagaba, vaciaba el carrito, armaba un pedido
+// PERSONAL que también llegara a 5 sándwiches, y metaAttribution() seguía mandando ese
+// groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
+// cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
+// regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
+function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 function loadCart(items){
@@ -2355,7 +2450,7 @@ function sOSig(){
       var myTotal=cust.total_orders||0;
       if(myTotal<s.minOrders){
         var missing=s.minOrders-myTotal;
-        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#A8C8B0')+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea en '+esc(rankName(s.minOrders))+' — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#A8C8B0')+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
       }
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
@@ -2580,7 +2675,7 @@ function sOItemConfirm(){
   var dbl=dblProtRef();
   var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
   var dblSurcharge=doubleProt?dblFee(dbl,size):0;
-  var sauceSurcharge=extraSauce?2:0;
+  var sauceSurcharge=extraSauce?EXTRA_SAUCE_PRICE:0;
   var t=quickPayEligible?payableTotal():total();
   rows.push({k:'Tamaño',v:szLabel(size)});
   // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
@@ -2599,7 +2694,7 @@ function sOItemConfirm(){
   // "Extra" es más de una salsa que ya elegiste — en BUILD YOUR OWN no tiene sentido
   // ofrecerla (ni el servidor la acepta) si el cliente no seleccionó ninguna salsa base.
   var sauceExtraAllowed=mode==='sig'||sauces.length>0;
-  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dblFee(dbl,size)}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:2}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
+  var recU=(!doubleProt&&dbl)?{k:'doubleProt',e:icon('dumbbell',18,GOLD),l:'Doble proteína',d:'El doble de tu proteína elegida'+dblStockWarn(dbl.id),p:dblFee(dbl,size)}:(!extraSauce&&sauceExtraAllowed)?{k:'sauce',e:icon('chili',18,GOLD),l:'Salsa extra',d:'Salsa adicional a tu elección',p:EXTRA_SAUCE_PRICE}:(cheeseSigAllowed&&!cheese)?{k:'cheese',e:icon('queso',18,GOLD),l:'Queso',d:'Cheddar derretido, opcional y gratis',p:0}:null;
   // Ticket-growth: sugerir subir a 30CM justo en la confirmación — antes el tamaño solo
   // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
   // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (hoy ningún ítem) —
@@ -2659,7 +2754,7 @@ function cartItemsHTML(){
   return cart.map(function(it,idx){
     var extras=itemExtrasLabel(it);
     var canEdit=it.type!=='side';
-    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+itemLineTotal(it)+'</span></div></div>';
+    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:#ff8888;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+(it.note?icon('reclamo',11,'#A8C8B0')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#1A3028);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(itemLineTotal(it))+'</span></div></div>';
   }).join('');
 }
 // Edita un producto ya en el carrito: lo saca y precarga el builder con su
@@ -2782,8 +2877,23 @@ async function applyPromoCode(){
   if(!phone){promoStatus='Ingresa tu teléfono de contacto primero.';renderPromoStatus();return;}
   promoStatus='Verificando...';renderPromoStatus();
   try{
+    // El preview tiene que tasar EXACTAMENTE igual que el cobro, o el descuento que se
+    // muestra no es el que se aplica y el checkout se rechaza por total que no coincide.
+    // Faltaban tres cosas:
+    //  · `token` y `groupCode`, sin los cuales el servidor no puede saber que el carrito
+    //    trae el sándwich gratis del organizador, así que calculaba el % sobre un
+    //    subtotal más alto que el real.
+    //  · el ISO de la hora programada. Antes se mandaba `schedEl.value` crudo
+    //    ("2026-08-28T15:30", sin zona): el servidor corre en UTC, así que esa cadena
+    //    naive se interpretaba como 15:30 UTC = 10:30 en Lima, y el preview no veía la
+    //    promo de hora valle que el pedido real sí iba a aplicar.
     var schedEl=(document.getElementById('o-sched') as HTMLInputElement|null);
-    var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:scheduleMode==='later'&&schedEl?schedEl.value:null});
+    var promoSchedIso=null;
+    if(scheduleMode==='later'&&schedEl&&schedEl.value){
+      var pd=new Date(schedEl.value);
+      if(!isNaN(pd.getTime()))promoSchedIso=pd.toISOString();
+    }
+    var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:promoSchedIso,token:token,groupCode:pendingGroupCode||''});
     appliedPromo={code:res.code,discount:res.discount};
     promoStatus='';
   }catch(e){
@@ -2802,7 +2912,12 @@ function pickAddr(id){
   var a=myAddresses.find(function(x){return x.id===id;});
   if(!a)return;
   syncConfirmFields();
-  pickedAddrId=id;addrText=a.address;render();
+  pickedAddrId=id;addrText=a.address;
+  // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
+  // tiene que volver a elegir algo que ya escribió cuando la guardó.
+  var inferred=districtFromAddress(a.address);
+  if(inferred)deliveryDistrict=inferred;
+  render();
 }
 // Bloque de campos de checkout (puntos a ganar, recompensas, direcciones guardadas,
 // nombre/correo/dirección/notas, horario, crédito, banner de notificaciones push) —
@@ -2843,6 +2958,83 @@ function comboDrinkNudgeHTML(){
 // Zona por defecto 'media' — el cliente solo toca esto si sabe que está más cerca o más
 // lejos de lo normal, nunca es un paso obligatorio. El monto ya se suma al total de abajo
 // (ver payableTotal) — no hace falta un aviso aparte de "cuánto cuesta el delivery".
+// Selector de DISTRITO — obligatorio, y separado a propósito de la "zona de entrega" de
+// abajo (esa solo fija el precio del motorizado; esta decide si el pedido se puede
+// entregar). Antes la cobertura se resolvía adivinando: se buscaba el nombre del distrito
+// dentro del texto libre que el cliente escribía, así que quien no lo escribía pasaba el
+// filtro sin querer y quien sí lo escribía se enteraba recién al tocar PAGAR, con todo el
+// checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
+// ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
+// no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
+// C4 — Distancia máxima (km) que cubre cada zona de PRECIO, derivada del único dato de
+// tarifa que el propio negocio publica al cliente: "~S/2 por km" (ver el texto bajo el
+// home). Con esa tarifa el fee de cada zona describe su alcance: S/6 → 3 km, S/8 → 4 km,
+// S/12 → 6 km, y de ahí para arriba MUY LEJOS. No es una geocerca ni una validación:
+// existe solo para AVISAR cuando la zona elegida y el pin del mapa no cuadran. Nunca
+// bloquea el pedido — un pin puede caer mal (GPS en interiores, mapa arrastrado a ojo) y
+// el cliente conoce su dirección mejor que el navegador. El cobro real lo sigue fijando
+// la zona que él eligió.
+var DELIVERY_ZONE_MAX_KM={cerca:3,media:4,lejos:6};
+function zoneForKm(km){
+  if(km<=DELIVERY_ZONE_MAX_KM.cerca)return'cerca';
+  if(km<=DELIVERY_ZONE_MAX_KM.media)return'media';
+  if(km<=DELIVERY_ZONE_MAX_KM.lejos)return'lejos';
+  return'muy_lejos';
+}
+// Distancia entre el pin que el cliente confirmó en el mapa y el punto de despacho.
+// Devuelve null si nunca tocó el mapa/GPS — sin pin no hay nada que comparar y no se
+// muestra ningún aviso (la mayoría de los pedidos escriben la dirección a mano).
+function pinDistanceKm(){
+  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
+  return haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
+}
+function applySuggestedZone(z){deliveryZone=z;confirmRerender();}
+// Aviso de zona vs. pin. Las dos direcciones del desajuste importan, por motivos
+// distintos: si el cliente eligió una zona más BARATA de lo que dice el pin, el dueño
+// pone la diferencia de su bolsillo (el delivery es pass-through, no tiene margen del
+// que salga); si eligió una más CARA, está pagando de más y avisarle es lo honesto.
+// Por eso los dos casos se avisan, con texto distinto.
+function deliveryZoneMismatchHTML(){
+  var km=pinDistanceKm();
+  if(km===null)return'';
+  var sug=zoneForKm(km);
+  if(sug===deliveryZone)return'';
+  var zSel=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
+  var zSug=DELIVERY_PRICE_ZONES.find(function(x){return x.id===sug;});
+  if(!zSel||!zSug)return'';
+  var masCaro=zSug.fee>zSel.fee;
+  var txt=masCaro
+    ?'Tu pin está a ~'+km.toFixed(1)+' km, que corresponde a '+zSug.l.toUpperCase()+'. Si dejas '+zSel.l.toUpperCase()+', puede que el motorizado te pida la diferencia al llegar.'
+    :'Tu pin está a ~'+km.toFixed(1)+' km: te alcanza '+zSug.l.toUpperCase()+' ('+SOLES_TXT+zSug.fee+') y estás pagando '+SOLES_TXT+zSel.fee+'.';
+  var color=masCaro?'#ffb84d':GOLD;
+  return'<div style="margin-top:10px;background:rgba(203,162,88,.08);border:1px solid '+color+';border-radius:8px;padding:10px 12px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.45">'+esc(txt)+'</div>'
+    +'<button onclick="applySuggestedZone(\''+sug+'\')" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:8px;background:transparent;border:1px solid '+color+';color:'+color+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar a '+esc(zSug.l.toUpperCase())+' // '+SOLES_TXT+zSug.fee+'</button>'
+    +'</div>';
+}
+function districtPickerHTML(){
+  var opts=DELIVERY_DISTRICTS.map(function(d){
+    var sel=deliveryDistrict===d.id;
+    return'<option value="'+d.id+'"'+(sel?' selected':'')+(d.out?' disabled':'')+'>'+esc(d.l)+(d.out?' — todavía no llegamos aquí':'')+'</option>';
+  }).join('');
+  var out=DELIVERY_DISTRICTS.filter(function(d){return d.out;}).map(function(d){return d.l;}).join(' y ');
+  return'<div>'
+    +'<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Distrito //</label>'
+    +'<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-shadow:'+SHADOW_SM+';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
+    +'<option value=""'+(deliveryDistrict?'':' selected')+'>Elige tu distrito</option>'+opts+'</select>'
+    +'<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+esc('Por ahora no llegamos a '+out+'.')+'</div>'
+    +'</div>';
+}
+// No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
+// tenga escrito a medias en los inputs de arriba (nombre/dirección/referencia solo se
+// vuelcan a las variables en syncConfirmFields).
+function pickDistrict(id){
+  deliveryDistrict=id||'';
+  var hint=document.getElementById('o-district-hint');
+  if(hint)hint.textContent=deliveryDistrict&&deliveryDistrict!=='otro'
+    ?'Entregamos en '+((districtById(deliveryDistrict)||{}).l||'')+'.'
+    :'Por ahora no llegamos a '+DELIVERY_DISTRICTS.filter(function(d){return d.out;}).map(function(d){return d.l;}).join(' y ')+'.';
+}
 function deliveryZonePickerHTML(){
   var h='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
   h+=DELIVERY_PRICE_ZONES.map(function(z){
@@ -2855,7 +3047,7 @@ function deliveryZonePickerHTML(){
     var shownFee=sel?deliveryFeeAmount():z.fee;
     return'<div onclick="deliveryZone=\''+z.id+'\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+z.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?GOLD:'#A8C8B0')+';margin-top:2px">'+SOLES_TXT+shownFee+'</div></div>';
   }).join('');
-  h+='</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
+  h+='</div>'+deliveryZoneMismatchHTML()+'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
   return h;
 }
 function checkoutExtrasHTML(){
@@ -2883,7 +3075,7 @@ function checkoutExtrasHTML(){
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+ESTIMATED_DELIVERY_RANGE[0]+'-'+ESTIMATED_DELIVERY_RANGE[1]+' min</b> desde que confirmamos tu pedido.</span></div></div>':'')
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -3427,6 +3619,13 @@ async function doOrder(){
   var notes=gv('o-notes').trim();
   var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
   if(!nom||!addr){if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;}
+  // El distrito es obligatorio: es lo que decide si el pedido se puede entregar (los que
+  // están fuera de cobertura ni siquiera son seleccionables, ver districtPickerHTML). Se
+  // adjunta al texto de la dirección antes de validar y de mandarlo, así el motorizado lo
+  // ve impreso y el chequeo por substring de abajo lo cubre igual que si el cliente lo
+  // hubiera escrito a mano.
+  if(!deliveryDistrict){if(errEl)errEl.textContent='Elige tu distrito para poder llevarte el pedido.';return;}
+  addr=addressWithDistrict(addr,deliveryDistrict);
   // Solo se avisa recién al intentar pagar, no mientras el cliente todavía está
   // escribiendo la dirección — un aviso en vivo mientras tipea se siente como un
   // rechazo prematuro antes de que termine de escribir. El servidor vuelve a validar
@@ -3471,7 +3670,7 @@ async function doOrder(){
   var lines=['*PEDIDO SND//WCH*','Ref: '+ref,'','👤 '+nom,'📱 '+phone,'📍 '+addr,''];
   cart.forEach(function(it,idx){
     var extras=itemExtrasLabel(it);
-    lines.push((idx+1)+') '+it.qty+'x '+itemLabel(it)+(extras?' — '+extras:'')+' — S/'+itemLineTotal(it));
+    lines.push((idx+1)+') '+it.qty+'x '+itemLabel(it)+(extras?' — '+extras:'')+' — S/'+pz(itemLineTotal(it)));
     if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
   });
   if(notes)lines.push('','📝 '+notes);
@@ -3680,9 +3879,19 @@ function finalizeOrderSuccess(res,po,chargeId){
   // justo después de que el servidor confirme este pedido (fuente real: total_orders que
   // ya devuelve el propio res.customer, no un cálculo local que podría desincronizarse).
   var prevRank=cust?rankName(cust.total_orders):null;
+  var prevTot=cust?(cust.total_orders||0):null;
   if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
   var newRank=cust?rankName(cust.total_orders):null;
   window._lRankUp=(prevRank&&newRank&&prevRank!==newRank)?newRank:null;
+  // Desbloqueo del menú secreto — evento PROPIO, no derivado del rango. Antes la
+  // celebración decía "Ya puedes ver el menú secreto" solo al llegar a INICIADO, porque el
+  // umbral del secreto y ese rango coincidían en 5. Desde que el umbral bajó a 3 dejaron de
+  // coincidir, y atarlo al rango avisaría dos pedidos tarde. Se compara contra el umbral
+  // real del sándwich secreto vigente (que además es editable desde el panel, así que
+  // cualquier valor futuro sigue funcionando sin tocar esto).
+  var secretGate=(SIGS.find(function(s){return s.secret;})||{}).minOrders;
+  window._lSecretUnlock=(prevTot!==null&&typeof secretGate==='number'
+    &&prevTot<secretGate&&(cust.total_orders||0)>=secretGate);
   if(!cust){window._lastGuestName=po.nom;window._lastGuestPhone=po.phone;window._lastGuestEmail=po.email;}
   // Guardado aparte de po (que se anula más abajo) para que el botón de respaldo en
   // sOSent pueda reabrir el mismo mensaje si este intento automático no llegó a abrirse
@@ -3741,7 +3950,9 @@ function sOSent(){
   // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
   // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
   var rankUp=window._lRankUp;
-  var rankPerk=rankUp==='INICIADO'?'Ya puedes ver el menú secreto.':null;
+  // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
+  // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
+  var rankPerk=window._lSecretUnlock?'Ya puedes ver el menú secreto.':null;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
     +'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>'
     // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
@@ -3749,6 +3960,12 @@ function sOSent(){
     +(pending?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>':(window._lTot===0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
     +(window._lRef?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-bottom:20px">Pedido '+esc(window._lRef)+'</div>':'<div style="margin-bottom:20px"></div>')
     +(rankUp?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:14px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(rankUp)+'</div>'+(rankPerk?'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'+rankPerk+'</div>':'')+'</div>':'')
+    // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
+    // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral
+    // del secreto (5) caía justo sobre INICIADO. Al bajarlo a 3 dejaron de coincidir: quien
+    // pasa de 2 a 3 pedidos desbloquea el menú secreto y no cambia de rango, así que se
+    // habría enterado por ningún lado. Esta tarjeta cubre ese caso.
+    +((rankPerk&&!rankUp)?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:14px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡Desbloqueaste algo! //</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+rankPerk+'</div></div>':'')
     +'<p style="font-family:\'EB Garamond\',serif;font-size:14px;color:var(--sw-text-muted,#A8C8B0);max-width:260px;line-height:1.6;margin-bottom:16px">'+(pending?'Verificaremos tu pago por '+methodLabel+' y tu pedido pasará a preparación en cuanto lo confirmemos.':'Tu pago fue procesado y tu pedido ya está en preparación.')+'</p>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Estado del pedido //</div>'
@@ -4431,20 +4648,34 @@ async function doRequestRestockNotify(sigId){
     showToast('Te avisamos apenas vuelva.','success');
   }catch(e){showToast(e.message);}
 }
+// Guardias de reentrada, como ya tienen doCreditGift/doGiftCardBuy/doWeeklyPlanBuy. BTN()
+// no genera `disabled`, así que el botón sigue clickeable durante la llamada. El servidor
+// rechaza el segundo reclamo de forma atómica (RPC claim_monthly_challenge), así que no se
+// duplican puntos — pero si la respuesta de error llega DESPUÉS que la de éxito, el mensaje
+// termina diciendo "Ya reclamaste el reto de este mes" encima de un reclamo que sí
+// funcionó. Un mensaje que contradice lo que acaba de pasar erosiona la confianza.
+var _challengeClaimInProgress=false;
+var _discChallengeClaimInProgress=false;
 async function doClaimChallenge(){
+  if(_challengeClaimInProgress)return;
+  _challengeClaimInProgress=true;
   try{
     var res=await api('claim-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     chalMsg='¡Reto completado! +50 pts';
   }catch(e){chalMsg=e.message;}
+  _challengeClaimInProgress=false;
   render();
 }
 async function doClaimDiscoveryChallenge(){
+  if(_discChallengeClaimInProgress)return;
+  _discChallengeClaimInProgress=true;
   try{
     var res=await api('claim-discovery-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
     discChalMsg='¡Reto completado! +50 pts';
   }catch(e){discChalMsg=e.message;}
+  _discChallengeClaimInProgress=false;
   render();
 }
 // Limpia todo el estado en memoria específico del cliente/admin que acaba de cerrar
@@ -4455,6 +4686,7 @@ async function doClaimDiscoveryChallenge(){
 // homólogo admin) resolvía de nuevo (hallazgo de auditoría de código).
 function doLogout(){
   cust=null;isAdmin=false;savedPh='';token='';aErr='';clearGoogleLink();
+  pendingGroupCode=null;
   localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');cacheCust(null);
   myOrders=[];myAddresses=[];myFavorites=[];pickedAddrId=null;editingAddrId=null;
   custDetail=null;custDetailPhone='';custDetailErr='';
@@ -5067,9 +5299,15 @@ function orderPriority(o){
 // hora en que se creó — antes el triage y el aviso de "atascado" leían siempre created_at,
 // así que un pedido programado para las 8pm creado a las 9am se veía tan urgente/viejo
 // como uno inmediato apenas pasaban 10 min desde que se creó (hallazgo de la re-auditoría
-// del panel admin: scheduled_for existe en la fila pero la cola nunca lo miraba).
+// del panel admin: la hora programada existe en la fila pero la cola nunca la miraba).
+// CORREGIDO 2026-08-27: se leía `o.scheduled_for`, columna que NO existe en `orders`
+// (verificado contra information_schema; ese nombre solo vive en `pending_charges`).
+// Siempre daba undefined, así que el badge "programado para HH:MM" nunca se mostró y
+// esta misma corrección de urgencia estaba muerta desde que se escribió. La columna
+// real es `delivery_time`, que es lo que escribe actPlaceOrder y lo que ya usan los
+// crons de la misma tabla.
 function orderDueTime(o){
-  return o.scheduled_for||o.created_at;
+  return o.delivery_time||o.created_at;
 }
 // Extraído para que admin_home y "modo foco" (sAdminFocus) ordenen la cola exactamente
 // igual — antes este sort vivía solo inline dentro de sAdminHome.
@@ -5084,6 +5322,131 @@ function sortedActiveOrders(){
 // reusarlas tanto en el grid de admin_home como en el drawer de navegación lateral
 // (adminToolsDrawerOpen/toggleAdminToolsDrawer), alcanzable ahora desde cualquiera de
 // las 14 pantallas secundarias del admin sin tener que volver primero a admin_home.
+// C5 — SALUD DEL NEGOCIO. Una pantalla que responde "¿hay algo que atender ahora mismo?".
+// El panel de negocio (ingresos, productos top, retención) ya existe y es bueno, pero
+// contesta otra pregunta — "¿cómo va el negocio?" — y para saber si hay ALGO PENDIENTE hoy
+// había que entrar a la cola, al inventario, a reclamaciones y al dashboard por separado y
+// deducirlo. Cocinando solo, eso no pasa.
+//
+// El veredicto de cada señal lo calcula el SERVIDOR (actAdminHealth): acá solo se pinta.
+// Si cada pantalla decidiera por su cuenta qué es "problema", dos versiones de la app
+// mostrarían distinto el mismo estado del negocio.
+var healthData=null,healthErr='';
+async function loadHealth(){
+  sndScreen='admin_health';busy=true;busyMsg='Revisando el negocio...';healthErr='';render();
+  try{
+    healthData=await api('admin-health',{token:token});
+  }catch(e){healthData=null;healthErr=e.message;}
+  busy=false;render();
+}
+var HEALTH_LEVELS={
+  ok:{c:'#25D366',l:'OK'},
+  atencion:{c:'#ffb84d',l:'ATENCIÓN'},
+  problema:{c:'#ff8888',l:'PROBLEMA'}
+};
+function sAdminHealth(){
+  var h=H('SALUD DEL NEGOCIO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(healthErr){
+    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(healthErr)+'</div>'
+      +'<div style="margin-top:14px">'+BTN('Reintentar //','loadHealth()',true)+'</div></div>';
+  }
+  if(!healthData)return h+'</div>';
+  var ov=HEALTH_LEVELS[healthData.overall]||HEALTH_LEVELS.ok;
+  var resumen=healthData.overall==='ok'
+    ?'Nada pendiente. Todo lo que este panel vigila está en orden.'
+    :healthData.overall==='atencion'
+      ?'Nada urgente, pero hay cosas que conviene mirar antes de la próxima tanda.'
+      :'Hay algo que atender ahora — abajo está qué y dónde.';
+  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+ov.c+';border-radius:12px;padding:18px;margin-bottom:18px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+ov.c+';letter-spacing:.2em">● '+ov.l+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-top:6px">'+esc(resumen)+'</div>'
+    +'</div>';
+  h+=healthData.signals.map(function(sg){
+    var lv=HEALTH_LEVELS[sg.level]||HEALTH_LEVELS.ok;
+    // Las señales en verde se muestran igual, no se ocultan: una lista que solo aparece
+    // cuando hay problemas no dice nada sobre lo que sí se está vigilando, y entonces el
+    // silencio se lee como "no hay chequeo" en vez de "está bien".
+    var clickable=sg.screen&&sg.level!=='ok';
+    return'<div'+(clickable?' onclick="goHealthTarget(\''+sg.screen+'\')"':'')+' style="background:var(--sw-card,#2D5246);border:1px solid '+(sg.level==='ok'?'var(--sw-border-soft,#1c1c1c)':lv.c)+';border-radius:10px;padding:13px 16px;margin-bottom:8px'+(clickable?';cursor:pointer':'')+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(sg.label)+'</div>'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+lv.c+';font-variant-numeric:tabular-nums">'+sg.count+'</div>'
+      +'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px;line-height:1.4">'+esc(sg.hint)+(clickable?' →':'')+'</div>'
+      +'</div>';
+  }).join('');
+  h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:14px">Revisado: '+esc(new Date(healthData.checkedAt).toLocaleString('es-PE'))+'</div>';
+  h+='<div style="margin-top:14px">'+BTN('Volver a revisar //','loadHealth()',true)+'</div>';
+  return h+'</div>';
+}
+// Cada señal en rojo/ámbar lleva a la pantalla donde de verdad se arregla — el valor de
+// esta vista es acortar el camino entre enterarse y resolver, no solo enterarse.
+function goHealthTarget(sc){
+  if(sc==='admin_inventory')return loadInventory();
+  if(sc==='admin_complaints')return loadAdminComplaints();
+  return loadAdmin();
+}
+// C6 — PLAN DE TANDA. Proyecta cuánto cocinar de cada insumo para cubrir los próximos N
+// días, a partir del consumo real de los pedidos ya pagados.
+//
+// La pantalla trata la FIABILIDAD como el dato principal, no como una nota al pie: con
+// pocas semanas de ventas, una proyección es un número inventado con aspecto de dato — y
+// el aspecto de dato es lo que hace que se le crea. Mientras el servidor diga
+// `reliable:false`, lo primero que se ve es por qué todavía no se le puede creer, y las
+// cantidades quedan explícitamente marcadas como referencia.
+var batchPlan=null,batchErr='',batchCoverDays=4;
+async function loadBatchPlan(){
+  sndScreen='admin_batch';busy=true;busyMsg='Calculando la tanda...';batchErr='';render();
+  try{
+    batchPlan=await api('admin-batch-plan',{token:token,coverDays:batchCoverDays});
+  }catch(e){batchPlan=null;batchErr=e.message;}
+  busy=false;render();
+}
+function setBatchCoverDays(d){batchCoverDays=d;loadBatchPlan();}
+function sAdminBatchPlan(){
+  var h=H('PLAN DE TANDA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(batchErr){
+    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(batchErr)+'</div>'
+      +'<div style="margin-top:14px">'+BTN('Reintentar //','loadBatchPlan()',true)+'</div></div>';
+  }
+  if(!batchPlan)return h+'</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cuántos días cubre esta tanda? //</div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+    +[2,3,4,7].map(function(d){
+      var sel=batchCoverDays===d;
+      return'<div onclick="setBatchCoverDays('+d+')" style="flex:1;min-width:64px;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 6px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+d+' días</div>';
+    }).join('')
+    +'</div>';
+  if(!batchPlan.reliable){
+    // Primero el motivo, antes que cualquier cantidad: si las cifras aparecieran arriba,
+    // se leerían como una indicación y el aviso quedaría como letra chica.
+    h+='<div style="background:rgba(255,184,77,.1);border:1px solid #ffb84d;border-radius:10px;padding:14px;margin-bottom:16px">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:#ffb84d">Todavía es una referencia, no una indicación</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-top:6px">Hay '+batchPlan.ordersConsidered+' pedido(s) en '+batchPlan.daysOfData+' día(s) de historial. Para proyectar de verdad hacen falta al menos '+batchPlan.minOrders+' pedidos y '+batchPlan.minDaysOfData+' días. Úsalo como punto de partida y corrígelo con lo que veas en cocina.</div>'
+      +'</div>';
+  }
+  if(!batchPlan.items.length){
+    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Todavía no hay consumo registrado ni pedidos programados: no hay nada que proyectar.</div></div>';
+  }
+  h+='<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Consumo de los últimos '+batchPlan.daysOfData+' día(s) proyectado a '+batchPlan.coverDays+', con un margen de '+Math.round((batchPlan.safetyFactor-1)*100)+'% para no quedarte corto. Los pedidos ya programados se cuentan como piso.</div>';
+  h+=batchPlan.items.map(function(it){
+    var cocinar=it.toCook;
+    return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:13px 16px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(it.name)+'</div>'
+      +'<div style="text-align:right;flex-shrink:0">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+';font-variant-numeric:tabular-nums;line-height:1">'+(cocinar==null?'—':cocinar)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.1em">COCINAR</div>'
+      +'</div></div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px;line-height:1.45">'
+      +'Necesitas '+it.needed+' · '+(it.stockTracked?'tienes '+it.stock:'sin rastreo de cantidad — ponle un número en Inventario para saber cuánto falta')
+      +' · usaste '+it.usedInWindow+' en '+batchPlan.daysOfData+' día(s) ('+it.perDay+'/día)'
+      +(it.committed?' · '+it.committed+' ya pedido(s) para esos días':'')
+      +'</div></div>';
+  }).join('');
+  h+='<div style="margin-top:14px">'+BTN('Registrar la tanda en Inventario //','loadInventory();setInvMode(\'tanda\')',true)+'</div>';
+  return h+'</div>';
+}
 function adminToolsSections(){
   return[
     ['Clientes y ventas //',[
@@ -5105,6 +5468,7 @@ function adminToolsSections(){
       ['precios','Precios','loadAdminCatalog()'],
       ['horario','Horario','loadStoreHoursForm()'],
       ['lock','Menú secreto','loadSecretSignatureAdmin()'],
+      ['precios','Signatures','loadCatalogItemsAdmin()'],
     ]],
     ['Cuenta //',[
       ['puntos','Puntos manuales','sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
@@ -5112,7 +5476,9 @@ function adminToolsSections(){
       ['auditoria','Auditoría','loadAuditLog()'],
     ]],
     ['Cocina y operación //',[
+      ['warning','Salud del negocio','loadHealth()'],
       ['prep','Preparación','loadPrepList()'],
+      ['inventario','Plan de tanda','loadBatchPlan()'],
       ['franjas','Franjas horarias','loadTimeWindowReport()'],
       ['direccion','Direcciones','loadProblemAddresses()'],
     ]],
@@ -5182,7 +5548,7 @@ function sAdminHome(){
       // que es la info que le interesa al operador.
       var mins=minutesAgo(o.created_at);
       var minsDue=minutesAgo(orderDueTime(o));
-      var isScheduledAhead=o.scheduled_for&&new Date(o.scheduled_for).getTime()>Date.now();
+      var isScheduledAhead=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
       var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
       // Antes toda la tarjeta pulsaba (class="pulse" en el contenedor completo), lo que
       // atenúa TODO al 35% de opacidad en cada ciclo — incluido el botón de acción, que
@@ -5196,7 +5562,7 @@ function sAdminHome(){
         +'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.customer_address)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
-        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
         // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
         // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
         // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
@@ -5287,7 +5653,7 @@ function sAdminFocus(){
   var manualLabel='Yape/Plin';
   var mins=minutesAgo(o.created_at);
   var minsDue=minutesAgo(orderDueTime(o));
-  var isScheduledAhead=o.scheduled_for&&new Date(o.scheduled_for).getTime()>Date.now();
+  var isScheduledAhead=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
   var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
   // Flechas de 56px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar.
   // Antes eran 20px de glifo con 4px de padding — un blanco de ~28px, muy por debajo del
@@ -5310,7 +5676,7 @@ function sAdminFocus(){
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:6px;margin-bottom:16px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
     // La receta, en escala de cocina, arriba de todo lo demás.
     +orderRecipeHTML(o.items,true)
-    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.scheduled_for).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
     +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#ffa500;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('warning',16,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
     +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#25D366;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
@@ -5713,8 +6079,23 @@ function confirmMap(){
   }
   if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat;window._mLon=c.lng;}
   closeMap();
+  // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
+  // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
+  // porque el aviso de zona vs. pin (deliveryZoneMismatchHTML) vive en el picker de zona
+  // y sin un render no aparecería hasta que el cliente tocara cualquier otra cosa — o
+  // sea, justo cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
+  // que nada de lo escrito se pierda; addrText se fija después porque la dirección que
+  // vale es la que se acaba de elegir en el mapa, no la que había en el input.
+  syncConfirmFields();
+  addrText=a;
+  // Si el pin cae claramente en otro distrito del que estaba elegido, no tiene sentido
+  // dejar el anterior: el mapa es un dato más fuerte que un selector que el cliente
+  // quizá ni tocó.
+  var inferred=districtFromAddress(a);
+  if(inferred)deliveryDistrict=inferred;
+  render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
-  if(el){el.value=a;el.style.borderColor='#3A86FF';el.focus();}
+  if(el){el.style.borderColor='#3A86FF';el.focus();}
   var h=(document.getElementById('gps-hint') as HTMLInputElement | null);
   if(h)h.innerHTML='<a href="https://maps.google.com/?q='+window._mLat+','+window._mLon+'" target="_blank" style="color:'+GOLD+';font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
   setTimeout(function(){var e=(document.getElementById('o-addr') as HTMLInputElement | null);if(e)e.style.borderColor='#0d0d0d';},3000);
@@ -5839,11 +6220,14 @@ function renderScreen(){
     case'group_order': h=sGroupOrder();break;
     case'p_addresses': h=sPAddresses();break;
     case'admin_home':  h=sAdminHome();break;
+    case'admin_health':h=sAdminHealth();break;
+    case'admin_batch':h=sAdminBatchPlan();break;
     case'admin_gen':   h=sAdminGen();break;
     case'admin_mgr':   h=sAdminMgr();break;
     case'admin_inventory':h=sAdminInventory();break;
     case'admin_catalog':h=sAdminCatalog();break;
     case'admin_secret': h=sAdminSecretSignature();break;
+    case'admin_items': h=sAdminCatalogItems();break;
     case'admin_dashboard':h=sAdminDashboard();break;
     case'admin_customer':h=sAdminCustomer();break;
     case'admin_search':h=sAdminSearch();break;
@@ -5921,11 +6305,22 @@ var INV_CATS=[
   {t:'Salsas',arr:SAUCES}
 ];
 var invQty={};
+// El inventario llega dentro de get-catalog (ver actGetCatalog), NO por PostgREST directo.
+// Antes esta función hacía sbG('inventory',...) con la anon key, pero esa tabla tiene RLS
+// activada sin políticas: PostgREST responde 200 [] — no un error — así que el catch nunca
+// veía nada y invStock quedaba vacío para todos. Con el objeto vacío, isAvail() daba true
+// siempre, y lo que el dueño marcaba SIN STOCK se seguía mostrando disponible.
+function applyInventory(inv){
+  invStock={};invQty={};
+  if(!inv)return;
+  Object.keys(inv).forEach(function(code){
+    invStock[code]=inv[code].inStock;invQty[code]=inv[code].qty;
+  });
+}
 async function loadInvBackground(){
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
-    invStock={};invQty={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
+    var r=await api('get-catalog',{});
+    applyInventory(r.inventory);
   }catch(e){}
 }
 // Precios vigentes desde el panel admin (tabla catalog_prices vía get-catalog) — antes
@@ -5935,8 +6330,68 @@ async function loadInvBackground(){
 async function loadCatalogBackground(){
   try{
     var r=await api('get-catalog',{});
+    // El inventario viaja en la misma respuesta, así que el arranque no necesita una
+    // segunda llamada para saber qué está agotado.
+    applyInventory(r.inventory);
     PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;if(typeof v.pDbl30==='number')p.pDbl30=v.pDbl30;}});
     SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
+    // Signatures públicos editables desde el panel (2026-08-27). Antes de esto, `r.sigs`
+    // solo traía precios: el nombre, el badge, el pitch, la foto y la composición vivían
+    // como literales en el array SIGS de arriba, así que cambiar cualquiera de esos exigía
+    // recompilar y desplegar. Ahora `r.sigItems` trae el ítem COMPLETO desde la tabla
+    // `catalog_items` y este bloque lo vuelca sobre la entrada que ya existe en SIGS —
+    // exactamente el mismo mecanismo que ya usaba el menú secreto abajo.
+    //
+    // El literal de SIGS pasa a ser SEMILLA: lo que se ve en el primer render, antes de que
+    // este fetch resuelva, y el respaldo si el servidor no responde. Nunca lo edites para
+    // cambiar el menú.
+    if(r.sigItems){
+      Object.keys(r.sigItems).forEach(function(id){
+        var v=r.sigItems[id];if(!v)return;
+        var sig=SIGS.find(function(x){return x.id===id;});
+        // Un item_id que no está en la semilla de SIGS se AGREGA en vez de descartarse.
+        // Antes se hacía `if(!sig)return;`, así que publicar un Signature nuevo desde el
+        // panel lo dejaba pedible por API pero invisible en la carta: existía para el
+        // servidor y no para el cliente. Que el panel pueda publicar un ítem nuevo es
+        // justamente lo que hace que cambiar el menú no requiera desplegar.
+        if(!sig){
+          sig={id:id,n:'',s:'',badge:'',pitch:'',img:'',base:'B01',prot:'',tops:[],sauces:[],p15:0,p30:0};
+          SIGS.push(sig);
+        }
+        if(v.n)sig.n=v.n;
+        if(v.s)sig.s=v.s;
+        // badge y pitch pueden quedar vacíos a propósito (un Signature sin badge), así que
+        // se copian aunque vengan en blanco — usar `if(v.badge)` haría imposible QUITAR un
+        // badge desde el panel, que es justo una de las cosas que se quiere poder hacer.
+        if(typeof v.badge==='string')sig.badge=v.badge;
+        if(typeof v.pitch==='string'&&v.pitch)sig.pitch=v.pitch;
+        if(v.base)sig.base=v.base;
+        if(v.prot)sig.prot=v.prot;
+        if(Array.isArray(v.tops))sig.tops=v.tops;
+        if(Array.isArray(v.sauces))sig.sauces=v.sauces;
+        if(typeof v.p15==='number')sig.p15=v.p15;
+        if(typeof v.p30==='number')sig.p30=v.p30;
+        if(v.img)SIG_IMG[id]=v.img;
+        // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
+        // ahora es publicar active=false desde el panel. La receta queda guardada en la
+        // tabla para cuando vuelva.
+        sig.retired=(v.active===false);
+      });
+      // Los retirados salen de la carta. Se filtra acá y no en cada pantalla para que
+      // ninguna vista tenga que acordarse de hacerlo.
+      for(var i=SIGS.length-1;i>=0;i--)if(SIGS[i].retired)SIGS.splice(i,1);
+      // Y hay que volver a limpiar el carrito guardado: restoreCart() corre en INIT, antes
+      // de que este fetch resuelva, así que ahí SIGS todavía era la semilla del código y un
+      // Signature retirado pasaba el filtro. Sin esto, quien tuviera uno en el carrito veía
+      // una línea en blanco a S/0 y el servidor le rechazaba el pago.
+      if(cart.length){
+        var quedan=cart.filter(cartItemStillExists);
+        if(quedan.length!==cart.length){
+          cart=quedan;saveCart();
+          if(!cart.length)appliedReward=null;
+        }
+      }
+    }
     SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
     RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
     // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05
@@ -5979,12 +6434,24 @@ async function loadStoreHoursBackground(){
     storePausedUntil=r.pausedUntil||null;
   }catch(e){}
 }
+// C7 — El panel de inventario tiene dos modos que hacen cosas distintas con el MISMO
+// número escrito en cada fila:
+//  · 'fijar'  → el número ES el stock (lo que había desde siempre; sirve para corregir un
+//               conteo, o para apagar el rastreo dejándolo vacío).
+//  · 'tanda'  → el número es lo que se acaba de PRODUCIR y se SUMA a lo que quedaba.
+// El segundo existe porque el dueño cocina por tandas 1-2 veces por semana y al terminar
+// sabe cuánto hizo, no cuánto suma con el sobrante. Hacer esa cuenta a mano por cada
+// insumo, recién salido de cocinar, es donde se equivoca — y un stock mal puesto apaga un
+// producto en la tienda o vende algo que ya no hay. La suma la hace el servidor
+// (admin-inventory-restock) leyendo la fila fresca, no el navegador con el número que
+// cargó cuando abrió la pantalla.
+var invMode='fijar';
+function setInvMode(m){invMode=m;render();}
 async function loadInventory(){
   sndScreen='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
-    var rows=await sbG('inventory','select=product_code,in_stock,stock_qty');
-    invStock={};invQty={};
-    rows.forEach(function(r){invStock[r.product_code]=r.in_stock;invQty[r.product_code]=r.stock_qty;});
+    var r=await api('get-catalog',{});
+    applyInventory(r.inventory);
   }catch(e){}
   busy=false;render();
 }
@@ -6022,7 +6489,19 @@ function sAdminInventory(){
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Control de stock //</div>';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
   h+=SEARCHBOX('inv-search','Buscar producto','inv-row');
-  h+='<div style="margin-bottom:20px">'+BTN('Guardar todos los cambios de stock //','saveAllInventoryChanges()',true)+'</div>';
+  h+='<div style="display:flex;gap:8px;margin:14px 0 10px">'
+    +['fijar','tanda'].map(function(m){
+      var sel=invMode===m;
+      var l=m==='fijar'?'Fijar cantidad':'Sumar tanda';
+      return'<div onclick="setInvMode(\''+m+'\')" style="flex:1;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+l+'</div>';
+    }).join('')
+    +'</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">'
+    +(invMode==='tanda'
+      ?'Escribe cuánto PRODUJISTE de cada insumo en esta tanda. Se suma a lo que quedaba — no tienes que calcular el total tú.'
+      :'El número que escribas ES el stock final. Déjalo vacío para volver al control manual, sin rastreo de cantidad.')
+    +'</div>';
+  h+='<div style="margin-bottom:20px">'+BTN(invMode==='tanda'?'Registrar la tanda //':'Guardar todos los cambios de stock //','saveAllInventoryChanges()',true)+'</div>';
   INV_CATS.forEach(function(cat){
     h+='<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);margin:18px 0 10px;text-wrap:balance">'+cat.t+'<span class="cut-sep" style="color:'+GOLD+'"> //</span></div>';
     h+=cat.arr.map(function(item){
@@ -6037,8 +6516,11 @@ function sAdminInventory(){
         +'<button onclick="toggleStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:'+(av?'rgba(255,85,85,.12)':'rgba(37,211,102,.15)')+';border:1px solid '+(av?'rgba(255,85,85,.4)':'rgba(37,211,102,.4)')+';color:'+(av?'#ff8888':'#25D366')+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.08em;padding:15px 14px;border-radius:8px;text-align:center;flex-shrink:0">'+(av?'Marcar agotado':'Reactivar')+'</button>'
         +'</div>'
         +'<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">'
-        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="Sin rastreo de cantidad" value="'+(tracked?qty:'')+'" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
-        +'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>'
+        // En modo tanda el campo arranca VACÍO y no precargado con el stock actual: si
+        // mostrara el número de ahora, escribir encima se leería como "fijar" y sumaría
+        // el doble sin que se note.
+        +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="'+(invMode==='tanda'?'Producido en esta tanda':'Sin rastreo de cantidad')+'" value="'+(invMode==='tanda'?'':(tracked?qty:''))+'" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
+        +(invMode==='tanda'?'':'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>')
         +'</div>'
         +'</div>';
     }).join('');
@@ -6052,6 +6534,7 @@ function sAdminInventory(){
 // después), detecta cuáles de verdad cambiaron, y reutiliza admin-inventory-set-stock
 // por cada uno — mismo endpoint que ya usaba el guardado fila por fila.
 async function saveAllInventoryChanges(){
+  if(invMode==='tanda')return registerBatchRestock();
   var jobs: {code:string;name:string;qty:number|null}[]=[];
   INV_CATS.forEach(function(cat){
     cat.arr.forEach(function(item){
@@ -6080,6 +6563,42 @@ async function saveAllInventoryChanges(){
   }
   busy=false;render();
   showToast(jobs.length+' producto(s) actualizado(s).');
+}
+// Registra una tanda: manda solo cuánto se PRODUJO de cada insumo y deja que el servidor
+// haga la suma sobre la fila fresca (admin-inventory-restock). Va en UNA sola llamada, a
+// diferencia del guardado fila por fila: una tanda es un evento, y si se corta a la mitad
+// el dueño no tiene forma de saber qué insumos ya se sumaron y cuáles no — reponerlos
+// "por si acaso" duplicaría el stock de los que sí pasaron.
+async function registerBatchRestock(){
+  var items: {code:string;name:string;add:number}[]=[];
+  var invalid=false;
+  INV_CATS.forEach(function(cat){
+    cat.arr.forEach(function(item){
+      var el=(document.getElementById('qty-'+item.id) as HTMLInputElement | null);
+      if(!el)return;
+      var raw=el.value.trim();
+      if(raw==='')return; // insumo que no entró en esta tanda
+      var add=parseInt(raw,10);
+      if(!isFinite(add)||add<=0){invalid=true;return;}
+      items.push({code:item.id,name:item.l+(item.s&&item.s!=='//'?' // '+item.s:''),add:add});
+    });
+  });
+  if(invalid){showToast('Una tanda solo suma: escribe cantidades mayores a 0, o deja vacío lo que no cocinaste.');return;}
+  if(!items.length){showToast('Escribe cuánto produjiste de al menos un insumo.');return;}
+  if(!(await showConfirm('¿Registrar la tanda? Se sumarán las cantidades de '+items.length+' insumo(s) a lo que ya había en stock.')))return;
+  busy=true;busyMsg='Registrando la tanda...';render();
+  try{
+    var r=await api('admin-inventory-restock',{token:token,items:items});
+    // El servidor devuelve el stock resultante de cada insumo — se toma de ahí y no del
+    // cálculo local, así lo que muestra la pantalla es lo que de verdad quedó guardado.
+    (r.applied||[]).forEach(function(a){invQty[a.code]=a.to;invStock[a.code]=a.to>0;});
+  }catch(e){
+    busy=false;render();
+    showToast('Error al registrar la tanda: '+e.message);
+    return;
+  }
+  busy=false;invMode='fijar';render();
+  showToast('Tanda registrada: '+items.length+' insumo(s) repuesto(s).');
 }
 
 var _adminList=[];
@@ -6324,6 +6843,112 @@ function sAdminSecretSignature(){
       +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
     +'</div>';
 }
+// ── Signatures editables desde el panel (2026-08-27) ──────────────────────────────────
+//
+// Contraparte de escritura de `catalog_items`. Antes, cambiar el nombre, el pitch, el
+// badge, la composición o el precio de un Signature exigía editar SIGS/SIG_DATA/SIG_LABEL/
+// SIG_IMG + catalog_prices y desplegar; retirar uno costaba una sesión de código entera.
+//
+// Se calca deliberadamente el panel del menú secreto de arriba (mismos chips, mismos
+// helpers, mismo flujo publicar→recargar): quien ya sabe usar aquel sabe usar este, y
+// cualquier arreglo futuro en esos helpers vale para los dos.
+var ciCur:any={},ciSel='',ciName='',ciSub='',ciBadge='',ciPitch='',ciBase='',ciProt='',
+    ciTops:string[]=[],ciSauces:string[]=[],ciCheese='',ciP15='',ciP30='',ciImg='',
+    ciActive=true,ciMsg='',ciHistory:any[]=[];
+async function loadCatalogItemsAdmin(){
+  sndScreen='admin_items';busy=true;busyMsg='Cargando Signatures...';render();
+  try{
+    var r=await api('admin-catalog-items-get',{token:token});
+    ciCur=r.current||{};ciHistory=r.history||[];
+    // Se abre el primero por defecto para que la pantalla no arranque vacía.
+    if(!ciSel||!ciCur[ciSel]){var ks=Object.keys(ciCur).sort();ciSel=ks.length?ks[0]:'';}
+    ciLoadForm();
+  }catch(e){showToast('Error: '+e.message);}
+  busy=false;render();
+}
+function ciLoadForm(){
+  var c=ciCur[ciSel];
+  ciName=c?c.name:'';ciSub=c?(c.subtitle||'Signature'):'Signature';
+  ciBadge=c&&c.badge?c.badge:'';ciPitch=c&&c.pitch?c.pitch:'';
+  ciBase=c?c.base:'B01';ciProt=c?c.protein_id:'';
+  ciTops=c&&Array.isArray(c.tops)?c.tops.slice():[];
+  ciSauces=c&&Array.isArray(c.sauces)?c.sauces.slice():[];
+  ciCheese=c&&c.fixed_cheese?c.fixed_cheese:'';
+  ciP15=c?String(c.price_15):'';ciP30=c?String(c.price_30):'';
+  ciImg=c&&c.image_path?c.image_path:'';
+  ciActive=c?c.active!==false:true;
+}
+function ciPick(id){
+  // Se guarda lo escrito en los campos de texto antes de cambiar de ítem: sin esto,
+  // tocar otro Signature perdía en silencio lo que estabas editando.
+  ciSyncInputs();ciSel=id;ciLoadForm();render();
+}
+function ciSyncInputs(){
+  if(document.getElementById('ci-name')){
+    ciName=gv('ci-name');ciSub=gv('ci-sub');ciBadge=gv('ci-badge');ciPitch=gv('ci-pitch');
+    ciImg=gv('ci-img');ciP15=gv('ci-p15');ciP30=gv('ci-p30');
+  }
+}
+function ciToggle(arr,id,max){
+  var i=arr.indexOf(id);
+  if(i>=0)arr.splice(i,1);else if(arr.length<max)arr.push(id);
+  ciSyncInputs();render();
+}
+function sAdminCatalogItems(){
+  var ids=Object.keys(ciCur).sort();
+  return H('SIGNATURES',"loadAdmin()")
+    +'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
+    +(ciMsg?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:14px;text-align:center">'+esc(ciMsg)+'</div>':'')
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">Cambia nombre, texto, receta o precio de cualquier Signature sin tocar código. Cada publicación queda guardada: puedes ver qué se cobraba antes. Para sacar uno de la carta, apaga <b>Activo</b> — su receta se conserva.</p>'
+    +'<div style="margin-bottom:16px">'+ids.map(function(id){
+        var c=ciCur[id];
+        return ssChip(ciSel===id,(c.active===false?'○ ':'')+esc(c.name),"ciPick('"+id+"')");
+      }).join('')+'</div>'
+    +(ciSel?'<div style="height:1px;background:var(--sw-bg,#1E3932);margin:0 0 16px"></div>'
+      +'<div style="margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Nombre</div>'+INP('ci-name','ej. The Original','text',ciName)+'</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+        +'<div style="flex:1"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Subtítulo</div>'+INP('ci-sub','Signature','text',ciSub)+'</div>'
+        +'<div style="flex:1"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Badge (puede ir vacío)</div>'+INP('ci-badge','ej. Clásico','text',ciBadge)+'</div>'
+      +'</div>'
+      +'<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Pitch (lo que lee el cliente)</div>'+INP('ci-pitch','Describe el sándwich','text',ciPitch)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
+      +'<div style="margin-bottom:14px">'+BASES.map(function(bs){return ssChip(ciBase===bs.id,bs.l+' '+bs.s,"ciSyncInputs();ciBase='"+bs.id+"';render()");}).join('')+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
+      +'<div style="margin-bottom:14px">'+PROTS.filter(function(pr){return!pr.vaultOnly;}).map(function(pr){return ssChip(ciProt===pr.id,pr.l+' '+pr.s,"ciSyncInputs();ciProt='"+pr.id+"';render()");}).join('')+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 ('+ciTops.length+'/3)</div>'
+      +'<div style="margin-bottom:14px">'+TOPS.filter(function(t){return!t.vaultOnly;}).map(function(t){return ssChip(ciTops.indexOf(t.id)>=0,t.l+' '+t.s,"ciToggle(ciTops,'"+t.id+"',3)");}).join('')+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 ('+ciSauces.length+'/2)</div>'
+      +'<div style="margin-bottom:14px">'+SAUCES.filter(function(sc){return!sc.vaultOnly;}).map(function(sc){return ssChip(ciSauces.indexOf(sc.id)>=0,sc.l+' '+sc.s,"ciToggle(ciSauces,'"+sc.id+"',2)");}).join('')+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Queso fijo // opcional</div>'
+      +'<div style="margin-bottom:14px">'+ssChip(!ciCheese,'Sin queso fijo',"ciSyncInputs();ciCheese='';render()")
+        +CHEESE.map(function(ch){return ssChip(ciCheese===ch.id,ch.l+' '+ch.s,"ciSyncInputs();ciCheese='"+ch.id+"';render()");}).join('')+'</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:14px">'+cpNumField('ci-p15','15CM',ciP15)+cpNumField('ci-p30','30CM',ciP30)+'</div>'
+      +'<div style="margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Foto (ruta/URL)</div>'+INP('ci-img','ej. img/sig01.jpg',undefined,ciImg)+'</div>'
+      +'<div style="margin-bottom:20px">'+ssChip(ciActive,(ciActive?'✓ ':'')+'Activo en la carta',"ciSyncInputs();ciActive=!ciActive;render()")+'</div>'
+      +BTN('Publicar cambios //','saveCatalogItem()')
+      :'<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">No hay Signatures publicados todavía.</p>')
+    +(ciHistory.length?'<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+      +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+h.price_15+'/'+SOLES_TXT+h.price_30+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
+    +'</div>';
+}
+async function saveCatalogItem(){
+  ciSyncInputs();
+  if(!ciSel)return;
+  busy=true;busyMsg='Publicando...';render();
+  try{
+    await api('admin-catalog-items-set',{token:token,itemId:ciSel,name:ciName.trim(),subtitle:ciSub.trim(),
+      badge:ciBadge.trim(),pitch:ciPitch.trim(),base:ciBase,proteinId:ciProt,tops:ciTops,sauces:ciSauces,
+      fixedCheese:ciCheese||null,price15:Number(ciP15),price30:Number(ciP30),
+      imagePath:ciImg.trim()||null,active:ciActive});
+    ciMsg='Publicado. Los clientes lo ven en su próxima carga.';
+    // Se recarga el catálogo del propio panel para que lo que se ve en pantalla sea lo que
+    // quedó guardado, no lo que se escribió — si el servidor normalizó algo, se nota acá.
+    await loadCatalogItemsAdmin();
+    await loadCatalogBackground();
+  }catch(e){showToast('Error: '+e.message);}
+  busy=false;render();
+  setTimeout(function(){ciMsg='';if(sndScreen==='admin_items')render();},2500);
+}
 async function saveSecretSignature(){
   ssName=gv('ss-name');ssImagePath=gv('ss-img');ssP15=gv('ss-p15');ssP30=gv('ss-p30');ssMinOrders=gv('ss-min');
   if(!ssName.trim()){showToast('Falta el nombre del sándwich del mes.');return;}
@@ -6338,9 +6963,14 @@ async function saveSecretSignature(){
   if(!Number.isInteger(minOrders)||minOrders<0){showToast('Pedidos mínimos inválido.');return;}
   busy=true;busyMsg='Publicando...';render();
   try{
-    await api('admin-secret-signature-set',{token:token,name:ssName.trim(),base:ssBase,proteinId:ssProt,tops:ssTops,sauces:ssSauces,vaultOnlyIds:ssVaultIds,price15:p15,price30:p30,minOrders:minOrders,imagePath:ssImagePath.trim()||null});
+    var pubRes=await api('admin-secret-signature-set',{token:token,name:ssName.trim(),base:ssBase,proteinId:ssProt,tops:ssTops,sauces:ssSauces,vaultOnlyIds:ssVaultIds,price15:p15,price30:p30,minOrders:minOrders,imagePath:ssImagePath.trim()||null});
     await loadCatalogBackground();
-    ssMsg='Sándwich del mes publicado.';
+    // El servidor avisa por push a quienes ya desbloquearon el menú secreto y devuelve a
+    // cuántos les llegó. Se muestra el número porque el dueño no tiene otra forma de saber
+    // si el aviso salió: es 0 tanto si nadie calificaba como si se corrigió una publicación
+    // reciente (hay una ventana de 12 h para no mandar dos push por arreglar una tilde).
+    var av=pubRes&&pubRes.announced;
+    ssMsg='Sándwich del mes publicado.'+(av?' Avisamos a '+av+' cliente(s) que ya lo desbloquearon.':' (Sin aviso push esta vez.)');
   }catch(e){
     busy=false;render();
     showToast('Error: '+e.message);

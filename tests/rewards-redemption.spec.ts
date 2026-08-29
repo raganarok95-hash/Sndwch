@@ -67,6 +67,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   await page.locator('#o-nom').fill('Bruno Cliente');
   await page.locator('#o-phone').fill('987654323');
   await page.locator('#o-addr').fill('Av. España 456, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
 
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();
@@ -141,6 +142,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.locator('#o-nom').fill('Carla Cliente');
   await page.locator('#o-phone').fill('987654324');
   await page.locator('#o-addr').fill('Av. España 789, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
 
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
   await expect(page.locator('text=¿CÓMO PAGAS?')).toBeVisible();

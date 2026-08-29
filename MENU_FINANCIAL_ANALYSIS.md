@@ -28,26 +28,63 @@
 > sin cotizar** — el atún es el más débil (usa ~S/67/kg investigado online, sin cotización
 > real de proveedor).
 >
-> ## Margen real por Signature, con los precios del 2026-08-22
+> ## ⚠ El pan estaba subcosteado un 28% — corregido con precio real (2026-08-22)
+>
+> El modelo usaba un proxy de **S/11/kg × 71 g = S/0.781** el 15CM y **142 g = S/1.562** el
+> 30CM. El pan **no se compra por kilo, se compra por unidad**: precio real del proveedor
+> confirmado por el dueño, **S/2 el pan sub**, y **el 15CM se hace con medio pan**.
+>
+> | | proxy anterior | real | diferencia |
+> |---|---|---|---|
+> | Pan 15CM (medio) | S/0.781 | **S/1.00** | +S/0.219 (+28%) |
+> | Pan 30CM (entero) | S/1.562 | **S/2.00** | +S/0.438 (+28%) |
+>
+> El recargo es idéntico para todos los ítems, así que se suma directo a cada costo de la
+> tabla de abajo sin recalcular el resto del modelo de componentes. Ese modelo se validó
+> antes de usarlo: The Original 15CM = P01 3.15 + pan 0.781 + empaque 1.10 + 2 salsas 0.532
+> + vegetales 0.26 = **S/5.823**, contra los S/5.82 que ya decía la tabla. Coincide.
+>
+> **Falta la focaccia.** S/13 la entera, pero no está medido cuántas porciones salen de una,
+> y sin eso no se puede costear. Empata con el pan sub recién a **13 porciones de 15CM por
+> focaccia**; a 8 porciones cuesta S/1.62, o sea +S/0.62 por sándwich. No es un detalle
+> menor: **el tipo de pan es una elección gratuita del cliente** (`BASES` en `src/app.ts` y
+> `VALID_BASES` en `catalog.ts` no llevan precio), así que cualquier sobrecosto de la
+> focaccia sale entero del margen.
+>
+> ## Margen real por Signature, con los precios del 2026-08-22 y el pan real
 >
 > | Signature | 15CM | costo | % | contribuye | 30CM | costo | % | contribuye |
 > |---|---|---|---|---|---|---|---|---|
-> | The Original | 20.90 | 5.82 | 27.9% | 15.08 | 26.90 | 10.55 | 39.2% | 16.35 |
-> | The Marinara | 21.90 | 4.13 | 18.9% | 17.77 | 28.90 | 7.16 | 24.8% | 21.74 |
-> | The Smoke | 23.90 | 7.08 | 29.6% | 16.82 | 34.90 | 13.07 | 37.5% | 21.83 |
-> | The Fresh | 20.90 | 7.23 | 34.6% | 13.67 | 34.90 | 13.35 | 38.3% | 21.55 |
-> | The Teriyaki | 19.90 | 5.14 | 25.8% | 14.76 | 25.90 | 9.20 | 35.5% | 16.70 |
+> | The Original | 20.90 | 6.04 | 28.9% | 14.86 | 26.90 | 10.99 | 40.8% | 15.91 |
+> | The Marinara | 21.90 | 4.35 | 19.9% | 17.55 | 28.90 | 7.60 | 26.3% | 21.30 |
+> | The Smoke | 23.90 | 7.30 | 30.5% | 16.60 | 34.90 | 13.51 | 38.7% | 21.39 |
+> | The Fresh | 20.90 | 7.45 | 35.6% | 13.45 | 34.90 | 13.79 | 39.5% | 21.11 |
+> | The Teriyaki | 19.90 | 5.36 | 26.9% | 14.54 | 25.90 | 9.64 | 37.2% | 16.26 |
 >
-> Los diez pasan el techo de 45% de insumos+empaque. THE CHICAGO (SIG07) salió del catálogo
-> el 2026-08-22 por costo de producción, no por margen.
+> Los diez siguen pasando el techo de 45% de insumos+empaque, con holgura. THE CHICAGO
+> (SIG07) salió del catálogo el 2026-08-22 por costo de producción, no por margen.
+>
+> **Donde sí muerde es en ARMA EL TUYO de 30CM**, que ya venía siendo lo más ajustado del
+> catálogo:
+>
+> | BYO 30CM | precio | antes | con pan real |
+> |---|---|---|---|
+> | Res (P01) | 22.90 | 43.7% | **45.6% — cruza el techo de 45%** |
+> | Atún (P04) | 30.90 | 43.2% | 44.6% |
+>
+> Es la única combinación del catálogo que se pasa. Sigue el mismo patrón ya visto con el
+> `pDbl` plano: el precio del BYO no se tocó en la subida de margen del 2026-08-22 (el dueño
+> autorizó los Signatures, no el BYO), así que absorbe entero cualquier encarecimiento de
+> insumo.
 >
 > ## Contribución por pedido y punto de equilibrio
 >
-> - Contribución media por sándwich (mezcla 80% en 15CM): **S/16.42**
+> - Contribución media por sándwich (mezcla 80% en 15CM): **S/16.16**
 > - Bebida: contribución media **S/4.79**; en combo (−S/1) deja **S/3.79**
 > - Comisión Culqi estimada: **−S/0.69/pedido** (60% paga con tarjeta, ~5%)
-> - **Contribución neta por pedido: S/16.68** (asumiendo 25% de pedidos con bebida)
-> - Costos fijos < S/500/mes → **punto de equilibrio ~30 pedidos/mes = 1.2 al día**
+> - **Contribución neta por pedido: S/16.42** (asumiendo 25% de pedidos con bebida) — bajó
+>   S/0.26 (−1.6%) respecto de los S/16.68 que se calcularon con el pan subcosteado
+> - Costos fijos < S/500/mes → **punto de equilibrio ~31 pedidos/mes = 1.2 al día**
 >
 > ## Rentabilidad mes a mes — modelo de cohortes v7 (2026-08-22)
 >

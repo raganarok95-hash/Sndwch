@@ -6,8 +6,9 @@
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run parity && npm run build && npm test",
-    "typecheck:api": "node scripts/check-backend.mjs"
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run build && npm test",
+    "typecheck:api": "node scripts/check-backend.mjs",
+    "test:api": "node scripts/check-money.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",

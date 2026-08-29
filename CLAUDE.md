@@ -30,16 +30,49 @@ afecta cualquier decisión de precio/margen.
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
   una hora específica (ej. evitar la promo de hora valle), usa `page.clock.setFixedTime()`
   **dentro de ese test**, no en `helpers.ts`.
-- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 109 migraciones**
+- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 122 migraciones**
   (un archivo `<version>_<nombre>.sql` cada una, extraído de
   `supabase_migrations.schema_migrations` el 2026-08-19 y verificado archivo por archivo
-  con md5 contra la base), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
+  con md5 contra la base; reconciliado de nuevo el 2026-08-28 — **el nombre del archivo
+  DEBE llevar la `version` exacta que quedó registrada en la base, no la hora en que lo
+  escribiste**: al aplicar con `apply_migration` y escribir el archivo unos minutos
+  después se habían colado 8 desfases y 2 migraciones sin archivo. Verificar con
+  `select version from supabase_migrations.schema_migrations` contra `ls` antes de dar por
+  cerrada una sesión que aplicó migraciones), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
   secreto de cron redactado a propósito** (`<CRON_SECRET_REDACTADO>`) — el valor sigue en
   texto plano en el historial dentro de Supabase, rotarlo es tarea pendiente del dueño.
   Una migración nueva se sigue aplicando con `mcp__Supabase__apply_migration`; para que
   quede versionada, escribe el mismo SQL en un archivo de esa carpeta en la misma sesión.
   Para el schema vigente de una tabla sigue siendo más confiable `mcp__Supabase__execute_sql`
   contra `information_schema` que leer el historial.
+
+## El menú se edita desde el panel, no desde el código (2026-08-27)
+
+Los 5 Signatures públicos viven en la tabla **`catalog_items`** (append-only: publicar
+inserta fila nueva, la de mayor `id` por `item_id` es la vigente — historial gratis, igual
+que `secret_signature`). `loadCatalogItems()` en `catalog.ts` sobreescribe en cada refresco
+`SIG_DATA`, `SIG_LABEL` y el nuevo `SIG_CONTENT` (nombre, subtítulo, badge, pitch, foto,
+activo). El cliente lo recibe resuelto por `get-catalog` (campo `sigItems`) y lo vuelca
+sobre `SIGS`.
+
+**Los literales de `SIGS` (src/app.ts) y `SIG_DATA`/`SIG_LABEL`/`SIG_CONTENT` (catalog.ts)
+son SEMILLA**: el primer render antes de que resuelva el fetch, y el respaldo si la base no
+responde. Editarlos no cambia el menú.
+
+Qué se puede hacer ahora sin desplegar: renombrar, cambiar badge/pitch/foto, cambiar
+composición (pan, proteína, toppings, salsas, queso fijo), cambiar precio, y **retirar un
+Signature** publicando `active=false` — lo que con THE CHICAGO costó una sesión de código
+entera, conservando la receta en la tabla para cuando vuelva.
+
+**El precio de un Signature ya NO se toca desde `catalog_prices`.** Las filas de categoría
+`sig` se borraron en la migración y `admin-catalog-set-price` rechaza esa categoría con un
+error que apunta al panel nuevo. Si no, habría dos sitios fijando el mismo número y uno
+ganando en silencio — el mismo defecto que costó 3 semanas de precios fantasma. Para
+proteínas, bebidas y recompensas `catalog_prices` sigue siendo la fuente (ver la sección de
+abajo, que sigue vigente para ellas).
+
+SIG05 no está en `catalog_items`: el menú secreto tiene su propia tabla y su propio panel.
+`loadCatalogItems()` ignora ese id explícitamente.
 
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
@@ -73,17 +106,35 @@ que una fila en `catalog_prices` para SIG05 sería ignorada.)
 2. `npm run typecheck:api` — `deno check` sobre las 8 edge functions
    (`scripts/check-backend.mjs`). El backend NO tiene otra verificación estática: el CI
    despliega sin type-check, así que un error acá llega a producción.
-3. `npm run parity` — compara las 28 constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el cliente mostraría un
-   número y el servidor cobraría otro.
-4. `npm run build` — regenera `index.html` desde `src/`.
-5. `npm test` (o `npm run verify`, que encadena las cinco) — deben pasar TODOS (revisa el
+3. `npm run test:api` — pruebas de COMPORTAMIENTO del backend, ejecutando el código real
+   (`tests-api/`, corridas por `scripts/check-money.mjs`). Existe porque había un hueco
+   estructural: los specs de Playwright mockean el endpoint `api` entero y nunca ejecutan
+   una línea del servidor, y `typecheck:api` solo mira tipos. Por ese hueco pasaron dos
+   defectos reales a producción con todo en verde — `pointsFor` devolviendo decimales
+   contra una columna `integer` (reventaba DESPUÉS del cobro de Culqi) y
+   `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
+   **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
+   `jsr:@std/assert`: jsr.io está bloqueado por el proxy, cada archivo trae su propio assert.
+   Hoy son 3 archivos / 23 pruebas: `dinero.test.ts` (`pointsFor`), `carrito.test.ts`
+   (`deriveCart` — combo vs. hora valle, recompensas, sándwich del organizador) y
+   `cancelacion.test.ts` (`cancellationDeltas`, la reversión al cancelar). El patrón para
+   que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
+   `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
+   palabra por palabra.
+4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
+   `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
+   cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
+   recompensa, umbrales, zonas de delivery (con precio y excluidas), nombres, y
+   `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
+   que esta comparación es su única defensa.
+5. `npm run build` — regenera `index.html` desde `src/`.
+6. `npm test` (o `npm run verify`, que encadena las seis) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
-6. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
+7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
-7. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
 
 ## Cómo desplegar el backend
 
@@ -154,7 +205,7 @@ que declara `sigOnly?:boolean` justamente para que los filtros `!x.sigOnly` siga
 compilando sin inventar un dato falso. No borres esa anotación "porque nadie la usa".
 
 **El menú secreto (SIG05) no se cocina hasta que alguien lo desbloquee** (decisión del
-dueño, 2026-08-22): se abre a los 5 pedidos pagados, así que en la primera semana de
+dueño, 2026-08-22): se abre a los 3 pedidos pagados (bajado de 5 el 2026-08-26), así que en la primera semana de
 operación nadie puede pedirlo y preparar una tanda de `P03` sería cocinar algo que no se
 puede vender. El Signature sigue en el catálogo; lo que cambia es solo cuándo se produce
 su proteína. No es un cambio de código.
@@ -183,8 +234,16 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → INICIADO (5, desbloquea el menú secreto) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
+  **El menú secreto YA NO cuelga de los rangos** (2026-08-26): su umbral bajó a 3 pedidos y
+  dejó de coincidir con INICIADO. Antes la tarjeta bloqueada decía "Se desbloquea en
+  <RANGO>" derivando el nombre con `rankName(minOrders)` y la celebración post-pedido se
+  disparaba con `rankUp==='INICIADO'` — con el umbral en 3 eso habría dicho "se desbloquea
+  en REGULAR" (rango que se alcanza al primer pedido, o sea contradictorio) y habría avisado
+  dos pedidos tarde. Ahora los dos textos hablan de PEDIDOS y el desbloqueo es un evento
+  propio (`_lSecretUnlock`), así que el umbral se puede mover desde el panel admin a
+  cualquier valor sin volver a tocar código.
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).
   - **Tarjeta de regalo** (`gift-card-purchase`): comprar crédito para OTRO cliente
@@ -192,36 +251,53 @@ Signature o build.
     un cobro Culqi que no encajaba con la intención original).
   - **Plan Semanal** (`prepare-weekly-plan`+`confirm-weekly-plan`): paga S/95 hoy con
     tarjeta (Culqi vía `create-credit-charge`), recibe S/100 en saldo propio al instante.
-- **Pedido grupal / canal de oficinas** (`create-group-order`/`add-group-item`/
-  `close-group-order`): un organizador crea un código, cualquiera con el link agrega su
-  propio sándwich sin necesitar cuenta, el organizador cierra y paga todo junto por el
-  checkout normal.
-  **Es el canal con mejor economía del negocio y desde el 2026-08-22 tiene incentivo
-  propio**: a partir de `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más
-  barato del grupo va gratis**. Un pedido de 6 sándwiches contribuye casi lo mismo que 6
-  pedidos individuales pero cuesta UN cliente en vez de seis, y el cuello de botella del
-  negocio no es la cocina (techo 40/día) ni el mercado (Trujillo tiene 1.1M) sino adquirir
-  clientes — con el agravante de que el dueño **no puede vender puerta a puerta porque sus
-  mañanas están cocinando**. Este incentivo convierte al cliente en el vendedor: comprar
-  una cuenta de oficina entera cuesta el insumo de un sándwich (~S/6) contra ~S/128-141 por
-  publicidad o por muestra dirigida.
+- **Pedido grupal** (`create-group-order`/`add-group-item`/`close-group-order`): un
+  organizador crea un código, cualquiera con el link agrega su propio sándwich sin necesitar
+  cuenta, el organizador cierra y paga todo junto por el checkout normal.
+  **NO es un canal B2B y el dueño NO sale a conseguir cuentas** (corregido explícitamente por
+  el dueño 2026-08-27, ver la advertencia de más abajo): es **el pedido de cualquier cliente**
+  que compra para varias personas — una oficina, un grupo de amigos, una familia. Llega por la
+  app como cualquier otro pedido y ese cliente se adquiere por la misma vía que todos los
+  demás. **Nunca proyectes "N oficinas conseguidas al mes"**: nadie las va a conseguir.
+  Lo que sí es cierto y medible: un pedido grupal trae **más sándwiches en un solo pedido**,
+  así que sube la contribución por pedido y reparte el costo de adquisición entre más gente
+  alcanzada. Desde el 2026-08-22 tiene incentivo propio: a partir de
+  `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más barato del grupo va gratis**.
   Detalles que no hay que romper: se perdona el **más barato del carrito, no "el del
-  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado
-  las líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que
-  R06** (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el
-  sándwich regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo
-  regalaría también la bebida emparejada con algo que ya es gratis. El servidor lo verifica
-  entero contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código
-  válido, quien paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese
-  código de grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces).
-  El `groupCode` que manda el cliente es solo atribución, nunca autorización.
-- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Un pedido individual
-  entregado a las 12:30 en una oficina YA es una muestra gratis repartida dentro del
-  cliente objetivo; lo que faltaba era el puente hacia un pedido grupal. Ese parámetro
-  abre uno directo (pide sesión, porque el servidor necesita saber a quién cobrarle al
+  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado las
+  líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que R06**
+  (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el sándwich
+  regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo regalaría
+  también la bebida emparejada con algo que ya es gratis. El servidor lo verifica entero
+  contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código válido, quien
+  paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese código de
+  grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces). El
+  `groupCode` que manda el cliente es solo atribución, nunca autorización.
+  **⚠ DOS ERRORES REALES COMETIDOS SOBRE ESTE CANAL — no los repitas.**
+  1. **El marco "canal de oficinas" / "comprar una cuenta de oficina entera" que este archivo
+     usó hasta el 2026-08-27 era falso.** Daba por hecho una venta B2B que el dueño nunca dijo
+     que haría, y que además contradice el hecho ya documentado de que sus mañanas están
+     cocinando. Sobre ese marco se construyó un titular de "10 oficinas dejan S/3,000 netos al
+     mes" que hubo que retirar entero. Un pedido grupal se modela como **más sándwiches en una
+     fracción de los pedidos normales**, nunca como cuentas que se adquieren aparte.
+  2. **El "~S/128-141 por publicidad" que decía este archivo NUNCA tuvo fuente.** Era una
+     estimación interna escrita como si fuera dato, y después se usó en dos modelos
+     financieros como si estuviera medida — con ella cualquier modelo concluye que la
+     publicidad destruye valor, que es lo contrario de lo que dicen los datos con fuente. El
+     CAC real de Meta Ads en Perú para rubro restaurantes (CPM S/5-12 + CTR 2.97% + CVR 1.89%
+     + IGV 18%) es de **S/10.51 a S/25.23**, entre 5 y 13 veces menor. El referido cuesta
+     **S/7.65** (el insumo del 15CM de R06 + la bebida de R05, no su precio de carta). Ver
+     `PREDICCION_V7.md`, `modelo/modelo_v7.py` y `modelo/FUENTES.md`, donde cada número lleva
+     etiqueta de origen y está la lista de lo que NO se pudo fundamentar.
+  **Sin B2B ni puerta a puerta, la publicidad pagada es prácticamente el único canal de
+  adquisición**, junto con los referidos de clientes que ya existen. Cualquier plan de
+  crecimiento parte de ahí.
+- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Promoción **pasiva** dentro
+  de un pedido que ya entregaste: la tarjeta va en la bolsa y quien la escanea abre un pedido
+  grupal directo. No exige ningún trabajo de venta del dueño — por eso sigue vigente aunque
+  no exista canal B2B. Pide sesión, porque el servidor necesita saber a quién cobrarle al
   cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
-  login/registro). Distinto de `?group=CODE`, que es unirse a uno existente y NO pide
-  cuenta.
+  login/registro. Distinto de `?group=CODE`, que es unirse a uno existente y NO pide cuenta.
 - **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
   (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
@@ -235,8 +311,17 @@ Signature o build.
   con/sin reembolso reconocido), dashboard de negocio (ingresos, tendencia 14 días, top
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
-  gestión de inventario/cuentas admin/horario editable, exportar CSV, log de auditoría,
-  contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
+  gestión de inventario/cuentas admin/horario editable (con **modo tanda**: se escribe
+  cuánto se PRODUJO y `admin-inventory-restock` lo SUMA server-side a lo que quedaba, en
+  una sola llamada — el modo normal sigue fijando el valor absoluto), exportar CSV, log de
+  auditoría,
+  contenido de marketing semanal listo para copiar, **Salud del negocio**
+  (`admin-health`: una sola pantalla con lo que hay que atender HOY — pagos por confirmar,
+  pedidos parados, insumos agotados/por acabarse, reclamos cerca del plazo legal, crons
+  caídos y picos de error; el VEREDICTO de cada señal lo calcula el servidor, la pantalla
+  solo lo pinta), **Plan de tanda** (`admin-batch-plan`: cuánto cocinar de cada insumo para
+  cubrir N días, con `reliable:false` mientras no haya ~14 días y 20 pedidos de historial —
+  la pantalla muestra el motivo ANTES que las cantidades), y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
   sesión de código, ver detalle técnico abajo).
@@ -286,7 +371,17 @@ Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrit
 abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas),
 aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
-contenido de marketing semanal. Limpieza/expiración: pagos manuales sin confirmar,
+contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
+crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`).
+**Dead-man switch de crons (2026-08-28)**: `api` anota un latido por cada corrida de cron
+que llega (`record_cron_heartbeat`, en `index.ts`, best-effort). Existe porque pg_cron
+guarda si DISPARÓ el job, pero `net.http_post()` vuelve al instante: "succeeded" ahí
+significa "se encoló la petición", no "la edge function hizo su trabajo" — si el secreto de
+cron rota o `api` responde 500, los 20 jobs siguen en verde para siempre mientras nada
+ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido. Cubre
+solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
+2 de SQL puro) quedan fuera a propósito y documentados en la migración.
+Limpieza/expiración: pagos manuales sin confirmar,
 cargos Culqi pendientes, Plan Semanal sin confirmar, conciliación de cargos Culqi
 huérfanos (cobro real sin pedido/Plan Semanal detrás). Ver el mapa completo de acciones
 en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
@@ -317,12 +412,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
   volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
   para necesitar contratar).
+- **⚠ EL PAN SE COTIZA POR UNIDAD, NO POR KILO — precio real del proveedor confirmado por
+  el dueño 2026-08-22.** **Pan sub S/2 la unidad**, y **el 15CM usa MEDIO pan** → S/1.00 el
+  15CM, S/2.00 el 30CM. El análisis financiero venía usando un proxy de S/11/kg × 71 g =
+  S/0.78 (15CM) / S/1.56 (30CM), o sea el pan estaba **28% subcosteado**. Ya recalculado en
+  `MENU_FINANCIAL_ANALYSIS.md`. Efecto: contribución por pedido S/16.68 → **S/16.42**, y
+  **BYO 30CM de res cruzó el techo de 45%** (43.7% → 45.6%), la única combinación del
+  catálogo que lo hace. Los 5 Signatures siguen holgados en los dos tamaños.
+  **Focaccia: S/13 la entera, pero FALTA el dato de cuántas porciones salen de una** — sin
+  eso no se puede costear. Sensibilidad: empata con el pan sub recién a 13 porciones de
+  15CM por focaccia; a 8 porciones cuesta S/1.62 (+S/0.62 por sándwich). Importa porque
+  **el tipo de pan es una elección GRATUITA del cliente** (`BASES` en `src/app.ts` y
+  `VALID_BASES` en `catalog.ts` no tienen precio), así que todo sobrecosto de la focaccia
+  sale del margen sin que el cliente pague nada extra.
 - **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
   **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
   `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
-  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según
-  tipo. **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
+  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg.
+  **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
   el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
   conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
@@ -383,6 +491,18 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Costos fijos mensuales: menos de S/500 — opera desde casa** (confirmado por el dueño
   2026-08-15). Sin alquiler de local. Los S/950 que usó el modelo v5 eran una estimación a
   ojo y estaban altos por casi el doble.
+- **Distrito y zona de precio son DOS cosas distintas en el checkout (desde 2026-08-28).**
+  El **distrito** (`DELIVERY_DISTRICTS` en `src/app.ts`) es obligatorio y decide si el
+  pedido se puede entregar: los que están fuera de cobertura salen listados pero
+  deshabilitados ("todavía no llegamos aquí"), y el distrito elegido se ADJUNTA al texto de
+  la dirección que va al servidor (no hay columna propia; el motorizado igual lo necesita
+  impreso). La **zona** (`DELIVERY_PRICE_ZONES`) solo fija cuánto cobra el motorizado y
+  tiene default. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
+  texto libre de la dirección: quien no lo escribía pasaba sin querer y quien sí lo escribía
+  se enteraba recién al tocar PAGAR. Ese substring (`DELIVERY_EXCLUDED_ZONES`, duplicado en
+  `src/app.ts` y `env.ts`) sigue siendo **la única defensa real** — `assertAddressAllowed`
+  en el servidor no ve el selector — así que recortar cobertura exige tocar los DOS lados,
+  no solo marcar `out:true` en la lista de distritos.
 - **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
   fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
   lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en

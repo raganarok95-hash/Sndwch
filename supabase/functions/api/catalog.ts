@@ -176,6 +176,22 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
   if (!pr) return 0;
   return size === "30" ? pr.pDbl30 : pr.pDbl;
 }
+// Contenido editable de cada Signature público (nombre, subtítulo, badge, pitch, foto y
+// si está activo). Antes esto vivía SOLO en el array SIGS de src/app.ts, o sea que cambiar
+// el nombre o el texto de un sándwich exigía editar el cliente y redesplegar. Ahora la fila
+// vigente de `catalog_items` lo sobreescribe, igual que loadSecretSignature() ya hace con
+// SIG05, y el cliente lo recibe resuelto por `get-catalog`.
+//
+// Estos literales son SEMILLA: valen para el primer arranque de cada instancia y como
+// respaldo si la base no responde. Nunca edites acá para cambiar el menú — eso se hace
+// desde Admin // Catálogo // Signatures.
+export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = {
+  SIG01: { n: "The Original", s: "Signature", badge: "Clásico", pitch: "", img: "img/sig01.jpg", active: true },
+  SIG02: { n: "The Marinara", s: "Signature", badge: "Italiano", pitch: "", img: "img/sig02.jpg", active: true },
+  SIG03: { n: "The Smoke", s: "Signature", badge: "Ahumado", pitch: "", img: "img/sig03.jpg", active: true },
+  SIG04: { n: "The Fresh", s: "Signature", badge: "Cítrico", pitch: "", img: "img/sig04.jpg", active: true },
+  SIG06: { n: "The Teriyaki", s: "Signature", badge: "Asiático", pitch: "", img: "img/sig06.jpg", active: true },
+};
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
   // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
   // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
@@ -258,7 +274,10 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
 // loadSecretSignature(), que sobreescribe SIG_GATES.SIG05.minOrders igual que sobreescribe
 // SIG_DATA.SIG05 arriba.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
-  SIG05: { minOrders: 5 },
+  // Bajado 15 → 5 → 3 pedidos (el paso a 3 es del 2026-08-26). SEMILLA únicamente: el valor
+  // real vive en `secret_signature.min_orders` y loadSecretSignature() lo sobreescribe en
+  // cada refresco, así que se edita desde Admin // Menú secreto sin desplegar nada.
+  SIG05: { minOrders: 3 },
 };
 export function sigGateError(sigId: string, totalOrders: number): string | null {
   const gate = SIG_GATES[sigId];
@@ -364,7 +383,64 @@ export async function loadCatalogPrices(): Promise<void> {
     // debe bloquear un pedido por un problema leyendo la tabla de precios.
     console.error("loadCatalogPrices failed:", e);
   }
+  // Se llama DESPUÉS del bucle de catalog_prices a propósito: para los Signatures,
+  // `catalog_items` es la fuente única y gana. Las filas de categoría 'sig' de
+  // catalog_prices se borraron en la misma migración, y el editor viejo de precios ahora
+  // rechaza esa categoría — si no, habría dos sitios fijando el mismo precio y uno
+  // ganando en silencio, que es justo el defecto que esto viene a eliminar.
+  await loadCatalogItems();
   await loadSecretSignature();
+}
+// Signatures públicos editables desde el panel admin (2026-08-27). Antes, cambiar un
+// sándwich del menú exigía tocar SEIS lugares: SIGS (src/app.ts), SIG_DATA, SIG_LABEL,
+// SIG_IMG, la tabla catalog_prices y los documentos de receta/costeo. Ahora la fila más
+// reciente de `catalog_items` para cada item_id sobreescribe los cuatro primeros de una
+// sola vez, con el mismo patrón append-only que ya usa el menú secreto.
+export async function loadCatalogItems(): Promise<void> {
+  try {
+    // Se piden TODAS las filas ordenadas por id descendente y se conserva la primera de
+    // cada item_id: es la vigente. Hacerlo en una sola consulta evita N llamadas (una por
+    // Signature) en una función que corre en cada refresco de catálogo.
+    const rows = await sbGet("catalog_items", "select=*&order=id.desc");
+    const vistos = new Set<string>();
+    for (const row of rows) {
+      const id = String(row.item_id || "");
+      if (!id || vistos.has(id)) continue;
+      vistos.add(id);
+      // SIG05 tiene su propia tabla y su propio ciclo: si alguien insertara una fila acá
+      // con ese id, loadSecretSignature() la pisaría después y el resultado sería
+      // impredecible. Se ignora explícitamente en vez de dejarlo al orden de las llamadas.
+      if (id === "SIG05") continue;
+      const tops = Array.isArray(row.tops) ? row.tops : [];
+      const sauces = Array.isArray(row.sauces) ? row.sauces : [];
+      SIG_DATA[id] = {
+        base: String(row.base),
+        prot: String(row.protein_id),
+        tops,
+        sauces,
+        p15: Number(row.price_15),
+        p30: Number(row.price_30),
+        ...(row.fixed_cheese ? { fixedCheese: String(row.fixed_cheese) } : {}),
+        ...(row.cheese_optional ? { cheeseOptional: true } : {}),
+      };
+      const nombre = String(row.name || "").trim();
+      const sub = String(row.subtitle || "Signature").trim();
+      SIG_CONTENT[id] = {
+        n: nombre,
+        s: sub,
+        badge: String(row.badge || "").trim(),
+        pitch: String(row.pitch || "").trim(),
+        img: row.image_path ? String(row.image_path) : null,
+        active: row.active !== false,
+      };
+      SIG_LABEL[id] = `${nombre.toUpperCase()} // ${sub.toUpperCase()}`;
+    }
+  } catch (e) {
+    // Mismo criterio que loadCatalogPrices/loadSecretSignature: si la tabla no responde se
+    // sigue con lo que haya en memoria (el literal en el primer arranque, o la última
+    // carga buena) en vez de bloquear un pedido.
+    console.error("loadCatalogItems failed:", e);
+  }
 }
 // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — reemplaza el
 // "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA.SIG05/SIG_GATES.SIG05/
@@ -500,6 +576,13 @@ type PricedBuild = {
 function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, extraSauce: boolean, cheese: string | null = null): PricedBuild {
   const sig = SIG_DATA[sigId];
   if (!sig) throw new ApiError("Signature inválida.");
+  // `active:false` se guardaba en SIG_CONTENT pero NINGÚN camino de tasación lo miraba, así
+  // que retirar un Signature desde el panel lo sacaba de la carta y nada más: se seguía
+  // pudiendo pedir por llamada directa a la API, desde un favorito o repitiendo un pedido
+  // viejo. Retirar algo tiene que retirarlo de verdad.
+  if (SIG_CONTENT[sigId] && SIG_CONTENT[sigId].active === false) {
+    throw new ApiError("Ese Signature ya no está disponible.", 400);
+  }
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
   if (doubleProt && NO_DOUBLE_PROTS.has(sig ? sig.prot : "")) throw new ApiError("Esa proteína no admite doble porción.");
@@ -568,7 +651,7 @@ function priceByoBuild(
   // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
   // especificar) — se descuenta del inventario real de esa misma salsa.
   if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
+  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? EXTRA_SAUCE_PRICE : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
 // Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,
@@ -846,8 +929,11 @@ const OFFPEAK_DRINK_PROMO_CAP = 6;
 // clientes, y el dueño no puede salir a vender puerta a puerta porque sus mañanas están
 // cocinando. Este incentivo convierte al cliente en el vendedor: quien junta al grupo se
 // lleva un sándwich gratis, y con eso el negocio compra una cuenta de oficina entera por
-// el costo de insumo de un solo sándwich (~S/6 contra los ~S/128-141 que cuesta la misma
-// cuenta por publicidad o por muestra dirigida).
+// el costo de insumo de un solo sándwich contra lo que cuesta la misma cuenta por
+// publicidad. Los números, ya con fuente (ver PREDICCION_V7.md): pedido grupal S/1.19 por
+// persona, referido S/7.65, Meta Ads en Perú S/10.51-25.23. El "~S/128-141" que decía este
+// comentario hasta el 2026-08-27 no tenía ninguna fuente y estaba entre 5 y 13 veces por
+// encima del costo real — no lo reintroduzcas.
 //
 // Se perdona el 15CM MÁS BARATO del carrito, no "el del organizador": el organizador paga
 // la cuenta completa, así que económicamente es lo mismo y evita tener que adivinar cuál
@@ -859,6 +945,12 @@ const OFFPEAK_DRINK_PROMO_CAP = 6;
 // no, el combo terminaría regalando también la bebida emparejada con un sándwich que ya
 // es gratis (es exactamente el bug que ya se corrigió una vez para R06).
 export const ORGANIZER_FREE_MIN_SANDWICHES = 5;
+
+// Recargo por SALSA EXTRA. Era el único precio del catálogo que vivía como literal `2`
+// suelto — 4 veces acá y 5 en src/app.ts — y además el único que NO se puede editar desde
+// `catalog_prices`. Cambiarlo en un solo lado rompía todo checkout que lo usara, sin que
+// nada avisara: `npm run parity` no podía vigilar un número sin nombre.
+export const EXTRA_SAUCE_PRICE = 2;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
 // pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en
@@ -914,6 +1006,13 @@ export function deriveCart(
 
   let sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
   let sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
+  // El umbral del organizador se mide sobre los sándwiches que el cliente REALMENTE pidió,
+  // antes de descontar la unidad que regala R06. Restar R06 primero hacía que un grupo de
+  // 5 con la recompensa canjeada cayera a 4 y perdiera el sándwich del organizador solo en
+  // el servidor: el cliente descontaba los dos y el checkout se rechazaba por total que no
+  // coincide. Es también lo que ya miden organizerFreeSandwichApplies y la pantalla del
+  // grupo, así que las tres cuentas quedan alineadas.
+  const sandwichQtyForOrganizerGate = sandwichQty;
   if (fullyWaivedSandwich) sandwichQty -= 1;
   if (fullyWaivedSide) sideQty -= 1;
 
@@ -922,7 +1021,7 @@ export function deriveCart(
   // recompensa, porque también regala una unidad COMPLETA y por lo tanto esa unidad no
   // puede seguir contando para el combo.
   let organizerWaivedIdx = -1;
-  if (organizerFreeSandwich && sandwichQty >= ORGANIZER_FREE_MIN_SANDWICHES) {
+  if (organizerFreeSandwich && sandwichQtyForOrganizerGate >= ORGANIZER_FREE_MIN_SANDWICHES) {
     let best = Infinity;
     priced.forEach((p, idx) => {
       if (idx === rewardTargetIdx) return; // no se apila con R06 sobre la misma línea
