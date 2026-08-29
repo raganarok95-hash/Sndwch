@@ -39,22 +39,46 @@ cruzaba un `double`. Un `numeric` largo volvía redondeado (`0.10000000000000000
 cambiado, que solo se habría descubierto el día de usarlo. Ahora las filas viajan como
 `row_to_json(t)::text` y JS nunca toca los números.
 
-## Lote E2 — Protege ingresos que ya existen
+## Lote E2 — Protege ingresos que ya existen ✅ HECHO (2026-08-29)
 
 Lo que evita perder ventas o clientes que ya tienes.
 
-| Orden | # | Qué |
-|---|---|---|
-| 5 | 11 | Bloqueo preventivo de Signature sin insumo comprometido |
-| 6 | 26 | Alerta de pedido programado sin insumo |
-| 7 | 23 | Auto-pausa al llenar la hora |
-| 8 | 24 | Reapertura automática |
-| 9 | 16 | ETA ajustada por cola |
-| 10 | 79 | Alerta de pedido que pasó el ETA |
-| 11 | 32 | Alerta de rechazo de tarjeta alto |
-| 12 | 33 | Reintento de cobro fallido |
-| 13 | 27 | Recordatorio al cliente 1h antes del pedido programado |
-| 14 | 30 | Alerta de nota de cocina inusual (alergias) |
+| Orden | # | Qué | Estado |
+|---|---|---|---|
+| 5 | 11 | Bloqueo preventivo de Signature | ✅ **La premisa del documento era falsa y el defecto real era otro** — ver abajo |
+| 6 | 26 | Alerta de pedido programado sin insumo | ✅ `alert-scheduled-shortfall`, cada hora. El cálculo ya existía en la pantalla de preparación; lo que faltaba era que avisara sin que nadie la abriera |
+| 7 | 23 | Auto-pausa al llenar la hora | ✅ **Reinterpretado**: pausar la tienda ENTERA habría bloqueado también las horas vacías. El cliente ahora VE las franjas llenas antes de elegir |
+| 8 | 24 | Reapertura automática | ✅ Sale gratis por construcción: la capacidad se calcula en vivo contra la hora actual, así que una franja deja de estar llena sola. No hay estado que revertir |
+| 9 | 16 | ETA ajustada por cola | ✅ El estimado que se ve ANTES de pagar suma 5 min por pedido en cola, en vez del rango fijo 25-40 ciego |
+| 10 | 79 | Alerta de pedido que pasó el ETA | ✅ Tercer barrido en `alert-stuck-orders`, contra la promesa hecha a ESE cliente (±5 min), no contra el reloj de la cocina |
+| 11 | 32 | Alerta de rechazo de tarjeta alto | ✅ `alert-card-declines`, cada hora, con mínimo de volumen para que 1 rechazo de 1 no dispare nada |
+| 12 | 33 | Reintento de cobro fallido | ⚠️ **Hecho hasta donde Culqi lo permite** — ver abajo |
+| 13 | 27 | Recordatorio al cliente 1h antes | ✅ Segundo barrido en `alert-scheduled-orders`, con bandera propia: el aviso al negocio va 20 min antes, el del cliente 60 |
+| 14 | 30 | Alerta de nota de cocina inusual | ✅ Lista compartida cliente↔servidor (con parity), bloque rojo en la comanda y "⚠️ ALERGIA" en el título del push |
+
+### Dos correcciones a lo que decía el documento
+
+**El #11 no era lo que decía.** La lista afirmaba que "el stock se descuenta pero nadie mira la
+demanda ya vendida". Falso: `reserve_inventory` descuenta AL RESERVAR, así que la demanda ya
+vendida sí está restada. El defecto real, verificado leyendo el código, era otro y peor: la
+tarjeta de un Signature comprobaba `isAvail(base) && isAvail(prot)` mientras el servidor
+reserva la receta COMPLETA (base + proteína + toppings + salsas + queso fijo). Si se acababa
+un topping, una salsa o el queso, el Signature se seguía ofreciendo y el cliente se enteraba
+al tocar PAGAR — el mismo patrón que ya obligó a poner el selector de distrito. Ahora
+`sigInStock()` mira la receta entera.
+
+**De paso apareció un segundo defecto real**: el servidor MANDA `fixedCheese`/`cheeseOptional`
+en `sigItems`, pero el cliente no los volcaba sobre `SIGS`. Cambiar el queso fijo de un
+Signature desde el panel no llegaba nunca al cliente.
+
+**El #33 no se puede hacer entero, y no por falta de tiempo.** El token de tarjeta de Culqi es
+de **un solo uso y vive 5 minutos**, así que el servidor no puede reintentar un cobro sin que
+el cliente vuelva a poner una tarjeta. Un reintento automático exigiría guardar la tarjeta en
+Culqi (One Click), o sea decidir guardar medios de pago de los clientes — decisión del dueño,
+no un detalle de implementación. Lo que sí se construyó: el rechazo queda anotado en la
+reserva, y el mensaje de recuperación dice "tu tarjeta no pasó, prueba con otra o con
+Yape/Plin" en vez del genérico "se te quedó a medias", que hacía reintentar con la misma
+tarjeta rechazada.
 
 ## Lote E3 — Genera ingresos nuevos
 

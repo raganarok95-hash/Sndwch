@@ -66,7 +66,7 @@ bloque es el que más tiempo tuyo devuelve.
     jornada, no desde una lista fija. · **HOY**
 11. **Bloqueo preventivo de Signature** — si la proteína no alcanza para los pedidos ya
     comprometidos, el producto sale del catálogo antes de que alguien más lo pida. Hoy el
-    stock se descuenta pero nadie mira la demanda ya vendida. · **HOY**
+    stock se descuenta pero nadie mira la demanda ya vendida. · **HECHO 2026-08-29 (el defecto real era otro: la tarjeta miraba solo pan+proteína mientras el servidor reserva la receta completa — ver docs/ORDEN_DE_EJECUCION.md)**
 12. **Orden de cocción sugerido** — qué preparar primero según las horas de entrega
     comprometidas. · **HOY**
 13. **Recordatorio de pedido al proveedor** — con el lead time de cada uno (el pan y la
@@ -79,7 +79,7 @@ bloque es el que más tiempo tuyo devuelve.
 ## B. Pedidos, despacho y reparto
 
 16. **ETA ajustada por cola** — hoy el ETA sale de la zona; esto le suma cuántos pedidos
-    tienes delante. Un ETA que miente es la causa directa de una calificación de 1 estrella. · **HOY**
+    tienes delante. Un ETA que miente es la causa directa de una calificación de 1 estrella. · **HECHO 2026-08-29 (`estimatedDeliveryRange()`: +5 min por pedido en cola)**
 17. **Agrupación de pedidos por cercanía** — dos pedidos a la misma zona en la misma ventana
     salen en un viaje. Baja lo que le pagas al motorizado. · **HOY**
 18. **Despacho al motorizado por WhatsApp** — mensaje con dirección, referencia, teléfono y
@@ -93,28 +93,28 @@ bloque es el que más tiempo tuyo devuelve.
 22. **Aviso de dos pedidos a la misma dirección** — casi siempre es un pedido partido en dos;
     juntarlos ahorra un viaje. · **HOY**
 23. **Auto-pausa al llenar la hora** — al llegar a `MAX_ORDERS_PER_HOUR` la tienda se pausa
-    sola en vez de aceptar algo que no vas a poder cumplir. · **HOY**
+    sola en vez de aceptar algo que no vas a poder cumplir. · **HECHO 2026-08-29 (reinterpretado: el cliente VE las franjas llenas; pausar la tienda entera habría bloqueado también las horas vacías)**
 24. **Reapertura automática** — al bajar la cola, la tienda vuelve sola. Sin esto la pausa
-    depende de que te acuerdes. · **HOY**
+    depende de que te acuerdes. · **HECHO 2026-08-29 (sale gratis: la capacidad se calcula en vivo, no hay estado que revertir)**
 25. **Sugerencia de hora alternativa** — cuando la franja está llena, ofrecer la siguiente
     libre en vez de solo rechazar. · **HOY**
 26. **Alerta de pedido programado sin insumo** — el pedido es para las 8pm y la proteína se
-    acabó a las 5pm: avisar mientras todavía se puede cocinar o llamar al cliente. · **HOY**
+    acabó a las 5pm: avisar mientras todavía se puede cocinar o llamar al cliente. · **HECHO 2026-08-29 (`alert-scheduled-shortfall`, cada hora)**
 27. **Recordatorio al cliente 1h antes** — de su pedido programado, para que esté en casa.
-    Reduce entregas fallidas. · **HOY**
+    Reduce entregas fallidas. · **HECHO 2026-08-29 (segundo barrido en `alert-scheduled-orders`, 60 min antes)**
 28. **Lectura del voucher de Yape** — OCR del comprobante que ya sube el cliente, para
     proponer la confirmación en vez de teclearla. · **$** (servicio de OCR)
 29. **Detección de comprobante duplicado** — el mismo voucher usado en dos pedidos. · **HOY**
 30. **Alerta de nota de cocina inusual** — "sin cebolla", "soy alérgico": se resalta en la
-    comanda en vez de perderse en el texto. · **HOY**
+    comanda en vez de perderse en el texto. · **HECHO 2026-08-29 (lista compartida con parity + bloque rojo en la comanda)**
 
 ## C. Dinero, márgenes y cobros
 
 31. **Reporte diario de conciliación** — el cron horario ya concilia cargos huérfanos; falta
     el resumen que te diga cuánto cobró Culqi vs. cuánto facturaste. · **HOY**
 32. **Alerta de rechazo de tarjeta alto** — si de golpe la mitad de los cobros falla, algo se
-    rompió (Culqi, el 3DS, tu cuenta). Hoy te enterarías por un cliente. · **HOY**
-33. **Reintento de cobro fallido** — con aviso al cliente, en vez de perder la venta. · **HOY**
+    rompió (Culqi, el 3DS, tu cuenta). Hoy te enterarías por un cliente. · **HECHO 2026-08-29 (`alert-card-declines`, con mínimo de volumen)**
+33. **Reintento de cobro fallido** — con aviso al cliente, en vez de perder la venta. · **PARCIAL 2026-08-29 — el reintento automático es IMPOSIBLE: el token de Culqi es de un solo uso y dura 5 min. Sí se construyó el aviso que dice que fue la tarjeta**
 34. **Reporte mensual de comisiones Culqi** — cuánto te costó cobrar con tarjeta ese mes.
     Es un costo real que hoy no está en ningún reporte. · **HOY**
 35. **Alerta de margen por pedido bajo el umbral** — un pedido que con combo + recompensa +
@@ -213,7 +213,7 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 78. **Tiempo real de entrega vs. prometido** — la columna `delivered_at` ya se llena; falta el
     reporte. Es el dato que dice si tu ETA miente. · **HOY**
 79. **Alerta de pedido que pasó el ETA** — mientras todavía puedes avisarle al cliente, que es
-    lo que evita la mala calificación. · **HOY**
+    lo que evita la mala calificación. · **HECHO 2026-08-29 (tercer barrido en `alert-stuck-orders`, contra la promesa hecha al cliente)**
 80. ~~**Encuesta de por qué no volvió**~~ — **DESCARTADO por el dueño (2026-08-29).**
 81. ~~**Foto del pedido antes de salir**~~ — **DESCARTADO por el dueño (2026-08-29).**
 82. ~~**Recordatorio de vencimiento de licencias**~~ — **DESCARTADO por el dueño (2026-08-29).**

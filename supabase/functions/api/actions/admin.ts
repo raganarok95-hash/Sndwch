@@ -962,19 +962,183 @@ export async function actAdminPrepList(b: any) {
   const invRows = codes.length
     ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty`)
     : [];
-  const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
-  const ingredients = codes
+  return {
+    orders,
+    ingredients: prepShortfall(ingredientCounts, invRows),
+    windowHours: PREP_LIST_WINDOW_HOURS,
+  };
+}
+
+// Cruce de lo que hace falta contra lo que hay. Se extrajo de actAdminPrepList para que la
+// ALERTA (#26) use exactamente el mismo criterio que la pantalla, en vez de una segunda
+// copia que con el tiempo diverge — el mismo motivo por el que `cancellationDeltas` salió
+// de las dos cancelaciones. Y porque así se puede probar: decidir mal acá no produce un
+// error, produce una alerta que no sale.
+export type PrepIngredient = { code: string; label: string; qty: number; stockQty: number | null; shortfall: boolean };
+
+export function prepShortfall(
+  ingredientCounts: Map<string, number>,
+  invRows: { product_code: string; product_name?: string | null; in_stock?: boolean | null; stock_qty?: number | null }[],
+): PrepIngredient[] {
+  const invMap = new Map<string, any>((invRows || []).map((r) => [r.product_code, r]));
+  return [...ingredientCounts.keys()]
     .map((code) => {
       const inv = invMap.get(code);
       const qty = ingredientCounts.get(code)!;
       const stockQty = inv?.stock_qty ?? null;
       // Sin fila en inventory = nunca se marcó agotado ni se le puso cantidad — no hay
-      // forma de saber si alcanza, así que no se marca como faltante.
+      // forma de saber si alcanza, así que no se marca como faltante. Inventar un faltante
+      // acá haría sonar la alarma por insumos que el dueño nunca quiso rastrear.
       const shortfall = inv?.in_stock === false || (stockQty != null && stockQty < qty);
       return { code, label: inv?.product_name || code, qty, stockQty, shortfall };
     })
     .sort((a, b) => (a.shortfall === b.shortfall ? b.qty - a.qty : a.shortfall ? -1 : 1));
-  return { orders, ingredients, windowHours: PREP_LIST_WINDOW_HOURS };
+}
+
+// #26 — ALERTA de pedido programado sin insumo.
+//
+// La pantalla de arriba ya calcula el faltante, pero solo lo ve quien la abre. El caso que
+// importa es el contrario: el pedido es para las 8pm, algo se marcó agotado a las 5pm, y
+// nadie va a abrir esa pantalla en el medio. Avisar mientras todavía se puede cocinar o
+// llamar al cliente es la diferencia entre resolverlo y cancelar a la hora de entregar.
+//
+// Por qué esto NO es redundante con la reserva de inventario: `reserve_inventory` descuenta
+// al reservar, así que un pedido programado ya tiene sus porciones apartadas. El hueco real
+// son los insumos SIN cantidad rastreada (stock_qty nulo: la reserva no los toca, solo
+// existe el interruptor in_stock) y las correcciones manuales de stock hacia abajo, que
+// pueden dejar el número por debajo de lo ya comprometido. Ninguno de los dos casos avisa
+// solo hoy.
+const SHORTFALL_ALERT_WINDOW_HOURS = 12;
+
+export async function actAlertScheduledShortfall(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  await loadCatalogPrices();
+  const nowIso = new Date().toISOString();
+  const windowEndIso = new Date(Date.now() + SHORTFALL_ALERT_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "orders",
+    `delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEndIso)}` +
+      `&status=neq.CANCELADO&status=neq.ENTREGADO&select=ref,delivery_time,items&order=delivery_time.asc&limit=500`,
+  );
+  if (!rows.length) return { success: true, alerted: false, orders: 0 };
+
+  const ingredientCounts = new Map<string, number>();
+  for (const o of rows) {
+    if (!Array.isArray(o.items)) continue;
+    for (const it of o.items) {
+      try {
+        const priced = priceCartItem(it);
+        for (const code of priced.ingredientsPerUnit) {
+          ingredientCounts.set(code, (ingredientCounts.get(code) || 0) + priced.qty);
+        }
+      } catch {
+        // Ítem legado fuera del catálogo actual: se omite ese ítem, no la alerta entera.
+      }
+    }
+  }
+  const codes = [...ingredientCounts.keys()];
+  const invRows = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty&limit=500`)
+    : [];
+  const faltantes = prepShortfall(ingredientCounts, invRows).filter((i) => i.shortfall);
+  if (!faltantes.length) return { success: true, alerted: false, orders: rows.length };
+
+  // Una vez cada 3 horas como mucho: el cron corre seguido a propósito (para enterarse
+  // pronto), pero repetir el mismo aviso cada hora lo vuelve ruido y el ruido se ignora.
+  const clave = "scheduled-shortfall:" + faltantes.map((f) => f.code).sort().join(",");
+  if (!(await rpc("check_rate_limit", { p_key: clave, p_limit: 1, p_window_minutes: 180 }))) {
+    return { success: true, alerted: false, throttled: true, orders: rows.length };
+  }
+
+  const detalle = faltantes
+    .slice(0, 4)
+    .map((f) => f.label + " (hacen falta " + f.qty + (f.stockQty == null ? ", marcado agotado" : ", hay " + f.stockQty) + ")")
+    .join(", ");
+  const proximo = new Date(rows[0].delivery_time).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+  await sendPushToAdmins({
+    title: "⚠️ Pedido programado sin insumo",
+    body: `${rows.length} pedido(s) programado(s), el primero a las ${proximo}. Falta: ${detalle}${faltantes.length > 4 ? "…" : ""}. Todavía hay tiempo de cocinar o de llamar al cliente.`,
+    url: "./index.html",
+    tag: "sndwch-scheduled-shortfall",
+    renotify: true,
+  });
+  return { success: true, alerted: true, orders: rows.length, faltantes: faltantes.length };
+}
+
+// ── #32: rechazo de tarjeta alto ────────────────────────────────────────────────────────
+//
+// Si de golpe la mitad de los cobros falla, algo se rompió del lado de los pagos: Culqi, el
+// 3DS, la cuenta del comercio, o una llave mal puesta tras un deploy. Hoy el dueño se
+// enteraría por un cliente escribiendo "no me deja pagar" — es decir, después de perder
+// varias ventas y sin saber que fueron varias.
+//
+// El dato ya existe: `claimAndChargeCulqi` escribe en `debug_logs` un evento
+// 'culqi-rejected' por cada rechazo y 'charge-succeeded' por cada cobro. Nadie los cruzaba.
+const DECLINE_WINDOW_HOURS = 3;
+// Con pocos intentos, el porcentaje no significa nada: 1 rechazo de 1 es 100% y puede ser
+// simplemente una tarjeta sin fondos. El mínimo evita que la alarma suene el primer día.
+const DECLINE_MIN_CHARGES = 5;
+// La mitad. No es un umbral fino: por debajo de eso hay rechazos normales (fondos, límites,
+// tarjetas vencidas) y afinar el número sin datos reales sería inventar precisión.
+const DECLINE_RATE_THRESHOLD = 0.5;
+
+export type DeclineStats = { total: number; rejected: number; rate: number; alert: boolean; reasons: string[] };
+
+// Cálculo puro, extraído para poder probarlo: su modo de fallo es una alarma que suena por
+// nada (y entonces se ignora) o que no suena mientras se pierden ventas. Ninguno de los dos
+// se ve como un error.
+export function declineStats(
+  rows: { detail?: { event?: string; culqi?: { user_message?: string; merchant_message?: string } } | null }[],
+  opts?: { minCharges?: number; threshold?: number },
+): DeclineStats {
+  const minCharges = opts?.minCharges ?? DECLINE_MIN_CHARGES;
+  const threshold = opts?.threshold ?? DECLINE_RATE_THRESHOLD;
+  let rejected = 0;
+  let succeeded = 0;
+  const reasons: string[] = [];
+  for (const r of rows || []) {
+    const ev = r?.detail?.event;
+    if (ev === "culqi-rejected") {
+      rejected++;
+      const m = r.detail?.culqi?.user_message || r.detail?.culqi?.merchant_message;
+      if (m && !reasons.includes(m)) reasons.push(String(m).slice(0, 120));
+    } else if (ev === "charge-succeeded") {
+      succeeded++;
+    }
+    // 'culqi-fetch-failed' NO cuenta como rechazo: es la red entre nosotros y Culqi, no una
+    // tarjeta rechazada. Mezclarlos convertiría un corte de red en "tus clientes no pueden
+    // pagar con tarjeta", que manda a revisar el lugar equivocado.
+  }
+  const total = rejected + succeeded;
+  const rate = total ? rejected / total : 0;
+  return { total, rejected, rate, alert: total >= minCharges && rate >= threshold, reasons: reasons.slice(0, 3) };
+}
+
+export async function actAlertCardDeclines(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const desde = new Date(Date.now() - DECLINE_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "debug_logs",
+    `source=in.(create-charge,create-credit-charge)&created_at=gte.${encodeURIComponent(desde)}&select=detail&limit=1000`,
+  );
+  const stats = declineStats(rows as any[]);
+  if (!stats.alert) return { success: true, alerted: false, ...stats };
+
+  // Una vez cada 3 horas: mientras el problema siga, el cron lo va a seguir viendo, y
+  // repetir el mismo aviso cada hora lo vuelve ruido.
+  if (!(await rpc("check_rate_limit", { p_key: "card-declines", p_limit: 1, p_window_minutes: 180 }))) {
+    return { success: true, alerted: false, throttled: true, ...stats };
+  }
+  await sendPushToAdmins({
+    title: "💳 Muchos pagos rechazados",
+    body: `${stats.rejected} de ${stats.total} cobros con tarjeta fallaron en las últimas ${DECLINE_WINDOW_HOURS} h`
+      + (stats.reasons.length ? `. Motivo más común: ${stats.reasons[0]}` : "")
+      + ". Revisa Culqi antes de perder más ventas.",
+    url: "./index.html",
+    tag: "sndwch-card-declines",
+    renotify: true,
+  });
+  return { success: true, alerted: true, ...stats };
 }
 
 // Rendimiento por franja horaria — no hay turnos de cocina distintos (una sola persona

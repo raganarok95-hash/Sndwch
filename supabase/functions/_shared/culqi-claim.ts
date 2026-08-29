@@ -109,6 +109,18 @@ export async function claimAndChargeCulqi(cfg: CulqiClaimConfig): Promise<CulqiC
     await releaseClaim();
     const msg = culqiData?.user_message || culqiData?.merchant_message || "El pago fue rechazado.";
     await debugLog({ event: "culqi-rejected", ref: cfg.refValue, amountCents: cfg.amountCents, status: culqiResp.status, culqi: culqiData });
+    // #33 — El rechazo se anota EN LA RESERVA, no solo en debug_logs. Cuando esta reserva
+    // expire sin pagarse, el recordatorio de recuperación necesita saber que fue la tarjeta:
+    // decirle "se te quedó a medias" a alguien a quien le rechazaron el pago hace que
+    // reintente con la misma tarjeta y le vuelva a fallar. Best-effort a propósito — que
+    // falle esta anotación no puede cambiar lo que se le responde al cliente ahora mismo.
+    try {
+      await fetch(`${cfg.sbUrl}/rest/v1/${cfg.table}?ref=eq.${encodeURIComponent(cfg.refValue)}`, {
+        method: "PATCH",
+        headers: { ...sbHeaders, Prefer: "return=minimal" },
+        body: JSON.stringify({ declined_at: new Date().toISOString(), decline_reason: String(msg).slice(0, 300) }),
+      });
+    } catch (_e) { /* nunca debe tumbar la respuesta real */ }
     return { ok: false, status: 402, error: msg, culqi: culqiData };
   }
 

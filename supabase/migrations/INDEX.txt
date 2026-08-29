@@ -128,3 +128,10 @@
 20260829024518  recompensas_tasa_unica_20_pts_por_sol
 20260829054106  quitar_google_review_url_descartado
 20260829151516  inventory_batch_expiry
+20260829153315  cron_alert_batch_expiry
+20260829161144  cron_alert_scheduled_shortfall
+20260829162132  orders_alerted_eta_missed
+20260829162231  orders_reminded_customer_scheduled
+20260829221313  pending_charges_decline_reason
+20260829221412  pending_weekly_plans_decline_reason
+20260829221548  cron_alert_card_declines

@@ -655,6 +655,13 @@ async function loadCatalogBackground(){
         if(Array.isArray(v.sauces))sig.sauces=v.sauces;
         if(typeof v.p15==='number')sig.p15=v.p15;
         if(typeof v.p30==='number')sig.p30=v.p30;
+        // El queso fijo VIAJA en sigItems desde que el panel edita el menú, pero este
+        // bloque no lo volcaba: cambiar el queso de un Signature desde el panel no llegaba
+        // nunca al cliente, que seguía mostrando (y contando como ingrediente) el de la
+        // semilla. Se copia aunque venga en null, porque QUITAR el queso fijo es una de las
+        // ediciones válidas — con `if(v.fixedCheese)` sería imposible.
+        if('fixedCheese' in v)sig.fixedCheese=v.fixedCheese||null;
+        if(typeof v.cheeseOptional==='boolean')sig.cheeseOptional=v.cheeseOptional;
         if(v.img)SIG_IMG[id]=v.img;
         // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
         // ahora es publicar active=false desde el panel. La receta queda guardada en la
@@ -716,6 +723,12 @@ async function loadStoreHoursBackground(){
     businessLaunched=r.businessLaunched===true;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
     storePausedUntil=r.pausedUntil||null;
+    // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
+    // cocina por delante ahora mismo.
+    fullHours=Array.isArray(r.fullHours)?r.fullHours:[];
+    queueAhead=typeof r.queueAhead==='number'?r.queueAhead:0;
+    if(typeof r.queueMinutesPerOrder==='number')queueMinutesPerOrder=r.queueMinutesPerOrder;
+    if(typeof r.maxPerHour==='number')maxPerHour=r.maxPerHour;
   }catch(e){}
 }
 // C7 — El panel de inventario tiene dos modos que hacen cosas distintas con el MISMO

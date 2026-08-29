@@ -159,6 +159,62 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
 // coincidir con CULQI_FEE_RATE en src/app.ts (ese lado solo estima el total antes de
 // pagar; este es el que de verdad determina cuánto se cobra).
 export const CULQI_FEE_RATE = 0.055;
+
+// Tope de pedidos por hora de entrega. Vivía en actions/orders.ts, pero desde que
+// `get-store-hours` le dice al cliente qué franjas están llenas (#23) hacen falta los dos
+// lados, y hours.ts no puede importar de orders.ts sin crear un ciclo. Debe coincidir con
+// MAX_ORDERS_PER_HOUR en src/app/ — lo verifica `npm run parity`.
+//
+// Subido de 6 a 10 (2026-08-15) al conocer el método de trabajo real: la cocción se hace
+// por TANDAS 1-2 veces por semana y en hora de servicio cada pedido es solo ARMAR el
+// sándwich (~4-5 min con todo en mise en place), no cocinar desde cero. Además el dueño
+// NUNCA reparte: el motorizado es aparte, así que armar no compite con salir a entregar.
+// El 6 anterior suponía un ciclo cocinar+repartir que no es el de este negocio, y con la
+// meta de ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos
+// reales un viernes por la noche.
+export const MAX_ORDERS_PER_HOUR = 10;
+
+// Cuánto suma al estimado de entrega cada pedido que ya está en cola por delante (#16).
+// Sale del mismo dato que el tope de arriba: armar un sándwich con el mise en place hecho
+// toma ~4-5 minutos, así que cada pedido delante corre la entrega unos 5.
+//
+// El estimado que se ve ANTES de pagar era un rango fijo (25-40 min) que no miraba la
+// cola: con 8 pedidos por delante prometía lo mismo que con la cocina vacía. Un ETA que
+// miente es la causa directa de una calificación de 1 estrella, y la calificación baja
+// cuesta más que la venta que se pierde por avisar que hoy hay demora.
+export const QUEUE_MINUTES_PER_ORDER = 5;
+
+// #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
+// preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
+// dirección ("portón azul", "3er piso"): una alergia escrita ahí se pinta igual que el
+// portón y se pierde entre lo demás, justo mientras se arma el pedido con las manos
+// ocupadas.
+//
+// La lista es DELIBERADAMENTE corta y de lenguaje de restricción, no de ingredientes. Meter
+// cada alérgeno ("maní", "huevo", "leche") haría saltar la alerta con "sin cebolla" y con
+// cualquier receta que los nombre — y una alarma que salta siempre deja de mirarse, que es
+// exactamente lo que esto viene a evitar. Un "sin cebolla" sigue mostrándose como nota
+// normal: es una preferencia, no un riesgo.
+//
+// DEBE coincidir con NOTE_ALERT_WORDS en src/app/ — lo verifica `npm run parity`.
+// Tope de notificaciones push por corrida de cron. Vivía en actions/customer.ts, pero desde
+// que el recordatorio de pedido programado al cliente (#27) también manda push desde
+// orders.ts hacen falta los dos lados — y son el mismo tope, no dos.
+//
+// Existe porque los crons leían hasta 20 000 clientes y enviaban en serie dentro de una sola
+// invocación: con varios cientos, la función se cortaba a mitad por tiempo y la cola no
+// recibía nada ese día, en silencio. Lo que sobra se atiende en la corrida siguiente (las
+// ventanas de elegibilidad son de varios días) y llegar al tope queda en debug_logs.
+export const MAX_PUSH_PER_RUN = 200;
+
+export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
+
+// Compara sin acentos ni mayúsculas: quien escribe "ALERGICO" desde el teclado del celular
+// no debería recibir menos cuidado que quien escribe "alérgico".
+export function noteNeedsAttention(notes: string | null | undefined): boolean {
+  const n = String(notes || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return NOTE_ALERT_WORDS.some((w) => n.includes(w.normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+}
 // d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
 // corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
 // como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro

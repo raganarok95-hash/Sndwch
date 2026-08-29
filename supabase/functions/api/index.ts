@@ -40,7 +40,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -129,6 +129,11 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-inventory-restock": actAdminInventoryRestock,
+  // #26: avisa de un pedido programado cuyo insumo ya no alcanza, mientras todavía se
+  // puede cocinar o llamar al cliente.
+  "alert-scheduled-shortfall": actAlertScheduledShortfall,
+  // #32: si de golpe la mitad de los cobros falla, algo se rompió del lado de los pagos.
+  "alert-card-declines": actAlertCardDeclines,
   "admin-inventory-batches": actAdminInventoryBatches,
   "admin-inventory-set-shelf-life": actAdminInventorySetShelfLife,
   "alert-system-health": actAlertSystemHealth,

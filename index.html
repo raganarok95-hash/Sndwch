@@ -777,7 +777,12 @@ function isWithinStoreHours(d) {
 var SCHED_LEAD_MINUTES = 20;
 function schedDateForDay(dayKey) { var d = new Date(); if (dayKey === 'tomorrow')
     d.setDate(d.getDate() + 1); return d; }
-function schedSlots(dayKey) {
+// Devuelve las franjas del día con su estado. `full` viene de la capacidad real que manda
+// el servidor (#23): antes el cliente ofrecía todas las franjas por igual y el rechazo por
+// hora llena aparecía recién al tocar PAGAR, con el sándwich ya armado y la dirección ya
+// escrita. La franja llena se sigue MOSTRANDO, apagada — esconderla dejaría un hueco
+// inexplicable en la lista de horas.
+function schedSlotsDetailed(dayKey) {
     var d = schedDateForDay(dayKey), range = STORE_HOURS[limaDayHour(d).weekday];
     if (!range)
         return [];
@@ -788,9 +793,14 @@ function schedSlots(dayKey) {
         slotDate.setMinutes(totalMin);
         if (isToday && slotDate.getTime() < now.getTime() + SCHED_LEAD_MINUTES * 60000)
             continue;
-        out.push(String(Math.floor(totalMin / 60)).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0'));
+        out.push({ t: String(Math.floor(totalMin / 60)).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0'), full: hourIsFull(slotDate) });
     }
     return out;
+}
+// Solo las franjas ELEGIBLES. Lo usan el default y la validación: una hora llena no puede
+// quedar preseleccionada, porque el cliente la pagaría sin haberla elegido.
+function schedSlots(dayKey) {
+    return schedSlotsDetailed(dayKey).filter(function (s) { return !s.full; }).map(function (s) { return s.t; });
 }
 function schedInputValue() {
     if (!schedSlot)
@@ -819,10 +829,19 @@ function scheduleTimePickerHTML() {
         var sub = d.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
         return '<div onclick="' + (closed ? '' : 'pickSchedDay(\'' + dd.key + '\')') + '" style="flex:1;text-align:center;background:' + (closed ? '#162922' : (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)')) + ';border:1px solid ' + (sel && !closed ? GOLD : '#3A6B58') + ';border-radius:8px;padding:9px 6px;cursor:' + (closed ? 'not-allowed' : 'pointer') + ';opacity:' + (closed ? .4 : 1) + '"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">' + dd.l + '</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">' + (closed ? 'CERRADO' : esc(sub)) + '</div></div>';
     }).join('');
-    var slots = schedSlots(schedDay);
+    var slots = schedSlotsDetailed(schedDay);
+    var libres = slots.filter(function (s) { return !s.full; });
     var slotsHTML = slots.length
-        ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">' + slots.map(function (s) { var sel = schedSlot === s; return '<div onclick="pickSchedSlot(\'' + s + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + (sel ? '#fff' : '#A8C8B0') + ';box-shadow:' + (sel ? SHADOW_GOLD : 'none') + '">' + s + '</div>'; }).join('') + '</div>'
+        ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">' + slots.map(function (s) {
+            if (s.full)
+                return '<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">' + s.t + '</div>';
+            var sel = schedSlot === s.t;
+            return '<div onclick="pickSchedSlot(\'' + s.t + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + (sel ? '#fff' : '#A8C8B0') + ';box-shadow:' + (sel ? SHADOW_GOLD : 'none') + '">' + s.t + '</div>';
+        }).join('') + '</div>'
+            + (libres.length < slots.length ? '<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>' : '')
         : '<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No hay horarios disponibles ese día.</div>';
+    if (slots.length && !libres.length)
+        slotsHTML += '<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + '">Todas las horas de ese día están completas. Prueba el otro día.</div>';
     return '<div style="display:flex;gap:8px">' + dayChips + '</div>' + slotsHTML + '<input type="hidden" id="o-sched" value="' + esc(schedInputValue()) + '">';
 }
 // Rango orientativo de preparación + entrega mostrado ANTES de pagar (reduce la
@@ -830,6 +849,19 @@ function scheduleTimePickerHTML() {
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
 // real de tu zona de reparto.
 var ESTIMATED_DELIVERY_RANGE = [25, 40];
+// #16 — El rango de arriba es el de la cocina VACÍA. Con pedidos por delante, prometer lo
+// mismo es mentir, y un ETA que miente es la causa directa de una calificación de 1
+// estrella: el cliente no reclama por esperar 50 minutos, reclama por esperar 50 cuando le
+// dijeron 25. Avisar la demora cuesta alguna venta; la mala calificación cuesta más.
+//
+// `queueAhead` son los pedidos en RECIBIDO/PREPARANDO (los que compiten por el tiempo de
+// armado); los que ya salieron EN CAMINO no cuentan. Si el fetch de capacidad falló,
+// queueAhead es 0 y esto devuelve exactamente el rango de siempre.
+function estimatedDeliveryRange() {
+    var extra = Math.max(0, queueAhead) * queueMinutesPerOrder;
+    return [ESTIMATED_DELIVERY_RANGE[0] + extra, ESTIMATED_DELIVERY_RANGE[1] + extra];
+}
+function estimatedRangeText() { var r = estimatedDeliveryRange(); return r[0] + '-' + r[1] + ' min'; }
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
@@ -842,6 +874,21 @@ var NEARBY_RADIUS_KM = 3;
 // este chequeo de acá es solo para dar el aviso al toque, sin esperar la respuesta del
 // servidor. DEBE coincidir con DELIVERY_EXCLUDED_ZONES en supabase/functions/api/env.ts.
 var DELIVERY_EXCLUDED_ZONES = ['el milagro', 'el porvenir'];
+// #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
+// preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
+// dirección ("portón azul", "3er piso"): una alergia escrita ahí se pintaba igual que el
+// portón y se perdía entre lo demás, justo mientras se arma el pedido.
+//
+// La lista es corta y de lenguaje de restricción, no de ingredientes, a propósito: meter
+// cada alérgeno haría saltar la alerta con "sin cebolla" y con cualquier receta que los
+// nombre, y una alarma que salta siempre deja de mirarse. Un "sin cebolla" se sigue viendo
+// como nota normal: es una preferencia, no un riesgo.
+// DEBE coincidir con NOTE_ALERT_WORDS en supabase/functions/api/env.ts.
+var NOTE_ALERT_WORDS = ['alergi', 'alérgi', 'intoleran', 'celiac', 'celíac', 'gluten', 'lactosa', 'diabet'];
+function noteNeedsAttention(notes) {
+    var n = (notes || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return NOTE_ALERT_WORDS.some(function (w) { return n.indexOf(w.normalize('NFD').replace(/[\u0300-\u036f]/g, '')) >= 0; });
+}
 function addressInExcludedZone(addr) {
     var a = (addr || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return DELIVERY_EXCLUDED_ZONES.some(function (z) { return a.indexOf(z) >= 0; });
@@ -1064,6 +1111,21 @@ var REFERRAL_BONUS_POINTS = 120;
 var metaPixelId = null, _metaPixelLoaded = false;
 // Pausa temporal de la tienda (se reanuda sola). Llega en get-store-hours.
 var storePausedUntil = null;
+// Capacidad (#23/#24/#16), también de get-store-hours. `fullHours` son los inicios de hora
+// (ISO) que ya llegaron al tope; `queueAhead`, los pedidos que la cocina tiene por delante
+// ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se
+// deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
+// que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
+var fullHours = [], queueAhead = 0, queueMinutesPerOrder = 5, maxPerHour = 10;
+// ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
+// como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
+function hourIsFull(d) {
+    if (!fullHours.length)
+        return false;
+    var h = new Date(d);
+    h.setMinutes(0, 0, 0);
+    return fullHours.indexOf(h.toISOString()) >= 0;
+}
 function initMetaPixel(id) {
     if (_metaPixelLoaded || !id)
         return;
@@ -1128,6 +1190,28 @@ function rankName(totalOrders) {
 // Urgencia real (no un timer inventado): invQty ya se carga para todos, no solo para el
 // panel admin (ver loadInvBackground) — solo faltaba mostrárselo al cliente en vez de
 // guardarlo solo para uso interno.
+// #11 — Disponibilidad REAL de un Signature (ojo: `sigAvailable` es otra cosa, la ventana
+// de fechas de una edición limitada; esto mira INSUMOS).
+//
+// Antes esto era `isAvail(s.base)&&isAvail(s.prot)` en los dos sitios donde se pinta un
+// Signature. Pero el servidor reserva la receta COMPLETA (`priceSigBuild` arma
+// `[base, prot, ...tops, ...sauces]` más el queso fijo, y eso es lo que va a
+// `reserve_inventory`). O sea que si se acababa un topping, una salsa o el queso fijo, la
+// tarjeta seguía diciendo "disponible": el cliente elegía el sándwich, lo armaba entero,
+// llegaba al checkout y recién ahí el servidor lo rechazaba con "uno o más productos se
+// agotaron". Es el mismo defecto que ya obligó a poner el selector de distrito — la
+// restricción existía y el cliente se enteraba al tocar PAGAR.
+//
+// El servidor sigue siendo la autoridad (esto no reemplaza `reserve_inventory`): lo que
+// cambia es que la app deja de ofrecer algo que ella misma ya sabe que no puede cumplir.
+function sigInStock(s) {
+    if (!s)
+        return false;
+    var codes = [s.base, s.prot].concat(s.tops || [], s.sauces || []);
+    if (s.fixedCheese)
+        codes.push(s.fixedCheese);
+    return codes.every(function (c) { return !c || isAvail(c); });
+}
 function lowStockNote(code) {
     var q = invQty[code];
     if (q == null || q <= 0 || q > 5)
@@ -1225,7 +1309,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '6481853813';
+var APP_BUILD = '58e4ad14b9';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2651,7 +2735,7 @@ function sOHome() {
     var showOpenBadge = ss.open && businessLaunched;
     // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
     // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-    var hoursBadge = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + '"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + ';letter-spacing:.1em">' + (!businessLaunched ? 'AÚN NO ABRIMOS' : ss.label) + '</span>' + (showOpenBadge ? '<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· ' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</span>' : '') + '</div>'
+    var hoursBadge = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + '"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + (!businessLaunched ? GOLD : (ss.open ? '#25D366' : '#ff8888')) + ';letter-spacing:.1em">' + (!businessLaunched ? 'AÚN NO ABRIMOS' : ss.label) + '</span>' + (showOpenBadge ? '<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· ' + estimatedRangeText() + '</span>' : '') + '</div>'
         // El costo de envío ya se mostraba en el checkout, pero recién ahí: el cliente armaba
         // todo el pedido y se enteraba del delivery al final. Esa sorpresa al final es la causa
         // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
@@ -2663,7 +2747,7 @@ function sOHome() {
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(lastOrd.summary || '') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
     var cartCard = cart.length ? '<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('cart', 16, '#FFFFFF') + 'Carrito<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + ' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">Ver \u2192</span></div>' : '';
     var pwaCard = (deferredInstallPrompt && !pwaDismissed) ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('device', 15, GOLD) + 'Instalar<span class="cut-sep" style="color:' + GOLD + '"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
-    var nearbyCard = (nearStore && ss.open && businessLaunched) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('direccion', 15, GOLD) + '¡Estás cerca<span class="cut-sep" style="color:' + GOLD + '"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en ' + ESTIMATED_DELIVERY_RANGE[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
+    var nearbyCard = (nearStore && ss.open && businessLaunched) ? '<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + icon('direccion', 15, GOLD) + '¡Estás cerca<span class="cut-sep" style="color:' + GOLD + '"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en ' + estimatedDeliveryRange()[0] + ' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:16px;padding:0 4px">&#10005;</button></div>' : '';
     return H()
         + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + hoursBadge
@@ -2703,7 +2787,7 @@ function sOHome() {
                 + '<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:' + (homeTab === 'byo' ? GOLD : 'transparent') + ';color:' + (homeTab === 'byo' ? '#241a08' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
                 + '</div>';
             var sigPanel = '<div style="margin-bottom:8px">' + visibleSigs.map(function (s, i) {
-                var av = isAvail(s.base) && isAvail(s.prot);
+                var av = sigInStock(s);
                 var thumb = SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="' + esc(s.n) + '" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : '<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:' + 'var(--sw-card2,#1A3028)' + '"></div>';
                 if (!av)
                     return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">' + thumb + '<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;flex-shrink:0">Agotado</span></div>';
@@ -3021,7 +3105,7 @@ function sOSig() {
             }
         }
         var sel = sigId === s.id, pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });
-        var av = isAvail(s.base) && isAvail(s.prot);
+        var av = sigInStock(s);
         var priceTag = size ? SOLES + sigPrice(s) : '—';
         if (!av) {
             var notifyRequested = restockNotified.indexOf(s.id) >= 0;
@@ -3709,7 +3793,7 @@ function checkoutExtrasHTML() {
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
         + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
-        + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + ESTIMATED_DELIVERY_RANGE[0] + '-' + ESTIMATED_DELIVERY_RANGE[1] + ' min</b> desde que confirmamos tu pedido.</span></div></div>' : '')
+        + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + estimatedRangeText() + '</b> desde que confirmamos tu pedido.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
         + deliveryZonePickerHTML()
@@ -4439,6 +4523,14 @@ async function doOrder() {
                 errEl.textContent = 'Esa hora está fuera de nuestro horario de atención.';
             return;
         }
+        // La franja pudo llenarse entre que el cliente la eligió y que llegó a pagar: el
+        // selector se pinta una vez y la capacidad se refresca aparte. El servidor es la
+        // autoridad, pero avisar acá evita mandarlo a la pantalla de pago para nada.
+        if (hourIsFull(schedDate)) {
+            if (errEl)
+                errEl.textContent = 'Esa hora se llenó mientras armabas el pedido. Elige otra franja, por favor.';
+            return;
+        }
         schedIso = schedDate.toISOString();
     }
     else if (!storeStatus().open) {
@@ -4446,6 +4538,15 @@ async function doOrder() {
         // tienda cerrada se podía pagar igual, y la cocina nunca lo iba a preparar.
         if (errEl)
             errEl.textContent = 'Estamos cerrados ahora mismo. Elige "PROGRAMAR" para pedir dentro de nuestro horario.';
+        return;
+    }
+    else if (hourIsFull(new Date())) {
+        // #23 — La hora actual ya llegó al tope. El servidor lo rechaza igual
+        // (`assertHourCapacity`), pero hasta ahora el cliente se enteraba con la tarjeta ya
+        // metida en la pantalla de Culqi. Se le manda a PROGRAMAR, donde las franjas libres
+        // están a la vista, en vez de dejarlo con un error sin salida.
+        if (errEl)
+            errEl.textContent = 'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Elige "PROGRAMAR" y te mostramos las horas libres.';
         return;
     }
     // El negocio abre el 7 de septiembre. Hasta entonces NO se acepta ningún pedido, ni
@@ -7137,7 +7238,12 @@ function sAdminFocus() {
         // La referencia que escribe el cliente ("portón azul", "3er piso") viajaba como
         // o.notes y solo se veía en el TICKET IMPRESO, etiquetada "NOTA:" — o sea en el papel
         // de cocina, que es justo donde no sirve. Quien despacha la necesita en pantalla.
-        + (o.notes ? '<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:' + GOLD + ';margin-top:8px">Referencia: ' + esc(o.notes) + '</div>' : '')
+        // #30 — Una nota que dice "soy alérgico" no puede pintarse igual que "portón azul".
+        // El bloque rojo no es decoración: esta tarjeta se lee de reojo con las manos ocupadas,
+        // y ahí lo único que funciona es que el aviso no se parezca a lo de al lado.
+        + (o.notes ? (noteNeedsAttention(o.notes)
+            ? '<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.5);border-radius:8px;padding:12px 14px;margin-top:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#ff8888;letter-spacing:.08em">⚠ ALERGIA O RESTRICCIÓN</div><div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text,#FFFFFF);margin-top:4px;line-height:1.4">' + esc(o.notes) + '</div></div>'
+            : '<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:' + GOLD + ';margin-top:8px">Referencia: ' + esc(o.notes) + '</div>') : '')
         + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">' + icon('moto', 16, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '')
         + (o.payment_method === 'cod' && o.payment_status !== 'paid' ? '<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:8px">' + icon('cash', 16, '#ffa500') + '<span>Cobrar ' + SOLES + pz(o.total) + ' al entregar</span></div>' : '')
         + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
@@ -8054,6 +8160,15 @@ async function loadCatalogBackground() {
                     sig.p15 = v.p15;
                 if (typeof v.p30 === 'number')
                     sig.p30 = v.p30;
+                // El queso fijo VIAJA en sigItems desde que el panel edita el menú, pero este
+                // bloque no lo volcaba: cambiar el queso de un Signature desde el panel no llegaba
+                // nunca al cliente, que seguía mostrando (y contando como ingrediente) el de la
+                // semilla. Se copia aunque venga en null, porque QUITAR el queso fijo es una de las
+                // ediciones válidas — con `if(v.fixedCheese)` sería imposible.
+                if ('fixedCheese' in v)
+                    sig.fixedCheese = v.fixedCheese || null;
+                if (typeof v.cheeseOptional === 'boolean')
+                    sig.cheeseOptional = v.cheeseOptional;
                 if (v.img)
                     SIG_IMG[id] = v.img;
                 // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
@@ -8131,6 +8246,14 @@ async function loadStoreHoursBackground() {
             initMetaPixel(r.metaPixelId);
         }
         storePausedUntil = r.pausedUntil || null;
+        // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
+        // cocina por delante ahora mismo.
+        fullHours = Array.isArray(r.fullHours) ? r.fullHours : [];
+        queueAhead = typeof r.queueAhead === 'number' ? r.queueAhead : 0;
+        if (typeof r.queueMinutesPerOrder === 'number')
+            queueMinutesPerOrder = r.queueMinutesPerOrder;
+        if (typeof r.maxPerHour === 'number')
+            maxPerHour = r.maxPerHour;
     }
     catch (e) { }
 }

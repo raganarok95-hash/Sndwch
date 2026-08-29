@@ -5,7 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
-  CULQI_FEE_RATE,
+  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -126,7 +126,10 @@ const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 // de suponer un ciclo cocinar+repartir que no es el de este negocio, y con la meta de
 // ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos reales
 // un viernes por la noche.
-const MAX_ORDERS_PER_HOUR = 10;
+// Vive en env.ts desde que `get-store-hours` también lo necesita para decirle al cliente
+// qué franjas están llenas (#23): hours.ts no puede importar de orders.ts sin crear un
+// ciclo, porque orders.ts ya importa storePausedUntil de hours.ts.
+// (Ver MAX_ORDERS_PER_HOUR en ../env.ts)
 
 // El negocio abre el 7 de septiembre de 2026. Hasta ese momento `app_settings
 // .business_launched` es false y el home muestra el badge "AÚN NO ABRIMOS" con la lista de
@@ -948,8 +951,12 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
 
     try {
       await sendPushToAdmins({
-        title: "Nuevo pedido " + pc.ref + " 🥪",
-        body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2),
+        // #30 — La restricción va en el TÍTULO, no escondida en el cuerpo: el push se lee
+        // de reojo mientras se cocina, y ahí solo se ve la primera línea. Un aviso que hay
+        // que abrir para enterarse no sirve para algo que puede enfermar a alguien.
+        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + pc.ref + " 🥪",
+        body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2)
+          + (noteNeedsAttention(pc.notes) ? "\nNOTA: " + String(pc.notes || "").slice(0, 180) : ""),
         url: "./index.html",
         tag: "sndwch-new-order-" + pc.ref,
       });
@@ -1168,9 +1175,10 @@ export async function actPlaceOrder(b: any) {
 
       try {
         await sendPushToAdmins({
-          title: "Nuevo pedido " + ref + " 🥪",
+          title: (noteNeedsAttention(b.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + ref + " 🥪",
           body: (name || "Cliente") + " — S/" + total.toFixed(2)
-            + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : ""),
+            + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : "")
+            + (noteNeedsAttention(b.notes) ? "\nNOTA: " + String(b.notes || "").slice(0, 180) : ""),
           url: "./index.html",
           tag: "sndwch-new-order-" + ref,
         });
@@ -2115,7 +2123,70 @@ export async function actAlertStuckOrders(b: any) {
     }
   }
 
+  // Tercer barrido (#79): pedidos que pasaron el ETA que se le PROMETIÓ al cliente. Los dos
+  // barridos de arriba miran el reloj de la cocina; este mira la promesa. Cuando el pedido
+  // sale EN CAMINO se le manda "llega entre las X y las Y" (etaWindowText, ±5 min sobre
+  // eta_minutes) — pasado eso, el cliente ya está mirando el reloj, y lo único que todavía
+  // evita la mala calificación es escribirle antes de que escriba él.
+  const enCamino = await sbGet(
+    "orders",
+    `status=eq.EN CAMINO&alerted_eta_missed=eq.false&eta_minutes=not.is.null&select=id,ref,customer_name,contact_phone,customer_phone,eta_minutes,status_changed_at&limit=500`,
+  );
+  for (const order of etaMissed(enCamino, Date.now())) {
+    try {
+      await sendPushToAdmins({
+        title: "⏱ Pasó el tiempo prometido",
+        body: `${order.ref} (${order.customerName}) ya pasó los ${order.etaMinutes} min que le prometimos, por ${order.lateMinutes} min. Escríbele antes de que escriba él.`,
+        url: "./index.html",
+        tag: "sndwch-eta-missed-" + order.id,
+        renotify: true,
+      });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { alerted_eta_missed: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-stuck-orders (ETA vencido) failed for order", order.id, e);
+    }
+  }
+
   return { success: true, alerted };
+}
+
+// Margen sobre el ETA antes de considerarlo incumplido. No es arbitrario: al cliente se le
+// promete una VENTANA de ±5 minutos (`etaWindowText`), así que avisar antes de que pase el
+// borde superior de esa ventana sería avisar de algo que todavía no incumple nada.
+export const ETA_GRACE_MINUTES = 5;
+
+export type EtaMissed = { id: string; ref: string; customerName: string; etaMinutes: number; lateMinutes: number };
+
+// Cuáles de estos pedidos EN CAMINO ya pasaron su promesa, y por cuánto. Se extrae del cron
+// porque su modo de fallo no es un error: un borde mal resuelto acá no rompe nada, solo
+// hace que el aviso no salga (o salga antes de tiempo, que a fuerza de repetirse termina
+// siendo lo mismo: una alarma que nadie mira).
+export function etaMissed(
+  rows: { id: string; ref: string; customer_name?: string | null; eta_minutes?: number | null; status_changed_at?: string | null }[],
+  nowMs: number,
+): EtaMissed[] {
+  const out: EtaMissed[] = [];
+  for (const o of rows || []) {
+    const eta = Number(o.eta_minutes);
+    if (!Number.isFinite(eta) || eta <= 0) continue;
+    // Sin marca de cuándo salió no se puede saber si se pasó. Suponer created_at sería
+    // inventar el dato: un pedido programado se creó horas antes de salir.
+    if (!o.status_changed_at) continue;
+    const salida = new Date(o.status_changed_at).getTime();
+    if (!Number.isFinite(salida)) continue;
+    const limite = salida + (eta + ETA_GRACE_MINUTES) * 60000;
+    if (nowMs < limite) continue;
+    out.push({
+      id: o.id,
+      ref: o.ref,
+      customerName: o.customer_name || "cliente",
+      etaMinutes: eta,
+      lateMinutes: Math.round((nowMs - salida - eta * 60000) / 60000),
+    });
+  }
+  // El más atrasado primero: si algo corta la lista, corta por el que menos urge.
+  return out.sort((a, b) => b.lateMinutes - a.lateMinutes);
 }
 
 // Reserva de Culqi (ver actPrepareOrder) que nunca llegó a cobrarse — el cliente cerró
@@ -2166,6 +2237,9 @@ export async function actExpirePendingCharges(b: any) {
 // re-auditoría de automatización). alerted_scheduled_reminder evita reenviar el mismo
 // aviso en cada corrida de este cron mientras el pedido sigue sin empezar.
 const SCHEDULED_REMINDER_LEAD_MINUTES = 20;
+// Al cliente se le avisa con MUCHA más anticipación que a la cocina: 20 minutos le sirven al
+// que va a armar el sándwich, pero no al que tiene que volver a su casa para recibirlo.
+const CUSTOMER_REMINDER_LEAD_MINUTES = 60;
 export async function actAlertScheduledOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
@@ -2190,7 +2264,42 @@ export async function actAlertScheduledOrders(b: any) {
       console.error("alert-scheduled-orders failed for order", order.id, e);
     }
   }
-  return { success: true, alerted };
+  // #27 — Recordatorio al CLIENTE, no al negocio. El de arriba avisa "empieza a prepararlo"
+  // 20 minutos antes; este avisa al cliente con una hora, que es el tiempo que necesita
+  // para estar en casa. Un pedido programado se hace horas antes, y para cuando llega la
+  // hora el cliente puede estar en la calle: la entrega fallida cuesta el sándwich, el
+  // motorizado y casi siempre el cliente.
+  const clienteWindowEnd = new Date(Date.now() + CUSTOMER_REMINDER_LEAD_MINUTES * 60000).toISOString();
+  const paraRecordar = await sbGet(
+    "orders",
+    `status=in.(RECIBIDO,PREPARANDO)&reminded_customer_scheduled=eq.false&delivery_time=not.is.null` +
+      `&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(clienteWindowEnd)}` +
+      `&select=id,ref,customer_name,customer_phone,contact_phone,delivery_time&limit=${MAX_PUSH_PER_RUN}`,
+  );
+  let recordados = 0;
+  for (const order of paraRecordar) {
+    const phone = order.customer_phone || order.contact_phone;
+    // Sin teléfono no hay a dónde mandar el push. Igual se marca la bandera: reintentarlo
+    // en cada corrida no lo va a conseguir, y dejaría la consulta cargando siempre las
+    // mismas filas imposibles.
+    try {
+      if (phone) {
+        const hora = new Date(order.delivery_time).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+        await sendPushToPhone(phone, {
+          title: "Tu pedido llega a las " + hora + " 🥪",
+          body: "Es dentro de poco — asegúrate de estar en la dirección que nos diste. Ref " + order.ref + ".",
+          url: "./index.html",
+          tag: "sndwch-sched-customer-" + order.id,
+        });
+        recordados++;
+      }
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { reminded_customer_scheduled: true });
+    } catch (e) {
+      console.error("alert-scheduled-orders (recordatorio al cliente) failed for order", order.id, e);
+    }
+  }
+
+  return { success: true, alerted, recordados };
 }
 
 // Cruza los cobros recientes exitosos de Culqi contra los pedidos propios — un cobro real

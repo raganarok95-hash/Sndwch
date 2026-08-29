@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS } from "../env.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge } from "./orders.ts";
@@ -49,7 +49,7 @@ async function customerRemindersEnabled(): Promise<boolean> {
 //
 // 200 sale del presupuesto real: a ~200 ms por envío son ~40 s, cómodo dentro del límite
 // de la función, y por encima de cualquier volumen diario plausible en el primer año.
-const MAX_PUSH_PER_RUN = 200;
+// (MAX_PUSH_PER_RUN vive en ../env.ts desde que orders.ts también manda push por cron)
 // Cuando se llega al tope se deja rastro: si empieza a pasar seguido es señal de que el
 // negocio creció y estos crons necesitan repartirse en tandas de verdad, no solo cortarse.
 // Va a debug_logs, así que el pico también lo ve `error_spike()` y la pantalla de salud.
@@ -1269,7 +1269,7 @@ export async function actRemindAbandonedPayment(b: any) {
   const stale = await sbGet(
     "pending_charges",
     `status=eq.expired&expires_at=lte.${encodeURIComponent(minCutoff)}&expires_at=gt.${encodeURIComponent(maxCutoff)}` +
-      `&select=id,ref,customer_phone,contact_phone,customer_name,summary,expected_total,created_at&limit=20000`,
+      `&select=id,ref,customer_phone,contact_phone,customer_name,summary,expected_total,created_at,declined_at,decline_reason&limit=20000`,
   );
   if (!stale.length) return { success: true, reminded: 0 };
 
@@ -1317,13 +1317,26 @@ export async function actRemindAbandonedPayment(b: any) {
       });
       if (!withinLimit) continue;
       const queEra = pc.summary ? String(pc.summary).slice(0, 70) : "tu pedido";
+      // #33 — Quien abandonó el pago y quien tuvo la tarjeta RECHAZADA no son el mismo
+      // caso. Decirle "se te quedó a medias" al segundo hace que reintente con la misma
+      // tarjeta y le vuelva a fallar; nombrar el rechazo y ofrecerle Yape/Plin es la
+      // diferencia entre recuperar la venta y quemarla dos veces.
+      //
+      // No hay reintento automático y no puede haberlo: el token de Culqi es de un solo uso
+      // y dura 5 minutos, así que el servidor no puede volver a cobrar sin que el cliente
+      // ponga una tarjeta de nuevo. Un cobro automático exigiría guardar la tarjeta en
+      // Culqi (One Click), que es una decisión del dueño sobre qué datos guardar, no un
+      // detalle de implementación.
+      const rechazada = !!pc.declined_at;
       await sendPushToPhone(phone, {
-        title: "Se te quedó a medias 🥪",
-        body: `${queEra} — el pago no llegó a completarse. Tu carrito se arma de nuevo en un toque.`,
+        title: rechazada ? "Tu tarjeta no pasó 💳" : "Se te quedó a medias 🥪",
+        body: rechazada
+          ? `${queEra} — el banco rechazó la tarjeta. Prueba con otra, o paga con Yape/Plin en un toque.`
+          : `${queEra} — el pago no llegó a completarse. Tu carrito se arma de nuevo en un toque.`,
         url: "./index.html",
         tag: "sndwch-abandoned-payment-" + pc.id,
       });
-      await logMarketingTouch(phone, "abandoned_payment");
+      await logMarketingTouch(phone, rechazada ? "card_declined" : "abandoned_payment");
       reminded++;
     } catch (e) {
       console.error("remind-abandoned-payment failed for", pc.id, e);

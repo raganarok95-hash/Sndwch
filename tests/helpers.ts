@@ -14,7 +14,7 @@ export type ActionHandlers = Record<string, unknown | ((body: any) => unknown)>;
 
 // Horario abierto las 24h los 7 días — evita que un test falle solo porque corrió de
 // madrugada hora Lima (el horario real hardcodeado en el cliente es 11-22).
-const OPEN_ALL_DAY_HOURS = Array.from({ length: 7 }, () => ({ open: 0, close: 24, closed: false }));
+export const OPEN_ALL_DAY_HOURS = Array.from({ length: 7 }, () => ({ open: 0, close: 24, closed: false }));
 
 const DEFAULT_HANDLERS: ActionHandlers = {
   'session-check': { valid: false },

@@ -588,16 +588,26 @@ function isWithinStoreHours(d){
 // no tuvo que cambiar.
 var SCHED_LEAD_MINUTES=20;
 function schedDateForDay(dayKey){var d=new Date();if(dayKey==='tomorrow')d.setDate(d.getDate()+1);return d;}
-function schedSlots(dayKey){
+// Devuelve las franjas del día con su estado. `full` viene de la capacidad real que manda
+// el servidor (#23): antes el cliente ofrecía todas las franjas por igual y el rechazo por
+// hora llena aparecía recién al tocar PAGAR, con el sándwich ya armado y la dirección ya
+// escrita. La franja llena se sigue MOSTRANDO, apagada — esconderla dejaría un hueco
+// inexplicable en la lista de horas.
+function schedSlotsDetailed(dayKey){
   var d=schedDateForDay(dayKey),range=STORE_HOURS[limaDayHour(d).weekday];
   if(!range)return[];
   var out=[],now=new Date(),isToday=dayKey==='today';
   for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
     var slotDate=new Date(d);slotDate.setHours(0,0,0,0);slotDate.setMinutes(totalMin);
     if(isToday&&slotDate.getTime()<now.getTime()+SCHED_LEAD_MINUTES*60000)continue;
-    out.push(String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'));
+    out.push({t:String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'),full:hourIsFull(slotDate)});
   }
   return out;
+}
+// Solo las franjas ELEGIBLES. Lo usan el default y la validación: una hora llena no puede
+// quedar preseleccionada, porque el cliente la pagaría sin haberla elegido.
+function schedSlots(dayKey){
+  return schedSlotsDetailed(dayKey).filter(function(s){return !s.full;}).map(function(s){return s.t;});
 }
 function schedInputValue(){
   if(!schedSlot)return'';
@@ -621,10 +631,16 @@ function scheduleTimePickerHTML(){
     var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
     return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)'))+';border:1px solid '+(sel&&!closed?GOLD:'#3A6B58')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
-  var slots=schedSlots(schedDay);
+  var slots=schedSlotsDetailed(schedDay);
+  var libres=slots.filter(function(s){return !s.full;});
   var slotsHTML=slots.length
-    ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){var sel=schedSlot===s;return'<div onclick="pickSchedSlot(\''+s+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s+'</div>';}).join('')+'</div>'
+    ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
+        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">'+s.t+'</div>';
+        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
+      }).join('')+'</div>'
+      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
     :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No hay horarios disponibles ese día.</div>';
+  if(slots.length&&!libres.length)slotsHTML+='<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+'">Todas las horas de ese día están completas. Prueba el otro día.</div>';
   return'<div style="display:flex;gap:8px">'+dayChips+'</div>'+slotsHTML+'<input type="hidden" id="o-sched" value="'+esc(schedInputValue())+'">';
 }
 // Rango orientativo de preparación + entrega mostrado ANTES de pagar (reduce la
@@ -632,6 +648,19 @@ function scheduleTimePickerHTML(){
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
 // real de tu zona de reparto.
 var ESTIMATED_DELIVERY_RANGE=[25,40];
+// #16 — El rango de arriba es el de la cocina VACÍA. Con pedidos por delante, prometer lo
+// mismo es mentir, y un ETA que miente es la causa directa de una calificación de 1
+// estrella: el cliente no reclama por esperar 50 minutos, reclama por esperar 50 cuando le
+// dijeron 25. Avisar la demora cuesta alguna venta; la mala calificación cuesta más.
+//
+// `queueAhead` son los pedidos en RECIBIDO/PREPARANDO (los que compiten por el tiempo de
+// armado); los que ya salieron EN CAMINO no cuentan. Si el fetch de capacidad falló,
+// queueAhead es 0 y esto devuelve exactamente el rango de siempre.
+function estimatedDeliveryRange(){
+  var extra=Math.max(0,queueAhead)*queueMinutesPerOrder;
+  return[ESTIMATED_DELIVERY_RANGE[0]+extra,ESTIMATED_DELIVERY_RANGE[1]+extra];
+}
+function estimatedRangeText(){var r=estimatedDeliveryRange();return r[0]+'-'+r[1]+' min';}
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
@@ -644,6 +673,21 @@ var NEARBY_RADIUS_KM=3;
 // este chequeo de acá es solo para dar el aviso al toque, sin esperar la respuesta del
 // servidor. DEBE coincidir con DELIVERY_EXCLUDED_ZONES en supabase/functions/api/env.ts.
 var DELIVERY_EXCLUDED_ZONES=['el milagro','el porvenir'];
+// #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
+// preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
+// dirección ("portón azul", "3er piso"): una alergia escrita ahí se pintaba igual que el
+// portón y se perdía entre lo demás, justo mientras se arma el pedido.
+//
+// La lista es corta y de lenguaje de restricción, no de ingredientes, a propósito: meter
+// cada alérgeno haría saltar la alerta con "sin cebolla" y con cualquier receta que los
+// nombre, y una alarma que salta siempre deja de mirarse. Un "sin cebolla" se sigue viendo
+// como nota normal: es una preferencia, no un riesgo.
+// DEBE coincidir con NOTE_ALERT_WORDS en supabase/functions/api/env.ts.
+var NOTE_ALERT_WORDS=['alergi','alérgi','intoleran','celiac','celíac','gluten','lactosa','diabet'];
+function noteNeedsAttention(notes){
+  var n=(notes||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return NOTE_ALERT_WORDS.some(function(w){return n.indexOf(w.normalize('NFD').replace(/[\u0300-\u036f]/g,''))>=0;});
+}
 function addressInExcludedZone(addr){
   var a=(addr||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return DELIVERY_EXCLUDED_ZONES.some(function(z){return a.indexOf(z)>=0;});
@@ -856,6 +900,19 @@ var REFERRAL_BONUS_POINTS=120;
 var metaPixelId=null,_metaPixelLoaded=false;
 // Pausa temporal de la tienda (se reanuda sola). Llega en get-store-hours.
 var storePausedUntil=null;
+// Capacidad (#23/#24/#16), también de get-store-hours. `fullHours` son los inicios de hora
+// (ISO) que ya llegaron al tope; `queueAhead`, los pedidos que la cocina tiene por delante
+// ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se
+// deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
+// que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
+var fullHours=[],queueAhead=0,queueMinutesPerOrder=5,maxPerHour=10;
+// ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
+// como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
+function hourIsFull(d){
+  if(!fullHours.length)return false;
+  var h=new Date(d);h.setMinutes(0,0,0);
+  return fullHours.indexOf(h.toISOString())>=0;
+}
 function initMetaPixel(id){
   if(_metaPixelLoaded||!id)return;
   _metaPixelLoaded=true;
@@ -901,6 +958,26 @@ function rankName(totalOrders){
 // Urgencia real (no un timer inventado): invQty ya se carga para todos, no solo para el
 // panel admin (ver loadInvBackground) — solo faltaba mostrárselo al cliente en vez de
 // guardarlo solo para uso interno.
+// #11 — Disponibilidad REAL de un Signature (ojo: `sigAvailable` es otra cosa, la ventana
+// de fechas de una edición limitada; esto mira INSUMOS).
+//
+// Antes esto era `isAvail(s.base)&&isAvail(s.prot)` en los dos sitios donde se pinta un
+// Signature. Pero el servidor reserva la receta COMPLETA (`priceSigBuild` arma
+// `[base, prot, ...tops, ...sauces]` más el queso fijo, y eso es lo que va a
+// `reserve_inventory`). O sea que si se acababa un topping, una salsa o el queso fijo, la
+// tarjeta seguía diciendo "disponible": el cliente elegía el sándwich, lo armaba entero,
+// llegaba al checkout y recién ahí el servidor lo rechazaba con "uno o más productos se
+// agotaron". Es el mismo defecto que ya obligó a poner el selector de distrito — la
+// restricción existía y el cliente se enteraba al tocar PAGAR.
+//
+// El servidor sigue siendo la autoridad (esto no reemplaza `reserve_inventory`): lo que
+// cambia es que la app deja de ofrecer algo que ella misma ya sabe que no puede cumplir.
+function sigInStock(s){
+  if(!s)return false;
+  var codes=[s.base,s.prot].concat(s.tops||[],s.sauces||[]);
+  if(s.fixedCheese)codes.push(s.fixedCheese);
+  return codes.every(function(c){return !c||isAvail(c);});
+}
 function lowStockNote(code){
   var q=invQty[code];
   if(q==null||q<=0||q>5)return'';
