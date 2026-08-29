@@ -42,3 +42,13 @@ jobs:
       - run: supabase functions deploy weekly-summary --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # PRUEBA DE HUMO DESPUÉS DEL DEPLOY (2026-08-29, automatización #99).
+      # Todo lo de arriba verifica ANTES de desplegar: `deno check`, las pruebas de dinero,
+      # y recién entonces el deploy. Después del deploy no verificaba nadie, y ahí es
+      # justamente donde vive lo que el CI no puede ver: un secret que no está puesto en
+      # producción aunque el código compile, una migración que no se aplicó y deja al código
+      # nuevo consultando una columna inexistente, o un deploy que devolvió éxito y dejó la
+      # versión anterior corriendo. No necesita ningún secret: golpea el mismo endpoint
+      # público que usa un cliente real.
+      - name: Prueba de humo en producción
+        run: node scripts/smoke-prod.mjs

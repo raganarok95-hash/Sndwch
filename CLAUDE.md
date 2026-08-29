@@ -139,13 +139,53 @@ que una fila en `catalog_prices` para SIG05 sería ignorada.)
    `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
    que esta comparación es su única defensa.
 5. `npm run build` — regenera `index.html` desde `src/`.
-6. `npm test` (o `npm run verify`, que encadena las seis) — deben pasar TODOS (revisa el
+5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
+   Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
+   propio Postgres, no hace falta configurar nada. Ver "Respaldo de la base".
+5c. `npm run check:smoke` — comprueba que la prueba de humo de producción
+   (`scripts/smoke-prod.mjs`, que corre tras cada deploy) de verdad SE DA CUENTA cuando
+   producción está rota: se le sirven 12 formas de romperse y tiene que señalar cada una.
+   Un chequeo de salud que siempre pasa es peor que no tener ninguno.
+6. `npm test` (o `npm run verify`, que ahora encadena nueve) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
 8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+
+## Respaldo de la base (2026-08-29)
+
+**El plan de Supabase de esta cuenta es `free`, que NO tiene respaldos automáticos de
+ninguna clase.** Hasta esta fecha la base no tenía ni un solo respaldo: un `delete` sin
+`where`, una migración mal escrita o una cuenta comprometida borraban pedidos, clientes,
+puntos y saldo de crédito sin vuelta atrás.
+
+`.github/workflows/backup-db.yml` corre a diario (03:10 hora Lima, tienda cerrada) y **no
+necesita ningún secret nuevo**: usa `SUPABASE_ACCESS_TOKEN`, el mismo que ya usa
+`deploy-api.yml`, contra la Management API. Por eso no depende de nada del dueño.
+
+- **Respalda DATOS, no esquema.** El esquema ya está versionado en `supabase/migrations/`;
+  duplicarlo sería una segunda fuente de verdad, el mismo defecto que costó tres semanas de
+  precios fantasma. **Restaurar de verdad = aplicar las migraciones y después cargar los
+  datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`).
+- **La lista de tablas se descubre en cada corrida** (`pg_class`), nunca está escrita a
+  mano: una lista fija dejaría fuera en silencio cualquier tabla nueva, y el día que eso
+  importe es el día del desastre.
+- **El comando de los cron jobs se guarda REDACTADO**: lleva el secreto de cron y el
+  respaldo termina como artefacto de GitHub.
+- **Las filas viajan como `row_to_json(t)::text`, no como objeto.** Si se parsean en JS,
+  todo número pasa por un `double`: un `numeric` largo o un `bigint` sobre 2^53 vuelven
+  CAMBIADOS. Probado — con la versión que parseaba, `0.10000000000000000001` se volvía
+  `0.1` y el id `9223372036854775807` se desbordaba al restaurar.
+- **El respaldo se RESTAURA en cada corrida**, no solo se guarda: el workflow levanta un
+  Postgres, carga el volcado del día (`scripts/verify-backup.mjs`) y compara conteos y
+  contenido contra el manifiesto. Un archivo que nunca se cargó no es un respaldo.
+- `npm run check:backup` (dentro de `verify`) prueba el MECANISMO con datos hostiles a
+  propósito —comillas, `$$`, saltos de línea, emoji, jsonb anidado, `text[]`, nulos, y una
+  tabla con más filas que el tamaño de página— levantando **su propio Postgres**. Los dos
+  chequeos hacen falta: el mecanismo puede estar bien y el volcado del martes venir cortado.
+- Retención de los artefactos: **90 días**, el techo del plan gratuito de GitHub.
 
 ## Cómo desplegar el backend
 
@@ -170,6 +210,15 @@ disparado el CI y el deploy YA estaba hecho, con éxito, minutos después del pu
 archivos de la función en una sola llamada (el bundler de Deno resuelve el grafo de
 imports completo y falla con `Module not found` si falta uno) — eso es lo que hace que un
 intento manual sea carísimo en tokens y fácil de arruinar a medias.
+
+**Desde 2026-08-29 el workflow termina con una prueba de humo contra producción**
+(`scripts/smoke-prod.mjs`): pide `ping`, `get-catalog` y `get-store-hours` al endpoint YA
+desplegado y falla el workflow si algo no cuadra. Comprueba CONTENIDO, no solo el 200 — un
+`get-catalog` que responde 200 con el catálogo vacío es una app sin menú, y para un chequeo
+que solo mire el código de estado, un éxito. No necesita ningún secret (usa el mismo camino
+público que un cliente). **Ese host está bloqueado por el proxy de este sandbox**, así que
+desde una sesión no se puede correr contra producción: para probar cambios al script está
+`npm run check:smoke`, que lo ejerce contra respuestas simuladas.
 
 1. Después de pushear `main`, simplemente **verifica** con
    `mcp__Supabase__list_edge_functions` (barato) que `version`/`updated_at` de la función
@@ -391,6 +440,16 @@ cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese
 silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
 de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
+**caducidad de tanda** (`alert-batch-expiry`, 08:12 hora Lima, antes de la hora de servicio
+— es SEGURIDAD ALIMENTARIA, no merma: el dueño cocina por tandas y en servicio solo arma,
+así que hay proteína cocida esperando en frío durante días. `inventory.batch_cooked_at` la
+escribe **solo** `admin-inventory-restock`; la edición normal de stock NO la toca, porque
+corregir un número a mano es una corrección y no cocinar de nuevo. `shelf_life_days` arranca
+en 3 —extremo conservador de la guía USDA/foodsafety.gov para carne y pollo cocidos a ≤4 °C,
+que da 3-4 días— y **es editable por insumo desde el panel de Inventario**, para que mover el
+umbral no exija una sesión de código. El cálculo puro vive en `batchExpiryStatus`
+(`actions/orders.ts`) y está probado en `tests-api/caducidad.test.ts`: su modo de fallo no es
+un error, es SILENCIO —la alerta que no sale— así que no alcanza con el typecheck),
 contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
 crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
 `sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs

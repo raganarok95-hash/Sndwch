@@ -21,16 +21,23 @@ porque sin él no se pueden hacer el #7, el #37, el #8 ni el #15.
 
 ---
 
-## Lote E1 — Nada de esto puede esperar
+## Lote E1 — Nada de esto puede esperar ✅ HECHO (2026-08-29)
 
 Ordenado por consecuencia del peor caso, no por dinero.
 
-| Orden | # | Qué | Por qué acá |
+| Orden | # | Qué | Estado |
 |---|---|---|---|
-| 1 | 83 | Respaldo de la base | **Hoy no existe ninguno.** Es el único de la lista cuyo peor caso es "se perdió todo el negocio" |
-| 2 | 100 | Restaurar el respaldo de prueba | Un backup que nunca se restauró no es un backup, es fe |
-| 3 | 99 | Prueba de humo en producción tras deploy | El CI verifica antes de desplegar; nadie verifica después |
-| 4 | 5 | Alerta de caducidad de tanda | Seguridad alimentaria. No es optimización |
+| 1 | 83 | Respaldo de la base | ✅ `.github/workflows/backup-db.yml`, diario. Usa el `SUPABASE_ACCESS_TOKEN` que el repo ya tenía: **cero secrets nuevos, cero costo** |
+| 2 | 100 | Restaurar el respaldo de prueba | ✅ El workflow restaura el volcado del día en un Postgres real (`scripts/verify-backup.mjs`) y compara. Además `npm run check:backup` prueba el mecanismo con datos hostiles en cada `verify` |
+| 3 | 99 | Prueba de humo en producción tras deploy | ✅ `scripts/smoke-prod.mjs` al final de `deploy-api.yml`; `npm run check:smoke` comprueba que de verdad detecta las 12 formas de romperse |
+| 4 | 5 | Alerta de caducidad de tanda | ✅ `alert-batch-expiry` (cron diario 08:12 Lima) + señal en Salud del negocio + fecha de tanda y vida útil editable en Inventario |
+
+**Un defecto real encontrado al construirlo**, y por qué valió la pena probar en vez de
+razonar: el volcado pasaba cada fila por `JSON.parse` de JavaScript, así que todo número
+cruzaba un `double`. Un `numeric` largo volvía redondeado (`0.10000000000000000001` →
+`0.1`) y un `bigint` sobre 2^53 se desbordaba **al restaurar**. Un respaldo con el dinero
+cambiado, que solo se habría descubierto el día de usarlo. Ahora las filas viajan como
+`row_to_json(t)::text` y JS nunca toca los números.
 
 ## Lote E2 — Protege ingresos que ya existen
 

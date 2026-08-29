@@ -2283,3 +2283,97 @@ export async function actRemindLowStock(b: any) {
   });
   return { success: true, alerted: true, outOfStock: outOfStock.length, low: low.length };
 }
+
+// ── Caducidad de tanda (#5) ──────────────────────────────────────────────────────────────
+//
+// SEGURIDAD ALIMENTARIA, no optimización de merma. El método de trabajo real del dueño es
+// cocinar por tandas 1-2 veces por semana y en hora de servicio solo ARMAR: eso significa
+// que hay proteína cocida esperando en frío durante días. Hasta acá el sistema sabía cuánto
+// queda de cada insumo pero no CUÁNDO se cocinó, así que una tanda de hace cinco días y una
+// de hoy eran el mismo número — y la única defensa era que una persona sola se acordara,
+// justo mientras está armando pedidos.
+//
+// El cálculo se extrae aparte de la acción que toca la base para poder probarlo de verdad
+// en `tests-api/` (mismo patrón que `cancellationDeltas`). Un caso límite mal resuelto acá
+// no se manifiesta como un error: se manifiesta como una alerta que no salió.
+
+// Se avisa un día antes de la fecha límite, no el mismo día: la próxima tanda hay que
+// planificarla y cocinarla, y enterarse cuando ya venció no sirve para nada.
+export const BATCH_EXPIRY_WARN_HOURS = 24;
+// Espejo del default de la columna `shelf_life_days` (migración 20260829151516): extremo
+// conservador de la guía USDA/foodsafety.gov para carne y pollo cocidos a <=4 °C (3-4 días).
+export const BATCH_SHELF_LIFE_DEFAULT_DAYS = 3;
+
+export type BatchRow = {
+  product_code: string;
+  product_name?: string | null;
+  stock_qty?: number | null;
+  in_stock?: boolean | null;
+  batch_cooked_at?: string | null;
+  shelf_life_days?: number | null;
+};
+export type BatchAlert = { code: string; name: string; horas: number; limite: string };
+
+export function batchExpiryStatus(rows: BatchRow[], nowMs: number): { vencidos: BatchAlert[]; porVencer: BatchAlert[] } {
+  const vencidos: BatchAlert[] = [];
+  const porVencer: BatchAlert[] = [];
+  for (const r of rows || []) {
+    // Sin tanda registrada no hay nada que vencer: es un insumo que se compra ya listo, o
+    // uno repuesto antes de que existiera la columna. Inventar una fecha acá sería
+    // exactamente el error que esta alerta viene a evitar.
+    if (!r.batch_cooked_at) continue;
+    // Si no queda nada, la tanda se consumió. Alertar sobre un insumo en cero sería ruido
+    // diario permanente, y una alarma que suena siempre deja de mirarse.
+    const qty = r.stock_qty == null ? null : Number(r.stock_qty);
+    if (qty == null || !(qty > 0)) continue;
+    if (r.in_stock === false) continue;
+
+    const cocinado = new Date(r.batch_cooked_at).getTime();
+    if (!Number.isFinite(cocinado)) continue;
+    const dias = Number(r.shelf_life_days);
+    const vida = Number.isFinite(dias) && dias > 0 ? dias : BATCH_SHELF_LIFE_DEFAULT_DAYS;
+    const limiteMs = cocinado + vida * 24 * 60 * 60 * 1000;
+    const horas = Math.round((limiteMs - nowMs) / (60 * 60 * 1000));
+    const item: BatchAlert = {
+      code: r.product_code,
+      name: r.product_name || r.product_code,
+      horas,
+      limite: new Date(limiteMs).toISOString(),
+    };
+    if (nowMs >= limiteMs) vencidos.push(item);
+    else if (nowMs >= limiteMs - BATCH_EXPIRY_WARN_HOURS * 60 * 60 * 1000) porVencer.push(item);
+  }
+  // Lo más urgente primero: si el aviso se corta por longitud, tiene que cortar por la cola.
+  vencidos.sort((a, b) => a.horas - b.horas);
+  porVencer.sort((a, b) => a.horas - b.horas);
+  return { vencidos, porVencer };
+}
+
+const BATCH_EXPIRY_MAX_NOMBRES = 6;
+
+export async function actAlertBatchExpiry(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const rows = await sbGet(
+    "inventory",
+    "select=product_code,product_name,in_stock,stock_qty,batch_cooked_at,shelf_life_days&limit=500",
+  );
+  const { vencidos, porVencer } = batchExpiryStatus(rows, Date.now());
+  if (!vencidos.length && !porVencer.length) return { success: true, alerted: false };
+
+  const nombres = (xs: BatchAlert[]) =>
+    xs.slice(0, BATCH_EXPIRY_MAX_NOMBRES).map((x) => x.name).join(", ") + (xs.length > BATCH_EXPIRY_MAX_NOMBRES ? "…" : "");
+  const partes: string[] = [];
+  if (vencidos.length) partes.push(`PASARON su fecha límite: ${nombres(vencidos)}`);
+  if (porVencer.length) partes.push(`vencen en menos de ${BATCH_EXPIRY_WARN_HOURS} h: ${nombres(porVencer)}`);
+
+  await sendPushToAdmins({
+    // El título cambia según haya algo ya vencido o solo por vencer: no es lo mismo "hay
+    // que cocinar mañana" que "hay que sacar eso de la refri ahora".
+    title: vencidos.length ? "🚫 Tanda vencida — no usar" : "⏳ Tanda por vencer",
+    body: partes.join(". ") + ".",
+    url: "./index.html",
+    tag: "sndwch-batch-expiry",
+    renotify: true,
+  });
+  return { success: true, alerted: true, vencidos: vencidos.length, porVencer: porVencer.length };
+}

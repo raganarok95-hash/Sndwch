@@ -9,6 +9,7 @@ import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem
 import { computeRankName, limaDayStartIso, limaMonthStartIso } from "../env.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
+import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS } from "./orders.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
@@ -183,6 +184,53 @@ export async function actAdminInventorySetStock(b: any) {
   return { success: true };
 }
 
+// ── Tandas: qué se cocinó cuándo, y cuánto aguanta (#5) ─────────────────────────────────
+//
+// Va por una acción propia de admin y no dentro de `get-catalog` a propósito: get-catalog es
+// PÚBLICO, y las fechas de producción de la cocina no tienen por qué viajar a cualquiera que
+// abra la app.
+export async function actAdminInventoryBatches(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet(
+    "inventory",
+    "select=product_code,product_name,stock_qty,in_stock,batch_cooked_at,shelf_life_days&limit=500",
+  );
+  const now = Date.now();
+  const { vencidos, porVencer } = batchExpiryStatus(rows as any[], now);
+  const estado: Record<string, string> = {};
+  for (const v of vencidos) estado[v.code] = "vencida";
+  for (const v of porVencer) estado[v.code] = "por-vencer";
+  const batches: Record<string, unknown> = {};
+  for (const r of rows as any[]) {
+    batches[String(r.product_code)] = {
+      cookedAt: r.batch_cooked_at || null,
+      shelfLifeDays: r.shelf_life_days == null ? BATCH_SHELF_LIFE_DEFAULT_DAYS : Number(r.shelf_life_days),
+      estado: r.batch_cooked_at ? estado[String(r.product_code)] || "ok" : "sin-tanda",
+    };
+  }
+  return { batches, warnHours: BATCH_EXPIRY_WARN_HOURS, defaultDays: BATCH_SHELF_LIFE_DEFAULT_DAYS };
+}
+
+// Tope alto a propósito: hay insumos secos o encurtidos que aguantan semanas. Lo que no
+// puede pasar es que quede en 0 o negativo, que dejaría todo vencido desde que se cocina y
+// convertiría la alerta en ruido permanente — la forma en que una alarma deja de mirarse.
+const SHELF_LIFE_MAX_DAYS = 90;
+
+export async function actAdminInventorySetShelfLife(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.code || "").trim();
+  if (!code) throw new ApiError("Falta el producto.");
+  const dias = Math.floor(Number(b.days));
+  if (!Number.isFinite(dias) || dias < 1 || dias > SHELF_LIFE_MAX_DAYS) {
+    throw new ApiError(`La vida útil debe estar entre 1 y ${SHELF_LIFE_MAX_DAYS} días.`);
+  }
+  const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(code)}&select=product_code`);
+  if (!existing.length) throw new ApiError("Ese insumo todavía no existe en el inventario: regístrale stock o una tanda primero.");
+  await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(code)}`, { shelf_life_days: dias });
+  await logAdminAction(s.phone, "inventory-set-shelf-life", code, { days: dias });
+  return { success: true, days: dias };
+}
+
 // C7 — Reposición de una TANDA. El dueño cocina por tandas 1-2 veces por semana: cuando
 // termina no sabe (ni tiene por qué calcular) el total nuevo de cada insumo, sabe cuánto
 // PRODUJO. Hasta ahora el único endpoint de stock fijaba un valor absoluto, así que
@@ -293,10 +341,16 @@ export async function actAdminInventoryRestock(b: any) {
     const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(it.code)}&select=stock_qty`);
     const from = existing.length && existing[0].stock_qty != null ? Number(existing[0].stock_qty) : 0;
     const to = from + it.add;
+    // Reponer es EXACTAMENTE el momento en que se cocinó una tanda, y es el único momento
+    // en que el sistema puede saberlo. De acá cuelga toda la alerta de caducidad (#5): sin
+    // esta fecha, una tanda de hace cinco días y una de hoy son el mismo número de stock.
+    // La edición normal de stock NO la toca a propósito — corregir un número a mano es una
+    // corrección, no cocinar de nuevo, y refrescar la fecha ahí borraría la caducidad real.
+    const cookedAt = new Date().toISOString();
     if (existing.length) {
-      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true });
+      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
     } else {
-      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true });
+      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
     }
     // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
     // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
@@ -1487,7 +1541,9 @@ export async function actAdminHealth(b: any) {
       `status=in.(RECIBIDO,PREPARANDO,EN CAMINO)&status_changed_at=lt.${encodeURIComponent(stuckCutoff)}&select=id&limit=200`,
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=200"),
-    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=200"),
+    // Se piden también las columnas de tanda: el mismo viaje sirve para "por acabarse" y
+    // para la caducidad (#5), y una consulta menos en una pantalla que ya hace siete.
+    sbGet("inventory", "select=product_code,product_name,stock_qty,low_stock_threshold,in_stock,batch_cooked_at,shelf_life_days&limit=200"),
     // Plazo legal del Libro de Reclamaciones: es el único de esta lista con consecuencia
     // regulatoria, no solo comercial.
     sbGet("complaints", "status=neq.atendido&select=id,claim_code,created_at&limit=200"),
@@ -1497,7 +1553,10 @@ export async function actAdminHealth(b: any) {
     rpc("error_spike", { p_min_errors: 10, p_factor: 4 }).catch(() => []),
   ]);
 
-  const bajos = (bajoStock as any[]).filter((r) => r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
+  // `stock_qty=not.is.null` se movió del filtro de PostgREST al de acá porque la misma
+  // consulta ahora alimenta dos señales: la caducidad necesita ver TODAS las filas.
+  const bajos = (bajoStock as any[]).filter((r) => r.stock_qty != null && r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
+  const caducidad = batchExpiryStatus(bajoStock as any[], now);
   const porVencer = (reclamos as any[]).filter(
     (c) => COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), new Date(now)) <= DEADLINE_WARNING_BUSINESS_DAYS,
   );
@@ -1543,6 +1602,21 @@ export async function actAdminHealth(b: any) {
       hint: bajos.length
         ? bajos.map((r) => (r.product_name || r.product_code) + " (" + r.stock_qty + ")").slice(0, 4).join(", ")
         : "Stock cómodo en todo lo que se rastrea.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "caducidad",
+      label: "Tandas vencidas o por vencer",
+      count: caducidad.vencidos.length + caducidad.porVencer.length,
+      // Una tanda VENCIDA no es "atención": es comida que no se puede servir, y es lo único
+      // de esta pantalla que puede enfermar a alguien. Una por vencer sí es aviso: todavía
+      // se puede vender antes de la fecha o planificar la siguiente tanda.
+      level: caducidad.vencidos.length > 0 ? "problema" : caducidad.porVencer.length > 0 ? "atencion" : "ok",
+      hint: caducidad.vencidos.length
+        ? "NO USAR: " + caducidad.vencidos.map((v) => v.name).slice(0, 4).join(", ")
+        : caducidad.porVencer.length
+        ? "Vencen en menos de " + BATCH_EXPIRY_WARN_HOURS + " h: " + caducidad.porVencer.map((v) => v.name).slice(0, 4).join(", ")
+        : "Ninguna tanda cerca de su fecha límite.",
       screen: "admin_inventory",
     },
     {

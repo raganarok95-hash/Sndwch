@@ -36,6 +36,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | # | Qué | Automatización que desbloquea |
 |---|---|---|
 | P11 | **Lead time de cada proveedor** (pan, carne, verduras) | #13 — recordatorio de pedido al proveedor |
+| P17 | **Revisar cuántos días aguanta de verdad cada insumo tuyo** en la pantalla de Inventario | La alerta de caducidad (#5) ya funciona, pero arranca con **3 días** para todo: es el extremo conservador de la guía de USDA para carne y pollo cocidos en frío, no una medición de TUS recetas. Un encurtido o una salsa aguantan bastante más, y dejarlos en 3 hace que la alarma suene por comida buena — que es la forma en que una alarma deja de mirarse. Se cambia por insumo desde el panel, sin código |
 | P12 | **Régimen tributario y formato que pide tu contador** | #84 — exportación mensual |
 | P13 | **Decidir sobre WhatsApp Business API** (con costo) | #18 — despacho automático al motorizado |
 
@@ -60,6 +61,10 @@ Para que quede claro dónde está la frontera: de las 93 automatizaciones vigent
 están marcadas HOY** — los datos y el código ya existen y las puedo construir sin que
 tengas que conseguir nada. Otras **31 necesitan historial real de ventas**, así que no es
 que falte algo tuyo: falta que el negocio opere unas semanas.
+
+Del lote E1 (respaldo, restauración, humo en producción y caducidad de tanda) **no quedó
+nada pendiente de tu lado**: ya está funcionando. Lo único que suma esta ronda es P17, y no
+bloquea nada — la alerta ya opera con el valor conservador.
 
 Solo **11** están bloqueadas por esta lista. Son las de la sección 2 y 3 de arriba, y casi
 todas cuelgan de una sola cosa: **los secrets de Meta (P5)**.

@@ -51,7 +51,8 @@ bloque es el que más tiempo tuyo devuelve.
 4. **Etiquetas de tanda imprimibles** — insumo, fecha de producción, fecha límite de uso.
    Sin esto, en la refri no se distingue una tanda de otra. · **HOY**
 5. **Alerta de caducidad de tanda** — proteína cocinada hace N días que sigue en stock. Es
-   seguridad alimentaria, no solo merma. · **HOY**
+   seguridad alimentaria, no solo merma. · **HECHO 2026-08-29** (`alert-batch-expiry`, señal
+   en Salud del negocio, fecha de tanda y vida útil editable en Inventario)
 6. **Merma real medida** — registras kg crudos que entraron y porciones que salieron; el
    sistema calcula el rendimiento verdadero por insumo. Hoy la merma es un supuesto
    (res 0.54, pollo 0.64-0.69) tomado de referencias, no de tu cocina. · **DATOS**
@@ -217,7 +218,10 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 81. ~~**Foto del pedido antes de salir**~~ — **DESCARTADO por el dueño (2026-08-29).**
 82. ~~**Recordatorio de vencimiento de licencias**~~ — **DESCARTADO por el dueño (2026-08-29).**
 83. **Respaldo automático de la base** — **hoy no existe ninguno.** Toda la operación vive en
-    un proyecto de Supabase sin copia propia. · **HOY**
+    un proyecto de Supabase sin copia propia. · **HECHO 2026-08-29**
+    (`.github/workflows/backup-db.yml`, diario, con el `SUPABASE_ACCESS_TOKEN` que el repo
+    ya tenía: sin secrets nuevos y sin costo. El plan de la organización es `free`, que no
+    trae respaldos de ninguna clase)
 84. **Exportación mensual para el contador** — ventas del mes en el formato que te pida. · **DUEÑO**
 85. ~~**Recordatorio de declaración de impuestos**~~ — **DESCARTADO por el dueño (2026-08-29).**
 86. **Reporte del Libro de Reclamaciones** — consolidado para Indecopi si lo piden. · **HOY**
@@ -247,9 +251,12 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 98. **Alerta de latencia de la edge function** — si `api` empieza a responder lento, se nota
     en la conversión antes que en cualquier otro sitio. · **HOY**
 99. **Prueba de humo en producción tras cada deploy** — pedir el catálogo y verificar que
-    responde. Hoy el CI verifica antes de desplegar, nadie verifica después. · **HOY**
+    responde. Hoy el CI verifica antes de desplegar, nadie verifica después.
+    · **HECHO 2026-08-29** (`scripts/smoke-prod.mjs` al final de `deploy-api.yml`)
 100. **Restauración de prueba del respaldo** — un backup que nunca se restauró no es un
-     backup. Es el complemento obligatorio del 83. · **HOY**
+     backup. Es el complemento obligatorio del 83. · **HECHO 2026-08-29** (el workflow
+     restaura el volcado del día en un Postgres real y compara; `npm run check:backup`
+     prueba el mecanismo con datos hostiles en cada `verify`)
 
 ---
 
