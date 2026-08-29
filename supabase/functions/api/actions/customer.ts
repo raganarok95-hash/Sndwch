@@ -1239,3 +1239,243 @@ export async function actWaitlistJoin(b: any) {
   }
   return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAGO ABANDONADO — quien llegó a la pantalla de Culqi y no terminó.
+//
+// Es la abandonada de MAYOR intención de todo el embudo, y era la única sin ningún
+// seguimiento. `expire-pending-charges` libera el inventario, suelta el código promocional
+// y marca la fila `expired`; ahí terminaba todo. Alguien que ya tenía la tarjeta en la
+// mano está mucho más cerca de comprar que quien dejó un carrito a medio armar — y para
+// ese sí existía cron desde hace tiempo.
+//
+// La reserva dura 10 minutos (PENDING_CHARGE_TTL_MINUTES), así que a los 30 minutos ya
+// caducó con holgura y el aviso no compite con un pago que todavía podría estar
+// completándose. El tope de 24 h es porque después deja de ser "te quedó algo a medias" y
+// pasa a ser publicidad genérica, que ya cubren los otros crons.
+//
+// Nunca se promete el carrito exacto: el inventario se liberó al expirar, así que lo que
+// tenía reservado puede haberse vendido. Se le recuerda QUÉ estaba pidiendo (`summary`,
+// que la fila ya guarda) y se le invita a rehacerlo.
+const ABANDONED_PAYMENT_MIN_MINUTES = 30;
+const ABANDONED_PAYMENT_MAX_MINUTES = 60 * 24;
+export async function actRemindAbandonedPayment(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
+  const now = Date.now();
+  const minCutoff = new Date(now - ABANDONED_PAYMENT_MIN_MINUTES * 60000).toISOString();
+  const maxCutoff = new Date(now - ABANDONED_PAYMENT_MAX_MINUTES * 60000).toISOString();
+  const stale = await sbGet(
+    "pending_charges",
+    `status=eq.expired&expires_at=lte.${encodeURIComponent(minCutoff)}&expires_at=gt.${encodeURIComponent(maxCutoff)}` +
+      `&select=id,ref,customer_phone,contact_phone,customer_name,summary,expected_total,created_at&limit=20000`,
+  );
+  if (!stale.length) return { success: true, reminded: 0 };
+
+  // Quien terminó comprando por otra vía (Yape/Plin, crédito, o simplemente rehizo el
+  // pedido) NO debe recibir "te quedó algo a medias": ya lo resolvió. Se mira si hay
+  // algún pedido pagado suyo POSTERIOR al intento.
+  const phones: string[] = [...new Set(stale.map((p: any) => String(p.customer_phone || p.contact_phone)).filter(Boolean) as string[])];
+  const paidAfter = new Map<string, number>();
+  if (phones.length) {
+    const list = phones.map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+    const orders = await sbGet(
+      "orders",
+      `or=(customer_phone.in.(${list}),contact_phone.in.(${list}))&payment_status=eq.paid&status=neq.CANCELADO` +
+        `&created_at=gte.${encodeURIComponent(maxCutoff)}&select=customer_phone,contact_phone,created_at&limit=20000`,
+    );
+    for (const o of orders) {
+      const t = new Date(o.created_at).getTime();
+      for (const key of [o.customer_phone, o.contact_phone]) {
+        if (!key) continue;
+        const prev = paidAfter.get(String(key));
+        if (prev === undefined || t > prev) paidAfter.set(String(key), t);
+      }
+    }
+  }
+
+  let reminded = 0;
+  for (const pc of stale) {
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached("pago-abandonado", reminded, stale.length - reminded);
+      break;
+    }
+    const phone = String(pc.customer_phone || pc.contact_phone || "");
+    if (!phone) continue;
+    const attemptAt = new Date(pc.created_at).getTime();
+    const completedAt = paidAfter.get(phone);
+    if (completedAt !== undefined && completedAt >= attemptAt) continue;
+    try {
+      if (touchedToday.has(phone)) continue;
+      // Una sola vez por intento, no por cliente: si alguien abandona dos pagos en
+      // semanas distintas, cada uno merece su recordatorio. La clave lleva el `ref`.
+      const withinLimit = await rpc("check_rate_limit", {
+        p_key: `abandoned-payment:${pc.ref}`,
+        p_limit: 1,
+        p_window_minutes: 60 * 24 * 30,
+      });
+      if (!withinLimit) continue;
+      const queEra = pc.summary ? String(pc.summary).slice(0, 70) : "tu pedido";
+      await sendPushToPhone(phone, {
+        title: "Se te quedó a medias 🥪",
+        body: `${queEra} — el pago no llegó a completarse. Tu carrito se arma de nuevo en un toque.`,
+        url: "./index.html",
+        tag: "sndwch-abandoned-payment-" + pc.id,
+      });
+      await logMarketingTouch(phone, "abandoned_payment");
+      reminded++;
+    } catch (e) {
+      console.error("remind-abandoned-payment failed for", pc.id, e);
+      await debugLog({ stage: "remind-abandoned-payment", pendingChargeId: pc.id, error: String(e) });
+    }
+  }
+  return { success: true, reminded };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRÉDITO SIN USAR — plata que el negocio YA cobró y está parada.
+//
+// Tres caminos dejan saldo en `credit_balance`: el Plan Semanal (pagó S/95 y recibió
+// S/100), la tarjeta de regalo (alguien gastó SUS puntos para darle saldo a otro) y el
+// regalo de saldo propio. En los tres el cliente recibe un push EN EL MOMENTO — pero si
+// no lo usa, nadie se lo vuelve a mencionar nunca.
+//
+// Es la conversión más barata que existe en todo el sistema: no hay que convencer a nadie
+// de pagar, el dinero ya entró. Y en el caso de la tarjeta de regalo el destinatario
+// muchas veces ni siquiera es cliente todavía — ese saldo es literalmente un cliente
+// nuevo esperando un empujón.
+//
+// Recurrente pero espaciado: cada 21 días mientras siga sin usarlo. No es un momento
+// único como el nudge de segundo pedido; el saldo sigue ahí y sigue siendo cierto.
+const UNUSED_CREDIT_MIN_DAYS = 7;
+const UNUSED_CREDIT_REPEAT_DAYS = 21;
+export async function actRemindUnusedCredit(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
+  const customers = await sbGet(
+    "customers",
+    "credit_balance=gt.0&select=phone,name,credit_balance&limit=20000",
+  );
+  if (!customers.length) return { success: true, reminded: 0 };
+
+  // No molestar a quien pidió hace poco: ya está activo y va a usar el saldo solo. El
+  // recordatorio es para el que se olvidó de que lo tiene.
+  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const since = new Date(Date.now() - UNUSED_CREDIT_MIN_DAYS * 86400000).toISOString();
+  const recientes = await sbGet(
+    "orders",
+    `customer_phone=in.(${phones})&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(since)}&select=customer_phone&limit=20000`,
+  );
+  const activos = new Set(recientes.map((o: any) => String(o.customer_phone)));
+
+  let reminded = 0;
+  for (const c of customers) {
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached("credito-sin-usar", reminded, customers.length - reminded);
+      break;
+    }
+    const phone = String(c.phone);
+    if (activos.has(phone)) continue;
+    try {
+      if (touchedToday.has(phone)) continue;
+      const withinLimit = await rpc("check_rate_limit", {
+        p_key: `unused-credit:${phone}`,
+        p_limit: 1,
+        p_window_minutes: 60 * 24 * UNUSED_CREDIT_REPEAT_DAYS,
+      });
+      if (!withinLimit) continue;
+      const saldo = Number(c.credit_balance || 0);
+      await sendPushToPhone(phone, {
+        title: `Tienes S/${saldo.toFixed(2)} de saldo 💛`,
+        body: "Tu saldo no vence y se descuenta solo al pagar. Alcanza para tu próximo pedido.",
+        url: "./index.html",
+        tag: "sndwch-unused-credit",
+      });
+      await logMarketingTouch(phone, "unused_credit");
+      reminded++;
+    } catch (e) {
+      console.error("remind-unused-credit failed for", c.phone, e);
+    }
+  }
+  return { success: true, reminded };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESPUÉS DE UNA CANCELACIÓN — el único final del flujo del que nadie se hacía cargo.
+//
+// Cancelar es la peor experiencia que ofrece el sistema: alguien esperaba comida que no
+// llegó. Hoy recibe el push de "pedido cancelado" y ahí termina la relación — sin
+// disculpa, sin motivo, sin invitación a volver. Un cliente que se va así no aparece en
+// ningún reporte como perdido, porque técnicamente nunca dejó de existir.
+//
+// Se manda al día siguiente, no al toque: en el momento de la cancelación la persona está
+// molesta y un mensaje comercial encima empeora las cosas. A las 24 h ya pasó el enojo y
+// el mensaje se lee como lo que es.
+//
+// NO se manda si ya volvió a pedir por su cuenta: en ese caso el problema se resolvió
+// solo y disculparse de nuevo es recordarle algo malo sin motivo.
+const POST_CANCEL_MIN_HOURS = 24;
+const POST_CANCEL_MAX_HOURS = 24 * 7;
+export async function actRemindAfterCancel(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  const touchedToday = await phonesTouchedToday();
+  const now = Date.now();
+  const minCutoff = new Date(now - POST_CANCEL_MIN_HOURS * 3600000).toISOString();
+  const maxCutoff = new Date(now - POST_CANCEL_MAX_HOURS * 3600000).toISOString();
+  // status_changed_at es CUÁNDO entró a CANCELADO (se fija en cada cambio real de estado),
+  // no cuándo se creó el pedido — que es lo que hay que medir acá.
+  const cancelados = await sbGet(
+    "orders",
+    `status=eq.CANCELADO&customer_phone=not.is.null&status_changed_at=lte.${encodeURIComponent(minCutoff)}` +
+      `&status_changed_at=gt.${encodeURIComponent(maxCutoff)}&select=id,ref,customer_phone,customer_name,status_changed_at&limit=20000`,
+  );
+  if (!cancelados.length) return { success: true, reminded: 0 };
+
+  const phones: string[] = [...new Set(cancelados.map((o: any) => String(o.customer_phone)) as string[])];
+  const list = phones.map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const posteriores = await sbGet(
+    "orders",
+    `customer_phone=in.(${list})&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(maxCutoff)}&select=customer_phone,created_at&limit=20000`,
+  );
+  const volvioAPedir = new Map<string, number>();
+  for (const o of posteriores) {
+    const t = new Date(o.created_at).getTime();
+    const prev = volvioAPedir.get(String(o.customer_phone));
+    if (prev === undefined || t > prev) volvioAPedir.set(String(o.customer_phone), t);
+  }
+
+  let reminded = 0;
+  for (const o of cancelados) {
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached("post-cancelacion", reminded, cancelados.length - reminded);
+      break;
+    }
+    const phone = String(o.customer_phone);
+    const canceladoAt = new Date(o.status_changed_at).getTime();
+    const volvio = volvioAPedir.get(phone);
+    if (volvio !== undefined && volvio >= canceladoAt) continue;
+    try {
+      if (touchedToday.has(phone)) continue;
+      const withinLimit = await rpc("check_rate_limit", {
+        p_key: `post-cancel:${o.ref}`,
+        p_limit: 1,
+        p_window_minutes: 60 * 24 * 90,
+      });
+      if (!withinLimit) continue;
+      await sendPushToPhone(phone, {
+        title: "Lo sentimos por lo del otro día 🙏",
+        body: "Tu pedido no pudo salir y eso no está bien. Cuando quieras intentarlo de nuevo, aquí estamos.",
+        url: "./index.html",
+        tag: "sndwch-post-cancel-" + o.id,
+      });
+      await logMarketingTouch(phone, "post_cancel");
+      reminded++;
+    } catch (e) {
+      console.error("remind-after-cancel failed for", o.id, e);
+    }
+  }
+  return { success: true, reminded };
+}

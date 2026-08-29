@@ -303,7 +303,12 @@ Signature o build.
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
   cerrar sesión en todos los dispositivos, borrar cuenta (anonimiza pedidos/ratings,
   borra datos estrictamente personales).
-- **Otros**: direcciones guardadas, favoritos, calificación post-entrega, "avísame cuando
+- **Otros**: direcciones guardadas, favoritos, calificación post-entrega (que ahora ofrece
+  el **enlace de reseña de Google** — `app_settings.google_review_url`, editable desde
+  Admin // Horario, viaja en `get-store-hours` como el píxel de Meta. **Se muestra a TODOS
+  los que califican, sin mirar la nota**: filtrar por estrellas es *review gating*, viola
+  las políticas de Google y fabrica un promedio falso. Nunca condicionar ese bloque a
+  `rtStars`), "avísame cuando
   vuelva" para un Signature agotado, Libro de Reclamaciones Virtual (público, exigido por
   ley — nunca modificar su texto legal), notificaciones push (Web Push/VAPID) para
   cambios de estado de pedido.
@@ -368,8 +373,17 @@ se prende sin redesplegar el cliente**; el `META_CAPI_TOKEN` nunca sale del serv
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
 Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrito
-abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas),
-aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
+abandonado, **pago abandonado** (llegó a la pantalla de Culqi y no terminó — la abandonada
+de mayor intención del embudo, y la única que no tenía seguimiento), segundo pedido,
+re-enganche de rango alto, nunca ha pedido (3 etapas), aniversario de cuenta,
+**crédito sin usar** (dinero que el negocio YA cobró: Plan Semanal, tarjetas de regalo,
+crédito regalado), **post-cancelación** (a las 24 h, no al toque: en el momento la persona
+está molesta), reclamos por vencer (plazo legal).
+**Todos los crons de push tienen un tope de `MAX_PUSH_PER_RUN` (200) por corrida**: leían
+hasta 20 000 clientes y enviaban en serie dentro de una sola invocación, así que con varios
+cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese día, en
+silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
+de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
 contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
 crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
