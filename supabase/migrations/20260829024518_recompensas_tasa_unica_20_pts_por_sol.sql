@@ -1,0 +1,21 @@
+-- Tasa de puntos invertida: R03 costaba 40 pts por cada sol perdonado y R04 53, contra 20
+-- de R02, R05 y R06. Como los puntos se ganan 1 por sol gastado, eso son retornos del
+-- 2.5% y 1.9% frente al 5% de las otras tres — o sea que un cliente racional NUNCA iba a
+-- canjearlas: por los mismos 320 puntos le convenía esperar a R06 y llevarse un sándwich
+-- entero de ~S/20 en vez de perdonar S/6-8. Dos opciones muertas ocupando sitio en la
+-- pantalla de recompensas, y encima haciendo ver el programa como arbitrario.
+--
+--   R02  40 pts ÷ S/2 (EXTRA_SAUCE_PRICE) = 20
+--   R05 120 pts ÷ S/6 (R05_FLAT_WAIVER)   = 20
+--   R03 160 pts ÷ S/8 (R03_FLAT_WAIVER)   = 20   ← era 320
+--   R04 120 pts ÷ S/6 (R04_FLAT_WAIVER)   = 20   ← era 320
+--   R06 400 pts ÷ ~S/20 (un 15CM)         = 20
+--
+-- No sube el techo de lo que regala el negocio: R06 ya fijaba ese mismo 5% sobre el premio
+-- más caro del programa. Lo que cambia es que ninguna opción domina a las otras.
+--
+-- ESTA TABLA ES LA QUE MANDA: loadCatalogPrices() la carga encima de los literales de
+-- catalog.ts, así que sin esta migración el cambio de código no habría hecho absolutamente
+-- nada (ver la advertencia de CLAUDE.md sobre precios fantasma).
+update catalog_prices set values = '{"pts":160}'::jsonb where code = 'R03' and category = 'reward';
+update catalog_prices set values = '{"pts":120}'::jsonb where code = 'R04' and category = 'reward';

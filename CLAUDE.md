@@ -6,11 +6,22 @@ afecta cualquier decisión de precio/margen.
 
 ## Estructura
 
-- **Cliente**: `src/app.ts` (toda la lógica y el tipado, un solo archivo grande, sin
-  framework) + `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__`
-  donde se inyecta `app.ts` compilado). `npm run build` compila y regenera `index.html`
-  en la raíz del repo — **ese archivo es el único artefacto servido**; nunca lo edites a
-  mano, siempre edita `src/app.ts`/`src/shell.html` y recompila.
+- **Cliente**: `src/app/NN-*.ts` (toda la lógica y el tipado, sin framework) +
+  `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__` donde se
+  inyecta el JS compilado). `npm run build` compila cada parte y las **concatena por orden
+  alfabético** para regenerar `index.html` en la raíz — **ese archivo es el único artefacto
+  servido**; nunca lo edites a mano.
+  Las 9 partes salieron de un único `src/app.ts` de 8 125 líneas (dividido el 2026-08-29).
+  Son **scripts globales, NO módulos**: no llevan `import`/`export`, comparten un mismo
+  ámbito y se ejecutan de arriba a abajo, así que **el orden importa** — hay estado
+  (catálogo, constantes de dinero, helpers) que tiene que existir antes de lo de abajo. Por
+  eso el prefijo numérico no es cosmético. `npm run check:bundle` (dentro de `verify`) exige
+  prefijos `01..NN` consecutivos y sin `import`/`export` de nivel superior; sin eso,
+  reordenar una parte no rompe la compilación, rompe la app en runtime.
+  La división se verificó comparando el JS emitido **byte a byte** contra el del archivo
+  único: idéntico. Lo único que hubo que resolver es que `tsc` antepone su propio
+  `"use strict";` a cada archivo, y los 8 sobrantes caen a mitad del bundle donde la
+  directiva no hace nada — `build.mjs` los quita al concatenar.
 - **Backend**: 8 edge functions en `supabase/functions/`:
   - **`api`** — la principal, un solo entrypoint con un action por operación (login,
     catálogo, pedidos, admin, dashboard, etc.), dividida en módulos:
@@ -303,7 +314,12 @@ Signature o build.
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
   cerrar sesión en todos los dispositivos, borrar cuenta (anonimiza pedidos/ratings,
   borra datos estrictamente personales).
-- **Otros**: direcciones guardadas, favoritos, calificación post-entrega, "avísame cuando
+- **Otros**: direcciones guardadas, favoritos, calificación post-entrega (que ahora ofrece
+  el **enlace de reseña de Google** — `app_settings.google_review_url`, editable desde
+  Admin // Horario, viaja en `get-store-hours` como el píxel de Meta. **Se muestra a TODOS
+  los que califican, sin mirar la nota**: filtrar por estrellas es *review gating*, viola
+  las políticas de Google y fabrica un promedio falso. Nunca condicionar ese bloque a
+  `rtStars`), "avísame cuando
   vuelva" para un Signature agotado, Libro de Reclamaciones Virtual (público, exigido por
   ley — nunca modificar su texto legal), notificaciones push (Web Push/VAPID) para
   cambios de estado de pedido.
@@ -368,17 +384,33 @@ se prende sin redesplegar el cliente**; el `META_CAPI_TOKEN` nunca sale del serv
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
 Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrito
-abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas),
-aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
+abandonado, **pago abandonado** (llegó a la pantalla de Culqi y no terminó — la abandonada
+de mayor intención del embudo, y la única que no tenía seguimiento), segundo pedido,
+re-enganche de rango alto, nunca ha pedido (3 etapas), aniversario de cuenta,
+**crédito sin usar** (dinero que el negocio YA cobró: Plan Semanal, tarjetas de regalo,
+crédito regalado), **post-cancelación** (a las 24 h, no al toque: en el momento la persona
+está molesta), reclamos por vencer (plazo legal).
+**Todos los crons de push tienen un tope de `MAX_PUSH_PER_RUN` (200) por corrida**: leían
+hasta 20 000 clientes y enviaban en serie dentro de una sola invocación, así que con varios
+cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese día, en
+silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
+de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
 contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
-crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`).
+crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
+`sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
+disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
 **Dead-man switch de crons (2026-08-28)**: `api` anota un latido por cada corrida de cron
 que llega (`record_cron_heartbeat`, en `index.ts`, best-effort). Existe porque pg_cron
 guarda si DISPARÓ el job, pero `net.http_post()` vuelve al instante: "succeeded" ahí
 significa "se encoló la petición", no "la edge function hizo su trabajo" — si el secreto de
 cron rota o `api` responde 500, los 20 jobs siguen en verde para siempre mientras nada
-ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido. Cubre
+ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido.
+**Las 4 RPC del latido llevan `revoke execute ... from public, anon, authenticated`** — se
+crearon sin él y `record_cron_heartbeat` quedó llamable con la anon key, o sea que
+cualquiera podía escribir un latido falso y DEJAR MUDA la alarma justo mientras la
+automatización estaba caída. Toda RPC `security definer` nueva necesita ese revoke: es el
+sexto caso del mismo defecto en este repo. Cubre
 solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
 2 de SQL puro) quedan fuera a propósito y documentados en la migración.
 Limpieza/expiración: pagos manuales sin confirmar,

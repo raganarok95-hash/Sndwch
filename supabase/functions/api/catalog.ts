@@ -45,11 +45,18 @@ import { computeRankName } from "./env.ts";
 // el que terminaba guardado/mostrado en el historial y recibos, además de romper la
 // convención sustantivo // sustantivo que sí siguen R04/R05/R06) — hallazgo de
 // auditoría de copy, BAJO.
+// TASA ÚNICA: 20 puntos por cada sol que perdona la recompensa (= 5% de retorno, porque
+// los puntos se ganan 1 por sol gastado). R03 y R04 estaban en 40 y 53 pts/sol: por los
+// mismos 320 puntos al cliente le convenía esperar a R06 y llevarse un sándwich entero,
+// así que eran opciones muertas. Ver el detalle completo junto a RWDS en src/app.ts.
+// DEBE coincidir con RWDS en src/app.ts — y estos puntos TAMBIÉN viven en `catalog_prices`
+// (categoría 'reward'), que es la fuente real en runtime: loadCatalogPrices() los carga
+// encima de estos literales, así que cambiar solo esto no cambia nada.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
   R02: { pts: 40, label: "SALSA // EXTRA" },
+  R04: { pts: 120, label: "DOBLE // PROTEÍNA" },
   R05: { pts: 120, label: "BEBIDA // GRATIS" },
-  R03: { pts: 320, label: "TAMAÑO // 30CM" },
-  R04: { pts: 320, label: "DOBLE // PROTEÍNA" },
+  R03: { pts: 160, label: "TAMAÑO // 30CM" },
   R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
 };
 
