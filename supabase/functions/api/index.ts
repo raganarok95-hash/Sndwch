@@ -22,7 +22,7 @@ import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
-  actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock,
+  actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
   actUploadReceipt, actAdminReceiptUrl, actValidatePromoCode,
 } from "./actions/orders.ts";
 import {
@@ -40,7 +40,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -118,6 +118,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "alert-scheduled-orders": actAlertScheduledOrders,
   "reconcile-culqi-charges": actReconcileCulqiCharges,
   "remind-low-stock": actRemindLowStock,
+  // Caducidad de tanda (#5): seguridad alimentaria. Corre a diario antes de la hora de
+  // servicio, para que enterarse todavía sirva para cambiar lo que se va a armar hoy.
+  "alert-batch-expiry": actAlertBatchExpiry,
   "admin-manual-points": actAdminManualPoints,
   "admin-manual-credit": actAdminManualCredit,
   "admin-accounts-list": actAdminAccountsList,
@@ -126,6 +129,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-inventory-toggle": actAdminInventoryToggle,
   "admin-inventory-set-stock": actAdminInventorySetStock,
   "admin-inventory-restock": actAdminInventoryRestock,
+  "admin-inventory-batches": actAdminInventoryBatches,
+  "admin-inventory-set-shelf-life": actAdminInventorySetShelfLife,
   "alert-system-health": actAlertSystemHealth,
   "admin-health": actAdminHealth,
   "admin-batch-plan": actAdminBatchPlan,

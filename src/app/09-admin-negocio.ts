@@ -730,13 +730,50 @@ async function loadStoreHoursBackground(){
 // (admin-inventory-restock) leyendo la fila fresca, no el navegador con el número que
 // cargó cuando abrió la pantalla.
 var invMode='fijar';
+// Tandas (#5): qué se cocinó cuándo y cuánto aguanta. Va por una acción de ADMIN aparte y
+// no dentro de get-catalog porque get-catalog es público, y la fecha de producción de la
+// cocina no tiene por qué viajar a cualquiera que abra la app.
+var invBatches={},invWarnHours=24,invDefaultDays=3;
 function setInvMode(m){invMode=m;render();}
 async function loadInventory(){
   sndScreen='admin_inventory';busy=true;busyMsg='Cargando inventario...';render();
   try{
     var r=await api('get-catalog',{});
     applyInventory(r.inventory);
+    // Si la lectura de tandas falla, el inventario se sigue mostrando: perder la fecha de
+    // caducidad empeora la pantalla, dejar sin inventario al dueño la inutiliza.
+    try{
+      var t=await api('admin-inventory-batches',{token:token});
+      invBatches=t.batches||{};invWarnHours=t.warnHours||24;invDefaultDays=t.defaultDays||3;
+    }catch(e2){invBatches={};}
   }catch(e){}
+  busy=false;render();
+}
+// Texto de la tanda de un insumo. Devuelve null cuando no hay nada que decir, para que la
+// fila no gane una línea vacía.
+function batchLine(code){
+  var b=invBatches[code];
+  if(!b||!b.cookedAt)return null;
+  var cocinado=new Date(b.cookedAt).getTime();
+  if(!isFinite(cocinado))return null;
+  var limite=cocinado+(b.shelfLifeDays||invDefaultDays)*24*3600*1000;
+  var horas=Math.round((limite-Date.now())/3600000);
+  var f=new Date(cocinado).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit'});
+  if(b.estado==='vencida')return{c:'#ff8888',t:'Tanda del '+f+' — VENCIDA hace '+Math.abs(horas)+' h. No usar.'};
+  if(b.estado==='por-vencer')return{c:'#E8B34A',t:'Tanda del '+f+' — vence en '+horas+' h.'};
+  return{c:'#A8C8B0',t:'Tanda del '+f+' — quedan '+Math.floor(horas/24)+' d.'};
+}
+async function setShelfLife(code,name){
+  var el=(document.getElementById('vida-'+code) as HTMLInputElement | null);
+  if(!el)return;
+  var dias=parseInt(el.value,10);
+  if(!isFinite(dias)||dias<1){showToast('La vida útil tiene que ser al menos 1 día.');return;}
+  busy=true;busyMsg='Guardando vida útil...';render();
+  try{
+    await api('admin-inventory-set-shelf-life',{token:token,code:code,days:dias});
+    if(invBatches[code])invBatches[code].shelfLifeDays=dias;
+    showToast('Vida útil de '+name+': '+dias+' día(s).');
+  }catch(e){showToast('Error: '+e.message);}
   busy=false;render();
 }
 async function toggleStock(code,name){
@@ -772,6 +809,9 @@ function sAdminInventory(){
   var h=H('INVENTARIO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Control de stock //</div>';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Un producto "sin stock" desaparece de las opciones del cliente hasta que lo reactives. Si además le pones una cantidad, se descuenta sola con cada venta y se marca "sin stock" automáticamente al llegar a 0 — deja el campo vacío para volver al control manual.</div>';
+  // Caducidad de tanda (#5): explicar de dónde sale la fecha, porque el dueño no la
+  // escribe en ningún lado — se registra sola al usar "Sumar tanda".
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Cada vez que registras una tanda se guarda la fecha. Si un insumo pasa los días que aguanta —o le faltan menos de '+invWarnHours+' h— te llega un aviso y aparece en Salud del negocio. El valor por defecto son '+invDefaultDays+' días (guía de USDA para carne y pollo cocidos en frío); cámbialo por insumo si tu receta aguanta más.</div>';
   h+=SEARCHBOX('inv-search','Buscar producto','inv-row');
   h+='<div style="display:flex;gap:8px;margin:14px 0 10px">'
     +['fijar','tanda'].map(function(m){
@@ -793,6 +833,7 @@ function sAdminInventory(){
       var av=invStock[item.id]!==false;
       var qty=invQty[item.id];
       var tracked=qty!=null;
+      var bl=batchLine(item.id);
       return'<div class="inv-row" data-name="'+esc(name.toLowerCase())+'" style="background:'+(av?'var(--sw-card,#2D5246)':'var(--sw-card-danger,#1A2420)')+';border:1px solid '+(av?'var(--sw-border,#3A6B58)':'rgba(255,85,85,.3)')+';border-radius:10px;padding:13px 16px;margin-bottom:8px">'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:'+(av?'var(--sw-text,#FFFFFF)':'var(--sw-text-muted,#A8C8B0)')+'">'+name+'</div>'
@@ -806,6 +847,16 @@ function sAdminInventory(){
         +'<input id="qty-'+item.id+'" type="number" min="0" placeholder="'+(invMode==='tanda'?'Producido en esta tanda':'Sin rastreo de cantidad')+'" value="'+(invMode==='tanda'?'':(tracked?qty:''))+'" style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif;font-style:italic">'
         +(invMode==='tanda'?'':'<button onclick="setStock(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:15px 14px;border-radius:8px;flex-shrink:0">Guardar stock</button>')
         +'</div>'
+        // Caducidad de tanda (#5). La línea solo aparece si hay una tanda registrada: un
+        // insumo que se compra ya listo no tiene fecha de cocción, e inventarle una sería
+        // exactamente el dato falso que esta alerta existe para evitar.
+        +(bl?'<div style="font-family:EB Garamond,serif;font-size:11px;color:'+bl.c+';margin-top:8px;line-height:1.4">'+esc(bl.t)+'</div>':'')
+        +(bl?'<div style="display:flex;gap:8px;margin-top:8px;align-items:center">'
+          +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);flex-shrink:0">Aguanta</div>'
+          +'<input id="vida-'+item.id+'" type="number" min="1" max="90" value="'+(invBatches[item.id]&&invBatches[item.id].shelfLifeDays||invDefaultDays)+'" style="width:64px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:7px 10px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif">'
+          +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);flex-shrink:0">días</div>'
+          +'<button onclick="setShelfLife(\''+item.id+'\',\''+name.replace(/'/g,"\\'")+'\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:11px 12px;border-radius:8px;flex-shrink:0">Guardar</button>'
+          +'</div>':'')
         +'</div>';
     }).join('');
   });
