@@ -24,7 +24,7 @@ export async function storePausedUntil(): Promise<string | null> {
 
 export async function actGetStoreHours(_b: any) {
   await loadStoreHours();
-  const settings = await sbGet("app_settings", "select=business_launched,paused_until,google_review_url&id=eq.true");
+  const settings = await sbGet("app_settings", "select=business_launched,paused_until&id=eq.true");
   const pausedUntilRaw = settings?.[0]?.paused_until;
   const pausedUntil = pausedUntilRaw && new Date(pausedUntilRaw).getTime() > Date.now() ? pausedUntilRaw : null;
   return {
@@ -35,41 +35,7 @@ export async function actGetStoreHours(_b: any) {
     metaPixelId: META_PIXEL_ID || null,
     // El cliente lo usa para mostrar "volvemos a las X" en vez de un genérico "cerrado".
     pausedUntil,
-    // URL de reseña de Google. Viaja por acá (público por diseño, igual que el píxel) para
-    // que el dueño la pegue desde el panel sin redesplegar el cliente. Null mientras no la
-    // haya configurado: sin URL no hay a dónde mandar a nadie.
-    googleReviewUrl: settings?.[0]?.google_review_url || null,
   };
-}
-
-// La URL de reseña de Google es un dato REAL del negocio: no se puede inventar (misma
-// regla que el RUC o la razón social), así que se pega desde el panel y nunca se hardcodea.
-// Se valida que sea una URL de Google de verdad — pegar por error el link de otra cosa
-// mandaría a todos los clientes a un sitio ajeno con el sello del negocio encima.
-const GOOGLE_REVIEW_HOSTS = ["google.com", "goo.gl", "g.page", "maps.app.goo.gl"];
-export async function actAdminSetGoogleReviewUrl(b: any) {
-  const s = await requireAdmin(b.token);
-  const raw = String(b.url || "").trim();
-  if (!raw) {
-    await sbUpdate("app_settings", "id=eq.true", { google_review_url: null, updated_at: new Date().toISOString() });
-    await logAdminAction(s.phone, "set-google-review-url", undefined, { url: null });
-    return { success: true, url: null };
-  }
-  let host = "";
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== "https:") throw new ApiError("El enlace debe empezar con https://", 400);
-    host = u.hostname.toLowerCase().replace(/^www\./, "");
-  } catch (e) {
-    if (e instanceof ApiError) throw e;
-    throw new ApiError("Eso no parece un enlace válido. Copia el que te da Google para pedir reseñas.", 400);
-  }
-  if (!GOOGLE_REVIEW_HOSTS.some((h) => host === h || host.endsWith("." + h))) {
-    throw new ApiError("El enlace tiene que ser de Google (google.com, g.page o maps.app.goo.gl).", 400);
-  }
-  await sbUpdate("app_settings", "id=eq.true", { google_review_url: raw.slice(0, 500), updated_at: new Date().toISOString() });
-  await logAdminAction(s.phone, "set-google-review-url", undefined, { url: raw.slice(0, 500) });
-  return { success: true, url: raw.slice(0, 500) };
 }
 
 export async function actAdminSetBusinessLaunched(b: any) {

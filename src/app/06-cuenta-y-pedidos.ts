@@ -186,25 +186,6 @@ async function doCancelMyOrder(ordId,ref){
     _cancelMyOrderInProgress=false;render();
   }catch(e){_cancelMyOrderInProgress=false;showToast(e.message);}
 }
-// Invitación a dejar reseña en Google, justo después de calificar.
-//
-// Para un delivery local las reseñas de Google Maps son el canal de adquisición gratuito
-// más fuerte que existe, y hasta ahora la calificación se quedaba encerrada dentro de la
-// app: el cliente ponía 5 estrellas y ese valor no llegaba a nadie que no fuera ya cliente.
-//
-// ⚠ SE MUESTRA A TODOS LOS QUE CALIFICAN, SIN MIRAR LA NOTA. Enseñar el enlace solo a
-// quien puso 4-5 estrellas se llama "review gating" y VIOLA las políticas de Google
-// (además de fabricar un promedio que no es real). Si alguien tuvo una mala experiencia y
-// quiere contarlo, tiene el mismo derecho a hacerlo — y responder bien a una reseña mala
-// en público convence más que diez buenas. Nunca condiciones este bloque a `rtStars`.
-function googleReviewBlockHTML(){
-  if(!googleReviewUrl)return'';
-  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px">'
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">¿Nos ayudas con una reseña? //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:10px">Somos un negocio de una sola persona. Una reseña en Google es lo que hace que otro vecino nos encuentre.</div>'
-    +'<a href="'+esc(googleReviewUrl)+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;background:transparent;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Escribir reseña en Google //</a>'
-    +'</div>';
-}
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
   if(ratedRefs().indexOf(o.ref)>=0){
@@ -221,9 +202,9 @@ function ratingHTML(o){
       // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
       // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
       // satisfacción de siempre, sin lógica nueva.
-      return googleReviewBlockHTML()+'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un sándwich 15CM GRATIS cuando tu invitado haga su primer pedido — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
+      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un sándwich 15CM GRATIS cuando tu invitado haga su primer pedido — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
     }
-    return(justRatedRef===o.ref?googleReviewBlockHTML():'')+'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
+    return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
   }
   // El consentimiento de testimonio NUNCA viene marcado por defecto — el cliente tiene
   // que elegirlo activamente cada vez (hallazgo del checklist de pre-lanzamiento: la

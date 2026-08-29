@@ -126,3 +126,4 @@
 20260829020112  app_settings_google_review_url
 20260829020316  crons_pago_abandonado_credito_sin_usar_post_cancelacion
 20260829024518  recompensas_tasa_unica_20_pts_por_sol
+20260829054106  quitar_google_review_url_descartado
