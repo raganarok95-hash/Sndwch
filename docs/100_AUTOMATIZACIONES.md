@@ -1,4 +1,4 @@
-# 100 automatizaciones para SND//WCH
+# Automatizaciones para SND//WCH — 93 vigentes de 100 propuestas
 
 Fecha: 2026-08-29 · Apertura: lunes 7 de septiembre de 2026
 
@@ -22,6 +22,11 @@ Cada ítem lleva una etiqueta de qué necesita:
 | **DATOS** | Necesita historial real de ventas (3-4 semanas mínimo). Antes da números inventados con aspecto de dato |
 | **DUEÑO** | Bloqueado por algo que solo tú puedes conseguir (una cuenta, un secret, una cotización) |
 | **$** | Tiene costo real recurrente |
+
+**7 descartados por el dueño el 2026-08-29:** 48, 49, 76, 80, 81, 82 y 85. Se dejan en la
+lista tachados y con su número original, en vez de renumerar: así los números siguen
+significando lo mismo en esta conversación y en los commits que los referencian. Quedan
+**93 vigentes**.
 
 **Advertencia honesta sobre el número 100.** Me pediste cien y hay cien, pero no son cien
 cosas igual de buenas. Las de los bloques A-E son las que de verdad mueven la aguja de este
@@ -143,9 +148,8 @@ canal. Este bloque va sobre no desperdiciar esa plata.
     las semanas es el desperdicio más común y más invisible. · **DUEÑO** · **$**
 47. **Publicar el menú secreto del mes solo** — al publicarlo desde el panel, sale el post.
     Hoy sale el push al cliente pero no el contenido social. · **DUEÑO** (secrets de Meta)
-48. **Story de "quedan N"** — cuando el stock de un Signature baja, se publica la escasez
-    real. Es honesto y funciona porque es verdad. · **DUEÑO**
-49. **Post automático de hora valle** — a las 3pm, recordando la bebida gratis. · **DUEÑO**
+48. ~~**Story de "quedan N"**~~ — **DESCARTADO por el dueño (2026-08-29).**
+49. ~~**Post automático de hora valle**~~ — **DESCARTADO por el dueño (2026-08-29).**
 50. **Generar el calendario de contenido, no solo recordarlo** — hoy el cron te avisa que
     toca; esto arma los borradores con el generador de guion que acabas de estrenar. · **HOY**
 51. **Mejor horario de publicación** — medido con el engagement real de tus posts. · **DATOS**
@@ -202,25 +206,20 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 
 ## G. Calidad y reputación
 
-76. **Seguimiento tras 1-2 estrellas** — hoy te llega la alerta; falta el contacto al cliente
-    y el registro de qué se hizo. · **HOY**
+76. ~~**Seguimiento tras 1-2 estrellas**~~ — **DESCARTADO por el dueño (2026-08-29).**
 77. **Detección de queja repetida** — el mismo cliente reclamando dos veces es un problema de
     proceso, no un cliente difícil. · **HOY**
 78. **Tiempo real de entrega vs. prometido** — la columna `delivered_at` ya se llena; falta el
     reporte. Es el dato que dice si tu ETA miente. · **HOY**
 79. **Alerta de pedido que pasó el ETA** — mientras todavía puedes avisarle al cliente, que es
     lo que evita la mala calificación. · **HOY**
-80. **Encuesta de por qué no volvió** — a los inactivos, una sola pregunta. · **HOY**
-81. **Foto del pedido antes de salir** — queda como respaldo si alguien reclama que llegó mal. · **HOY**
-
-## H. Cumplimiento, respaldo y administración
-
-82. **Recordatorio de vencimiento de licencias** — carné de sanidad, fumigación, ITSE,
-    licencia de funcionamiento. Con fechas reales, avisadas con meses de anticipación. · **DUEÑO**
+80. ~~**Encuesta de por qué no volvió**~~ — **DESCARTADO por el dueño (2026-08-29).**
+81. ~~**Foto del pedido antes de salir**~~ — **DESCARTADO por el dueño (2026-08-29).**
+82. ~~**Recordatorio de vencimiento de licencias**~~ — **DESCARTADO por el dueño (2026-08-29).**
 83. **Respaldo automático de la base** — **hoy no existe ninguno.** Toda la operación vive en
     un proyecto de Supabase sin copia propia. · **HOY**
 84. **Exportación mensual para el contador** — ventas del mes en el formato que te pida. · **DUEÑO**
-85. **Recordatorio de declaración de impuestos** — según el régimen que elijas. · **DUEÑO**
+85. ~~**Recordatorio de declaración de impuestos**~~ — **DESCARTADO por el dueño (2026-08-29).**
 86. **Reporte del Libro de Reclamaciones** — consolidado para Indecopi si lo piden. · **HOY**
 87. **Rotación del secreto de cron** — el valor sigue en texto plano en el historial de
     migraciones dentro de Supabase. Está pendiente desde hace tiempo. · **DUEÑO**
