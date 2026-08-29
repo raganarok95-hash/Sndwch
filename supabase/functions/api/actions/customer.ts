@@ -32,6 +32,31 @@ async function customerRemindersEnabled(): Promise<boolean> {
   }
 }
 
+// Tope de envíos por CORRIDA, compartido por todos los crons de recordatorio.
+//
+// EL PROBLEMA QUE RESUELVE. Cada uno de estos crons lee hasta 20 000 clientes y les manda
+// push UNO POR UNO, en serie, dentro de una sola invocación de la edge function. Con un
+// puñado de clientes eso es instantáneo. Con varios cientos, cada push son una consulta a
+// push_subscriptions más N llamadas HTTP a los servidores de Web Push, y la corrida se
+// pasa del tiempo máximo de la función: se corta A MITAD, sin error visible, y la gente
+// que quedaba en la cola simplemente no recibe nada ese día. Silencioso, y aparece
+// justamente cuando el negocio empieza a funcionar.
+//
+// Con el tope, la corrida termina siempre y lo que sobra se atiende en la siguiente. Las
+// ventanas de elegibilidad de estos crons son de varios días (no de un instante), así que
+// un cliente que hoy queda fuera del corte sigue calificando mañana — a diferencia del
+// corte por timeout, que además es impredecible.
+//
+// 200 sale del presupuesto real: a ~200 ms por envío son ~40 s, cómodo dentro del límite
+// de la función, y por encima de cualquier volumen diario plausible en el primer año.
+const MAX_PUSH_PER_RUN = 200;
+// Cuando se llega al tope se deja rastro: si empieza a pasar seguido es señal de que el
+// negocio creció y estos crons necesitan repartirse en tandas de verdad, no solo cortarse.
+// Va a debug_logs, así que el pico también lo ve `error_spike()` y la pantalla de salud.
+async function capReached(campaign: string, sent: number, pending: number): Promise<void> {
+  await debugLog({ stage: "campaign-cap-reached", campaign, sent, pending });
+}
+
 // Log de campañas de marketing (`marketing_touches`) — antes ningún cron de re-enganche
 // dejaba rastro de a quién se le mandó qué, así que era imposible medir si un recordatorio
 // de verdad trae de vuelta al cliente (solo se sabía "se mandó", nunca "funcionó"). Este
@@ -430,9 +455,15 @@ export async function actRemindUnclaimedChallenge(b: any) {
   // antes de interpolar en un literal de lista in.() de PostgREST evita que un valor malicioso
   // rompa fuera de su literal y altere el filtro (hallazgo de auditoría 2026-08-07).
   const phonesList = qualifyingPhones.map((p) => `"${String(p).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
-  const customers = await sbGet("customers", `phone=in.(${phonesList})&select=phone,challenge_claimed_month`);
+  const customers = await sbGet("customers", `phone=in.(${phonesList})&select=phone,challenge_claimed_month&limit=20000`);
   let reminded = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('reto-sin-reclamar', reminded, customers.length - reminded);
+      break;
+    }
     if (c.challenge_claimed_month === thisMonth) continue;
     try {
       if (touchedToday.has(String(c.phone))) continue;
@@ -493,6 +524,12 @@ export async function actRemindPeakHour(b: any) {
   const copy = PEAK_HOUR_COPY[slot];
   let reminded = 0;
   for (const phone of targets) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('hora-pico', reminded, targets.length - reminded);
+      break;
+    }
     try {
       if (touchedToday.has(String(phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `peak-reminder:${phone}:${dateKey}:${slot}`, p_limit: 1, p_window_minutes: 60 * 24 });
@@ -549,10 +586,16 @@ export async function actRemindAbandonedCart(b: any) {
   const maxCutoff = new Date(now - ABANDONED_CART_MAX_MINUTES * 60000).toISOString();
   const rows = await sbGet(
     "cart_snapshots",
-    `updated_at=lte.${encodeURIComponent(minCutoff)}&updated_at=gt.${encodeURIComponent(maxCutoff)}&reminded_at=is.null&select=customer_phone,items`,
+    `updated_at=lte.${encodeURIComponent(minCutoff)}&updated_at=gt.${encodeURIComponent(maxCutoff)}&reminded_at=is.null&select=customer_phone,items&limit=20000`,
   );
   let reminded = 0;
   for (const row of rows) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('carrito-abandonado', reminded, rows.length - reminded);
+      break;
+    }
     const items = Array.isArray(row.items) ? row.items : [];
     if (!items.length) continue;
     try {
@@ -629,9 +672,15 @@ export async function actBounceBackFirstOrder(b: any) {
   const phones: string[] = Array.from(new Set(orders.map((o: any) => String(o.customer_phone))));
   const phonesList = phones.map((p: string) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   // total_orders=1 asegura que es su PRIMER pedido, no una entrega cualquiera.
-  const customers = await sbGet("customers", `phone=in.(${phonesList})&total_orders=eq.1&select=phone,name`);
+  const customers = await sbGet("customers", `phone=in.(${phonesList})&total_orders=eq.1&select=phone,name&limit=20000`);
   let sent = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (sent >= MAX_PUSH_PER_RUN) {
+      await capReached('rebote-primer-pedido', sent, customers.length - sent);
+      break;
+    }
     try {
       // Una sola vez en la vida del cliente (ventana de 1 año) — este momento no se repite.
       if (touchedToday.has(String(c.phone))) continue;
@@ -687,6 +736,12 @@ export async function actRemindSecondOrder(b: any) {
   const now = Date.now();
   let reminded = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('segundo-pedido', reminded, customers.length - reminded);
+      break;
+    }
     const firstOrderAt = firstOrderByPhone.get(c.phone);
     if (firstOrderAt === undefined) continue;
     const daysSince = (now - firstOrderAt) / 86400000;
@@ -753,6 +808,12 @@ export async function actRemindLapsedCustomers(b: any) {
   const now = Date.now();
   let reminded = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('clientes-dormidos', reminded, customers.length - reminded);
+      break;
+    }
     const lastOrderAt = lastOrderByPhone.get(c.phone);
     if (lastOrderAt === undefined) continue;
     const daysSince = (now - lastOrderAt) / 86400000;
@@ -804,6 +865,12 @@ export async function actRemindHighRankWinback(b: any) {
   const now = Date.now();
   let reminded = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (reminded >= MAX_PUSH_PER_RUN) {
+      await capReached('rango-alto', reminded, customers.length - reminded);
+      break;
+    }
     const lastOrderAt = lastOrderByPhone.get(c.phone);
     if (lastOrderAt === undefined) continue;
     const daysSince = (now - lastOrderAt) / 86400000;
@@ -857,9 +924,15 @@ export async function actRemindNeverOrdered(b: any) {
     const maxCreatedIso = new Date(Date.now() - stage.minDays * 86400000).toISOString();
     const customers = await sbGet(
       "customers",
-      `total_orders=eq.0&created_at=gte.${encodeURIComponent(minCreatedIso)}&created_at=lte.${encodeURIComponent(maxCreatedIso)}&select=phone,name`,
+      `total_orders=eq.0&created_at=gte.${encodeURIComponent(minCreatedIso)}&created_at=lte.${encodeURIComponent(maxCreatedIso)}&select=phone,name&limit=20000`,
     );
     for (const c of customers) {
+      // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+      // siguiente, en vez de que la función se corte a mitad por tiempo.
+      if (reminded >= MAX_PUSH_PER_RUN) {
+        await capReached('nunca-pidio', reminded, customers.length - reminded);
+        break;
+      }
       try {
         if (touchedToday.has(String(c.phone))) continue;
         const withinLimit = await rpc("check_rate_limit", { p_key: `never-ordered-${stage.key}:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * NEVER_ORDERED_MAX_DAYS });
@@ -904,6 +977,12 @@ export async function actAnniversaryGreeting(b: any) {
   const customers = await sbGet("customers", "select=phone,name,created_at&limit=20000");
   let greeted = 0;
   for (const c of customers) {
+    // Tope por corrida (ver MAX_PUSH_PER_RUN): lo que sobra se atiende en la
+    // siguiente, en vez de que la función se corte a mitad por tiempo.
+    if (greeted >= MAX_PUSH_PER_RUN) {
+      await capReached('aniversario', greeted, customers.length - greeted);
+      break;
+    }
     if (!c.created_at) continue;
     const created = new Date(c.created_at);
     const createdMM = String(created.getUTCMonth() + 1).padStart(2, "0");
@@ -1098,7 +1177,7 @@ export async function actExpirePendingWeeklyPlans(b: any) {
   const nowIso = new Date().toISOString();
   const stale = await sbGet(
     "pending_weekly_plans",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status&limit=5000`,
   );
   let expired = 0;
   for (const pp of stale) {

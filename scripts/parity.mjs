@@ -308,6 +308,94 @@ for (const [varName, prefix, nameField, serverMap, humano] of [
   }
 }
 
+// ---------- constantes que NO son de dinero pero igual viven duplicadas ----------
+// Las cuatro de abajo estaban defendidas solo por un comentario "DEBE coincidir con...",
+// y un comentario no falla el build — que es exactamente el motivo por el que existe este
+// archivo. Hoy los dos lados coinciden; esto es para que sigan coincidiendo mañana.
+//
+// No mueven el total de un pedido, pero cada una decide si un pedido SE PUEDE HACER:
+// el horario y la ventana de hora valle deciden si se acepta, RANKS decide qué rango ve
+// el cliente contra el que calcula el servidor, y NO_DOUBLE_PROTS decide si el doble de
+// atún se puede pedir. Si se separan, el cliente ofrece algo que el servidor rechaza al
+// pagar — el mismo síntoma que un precio desalineado, con otra causa.
+
+// Horario de atención. En runtime los dos lados lo sobreescriben desde `store_hours`, así
+// que esto compara la SEMILLA: lo que rige en el primer render antes de que resuelva el
+// fetch, y el respaldo si la base no responde.
+function hoursPairs(src, re, file) {
+  const m = src.match(re);
+  if (!m) {
+    problems.push(`STORE_HOURS: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
+    return null;
+  }
+  // Normaliza "[11,22]" y "null" de los dos lenguajes a una forma común comparable.
+  return m[1]
+    .split(/,(?![^[]*\])/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => (x === 'null' ? null : x.replace(/[[\]\s]/g, '').split(',').map(Number)));
+}
+cmp('STORE_HOURS (semilla del horario de atención)',
+  hoursPairs(app, /var STORE_HOURS=\[([\s\S]*?)\];/, 'src/app.ts'),
+  hoursPairs(env, /export const STORE_HOURS: Array<\[number, number\] \| null> = \[([\s\S]*?)\];/, 'env.ts'));
+
+// Ventana de la promo de hora valle. Si se separan, el cliente promete "BEBIDA // GRATIS"
+// a una hora en la que el servidor no la perdona, y el checkout rebota por total que no
+// coincide.
+function hourWindows(src, re, file) {
+  const m = src.match(re);
+  if (!m) {
+    problems.push(`OFFPEAK_DRINK_PROMO_HOURS_LIMA: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
+    return null;
+  }
+  return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? null;
+}
+cmp('OFFPEAK_DRINK_PROMO_HOURS_LIMA (ventana de la bebida gratis)',
+  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA=(\[[\s\S]*?\]);/, 'src/app.ts'),
+  hourWindows(catalog, /const OFFPEAK_DRINK_PROMO_HOURS_LIMA: \[number, number\]\[\] = (\[[\s\S]*?\]);/, 'catalog.ts'));
+
+// Rangos. Son de puro reconocimiento (nunca cambian precio ni multiplicador), pero el
+// cliente pinta uno y el servidor guarda otro en `orders.customer_rank` — dos historias
+// distintas del mismo pedido.
+function ranks(src, re, file) {
+  const m = src.match(re);
+  if (!m) {
+    problems.push(`RANKS: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
+    return null;
+  }
+  const out = [];
+  const rx = /name:\s*'([^']+)'\s*,\s*minOrders:\s*(\d+)|name:\s*"([^"]+)"\s*,\s*minOrders:\s*(\d+)/g;
+  let r;
+  while ((r = rx.exec(m[1]))) out.push([r[1] ?? r[3], Number(r[2] ?? r[4])]);
+  return out.length ? out : null;
+}
+cmp('RANKS (nombres y umbrales de rango)',
+  ranks(app, /var RANKS=\[([\s\S]*?)\];/, 'src/app.ts'),
+  ranks(env, /export const RANKS: \{ name: string; minOrders: number \}\[\] = \[([\s\S]*?)\];/, 'env.ts'));
+
+// Proteínas sin opción de doble. El cliente la esconde con `noDouble`, el servidor la
+// rechaza con NO_DOUBLE_PROTS. Si se separan, o se ofrece un extra que el servidor no
+// cobra, o se cobra uno que el cliente nunca mostró.
+function clientNoDouble() {
+  const start = app.indexOf('var PROTS');
+  if (start < 0) return null;
+  const block = app.slice(start, app.indexOf('];', start));
+  const out = [];
+  const rx = /\{\s*id:\s*'(P\d+)'[^}]*?noDouble:\s*true/g;
+  let m;
+  while ((m = rx.exec(block))) out.push(m[1]);
+  return out.sort();
+}
+function serverNoDouble() {
+  const m = catalog.match(/export const NO_DOUBLE_PROTS = new Set\(\[([^\]]*)\]\)/);
+  if (!m) {
+    problems.push('NO_DOUBLE_PROTS: no se encontró en catalog.ts — el formato cambió y este script quedó ciego');
+    return null;
+  }
+  return (m[1].match(/"(P\d+)"/g) ?? []).map((x) => x.replace(/"/g, '')).sort();
+}
+cmp('NO_DOUBLE_PROTS (proteínas sin doble)', clientNoDouble(), serverNoDouble());
+
 // ---------- salida ----------
 if (problems.length) {
   console.error(`\n✗ Paridad cliente ↔ servidor: ${problems.length} diferencia(s) de ${checks} comprobaciones\n`);

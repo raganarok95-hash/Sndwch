@@ -207,7 +207,7 @@ export async function actAutoPublishCalendar(b: any) {
   const today = new Date().toISOString().slice(0, 10);
   const due = await sbGet(
     "marketing_calendar",
-    `status=eq.scheduled&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*`,
+    `status=eq.scheduled&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&limit=500`,
   );
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const entry of due) {
@@ -266,6 +266,6 @@ export async function actAdminUploadRawVideo(b: any) {
 
 export async function actAdminListRawUploads(b: any) {
   await requireAdmin(b.token);
-  const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*");
+  const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*&limit=500");
   return { uploads: rows };
 }
