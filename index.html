@@ -685,11 +685,28 @@ var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/pro
 // rompiendo la convención que sí siguen R04/R05/R06 (sustantivo // sustantivo) —
 // hallazgo de auditoría de copy, BAJO. R03 DEBE coincidir con REWARDS.R03.label en
 // catalog.ts.
+// TASA ÚNICA: 20 PUNTOS POR CADA SOL QUE PERDONA LA RECOMPENSA.
+// Los puntos se ganan 1 por sol gastado, así que 20 pts/sol = 5% de retorno para el
+// cliente, igual en las cinco. R03 y R04 estaban en 40 y 53 pts/sol (2.5% y 1.9%), o sea
+// que un cliente racional NUNCA las iba a canjear: por los mismos 320 puntos le convenía
+// esperar a R06 y llevarse un sándwich entero de ~S/20 en vez de perdonar S/6-8. Eran dos
+// opciones muertas ocupando sitio en la pantalla, y encima hacían ver el programa como
+// arbitrario. Recalibradas a la misma tasa que las otras tres:
+//   R02  40 pts ÷ S/2 (EXTRA_SAUCE_PRICE) = 20
+//   R05 120 pts ÷ S/6 (R05_FLAT_WAIVER)   = 20
+//   R03 160 pts ÷ S/8 (R03_FLAT_WAIVER)   = 20   ← era 320
+//   R04 120 pts ÷ S/6 (R04_FLAT_WAIVER)   = 20   ← era 320
+//   R06 400 pts ÷ ~S/20 (un 15CM)         = 20
+// No sube el techo de lo que regala el negocio: R06 ya fijaba ese 5% sobre el premio más
+// caro del programa. Lo que cambia es que ahora ninguna opción domina a las otras.
+// DEBE coincidir con REWARDS en supabase/functions/api/catalog.ts — y ojo, esos puntos
+// también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
+// runtime: cambiar solo estos literales no cambia nada.
 var RWDS = [
     { id: 'R02', pts: 40, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
+    { id: 'R04', pts: 120, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
     { id: 'R05', pts: 120, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
-    { id: 'R03', pts: 320, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
-    { id: 'R04', pts: 320, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
+    { id: 'R03', pts: 160, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
     { id: 'R06', pts: 400, n: 'Sándwich', s: 'Gratis', d: 'Sándwich 15CM gratis — no aplica a Signatures Reserve', sizeOnly: '15' }
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -1208,7 +1225,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '5073761bbb';
+var APP_BUILD = '83de2b3c3a';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6798,6 +6815,112 @@ function sAdminBatchPlan() {
     h += '<div style="margin-top:14px">' + BTN('Registrar la tanda en Inventario //', 'loadInventory();setInvMode(\'tanda\')', true) + '</div>';
     return h + '</div>';
 }
+// D5 — GUION DE VIDEO. El backend para esto (actions/video.ts) estaba implementado y
+// registrado desde hace tiempo, pero NINGUNA pantalla lo llamaba: el dueño no tenía forma
+// de llegar a él. La mitad que importa es gratis y funciona hoy — genera el guion, el
+// prompt para Veo/Flow, el pie de publicación y los hashtags a partir de la receta REAL
+// del Signature (no de una descripción escrita a mano que se desactualiza). La otra mitad
+// (generar el MP4 con la API de Veo) cuesta dinero real y necesita GEMINI_API_KEY, así que
+// esa se deja como está: sin la key el servidor responde con instrucciones en vez de
+// fallar, y el prompt igual sirve para pegarlo a mano en Flow, que es lo que el dueño ya
+// hace.
+var vidScript = null, vidSigId = '', vidAngle = '', vidErr = '';
+async function loadVideoScript() {
+    sndScreen = 'admin_video';
+    vidErr = '';
+    if (!vidSigId) {
+        var first = SIGS.find(function (x) { return !x.secret; });
+        vidSigId = first ? first.id : 'SIG01';
+    }
+    busy = true;
+    busyMsg = 'Armando el guion...';
+    render();
+    try {
+        vidScript = await api('admin-video-script', { token: token, sigId: vidSigId, angle: vidAngle || undefined });
+        if (!vidAngle && vidScript && vidScript.angle)
+            vidAngle = vidScript.angle.key;
+    }
+    catch (e) {
+        vidScript = null;
+        vidErr = e.message;
+    }
+    busy = false;
+    render();
+}
+function pickVideoSig(id) { vidSigId = id; loadVideoScript(); }
+function pickVideoAngle(k) { vidAngle = k; loadVideoScript(); }
+function sAdminVideo() {
+    var h = H('GUION DE VIDEO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:16px">El guion y el prompt salen de la receta real del Signature, así que si cambias la composición desde el panel, el video que generes ya refleja el cambio.</div>';
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Qué sándwich? //</div>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+        + SIGS.filter(function (x) { return !x.secret; }).map(function (x) {
+            var sel = vidSigId === x.id;
+            return '<div onclick="pickVideoSig(\'' + x.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(x.n) + '</div>';
+        }).join('')
+        + '</div>';
+    if (vidErr) {
+        h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">' + esc(vidErr) + '</div>';
+        return h + '</div>';
+    }
+    if (!vidScript)
+        return h + '</div>';
+    if (vidScript.angles && vidScript.angles.length) {
+        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Qué plano? //</div>';
+        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
+            + vidScript.angles.map(function (a) {
+                var sel = (vidScript.angle && vidScript.angle.key) === a.key;
+                return '<div onclick="pickVideoAngle(\'' + a.key + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>';
+            }).join('')
+            + '</div>';
+    }
+    var g = vidScript.guion || {};
+    h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:12px">'
+        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:10px">' + esc(vidScript.name || '') + '</div>'
+        + [['Duración', g.duracion], ['Formato', g.formato], ['Plano', g.plano], ['Acción', g.accion], ['Pan', g.pan], ['Ingredientes', g.ingredientes]]
+            .filter(function (r) { return r[1]; })
+            .map(function (r) { return '<div style="display:flex;gap:10px;margin-bottom:6px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;min-width:88px;flex-shrink:0;padding-top:2px">' + r[0].toUpperCase() + '</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + esc(String(r[1])) + '</div></div>'; }).join('')
+        + '</div>';
+    // Los tres bloques que se COPIAN. Cada uno con su botón: el prompt va a Flow, el pie y
+    // los hashtags van a Instagram — son destinos distintos, así que copiarlos juntos
+    // obligaría a recortar a mano justo cuando el dueño está apurado publicando.
+    h += copyBlockHTML('Prompt para Flow / Veo', 'vid-prompt', vidScript.veoPrompt || '');
+    h += copyBlockHTML('Pie de publicación', 'vid-caption', vidScript.caption || '');
+    h += copyBlockHTML('Hashtags', 'vid-tags', vidScript.hashtags || '');
+    if (vidScript._nota) {
+        h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px;line-height:1.5">' + esc(vidScript._nota) + '</div>';
+    }
+    h += '<div style="margin-top:14px">' + BTN('Otro plano al azar //', 'vidAngle=\'\';loadVideoScript()', true) + '</div>';
+    return h + '</div>';
+}
+// Bloque de texto copiable — se usa tres veces en la pantalla de guion. El textarea es
+// readonly y no un <div>: copiar desde un div obliga a seleccionar a mano en móvil, que es
+// justo donde el dueño va a estar cuando publique.
+function copyBlockHTML(titulo, id, texto) {
+    return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px">'
+        + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em">' + esc(titulo).toUpperCase() + '</div>'
+        + '<button onclick="copyFromField(\'' + id + '\')" style="all:unset;cursor:pointer;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:8px 14px;border-radius:8px;flex-shrink:0">Copiar</button>'
+        + '</div>'
+        + '<textarea id="' + id + '" readonly style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text-body,#F2F0EB);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:' + (texto.length > 200 ? '110px' : '64px') + ';box-sizing:border-box;resize:vertical">' + esc(texto) + '</textarea>'
+        + '</div>';
+}
+async function copyFromField(id) {
+    var el = document.getElementById(id);
+    if (!el)
+        return;
+    try {
+        await navigator.clipboard.writeText(el.value);
+        showToast('Copiado.');
+    }
+    catch (e) {
+        // Sin permiso de portapapeles (o navegador viejo): seleccionar el texto deja al dueño
+        // a un toque de copiarlo a mano, en vez de dejarlo sin salida.
+        el.focus();
+        el.select();
+        showToast('Selecciónalo y copia con el teclado.');
+    }
+}
 function adminToolsSections() {
     return [
         ['Clientes y ventas //', [
@@ -6809,6 +6932,7 @@ function adminToolsSections() {
             ]],
         ['Marketing //', [
                 ['calendar', 'Calendario de contenido', 'loadCalendar()'],
+                ['camera', 'Guion de video', 'loadVideoScript()'],
                 ['megaphone', 'Contenido semanal', 'loadMarketingContent()'],
                 ['precios', 'Códigos promo', 'loadPromoCodes()'],
                 ['estrella', 'Rendimiento campañas', 'loadCampaignPerformance()'],
@@ -7726,6 +7850,9 @@ function renderScreen() {
             break;
         case 'admin_batch':
             h = sAdminBatchPlan();
+            break;
+        case 'admin_video':
+            h = sAdminVideo();
             break;
         case 'admin_gen':
             h = sAdminGen();

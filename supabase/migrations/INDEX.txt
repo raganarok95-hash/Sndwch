@@ -125,3 +125,4 @@
 20260829012558  sig05_precio_2490_3090_sincroniza_con_el_codigo
 20260829020112  app_settings_google_review_url
 20260829020316  crons_pago_abandonado_credito_sin_usar_post_cancelacion
+20260829024518  recompensas_tasa_unica_20_pts_por_sol

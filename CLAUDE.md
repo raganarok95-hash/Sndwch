@@ -6,11 +6,22 @@ afecta cualquier decisión de precio/margen.
 
 ## Estructura
 
-- **Cliente**: `src/app.ts` (toda la lógica y el tipado, un solo archivo grande, sin
-  framework) + `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__`
-  donde se inyecta `app.ts` compilado). `npm run build` compila y regenera `index.html`
-  en la raíz del repo — **ese archivo es el único artefacto servido**; nunca lo edites a
-  mano, siempre edita `src/app.ts`/`src/shell.html` y recompila.
+- **Cliente**: `src/app/NN-*.ts` (toda la lógica y el tipado, sin framework) +
+  `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__` donde se
+  inyecta el JS compilado). `npm run build` compila cada parte y las **concatena por orden
+  alfabético** para regenerar `index.html` en la raíz — **ese archivo es el único artefacto
+  servido**; nunca lo edites a mano.
+  Las 9 partes salieron de un único `src/app.ts` de 8 125 líneas (dividido el 2026-08-29).
+  Son **scripts globales, NO módulos**: no llevan `import`/`export`, comparten un mismo
+  ámbito y se ejecutan de arriba a abajo, así que **el orden importa** — hay estado
+  (catálogo, constantes de dinero, helpers) que tiene que existir antes de lo de abajo. Por
+  eso el prefijo numérico no es cosmético. `npm run check:bundle` (dentro de `verify`) exige
+  prefijos `01..NN` consecutivos y sin `import`/`export` de nivel superior; sin eso,
+  reordenar una parte no rompe la compilación, rompe la app en runtime.
+  La división se verificó comparando el JS emitido **byte a byte** contra el del archivo
+  único: idéntico. Lo único que hubo que resolver es que `tsc` antepone su propio
+  `"use strict";` a cada archivo, y los 8 sobrantes caen a mitad del bundle donde la
+  directiva no hace nada — `build.mjs` los quita al concatenar.
 - **Backend**: 8 edge functions en `supabase/functions/`:
   - **`api`** — la principal, un solo entrypoint con un action por operación (login,
     catálogo, pedidos, admin, dashboard, etc.), dividida en módulos:

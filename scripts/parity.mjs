@@ -1,6 +1,6 @@
 // Comprobación de paridad cliente ↔ servidor.
 //
-// Hay ~20 constantes que existen DOS veces en este repo: una en `src/app.ts` (para que el
+// Hay ~20 constantes que existen DOS veces en este repo: una en `src/app/` (para que el
 // cliente pueda mostrar precios y totales sin esperar al servidor) y otra en
 // `supabase/functions/api/` (que es la que de verdad cobra). Hasta ahora la única defensa
 // contra que se separen era un comentario "DEBE coincidir con ..." al lado de cada una, y
@@ -21,12 +21,21 @@
 // pueden seguir sin coincidir con lo que se cobra de verdad (ver CLAUDE.md). Esto solo
 // garantiza que los dos lados del CÓDIGO digan lo mismo.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const app = readFileSync(join(ROOT, 'src/app.ts'), 'utf8');
+// El cliente ya no es un solo archivo: vive en src/app/NN-*.ts y el build los concatena
+// por orden alfabético (ver scripts/build.mjs y scripts/check-bundle.mjs). Acá se leen y
+// se pegan igual, así que todos los regex de abajo siguen funcionando exactamente como
+// cuando había un único src/app.ts — este script nunca necesitó saber dónde empieza y
+// termina cada parte, solo que el texto completo esté disponible.
+const app = readdirSync(join(ROOT, 'src/app'))
+  .filter((f) => f.endsWith('.ts'))
+  .sort()
+  .map((f) => readFileSync(join(ROOT, 'src/app', f), 'utf8'))
+  .join('\n');
 const catalog = readFileSync(join(ROOT, 'supabase/functions/api/catalog.ts'), 'utf8');
 const env = readFileSync(join(ROOT, 'supabase/functions/api/env.ts'), 'utf8');
 const customer = readFileSync(join(ROOT, 'supabase/functions/api/actions/customer.ts'), 'utf8');
@@ -178,17 +187,17 @@ for (const id of new Set([...Object.keys(cSig), ...Object.keys(sSig)])) {
 cmp('Zonas de delivery (DELIVERY_PRICE_ZONES ↔ DELIVERY_ZONE_FEES)', cZones, sZones);
 
 cmp('COMBO_DISCOUNT_PER_PAIR',
-  scalar(app, 'COMBO_DISCOUNT_PER_PAIR', /var COMBO_DISCOUNT_PER_PAIR=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'COMBO_DISCOUNT_PER_PAIR', /var COMBO_DISCOUNT_PER_PAIR=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'COMBO_DISCOUNT_PER_PAIR', /const COMBO_DISCOUNT_PER_PAIR = ([\d.]+)/, 'catalog.ts'));
 cmp('GIFT_CARD_POINTS_PER_SOL',
-  scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
 cmp('CULQI_FEE_RATE',
-  scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app/'),
   scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));
 
 cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
-  scalar(app, 'REFERRAL_BONUS_POINTS', /var REFERRAL_BONUS_POINTS=(\d+)/, 'src/app.ts'),
+  scalar(app, 'REFERRAL_BONUS_POINTS', /var REFERRAL_BONUS_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'));
 
 // Invariante, no duplicación: lo que recibe QUIEN INVITA es "un 15CM gratis" entregado
@@ -207,28 +216,28 @@ cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
 // EXTRA_SAUCE_PRICE es el caso más grave: es el único precio del catálogo que no vive en
 // `catalog_prices`, así que esta comparación es su ÚNICA defensa.
 cmp('R03_FLAT_WAIVER (tope de "sube a 30CM gratis")',
-  scalar(app, 'R03_FLAT_WAIVER', /var R03_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'R03_FLAT_WAIVER', /var R03_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'R03_FLAT_WAIVER', /const R03_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
 cmp('R04_FLAT_WAIVER (tope de doble proteína gratis)',
-  scalar(app, 'R04_FLAT_WAIVER', /var R04_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'R04_FLAT_WAIVER', /var R04_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'R04_FLAT_WAIVER', /const R04_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
 cmp('R05_FLAT_WAIVER (tope de bebida gratis)',
-  scalar(app, 'R05_FLAT_WAIVER', /var R05_FLAT_WAIVER=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'R05_FLAT_WAIVER', /var R05_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'R05_FLAT_WAIVER', /const R05_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
 cmp('OFFPEAK_DRINK_PROMO_CAP (tope de la bebida de hora valle)',
-  scalar(app, 'OFFPEAK_DRINK_PROMO_CAP', /var OFFPEAK_DRINK_PROMO_CAP=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'OFFPEAK_DRINK_PROMO_CAP', /var OFFPEAK_DRINK_PROMO_CAP=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'OFFPEAK_DRINK_PROMO_CAP', /const OFFPEAK_DRINK_PROMO_CAP = ([\d.]+)/, 'catalog.ts'));
 cmp('ORGANIZER_FREE_MIN_SANDWICHES (umbral del sándwich gratis del organizador)',
-  scalar(app, 'ORGANIZER_FREE_MIN_SANDWICHES', /var ORGANIZER_FREE_MIN_SANDWICHES=(\d+)/, 'src/app.ts'),
+  scalar(app, 'ORGANIZER_FREE_MIN_SANDWICHES', /var ORGANIZER_FREE_MIN_SANDWICHES=(\d+)/, 'src/app/'),
   scalar(catalog, 'ORGANIZER_FREE_MIN_SANDWICHES', /export const ORGANIZER_FREE_MIN_SANDWICHES = (\d+)/, 'catalog.ts'));
 cmp('EXTRA_SAUCE_PRICE (el único precio que NO vive en catalog_prices)',
-  scalar(app, 'EXTRA_SAUCE_PRICE', /var EXTRA_SAUCE_PRICE=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'EXTRA_SAUCE_PRICE', /var EXTRA_SAUCE_PRICE=([\d.]+)/, 'src/app/'),
   scalar(catalog, 'EXTRA_SAUCE_PRICE', /export const EXTRA_SAUCE_PRICE = ([\d.]+)/, 'catalog.ts'));
 cmp('WEEKLY_PLAN_PRICE (lo que paga hoy)',
-  scalar(app, 'WEEKLY_PLAN_PRICE', /var WEEKLY_PLAN_PRICE=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'WEEKLY_PLAN_PRICE', /var WEEKLY_PLAN_PRICE=([\d.]+)/, 'src/app/'),
   scalar(customer, 'WEEKLY_PLAN_PRICE', /const WEEKLY_PLAN_PRICE = ([\d.]+)/, 'customer.ts'));
 cmp('WEEKLY_PLAN_CREDIT (el saldo que recibe)',
-  scalar(app, 'WEEKLY_PLAN_CREDIT', /var WEEKLY_PLAN_CREDIT=([\d.]+)/, 'src/app.ts'),
+  scalar(app, 'WEEKLY_PLAN_CREDIT', /var WEEKLY_PLAN_CREDIT=([\d.]+)/, 'src/app/'),
   scalar(customer, 'WEEKLY_PLAN_CREDIT', /const WEEKLY_PLAN_CREDIT = ([\d.]+)/, 'customer.ts'));
 
 // Zonas EXCLUIDAS del reparto. No es dinero, pero desincronizarlas es peor que un precio
@@ -240,12 +249,12 @@ function excludedZones(src, re, where) {
   return m[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean).sort().join('|');
 }
 cmp('DELIVERY_EXCLUDED_ZONES (zonas sin reparto)',
-  excludedZones(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app.ts'),
+  excludedZones(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app/'),
   excludedZones(env, /export const DELIVERY_EXCLUDED_ZONES = \[([^\]]*)\]/, 'env.ts'));
 
 // Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
 cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
-  scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app.ts'),
+  scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app/'),
   scalar(catalog, 'SIG_GATES.SIG05', /SIG05: \{ minOrders: (\d+) \}/, 'catalog.ts'));
 
 // ---------- NOMBRES (agregado 2026-08-26) ----------
@@ -336,7 +345,7 @@ function hoursPairs(src, re, file) {
     .map((x) => (x === 'null' ? null : x.replace(/[[\]\s]/g, '').split(',').map(Number)));
 }
 cmp('STORE_HOURS (semilla del horario de atención)',
-  hoursPairs(app, /var STORE_HOURS=\[([\s\S]*?)\];/, 'src/app.ts'),
+  hoursPairs(app, /var STORE_HOURS=\[([\s\S]*?)\];/, 'src/app/'),
   hoursPairs(env, /export const STORE_HOURS: Array<\[number, number\] \| null> = \[([\s\S]*?)\];/, 'env.ts'));
 
 // Ventana de la promo de hora valle. Si se separan, el cliente promete "BEBIDA // GRATIS"
@@ -351,7 +360,7 @@ function hourWindows(src, re, file) {
   return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? null;
 }
 cmp('OFFPEAK_DRINK_PROMO_HOURS_LIMA (ventana de la bebida gratis)',
-  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA=(\[[\s\S]*?\]);/, 'src/app.ts'),
+  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA=(\[[\s\S]*?\]);/, 'src/app/'),
   hourWindows(catalog, /const OFFPEAK_DRINK_PROMO_HOURS_LIMA: \[number, number\]\[\] = (\[[\s\S]*?\]);/, 'catalog.ts'));
 
 // Rangos. Son de puro reconocimiento (nunca cambian precio ni multiplicador), pero el
@@ -370,7 +379,7 @@ function ranks(src, re, file) {
   return out.length ? out : null;
 }
 cmp('RANKS (nombres y umbrales de rango)',
-  ranks(app, /var RANKS=\[([\s\S]*?)\];/, 'src/app.ts'),
+  ranks(app, /var RANKS=\[([\s\S]*?)\];/, 'src/app/'),
   ranks(env, /export const RANKS: \{ name: string; minOrders: number \}\[\] = \[([\s\S]*?)\];/, 'env.ts'));
 
 // Proteínas sin opción de doble. El cliente la esconde con `noDouble`, el servidor la

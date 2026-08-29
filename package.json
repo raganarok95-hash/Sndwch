@@ -5,8 +5,9 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run build && npm test",
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run build && npm test",
     "typecheck:api": "node scripts/check-backend.mjs",
     "test:api": "node scripts/check-money.mjs"
   },
