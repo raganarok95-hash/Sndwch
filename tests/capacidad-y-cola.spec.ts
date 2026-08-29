@@ -107,9 +107,18 @@ test('un pedido AHORA con la hora actual llena avisa antes de la pantalla de pag
   await armarSandwich(page);
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
 
-  // El mensaje nombra la salida concreta ("elige PROGRAMAR"), no solo el problema.
+  // #25 — El mensaje no solo dice que no se puede: NOMBRA la siguiente franja libre y la
+  // deja a un toque. Rechazar sin alternativa manda al cliente a adivinar cuándo volver, y
+  // la mayoría no vuelve.
   await expect(page.locator('#o-err')).toContainText('Esta hora ya está completa');
-  await expect(page.locator('#o-err')).toContainText('PROGRAMAR');
+  await expect(page.locator('#o-err')).toContainText('La más cercana libre es');
+  await expect(page.locator('#o-alt-slot button')).toBeVisible();
   // Y sobre todo: el pedido NUNCA se manda. Antes esto llegaba al servidor y volvía 409.
   expect(calls.filter((c) => c.action === 'place-order')).toHaveLength(0);
+
+  // El botón no es decorativo: deja el pedido programado en esa franja, listo para pagar.
+  await page.locator('#o-alt-slot button').click();
+  await expect(page.locator('#o-sched')).toHaveCount(1);
+  const elegido = await page.locator('#o-sched').inputValue();
+  expect(elegido).toBeTruthy();
 });

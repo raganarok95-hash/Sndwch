@@ -1,3 +1,77 @@
+// ── #60: pedido fijo (recurrente) ───────────────────────────────────────────────────────
+//
+// "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
+// falta a un negocio nuevo.
+//
+// ⚠ NO SE COBRA SOLO, Y LA PANTALLA LO DICE. El token de tarjeta de Culqi es de un solo uso
+// y vive 5 minutos, así que no hay forma de volver a cobrar sin que el cliente ponga una
+// tarjeta otra vez. Prometerle "se cobra solo" y después pedirle que confirme sería la clase
+// de promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
+var myRecurring=[];
+var DIAS_SEMANA=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+function sPRecurring(){
+  var h=H('MI PEDIDO FIJO',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#F2F0EB)">nunca te cobramos sin que confirmes</b>.</div>';
+  if(!myRecurring.length){
+    h+='<div style="text-align:center;padding-top:40px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em">Sin pedidos fijos //</div><p style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px">Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.</p></div>';
+  }else{
+    h+=myRecurring.map(function(r){
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
+        +'<span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:17px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(DIAS_SEMANA[r.weekday]||'')+' · '+esc(r.slot)+'</span>'
+        +'<button onclick="doDeleteRecurring(\''+r.id+'\')" style="all:unset;cursor:pointer;color:#ff8888;font-family:EB Garamond,serif;font-weight:600;font-size:10px;flex-shrink:0">Quitar</button>'
+        +'</div>'
+        +(r.label?'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px">'+esc(r.label)+'</div>':'')
+        +'<button onclick="loadCart('+JSON.stringify(r.items||[]).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedirlo ahora //</button>'
+        +'</div>';
+    }).join('');
+  }
+  h+='</div>'+NAV();
+  return h;
+}
+async function goRecurring(){
+  sndScreen='p_recurring';busy=true;busyMsg='Cargando...';render();
+  try{
+    var r=await api('recurring-list',{token:token});
+    myRecurring=Array.isArray(r.recurring)?r.recurring:[];
+  }catch(e){myRecurring=[];}
+  busy=false;render();
+}
+async function doDeleteRecurring(id){
+  if(!(await showConfirm('¿Quitar este pedido fijo? Dejaremos de avisarte.')))return;
+  // Optimista, igual que favoritos: se quita al instante y se reinserta si el borrado falla.
+  var idx=myRecurring.findIndex(function(r){return r.id===id;});
+  var removed=idx>=0?myRecurring.splice(idx,1)[0]:null;
+  render();
+  try{
+    await api('recurring-delete',{token:token,id:id});
+  }catch(e){
+    if(removed)myRecurring.splice(idx,0,removed);
+    render();
+    showToast('No se pudo quitar: '+e.message);
+  }
+}
+// Guarda el carrito actual como pedido fijo. Vive acá, junto al resto del pedido fijo, para
+// que toda la funcionalidad quede en un solo sitio.
+async function saveCartAsRecurring(){
+  if(!cust){showToast('Inicia sesión para dejar un pedido fijo.');return;}
+  if(!cart.length){showToast('Arma tu pedido antes de dejarlo fijo.');return;}
+  var wd=(document.getElementById('rec-day') as HTMLSelectElement|null);
+  var sl=(document.getElementById('rec-slot') as HTMLSelectElement|null);
+  if(!wd||!sl)return;
+  var dia=parseInt(wd.value,10);
+  busy=true;busyMsg='Guardando tu pedido fijo...';render();
+  try{
+    await api('recurring-add',{token:token,items:cart,weekday:dia,slot:sl.value,label:cart.length+' ítem'+(cart.length===1?'':'s')});
+    busy=false;render();
+    showToast('Listo — te avisamos cada '+DIAS_SEMANA[dia].toLowerCase()+' a las '+sl.value+'.');
+  }catch(e){
+    busy=false;render();
+    showToast('No se pudo guardar: '+e.message);
+  }
+}
+
 // FAVORITOS
 async function loadFavorites(){
   sndScreen='p_favorites';busy=true;busyMsg='Cargando favoritos...';render();

@@ -80,19 +80,40 @@ reserva, y el mensaje de recuperación dice "tu tarjeta no pasó, prueba con otr
 Yape/Plin" en vez del genérico "se te quedó a medias", que hacía reintentar con la misma
 tarjeta rechazada.
 
-## Lote E3 — Genera ingresos nuevos
+## Lote E3 — Genera ingresos nuevos (en curso)
 
-| Orden | # | Qué |
-|---|---|---|
-| 15 | 60 | Pedido recurrente programado |
-| 16 | 55 | Referidos escalonados |
-| 17 | 59 | "Lo de siempre" propuesto solo |
-| 18 | 64 | Aviso de "te faltan N puntos" |
-| 19 | 54 | Cupón de cumpleaños con vencimiento |
-| 20 | 61 | Aviso de favorito de vuelta en stock |
-| 21 | 25 | Sugerencia de hora alternativa cuando la franja está llena |
-| 22 | 65 | Resumen mensual personal |
-| 23 | 50 | Generar el calendario de contenido, no solo recordarlo |
+| Orden | # | Qué | Estado |
+|---|---|---|---|
+| 15 | 60 | Pedido recurrente programado | ✅ Tabla `recurring_orders`, cron `remind-recurring-orders`, pantalla propia y bloque en el carrito. **NO cobra solo y la app lo dice** — ver abajo |
+| 16 | 55 | Referidos escalonados | ⏳ pendiente |
+| 17 | 59 | "Lo de siempre" propuesto solo | ✅ **YA EXISTÍA** — verificado, no se duplicó. Ver abajo |
+| 18 | 64 | Aviso de "te faltan N puntos" | ✅ `remind-points-nudge`, semanal los jueves. La pantalla ya mostraba "+N pts para X"; lo que faltaba era el empujón proactivo |
+| 19 | 54 | Cupón de cumpleaños con vencimiento | ⏳ pendiente |
+| 20 | 61 | Aviso de favorito de vuelta en stock | ✅ Extendido a favoritos, **y de paso corregido un defecto real** — ver abajo |
+| 21 | 25 | Sugerencia de hora alternativa | ✅ Se nombra la siguiente franja libre y se ofrece a un toque, en vez de solo rechazar |
+| 22 | 65 | Resumen mensual personal | ⏳ pendiente |
+| 23 | 50 | Generar el calendario de contenido | ⏳ pendiente |
+
+### Lo que no era como el plan lo decía
+
+**#59 ya estaba construido.** La tarjeta "↻ Repetir pedido" aparece sola en el home Y en la
+pantalla de Signatures ("↻ Tu de siempre"), y reconstruye el carrito anterior completo de un
+toque — que es exactamente lo que el ítem pedía. Se verificó leyendo el código antes de
+tocar nada, en vez de construir un duplicado.
+
+**El #60 no puede cobrar solo.** El token de tarjeta de Culqi es de un solo uso y vive 5
+minutos ([documentación de Culqi](https://docs.culqi.com/es/documentacion/pagos-online/cargo-unico/tokens/)),
+así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta otra vez.
+Tampoco cobra contra el crédito interno aunque técnicamente se podría: sacarle plata a
+alguien sin una decisión fresca suya es la clase de sorpresa que cuesta el cliente entero.
+Lo que hace es avisar una hora antes con el carrito ya armado, y **la app dice explícitamente
+"no te cobramos sin que confirmes"** — hay un test que lo protege, porque si alguien
+"mejora" ese texto a "se cobra solo", la promesa se vuelve falsa.
+
+**Al hacer el #61 apareció el mismo defecto del #11 en otro sitio.**
+`notifyRestockedSignatures` comprobaba solo pan y proteína antes de anunciar "¡Ya volvió!",
+mientras el servidor reserva la receta completa: podía mandar a un cliente a un producto con
+un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la receta entera.
 
 ## Lote E4 — Devuelve tu tiempo (el cuello real)
 

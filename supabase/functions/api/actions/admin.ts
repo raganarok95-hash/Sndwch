@@ -16,30 +16,55 @@ import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DA
 // avisa a quienes pidieron "avísame cuando vuelva" (ver actRequestRestockNotify,
 // customer.ts) — sin esto, esa demanda quedaba perdida en silencio: la tarjeta AGOTADO
 // ni siquiera dejaba intentar pedirlo.
+// Los códigos que un Signature consume de verdad. El servidor reserva la receta COMPLETA
+// (`priceSigBuild` arma [base, prot, ...tops, ...sauces] más el queso fijo), así que
+// preguntar solo por pan y proteína —como se hacía acá— podía anunciar "¡Ya volvió!" con un
+// topping todavía agotado, mandando al cliente a un producto que el checkout va a rechazar.
+// Mismo defecto que la disponibilidad en la tarjeta del cliente (#11).
+function sigIngredientCodes(sig: any): string[] {
+  const codes = [sig.base, sig.prot, ...(sig.tops || []), ...(sig.sauces || [])];
+  if (sig.fixedCheese) codes.push(sig.fixedCheese);
+  return [...new Set(codes.filter(Boolean).map(String))];
+}
+
 async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
   const affectedSigIds = Object.entries(SIG_DATA)
-    .filter(([, sig]) => sig.base === restockedCode || sig.prot === restockedCode)
+    .filter(([, sig]) => sigIngredientCodes(sig).includes(restockedCode))
     .map(([id]) => id);
   if (!affectedSigIds.length) return;
   for (const sigId of affectedSigIds) {
     const sig = SIG_DATA[sigId];
+    const codes = sigIngredientCodes(sig);
     const rows = await sbGet(
       "inventory",
-      `product_code=in.(${encodeURIComponent(sig.base)},${encodeURIComponent(sig.prot)})&select=product_code,in_stock`,
+      `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,in_stock&limit=100`,
     );
-    const baseRow = rows.find((r: any) => r.product_code === sig.base);
-    const protRow = rows.find((r: any) => r.product_code === sig.prot);
     // Sin fila en inventory = nunca se marcó agotado, así que cuenta como disponible.
-    const baseOk = !baseRow || baseRow.in_stock !== false;
-    const protOk = !protRow || protRow.in_stock !== false;
-    if (!baseOk || !protOk) continue;
-    const requests = await sbGet("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}&select=id,customer_phone`);
-    if (!requests.length) continue;
-    for (const r of requests) {
+    const agotado = codes.some((c) => rows.find((r: any) => r.product_code === c)?.in_stock === false);
+    if (agotado) continue;
+
+    // Quien lo PIDIÓ explícitamente ("avísame cuando vuelva") y quien lo tiene guardado como
+    // FAVORITO (#61) son dos poblaciones distintas: la segunda nunca pidió el aviso, pero ya
+    // demostró que le interesa ese sándwich guardándolo. Se juntan en un solo envío para no
+    // mandarle dos push a quien está en las dos listas.
+    const [requests, favoritos] = await Promise.all([
+      sbGet("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}&select=id,customer_phone&limit=1000`),
+      sbGet("favorites", `build->>sigId=eq.${encodeURIComponent(sigId)}&select=customer_phone&limit=1000`),
+    ]);
+    const phones = [...new Set([
+      ...requests.map((r: any) => String(r.customer_phone)),
+      ...favoritos.map((f: any) => String(f.customer_phone)),
+    ].filter(Boolean))];
+    if (!phones.length) continue;
+    const pidieronAviso = new Set(requests.map((r: any) => String(r.customer_phone)));
+    for (const phone of phones) {
       try {
-        await sendPushToPhone(r.customer_phone, {
+        await sendPushToPhone(phone, {
           title: "¡Ya volvió!",
-          body: (SIG_LABEL[sigId] || "El sabor que pediste") + " ya está disponible de nuevo.",
+          // A quien lo pidió se le contesta lo que pidió; a quien no, se le explica por qué
+          // le llega — un aviso sin motivo aparente se lee como spam.
+          body: (SIG_LABEL[sigId] || "El sabor que pediste") +
+            (pidieronAviso.has(phone) ? " ya está disponible de nuevo." : " —uno de tus guardados— ya está disponible de nuevo."),
           url: "./index.html",
           tag: "sndwch-restock-" + sigId,
         });

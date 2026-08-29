@@ -28,6 +28,7 @@ import {
 import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
+  actRecurringList, actRecurringAdd, actRecurringDelete, actRemindRecurringOrders, actRemindPointsNudge,
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actGiftCardPurchase,
@@ -99,6 +100,15 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "favorites-list": actFavoritesList,
   "favorites-add": actFavoritesAdd,
   "favorites-delete": actFavoritesDelete,
+  // #60 — Pedido recurrente. NO cobra solo (el token de Culqi es de un solo uso): a la hora
+  // elegida llega el aviso con el carrito armado y el cliente confirma en un toque.
+  "recurring-list": actRecurringList,
+  "recurring-add": actRecurringAdd,
+  "recurring-delete": actRecurringDelete,
+  "remind-recurring-orders": actRemindRecurringOrders,
+  // #64 — Empuja solo a quien está CERCA de una recompensa. Al que le faltan 300 puntos no
+  // le sirve saberlo; al que le faltan 30, sí.
+  "remind-points-nudge": actRemindPointsNudge,
   "submit-rating": actSubmitRating,
   "claim-challenge": actClaimChallenge,
   "claim-discovery-challenge": actClaimDiscoveryChallenge,

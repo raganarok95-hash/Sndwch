@@ -236,6 +236,30 @@ desde una sesión no se puede correr contra producción: para probar cambios al 
    del push si el código nuevo depende de ella (columnas, RPCs, cron jobs) — las
    migraciones nunca pasan por este CI, se aplican aparte.
 
+## Pedido fijo (recurrente) — NO cobra solo, y no puede (2026-08-29)
+
+`recurring_orders` guarda día de la semana + franja + el carrito completo, y el cron
+`remind-recurring-orders` (cada media hora, :05 y :35) avisa una hora antes con el carrito
+armado. El cliente lo gestiona desde PUNTOS → "Mi Pedido Fijo" y lo crea desde el carrito.
+
+**El límite es de Culqi, no del código**: el token de tarjeta es de **un solo uso y vive 5
+minutos**, así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta
+otra vez. Un cobro automático exigiría guardar la tarjeta (Culqi One Click), o sea decidir
+guardar medios de pago de los clientes — **decisión del dueño, no un detalle de
+implementación**. Tampoco se cobra contra el crédito interno aunque técnicamente se podría:
+sacarle plata a alguien sin una decisión fresca suya es la clase de sorpresa que cuesta el
+cliente entero.
+
+Por eso la app dice explícitamente "**no te cobramos sin que confirmes**" en las dos
+pantallas, y `tests/pedido-fijo.spec.ts` lo protege: si alguien "mejora" ese texto a "se
+cobra solo cada semana", la promesa se vuelve falsa y el cliente se entera el día que
+esperaba su sándwich. Misma clase de promesa que ya obligó a retirar los badges MÁS PEDIDO y
+EDICIÓN LIMITADA.
+
+**Nunca se guarda el total** de la recurrencia, solo los ítems: el precio se re-tasa el día
+del aviso. Congelarlo sería una segunda fuente de verdad, el defecto que ya costó tres
+semanas de precios fantasma.
+
 ## Capacidad por hora, cola y ETA (2026-08-29)
 
 `MAX_ORDERS_PER_HOUR` (10) y `QUEUE_MINUTES_PER_ORDER` (5) viven en **`env.ts`**, no en

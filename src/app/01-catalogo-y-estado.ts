@@ -609,6 +609,42 @@ function schedSlotsDetailed(dayKey){
 function schedSlots(dayKey){
   return schedSlotsDetailed(dayKey).filter(function(s){return !s.full;}).map(function(s){return s.t;});
 }
+// #25 — La primera hora libre, mirando HOY y después MAÑANA. Rechazar sin ofrecer una
+// alternativa es mandar al cliente a adivinar cuándo volver: la mayoría no vuelve. Devuelve
+// null solo si de verdad no queda ninguna franja en los dos días.
+function nextFreeSlot(){
+  var hoy=schedSlots('today');
+  if(hoy.length)return{day:'today',label:'hoy',slot:hoy[0]};
+  var man=schedSlots('tomorrow');
+  if(man.length)return{day:'tomorrow',label:'mañana',slot:man[0]};
+  return null;
+}
+// #60 — Franjas ofrecidas para un pedido FIJO. Se toma el horario más amplio de la semana y
+// no el de hoy: la recurrencia es para un día futuro, y acotarla al horario de hoy
+// escondería franjas perfectamente válidas (o dejaría la lista vacía un día cerrado).
+function recurringSlotOptions(){
+  var abre=24,cierra=0;
+  for(var i=0;i<7;i++){
+    var r=STORE_HOURS[i];
+    if(!r)continue;
+    if(r[0]<abre)abre=r[0];
+    if(r[1]>cierra)cierra=r[1];
+  }
+  if(abre>=cierra)return[];
+  var out=[];
+  for(var m=abre*60;m<cierra*60;m+=30){
+    out.push(String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'));
+  }
+  return out;
+}
+// Salta a esa franja y deja el pedido en modo programado, para que ofrecerla sea un toque y
+// no una instrucción que el cliente tiene que ejecutar a mano.
+function useNextFreeSlot(){
+  var n=nextFreeSlot();
+  if(!n)return;
+  scheduleMode='later';schedDay=n.day;schedSlot=n.slot;
+  confirmRerender();
+}
 function schedInputValue(){
   if(!schedSlot)return'';
   var d=schedDateForDay(schedDay),parts=schedSlot.split(':');
