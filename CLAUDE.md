@@ -372,13 +372,20 @@ abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas
 aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
 contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
-crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`).
+crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
+`sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
+disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
 **Dead-man switch de crons (2026-08-28)**: `api` anota un latido por cada corrida de cron
 que llega (`record_cron_heartbeat`, en `index.ts`, best-effort). Existe porque pg_cron
 guarda si DISPARÓ el job, pero `net.http_post()` vuelve al instante: "succeeded" ahí
 significa "se encoló la petición", no "la edge function hizo su trabajo" — si el secreto de
 cron rota o `api` responde 500, los 20 jobs siguen en verde para siempre mientras nada
-ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido. Cubre
+ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido.
+**Las 4 RPC del latido llevan `revoke execute ... from public, anon, authenticated`** — se
+crearon sin él y `record_cron_heartbeat` quedó llamable con la anon key, o sea que
+cualquiera podía escribir un latido falso y DEJAR MUDA la alarma justo mientras la
+automatización estaba caída. Toda RPC `security definer` nueva necesita ese revoke: es el
+sexto caso del mismo defecto en este repo. Cubre
 solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
 2 de SQL puro) quedan fuera a propósito y documentados en la migración.
 Limpieza/expiración: pagos manuales sin confirmar,

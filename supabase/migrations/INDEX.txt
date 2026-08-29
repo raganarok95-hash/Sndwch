@@ -120,3 +120,5 @@
 20260828164122  dni_del_dueno_escala_de_dinero_y_ledger_completo
 20260828164151  credit_ledger_usa_related_phone
 20260828183910  cron_heartbeats_dead_man_switch_y_pico_de_errores
+20260829003727  revoke_public_execute_en_rpcs_del_heartbeat
+20260829004606  cron_alert_system_health_horario
