@@ -196,6 +196,27 @@ cmp('CULQI_FEE_RATE',
   scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app/'),
   scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));
 
+// Capacidad y cola (#23/#16). El cliente NO tiene estos números como fuente: los recibe en
+// get-store-hours. Pero sus valores por defecto —los que rigen si ese fetch falla— tienen
+// que ser los mismos, o la app degradaría a un comportamiento distinto del que el servidor
+// va a aplicar igual: ofrecería una hora que el servidor rechaza, o prometería un tiempo de
+// entrega que no corresponde.
+// #30 — Las palabras que disparan la alerta de alergia. Si las dos listas divergen, el
+// servidor mandaría el push con "⚠️ ALERGIA" y la comanda pintaría la nota como una
+// referencia de dirección cualquiera, o al revés. Es una lista de seguridad: no puede
+// depender de que alguien se acuerde de tocar los dos archivos.
+cmp('NOTE_ALERT_WORDS (palabras que marcan una nota como restricción)',
+  stringList(app, /var NOTE_ALERT_WORDS=\[([^\]]*)\]/, 'src/app/', 'NOTE_ALERT_WORDS'),
+  stringList(env, /export const NOTE_ALERT_WORDS = \[([^\]]*)\]/, 'env.ts', 'NOTE_ALERT_WORDS'));
+
+cmp('MAX_ORDERS_PER_HOUR (tope por franja)',
+  scalar(app, 'maxPerHour', /maxPerHour=(\d+)/, 'src/app/'),
+  scalar(env, 'MAX_ORDERS_PER_HOUR', /const MAX_ORDERS_PER_HOUR = (\d+)/, 'env.ts'));
+
+cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
+  scalar(app, 'queueMinutesPerOrder', /queueMinutesPerOrder=(\d+)/, 'src/app/'),
+  scalar(env, 'QUEUE_MINUTES_PER_ORDER', /const QUEUE_MINUTES_PER_ORDER = (\d+)/, 'env.ts'));
+
 cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
   scalar(app, 'REFERRAL_BONUS_POINTS', /var REFERRAL_BONUS_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'));
@@ -243,14 +264,16 @@ cmp('WEEKLY_PLAN_CREDIT (el saldo que recibe)',
 // Zonas EXCLUIDAS del reparto. No es dinero, pero desincronizarlas es peor que un precio
 // distinto: el cliente cree que le llega y el servidor le rechaza el pedido ya pagado, o al
 // revés. `parity` ya comparaba las zonas con precio pero nunca estas.
-function excludedZones(src, re, where) {
+// Lista de cadenas literales, comparada sin importar el orden. La usan las zonas
+// excluidas y las palabras de alerta en notas.
+function stringList(src, re, where, what) {
   const m = src.match(re);
-  if (!m) { console.error(`✗ No se encontró DELIVERY_EXCLUDED_ZONES en ${where}`); process.exitCode = 1; return null; }
+  if (!m) { console.error(`✗ No se encontró ${what} en ${where}`); process.exitCode = 1; return null; }
   return m[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean).sort().join('|');
 }
 cmp('DELIVERY_EXCLUDED_ZONES (zonas sin reparto)',
-  excludedZones(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app/'),
-  excludedZones(env, /export const DELIVERY_EXCLUDED_ZONES = \[([^\]]*)\]/, 'env.ts'));
+  stringList(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app/', 'DELIVERY_EXCLUDED_ZONES'),
+  stringList(env, /export const DELIVERY_EXCLUDED_ZONES = \[([^\]]*)\]/, 'env.ts', 'DELIVERY_EXCLUDED_ZONES'));
 
 // Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
 cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',

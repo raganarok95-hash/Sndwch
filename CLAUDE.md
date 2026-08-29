@@ -236,6 +236,32 @@ desde una sesión no se puede correr contra producción: para probar cambios al 
    del push si el código nuevo depende de ella (columnas, RPCs, cron jobs) — las
    migraciones nunca pasan por este CI, se aplican aparte.
 
+## Capacidad por hora, cola y ETA (2026-08-29)
+
+`MAX_ORDERS_PER_HOUR` (10) y `QUEUE_MINUTES_PER_ORDER` (5) viven en **`env.ts`**, no en
+`orders.ts`: `get-store-hours` también los necesita y `hours.ts` no puede importar de
+`orders.ts` sin crear un ciclo (orders ya importa `storePausedUntil` de hours). `npm run
+parity` compara los dos contra los valores por defecto del cliente.
+
+- **El tope por hora ya existía, pero solo en el servidor.** `assertHourCapacity` rechazaba
+  con 409 al pagar, así que el cliente armaba el sándwich entero, escribía la dirección y
+  recién ahí se enteraba. Mismo defecto que ya obligó a poner el selector de distrito.
+  Ahora `get-store-hours` devuelve `fullHours` (inicios de hora que llegaron al tope, 48 h
+  hacia adelante) y el selector las pinta **tachadas y sin onclick** — se muestran, no se
+  esconden: un hueco en la lista de horas no se explica solo.
+- **La "auto-pausa" del plan (#23) se reinterpretó a propósito.** Pausar la TIENDA ENTERA al
+  llenarse una hora habría bloqueado también las horas vacías: peor que lo que ya había. Lo
+  que faltaba no era otro interruptor, era que el cliente lo viera antes de elegir.
+- **La "reapertura automática" (#24) no existe como mecanismo y no debe construirse.** La
+  capacidad se calcula en vivo contra la hora actual, así que una franja deja de estar llena
+  sola cuando el reloj la pasa. Mismo criterio que la pausa temporal, que se reanuda
+  comparando contra la hora en vez de guardando un "cerrado" que después hay que apagar.
+- **El estimado de entrega ya no es ciego a la cola** (`estimatedDeliveryRange()`): suma
+  `queueAhead × 5 min` al rango base de 25-40. `queueAhead` son los pedidos en
+  RECIBIDO/PREPARANDO; los que ya salieron EN CAMINO no compiten por el tiempo de armado.
+  Si el fetch de capacidad falla, `queueAhead` es 0 y el rango vuelve a ser exactamente el
+  de antes — el peor caso es el comportamiento anterior, nunca una demora inventada.
+
 ## Flujos y funcionalidades actuales del cliente
 
 Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 6 Signatures
@@ -434,13 +460,23 @@ re-enganche de rango alto, nunca ha pedido (3 etapas), aniversario de cuenta,
 **crédito sin usar** (dinero que el negocio YA cobró: Plan Semanal, tarjetas de regalo,
 crédito regalado), **post-cancelación** (a las 24 h, no al toque: en el momento la persona
 está molesta), reclamos por vencer (plazo legal).
-**Todos los crons de push tienen un tope de `MAX_PUSH_PER_RUN` (200) por corrida**: leían
+**Todos los crons de push tienen un tope de `MAX_PUSH_PER_RUN` (200, en `env.ts`) por corrida**: leían
 hasta 20 000 clientes y enviaban en serie dentro de una sola invocación, así que con varios
 cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese día, en
 silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
 de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
-**caducidad de tanda** (`alert-batch-expiry`, 08:12 hora Lima, antes de la hora de servicio
+**pedido programado sin insumo** (`alert-scheduled-shortfall`, cada hora en :22 — el cálculo
+ya existía en la pantalla de preparación anticipada, pero solo lo veía quien la abría; el caso
+que importa es el contrario: el pedido es para las 8pm, algo se marcó agotado a las 5pm y
+nadie va a abrir esa pantalla en el medio. Reutiliza `prepShortfall`, probado en
+`tests-api/faltante.test.ts`), **rechazo de tarjeta alto** (`alert-card-declines`, cada hora
+en :47 — cruza los eventos `culqi-rejected`/`charge-succeeded` que `claimAndChargeCulqi` ya
+escribía en `debug_logs` y nadie miraba. Exige un MÍNIMO DE VOLUMEN: 1 rechazo de 1 intento es
+100% y casi siempre es una tarjeta sin fondos, y una alarma que suena por eso deja de mirarse
+antes del día que importa. Un `culqi-fetch-failed` NO cuenta como rechazo: es la red, no la
+tarjeta, y mezclarlos manda a revisar el lugar equivocado), **caducidad de tanda**
+(`alert-batch-expiry`, 08:12 hora Lima, antes de la hora de servicio
 — es SEGURIDAD ALIMENTARIA, no merma: el dueño cocina por tandas y en servicio solo arma,
 así que hay proteína cocida esperando en frío durante días. `inventory.batch_cooked_at` la
 escribe **solo** `admin-inventory-restock`; la edición normal de stock NO la toca, porque

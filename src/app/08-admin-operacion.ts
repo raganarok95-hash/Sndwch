@@ -598,7 +598,12 @@ function sAdminFocus(){
     // La referencia que escribe el cliente ("portón azul", "3er piso") viajaba como
     // o.notes y solo se veía en el TICKET IMPRESO, etiquetada "NOTA:" — o sea en el papel
     // de cocina, que es justo donde no sirve. Quien despacha la necesita en pantalla.
-    +(o.notes?'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:'+GOLD+';margin-top:8px">Referencia: '+esc(o.notes)+'</div>':'')
+    // #30 — Una nota que dice "soy alérgico" no puede pintarse igual que "portón azul".
+    // El bloque rojo no es decoración: esta tarjeta se lee de reojo con las manos ocupadas,
+    // y ahí lo único que funciona es que el aviso no se parezca a lo de al lado.
+    +(o.notes?(noteNeedsAttention(o.notes)
+      ?'<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.5);border-radius:8px;padding:12px 14px;margin-top:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#ff8888;letter-spacing:.08em">⚠ ALERGIA O RESTRICCIÓN</div><div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text,#FFFFFF);margin-top:4px;line-height:1.4">'+esc(o.notes)+'</div></div>'
+      :'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:'+GOLD+';margin-top:8px">Referencia: '+esc(o.notes)+'</div>'):'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div onclick="event.stopPropagation();editEta(\''+o.id+'\','+o.eta_minutes+')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">'+icon('moto',16,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min · editar</span></div>':'')
     +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:8px">'+icon('cash',16,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
     +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
