@@ -42,6 +42,15 @@ jobs:
       - run: supabase functions deploy weekly-summary --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # birthday-bonus entra al workflow el 2026-08-29. Estaba fuera —como daily-summary,
+      # winback-campaign y send-order-email— y eso significaba que cualquier cambio exigía un
+      # deploy MANUAL que había que acordarse de hacer. Un cambio commiteado y no desplegado
+      # es peor que uno no hecho: el repo dice una cosa y producción hace otra, que es
+      # exactamente el defecto que en este proyecto ya costó tres semanas de precios
+      # fantasma. Se agrega ahora porque el cupón de cumpleaños (#54) la cambió de verdad.
+      - run: supabase functions deploy birthday-bonus --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       # PRUEBA DE HUMO DESPUÉS DEL DEPLOY (2026-08-29, automatización #99).
       # Todo lo de arriba verifica ANTES de desplegar: `deno check`, las pruebas de dinero,
       # y recién entonces el deploy. Después del deploy no verificaba nadie, y ahí es
