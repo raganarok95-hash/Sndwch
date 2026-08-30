@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/social
 // Publicación real en Instagram/Facebook vía Meta Graph API — la única pieza del sistema
 // de marketing que de verdad sale de la app sin copiar/pegar a mano. Todo lo demás
-// (MARKETING_CONTENT) sigue siendo "nada se publica solo" a propósito; esto es la
+// (marketingContent()) sigue siendo "nada se publica solo" a propósito; esto es la
 // excepción, y solo para los canales instagram/facebook de una entrada del calendario
 // que ya tiene foto o video subido.
 //

@@ -80,19 +80,19 @@ reserva, y el mensaje de recuperación dice "tu tarjeta no pasó, prueba con otr
 Yape/Plin" en vez del genérico "se te quedó a medias", que hacía reintentar con la misma
 tarjeta rechazada.
 
-## Lote E3 — Genera ingresos nuevos (en curso)
+## Lote E3 — Genera ingresos nuevos ✅ HECHO (2026-08-30)
 
 | Orden | # | Qué | Estado |
 |---|---|---|---|
 | 15 | 60 | Pedido recurrente programado | ✅ Tabla `recurring_orders`, cron `remind-recurring-orders`, pantalla propia y bloque en el carrito. **NO cobra solo y la app lo dice** — ver abajo |
-| 16 | 55 | Referidos escalonados | ⏳ pendiente |
+| 16 | 55 | Referidos escalonados | ✅ Premio extra al 3.º (bebida), 5.º (15CM) y 10.º (dos 15CM), encima de los 400 pts por cada uno. La escalera se VE en el perfil antes de invitar |
 | 17 | 59 | "Lo de siempre" propuesto solo | ✅ **YA EXISTÍA** — verificado, no se duplicó. Ver abajo |
 | 18 | 64 | Aviso de "te faltan N puntos" | ✅ `remind-points-nudge`, semanal los jueves. La pantalla ya mostraba "+N pts para X"; lo que faltaba era el empujón proactivo |
-| 19 | 54 | Cupón de cumpleaños con vencimiento | ⏳ pendiente |
+| 19 | 54 | Cupón de cumpleaños con vencimiento | ✅ S/6 que vence en 7 días, en vez de 100 puntos que no vencen. **Cambia lo que recibe el cliente** — anotado como P18 para que el dueño confirme |
 | 20 | 61 | Aviso de favorito de vuelta en stock | ✅ Extendido a favoritos, **y de paso corregido un defecto real** — ver abajo |
 | 21 | 25 | Sugerencia de hora alternativa | ✅ Se nombra la siguiente franja libre y se ofrece a un toque, en vez de solo rechazar |
-| 22 | 65 | Resumen mensual personal | ⏳ pendiente |
-| 23 | 50 | Generar el calendario de contenido | ⏳ pendiente |
+| 22 | 65 | Resumen mensual personal | ✅ `remind-monthly-recap`, días 1-5 de cada mes. Cinco días y no uno: el tope de 200 envíos por corrida dejaría sin resumen a todos los demás hasta el mes siguiente |
+| 23 | 50 | Generar el calendario de contenido | ✅ El cron semanal deja los borradores escritos (caption, WhatsApp, idea de foto) + botón en el panel. **Y tres números públicos estaban mal** — ver abajo |
 
 ### Lo que no era como el plan lo decía
 
@@ -109,6 +109,21 @@ alguien sin una decisión fresca suya es la clase de sorpresa que cuesta el clie
 Lo que hace es avisar una hora antes con el carrito ya armado, y **la app dice explícitamente
 "no te cobramos sin que confirmes"** — hay un test que lo protege, porque si alguien
 "mejora" ese texto a "se cobra solo", la promesa se vuelve falsa.
+
+**El #50 destapó tres promesas públicas falsas.** El texto de marketing que el dueño COPIA Y
+PEGA a Instagram/WhatsApp tenía números escritos a mano que se quedaron viejos: decía que
+referir daba "50 puntos a ambos" (son 400 al que invita y 120 al invitado desde el
+2026-08-15 — prometía menos de la décima parte), que el menú secreto se abre "desde tu 5to
+pedido" (son 3 desde el 2026-08-26) y repetía "S/95 → S/100" al lado de las constantes
+reales. Ninguno iba a avisar nunca, porque son texto y no cálculo. Ahora ese contenido es
+una FUNCIÓN que interpola `REFERRER_REWARD_POINTS`, `SIG_GATES.SIG05.minOrders` y
+`WEEKLY_PLAN_PRICE` en el momento de armarlo — el umbral del secreto además es editable
+desde el panel, así que un literal se habría desincronizado otra vez.
+
+**El #55 destapó un tercer camino de referido que nunca avisaba.** Vincular un pedido de
+invitado al crear la cuenta (`auth.ts`) otorgaba el bono pero no mandaba ningún push: el
+referidor ganaba su sándwich y solo se enteraba si abría la app y miraba sus puntos. Los
+otros dos caminos sí avisaban desde hace semanas.
 
 **Al hacer el #61 apareció el mismo defecto del #11 en otro sitio.**
 `notifyRestockedSignatures` comprobaba solo pan y proteína antes de anunciar "¡Ya volvió!",

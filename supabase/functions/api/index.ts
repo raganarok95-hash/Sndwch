@@ -29,6 +29,7 @@ import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
   actRecurringList, actRecurringAdd, actRecurringDelete, actRemindRecurringOrders, actRemindPointsNudge,
+  actRemindMonthlyRecap,
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actGiftCardPurchase,
@@ -47,7 +48,7 @@ import {
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
   actAdminMarketingContent, actRemindMarketingContent, actAdminCampaignPerformance,
   actAdminPromoList, actAdminPromoCreate, actAdminPromoToggle,
-  actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete,
+  actAdminCalendarList, actAdminCalendarCreate, actAdminCalendarUpdate, actAdminCalendarDelete, actAdminCalendarGenerate,
   actAdminWaitlistList,
   actAdminSecretSignatureGet, actAdminSecretSignatureSet,
   actAdminRetentionReport,
@@ -109,6 +110,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   // #64 — Empuja solo a quien está CERCA de una recompensa. Al que le faltan 300 puntos no
   // le sirve saberlo; al que le faltan 30, sí.
   "remind-points-nudge": actRemindPointsNudge,
+  "remind-monthly-recap": actRemindMonthlyRecap,
   "submit-rating": actSubmitRating,
   "claim-challenge": actClaimChallenge,
   "claim-discovery-challenge": actClaimDiscoveryChallenge,
@@ -179,6 +181,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-calendar-create": actAdminCalendarCreate,
   "admin-calendar-update": actAdminCalendarUpdate,
   "admin-calendar-delete": actAdminCalendarDelete,
+  "admin-calendar-generate": actAdminCalendarGenerate,
   "waitlist-join": actWaitlistJoin,
   "admin-waitlist-list": actAdminWaitlistList,
   "admin-calendar-upload-image": actAdminCalendarUploadImage,

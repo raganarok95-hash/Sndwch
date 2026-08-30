@@ -1149,6 +1149,28 @@ var GIFT_CARD_POINTS_PER_SOL = 40;
 // otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
 // supabase/functions/api/env.ts.
 var REFERRAL_BONUS_POINTS = 120;
+// #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
+// (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
+// REFERRAL_MILESTONES en supabase/functions/api/env.ts — lo verifica `npm run parity`.
+//
+// Existe en el cliente porque un premio escalonado que nadie VE es exactamente igual que
+// no tenerlo: lo que hace que alguien invite al tercero es saber que el tercero paga
+// distinto, y eso solo puede decirlo la pantalla de referidos.
+var REFERRAL_MILESTONES = [
+    { count: 3, points: 120, label: 'Una bebida de la casa gratis' },
+    { count: 5, points: 400, label: 'Otro sándwich 15CM gratis' },
+    { count: 10, points: 800, label: 'Dos sándwiches 15CM gratis' }
+];
+// Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
+// ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".
+function nextReferralMilestone(n) {
+    var t = Number(n) || 0;
+    for (var i = 0; i < REFERRAL_MILESTONES.length; i++) {
+        if (REFERRAL_MILESTONES[i].count > t)
+            return { m: REFERRAL_MILESTONES[i], missing: REFERRAL_MILESTONES[i].count - t };
+    }
+    return null;
+}
 // Píxel de Meta — el id llega del servidor (get-store-hours) y no está en el código: si el
 // dueño todavía no configuró el secret, la app no carga NINGÚN script de terceros. Todo lo
 // de medición pasa por fbq(), que es un no-op mientras el píxel no exista, así que ningún
@@ -1354,7 +1376,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '68b57f6066';
+var APP_BUILD = '758996edad';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5606,10 +5628,36 @@ function badgesHTML(c) {
         return '<div style="background:' + (b.unlocked ? '#1E4A38' : '#0d1a15') + ';border:1px solid ' + (b.unlocked ? GOLD : '#2a2a2a') + ';border-radius:10px;padding:10px;text-align:center;opacity:' + (b.unlocked ? 1 : .4) + '"><div>' + icon(b.icon, 22, (b.unlocked ? GOLD : '#666')) + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:' + (b.unlocked ? '#FFFFFF' : '#A8C8B0') + ';margin-top:4px">' + b.label + '</div>' + (b.sub ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + b.sub + '</div>' : '') + '</div>';
     }).join('') + '</div></div>';
 }
+// #55 — La escalera de referidos, pintada dentro de la tarjeta del programa.
+//
+// Sin esto el escalonado no existe para el cliente: los puntos extra le caerían de sorpresa
+// y nunca habrían sido una razón para invitar al tercero, que es justamente para lo que se
+// puso la escalera. Por eso el escalón siguiente se muestra SIEMPRE con cuántos amigos
+// faltan, no solo los ya ganados.
+function referralLadderHTML(refs) {
+    var n = Number(refs) || 0;
+    var sig = nextReferralMilestone(n);
+    var filas = REFERRAL_MILESTONES.map(function (m) {
+        var ganado = n >= m.count;
+        var esSiguiente = !!sig && sig.m.count === m.count;
+        var col = ganado ? GOLD : (esSiguiente ? 'var(--sw-text,#FFFFFF)' : 'var(--sw-text-muted,#A8C8B0)');
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:' + (ganado || esSiguiente ? 1 : .5) + '">'
+            + '<div style="flex:0 0 auto;width:18px;text-align:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:640;color:' + col + '">' + (ganado ? '&#10003;' : m.count) + '</div>'
+            + '<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:' + col + '">' + esc(m.label) + '</div>'
+            + '<div style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:' + col + '">+' + m.points + ' pts</div></div>';
+    }).join('');
+    var pie = sig
+        ? 'Te ' + (sig.missing === 1 ? 'falta 1 amigo' : 'faltan ' + sig.missing + ' amigos') + ' para el siguiente premio.'
+        : 'Ganaste todos los premios de la escalera. Cada nuevo amigo te sigue dando tu sándwich.';
+    return '<div style="background:rgba(0,0,0,.18);border-radius:10px;padding:10px 12px;margin-bottom:12px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">PREMIOS EXTRA //</div>'
+        + filas
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-top:6px">' + esc(pie) + '</div></div>';
+}
 function sPProfile() {
     var initial = esc((cust.name || '?').trim().charAt(0).toUpperCase());
     var heroHTML = '<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid var(--sw-border,#3A6B58);border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:#12241D">' + initial + '</div><div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cust.name) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + esc(cust.phone) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-top:6px">' + rankName(cust.total_orders) + ' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:' + GOLD + ';line-height:1">' + (cust.points || 0) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">Pts</div></div></div>';
-    var referralHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:' + GOLD + '"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
+    var referralHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:' + GOLD + '"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div>' + referralLadderHTML(cust.total_referrals) + '<button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
     // Antes las 3 tarjetas de abajo (crédito/tarjeta de regalo/Plan Semanal) no tenían
     // ningún elemento que las diferencie, pese a tener lógicas de negocio muy distintas
     // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo
@@ -9830,6 +9878,27 @@ CAL_CHANNELS.forEach(function (c) { CAL_CHANNEL_LABEL[c[0]] = c[1]; });
 // de publicar, para que el otro camino no la duplique (auditoría de código, ALTO).
 var CAL_STATUS_LABEL = { draft: 'Borrador', scheduled: 'Programado', publishing: 'Publicando...', posted: 'Publicado' };
 var CAL_STATUS_COLOR = { draft: '#A8C8B0', scheduled: GOLD, publishing: GOLD, posted: '#25D366' };
+// #50 — Deja escritas las próximas semanas del calendario en un toque.
+//
+// Hasta acá el cron ya las va dejando solo cada semana; este botón existe para el arranque
+// (la tabla vacía el día 1) y para cuando el dueño quiere ver el mes entero de una. El
+// servidor NUNCA pisa una fecha que ya tiene entrada, así que tocarlo dos veces no duplica
+// nada y no borra lo que él haya planeado a mano.
+async function generateCalendar() {
+    busy = true;
+    busyMsg = 'Generando borradores...';
+    render();
+    try {
+        var res = await api('admin-calendar-generate', { token: token, weeks: 4 });
+        await loadCalendar();
+        showToast(res.creados ? ('Listo: ' + res.creados + ' borrador' + (res.creados === 1 ? '' : 'es') + ' nuevo' + (res.creados === 1 ? '' : 's') + '.') : 'Las próximas 4 semanas ya estaban planeadas.');
+    }
+    catch (e) {
+        busy = false;
+        render();
+        showToast("No se pudo generar: " + e.message);
+    }
+}
 async function loadCalendar() {
     sndScreen = 'admin_calendar';
     busy = true;
@@ -10018,6 +10087,9 @@ async function publishCalendarEntry(id) {
 function sAdminCalendar() {
     var h = H('CALENDARIO DE CONTENIDO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
     h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto/video y toca "Publicar ahora", o déjalo programado y sale solo el día que le toca) — el resto de canales sigue siendo copiar el texto a mano.</div>';
+    // El botón va ARRIBA del formulario manual a propósito: crear una entrada a mano es el
+    // camino largo, y hasta #50 era el único que había.
+    h += '<div style="margin-bottom:20px"><button onclick="generateCalendar()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:8px;text-align:center">Generar las próximas 4 semanas //</button><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Deja los borradores escritos (caption, texto de WhatsApp e idea de foto) en las fechas que todavía estén libres. No toca ninguna entrada que ya exista.</div></div>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:10px;padding:16px;margin-bottom:20px">';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Clips de la semana //</div>';
     // Copy corregida (auditoría UX, P2): antes prometía "sin que tengas que volver a tocar

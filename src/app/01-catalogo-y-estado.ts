@@ -929,6 +929,27 @@ var GIFT_CARD_POINTS_PER_SOL=40;
 // otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
 // supabase/functions/api/env.ts.
 var REFERRAL_BONUS_POINTS=120;
+// #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
+// (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
+// REFERRAL_MILESTONES en supabase/functions/api/env.ts — lo verifica `npm run parity`.
+//
+// Existe en el cliente porque un premio escalonado que nadie VE es exactamente igual que
+// no tenerlo: lo que hace que alguien invite al tercero es saber que el tercero paga
+// distinto, y eso solo puede decirlo la pantalla de referidos.
+var REFERRAL_MILESTONES=[
+  {count:3,points:120,label:'Una bebida de la casa gratis'},
+  {count:5,points:400,label:'Otro sándwich 15CM gratis'},
+  {count:10,points:800,label:'Dos sándwiches 15CM gratis'}
+];
+// Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
+// ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".
+function nextReferralMilestone(n){
+  var t=Number(n)||0;
+  for(var i=0;i<REFERRAL_MILESTONES.length;i++){
+    if(REFERRAL_MILESTONES[i].count>t) return {m:REFERRAL_MILESTONES[i],missing:REFERRAL_MILESTONES[i].count-t};
+  }
+  return null;
+}
 // Píxel de Meta — el id llega del servidor (get-store-hours) y no está en el código: si el
 // dueño todavía no configuró el secret, la app no carga NINGÚN script de terceros. Todo lo
 // de medición pasa por fbq(), que es un no-op mientras el píxel no exista, así que ningún

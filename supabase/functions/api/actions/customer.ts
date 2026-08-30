@@ -4,11 +4,11 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts } from "../catalog.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
-import { verifyCulqiCharge } from "./orders.ts";
+import { verifyCulqiCharge, pointsFor } from "./orders.ts";
 
 // Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
 // retención corren en producción desde antes de abrir, sin verificar que el negocio ya
@@ -309,6 +309,99 @@ export async function actRemindPointsNudge(b: any) {
     }
   }
   return { success: true, avisados };
+}
+
+// ── #65: RESUMEN MENSUAL PERSONAL ──────────────────────────────────────────────────────
+//
+// "Este mes pediste 4 veces, tu favorito fue X." No vende nada y no lleva descuento: es lo
+// único que le manda este sistema al cliente sin pedirle plata a cambio, y por eso es de lo
+// poco que se lee entero.
+//
+// El cálculo va separado del cron para poder probarlo (tests-api/resumen-mensual.test.ts):
+// decide qué se le DICE al cliente sobre sus propios pedidos, y equivocarse ahí es peor que
+// callarse — un resumen con el número de pedidos mal es una razón para desconfiar de la
+// app entera, justo del lado que maneja su dinero.
+export function monthlyRecap(orders: any[]): { count: number; points: number; favorite: string | null } | null {
+  if (!Array.isArray(orders) || orders.length === 0) return null;
+  const points = orders.reduce(
+    (a: number, o: any) => a + pointsFor(Number(o.total) || 0, Number(o.delivery_fee) || 0),
+    0,
+  );
+  // buildTopProducts ya resuelve la etiqueta de cada ítem y el formato legado de pedidos
+  // viejos (product_key/summary); reimplementarlo acá sería una segunda fuente para lo
+  // mismo, y la del dashboard es la que está probada contra pedidos reales.
+  const top = buildTopProducts(orders, 1)[0];
+  // Un "favorito" que se pidió UNA sola vez no es un favorito, es el único que hubo. Decirle
+  // "tu favorito fue X" a alguien que pidió una vez suena a que la app no lo conoce.
+  const favorite = top && top.count >= 2 ? top.name : null;
+  return { count: orders.length, points: Math.max(0, points), favorite };
+}
+
+// Cron del resumen. Corre los primeros días de cada mes (ver la migración del cron): no una
+// sola vez, porque MAX_PUSH_PER_RUN corta en 200 por corrida y una corrida única dejaría al
+// cliente 201 sin su resumen hasta el mes siguiente, cuando la ventana ya se movió. La marca
+// `monthly_recap_ym` hace que cada corrida siga por donde quedó la anterior.
+export async function actRemindMonthlyRecap(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  await loadCatalogPrices();
+  const { startIso, endIso, ym } = limaPrevMonthRange(new Date());
+
+  // Se leen los PEDIDOS del mes pasado, no los clientes: quien no pidió no recibe nada, y
+  // partir de la tabla de clientes obligaría a consultar pedidos uno por uno.
+  const orders = await sbGet(
+    "orders",
+    `created_at=gte.${startIso}&created_at=lt.${endIso}&payment_status=eq.paid&status=neq.CANCELADO` +
+      `&customer_phone=not.is.null&select=customer_phone,items,total,delivery_fee,product_key,summary&limit=20000`,
+  );
+  const porCliente = new Map<string, any[]>();
+  for (const o of orders) {
+    const phone = String(o.customer_phone || "");
+    if (!phone) continue;
+    if (!porCliente.has(phone)) porCliente.set(phone, []);
+    porCliente.get(phone)!.push(o);
+  }
+  if (porCliente.size === 0) return { success: true, avisados: 0 };
+
+  // Solo los que todavía no recibieron el de ESTE mes. El filtro va en la base por la misma
+  // razón que en remind-points-nudge: traer 20 000 filas para descartar casi todas es lo
+  // que hace que una corrida se corte por tiempo.
+  const phones = [...porCliente.keys()];
+  const pendientes = await sbGet(
+    "customers",
+    `phone=in.(${phones.map((p) => `"${p.replace(/"/g, "")}"`).join(",")})` +
+      `&monthly_recap_ym=neq.${ym}&select=phone,name&limit=20000`,
+  );
+
+  let avisados = 0;
+  for (const c of pendientes) {
+    if (avisados >= MAX_PUSH_PER_RUN) {
+      await capReached("resumen-mensual", avisados, pendientes.length - avisados);
+      break;
+    }
+    const phone = String(c.phone || "");
+    const recap = monthlyRecap(porCliente.get(phone) || []);
+    if (!recap) continue;
+    try {
+      await sendPushToPhone(phone, {
+        title: `Tu mes en SND//WCH 🥪`,
+        body: recap.favorite
+          ? `${recap.count} ${recap.count === 1 ? "pedido" : "pedidos"} y ${recap.points} puntos ganados. Tu favorito fue ${recap.favorite}.`
+          : `${recap.count} ${recap.count === 1 ? "pedido" : "pedidos"} y ${recap.points} puntos ganados. Gracias por pedir con nosotros.`,
+        url: "./index.html",
+        tag: "sndwch-monthly-recap-" + ym,
+      });
+      // La marca se escribe DESPUÉS del push. Al revés, un fallo de envío dejaría al cliente
+      // marcado como avisado y sin resumen — y como el cron es mensual, sin segunda
+      // oportunidad. Al derecho, el peor caso es que reciba el suyo dos veces.
+      await sbUpdate("customers", `phone=eq.${encodeURIComponent(phone)}`, { monthly_recap_ym: ym });
+      await logMarketingTouch(phone, "monthly_recap");
+      avisados++;
+    } catch (e) {
+      console.error("remind-monthly-recap failed for", phone, e);
+    }
+  }
+  return { success: true, avisados, mes: ym };
 }
 
 const MAX_ADDRESSES = 6;
@@ -1300,8 +1393,10 @@ export async function actGiftCardPurchase(b: any) {
 // S/95 sin ajustar más — el crédito de S/100 que se entrega a cambio cuesta ~S/45 reales
 // de honrar, así que el negocio sigue siendo rentable en términos absolutos incluso en el
 // peor caso de comisión, solo no llega a cubrir el piso exacto de S/90 en ese extremo).
-const WEEKLY_PLAN_PRICE = 95;
-const WEEKLY_PLAN_CREDIT = 100;
+// Exportados desde #50: el contenido de marketing los interpola en vez de repetir "S/95"
+// y "S/100" escritos a mano en un texto que el dueño copia y pega a Instagram.
+export const WEEKLY_PLAN_PRICE = 95;
+export const WEEKLY_PLAN_CREDIT = 100;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 export async function actPrepareWeeklyPlan(b: any) {

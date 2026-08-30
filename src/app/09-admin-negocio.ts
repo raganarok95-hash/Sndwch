@@ -1800,6 +1800,20 @@ var CAL_CHANNEL_LABEL={};CAL_CHANNELS.forEach(function(c){CAL_CHANNEL_LABEL[c[0]
 // de publicar, para que el otro camino no la duplique (auditoría de código, ALTO).
 var CAL_STATUS_LABEL={draft:'Borrador',scheduled:'Programado',publishing:'Publicando...',posted:'Publicado'};
 var CAL_STATUS_COLOR={draft:'#A8C8B0',scheduled:GOLD,publishing:GOLD,posted:'#25D366'};
+// #50 — Deja escritas las próximas semanas del calendario en un toque.
+//
+// Hasta acá el cron ya las va dejando solo cada semana; este botón existe para el arranque
+// (la tabla vacía el día 1) y para cuando el dueño quiere ver el mes entero de una. El
+// servidor NUNCA pisa una fecha que ya tiene entrada, así que tocarlo dos veces no duplica
+// nada y no borra lo que él haya planeado a mano.
+async function generateCalendar(){
+  busy=true;busyMsg='Generando borradores...';render();
+  try{
+    var res=await api('admin-calendar-generate',{token:token,weeks:4});
+    await loadCalendar();
+    showToast(res.creados?('Listo: '+res.creados+' borrador'+(res.creados===1?'':'es')+' nuevo'+(res.creados===1?'':'s')+'.'):'Las próximas 4 semanas ya estaban planeadas.');
+  }catch(e){busy=false;render();showToast("No se pudo generar: "+e.message);}
+}
 async function loadCalendar(){
   sndScreen='admin_calendar';busy=true;busyMsg='Cargando calendario...';render();
   try{var res=await api('admin-calendar-list',{token:token});calendarData=res.entries;}
@@ -1911,6 +1925,9 @@ async function publishCalendarEntry(id){
 function sAdminCalendar(){
   var h=H('CALENDARIO DE CONTENIDO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto/video y toca "Publicar ahora", o déjalo programado y sale solo el día que le toca) — el resto de canales sigue siendo copiar el texto a mano.</div>';
+  // El botón va ARRIBA del formulario manual a propósito: crear una entrada a mano es el
+  // camino largo, y hasta #50 era el único que había.
+  h+='<div style="margin-bottom:20px"><button onclick="generateCalendar()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:8px;text-align:center">Generar las próximas 4 semanas //</button><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Deja los borradores escritos (caption, texto de WhatsApp e idea de foto) en las fechas que todavía estén libres. No toca ninguna entrada que ya exista.</div></div>';
   h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:10px;padding:16px;margin-bottom:20px">';
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Clips de la semana //</div>';
   // Copy corregida (auditoría UX, P2): antes prometía "sin que tengas que volver a tocar

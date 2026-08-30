@@ -151,14 +151,14 @@ canal. Este bloque va sobre no desperdiciar esa plata.
     Hoy sale el push al cliente pero no el contenido social. · **DUEÑO** (secrets de Meta)
 48. ~~**Story de "quedan N"**~~ — **DESCARTADO por el dueño (2026-08-29).**
 49. ~~**Post automático de hora valle**~~ — **DESCARTADO por el dueño (2026-08-29).**
-50. **Generar el calendario de contenido, no solo recordarlo** — hoy el cron te avisa que
+50. ✅ **Generar el calendario de contenido, no solo recordarlo** — hoy el cron te avisa que
     toca; esto arma los borradores con el generador de guion que acabas de estrenar. · **HOY**
 51. **Mejor horario de publicación** — medido con el engagement real de tus posts. · **DATOS**
 52. **Reciclar el post que mejor rindió** — a los N meses, con foto distinta. · **DATOS**
 53. **Alerta de campaña sin conversiones** — N días gastando sin un solo pedido atribuido. · **DUEÑO**
 54. **Cupón de cumpleaños** — hoy das puntos; un cupón con vencimiento corto convierte más
     porque tiene urgencia. · **HOY**
-55. **Referidos escalonados** — premio creciente al 3.º, 5.º y 10.º invitado, en vez de plano.
+55. ✅ **Referidos escalonados** — premio creciente al 3.º, 5.º y 10.º invitado, en vez de plano.
     Convierte a un cliente contento en un canal. · **HOY**
 
 ## E. Retención y ciclo de vida del cliente
@@ -181,7 +181,7 @@ canal. Este bloque va sobre no desperdiciar esa plata.
     mensaje que quien pide un 15CM solo. · **DATOS**
 64. **Aviso de "te faltan N puntos"** — cuando está cerca de una recompensa. Con la tasa ya
     pareja a 20 pts/sol, ahora sí tiene sentido empujarlo. · **HOY**
-65. **Resumen mensual personal** — "este mes pediste 4 veces, tu favorito fue X". Barato de
+65. ✅ **Resumen mensual personal** — "este mes pediste 4 veces, tu favorito fue X". Barato de
     hacer y sorprendentemente bueno para la relación. · **HOY**
 
 ## F. Producto y menú

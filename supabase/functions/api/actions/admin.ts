@@ -5,8 +5,9 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso } from "../env.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS } from "../env.ts";
+import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS } from "./orders.ts";
@@ -1236,11 +1237,31 @@ export async function actAdminProblemAddresses(b: any) {
 // feed, y una idea de foto, uno distinto cada semana. Las primeras 4 semanas siguen la
 // secuencia real de lanzamiento (recién abre → prueba social → referidos → menú secreto);
 // de ahí en adelante rota entre las promociones que ya existen en la app.
-const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; photoIdea: string }[] = [
+// #50 — El contenido semanal deja de ser un literal con números escritos a mano.
+//
+// TRES NÚMEROS DE ESTE TEXTO ESTABAN MAL, y no es un detalle: esto es lo que el dueño COPIA
+// Y PEGA a Instagram y WhatsApp, o sea una promesa pública.
+//   · "ambos ganan 50 puntos" por referir — falso desde el 2026-08-15: quien invita se lleva
+//     400 (un 15CM) y el invitado 120 (una bebida). El post prometía menos de la décima parte.
+//   · "se desbloquea desde tu 5to pedido" para el menú secreto — falso desde el 2026-08-26,
+//     cuando bajó a 3. Dos pedidos de más para algo que la app ya le habría dado.
+//   · "S/95 → S/100" del Plan Semanal, escrito a mano al lado de las constantes reales.
+// Ninguno de los tres iba a avisar nunca: son texto, no cálculo.
+//
+// Por eso ahora es una FUNCIÓN y no un array: cada número sale de la constante que de verdad
+// lo manda (REFERRER_REWARD_POINTS, SIG_GATES.SIG05.minOrders, WEEKLY_PLAN_PRICE...), leída
+// en el momento de armar el texto. El umbral del menú secreto además es editable desde el
+// panel, así que un literal se desincronizaría otra vez el día que el dueño lo mueva.
+//
+// Llamar a loadCatalogPrices() antes (que arrastra loadSecretSignature) es lo que hace que
+// SIG_GATES.SIG05.minOrders sea el valor vigente y no la semilla del código.
+function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string }[] {
+  const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
+  return [
   {
     theme: "LANZAMIENTO",
-    whatsapp: "🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Tu primer pedido te regala 40 puntos.",
-    caption: "Ya abrimos // SND//WCH llega a tu zona. Sandwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — tu primer pedido te regala 40 puntos para canjear después.",
+    whatsapp: `🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos.`,
+    caption: `Ya abrimos // SND//WCH llega a tu zona. Sándwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos para canjear después.`,
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
   },
   {
@@ -1251,14 +1272,14 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "REFERIDOS",
-    whatsapp: "Invita a un amigo a SND//WCH y ambos ganan 50 puntos en su primer pedido. Tu código está en tu perfil de la app.",
-    caption: "Comparte y gana // Cada amigo que invitas con tu código les da 50 puntos a ambos en su primer pedido. Entre más compartes, más rápido subes de rango.",
-    photoIdea: "Gráfico simple '50 + 50 puntos' sobre el verde/dorado de la marca, o dos sandwiches juntos.",
+    whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
+    caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
+    photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
   },
   {
     theme: "MENÚ SECRETO",
-    whatsapp: "Hay un Signature que no está en el menú público. Se desbloquea desde tu 5to pedido 👀",
-    caption: "Lo que no ves en el menú // Después de cierta cantidad de pedidos se desbloquea un Signature que no aparece para nadie más. No decimos cuál — te lo tienes que ganar.",
+    whatsapp: `Hay un Signature que no está en el menú público. Se desbloquea a partir de tu pedido número ${secretoMin} 👀`,
+    caption: `Lo que no ves en el menú // A partir de tu pedido número ${secretoMin} se desbloquea un Signature que no aparece para nadie más, y cambia cada mes. No decimos cuál — te lo tienes que ganar.`,
     photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
   },
   {
@@ -1269,15 +1290,15 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "PEDIDOS GRUPALES",
-    whatsapp: "¿Pedido de oficina? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo, se paga todo junto.",
-    caption: "Para la oficina o la reunión // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Perfecto para el almuerzo de equipo.",
+    whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
+    caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
   },
   {
     theme: "PLAN SEMANAL",
-    whatsapp: "Paga S/95 hoy, recibe S/100 en saldo para pedir cuando quieras esta semana. El saldo no vence.",
+    whatsapp: `Paga S/${WEEKLY_PLAN_PRICE} hoy y recibe S/${WEEKLY_PLAN_CREDIT} en saldo para pedir cuando quieras. El saldo no vence.`,
     caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
-    photoIdea: "Gráfico 'S/95 → S/100', o varios pedidos de la semana juntos.",
+    photoIdea: `Gráfico 'S/${WEEKLY_PLAN_PRICE} → S/${WEEKLY_PLAN_CREDIT}', o varios pedidos de la semana juntos.`,
   },
   {
     theme: "RECORDATORIO",
@@ -1285,40 +1306,136 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
     caption: "Por si se te olvidó que existimos // Seguimos aquí, armando sandwiches todos los días. Pide por la app cuando se te antoje.",
     photoIdea: "Cualquier foto de producto que no hayas usado en semanas anteriores.",
   },
-];
+  ];
+}
 function marketingWeekIndex(offset = 0): number {
   const daysSinceEpoch = Math.floor(Date.now() / 86400000);
   const weekNumber = Math.floor(daysSinceEpoch / 7) + offset;
-  return ((weekNumber % MARKETING_CONTENT.length) + MARKETING_CONTENT.length) % MARKETING_CONTENT.length;
+  const n = marketingContent().length;
+  return ((weekNumber % n) + n) % n;
 }
 export async function actAdminMarketingContent(b: any) {
   await requireAdmin(b.token);
+  // Sin esto, SIG_GATES.SIG05.minOrders sería la semilla del código y no el umbral que el
+  // dueño tenga puesto hoy en el panel — justo el número que este texto promete en público.
+  await loadCatalogPrices();
+  const temas = marketingContent();
   return {
-    current: MARKETING_CONTENT[marketingWeekIndex()],
-    next: MARKETING_CONTENT[marketingWeekIndex(1)],
+    current: temas[marketingWeekIndex()],
+    next: temas[marketingWeekIndex(1)],
   };
 }
-// Cron semanal — no publica nada (ninguna red social está conectada a este sistema), solo
-// avisa que el contenido de la semana ya está listo para copiar en el panel admin.
+
+// ── #50: GENERAR EL CALENDARIO, NO SOLO RECORDARLO ─────────────────────────────────────
+//
+// Hasta hoy el cron semanal solo avisaba "toca publicar" y el rotador enseñaba el texto de
+// la semana. El calendario real (marketing_calendar) existía desde antes, con fechas y
+// estado — pero había que llenarlo A MANO, entrada por entrada. O sea que la parte que
+// costaba trabajo seguía siendo trabajo, y un recordatorio sin el borrador hecho es
+// exactamente el tipo de aviso que se termina ignorando.
+//
+// Ahora el cron ADELANTA los borradores: deja las próximas semanas ya escritas en estado
+// `draft`, con caption, texto de WhatsApp e idea de foto. El dueño edita o borra, que es
+// mucho más barato que escribir desde cero.
+//
+// Sigue sin publicar nada solo: no hay conector real a Instagram/TikTok en este sistema
+// (ver la sección de publicación automática en CLAUDE.md), y fingir que sí lo hay sería
+// peor que no tenerlo.
+const CALENDAR_GENERATE_WEEKS = 4;
+const CALENDAR_GENERATE_MAX_WEEKS = 12;
+
+// Cálculo puro (probado en tests-api/calendario-contenido.test.ts). Lo que decide es qué
+// fechas se van a ESCRIBIR en la base, y el modo de fallo que importa es la duplicación:
+// este generador corre cada semana sobre la misma tabla, así que sin el filtro de fechas ya
+// ocupadas la cuarta corrida dejaría cuatro borradores encima del mismo día y el calendario
+// —cuyo único valor es decir qué toca publicar hoy— se volvería ilegible.
+export function planContentCalendar(
+  desdeFecha: string,
+  semanas: number,
+  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string }[],
+  indiceInicial: number,
+  yaOcupadas: Set<string>,
+): { scheduled_date: string; title: string; caption_text: string; whatsapp_text: string; photo_idea: string }[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(desdeFecha) || !Array.isArray(temas) || temas.length === 0) return [];
+  const n = Math.max(0, Math.min(Math.floor(Number(semanas) || 0), CALENDAR_GENERATE_MAX_WEEKS));
+  const [y, m, d] = desdeFecha.split("-").map(Number);
+  const salida = [];
+  for (let k = 0; k < n; k++) {
+    // Aritmética en UTC y no con `new Date(str)`: sumar días sobre una fecha local hace que
+    // un cambio de mes o de año corra la fecha un día según la zona horaria del runtime.
+    const fecha = new Date(Date.UTC(y, m - 1, d + k * 7)).toISOString().slice(0, 10);
+    if (yaOcupadas.has(fecha)) continue;
+    const tema = temas[(((indiceInicial + k) % temas.length) + temas.length) % temas.length];
+    salida.push({
+      scheduled_date: fecha,
+      title: tema.theme,
+      caption_text: tema.caption,
+      whatsapp_text: tema.whatsapp,
+      photo_idea: tema.photoIdea,
+    });
+  }
+  return salida;
+}
+
+async function generarBorradores(semanas: number, creadoPor: string): Promise<{ creados: number; fechas: string[] }> {
+  await loadCatalogPrices();
+  const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10); // hora Lima
+  // Se leen las fechas que YA tienen entrada —cualquiera, no solo las generadas— para no
+  // pisar lo que el dueño planeó a mano. Su plan manda sobre el borrador automático.
+  const existentes = await sbGet(
+    "marketing_calendar",
+    `scheduled_date=gte.${hoy}&select=scheduled_date&limit=${CALENDAR_LIST_LIMIT}`,
+  );
+  const ocupadas = new Set<string>(existentes.map((r: any) => String(r.scheduled_date).slice(0, 10)));
+  const nuevas = planContentCalendar(hoy, semanas, marketingContent(), marketingWeekIndex(), ocupadas);
+  if (!nuevas.length) return { creados: 0, fechas: [] };
+  await sbInsert(
+    "marketing_calendar",
+    nuevas.map((e) => ({ ...e, channel: "instagram", status: "draft", created_by: creadoPor })),
+  );
+  return { creados: nuevas.length, fechas: nuevas.map((e) => e.scheduled_date) };
+}
+
+export async function actAdminCalendarGenerate(b: any) {
+  const s = await requireAdmin(b.token);
+  const semanas = Number(b.weeks) > 0 ? Number(b.weeks) : CALENDAR_GENERATE_WEEKS;
+  const res = await generarBorradores(semanas, s.phone);
+  await logAdminAction(s.phone, "calendar-generate", `${res.creados} borradores`, { semanas, fechas: res.fechas });
+  return { success: true, ...res };
+}
+
+// Cron semanal — no publica nada (ninguna red social está conectada a este sistema). Desde
+// #50 además de avisar DEJA LOS BORRADORES HECHOS para las próximas semanas.
 export async function actRemindMarketingContent(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const theme = MARKETING_CONTENT[marketingWeekIndex()].theme;
+  await loadCatalogPrices();
+  const theme = marketingContent()[marketingWeekIndex()].theme;
+  // Best-effort: si la generación falla, el aviso de la semana igual tiene que salir. Al
+  // revés —dejar que un error de la tabla se coma el recordatorio— el dueño se quedaría sin
+  // las dos cosas.
+  let creados = 0;
+  try {
+    creados = (await generarBorradores(CALENDAR_GENERATE_WEEKS, "cron")).creados;
+  } catch (e) {
+    console.error("calendar auto-generate failed:", e);
+  }
   await sendPushToAdmins({
     title: "Contenido de esta semana listo 📣",
-    body: "Tema: " + theme + ". Copia el texto listo desde el panel admin → MARKETING.",
+    body: `Tema: ${theme}.` + (creados ? ` Dejé ${creados} ${creados === 1 ? "borrador nuevo" : "borradores nuevos"} en el calendario.` : "") +
+      " Panel admin → MARKETING.",
     url: "./index.html",
     tag: "sndwch-weekly-marketing",
     renotify: true,
   });
-  return { success: true, theme };
+  return { success: true, theme, borradoresCreados: creados };
 }
 
 // Calendario de contenido real (marketing_calendar) — reemplaza depender solo del rotador
-// estático de arriba (MARKETING_CONTENT) para "qué publicar hoy": el dueño puede planear
+// estático de arriba (marketingContent()) para "qué publicar hoy": el dueño puede planear
 // fechas concretas, por canal, con estado real (borrador/programado/publicado). Nada de
 // esto publica solo (mismo límite que el resto del sistema de marketing — no hay conector
 // real a Instagram/TikTok/Meta en este entorno) — es la lista de acción que el dueño copia
-// a mano, igual que ya hacía con MARKETING_CONTENT, pero con fechas y estado reales en vez
+// a mano, igual que ya hacía con marketingContent(), pero con fechas y estado reales en vez
 // de un rotador de 2 semanas sin memoria de qué ya se publicó.
 const CALENDAR_CHANNELS = new Set(["instagram", "tiktok", "whatsapp", "facebook", "google_business", "otro"]);
 const CALENDAR_STATUSES = new Set(["draft", "scheduled", "posted"]);

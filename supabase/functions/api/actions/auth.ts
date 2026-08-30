@@ -9,7 +9,7 @@ import {
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
 } from "../session.ts";
 import { sendRecoveryEmail, maskEmail } from "../email.ts";
-import { pointsFor } from "./orders.ts";
+import { pointsFor, rewardReferrer } from "./orders.ts";
 
 // Verifica un id_token de Google Identity Services contra el propio endpoint de Google
 // (tokeninfo) en vez de validar la firma RS256/JWKS localmente — mismo criterio que
@@ -228,6 +228,13 @@ export async function actRegister(b: any) {
             claimAuditInserts.push(sbInsert("transactions", { customer_phone: referredByValid, type: "earn_confirmed", points: REFERRER_REWARD_POINTS, description: "Sándwich gratis por invitar a " + name, confirmed: true }));
           }
           await Promise.all(claimAuditInserts);
+          // Este tercer camino de otorgamiento (vincular un pedido de invitado ya pagado al
+          // crear la cuenta) era el ÚNICO que nunca avisaba a quien invitó: los otros dos
+          // llaman a rewardReferrer desde orders.ts y este se quedó fuera desde que se
+          // agregó el push. El referidor ganaba su sándwich y se enteraba solo si abría la
+          // app. Desde #55 además es el punto donde se paga el escalón, así que dejarlo
+          // fuera significaba también saltarse el premio.
+          if (referredByValid) await rewardReferrer(referredByValid, name);
         }
       }
     } catch (e) {
