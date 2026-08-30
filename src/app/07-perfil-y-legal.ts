@@ -195,7 +195,7 @@ async function loadAdmin(){
   sndScreen='admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
-  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;lastPollCount=adminOrders.length;}
+  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;}
   catch(e){adminOrders=[];}
   busy=false;startPoll();render();
 }

@@ -433,7 +433,14 @@ Signature o build.
   ley — nunca modificar su texto legal), notificaciones push (Web Push/VAPID) para
   cambios de estado de pedido.
 - **Admin**: cola de pedidos (avanzar estado uno a uno, confirmar pago manual, cancelar
-  con/sin reembolso reconocido), dashboard de negocio (ingresos, tendencia 14 días, top
+  con/sin reembolso reconocido, y desde 2026-08-30 **tres señales sobre las direcciones que
+  la cola ya tenía y no decía** — `queueAddressFlags` en `actions/orders.ts`: dos pedidos a
+  la misma puerta (#22, con normalización real: "Av. España 123" y "av espana 123" son la
+  misma), dos pedidos a la misma zona dentro de 45 min (#17 — la cercanía SIN ventana de
+  tiempo es el consejo que hace llegar tarde a uno de los dos), y una dirección que el
+  motorizado no va a encontrar (#21, con los motivos por separado porque "sin número" y "sin
+  referencia" se preguntan distinto). Se calculan sobre los pedidos ya leídos: cero consultas
+  extra y no pueden contradecir a la lista de al lado), dashboard de negocio (ingresos, tendencia 14 días, top
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
   gestión de inventario/cuentas admin/horario editable (con **modo tanda**: se escribe
@@ -510,6 +517,12 @@ cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese
 silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
 de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
+**toca cocinar** (`alert-cook-now`, 08:15 hora Lima — NO es la alerta de stock bajo, que ya
+existe: esta compara el ritmo real de consumo contra lo que queda y avisa cuando quedan
+menos días de los que tarda producir una tanda (`COOK_LEAD_DAYS`). Enterarse a las 8pm no se
+arregla con una compra rápida: hay que descongelar, cocinar y enfriar. El cálculo puro es
+`batchPlanItems`/`cookNowItems`, compartido con la pantalla del plan de tanda para que las
+dos no puedan decir cosas distintas),
 **pedido programado sin insumo** (`alert-scheduled-shortfall`, cada hora en :22 — el cálculo
 ya existía en la pantalla de preparación anticipada, pero solo lo veía quien la abría; el caso
 que importa es el contrario: el pedido es para las 8pm, algo se marcó agotado a las 5pm y

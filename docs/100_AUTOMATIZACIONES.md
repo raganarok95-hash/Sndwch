@@ -44,7 +44,7 @@ bloque es el que más tiempo tuyo devuelve.
 1. **Lista de compras automática** — del plan de tanda salen las cantidades; esto las
    agrupa por proveedor (carnicería, panadería, mercado) y arma la lista lista para salir.
    Hoy el plan dice cuánto cocinar pero no qué comprar. · **DATOS**
-2. **Aviso de "toca cocinar"** — cruza stock actual contra pedidos ya programados y avisa
+2. ✅ **Aviso de "toca cocinar"** — cruza stock actual contra pedidos ya programados y avisa
    cuándo se acaba, con margen para producir. Reemplaza acordarse. · **HOY**
 3. **Temporizador de tanda por proteína** — los tiempos ya están en el RECETARIO; la app los
    dispara y avisa cada etapa mientras haces otra cosa. · **HOY**
@@ -62,12 +62,12 @@ bloque es el que más tiempo tuyo devuelve.
    (subió el insumo, salieron menos porciones). · **DATOS**
 9. **Escalado de receta** — pones "quiero 40 porciones" y devuelve las cantidades exactas
    de cada ingrediente. · **HOY**
-10. **Checklist de mise en place del día** — generado desde los pedidos programados de esa
+10. ✅ **Checklist de mise en place del día** — generado desde los pedidos programados de esa
     jornada, no desde una lista fija. · **HOY**
 11. **Bloqueo preventivo de Signature** — si la proteína no alcanza para los pedidos ya
     comprometidos, el producto sale del catálogo antes de que alguien más lo pida. Hoy el
     stock se descuenta pero nadie mira la demanda ya vendida. · **HECHO 2026-08-29 (el defecto real era otro: la tarjeta miraba solo pan+proteína mientras el servidor reserva la receta completa — ver docs/ORDEN_DE_EJECUCION.md)**
-12. **Orden de cocción sugerido** — qué preparar primero según las horas de entrega
+12. ✅ **Orden de cocción sugerido** — qué preparar primero según las horas de entrega
     comprometidas. · **HOY**
 13. **Recordatorio de pedido al proveedor** — con el lead time de cada uno (el pan y la
     giardiniera no se consiguen el mismo día). · **DUEÑO** (faltan los lead times reales)
@@ -80,7 +80,7 @@ bloque es el que más tiempo tuyo devuelve.
 
 16. **ETA ajustada por cola** — hoy el ETA sale de la zona; esto le suma cuántos pedidos
     tienes delante. Un ETA que miente es la causa directa de una calificación de 1 estrella. · **HECHO 2026-08-29 (`estimatedDeliveryRange()`: +5 min por pedido en cola)**
-17. **Agrupación de pedidos por cercanía** — dos pedidos a la misma zona en la misma ventana
+17. ✅ **Agrupación de pedidos por cercanía** — dos pedidos a la misma zona en la misma ventana
     salen en un viaje. Baja lo que le pagas al motorizado. · **HOY**
 18. **Despacho al motorizado por WhatsApp** — mensaje con dirección, referencia, teléfono y
     link de mapa, sin que lo escribas. · **DUEÑO** (necesita WhatsApp Business API)
@@ -88,9 +88,9 @@ bloque es el que más tiempo tuyo devuelve.
     a ENTREGADO solo. Hoy lo marcas tú. · **HOY**
 20. **Auto-cierre de pedidos sin calificar** — a los N días deja de pedir calificación en vez
     de arrastrar la tarjeta para siempre. · **HOY**
-21. **Detección de dirección ambigua** — sin número, sin referencia, o repetida con otra
+21. ✅ **Detección de dirección ambigua** — sin número, sin referencia, o repetida con otra
     distinta. Se pregunta ANTES de despachar, no cuando el motorizado está perdido. · **HOY**
-22. **Aviso de dos pedidos a la misma dirección** — casi siempre es un pedido partido en dos;
+22. ✅ **Aviso de dos pedidos a la misma dirección** — casi siempre es un pedido partido en dos;
     juntarlos ahorra un viaje. · **HOY**
 23. **Auto-pausa al llenar la hora** — al llegar a `MAX_ORDERS_PER_HOUR` la tienda se pausa
     sola en vez de aceptar algo que no vas a poder cumplir. · **HECHO 2026-08-29 (reinterpretado: el cliente VE las franjas llenas; pausar la tienda entera habría bloqueado también las horas vacías)**
@@ -104,7 +104,7 @@ bloque es el que más tiempo tuyo devuelve.
     Reduce entregas fallidas. · **HECHO 2026-08-29 (segundo barrido en `alert-scheduled-orders`, 60 min antes)**
 28. **Lectura del voucher de Yape** — OCR del comprobante que ya sube el cliente, para
     proponer la confirmación en vez de teclearla. · **$** (servicio de OCR)
-29. **Detección de comprobante duplicado** — el mismo voucher usado en dos pedidos. · **HOY**
+29. ✅ **Detección de comprobante duplicado** — el mismo voucher usado en dos pedidos. · **HOY**
 30. **Alerta de nota de cocina inusual** — "sin cebolla", "soy alérgico": se resalta en la
     comanda en vez de perderse en el texto. · **HECHO 2026-08-29 (lista compartida con parity + bloque rojo en la comanda)**
 

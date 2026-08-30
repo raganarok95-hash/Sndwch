@@ -1115,6 +1115,10 @@ var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 var _googleIdToken=null,_googleLinkedEmail=null;
 function clearGoogleLink(){_googleIdToken=null;_googleLinkedEmail=null;}
 var adminOrders=[],myOrders=[],adminOrdersTruncated=false;
+// #21/#22/#17 — Las tres señales que el servidor calcula sobre las direcciones de la cola
+// (ambigua, duplicada, agrupable). null mientras no haya respuesta: la cola tiene que
+// funcionar igual con un servidor viejo que todavía no las manda.
+var adminAddressFlags=null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
