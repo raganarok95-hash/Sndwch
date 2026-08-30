@@ -522,6 +522,7 @@ function renderScreen(){
     case'admin_ratings':h=sAdminRatings();break;
     case'admin_complaints':h=sAdminComplaints();break;
     case'admin_prep':h=sAdminPrepList();break;
+    case'admin_recipes':h=sAdminRecipes();break;
     case'admin_time_report':h=sAdminTimeReport();break;
     case'admin_problem_addresses':h=sAdminProblemAddresses();break;
     case'admin_marketing':h=sAdminMarketing();break;
@@ -2515,3 +2516,164 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para organizar el pedido de tu oficina.');render();}
   }
 })();
+
+// ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────
+//
+// Tres cosas que hasta hoy solo existían en RECETARIO.md, que es un documento para leer y
+// no para cocinar con él al lado: escalar la receta a las porciones de hoy, cronometrar
+// cada etapa, e imprimir la etiqueta que va pegada al envase.
+//
+// El recetario NO se reemplaza: sigue teniendo el porqué de cada decisión (por qué punta de
+// pecho y no lomo, qué pasa si sobrecargas la sartén). Acá está solo lo que hay que calcular.
+var recipesData=null,recipeTarget='',recipeTimer=null,recipeTimerStep=null,recipeTimerEndsAt=0;
+
+async function loadRecipes(target){
+  sndScreen='admin_recipes';busy=true;busyMsg='Cargando recetas...';render();
+  var t=Number(target||recipeTarget);
+  try{recipesData=await api('admin-recipes',{token:token,targetPortions:(t>0?t:null)});}
+  catch(e){recipesData=null;}
+  busy=false;render();
+}
+function setRecipeTarget(v){
+  recipeTarget=v;
+  // Se recalcula EN EL SERVIDOR, no acá: el escalado decide cuánto comprar, y tenerlo en
+  // dos sitios es la forma de que un día digan cosas distintas.
+  loadRecipes(v);
+}
+
+// #3 — Temporizador de una etapa. Uno solo a la vez a propósito: cocinando solo, dos
+// cronómetros corriendo es exactamente la situación en la que se ignoran los dos.
+function startRecipeTimer(code,idx,minutes){
+  stopRecipeTimer();
+  recipeTimerStep=code+'#'+idx;
+  recipeTimerEndsAt=Date.now()+minutes*60000;
+  recipeTimer=setInterval(function(){
+    if(Date.now()>=recipeTimerEndsAt){
+      stopRecipeTimer();
+      // La app puede estar en segundo plano mientras se cocina — por eso además del cambio
+      // en pantalla suena y vibra. Un aviso solo visual no sirve con las manos ocupadas.
+      try{playNotif();}catch(e){}
+      try{if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);}catch(e){}
+      showToast('Terminó la etapa ⏱');
+    }
+    render();
+  },1000);
+  render();
+}
+function stopRecipeTimer(){
+  if(recipeTimer){clearInterval(recipeTimer);recipeTimer=null;}
+  recipeTimerStep=null;recipeTimerEndsAt=0;
+}
+function recipeTimerLeft(){
+  var ms=recipeTimerEndsAt-Date.now();if(ms<0)ms=0;
+  var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);
+  return m+':'+(s<10?'0':'')+s;
+}
+
+// #4 — La etiqueta. RECETARIO.md lo dice sin rodeos: "Sin fecha no hay rotación" — en el
+// refri dos bolsas de mechado son indistinguibles.
+function printRecipeLabels(code){
+  var r=(recipesData&&recipesData.recipes||[]).filter(function(x){return x.recipe_code===code;})[0];
+  if(!r)return;
+  var hoy=new Date();
+  var f=function(d){return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase().replace('.','');};
+  var vence=r.shelfLifeDays>0?new Date(hoy.getTime()+r.shelfLifeDays*86400000):null;
+  var g=r.portion_grams?r.portion_grams+'g':'';
+  // Se imprimen varias iguales: una tanda son muchas bolsas, y rotular a mano una por una es
+  // justo el trabajo que esto elimina.
+  var n=Math.max(1,Number(r.yield_portions)||1);
+  var etiquetas='';
+  for(var i=0;i<n;i++){
+    etiquetas+='<div class="et"><div class="c">'+esc(r.recipe_code)+(g?' · '+g:'')+'</div>'
+      +'<div class="n">'+esc(r.name)+'</div>'
+      +'<div class="d">PROD '+f(hoy)+(vence?' · USAR ANTES DE '+f(vence):'')+'</div></div>';
+  }
+  var w=window.open('','_blank');
+  if(!w){showToast('El navegador bloqueó la ventana de impresión.');return;}
+  w.document.write('<html><head><title>Etiquetas '+esc(r.recipe_code)+'</title><style>'
+    +'body{font-family:system-ui,sans-serif;margin:8mm;display:flex;flex-wrap:wrap;gap:3mm}'
+    +'.et{border:1px solid #000;border-radius:2mm;padding:3mm;width:48mm;box-sizing:border-box}'
+    +'.c{font-weight:700;font-size:11pt}.n{font-size:8pt;margin:1mm 0}'
+    +'.d{font-size:7pt;letter-spacing:.03em}'
+    +'@media print{.et{break-inside:avoid}}'
+    +'</style></head><body>'+etiquetas+'</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function sAdminRecipes(){
+  var h=H('RECETAS',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!recipesData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadRecipes()')+'</div>';
+  }
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Las cantidades y los tiempos para cocinar. El porqué de cada decisión sigue en el recetario — acá está lo que hay que calcular.</div>';
+
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:10px;padding:14px;margin-bottom:18px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Escalar a //</div>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<input id="rec-target" type="number" min="1" inputmode="numeric" value="'+esc(String(recipeTarget||''))+'" placeholder="porciones" style="flex:1;min-width:0;background:var(--sw-bg,#1E3932);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+    +'<button onclick="setRecipeTarget(document.getElementById(\'rec-target\').value)" style="all:unset;cursor:pointer;background:'+GOLD+';color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">Calcular</button>'
+    +(recipesData.targetPortions?'<button onclick="setRecipeTarget(\'\')" style="all:unset;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);padding:10px">Quitar</button>':'')
+    +'</div></div>';
+
+  var recetas=recipesData.recipes||[];
+  if(!recetas.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Todavía no hay ninguna receta cargada.</div>';
+    return h+'</div>';
+  }
+  h+=recetas.map(function(r){
+    var tl=r.timeline||{steps:[],totalMinutes:0};
+    var esc2=function(x){return esc(String(x==null?'':x));};
+    var s='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:16px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px">'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc2(r.name)+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-top:2px">'+esc2(r.recipe_code)+' · RINDE '+esc2(r.yield_portions)+(r.portion_grams?' × '+esc2(r.portion_grams)+'g':'')+'</div></div>'
+      +'<div style="text-align:right;flex:0 0 auto"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:'+GOLD+'">'+Math.floor(tl.totalMinutes/60)+'h '+(tl.totalMinutes%60)+'m</div>'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">DE TANDA</div></div></div>';
+
+    // Ingredientes. Cuando hay escalado, la cantidad original queda AL LADO: sin ella no hay
+    // forma de notar que el factor está mal.
+    s+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin:12px 0 6px">INGREDIENTES'+(r.scaled?' · PARA '+esc2(recipesData.targetPortions):'')+'</div>';
+    var ing=r.scaled||(r.ingredients||[]).map(function(i){return{item:i.item,qty:i.qty,unit:i.unit,scaledQty:i.qty};});
+    s+=ing.map(function(i){
+      var cambio=r.scaled&&i.scaledQty!==i.qty;
+      return'<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc2(i.item)+'</span>'
+        +'<span style="flex:0 0 auto;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(cambio?GOLD:'var(--sw-text,#FFFFFF)')+'">'+esc2(i.scaledQty)+' '+esc2(i.unit)
+        +(cambio?'<span style="font-family:EB Garamond,serif;font-weight:400;font-size:10px;color:var(--sw-text-muted,#A8C8B0)"> (base '+esc2(i.qty)+')</span>':'')
+        +'</span></div>';
+    }).join('');
+
+    // #3 — Etapas con cronómetro. Los tiempos NO se escalan: duplicar la tanda no duplica el
+    // braseado, y decir que sí haría planificar contra un número falso.
+    s+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin:14px 0 6px">ETAPAS</div>';
+    s+=tl.steps.map(function(st,idx){
+      var corriendo=recipeTimerStep===(r.recipe_code+'#'+idx);
+      return'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0">'
+        +'<span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);min-width:0">'+esc2(st.label)+'</span>'
+        +'<span style="flex:0 0 auto">'
+        +(st.minutes
+          ?(corriendo
+            ?'<button onclick="stopRecipeTimer()" style="all:unset;cursor:pointer;background:#ff8888;color:#241a08;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:640;padding:6px 12px;border-radius:6px">'+recipeTimerLeft()+' ✕</button>'
+            :'<button onclick="startRecipeTimer(\''+esc2(r.recipe_code)+'\','+idx+','+st.minutes+')" style="all:unset;cursor:pointer;background:var(--sw-bg,#1E3932);border:1px solid '+GOLD+';color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:6px 12px;border-radius:6px">'+st.minutes+' min ▶</button>')
+          :'<span style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">sin tiempo</span>')
+        +'</span></div>';
+    }).join('');
+
+    if(r.notes){
+      s+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)">'+esc2(r.notes)+'</div>';
+    }
+    // #4 — Etiquetas. La vida útil viene del INVENTARIO (la misma que usa la alerta de
+    // caducidad), no de la receta: dos números para lo mismo terminan en que uno gana solo.
+    s+='<div style="margin-top:12px">'
+      +'<button onclick="printRecipeLabels(\''+esc2(r.recipe_code)+'\')" style="all:unset;cursor:pointer;background:var(--sw-bg,#1E3932);border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text,#FFFFFF);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 14px;border-radius:8px">Imprimir '+esc2(r.yield_portions)+' etiquetas //</button>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px;line-height:1.5">'
+      +(r.shelfLifeDays>0
+        ?'Con fecha de hoy y límite a '+esc2(r.shelfLifeDays)+' días, tomado del inventario.'
+        :'Sin vida útil configurada para este insumo: la etiqueta sale con la fecha de producción y sin fecha límite. Se configura en Inventario.')
+      +'</div></div>';
+    return s+'</div>';
+  }).join('');
+  return h+'</div>';
+}

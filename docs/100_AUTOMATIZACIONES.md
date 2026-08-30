@@ -46,9 +46,9 @@ bloque es el que más tiempo tuyo devuelve.
    Hoy el plan dice cuánto cocinar pero no qué comprar. · **DATOS**
 2. ✅ **Aviso de "toca cocinar"** — cruza stock actual contra pedidos ya programados y avisa
    cuándo se acaba, con margen para producir. Reemplaza acordarse. · **HOY**
-3. **Temporizador de tanda por proteína** — los tiempos ya están en el RECETARIO; la app los
+3. ✅ **Temporizador de tanda por proteína** — los tiempos ya están en el RECETARIO; la app los
    dispara y avisa cada etapa mientras haces otra cosa. · **HOY**
-4. **Etiquetas de tanda imprimibles** — insumo, fecha de producción, fecha límite de uso.
+4. ✅ **Etiquetas de tanda imprimibles** — insumo, fecha de producción, fecha límite de uso.
    Sin esto, en la refri no se distingue una tanda de otra. · **HOY**
 5. **Alerta de caducidad de tanda** — proteína cocinada hace N días que sigue en stock. Es
    seguridad alimentaria, no solo merma. · **HECHO 2026-08-29** (`alert-batch-expiry`, señal
@@ -60,7 +60,7 @@ bloque es el que más tiempo tuyo devuelve.
    deja de ser estimado. Esto es lo que destraba media docena de decisiones de precio. · **DATOS**
 8. **Alerta de desvío de costo de tanda** — avisa si una tanda salió más cara de lo normal
    (subió el insumo, salieron menos porciones). · **DATOS**
-9. **Escalado de receta** — pones "quiero 40 porciones" y devuelve las cantidades exactas
+9. ✅ **Escalado de receta** — pones "quiero 40 porciones" y devuelve las cantidades exactas
    de cada ingrediente. · **HOY**
 10. ✅ **Checklist de mise en place del día** — generado desde los pedidos programados de esa
     jornada, no desde una lista fija. · **HOY**

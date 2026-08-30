@@ -1857,6 +1857,176 @@ export function miseEnPlaceGroups(
   return grupos;
 }
 
+// ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────
+//
+// Las recetas viven en `production_recipes` (append-only: la fila de mayor id por
+// recipe_code es la vigente, mismo patrón que catalog_items y secret_signature). RECETARIO.md
+// sigue siendo la EXPLICACIÓN — por qué punta de pecho y no lomo, qué pasa si sobrecargas la
+// sartén — y ahí se queda; acá vive solo lo que hay que poder calcular.
+
+export type RecipeIngredient = { item: string; qty: number; unit: string };
+export type RecipeStep = { label: string; minutes: number | null };
+
+// #9 — Escalar una receta a las porciones que se quieren hoy.
+//
+// Puro y probado (tests-api/recetas.test.ts). Es aritmética simple y por eso mismo es fácil
+// que nadie la pruebe — pero se equivoca hacia el lado caro: un factor mal calculado hace
+// comprar 12 kg de carne en vez de 6, y eso son S/120 parados en un refri que además tiene
+// fecha de vencimiento.
+export function scaleRecipe(
+  ingredients: RecipeIngredient[],
+  baseYield: number,
+  targetPortions: number,
+): (RecipeIngredient & { scaledQty: number })[] {
+  const base = Number(baseYield);
+  const objetivo = Number(targetPortions);
+  if (!Array.isArray(ingredients) || !Number.isFinite(base) || base <= 0) return [];
+  if (!Number.isFinite(objetivo) || objetivo <= 0) return [];
+  const factor = objetivo / base;
+  return ingredients
+    .filter((i) => i && typeof i.item === "string" && Number.isFinite(Number(i.qty)))
+    .map((i) => {
+      const escalada = Number(i.qty) * factor;
+      return {
+        item: i.item,
+        qty: Number(i.qty),
+        unit: String(i.unit || ""),
+        // Se redondea a 1 decimal, no a entero: media cucharada de sal en una tanda de 2 kg
+        // sí cambia el resultado, y redondear 0.4 huevos a 0 deja la receta sin huevo.
+        scaledQty: Math.round(escalada * 10) / 10,
+      };
+    });
+}
+
+// #3 — Los tiempos de la tanda, acumulados.
+//
+// Cada etapa con su minuto de inicio contado desde el arranque, y el total. Sin el
+// acumulado, "hornear 17 min" no responde la pregunta real, que es a qué hora se termina —
+// y esa es la que decide si la tanda entra en la tarde o hay que empezar mañana.
+//
+// Una etapa SIN minutos se conserva en la lista con `minutes: null`: se muestra como paso
+// pero sin cronómetro. Inventarle una duración sería peor que no tenerla.
+export function recipeTimeline(
+  steps: RecipeStep[],
+): { steps: (RecipeStep & { startsAtMinute: number })[]; totalMinutes: number } {
+  const lista = Array.isArray(steps) ? steps : [];
+  let acumulado = 0;
+  const salida = lista
+    .filter((s) => s && typeof s.label === "string" && s.label.length > 0)
+    .map((s) => {
+      const m = Number(s.minutes);
+      const minutos = Number.isFinite(m) && m > 0 ? Math.round(m) : null;
+      const inicio = acumulado;
+      if (minutos) acumulado += minutos;
+      return { label: s.label, minutes: minutos, startsAtMinute: inicio };
+    });
+  return { steps: salida, totalMinutes: acumulado };
+}
+
+// #4 — La etiqueta que va pegada al envase.
+//
+// RECETARIO.md lo dice sin rodeos: "Sin fecha no hay rotación". En el refri, dos bolsas de
+// mechado son indistinguibles, y la única forma de saber cuál usar primero es que lo diga la
+// etiqueta.
+//
+// La vida útil llega desde `inventory.shelf_life_days` — la MISMA que usa la alerta de
+// caducidad (#5) y que el dueño edita en el panel de Inventario. No se guarda en la receta a
+// propósito: dos números para la misma cosa terminan en que uno gana en silencio.
+export function batchLabels(
+  recipe: { recipe_code: string; name: string; portion_grams?: number | null },
+  cookedAtIso: string,
+  shelfLifeDays: number | null,
+): { code: string; name: string; portionGrams: number | null; cookedAt: string; useBy: string | null } {
+  const cocinado = new Date(cookedAtIso);
+  const valido = !Number.isNaN(cocinado.getTime());
+  const dias = Number(shelfLifeDays);
+  return {
+    code: String(recipe?.recipe_code || ""),
+    name: String(recipe?.name || ""),
+    portionGrams: Number.isFinite(Number(recipe?.portion_grams)) ? Number(recipe?.portion_grams) : null,
+    cookedAt: valido ? cocinado.toISOString() : "",
+    // Sin vida útil configurada la etiqueta sale igual, con la fecha de producción y sin
+    // fecha límite. Una etiqueta sin "usar antes de" sigue permitiendo rotar; una etiqueta
+    // con una fecha inventada hace tirar comida buena o servir comida vencida.
+    useBy: valido && Number.isFinite(dias) && dias > 0
+      ? new Date(cocinado.getTime() + dias * 86400000).toISOString()
+      : null,
+  };
+}
+
+// Solo la fila vigente de cada receta: append-only significa que hay varias por código.
+export async function actAdminRecipes(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("production_recipes", "select=*&order=id.desc&limit=500");
+  const vigentes = new Map<string, any>();
+  for (const r of rows) if (!vigentes.has(r.recipe_code)) vigentes.set(r.recipe_code, r);
+  const recetas = [...vigentes.values()].filter((r) => r.active !== false);
+
+  // La vida útil de cada insumo, para las etiquetas. Una sola consulta para todas las
+  // recetas en vez de una por receta.
+  const codes = recetas.map((r) => r.recipe_code);
+  const inv = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,shelf_life_days`)
+    : [];
+  const vida = new Map<string, number | null>(inv.map((i: any) => [i.product_code, i.shelf_life_days ?? null]));
+
+  const targetPortions = Number(b.targetPortions);
+  return {
+    recipes: recetas.map((r) => ({
+      ...r,
+      timeline: recipeTimeline(r.steps || []),
+      shelfLifeDays: vida.get(r.recipe_code) ?? null,
+      // El escalado solo viaja si se pidió: sin objetivo, la pantalla muestra la receta tal
+      // como está escrita, que es lo correcto por defecto.
+      scaled: Number.isFinite(targetPortions) && targetPortions > 0
+        ? scaleRecipe(r.ingredients || [], r.yield_portions, targetPortions)
+        : null,
+    })),
+    targetPortions: Number.isFinite(targetPortions) && targetPortions > 0 ? targetPortions : null,
+  };
+}
+
+// Guardar una receta = insertar una fila nueva (append-only). Nunca se edita in-place: así
+// queda el historial de "qué hice la vez que salió bien", que en una receta es justo lo que
+// uno quiere poder mirar.
+const RECIPE_MAX_INGREDIENTS = 60;
+const RECIPE_MAX_STEPS = 40;
+export async function actAdminRecipeSet(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.recipeCode || "").trim().toUpperCase().slice(0, 20);
+  const name = String(b.name || "").trim().slice(0, 120);
+  const yieldPortions = Number(b.yieldPortions);
+  if (!code) throw new ApiError("Falta el código del insumo.", 400);
+  if (!name) throw new ApiError("Falta el nombre de la receta.", 400);
+  if (!Number.isFinite(yieldPortions) || yieldPortions <= 0) {
+    // Sin rendimiento no se puede escalar nada, así que una receta sin él no sirve para lo
+    // único que esta pantalla hace.
+    throw new ApiError("El rendimiento en porciones tiene que ser un número mayor que cero.", 400);
+  }
+  const ingredients = (Array.isArray(b.ingredients) ? b.ingredients : [])
+    .slice(0, RECIPE_MAX_INGREDIENTS)
+    .filter((i: any) => i && String(i.item || "").trim() && Number.isFinite(Number(i.qty)))
+    .map((i: any) => ({ item: String(i.item).trim().slice(0, 120), qty: Number(i.qty), unit: String(i.unit || "").trim().slice(0, 20) }));
+  const steps = (Array.isArray(b.steps) ? b.steps : [])
+    .slice(0, RECIPE_MAX_STEPS)
+    .filter((x: any) => x && String(x.label || "").trim())
+    .map((x: any) => ({ label: String(x.label).trim().slice(0, 200), minutes: Number.isFinite(Number(x.minutes)) && Number(x.minutes) > 0 ? Math.round(Number(x.minutes)) : null }));
+
+  const row = (await sbInsert("production_recipes", {
+    recipe_code: code,
+    name,
+    yield_portions: Math.round(yieldPortions),
+    portion_grams: Number.isFinite(Number(b.portionGrams)) && Number(b.portionGrams) > 0 ? Math.round(Number(b.portionGrams)) : null,
+    ingredients,
+    steps,
+    notes: b.notes ? String(b.notes).slice(0, 2000) : null,
+    active: b.active !== false,
+    created_by: s.phone,
+  }))[0];
+  await logAdminAction(s.phone, "recipe-set", code, { name, yieldPortions, ingredientes: ingredients.length, etapas: steps.length });
+  return { success: true, recipe: row };
+}
+
 // Cálculo puro del plan de tanda, extraído de actAdminBatchPlan (#2, 2026-08-30).
 //
 // Se saca acá por la misma razón que `prepShortfall` y `cancellationDeltas`: la ALERTA de
