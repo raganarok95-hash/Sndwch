@@ -39,6 +39,8 @@ var ICONS={
   sonido:'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/>',
   notif:'<path d="M12 3a5 5 0 0 0-5 5v3.5L5 15h14l-2-3.5V8a5 5 0 0 0-5-5z"/><path d="M9.5 18a2.5 2.5 0 0 0 5 0"/>',
   prep:'<rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><path d="M9 12h6M9 16h4"/>',
+  // Olla con vapor — la receta acá es producción por tandas, no un libro de cocina.
+  recipe:'<path d="M5 10h14v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-6z"/><path d="M3 10h18"/><path d="M9 6c0-1 1-1 1-2M13 7c0-1 1-1 1-2"/>',
   franjas:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16v-7M16 16v-2"/>',
   direccion:'<path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/>',
   cart:'<path d="M4 5h2l2.3 11.4A2 2 0 0 0 10.3 18h7.4a2 2 0 0 0 2-1.6L21 9H7.2"/><circle cx="10.5" cy="20.5" r="1.3"/><circle cx="17.5" cy="20.5" r="1.3"/>',
@@ -384,6 +386,7 @@ function adminToolsSections(){
     ['Cocina y operación //',[
       ['warning','Salud del negocio','loadHealth()'],
       ['prep','Preparación','loadPrepList()'],
+      ['recipe','Recetas','loadRecipes()'],
       ['inventario','Plan de tanda','loadBatchPlan()'],
       ['franjas','Franjas horarias','loadTimeWindowReport()'],
       ['direccion','Direcciones','loadProblemAddresses()'],

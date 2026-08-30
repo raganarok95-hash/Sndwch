@@ -126,6 +126,30 @@ terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive
 `secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
 que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
+## Las recetas de producción viven en la base, no en el markdown (2026-08-30)
+
+`production_recipes` (append-only: publicar inserta fila nueva, la de mayor `id` por
+`recipe_code` es la vigente — mismo patrón que `catalog_items` y `secret_signature`) guarda
+lo que la app necesita CALCULAR de cada receta: ingredientes con cantidad numérica,
+rendimiento en porciones, gramaje y etapas con minutos. De ahí salen el escalado (#9), el
+temporizador por etapa (#3) y las etiquetas de tanda (#4), en Admin // Recetas.
+
+**`RECETARIO.md` no se reemplaza y no es la fuente de estos números.** Sigue siendo la
+explicación —por qué punta de pecho y no lomo, por qué la panade, qué pasa si sobrecargas la
+sartén— y ahí se queda. Markdown no se puede escalar a 40 porciones ni disparar un
+cronómetro; eso es lo único que se movió.
+
+Solo están sembradas **P01, P02 y P06**, que son las que el recetario documenta con
+cantidades y tiempos reales. Las demás las carga el dueño desde el panel: el propio recetario
+marca cuáles están investigadas a fondo y cuáles son propuesta sin cotizar, y transcribir una
+cantidad que nadie midió la convertiría en un dato con aspecto de medición.
+
+**La vida útil NO está en la receta, a propósito.** Vive en `inventory.shelf_life_days`
+(editable en el panel de Inventario) y es la que usa la alerta de caducidad (#5); las
+etiquetas la leen de ahí. Dos números para la misma cosa terminan en que uno gana en
+silencio. **Y los tiempos de las etapas NO se escalan con las porciones**: duplicar la tanda
+no duplica el braseado, y escalarlos haría planificar la jornada contra un número falso.
+
 ## Checklist antes de dar por terminado un cambio en el cliente
 
 1. `npm run typecheck` — cero errores (solo cubre `src/**`).

@@ -137,9 +137,9 @@ un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la recet
 | 24 | 2 | Aviso de "toca cocinar" | ✅ `alert-cook-now`, diario 08:15 Lima. No avisa "te quedaste sin stock" (eso ya existe) sino "al ritmo actual te queda menos de lo que tardas en producir" |
 | 25 | 10 | Checklist de mise en place del día | ✅ Los mismos ingredientes de la lista de preparación, agrupados por dónde está cada cosa. La lista plana era correcta para leer e inservible para trabajar |
 | 26 | 12 | Orden de cocción sugerido | ✅ Reinterpretado a **orden de ARMADO**: el dueño cocina por tandas y en servicio solo arma. Dice a qué hora EMPEZAR cada pedido, restando el tiempo acumulado |
-| 27 | 9 | Escalado de receta | ⏳ pendiente |
-| 28 | 3 | Temporizador de tanda | ⏳ pendiente |
-| 29 | 4 | Etiquetas de tanda imprimibles | ⏳ pendiente |
+| 27 | 9 | Escalado de receta | ✅ "Quiero 40 porciones" → cantidades exactas, con la base al lado para poder notar si el factor está mal |
+| 28 | 3 | Temporizador de tanda | ✅ Cronómetro por etapa, con sonido y vibración: la app está en segundo plano mientras se cocina. **Los tiempos NO se escalan** — duplicar la tanda no duplica el braseado |
+| 29 | 4 | Etiquetas de tanda imprimibles | ✅ Una por porción, con código, gramaje, fecha de producción y fecha límite. La vida útil viene del **inventario**, no de la receta |
 | 30 | 40 | Cierre de caja diario | ⏳ pendiente |
 | 31 | 19 | Confirmación de entrega por link | ⏳ pendiente |
 | 32 | 17 | Agrupación de pedidos por cercanía | ✅ Misma zona + misma ventana de 45 min. La cercanía SIN la ventana de tiempo es el consejo que hace llegar tarde a uno de los dos |
@@ -147,6 +147,25 @@ un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la recet
 | 34 | 21 | Detección de dirección ambigua | ✅ Con los motivos por separado — "sin número" y "sin referencia" se arreglan con preguntas distintas |
 | 35 | 29 | Detección de comprobante duplicado | ✅ **Era más grave que el título**: el comprobante es una captura que el admin aprueba mirándola, y nada comparaba una contra las anteriores. La misma imagen respaldaba tres pedidos |
 | 36 | 20 | Auto-cierre de pedidos sin calificar | ⏳ pendiente |
+
+### La decisión de fondo del bloque de cocina
+
+**Las recetas pasaron de markdown a dato** (`production_recipes`, append-only como
+`catalog_items`). Markdown no se puede escalar a 40 porciones ni disparar un temporizador.
+`RECETARIO.md` NO se reemplaza: sigue siendo el porqué de cada decisión —por qué punta de
+pecho y no lomo, qué pasa si sobrecargas la sartén— y ahí se queda; en la tabla vive solo lo
+que hay que poder calcular.
+
+Se sembraron **solo las tres recetas que el recetario documenta con cantidades y tiempos
+reales** (P01 res, P02 pollo teriyaki, P06 albóndiga + marinara). Las otras las carga el
+dueño desde el panel: el propio recetario marca cuáles están investigadas a fondo y cuáles
+son propuesta sin cotizar, y transcribir una cantidad que nadie midió la convertiría en un
+dato con aspecto de medición — en una pantalla que va a servir para comprar y cocinar.
+
+**La vida útil NO se duplicó en la receta.** Ya vive en `inventory.shelf_life_days` (#5,
+editable en el panel de Inventario) y es la que usa la alerta de caducidad. Las etiquetas la
+leen de ahí. Dos números para la misma cosa terminan en que uno gana en silencio, que es
+exactamente el defecto que costó tres semanas de precios fantasma.
 
 ### Lo que cambió respecto al plan
 
