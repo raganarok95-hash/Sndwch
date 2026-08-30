@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
@@ -988,10 +988,19 @@ export async function actAdminPrepList(b: any) {
   const invRows = codes.length
     ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty`)
     : [];
+  const ingredients = prepShortfall(ingredientCounts, invRows);
   return {
     orders,
-    ingredients: prepShortfall(ingredientCounts, invRows),
+    ingredients,
     windowHours: PREP_LIST_WINDOW_HOURS,
+    // #12 — Cuándo empezar cada uno, no solo en qué orden. Es secuencial porque cocina una
+    // sola persona: el tercero de las 8pm hay que empezarlo 15 minutos antes, no 5.
+    assembly: assemblyOrder(orders, Date.now(), QUEUE_MINUTES_PER_ORDER),
+    // #10 — Los mismos ingredientes agrupados por dónde están, para armar el mise en place
+    // sin volver a la refri seis veces. Es la MISMA lista, presentada para usarse en la
+    // cocina en vez de para leerse — dos consultas distintas darían dos verdades distintas.
+    miseEnPlace: miseEnPlaceGroups(ingredients),
+    minutesPerOrder: QUEUE_MINUTES_PER_ORDER,
   };
 }
 
@@ -1715,10 +1724,208 @@ const BATCH_MIN_ORDERS = 20;
 // Cocinar exactamente el promedio significa quedarse corto la mitad de los días. Este
 // margen es un colchón, no una predicción: con datos reales de varianza se puede afinar.
 const BATCH_SAFETY_FACTOR = 1.25;
-export async function actAdminBatchPlan(b: any) {
-  await requireAdmin(b.token);
+// ── #2: AVISO DE "TOCA COCINAR" ────────────────────────────────────────────────────────
+//
+// El plan de tanda ya dice cuánto cocinar, pero solo si el dueño ABRE la pantalla. El caso
+// que importa es el contrario: está cocinando otra cosa, o repartiendo, o es martes y no
+// piensa en el jueves. Cocinar por tandas significa que enterarse tarde no se arregla con
+// una compra rápida — hay que descongelar, limpiar, cocinar y enfriar.
+//
+// Por eso el umbral NO es "te quedaste sin stock" (eso ya lo avisa la alerta de stock bajo)
+// sino "al ritmo actual te queda menos de lo que tardas en producir". Ese margen es el
+// único número que hace la diferencia entre un aviso útil y una autopsia.
+const COOK_LEAD_DAYS = 2;
+
+export type CookNowItem = { code: string; name: string; daysLeft: number; toCook: number | null };
+
+// Qué insumos hay que cocinar YA. Puro y probado (tests-api/toca-cocinar.test.ts): su modo
+// de fallo no es un error visible, es el SILENCIO — la alerta que no salió el día que se
+// necesitaba.
+export function cookNowItems(items: BatchPlanItem[], leadDays: number = COOK_LEAD_DAYS): CookNowItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    // `daysLeft === null` queda fuera a propósito: significa que no hay cantidad rastreada
+    // o que no hay consumo medido, y en ninguno de los dos casos se puede afirmar que se
+    // esté acabando. Inventar una alerta ahí enseña a ignorar las siguientes.
+    .filter((i) => i && i.daysLeft !== null && i.daysLeft <= leadDays)
+    .sort((a, b) => (a.daysLeft as number) - (b.daysLeft as number))
+    .map((i) => ({ code: i.code, name: i.name, daysLeft: i.daysLeft as number, toCook: i.toCook }));
+}
+
+export async function actAlertCookNow(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const plan = await computeBatchPlan(BATCH_DEFAULT_COVER_DAYS);
+  // Sin historial suficiente el "por día" es ruido, y una alerta construida sobre ruido
+  // manda a cocinar de más. Es el mismo freno que la pantalla del plan de tanda ya muestra
+  // ANTES que las cantidades.
+  if (!plan.reliable) return { success: true, alerted: false, reason: "sin historial suficiente" };
+
+  const urgentes = cookNowItems(plan.items);
+  if (!urgentes.length) return { success: true, alerted: false };
+
+  // Una vez al día por combinación de insumos: el cron corre a diario y repetir el mismo
+  // aviso mientras el dueño todavía no cocina lo vuelve ruido.
+  const clave = "cook-now:" + urgentes.map((u) => u.code).sort().join(",");
+  if (!(await rpc("check_rate_limit", { p_key: clave, p_limit: 1, p_window_minutes: 60 * 20 }))) {
+    return { success: true, alerted: false, throttled: true };
+  }
+  const detalle = urgentes.slice(0, 3)
+    .map((u) => `${u.name} (${u.daysLeft <= 0 ? "ya" : u.daysLeft + "d"})`)
+    .join(", ");
+  await sendPushToAdmins({
+    title: "🍳 Toca cocinar",
+    body: `Se acaba: ${detalle}${urgentes.length > 3 ? ` y ${urgentes.length - 3} más` : ""}. Panel → Plan de tanda.`,
+    url: "./index.html",
+    tag: "sndwch-cook-now",
+    renotify: true,
+  });
+  return { success: true, alerted: true, items: urgentes.length };
+}
+
+// ── #12: ORDEN DE ARMADO ───────────────────────────────────────────────────────────────
+//
+// "Orden de cocción" en el plan; en la práctica de este negocio es orden de ARMADO: el
+// dueño cocina por tandas 1-2 veces por semana y en hora de servicio solo arma (ver el
+// método de trabajo real en CLAUDE.md). Lo que se le puede decir de verdad no es "cocina
+// esto primero" sino "empieza este a las 19:05 o no llega".
+//
+// El valor está en el caso feo: tres pedidos programados para la misma hora. Ordenarlos por
+// hora de entrega no alcanza — hay que restar hacia atrás el tiempo de armado ACUMULADO,
+// porque son secuenciales (una persona sola). Sin eso, el tercero se empieza tarde siempre.
+export type AssemblySlot = { ref: string; customerName: string; deliveryTime: string; startBy: string; late: boolean };
+
+export function assemblyOrder(
+  orders: { ref: string; customerName?: string | null; deliveryTime: string }[],
+  nowMs: number,
+  minutesPerOrder: number,
+): AssemblySlot[] {
+  if (!Array.isArray(orders)) return [];
+  const validos = orders
+    .filter((o) => o && o.deliveryTime && !Number.isNaN(new Date(o.deliveryTime).getTime()))
+    .sort((a, b) => new Date(a.deliveryTime).getTime() - new Date(b.deliveryTime).getTime());
+  const mins = Math.max(1, Number(minutesPerOrder) || 1);
+  return validos.map((o, i) => {
+    // El i-ésimo pedido tiene (i+1) armados por delante contándose a sí mismo: el primero
+    // se empieza `mins` antes de su hora, el segundo `2*mins`, y así. Restar solo `mins`
+    // para todos es exactamente el error que hace que el último salga tarde.
+    const startBy = new Date(new Date(o.deliveryTime).getTime() - (i + 1) * mins * 60000);
+    return {
+      ref: o.ref,
+      customerName: o.customerName || "",
+      deliveryTime: o.deliveryTime,
+      startBy: startBy.toISOString(),
+      // `late` no es decorativo: es la única señal de que un pedido YA no llega a tiempo, y
+      // saberlo ahora permite avisarle al cliente en vez de que se entere por el retraso.
+      late: startBy.getTime() < nowMs,
+    };
+  });
+}
+
+// ── #10: MISE EN PLACE DEL DÍA ─────────────────────────────────────────────────────────
+//
+// La lista de preparación (#26) ya agrega los ingredientes de las próximas 24 h, pero como
+// una lista plana ordenada por faltante. Para USARLA en la cocina hace falta otra cosa:
+// agrupada por dónde está cada cosa, para no volver a la refri seis veces.
+//
+// Los grupos salen del prefijo del código, que es el mismo esquema que usa todo el catálogo
+// (B=pan, P=proteína, T=topping, S=salsa, D=bebida). Derivarlo así y no con una lista
+// escrita a mano es lo que hace que un ingrediente nuevo aparezca solo en su grupo.
+const MISE_GROUPS: { key: string; label: string; prefix: string }[] = [
+  { key: "prot", label: "Proteínas", prefix: "P" },
+  { key: "base", label: "Panes", prefix: "B" },
+  { key: "top", label: "Toppings", prefix: "T" },
+  { key: "sauce", label: "Salsas", prefix: "S" },
+  { key: "drink", label: "Bebidas", prefix: "D" },
+];
+
+export function miseEnPlaceGroups(
+  ingredients: PrepIngredient[],
+): { key: string; label: string; items: PrepIngredient[] }[] {
+  const lista = Array.isArray(ingredients) ? ingredients : [];
+  const usados = new Set<string>();
+  const grupos = MISE_GROUPS.map((g) => {
+    const items = lista.filter((i) => i && typeof i.code === "string" && i.code.startsWith(g.prefix));
+    items.forEach((i) => usados.add(i.code));
+    // Dentro de cada grupo mandan los faltantes: es lo que hay que resolver antes de abrir.
+    items.sort((a, b) => (Number(b.shortfall) - Number(a.shortfall)) || (b.qty - a.qty));
+    return { key: g.key, label: g.label, items };
+  }).filter((g) => g.items.length);
+  // Un código que no encaja en ningún prefijo NO se descarta: se pone en "Otros". Perderlo
+  // en silencio sería peor que mostrarlo mal — es un insumo que igual hay que preparar.
+  const otros = lista.filter((i) => i && !usados.has(i.code));
+  if (otros.length) grupos.push({ key: "otros", label: "Otros", items: otros });
+  return grupos;
+}
+
+// Cálculo puro del plan de tanda, extraído de actAdminBatchPlan (#2, 2026-08-30).
+//
+// Se saca acá por la misma razón que `prepShortfall` y `cancellationDeltas`: la ALERTA de
+// "toca cocinar" tiene que usar exactamente el mismo criterio que la pantalla. Dos copias
+// del mismo cálculo divergen, y el día que diverjan la pantalla dirá que alcanza mientras
+// la alerta grita, o al revés — y entonces no se le cree a ninguna de las dos.
+export type BatchPlanItem = {
+  code: string;
+  name: string;
+  usedInWindow: number;
+  perDay: number;
+  committed: number;
+  needed: number;
+  stock: number | null;
+  toCook: number | null;
+  stockTracked: boolean;
+  daysLeft: number | null;
+};
+
+export function batchPlanItems(
+  consumo: Map<string, number>,
+  comprometido: Map<string, number>,
+  invMap: Map<string, { product_name?: string | null; stock_qty?: number | null }>,
+  daysOfData: number,
+  coverDays: number,
+): BatchPlanItem[] {
+  const dias = Math.max(1, Number(daysOfData) || 1);
+  const codes = new Set<string>([...consumo.keys(), ...comprometido.keys()]);
+  return [...codes]
+    .map((code) => {
+      const usado = consumo.get(code) || 0;
+      const porDia = usado / dias;
+      const proyectado = Math.ceil(porDia * coverDays * BATCH_SAFETY_FACTOR);
+      const yaPedido = comprometido.get(code) || 0;
+      // Los pedidos ya programados son demanda comprometida: si superan la proyección,
+      // manda el compromiso — no se puede "promediar" algo que ya está vendido.
+      const necesario = Math.max(proyectado, yaPedido);
+      const inv = invMap.get(code);
+      // Sin cantidad rastreada no se puede restar nada: se informa el total necesario y se
+      // deja claro que el stock actual es desconocido, en vez de asumir cero (haría
+      // cocinar de más) o asumir que alcanza (haría quedarse corto).
+      const stock = inv?.stock_qty ?? null;
+      return {
+        code,
+        name: inv?.product_name || code,
+        usedInWindow: usado,
+        perDay: Math.round(porDia * 100) / 100,
+        committed: yaPedido,
+        needed: necesario,
+        stock,
+        toCook: stock == null ? null : Math.max(0, necesario - stock),
+        stockTracked: stock != null,
+        // #2 — Para cuántos días alcanza lo que hay, al ritmo real de consumo. Es el número
+        // que convierte "te quedan 12 porciones" (que no dice nada por sí solo) en "se te
+        // acaba el jueves". `null` cuando no hay consumo medido: dividir entre cero daría
+        // Infinity y la pantalla mostraría que alcanza para siempre.
+        daysLeft: stock == null || porDia <= 0 ? null : Math.round((stock / porDia) * 10) / 10,
+      };
+    })
+    .filter((x) => x.needed > 0)
+    .sort((a, b) => b.needed - a.needed);
+}
+
+// Lectura + cálculo del plan de tanda, compartida por la pantalla (actAdminBatchPlan) y la
+// alerta de "toca cocinar" (#2). Antes esto vivía entero dentro de la acción del panel, así
+// que la alerta habría necesitado su propia copia de las dos consultas y del promedio.
+const BATCH_DEFAULT_COVER_DAYS = 4;
+async function computeBatchPlan(coverDays: number) {
   await loadCatalogPrices();
-  const coverDays = Number.isInteger(b.coverDays) && b.coverDays > 0 && b.coverDays <= 14 ? b.coverDays : 4;
   const now = Date.now();
   const since = new Date(now - BATCH_LOOKBACK_DAYS * 86400000).toISOString();
   const horizonEnd = new Date(now + coverDays * 86400000).toISOString();
@@ -1772,34 +1979,7 @@ export async function actAdminBatchPlan(b: any) {
     : [];
   const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
 
-  const items = [...codes]
-    .map((code) => {
-      const usado = consumo.get(code) || 0;
-      const porDia = usado / daysOfData;
-      const proyectado = Math.ceil(porDia * coverDays * BATCH_SAFETY_FACTOR);
-      const yaPedido = comprometido.get(code) || 0;
-      // Los pedidos ya programados son demanda comprometida: si superan la proyección,
-      // manda el compromiso — no se puede "promediar" algo que ya está vendido.
-      const necesario = Math.max(proyectado, yaPedido);
-      const inv = invMap.get(code);
-      // Sin cantidad rastreada no se puede restar nada: se informa el total necesario y se
-      // deja claro que el stock actual es desconocido, en vez de asumir cero (haría
-      // cocinar de más) o asumir que alcanza (haría quedarse corto).
-      const stock = inv?.stock_qty ?? null;
-      return {
-        code,
-        name: inv?.product_name || code,
-        usedInWindow: usado,
-        perDay: Math.round(porDia * 100) / 100,
-        committed: yaPedido,
-        needed: necesario,
-        stock,
-        toCook: stock == null ? null : Math.max(0, necesario - stock),
-        stockTracked: stock != null,
-      };
-    })
-    .filter((x) => x.needed > 0)
-    .sort((a, b) => b.needed - a.needed);
+  const items = batchPlanItems(consumo, comprometido, invMap, daysOfData, coverDays);
 
   return {
     coverDays,
@@ -1815,6 +1995,14 @@ export async function actAdminBatchPlan(b: any) {
     minOrders: BATCH_MIN_ORDERS,
     items,
   };
+}
+
+export async function actAdminBatchPlan(b: any) {
+  await requireAdmin(b.token);
+  const coverDays = Number.isInteger(b.coverDays) && b.coverDays > 0 && b.coverDays <= 14
+    ? b.coverDays
+    : BATCH_DEFAULT_COVER_DAYS;
+  return await computeBatchPlan(coverDays);
 }
 
 // C5 — SALUD DEL NEGOCIO. Una sola pantalla que responde "¿hay algo que atender ahora

@@ -14,8 +14,9 @@
 > completas al final, en la PARTE 7, listas para cuando vuelva.
 >
 > El **menú secreto (SIG05) se queda en el catálogo**, pero **no cocines P03 hasta que
-> alguien lo desbloquee** — se abre a los 5 pedidos pagados y nadie va a tenerlos en la
-> primera semana. Cocinar 4 kg de pollo cajún para la apertura es cocinar algo que nadie
+> alguien lo desbloquee** — se abre a los 3 pedidos pagados (bajado de 5 el 2026-08-26, y
+> editable desde el panel: confirma el umbral vigente ahí antes de una tanda) y nadie va a
+> tenerlos en la primera semana. Cocinar 4 kg de pollo cajún para la apertura es cocinar algo que nadie
 > puede comprar todavía.
 
 Escrito para **una persona sola**, cocinando **en casa**, **por tandas**, sin cocina industrial.

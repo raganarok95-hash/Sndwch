@@ -130,23 +130,38 @@ otros dos caminos sí avisaban desde hace semanas.
 mientras el servidor reserva la receta completa: podía mandar a un cliente a un producto con
 un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la receta entera.
 
-## Lote E4 — Devuelve tu tiempo (el cuello real)
+## Lote E4 — Devuelve tu tiempo (el cuello real) — en curso
 
-| Orden | # | Qué |
-|---|---|---|
-| 24 | 2 | Aviso de "toca cocinar" |
-| 25 | 10 | Checklist de mise en place del día |
-| 26 | 12 | Orden de cocción sugerido |
-| 27 | 9 | Escalado de receta |
-| 28 | 3 | Temporizador de tanda |
-| 29 | 4 | Etiquetas de tanda imprimibles |
-| 30 | 40 | Cierre de caja diario |
-| 31 | 19 | Confirmación de entrega por link |
-| 32 | 17 | Agrupación de pedidos por cercanía |
-| 33 | 22 | Aviso de dos pedidos a la misma dirección |
-| 34 | 21 | Detección de dirección ambigua |
-| 35 | 29 | Detección de comprobante duplicado |
-| 36 | 20 | Auto-cierre de pedidos sin calificar |
+| Orden | # | Qué | Estado |
+|---|---|---|---|
+| 24 | 2 | Aviso de "toca cocinar" | ✅ `alert-cook-now`, diario 08:15 Lima. No avisa "te quedaste sin stock" (eso ya existe) sino "al ritmo actual te queda menos de lo que tardas en producir" |
+| 25 | 10 | Checklist de mise en place del día | ✅ Los mismos ingredientes de la lista de preparación, agrupados por dónde está cada cosa. La lista plana era correcta para leer e inservible para trabajar |
+| 26 | 12 | Orden de cocción sugerido | ✅ Reinterpretado a **orden de ARMADO**: el dueño cocina por tandas y en servicio solo arma. Dice a qué hora EMPEZAR cada pedido, restando el tiempo acumulado |
+| 27 | 9 | Escalado de receta | ⏳ pendiente |
+| 28 | 3 | Temporizador de tanda | ⏳ pendiente |
+| 29 | 4 | Etiquetas de tanda imprimibles | ⏳ pendiente |
+| 30 | 40 | Cierre de caja diario | ⏳ pendiente |
+| 31 | 19 | Confirmación de entrega por link | ⏳ pendiente |
+| 32 | 17 | Agrupación de pedidos por cercanía | ✅ Misma zona + misma ventana de 45 min. La cercanía SIN la ventana de tiempo es el consejo que hace llegar tarde a uno de los dos |
+| 33 | 22 | Aviso de dos pedidos a la misma dirección | ✅ Con normalización real: "Av. España 123" y "av espana 123" son la misma puerta |
+| 34 | 21 | Detección de dirección ambigua | ✅ Con los motivos por separado — "sin número" y "sin referencia" se arreglan con preguntas distintas |
+| 35 | 29 | Detección de comprobante duplicado | ✅ **Era más grave que el título**: el comprobante es una captura que el admin aprueba mirándola, y nada comparaba una contra las anteriores. La misma imagen respaldaba tres pedidos |
+| 36 | 20 | Auto-cierre de pedidos sin calificar | ⏳ pendiente |
+
+### Lo que cambió respecto al plan
+
+**El #12 decía "orden de cocción" y eso no describe este negocio.** El dueño cocina por
+tandas 1-2 veces por semana; en hora de servicio solo arma. Decirle "cocina esto primero"
+sería un consejo para una cocina que no existe. Lo que sí le falta y no tenía es a qué hora
+EMPEZAR cada pedido — y con una sola persona los tiempos se acumulan, así que tres pedidos
+para las 8pm no se empiezan todos a las 7:55. Ese era el defecto real.
+
+**El #29 protegía menos de lo que parecía.** El comprobante se guardaba por pedido y nadie
+comparaba si era el MISMO archivo que otro. Con dos pedidos seguidos del mismo cliente, el
+único filtro era que el dueño se acordara de la captura. Ahora se guarda el SHA-256 de los
+bytes y el aviso al admin NOMBRA el otro pedido. No bloquea la subida a propósito: un pedido
+grupal pagado con una sola transferencia es legítimo, y rechazarlo dejaría sin avisar a
+alguien que sí pagó.
 
 ## Lote E5 — Base de datos de costo (desbloquea el bloque de margen)
 

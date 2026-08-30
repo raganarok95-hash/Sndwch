@@ -208,6 +208,7 @@ function startPoll(){
       if(pollFailing){pollFailing=false;render();}
       if(ordersSig(r.orders)!==ordersSig(adminOrders)){
         adminOrders=r.orders;
+        adminAddressFlags=r.addressFlags||null;
         render();
       }
     }catch(e){

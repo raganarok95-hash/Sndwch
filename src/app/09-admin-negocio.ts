@@ -1649,15 +1649,41 @@ function sAdminPrepList(){
       +shortfalls.map(function(i){return'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);margin-bottom:4px">'+esc(i.label)+' — necesitas '+i.qty+(i.stockQty!=null?', tienes '+i.stockQty:', sin stock')+'</div>';}).join('')
       +'</div>';
   }
-  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes a preparar //</div>';
-  h+=d.ingredients.length?d.ingredients.map(function(i){
-    return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid '+(i.shortfall?'rgba(255,85,85,.4)':'#3A6B58')+';border-radius:8px;padding:10px 14px;margin-bottom:8px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(i.label)+'</span><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:'+(i.shortfall?'#ff8888':GOLD)+'">×'+i.qty+'</span></div>';
+  // #10 — MISE EN PLACE, agrupado por dónde está cada cosa. Antes esto era una lista plana
+  // de 15 líneas ordenada por faltante: correcta para LEER, inservible para trabajar, porque
+  // obliga a volver a la refri una vez por línea. Los grupos los arma el servidor
+  // (miseEnPlaceGroups) desde la MISMA lista que ya se usaba — no es otra consulta, así que
+  // no puede decir algo distinto que el bloque de faltantes de arriba.
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Mise en place //</div>';
+  var grupos=d.miseEnPlace||[];
+  if(!grupos.length&&d.ingredients.length){
+    // Respaldo por si el servidor todavía no manda los grupos (deploy a medias): mostrar la
+    // lista plana es peor que la agrupada, pero infinitamente mejor que una pantalla vacía.
+    grupos=[{key:'todos',label:'Ingredientes',items:d.ingredients}];
+  }
+  h+=grupos.length?grupos.map(function(g){
+    return'<div style="margin-bottom:14px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-bottom:6px">'+esc(g.label).toUpperCase()+'</div>'
+      +g.items.map(function(i){
+        return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid '+(i.shortfall?'rgba(255,85,85,.4)':'#3A6B58')+';border-radius:8px;padding:10px 14px;margin-bottom:6px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(i.label)+'</span><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:'+(i.shortfall?'#ff8888':GOLD)+'">×'+i.qty+'</span></div>';
+      }).join('')+'</div>';
   }).join(''):'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px">Sin pedidos programados en esta ventana.</div>';
+
+  // #12 — ORDEN DE ARMADO. Antes esta lista solo decía a qué hora ENTREGA cada pedido, que
+  // es el dato que no sirve: lo que hay que saber es a qué hora EMPEZAR. Con una sola
+  // persona armando, los tiempos se acumulan, así que tres pedidos para las 8pm no se
+  // empiezan todos a las 7:55.
   if(d.orders.length){
     h+='<div style="height:1px;background:var(--sw-bg,#1E3932);margin:18px 0"></div>';
-    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Pedidos incluidos //</div>';
-    h+=d.orders.map(function(o){
-      return'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px">'+esc(o.ref)+' · '+esc(o.customerName)+' · '+esc(new Date(o.deliveryTime).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</div>';
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Orden de armado //</div>';
+    h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;line-height:1.5">Calculado hacia atrás desde cada hora de entrega, contando '+(d.minutesPerOrder||5)+' min por sándwich y que los armas uno tras otro.</div>';
+    var plan=(d.assembly&&d.assembly.length)?d.assembly:d.orders.map(function(o){return{ref:o.ref,customerName:o.customerName,deliveryTime:o.deliveryTime,startBy:null,late:false};});
+    h+=plan.map(function(o){
+      var hora=function(t){return t?new Date(t).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—';};
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid '+(o.late?'rgba(255,85,85,.45)':'#3A6B58')+';border-radius:8px;padding:10px 14px;margin-bottom:6px">'
+        +'<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.ref)+' · '+esc(o.customerName)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Entrega '+esc(hora(o.deliveryTime))+(o.late?' · ya vas tarde':'')+'</div></div>'
+        +'<div style="text-align:right;flex:0 0 auto;margin-left:10px"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:'+(o.late?'#ff8888':GOLD)+'">'+esc(hora(o.startBy))+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.12em">EMPIEZA</div></div></div>';
     }).join('');
   }
   h+=BTN('Actualizar //','loadPrepList()',true);

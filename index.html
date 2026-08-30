@@ -1360,6 +1360,10 @@ var cust = null, isAdmin = false, atab = 'reg', aErr = '', refCode = '';
 var _googleIdToken = null, _googleLinkedEmail = null;
 function clearGoogleLink() { _googleIdToken = null; _googleLinkedEmail = null; }
 var adminOrders = [], myOrders = [], adminOrdersTruncated = false;
+// #21/#22/#17 — Las tres señales que el servidor calcula sobre las direcciones de la cola
+// (ambigua, duplicada, agrupable). null mientras no haya respuesta: la cola tiene que
+// funcionar igual con un servidor viejo que todavía no las manda.
+var adminAddressFlags = null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
@@ -1376,7 +1380,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '758996edad';
+var APP_BUILD = '99b2774457';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -1783,6 +1787,7 @@ function startPoll() {
             }
             if (ordersSig(r.orders) !== ordersSig(adminOrders)) {
                 adminOrders = r.orders;
+                adminAddressFlags = r.addressFlags || null;
                 render();
             }
         }
@@ -6513,6 +6518,7 @@ async function loadAdmin() {
         var r = await api('admin-orders', { token: token });
         adminOrders = r.orders;
         adminOrdersTruncated = !!r.truncated;
+        adminAddressFlags = r.addressFlags || null;
         lastPollCount = adminOrders.length;
     }
     catch (e) {
@@ -7268,6 +7274,28 @@ function adminToolsGridHTML() {
 }
 function sAdminHome() {
     var ao = sortedActiveOrders();
+    // Banner de las tres señales de dirección de la cola (#22 duplicada, #21 ambigua,
+    // #17 agrupable). Devuelve '' cuando no hay nada que decir — una franja permanente que casi
+    // siempre dice "todo bien" se deja de leer, y entonces no se lee el día que dice otra cosa.
+    function addressFlagsBanner() {
+        var f = adminAddressFlags;
+        if (!f)
+            return '';
+        var filas = [];
+        function fila(color, texto) {
+            return '<div style="background:rgba(' + color + ',.12);border-bottom:1px solid rgba(' + color + ',.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + texto + '</div>';
+        }
+        (f.duplicates || []).forEach(function (d) {
+            filas.push(fila('255,165,0', '<b>Misma dirección</b> en ' + d.refs.length + ' pedidos (' + d.refs.map(esc).join(', ') + ') — casi siempre es un pedido partido en dos: se entregan juntos y es un viaje.'));
+        });
+        (f.nearby || []).forEach(function (n) {
+            filas.push(fila('203,162,88', '<b>' + n.refs.length + ' pedidos a la zona «' + esc(n.zone) + '»</b> con poca diferencia (' + n.refs.map(esc).join(', ') + ') — salen en un solo viaje.'));
+        });
+        (f.ambiguous || []).forEach(function (a) {
+            filas.push(fila('255,85,85', '<b>' + esc(a.ref) + '</b>: dirección ' + a.reasons.map(esc).join(' y ') + '. Pregúntale ANTES de despachar.'));
+        });
+        return filas.join('');
+    }
     var badge = ao.length;
     return '<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'
         + '<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
@@ -7281,6 +7309,11 @@ function sAdminHome() {
         // un estado desactualizado sin ninguna señal de que la actualización automática dejó
         // de funcionar.
         + (pollFailing ? '<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;display:flex;align-items:center;gap:5px">' + icon('warning', 12, '#ff8888') + '<span>No se pudo actualizar la cola de pedidos — reintentando…</span></div>' : '')
+        // #22 / #21 / #17 — Tres cosas que la cola ya sabía y no decía. Van ARRIBA de la lista
+        // porque las tres son decisiones que se toman ANTES de despachar: juntar dos pedidos,
+        // llamar para pedir la referencia que falta, o mandar dos en un viaje. Descubrirlas
+        // después es un viaje pagado de más o un motorizado dando vueltas.
+        + addressFlagsBanner()
         + '<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
         + '<div onclick="loadDashboard()" style="background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:' + SHADOW_SM + '">'
         + '<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:' + GOLD + '"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
@@ -9680,15 +9713,40 @@ function sAdminPrepList() {
             + shortfalls.map(function (i) { return '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);margin-bottom:4px">' + esc(i.label) + ' — necesitas ' + i.qty + (i.stockQty != null ? ', tienes ' + i.stockQty : ', sin stock') + '</div>'; }).join('')
             + '</div>';
     }
-    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Ingredientes a preparar //</div>';
-    h += d.ingredients.length ? d.ingredients.map(function (i) {
-        return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid ' + (i.shortfall ? 'rgba(255,85,85,.4)' : '#3A6B58') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(i.label) + '</span><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:' + (i.shortfall ? '#ff8888' : GOLD) + '">×' + i.qty + '</span></div>';
+    // #10 — MISE EN PLACE, agrupado por dónde está cada cosa. Antes esto era una lista plana
+    // de 15 líneas ordenada por faltante: correcta para LEER, inservible para trabajar, porque
+    // obliga a volver a la refri una vez por línea. Los grupos los arma el servidor
+    // (miseEnPlaceGroups) desde la MISMA lista que ya se usaba — no es otra consulta, así que
+    // no puede decir algo distinto que el bloque de faltantes de arriba.
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Mise en place //</div>';
+    var grupos = d.miseEnPlace || [];
+    if (!grupos.length && d.ingredients.length) {
+        // Respaldo por si el servidor todavía no manda los grupos (deploy a medias): mostrar la
+        // lista plana es peor que la agrupada, pero infinitamente mejor que una pantalla vacía.
+        grupos = [{ key: 'todos', label: 'Ingredientes', items: d.ingredients }];
+    }
+    h += grupos.length ? grupos.map(function (g) {
+        return '<div style="margin-bottom:14px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-bottom:6px">' + esc(g.label).toUpperCase() + '</div>'
+            + g.items.map(function (i) {
+                return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid ' + (i.shortfall ? 'rgba(255,85,85,.4)' : '#3A6B58') + ';border-radius:8px;padding:10px 14px;margin-bottom:6px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(i.label) + '</span><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:' + (i.shortfall ? '#ff8888' : GOLD) + '">×' + i.qty + '</span></div>';
+            }).join('') + '</div>';
     }).join('') : '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px">Sin pedidos programados en esta ventana.</div>';
+    // #12 — ORDEN DE ARMADO. Antes esta lista solo decía a qué hora ENTREGA cada pedido, que
+    // es el dato que no sirve: lo que hay que saber es a qué hora EMPEZAR. Con una sola
+    // persona armando, los tiempos se acumulan, así que tres pedidos para las 8pm no se
+    // empiezan todos a las 7:55.
     if (d.orders.length) {
         h += '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:18px 0"></div>';
-        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Pedidos incluidos //</div>';
-        h += d.orders.map(function (o) {
-            return '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px">' + esc(o.ref) + ' · ' + esc(o.customerName) + ' · ' + esc(new Date(o.deliveryTime).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</div>';
+        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">Orden de armado //</div>';
+        h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;line-height:1.5">Calculado hacia atrás desde cada hora de entrega, contando ' + (d.minutesPerOrder || 5) + ' min por sándwich y que los armas uno tras otro.</div>';
+        var plan = (d.assembly && d.assembly.length) ? d.assembly : d.orders.map(function (o) { return { ref: o.ref, customerName: o.customerName, deliveryTime: o.deliveryTime, startBy: null, late: false }; });
+        h += plan.map(function (o) {
+            var hora = function (t) { return t ? new Date(t).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '—'; };
+            return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid ' + (o.late ? 'rgba(255,85,85,.45)' : '#3A6B58') + ';border-radius:8px;padding:10px 14px;margin-bottom:6px">'
+                + '<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(o.ref) + ' · ' + esc(o.customerName) + '</div>'
+                + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Entrega ' + esc(hora(o.deliveryTime)) + (o.late ? ' · ya vas tarde' : '') + '</div></div>'
+                + '<div style="text-align:right;flex:0 0 auto;margin-left:10px"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:' + (o.late ? '#ff8888' : GOLD) + '">' + esc(hora(o.startBy)) + '</div>'
+                + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.12em">EMPIEZA</div></div></div>';
         }).join('');
     }
     h += BTN('Actualizar //', 'loadPrepList()', true);

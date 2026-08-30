@@ -1306,10 +1306,130 @@ export async function actMyHistory(b: any) {
 // Pide un registro más que el límite real para poder avisar si se recortó algo, en vez
 // de que la cola/el export se vea completo cuando en realidad falta al final.
 const ADMIN_ORDERS_LIMIT = 30;
+// ── #21 / #22 / #17: LO QUE LA COLA NO DECÍA SOBRE LAS DIRECCIONES ────────────────────
+//
+// Los tres salen del MISMO dato que la cola ya tiene y nadie estaba mirando: el texto de la
+// dirección de los pedidos activos. Cada uno se descubre hoy de la peor forma posible — el
+// motorizado perdido llamando, dos viajes a la misma puerta, o dos viajes a la misma cuadra
+// con veinte minutos de diferencia.
+
+// Normalización para COMPARAR direcciones, nunca para mostrarlas. Sin esto "Av. España 123"
+// y "av espana 123" son dos direcciones distintas y no se detecta ningún duplicado.
+export function normalizeAddress(address: string): string {
+  return String(address || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    // Abreviaturas que la misma persona escribe distinto entre un pedido y otro.
+    .replace(/\b(av|avda)\b\.?/g, "avenida")
+    .replace(/\b(jr)\b\.?/g, "jiron")
+    .replace(/\b(ca|cl)\b\.?/g, "calle")
+    .replace(/\b(urb)\b\.?/g, "urbanizacion")
+    .replace(/\bnro\b\.?|\bn°|\bno\b\.?|#/g, "")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// #21 — Qué le falta a una dirección para que el motorizado la encuentre.
+//
+// Se comprueba ANTES de despachar, no cuando ya está dando vueltas. Devuelve motivos, no un
+// booleano: "sin número" y "sin referencia" se arreglan con preguntas distintas, y un aviso
+// que no dice qué preguntar obliga a abrir el pedido igual.
+export function addressIssues(address: string, hasCoords: boolean): string[] {
+  const texto = String(address || "").trim();
+  const motivos: string[] = [];
+  if (texto.length < 10) motivos.push("demasiado corta");
+  // Un número de puerta es lo único que convierte una calle en una dirección. Se busca un
+  // número suelto, no cualquier dígito: "Mz A Lt 12" cuenta, "Av. 28 de Julio" sola no.
+  if (!/\d/.test(texto.replace(/\b(28|9|2)\s*de\s*\w+/gi, ""))) motivos.push("sin número de puerta");
+  // La referencia es lo que salva una dirección que el mapa ubica mal. No hace falta si el
+  // cliente dejó el pin: ahí el motorizado tiene coordenadas exactas.
+  if (!hasCoords && texto.length < 30 && !/(ref|frente|espalda|costado|altura|cerca|entre|puerta|color|piso|dpto|depto|interior)/i.test(texto)) {
+    motivos.push("sin referencia");
+  }
+  return motivos;
+}
+
+export type QueueAddressFlags = {
+  duplicates: { address: string; refs: string[] }[];
+  ambiguous: { ref: string; address: string; reasons: string[] }[];
+  nearby: { zone: string; refs: string[] }[];
+};
+
+// #22 y #17 — Dos pedidos a la misma puerta, y dos pedidos a la misma zona en la misma
+// ventana. Son cosas distintas: el primero casi siempre es un pedido partido en dos y se
+// puede entregar en un solo timbre; el segundo son dos clientes distintos que igual se
+// pueden repartir en un viaje.
+export function queueAddressFlags(
+  orders: { ref: string; customer_address?: string | null; delivery_zone?: string | null; created_at?: string | null; lat?: number | null; lon?: number | null }[],
+  nearbyWindowMinutes: number,
+): QueueAddressFlags {
+  const lista = Array.isArray(orders) ? orders.filter((o) => o && o.ref) : [];
+
+  const porDireccion = new Map<string, { address: string; refs: string[] }>();
+  const ambiguous: { ref: string; address: string; reasons: string[] }[] = [];
+  for (const o of lista) {
+    const texto = String(o.customer_address || "");
+    const clave = normalizeAddress(texto);
+    if (clave) {
+      if (!porDireccion.has(clave)) porDireccion.set(clave, { address: texto, refs: [] });
+      porDireccion.get(clave)!.refs.push(o.ref);
+    }
+    const reasons = addressIssues(texto, o.lat != null && o.lon != null);
+    if (reasons.length) ambiguous.push({ ref: o.ref, address: texto, reasons });
+  }
+  const duplicates = [...porDireccion.values()].filter((g) => g.refs.length > 1);
+
+  // Agrupación por cercanía: la zona de delivery es la única señal de ubicación que este
+  // sistema tiene para TODOS los pedidos (el pin GPS es opcional). Se exige además que
+  // caigan en la misma ventana de tiempo — dos pedidos a la misma zona con tres horas de
+  // diferencia no se reparten juntos, y sugerirlo haría llegar tarde a uno de los dos.
+  const porZona = new Map<string, typeof lista>();
+  for (const o of lista) {
+    const zona = String(o.delivery_zone || "").trim();
+    if (!zona) continue;
+    if (!porZona.has(zona)) porZona.set(zona, []);
+    porZona.get(zona)!.push(o);
+  }
+  const ventana = Math.max(1, Number(nearbyWindowMinutes) || 1) * 60000;
+  const nearby: { zone: string; refs: string[] }[] = [];
+  for (const [zona, pedidos] of porZona) {
+    if (pedidos.length < 2) continue;
+    const conFecha = pedidos
+      .filter((o) => o.created_at && !Number.isNaN(new Date(o.created_at).getTime()))
+      .sort((a, b) => new Date(a.created_at as string).getTime() - new Date(b.created_at as string).getTime());
+    let grupo: string[] = [];
+    let inicio = 0;
+    for (const o of conFecha) {
+      const t = new Date(o.created_at as string).getTime();
+      if (!grupo.length) { grupo = [o.ref]; inicio = t; continue; }
+      if (t - inicio <= ventana) { grupo.push(o.ref); continue; }
+      if (grupo.length > 1) nearby.push({ zone: zona, refs: grupo });
+      grupo = [o.ref];
+      inicio = t;
+    }
+    if (grupo.length > 1) nearby.push({ zone: zona, refs: grupo });
+  }
+  return { duplicates, ambiguous, nearby };
+}
+
+// Ventana para considerar que dos pedidos de la misma zona salen en un viaje. 45 min: lo
+// que tarda una vuelta de reparto más el margen de armado. Más ancha haría esperar al
+// primero; más angosta no agruparía nunca nada.
+const NEARBY_WINDOW_MINUTES = 45;
+
 export async function actAdminOrders(b: any) {
   await requireAdmin(b.token);
   const rows = await sbGet("orders", `status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=${ADMIN_ORDERS_LIMIT + 1}`);
-  return { orders: rows.slice(0, ADMIN_ORDERS_LIMIT), truncated: rows.length > ADMIN_ORDERS_LIMIT };
+  const orders = rows.slice(0, ADMIN_ORDERS_LIMIT);
+  return {
+    orders,
+    truncated: rows.length > ADMIN_ORDERS_LIMIT,
+    // Se calcula sobre los pedidos YA leídos: cero consultas extra, y no puede contradecir
+    // a la lista que se muestra al lado.
+    addressFlags: queueAddressFlags(orders, NEARBY_WINDOW_MINUTES),
+    nearbyWindowMinutes: NEARBY_WINDOW_MINUTES,
+  };
 }
 
 // Cuando un pago que no se pudo verificar automáticamente (Yape, Plin, o un pedido
@@ -1644,6 +1764,33 @@ const RECEIPT_UPLOAD_RATE_LIMIT = 6;
 const RECEIPT_UPLOAD_RATE_WINDOW_MINUTES = 60;
 const RECEIPT_MAX_BYTES = 2 * 1024 * 1024;
 const RECEIPT_MIME_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+// #29 — El SHA-256 de los bytes del comprobante. Se calcula sobre los BYTES DECODIFICADOS,
+// no sobre el base64: dos codificaciones del mismo archivo pueden diferir en el texto y ser
+// el mismo píxel por píxel, y esa diferencia es justo la que dejaría pasar el duplicado.
+export async function receiptHash(bytes: Uint8Array): Promise<string> {
+  // `bytes.slice().buffer` y no `bytes` a secas: desde TypeScript 5.7 un Uint8Array ya no
+  // encaja en BufferSource aunque en runtime funcione perfecto — es exactamente el mismo
+  // choque que ya está documentado para `storageUpload` en db.ts. El slice además garantiza
+  // que se hashea SOLO la vista y no un buffer subyacente más grande, que daría un hash
+  // distinto para el mismo archivo.
+  const digest = await crypto.subtle.digest("SHA-256", bytes.slice().buffer);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Qué otro pedido ya usó esta misma captura. Devuelve la lista de refs, no un booleano: el
+// aviso al admin tiene que DECIR cuál, porque lo primero que va a querer hacer es abrir el
+// otro pedido y comparar.
+//
+// Deliberadamente NO bloquea la subida. Hay un caso legítimo —un pedido grupal que se paga
+// con una sola transferencia, o el cliente que reenvía la captura equivocada por error— y
+// rechazarlo dejaría a alguien que sí pagó sin poder avisar. Lo que sí hace es que el admin
+// lo vea ANTES de dar el pago por bueno, que es el único momento en que sirve.
+export function duplicateReceiptRefs(rows: { ref: string }[], currentRef: string): string[] {
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => String(r?.ref || ""))
+    .filter((ref) => ref && ref !== currentRef);
+}
+
 export async function actUploadReceipt(b: any) {
   const ref = String(b.ref || "").trim().slice(0, 40);
   const mime = String(b.mime || "");
@@ -1677,20 +1824,47 @@ export async function actUploadReceipt(b: any) {
 
   const path = `${ref}.${ext}`;
   await storageUpload("payment-receipts", path, bytes, mime);
-  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path });
+
+  // #29 — Antes de guardar, ver si esta MISMA captura ya respalda otro pedido. Es la única
+  // defensa contra reenviar el comprobante de un pago que ya se usó: el admin confirma
+  // mirando la imagen, y dos pedidos seguidos del mismo cliente se ven iguales.
+  let duplicados: string[] = [];
+  try {
+    const hash = await receiptHash(bytes);
+    const previos = await sbGet("orders", `receipt_hash=eq.${encodeURIComponent(hash)}&select=ref&limit=20`);
+    duplicados = duplicateReceiptRefs(previos, ref);
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path, receipt_hash: hash });
+  } catch (e) {
+    // Un fallo del hash NUNCA puede impedir que un cliente que sí pagó suba su comprobante:
+    // el camino de siempre sigue guardando la ruta del archivo.
+    await debugLog({ stage: "receipt_hash_failed", ref, error: String(e) });
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path });
+  }
 
   // Aviso opcional al admin — no bloquea la respuesta al cliente si el push falla, mismo
   // criterio que el resto de notificaciones best-effort de este archivo.
   try {
-    await sendPushToAdmins({
-      title: "📎 Comprobante subido",
-      body: `El pedido ${ref} tiene un comprobante de Yape/Plin listo para revisar.`,
-      url: "./index.html",
-      tag: `sndwch-receipt-${ref}`,
-    });
+    await sendPushToAdmins(duplicados.length
+      ? {
+        // El aviso NOMBRA el otro pedido: lo primero que el dueño va a querer es abrirlo y
+        // comparar, y un "ojo, parece repetido" sin decir con cuál no le ahorra ese paso.
+        title: "⚠️ Comprobante repetido",
+        body: `El comprobante del pedido ${ref} es idéntico al de ${duplicados.join(", ")}. Revísalo antes de confirmar el pago.`,
+        url: "./index.html",
+        tag: `sndwch-receipt-dup-${ref}`,
+        renotify: true,
+      }
+      : {
+        title: "📎 Comprobante subido",
+        body: `El pedido ${ref} tiene un comprobante de Yape/Plin listo para revisar.`,
+        url: "./index.html",
+        tag: `sndwch-receipt-${ref}`,
+      });
   } catch {
     // silencioso a propósito
   }
+  // El cliente NO recibe la lista de refs ajenos (sería filtrar pedidos de otra persona),
+  // solo el éxito de siempre. El aviso del duplicado va al admin, que es quien decide.
   return { success: true };
 }
 

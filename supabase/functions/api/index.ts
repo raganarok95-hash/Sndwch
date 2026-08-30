@@ -42,7 +42,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -151,6 +151,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "alert-system-health": actAlertSystemHealth,
   "admin-health": actAdminHealth,
   "admin-batch-plan": actAdminBatchPlan,
+  "alert-cook-now": actAlertCookNow,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
   // Signatures editables desde el panel (ver loadCatalogItems / tabla catalog_items).
   "admin-catalog-items-get": actAdminCatalogItemsGet,

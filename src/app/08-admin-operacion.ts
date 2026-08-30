@@ -402,6 +402,26 @@ function adminToolsGridHTML(){
 }
 function sAdminHome(){
   var ao=sortedActiveOrders();
+// Banner de las tres señales de dirección de la cola (#22 duplicada, #21 ambigua,
+// #17 agrupable). Devuelve '' cuando no hay nada que decir — una franja permanente que casi
+// siempre dice "todo bien" se deja de leer, y entonces no se lee el día que dice otra cosa.
+function addressFlagsBanner(){
+  var f=adminAddressFlags;if(!f)return '';
+  var filas=[];
+  function fila(color,texto){
+    return '<div style="background:rgba('+color+',.12);border-bottom:1px solid rgba('+color+',.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+texto+'</div>';
+  }
+  (f.duplicates||[]).forEach(function(d){
+    filas.push(fila('255,165,0','<b>Misma dirección</b> en '+d.refs.length+' pedidos ('+d.refs.map(esc).join(', ')+') — casi siempre es un pedido partido en dos: se entregan juntos y es un viaje.'));
+  });
+  (f.nearby||[]).forEach(function(n){
+    filas.push(fila('203,162,88','<b>'+n.refs.length+' pedidos a la zona «'+esc(n.zone)+'»</b> con poca diferencia ('+n.refs.map(esc).join(', ')+') — salen en un solo viaje.'));
+  });
+  (f.ambiguous||[]).forEach(function(a){
+    filas.push(fila('255,85,85','<b>'+esc(a.ref)+'</b>: dirección '+a.reasons.map(esc).join(' y ')+'. Pregúntale ANTES de despachar.'));
+  });
+  return filas.join('');
+}
   var badge=ao.length;
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'
     +'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
@@ -415,6 +435,11 @@ function sAdminHome(){
     // un estado desactualizado sin ninguna señal de que la actualización automática dejó
     // de funcionar.
     +(pollFailing?'<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ff8888')+'<span>No se pudo actualizar la cola de pedidos — reintentando…</span></div>':'')
+    // #22 / #21 / #17 — Tres cosas que la cola ya sabía y no decía. Van ARRIBA de la lista
+    // porque las tres son decisiones que se toman ANTES de despachar: juntar dos pedidos,
+    // llamar para pedir la referencia que falta, o mandar dos en un viaje. Descubrirlas
+    // después es un viaje pagado de más o un motorizado dando vueltas.
+    +addressFlagsBanner()
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
 
     +'<div onclick="loadDashboard()" style="background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:'+SHADOW_SM+'">'
