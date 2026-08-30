@@ -126,6 +126,37 @@ terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive
 `secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
 que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
+## El costo del menú deja de ser un literal de markdown (#38, 2026-08-30)
+
+`ingredient_purchases` guarda **cada compra como un hecho con fecha** (cantidad, unidad, lo
+pagado en total), no un catálogo de precios que se sobrescribe. El precio unitario se deriva:
+`ingredientCosts()` da la última compra y el promedio **ponderado por cantidad** de las
+últimas 3 — ponderado y no simple, porque 6 kg a S/20 y 0.5 kg a S/30 no cuestan S/25 el kilo.
+
+Cruzado con `production_recipes` (#9), `recipeCost()` da el costo por porción. **Si falta el
+precio de UN solo ingrediente, devuelve `null`** y la pantalla dice cuál falta: un total
+parcial que se ve completo es un dato con aspecto de medición, y sobre un costo por porción
+se fija el precio de venta. Las unidades tienen que coincidir entre receta y compra —
+comprar en kg y pedir en g daría un costo mil veces menor sin ningún error visible.
+
+Esto NO reemplaza `MENU_FINANCIAL_ANALYSIS.md` todavía: ese documento sigue siendo la única
+fuente hasta que haya compras reales cargadas. Y **la merma sigue sin medir** (#6): el costo
+por porción que calcula esta pantalla es el del insumo CRUDO por la cantidad de la receta,
+no el de la porción terminada. Los rendimientos (res 0.54, pollo 0.64-0.69) siguen siendo
+referencias, no medición propia.
+
+## Una alerta de margen mal anclada nunca suena (#35, 2026-08-30)
+
+`orderMargin()` calcula el costo estimado sobre el **precio de carta** de lo que se armó, no
+sobre el total ya descontado. La primera versión hacía lo segundo, y con un costo plano del
+45% eso da 55% de margen SIEMPRE, por construcción: la alerta habría quedado viva en el
+código y muerta en la práctica, dando además la falsa sensación de estar vigilado.
+
+El defecto que el ítem describe es justo el contrario: el cliente paga menos (combo +
+recompensa + promo apilados) y **el costo no baja**. Por eso el descuento sale entero del
+margen. Hay una prueba en `tests-api/costo-y-margen.test.ts` que compara los dos cálculos y
+falla si alguien "simplifica" quitando el precio de carta.
+
 ## El "ingreso del día" no es lo que le queda al negocio (2026-08-30)
 
 `cashClose()` (`actions/admin.ts`, pantalla Admin // Cierre de caja) existe porque el

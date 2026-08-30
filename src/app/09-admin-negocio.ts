@@ -525,6 +525,8 @@ function renderScreen(){
     case'admin_recipes':h=sAdminRecipes();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;
     case'admin_cash':h=sAdminCashClose();break;
+    case'admin_purchases':h=sAdminPurchases();break;
+    case'admin_culqi':h=sAdminCulqiReport();break;
     case'admin_time_report':h=sAdminTimeReport();break;
     case'admin_problem_addresses':h=sAdminProblemAddresses();break;
     case'admin_marketing':h=sAdminMarketing();break;
@@ -2779,6 +2781,141 @@ function sAdminCashClose(){
       +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:4px">SIN CONFIRMAR //</div>'
       +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+d.pendingConfirmation.orders+' pedido'+(d.pendingConfirmation.orders===1?'':'s')+' por '+money(d.pendingConfirmation.amount)+' esperan que confirmes el pago. <b>No están sumados arriba</b> — revísalos contra tu cuenta antes de darlos por cobrados.</div></div>';
   }
+  // #39 — El pasivo de crédito NO es del día: es un saldo acumulado. Va al final y separado
+  // con una línea, porque mezclarlo con el cierre sería exactamente el error que este cierre
+  // vino a arreglar.
+  var cl=d.creditLiability;
+  if(cl&&cl.customers){
+    h+='<div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Crédito que debes // acumulado, no de hoy</div>';
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+cl.customers+' cliente'+(cl.customers===1?'':'s')+' con saldo</div>'
+      +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+'">'+money(cl.total)+'</div></div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:6px">Plata que ya cobraste (Plan Semanal, tarjetas de regalo) y todavía debes en comida. Promedio '+money(cl.average)+', el mayor '+money(cl.largest)+'.</div></div>';
+  }
   h+=BTN('Actualizar //','loadCashClose()',true);
+  return h+'</div>';
+}
+
+// ── #38: COMPRAS DE INSUMOS Y COSTO REAL ───────────────────────────────────────────────
+//
+// Todo el costeo del menú corre hoy sobre literales de markdown que nadie actualiza cuando
+// sube la carne. Cada compra registrada convierte eso en un número derivado de boletas — y
+// cruzándolo con las recetas (que desde #9 también son dato) da el costo por porción.
+var purchasesData=null,purchaseMsg='';
+async function loadPurchases(){
+  sndScreen='admin_purchases';busy=true;busyMsg='Cargando compras...';render();
+  try{purchasesData=await api('admin-purchases',{token:token});}
+  catch(e){purchasesData=null;}
+  busy=false;render();
+}
+async function doAddPurchase(){
+  var g=function(id){var el=document.getElementById(id) as HTMLInputElement|null;return el?el.value.trim():'';};
+  var code=g('pu-code'),qty=g('pu-qty'),unit=g('pu-unit'),total=g('pu-total');
+  if(!code||!qty||!unit||!total){purchaseMsg='Completa insumo, cantidad, unidad y lo pagado.';render();return;}
+  busy=true;busyMsg='Guardando compra...';render();
+  try{
+    var r=await api('admin-purchase-add',{token:token,productCode:code,qty:Number(qty),unit:unit,totalPaid:Number(total),supplier:g('pu-supplier')||null,purchasedAt:g('pu-date')||null});
+    purchaseMsg='';
+    await loadPurchases();
+    // El aviso de subida sale AHORA, cuando el dueño acaba de pagar y todavía se acuerda de
+    // por qué. Enterarse un mes después, con el margen ya bajo, no permite hacer nada.
+    if(r.spike){
+      showToast('Ojo: subió '+Math.round(r.spike.pct*100)+'% (de S/'+r.spike.previous+' a S/'+r.spike.current+' por unidad).');
+    }else{
+      showToast('Compra registrada ✓');
+    }
+  }catch(e){busy=false;purchaseMsg=e.message;render();}
+}
+function sAdminPurchases(){
+  var h=H('COMPRAS Y COSTOS',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!purchasesData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadPurchases()')+'</div>';
+  }
+  var d=purchasesData;
+  var money=function(n){return 'S/'+(Math.round((Number(n)||0)*100)/100).toFixed(2);};
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Anota cada compra con lo que pagaste en total — el precio por unidad lo calcula solo. Con eso el costo del menú deja de ser un número escrito a mano.</div>';
+
+  // Formulario primero: es lo que se hace al volver del mercado, con la boleta en la mano.
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:10px;padding:16px;margin-bottom:20px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Registrar compra //</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +INP('pu-code','Insumo // código o nombre (P01, Punta de pecho...)','text')
+    +'<div style="display:flex;gap:8px">'+INP('pu-qty','Cantidad','number')+INP('pu-unit','Unidad // kg, g, unidades','text')+'</div>'
+    +INP('pu-total','Total pagado // S/','number')
+    +INP('pu-supplier','Proveedor // opcional','text')
+    +INP('pu-date','Fecha // AAAA-MM-DD, vacío = hoy','text')
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px">'+esc(purchaseMsg)+'</div>'
+    +BTN('Guardar compra //','doAddPurchase()')
+    +'</div></div>';
+
+  // Costo por porción: lo que de verdad se venía a buscar.
+  if(d.recipeCosts&&d.recipeCosts.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Costo por porción //</div>';
+    h+=d.recipeCosts.map(function(r){
+      var listo=r.costPerPortion!=null;
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(listo?'rgba(203,162,88,.45)':'var(--sw-border,#3A6B58)')+';border-radius:8px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
+        +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(r.name)+'</div>'
+        +'<div style="flex:0 0 auto;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:'+(listo?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+(listo?money(r.costPerPortion):'—')+'</div></div>'
+        // Si falta el precio de UN ingrediente NO se muestra un total parcial: un número que
+        // parece completo y no lo está es sobre lo que se fija el precio de venta.
+        +(listo
+          ?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'+money(r.total)+' la tanda ÷ '+r.yieldPortions+' porciones</div>'
+          :'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.5">Falta el precio de: '+esc(r.missing.slice(0,4).join(', '))+(r.missing.length>4?' y '+(r.missing.length-4)+' más':'')+'. Sin todos, un total parcial engañaría.</div>')
+        +'</div>';
+    }).join('');
+  }
+
+  if(d.costs&&d.costs.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 8px">Precio por unidad //</div>';
+    h+=d.costs.map(function(c){
+      var subio=c.spikePct!=null&&c.spikePct>=(d.spikeThreshold||0.15);
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid '+(subio?'rgba(255,165,0,.45)':'var(--sw-border,#3A6B58)')+';border-radius:8px;padding:10px 14px;margin-bottom:6px">'
+        +'<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(c.code)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">'+c.purchases+' compra'+(c.purchases===1?'':'s')+' · última '+esc(c.lastPurchasedAt)+'</div></div>'
+        +'<div style="text-align:right;flex:0 0 auto"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:'+GOLD+'">'+money(c.avgUnitCost)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:'+(subio?'#ffb366':'var(--sw-text-muted,#A8C8B0)')+';letter-spacing:.08em">por '+esc(c.unit)+(c.spikePct!=null?' · '+(c.spikePct>=0?'+':'')+Math.round(c.spikePct*100)+'%':'')+'</div></div></div>';
+    }).join('');
+  }
+  if(!d.costs||!d.costs.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">Todavía no hay ninguna compra registrada.</div>';
+  }
+  return h+'</div>';
+}
+
+// ── #31 / #34: CONCILIACIÓN Y COMISIONES DE CULQI ──────────────────────────────────────
+var culqiReportData=null;
+async function loadCulqiReport(){
+  sndScreen='admin_culqi';busy=true;busyMsg='Cargando reporte...';render();
+  try{culqiReportData=await api('admin-culqi-report',{token:token});}
+  catch(e){culqiReportData=null;}
+  busy=false;render();
+}
+function sAdminCulqiReport(){
+  var h=H('TARJETA // CULQI',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!culqiReportData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadCulqiReport()')+'</div>';
+  }
+  var d=culqiReportData;
+  var money=function(n){return 'S/'+(Math.round((Number(n)||0)*100)/100).toFixed(2);};
+  h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Este mes. La comisión de Culqi es un costo real que no aparecía en ningún reporte — a este ritmo puede pesar más que tus costos fijos.</div>';
+  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:'+GOLD+';line-height:1.1">'+money(d.netExpected)+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-top:4px">DEBERÍA LLEGARTE DE CULQI</div>'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Compara este número con lo que de verdad depositaron. Si no cuadra, hay algo que revisar.</div></div>';
+  var fila2=function(l,v,n='',c=''){
+    return'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +'<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+l+'</div>'
+      +(n?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:1px">'+n+'</div>':'')+'</div>'
+      +'<div style="flex:0 0 auto;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:'+(c||'var(--sw-text,#FFFFFF)')+'">'+v+'</div></div>';
+  };
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:16px">';
+  h+=fila2('Facturado con tarjeta',money(d.invoiced),d.orders+' pedido'+(d.orders===1?'':'s')+'.');
+  h+=fila2('− Comisión de Culqi','−'+money(d.fees),'Al '+(Math.round((d.feeRate||0)*1000)/10)+'%. Es un costo, no un redondeo.','#ffb366');
+  h+=fila2('Cobros rechazados',String(d.declines),d.declineRate!=null?('El '+Math.round(d.declineRate*100)+'% de los intentos.'):'Sin intentos este mes.',d.declineRate!=null&&d.declineRate>0.3?'#ff8888':'');
+  if(d.orphanCharges)h+=fila2('Cargos huérfanos detectados',String(d.orphanCharges),'Cobros sin pedido detrás que el cron ya concilió.','#ffb366');
+  h+='</div>';
+  h+=BTN('Actualizar //','loadCulqiReport()',true);
   return h+'</div>';
 }

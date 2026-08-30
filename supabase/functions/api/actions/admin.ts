@@ -4,13 +4,13 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { logAdminAction } from "../logging.ts";
+import { logAdminAction, debugLog } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
-import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS } from "./orders.ts";
+import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
@@ -1857,6 +1857,296 @@ export function miseEnPlaceGroups(
   return grupos;
 }
 
+// ── #31 / #34: CONCILIACIÓN Y COMISIONES DE CULQI ──────────────────────────────────────
+//
+// El cron horario ya concilia cargos HUÉRFANOS (un cobro real sin pedido detrás), que es el
+// caso catastrófico. Lo que faltaba es lo aburrido y constante: cuánto cobró Culqi contra
+// cuánto se facturó, y cuánto se llevó de comisión.
+//
+// La comisión de Culqi es un costo REAL que hoy no aparece en ningún reporte. A 5.5% sobre
+// un mes de S/6 000 en tarjeta son S/330 — más que los costos fijos del negocio, que están
+// por debajo de S/500. No verlo no lo hace desaparecer.
+export type CulqiReconciliation = {
+  orders: number;
+  invoiced: number;
+  fees: number;
+  netExpected: number;
+  declines: number;
+  declineRate: number | null;
+  orphanCharges: number;
+};
+
+// Cálculo puro (tests-api/conciliacion-culqi.test.ts). No consulta a Culqi: cruza lo que la
+// propia base ya sabe — los pedidos cobrados con tarjeta y los eventos que `claimAndChargeCulqi`
+// escribe en `debug_logs`. Un reporte que dependiera de la API de Culqi fallaría justo los
+// días en que Culqi tiene problemas, que son los días en que hay que mirarlo.
+export function culqiReconciliation(
+  orders: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: number | null }[],
+  logs: { detail?: { stage?: string } | null }[],
+  feeRate: number,
+  orphanCharges = 0,
+): CulqiReconciliation {
+  const cobrados = (Array.isArray(orders) ? orders : []).filter(
+    (o) => o && o.payment_method === "card" && o.payment_status === "paid" && o.status !== "CANCELADO",
+  );
+  const invoiced = cobrados.reduce((a, o) => {
+    const n = Number(o.total);
+    return a + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  const eventos = (Array.isArray(logs) ? logs : []).map((l) => l?.detail?.stage);
+  const declines = eventos.filter((e) => e === "culqi-rejected").length;
+  const exitos = eventos.filter((e) => e === "charge-succeeded").length;
+  const intentos = declines + exitos;
+  const fees = invoiced * feeRate;
+  return {
+    orders: cobrados.length,
+    invoiced: Math.round(invoiced * 100) / 100,
+    fees: Math.round(fees * 100) / 100,
+    // Lo que de verdad debería llegar a la cuenta. Es el número contra el que se compara el
+    // depósito de Culqi: si no cuadra, hay algo que revisar.
+    netExpected: Math.round((invoiced - fees) * 100) / 100,
+    declines,
+    // `null` sin intentos: 0% con cero cobros sugeriría que todo salió bien cuando en
+    // realidad no pasó nada.
+    declineRate: intentos > 0 ? Math.round((declines / intentos) * 1000) / 1000 : null,
+    orphanCharges,
+  };
+}
+
+export async function actAdminCulqiReport(b: any) {
+  await requireAdmin(b.token);
+  // Por defecto el MES en curso en hora Lima: la comisión se mira contra la liquidación
+  // mensual, no día a día.
+  const desde = typeof b.since === "string" && b.since ? b.since : limaMonthStartIso(new Date());
+  const hasta = typeof b.until === "string" && b.until ? b.until : new Date().toISOString();
+  const [orders, logs, huerfanos] = await Promise.all([
+    sbGet("orders", `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}&payment_method=eq.card&select=payment_method,payment_status,status,total&limit=5000`),
+    sbGet("debug_logs", `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}&select=detail&limit=5000`),
+    sbGet("debug_logs", `created_at=gte.${encodeURIComponent(desde)}&select=detail&limit=1000`),
+  ]);
+  const orphan = huerfanos.filter((l: any) => l?.detail?.stage === "orphan-charge-refunded" || l?.detail?.stage === "orphan-charge-found").length;
+  return { since: desde, until: hasta, feeRate: CULQI_FEE_RATE, ...culqiReconciliation(orders, logs, CULQI_FEE_RATE, orphan) };
+}
+
+// ── #38: PRECIO DE INSUMO POR COMPRA ───────────────────────────────────────────────────
+//
+// Todo el costeo del menú corre hoy sobre literales de markdown que nadie actualiza cuando
+// sube la carne. Cada compra registrada convierte eso en un número derivado de boletas
+// reales — y, cruzándolo con las recetas (que desde #9 también son dato), da el costo por
+// porción sin que nadie lo calcule a mano.
+//
+// Cuántas compras entran en el promedio. Tres y no una: una sola compra rara (un día que
+// pagaste de más por urgencia) movería el costo del menú entero. Tampoco muchas: con
+// inflación, promediar seis meses da un costo que ya no existe.
+const PURCHASE_AVG_WINDOW = 3;
+// A partir de cuánto una subida deja de ser ruido de mercado y merece decirse.
+const PURCHASE_SPIKE_PCT = 0.15;
+
+export type PurchaseRow = { product_code: string; qty: number; unit: string; total_paid: number; purchased_at: string; supplier?: string | null };
+export type IngredientCost = {
+  code: string;
+  unit: string;
+  lastUnitCost: number;
+  avgUnitCost: number;
+  purchases: number;
+  lastPurchasedAt: string;
+  spikePct: number | null;
+};
+
+// Costo unitario vigente por insumo. Puro y probado (tests-api/costo-insumos.test.ts):
+// alimenta el costo del menú, así que un error acá se propaga a toda decisión de precio.
+export function ingredientCosts(rows: PurchaseRow[]): Map<string, IngredientCost> {
+  const salida = new Map<string, IngredientCost>();
+  const porCodigo = new Map<string, PurchaseRow[]>();
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r || !r.product_code) continue;
+    const qty = Number(r.qty);
+    const pagado = Number(r.total_paid);
+    // Una compra sin cantidad no permite derivar ningún precio unitario; incluirla daría
+    // Infinity y ese número se propagaría al costo de todo el menú.
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(pagado) || pagado < 0) continue;
+    if (!porCodigo.has(r.product_code)) porCodigo.set(r.product_code, []);
+    porCodigo.get(r.product_code)!.push(r);
+  }
+  for (const [code, compras] of porCodigo) {
+    // Más reciente primero. Se ordena acá y no se confía en el orden de la consulta: esta
+    // función se prueba con listas armadas a mano y tiene que dar lo mismo.
+    compras.sort((a, b) => String(b.purchased_at).localeCompare(String(a.purchased_at)));
+    const unitario = (r: PurchaseRow) => Number(r.total_paid) / Number(r.qty);
+    const ultima = compras[0];
+    const ventana = compras.slice(0, PURCHASE_AVG_WINDOW);
+    // Promedio PONDERADO por cantidad, no promedio de precios unitarios: comprar 6 kg a S/20
+    // y 0.5 kg a S/30 no cuesta S/25 el kilo en promedio, cuesta S/20.77.
+    const totalQty = ventana.reduce((a, r) => a + Number(r.qty), 0);
+    const totalPagado = ventana.reduce((a, r) => a + Number(r.total_paid), 0);
+    const anterior = compras[1];
+    const previo = anterior ? unitario(anterior) : null;
+    const actual = unitario(ultima);
+    salida.set(code, {
+      code,
+      unit: String(ultima.unit || ""),
+      lastUnitCost: Math.round(actual * 10000) / 10000,
+      avgUnitCost: totalQty > 0 ? Math.round((totalPagado / totalQty) * 10000) / 10000 : actual,
+      purchases: compras.length,
+      lastPurchasedAt: String(ultima.purchased_at || ""),
+      // Cuánto subió respecto de la compra anterior. `null` con una sola compra: no hay
+      // contra qué comparar, y mostrar 0% ahí sugeriría que el precio está estable.
+      spikePct: previo && previo > 0 ? Math.round(((actual - previo) / previo) * 1000) / 1000 : null,
+    });
+  }
+  return salida;
+}
+
+export type RecipeCost = {
+  recipeCode: string;
+  name: string;
+  yieldPortions: number;
+  known: number;
+  total: number;
+  costPerPortion: number | null;
+  missing: string[];
+};
+
+// Costo por porción de una receta, a partir de las compras reales.
+//
+// LA PARTE QUE IMPORTA: si falta el precio de UN solo ingrediente, `costPerPortion` es
+// `null`. Un total parcial que se ve completo es exactamente el "dato con aspecto de
+// medición" que este proyecto ya decidió no producir — y sobre un costo por porción se
+// toman decisiones de precio. Se devuelve además QUÉ falta, para que la pantalla diga cómo
+// completarlo en vez de solo negarse.
+//
+// Las unidades tienen que coincidir entre la receta y la compra: comprar en kg y pedir en g
+// daría un costo mil veces menor. Cuando no coinciden, el ingrediente cuenta como faltante,
+// que es la lectura conservadora.
+export function recipeCost(
+  recipe: { recipe_code: string; name: string; yield_portions: number; ingredients?: { item: string; qty: number; unit: string; code?: string }[] },
+  costs: Map<string, IngredientCost>,
+): RecipeCost {
+  const ingredientes = Array.isArray(recipe?.ingredients) ? recipe.ingredients : [];
+  const rendimiento = Number(recipe?.yield_portions);
+  let total = 0;
+  let known = 0;
+  const missing: string[] = [];
+  for (const ing of ingredientes) {
+    // El código del insumo puede venir explícito; si no, se usa el propio nombre como clave,
+    // que es lo que el dueño escribe al registrar la compra.
+    const clave = String(ing?.code || ing?.item || "").trim();
+    const costo = costs.get(clave);
+    const qty = Number(ing?.qty);
+    if (!costo || !Number.isFinite(qty) || qty <= 0) { missing.push(String(ing?.item || clave)); continue; }
+    if (String(ing?.unit || "").toLowerCase() !== String(costo.unit || "").toLowerCase()) {
+      // Mezclar kg con g daría un costo mil veces menor sin ningún error visible.
+      missing.push(`${ing.item} (compraste en ${costo.unit}, la receta pide ${ing.unit})`);
+      continue;
+    }
+    total += qty * costo.avgUnitCost;
+    known++;
+  }
+  const completo = known === ingredientes.length && ingredientes.length > 0;
+  return {
+    recipeCode: String(recipe?.recipe_code || ""),
+    name: String(recipe?.name || ""),
+    yieldPortions: Number.isFinite(rendimiento) && rendimiento > 0 ? rendimiento : 0,
+    known,
+    total: Math.round(total * 100) / 100,
+    costPerPortion: completo && rendimiento > 0 ? Math.round((total / rendimiento) * 100) / 100 : null,
+    missing,
+  };
+}
+
+const PURCHASES_LIST_LIMIT = 500;
+
+export async function actAdminPurchases(b: any) {
+  await requireAdmin(b.token);
+  const [compras, recetas] = await Promise.all([
+    sbGet("ingredient_purchases", `select=*&order=purchased_at.desc,id.desc&limit=${PURCHASES_LIST_LIMIT}`),
+    sbGet("production_recipes", "select=*&order=id.desc&limit=500"),
+  ]);
+  const costos = ingredientCosts(compras);
+  // Solo la receta vigente de cada código (append-only, ver #9).
+  const vigentes = new Map<string, any>();
+  for (const r of recetas) if (!vigentes.has(r.recipe_code)) vigentes.set(r.recipe_code, r);
+  return {
+    purchases: compras.slice(0, 100),
+    costs: [...costos.values()].sort((a, b) => a.code.localeCompare(b.code)),
+    recipeCosts: [...vigentes.values()]
+      .filter((r) => r.active !== false)
+      .map((r) => recipeCost(r, costos)),
+    avgWindow: PURCHASE_AVG_WINDOW,
+    spikeThreshold: PURCHASE_SPIKE_PCT,
+  };
+}
+
+export async function actAdminPurchaseAdd(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.productCode || "").trim().toUpperCase().slice(0, 20);
+  const qty = Number(b.qty);
+  const totalPaid = Number(b.totalPaid);
+  const unit = String(b.unit || "").trim().slice(0, 20);
+  if (!code) throw new ApiError("Falta el código del insumo.", 400);
+  if (!Number.isFinite(qty) || qty <= 0) throw new ApiError("La cantidad tiene que ser mayor que cero.", 400);
+  if (!Number.isFinite(totalPaid) || totalPaid < 0) throw new ApiError("Lo pagado no puede ser negativo.", 400);
+  if (!unit) throw new ApiError("Falta la unidad (kg, g, unidades...).", 400);
+
+  const row = (await sbInsert("ingredient_purchases", {
+    product_code: code,
+    supplier: b.supplier ? String(b.supplier).trim().slice(0, 120) : null,
+    qty,
+    unit,
+    total_paid: totalPaid,
+    purchased_at: /^\d{4}-\d{2}-\d{2}$/.test(String(b.purchasedAt || "")) ? b.purchasedAt : undefined,
+    notes: b.notes ? String(b.notes).slice(0, 500) : null,
+    created_by: s.phone,
+  }))[0];
+
+  // Si el precio subió fuerte respecto de la compra anterior, se dice AHORA — el dueño
+  // acaba de pagar y todavía se acuerda de por qué. Enterarse un mes después, cuando el
+  // margen ya bajó, no permite hacer nada al respecto.
+  let spike: { pct: number; previous: number; current: number } | null = null;
+  try {
+    const previas = await sbGet(
+      "ingredient_purchases",
+      `product_code=eq.${encodeURIComponent(code)}&select=qty,total_paid,purchased_at,unit,product_code&order=purchased_at.desc,id.desc&limit=5`,
+    );
+    const info = ingredientCosts(previas).get(code);
+    if (info && info.spikePct !== null && info.spikePct >= PURCHASE_SPIKE_PCT) {
+      const anterior = info.lastUnitCost / (1 + info.spikePct);
+      spike = { pct: info.spikePct, previous: Math.round(anterior * 100) / 100, current: info.lastUnitCost };
+    }
+  } catch (e) {
+    // El aviso es un plus: nunca puede impedir que la compra quede registrada.
+    await debugLog({ stage: "purchase_spike_check_failed", code, error: String(e) });
+  }
+
+  await logAdminAction(s.phone, "purchase-add", code, { qty, unit, totalPaid });
+  return { success: true, purchase: row, spike };
+}
+
+// ── #39: PASIVO DE CRÉDITO EMITIDO ─────────────────────────────────────────────────────
+//
+// El crédito interno (Plan Semanal, tarjetas de regalo, saldo regalado) es plata que el
+// negocio YA COBRÓ y todavía debe en comida. Nadie lo miraba: no aparece en el dashboard ni
+// en el cierre de caja, y por diseño no puede aparecer ahí — el cierre de caja habla del
+// día, y esto es un saldo acumulado.
+//
+// Importa por dos razones distintas. La obvia: es deuda, y en un mes flojo puede ser una
+// parte grande de los pedidos que "no dejan caja". La menos obvia: crédito que nadie usa es
+// una promesa que el cliente no está cobrando, y eso ya tiene su propio recordatorio.
+export function creditLiability(
+  customers: { credit_balance?: number | null }[],
+): { customers: number; total: number; average: number; largest: number } {
+  const saldos = (Array.isArray(customers) ? customers : [])
+    .map((c) => Number(c?.credit_balance))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const total = saldos.reduce((a, n) => a + n, 0);
+  return {
+    customers: saldos.length,
+    total: Math.round(total * 100) / 100,
+    average: saldos.length ? Math.round((total / saldos.length) * 100) / 100 : 0,
+    largest: saldos.length ? Math.round(Math.max(...saldos) * 100) / 100 : 0,
+  };
+}
+
 // ── #40: CIERRE DE CAJA DIARIO ─────────────────────────────────────────────────────────
 //
 // El correo de resumen diario ya manda "ingresos del día", y ese número miente por omisión
@@ -1966,12 +2256,24 @@ export async function actAdminCashClose(b: any) {
   // Por defecto el día en curso en hora de Lima, que es lo que significa "cerrar la caja".
   const desde = typeof b.since === "string" && b.since ? b.since : limaDayStartIso(new Date());
   const hasta = typeof b.until === "string" && b.until ? b.until : new Date().toISOString();
-  const rows = await sbGet(
-    "orders",
-    `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}` +
-      `&select=payment_method,payment_status,status,total,delivery_fee&limit=5000`,
-  );
-  return { since: desde, until: hasta, culqiFeeRate: CULQI_FEE_RATE, ...cashClose(rows, CULQI_FEE_RATE) };
+  const [rows, conSaldo] = await Promise.all([
+    sbGet(
+      "orders",
+      `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}` +
+        `&select=payment_method,payment_status,status,total,delivery_fee&limit=5000`,
+    ),
+    // #39 — El pasivo de crédito NO es del día: es un saldo acumulado. Viaja con el cierre
+    // de caja porque es donde el dueño está mirando plata, pero la pantalla lo separa y lo
+    // dice — mezclarlo con el día sería exactamente el error que este cierre vino a arreglar.
+    sbGet("customers", "credit_balance=gt.0&select=credit_balance&limit=20000"),
+  ]);
+  return {
+    since: desde,
+    until: hasta,
+    culqiFeeRate: CULQI_FEE_RATE,
+    ...cashClose(rows, CULQI_FEE_RATE),
+    creditLiability: creditLiability(conSaldo),
+  };
 }
 
 // ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────

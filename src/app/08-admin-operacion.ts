@@ -390,6 +390,8 @@ function adminToolsSections(){
       ['recipe','Recetas','loadRecipes()'],
       ['inventario','Plan de tanda','loadBatchPlan()'],
       ['caja','Cierre de caja','loadCashClose()'],
+      ['caja','Compras y costos','loadPurchases()'],
+      ['caja','Tarjeta / Culqi','loadCulqiReport()'],
       ['franjas','Franjas horarias','loadTimeWindowReport()'],
       ['direccion','Direcciones','loadProblemAddresses()'],
     ]],

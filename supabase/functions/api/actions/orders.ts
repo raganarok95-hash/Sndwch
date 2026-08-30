@@ -620,6 +620,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     }
     await Promise.all(auditInserts);
     if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
+    await alertLowMarginOrder(p);
     reportPurchaseToMeta(p);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
@@ -1417,6 +1418,111 @@ export function queueAddressFlags(
 // que tarda una vuelta de reparto más el margen de armado. Más ancha haría esperar al
 // primero; más angosta no agruparía nunca nada.
 const NEARBY_WINDOW_MINUTES = 45;
+
+// ── #35: ALERTA DE MARGEN POR PEDIDO BAJO EL UMBRAL ────────────────────────────────────
+//
+// Un pedido puede apilar combo + recompensa + zona cara y quedar por debajo del piso sin que
+// nada avise: cada descuento por separado está aprobado y tiene sentido, y el problema
+// aparece solo al sumarlos. Es el mismo patrón que ya obligó a apagar el doble de atún y a
+// corregir el pDbl de 30CM — un producto que pierde plata en una combinación concreta.
+//
+// El margen se estima con el % de insumos acordado con el dueño (45% del precio de venta,
+// ver el contexto de negocio en CLAUDE.md). NO es el costo real medido: eso es el #7 y
+// necesita las compras (#38) y la merma medida (#6). Por eso esto AVISA, no bloquea.
+const MARGIN_INPUT_COST_RATE = 0.45;
+const MARGIN_FLOOR_PCT = 0.25;
+
+export type OrderMargin = {
+  ref: string;
+  listFood: number;
+  chargedFood: number;
+  discount: number;
+  estimatedCost: number;
+  contribution: number;
+  marginPct: number;
+  belowFloor: boolean;
+};
+
+export function orderMargin(
+  order: { ref?: string | null; total?: number | null; delivery_fee?: number | null; listFood?: number | null },
+  culqiFee: number,
+  inputRate = MARGIN_INPUT_COST_RATE,
+  floor = MARGIN_FLOOR_PCT,
+): OrderMargin {
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  // Lo que el cliente PAGÓ por la comida: el reparto es pass-through al motorizado.
+  const chargedFood = Math.max(0, num(order?.total) - num(order?.delivery_fee));
+  // Lo que el sándwich VALE de carta, antes de combo, recompensa y promo.
+  //
+  // ESTA DISTINCIÓN ES TODO EL ÍTEM. Calcular el costo como un % del precio ya descontado
+  // hace que el margen dé siempre lo mismo (55%) por construcción, y la alerta no saltaría
+  // JAMÁS — un aviso que nunca suena es peor que no tenerlo, porque da la sensación de estar
+  // vigilado. El costo de los insumos no baja porque el cliente haya pagado menos: la
+  // proteína, el pan y la salsa son los mismos. Por eso el costo se ancla al precio de
+  // carta y el descuento sale ENTERO del margen, que es lo que pasa de verdad.
+  const listFood = num(order?.listFood) > 0 ? num(order.listFood) : chargedFood;
+  const estimatedCost = listFood * inputRate;
+  const contribution = chargedFood - estimatedCost - culqiFee;
+  return {
+    ref: String(order?.ref || ""),
+    listFood: r2(listFood),
+    chargedFood: r2(chargedFood),
+    discount: r2(Math.max(0, listFood - chargedFood)),
+    estimatedCost: r2(estimatedCost),
+    contribution: r2(contribution),
+    // El margen se mide contra lo que se COBRÓ: es la pregunta "de cada sol que entró,
+    // cuánto me quedó". Medirlo contra el precio de carta diría que un sándwich regalado
+    // tiene margen negativo del 100%, que es cierto pero no accionable.
+    marginPct: chargedFood > 0 ? Math.round((contribution / chargedFood) * 1000) / 1000 : 0,
+    // Sobre CERO comida cobrada el margen no es malo, es indefinido: un pedido 100% cubierto
+    // por una recompensa es un premio ya pagado con puntos, no una venta mal calibrada.
+    belowFloor: chargedFood > 0 && (contribution / chargedFood) < floor,
+  };
+}
+
+// Aviso de margen bajo, en el momento en que el pedido se crea.
+//
+// Va acá y no en un cron a propósito: el valor está en verlo cuando todavía se puede hacer
+// algo — mirar qué combinación lo produjo y decidir si esa promo sigue. Un reporte semanal
+// diría lo mismo cuando ya se cobraron veinte iguales.
+//
+// Con freno de 6 horas: si una combinación concreta está mal calibrada, va a disparar en
+// cada pedido, y veinte notificaciones idénticas se apagan antes que se corrija el precio.
+async function alertLowMarginOrder(p: FinalizeOrderParams): Promise<void> {
+  try {
+    // La comisión solo existe si el cobro pasó por Culqi. Yape/Plin, crédito y recompensa
+    // no la pagan, y cargársela les bajaría el margen en el reporte sin ninguna razón.
+    const culqiFee = p.paymentMethod === "card" ? (Number(p.total) || 0) * CULQI_FEE_RATE : 0;
+    // El precio de carta de lo que se armó, ANTES de combo/recompensa/promo. Es lo que hace
+    // que el descuento salga del margen en vez de desaparecer del cálculo.
+    let listFood = 0;
+    for (const it of p.items || []) {
+      try {
+        const priced = priceCartItem(it);
+        listFood += priced.unitPrice * priced.qty;
+      } catch {
+        // Un ítem que ya no encaja en el catálogo no puede tumbar el aviso de los demás.
+      }
+    }
+    const m = orderMargin({ ref: p.ref, total: p.total, delivery_fee: p.deliveryFee, listFood }, culqiFee);
+    if (!m.belowFloor) return;
+    const ok = await rpc("check_rate_limit", { p_key: "low-margin-order", p_limit: 1, p_window_minutes: 360 });
+    if (!ok) return;
+    await sendPushToAdmins({
+      title: "📉 Pedido bajo el margen mínimo",
+      body: `${p.ref}: cobraste S/${m.chargedFood.toFixed(2)} de S/${m.listFood.toFixed(2)} de carta y quedan S/${m.contribution.toFixed(2)} (${Math.round(m.marginPct * 100)}%). Revisa qué promos se apilaron.`,
+      url: "./index.html",
+      tag: "sndwch-low-margin",
+      renotify: true,
+    });
+  } catch {
+    // Un aviso nunca puede tumbar un pedido que ya se cobró.
+  }
+}
 
 // ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────
 //

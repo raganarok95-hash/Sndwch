@@ -110,22 +110,22 @@ bloque es el que más tiempo tuyo devuelve.
 
 ## C. Dinero, márgenes y cobros
 
-31. **Reporte diario de conciliación** — el cron horario ya concilia cargos huérfanos; falta
+31. ✅ **Reporte diario de conciliación** — el cron horario ya concilia cargos huérfanos; falta
     el resumen que te diga cuánto cobró Culqi vs. cuánto facturaste. · **HOY**
 32. **Alerta de rechazo de tarjeta alto** — si de golpe la mitad de los cobros falla, algo se
     rompió (Culqi, el 3DS, tu cuenta). Hoy te enterarías por un cliente. · **HECHO 2026-08-29 (`alert-card-declines`, con mínimo de volumen)**
 33. **Reintento de cobro fallido** — con aviso al cliente, en vez de perder la venta. · **PARCIAL 2026-08-29 — el reintento automático es IMPOSIBLE: el token de Culqi es de un solo uso y dura 5 min. Sí se construyó el aviso que dice que fue la tarjeta**
-34. **Reporte mensual de comisiones Culqi** — cuánto te costó cobrar con tarjeta ese mes.
+34. ✅ **Reporte mensual de comisiones Culqi** — cuánto te costó cobrar con tarjeta ese mes.
     Es un costo real que hoy no está en ningún reporte. · **HOY**
-35. **Alerta de margen por pedido bajo el umbral** — un pedido que con combo + recompensa +
+35. ✅ **Alerta de margen por pedido bajo el umbral** — un pedido que con combo + recompensa +
     zona cara queda por debajo del piso, avisado en el momento. · **HOY**
 36. **Punto de equilibrio del mes en vivo** — cuántos pedidos te faltan para cubrir costos.
     Con costos fijos bajo S/500 es un número chico y muy motivador de ver. · **DATOS**
 37. **Recosteo automático al subir un insumo** — registras que la res subió a S/23/kg y el
     sistema te dice qué productos cayeron bajo el 45%. · **DATOS**
-38. **Precio de insumo por compra** — cada compra queda registrada; el costo del menú deja de
+38. ✅ **Precio de insumo por compra** — cada compra queda registrada; el costo del menú deja de
     ser un literal escrito a mano. Es la base del 37 y del 7. · **HOY**
-39. **Pasivo de crédito emitido** — cuánto crédito interno hay vivo sin consumir (Plan
+39. ✅ **Pasivo de crédito emitido** — cuánto crédito interno hay vivo sin consumir (Plan
     Semanal, tarjetas de regalo). Es deuda tuya en comida, y hoy nadie la mira. · **HOY**
 40. ✅ **Cierre de caja diario** — cuánto entró por tarjeta, cuánto por Yape/Plin, cuánto en
     crédito, cuadrado contra los pedidos del día. · **HOY**
