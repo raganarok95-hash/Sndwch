@@ -290,10 +290,36 @@ function badgesHTML(c){
     return'<div style="background:'+(b.unlocked?'#1E4A38':'#0d1a15')+';border:1px solid '+(b.unlocked?GOLD:'#2a2a2a')+';border-radius:10px;padding:10px;text-align:center;opacity:'+(b.unlocked?1:.4)+'"><div>'+icon(b.icon,22,(b.unlocked?GOLD:'#666'))+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:'+(b.unlocked?'#FFFFFF':'#A8C8B0')+';margin-top:4px">'+b.label+'</div>'+(b.sub?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+b.sub+'</div>':'')+'</div>';
   }).join('')+'</div></div>';
 }
+// #55 — La escalera de referidos, pintada dentro de la tarjeta del programa.
+//
+// Sin esto el escalonado no existe para el cliente: los puntos extra le caerían de sorpresa
+// y nunca habrían sido una razón para invitar al tercero, que es justamente para lo que se
+// puso la escalera. Por eso el escalón siguiente se muestra SIEMPRE con cuántos amigos
+// faltan, no solo los ya ganados.
+function referralLadderHTML(refs){
+  var n=Number(refs)||0;
+  var sig=nextReferralMilestone(n);
+  var filas=REFERRAL_MILESTONES.map(function(m){
+    var ganado=n>=m.count;
+    var esSiguiente=!!sig&&sig.m.count===m.count;
+    var col=ganado?GOLD:(esSiguiente?'var(--sw-text,#FFFFFF)':'var(--sw-text-muted,#A8C8B0)');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:'+(ganado||esSiguiente?1:.5)+'">'
+      +'<div style="flex:0 0 auto;width:18px;text-align:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:640;color:'+col+'">'+(ganado?'&#10003;':m.count)+'</div>'
+      +'<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:'+col+'">'+esc(m.label)+'</div>'
+      +'<div style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+col+'">+'+m.points+' pts</div></div>';
+  }).join('');
+  var pie=sig
+    ? 'Te '+(sig.missing===1?'falta 1 amigo':'faltan '+sig.missing+' amigos')+' para el siguiente premio.'
+    : 'Ganaste todos los premios de la escalera. Cada nuevo amigo te sigue dando tu sándwich.';
+  return '<div style="background:rgba(0,0,0,.18);border-radius:10px;padding:10px 12px;margin-bottom:12px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">PREMIOS EXTRA //</div>'
+    +filas
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-top:6px">'+esc(pie)+'</div></div>';
+}
 function sPProfile(){
   var initial=esc((cust.name||'?').trim().charAt(0).toUpperCase());
   var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid var(--sw-border,#3A6B58);border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-top:6px">'+rankName(cust.total_orders)+' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">Pts</div></div></div>';
-  var referralHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:'+GOLD+'"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div><button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
+  var referralHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:'+GOLD+'"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div>'+referralLadderHTML(cust.total_referrals)+'<button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
   // Antes las 3 tarjetas de abajo (crédito/tarjeta de regalo/Plan Semanal) no tenían
   // ningún elemento que las diferencie, pese a tener lógicas de negocio muy distintas
   // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo

@@ -229,6 +229,43 @@ cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'),
   sRew.R06 ? sRew.R06.pts : null);
 
+// #55 — La escalera de referidos vive en los dos lados: el servidor la PAGA y el cliente la
+// PINTA. Si se desincronizan, la pantalla le promete al cliente un premio que el servidor
+// nunca va a otorgar — la misma clase de promesa falsa que ya obligó a retirar los badges
+// MÁS PEDIDO y EDICIÓN LIMITADA. Se comparan los pares (cuántos amigos, cuántos puntos);
+// las etiquetas no, porque el copy de cada lado es distinto a propósito.
+function milestones(src, re, file) {
+  const m = src.match(re);
+  if (!m) {
+    problems.push(`REFERRAL_MILESTONES: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
+    return null;
+  }
+  const pares = [...m[1].matchAll(/count:\s*(\d+)\s*,\s*points:\s*(\d+)/g)].map((x) => [Number(x[1]), Number(x[2])]);
+  if (!pares.length) {
+    problems.push(`REFERRAL_MILESTONES: se encontró el bloque en ${file} pero ningún escalón dentro`);
+    return null;
+  }
+  return pares;
+}
+cmp('REFERRAL_MILESTONES (escalera de referidos: amigos → puntos extra)',
+  milestones(app, /var REFERRAL_MILESTONES=\[([\s\S]*?)\];/, 'src/app/'),
+  milestones(env, /export const REFERRAL_MILESTONES[^=]*=\s*\[([\s\S]*?)\];/, 'env.ts'));
+
+// Y cada escalón tiene que valer una recompensa NOMBRABLE (o un múltiplo de una): si un
+// escalón cayera en un número suelto, la notificación no podría decir qué se ganó, que es
+// lo único que hace que el premio empuje a invitar otra vez.
+{
+  checks++;
+  const pares = milestones(env, /export const REFERRAL_MILESTONES[^=]*=\s*\[([\s\S]*?)\];/, 'env.ts') || [];
+  const valores = Object.values(sRew).map((r) => r.pts);
+  const sueltos = pares
+    .map(([, pts]) => pts)
+    .filter((pts) => !valores.some((v) => v > 0 && pts % v === 0));
+  if (sueltos.length) {
+    problems.push(`REFERRAL_MILESTONES: ${sueltos.join(', ')} no es múltiplo de ninguna recompensa de REWARDS (${valores.join(', ')}) — no se puede nombrar el premio`);
+  }
+}
+
 // ---------- TOPES, UMBRALES Y EL PRECIO SIN TABLA (agregado 2026-08-28) ----------
 //
 // Estas 7 constantes estaban duplicadas en los dos lados y NINGUNA se comparaba. Cambiar

@@ -5,7 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
-  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN,
+  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -335,19 +335,101 @@ async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void
   }
 }
 
+// #55 — Qué escalón de referidos corresponde cobrar, si es que alguno.
+//
+// Cálculo PURO a propósito, separado de la escritura en la base (la RPC
+// grant_referral_milestone): así `npm run test:api` puede ejecutar de verdad la decisión de
+// cuántos puntos regalar, que es la parte que toca dinero. Es el mismo patrón que ya
+// siguieron `cancellationDeltas` y `batchExpiryStatus`.
+//
+// Devuelve el escalón MÁS ALTO alcanzado y todavía no pagado, no "el siguiente". Si por lo
+// que sea se saltó uno —un fallo de red en la conversión anterior, dos referidos que
+// convierten casi a la vez— el referidor igual cobra el que le corresponde por su conteo
+// real, en vez de quedarse trabado para siempre en el escalón que se perdió.
+export function nextReferralMilestone(
+  totalReferrals: number,
+  alreadyGranted: number,
+  milestones: { count: number; points: number; label: string }[] = REFERRAL_MILESTONES,
+): { count: number; points: number; label: string } | null {
+  const total = Number(totalReferrals);
+  const done = Number(alreadyGranted);
+  // Basura de la base (null, NaN, negativos) tiene que terminar en "no pagar nada", nunca
+  // en un premio inventado.
+  if (!Array.isArray(milestones) || !Number.isFinite(total) || total <= 0) return null;
+  const yaPagado = Number.isFinite(done) ? done : 0;
+  let mejor: { count: number; points: number; label: string } | null = null;
+  for (const m of milestones) {
+    if (!m || !Number.isFinite(m.count) || !Number.isFinite(m.points) || m.points <= 0) continue;
+    if (m.count > total || m.count <= yaPagado) continue;
+    if (!mejor || m.count > mejor.count) mejor = m;
+  }
+  return mejor;
+}
+
 // El bono al que invita cae recién cuando su referido hace el PRIMER PEDIDO PAGADO — pero
 // hasta ahora nadie se lo decía: se enteraba solo si abría la app y miraba sus puntos. Ese
 // es justo el momento de máxima motivación para volver a invitar a alguien, y se estaba
-// desperdiciando. Un push fallido nunca debe tumbar el pedido, así que va todo en try.
-async function notifyReferrerBonus(referrerPhone: string, referredName: string): Promise<void> {
+// desperdiciando.
+//
+// Desde #55 esta función hace las dos cosas de una sola vez: paga el escalón si toca, y
+// manda UN push (no dos). Dos notificaciones seguidas por el mismo evento se leen como
+// spam justo en el momento en que más importa que se lean.
+//
+// Nada de esto puede tumbar el pedido: el bono base ya quedó otorgado dentro de
+// finalize_order_customer_update, que es la parte atómica. Si el escalón falla, la próxima
+// conversión lo recupera sola (nextReferralMilestone toma el más alto pendiente), y el
+// fallo queda en debug_logs para que lo vea error_spike().
+export async function rewardReferrer(referrerPhone: string, referredName: string): Promise<void> {
+  let hito: { count: number; points: number; label: string } | null = null;
   try {
-    await sendPushToPhone(referrerPhone, {
-      title: "🥪 ¡Te ganaste un sándwich!",
-      body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
-      url: "./index.html",
-      tag: "sndwch-referral-reward",
-      vibrate: [120, 60, 120, 60, 240],
-    });
+    const rows = await sbGet(
+      "customers",
+      `phone=eq.${encodeURIComponent(referrerPhone)}&select=total_referrals,referral_milestone_granted`,
+    );
+    const r = rows[0];
+    if (r) {
+      const candidato = nextReferralMilestone(r.total_referrals || 0, r.referral_milestone_granted || 0);
+      if (candidato) {
+        // La RPC vuelve a comprobar el escalón contra la fila (`referral_milestone_granted
+        // < p_tier` en el WHERE): si dos referidos convierten en el mismo segundo, solo una
+        // de las dos llamadas paga. Un null acá significa "ya estaba pagado", no un error.
+        const res = await rpc("grant_referral_milestone", {
+          p_phone: referrerPhone,
+          p_tier: candidato.count,
+          p_points: candidato.points,
+        });
+        if (res) {
+          hito = candidato;
+          await sbInsert("transactions", {
+            customer_phone: referrerPhone,
+            type: "earn_confirmed",
+            points: candidato.points,
+            description: `Premio por ${candidato.count} amigos referidos`,
+            confirmed: true,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    await debugLog({ stage: "referral_milestone_failed", phone: referrerPhone, error: String(e) });
+  }
+
+  try {
+    await sendPushToPhone(referrerPhone, hito
+      ? {
+        title: `🏆 ¡${hito.count} amigos referidos!`,
+        body: `${referredName} hizo su primer pedido. Además de tu sándwich, te llevas ${hito.points} puntos extra: ${hito.label}.`,
+        url: "./index.html",
+        tag: "sndwch-referral-milestone-" + hito.count,
+        vibrate: [120, 60, 120, 60, 240],
+      }
+      : {
+        title: "🥪 ¡Te ganaste un sándwich!",
+        body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
+        url: "./index.html",
+        tag: "sndwch-referral-reward",
+        vibrate: [120, 60, 120, 60, 240],
+      });
   } catch {
     // sin conexión, sin suscripción push o token vencido — el bono ya está otorgado igual
   }
@@ -537,7 +619,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       }));
     }
     await Promise.all(auditInserts);
-    if (isReferral && c.referred_by) await notifyReferrerBonus(c.referred_by, p.name);
+    if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
     reportPurchaseToMeta(p);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
@@ -1289,7 +1371,7 @@ async function confirmManualPayment(order: any) {
       description: "Sándwich gratis por invitar a " + order.customer_name,
       confirmed: true,
     });
-    await notifyReferrerBonus(referrerPhone, order.customer_name);
+    await rewardReferrer(referrerPhone, order.customer_name);
   }
 
   // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el

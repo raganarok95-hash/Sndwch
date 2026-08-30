@@ -85,6 +85,21 @@ abajo, que sigue vigente para ellas).
 SIG05 no está en `catalog_items`: el menú secreto tiene su propia tabla y su propio panel.
 `loadCatalogItems()` ignora ese id explícitamente.
 
+## ⚠ UN NÚMERO ESCRITO A MANO EN UN TEXTO ES UNA PROMESA QUE SE VA A ROMPER (2026-08-30)
+
+El contenido semanal de marketing (`marketingContent()` en `actions/admin.ts`) es lo que el
+dueño **copia y pega a Instagram y WhatsApp**: una promesa pública. Tenía TRES números
+desactualizados a la vez y ninguno iba a avisar jamás, porque son texto y no cálculo:
+"ambos ganan 50 puntos" por referir (son 400 y 120 desde el 2026-08-15 — prometía menos de
+la décima parte de lo real), "se desbloquea desde tu 5to pedido" para el menú secreto (son 3
+desde el 2026-08-26), y "S/95 → S/100" escrito al lado de las constantes que lo mandan.
+
+Ahora esos textos son plantillas que interpolan la constante real en el momento de armarse.
+**Regla para cualquier texto nuevo dirigido al cliente —push, correo, caption, pantalla—:
+si menciona una cifra que el código ya conoce, interpólala; nunca la escribas.** El umbral
+del menú secreto es el caso más claro: es editable desde el panel, así que un literal se
+desincroniza el día que el dueño lo mueva, sin tocar una línea de código.
+
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
 **Los literales de precio de `catalog.ts` (`PROT_PRICE`, `SIG_DATA`, `SIDE_PRICE`,
@@ -481,6 +496,11 @@ Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrit
 abandonado, **pago abandonado** (llegó a la pantalla de Culqi y no terminó — la abandonada
 de mayor intención del embudo, y la única que no tenía seguimiento), segundo pedido,
 re-enganche de rango alto, nunca ha pedido (3 etapas), aniversario de cuenta,
+**resumen mensual personal** (#65, días 1-5 de cada mes: "pediste N veces, tu favorito fue
+X" — corre CINCO días y no uno porque `MAX_PUSH_PER_RUN` corta en 200 por corrida y una sola
+corrida dejaría sin resumen a todo cliente por encima de ese número hasta el mes siguiente,
+cuando la ventana ya se movió; la marca `customers.monthly_recap_ym` hace que cada corrida
+siga por donde quedó la anterior),
 **crédito sin usar** (dinero que el negocio YA cobró: Plan Semanal, tarjetas de regalo,
 crédito regalado), **post-cancelación** (a las 24 h, no al toque: en el momento la persona
 está molesta), reclamos por vencer (plazo legal).
@@ -510,7 +530,10 @@ que da 3-4 días— y **es editable por insumo desde el panel de Inventario**, p
 umbral no exija una sesión de código. El cálculo puro vive en `batchExpiryStatus`
 (`actions/orders.ts`) y está probado en `tests-api/caducidad.test.ts`: su modo de fallo no es
 un error, es SILENCIO —la alerta que no sale— así que no alcanza con el typecheck),
-contenido de marketing semanal, y **salud del sistema** (`alert-system-health`, horario:
+contenido de marketing semanal (**que desde #50 no solo avisa: deja los borradores
+escritos** en `marketing_calendar` para las próximas 4 semanas, saltándose toda fecha que ya
+tenga entrada — el dueño edita en vez de escribir desde cero, y tocar el botón dos veces no
+duplica nada), y **salud del sistema** (`alert-system-health`, horario:
 crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
 `sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
 disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
@@ -625,6 +648,19 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `p_referrer_bonus` para esto — **la reversión por cancelación tiene que descontar el monto
   de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 400
   otorgados y quedaban 350 puntos regalados por un pedido que nunca existió.
+  **Escalera de referidos (#55, 2026-08-30)**: encima de los 400 planos por CADA referido
+  convertido, hay un premio extra al 3.º (120 pts = bebida), 5.º (400 = otro 15CM) y 10.º
+  (800 = dos 15CM). Los escalones viven en `REFERRAL_MILESTONES` (`env.ts`) y **están
+  duplicados en `src/app/01-*` solo para pintarlos**, con `npm run parity` verificando los
+  dos lados — el cliente nunca suma puntos. Quién decide qué escalón toca es
+  `nextReferralMilestone()` (cálculo puro, probado en `tests-api/escalera-referidos.test.ts`,
+  incluido un test que falla si la escalera llega a costar más que el CAC más bajo medido de
+  Meta); quién lo escribe es la RPC `grant_referral_milestone`, cuyo
+  `referral_milestone_granted < p_tier` en el WHERE es lo que impide pagarlo dos veces si dos
+  referidos convierten en el mismo segundo. Esa columna es **monotónica a propósito**: una
+  cancelación baja `total_referrals` pero NO devuelve el escalón, porque los puntos pueden
+  estar ya canjeados y quitarlos dejaría el saldo en negativo; lo que sí impide es volver a
+  cobrarlo al recuperar el conteo.
 - **Método de trabajo real del dueño (confirmado 2026-08-15) — no asumir otro.** (1) **Nunca
   reparte**: el motorizado siempre es aparte y lo paga el cliente (ver punto siguiente).
   (2) **Cocina por TANDAS 1-2 veces por semana** — proteínas, salsas y vegetales quedan
