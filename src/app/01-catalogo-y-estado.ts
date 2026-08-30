@@ -1119,6 +1119,10 @@ var adminOrders=[],myOrders=[],adminOrdersTruncated=false;
 // (ambigua, duplicada, agrupable). null mientras no haya respuesta: la cola tiene que
 // funcionar igual con un servidor viejo que todavía no las manda.
 var adminAddressFlags=null;
+// #19 — El token del link que abre el MOTORIZADO para confirmar la entrega. No es una
+// sesión ni exige cuenta: quien reparte no tiene una. El token en sí es la autorización,
+// igual que `ref` para un invitado que quiere ver o cancelar su pedido.
+var deliveryTokenFromUrl=null,deliveryConfirmState=null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
@@ -1246,7 +1250,7 @@ var groupCodeFromUrl=null;
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
 // entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
 var wantsNewGroup=false;
-(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;
+(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();
   // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.

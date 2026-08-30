@@ -523,6 +523,8 @@ function renderScreen(){
     case'admin_complaints':h=sAdminComplaints();break;
     case'admin_prep':h=sAdminPrepList();break;
     case'admin_recipes':h=sAdminRecipes();break;
+    case'delivery_confirm':h=sDeliveryConfirm();break;
+    case'admin_cash':h=sAdminCashClose();break;
     case'admin_time_report':h=sAdminTimeReport();break;
     case'admin_problem_addresses':h=sAdminProblemAddresses();break;
     case'admin_marketing':h=sAdminMarketing();break;
@@ -2515,7 +2517,47 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     if(cust)doCreateGroupOrder();
     else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para organizar el pedido de tu oficina.');render();}
   }
+  // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
+  // único que importa de esta visita y se lleva la pantalla entera.
+  if(deliveryTokenFromUrl){
+    sndScreen='delivery_confirm';deliveryConfirmState={loading:true};render();
+    doConfirmDelivery();
+  }
 })();
+
+// #19 — Confirmar la entrega desde el link. Se dispara SOLO, sin botón: quien abre este
+// link está en la puerta con una mano ocupada, y pedirle un toque más es fricción que no
+// aporta nada — el link ya es la confirmación de que llegó.
+async function doConfirmDelivery(){
+  try{
+    var r=await api('confirm-delivery',{deliveryToken:deliveryTokenFromUrl});
+    deliveryConfirmState={ok:true,ref:r.ref,already:!!r.alreadyDelivered};
+  }catch(e){
+    deliveryConfirmState={ok:false,error:e.message};
+  }
+  render();
+}
+function sDeliveryConfirm(){
+  var d=deliveryConfirmState||{};
+  var caja=function(inner){
+    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#1E3932)">'
+      +'<div style="max-width:360px;width:100%;text-align:center">'+inner+'</div></div>';
+  };
+  if(d.loading){
+    return caja('<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em">CONFIRMANDO ENTREGA //</div>');
+  }
+  if(d.ok){
+    return caja('<div style="font-size:54px;line-height:1;margin-bottom:14px">&#9989;</div>'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">'+(d.already?'Ya estaba confirmado':'Entrega confirmada')+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Pedido '+esc(d.ref||'')+'.'+(d.already?' Alguien ya lo cerró antes — no hace falta hacer nada más.':' Gracias, ya está cerrado.')+'</div>');
+  }
+  // El error dice qué pasó y qué hacer. Un "algo salió mal" deja al motorizado llamando por
+  // teléfono, que es exactamente el trabajo que este link tenía que ahorrar.
+  return caja('<div style="font-size:54px;line-height:1;margin-bottom:14px">&#9888;&#65039;</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">No se pudo confirmar</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">'+esc(d.error||'')+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
+}
 
 // ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────
 //
@@ -2675,5 +2717,68 @@ function sAdminRecipes(){
       +'</div></div>';
     return s+'</div>';
   }).join('');
+  return h+'</div>';
+}
+
+// ── #40: CIERRE DE CAJA DIARIO ─────────────────────────────────────────────────────────
+//
+// El panel de negocio ya muestra "ingresos", y para ESTE negocio ese número miente por
+// omisión en tres formas: el delivery no es plata suya (va al motorizado), un pedido pagado
+// con crédito interno no trajo plata hoy (entró cuando se vendió el Plan Semanal), y la
+// tarjeta no llega entera (Culqi se queda su comisión). Cerrar la caja es separar eso.
+var cashCloseData=null;
+async function loadCashClose(){
+  sndScreen='admin_cash';busy=true;busyMsg='Cuadrando la caja...';render();
+  try{cashCloseData=await api('admin-cash-close',{token:token});}
+  catch(e){cashCloseData=null;}
+  busy=false;render();
+}
+function sAdminCashClose(){
+  var h=H('CIERRE DE CAJA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!cashCloseData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadCashClose()')+'</div>';
+  }
+  var d=cashCloseData;
+  var money=function(n){return 'S/'+(Math.round((Number(n)||0)*100)/100).toFixed(2);};
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:14px">Hoy · '+d.orders+' pedido'+(d.orders===1?'':'s')+' cobrado'+(d.orders===1?'':'s')+'</div>';
+
+  // El número grande es el que de verdad le queda al negocio, no el bruto. Poner el bruto
+  // arriba sería repetir la mentira que esta pantalla existe para deshacer.
+  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:'+GOLD+';line-height:1.1">'+money(d.businessRevenue)+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin-top:4px">TUYO, DESPUÉS DEL REPARTO Y LA COMISIÓN</div></div>';
+
+  var fila=function(label,valor,nota='',color=''){
+    return'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +'<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+label+'</div>'
+      +(nota?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:1px">'+nota+'</div>':'')+'</div>'
+      +'<div style="flex:0 0 auto;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:'+(color||'var(--sw-text,#FFFFFF)')+'">'+valor+'</div></div>';
+  };
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin-bottom:16px">';
+  h+=fila('Cobrado en total',money(d.gross),'Todo lo que pagaron los clientes, delivery incluido.');
+  h+=fila('− Pagado con crédito interno','−'+money(d.creditUsed),'Esa plata entró el día que compraron el Plan Semanal o la tarjeta de regalo. Hoy no llegó nada.','#ffb366');
+  h+=fila('− Comisión de Culqi','−'+money(d.cardFees),'Solo sobre lo que pasó por tarjeta ('+Math.round((d.culqiFeeRate||0)*1000)/10+'%).','#ffb366');
+  h+=fila('<b>Entró hoy</b>','<b>'+money(d.cashIn)+'</b>','',GOLD);
+  h+=fila('− Reparto (va al motorizado)','−'+money(d.deliveryPassThrough),'Pass-through: lo cobras y se lo entregas. Incluye el de los pedidos pagados con crédito — al motorizado se le paga igual.','#ffb366');
+  h+='</div>';
+
+  if(d.byMethod&&d.byMethod.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Por método //</div>';
+    h+=d.byMethod.map(function(m){
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:6px">'
+        +'<div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(m.label)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">'+m.orders+' pedido'+(m.orders===1?'':'s')+' · '+money(m.net)+' de comida</div></div>'
+        +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:'+GOLD+'">'+money(m.gross)+'</div></div>';
+    }).join('');
+  }
+
+  // Yape/Plin sin confirmar NO suma arriba, a propósito: el cliente dijo que pagó y nadie
+  // miró la cuenta. El día que sume una vez, esta pantalla deja de servir para cuadrar.
+  if(d.pendingConfirmation&&d.pendingConfirmation.orders){
+    h+='<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:14px 16px;margin-top:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:4px">SIN CONFIRMAR //</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+d.pendingConfirmation.orders+' pedido'+(d.pendingConfirmation.orders===1?'':'s')+' por '+money(d.pendingConfirmation.amount)+' esperan que confirmes el pago. <b>No están sumados arriba</b> — revísalos contra tu cuenta antes de darlos por cobrados.</div></div>';
+  }
+  h+=BTN('Actualizar //','loadCashClose()',true);
   return h+'</div>';
 }

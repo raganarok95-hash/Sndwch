@@ -130,7 +130,7 @@ otros dos caminos sí avisaban desde hace semanas.
 mientras el servidor reserva la receta completa: podía mandar a un cliente a un producto con
 un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la receta entera.
 
-## Lote E4 — Devuelve tu tiempo (el cuello real) — en curso
+## Lote E4 — Devuelve tu tiempo (el cuello real) ✅ HECHO (2026-08-30)
 
 | Orden | # | Qué | Estado |
 |---|---|---|---|
@@ -140,13 +140,37 @@ un topping todavía agotado, que el checkout iba a rechazar. Ahora mira la recet
 | 27 | 9 | Escalado de receta | ✅ "Quiero 40 porciones" → cantidades exactas, con la base al lado para poder notar si el factor está mal |
 | 28 | 3 | Temporizador de tanda | ✅ Cronómetro por etapa, con sonido y vibración: la app está en segundo plano mientras se cocina. **Los tiempos NO se escalan** — duplicar la tanda no duplica el braseado |
 | 29 | 4 | Etiquetas de tanda imprimibles | ✅ Una por porción, con código, gramaje, fecha de producción y fecha límite. La vida útil viene del **inventario**, no de la receta |
-| 30 | 40 | Cierre de caja diario | ⏳ pendiente |
-| 31 | 19 | Confirmación de entrega por link | ⏳ pendiente |
+| 30 | 40 | Cierre de caja diario | ✅ **El "ingreso del día" mentía por omisión de tres formas a la vez** — ver abajo |
+| 31 | 19 | Confirmación de entrega por link | ✅ El motorizado abre un link y el pedido se cierra con la hora REAL. Token de un solo uso: se quema al confirmar |
 | 32 | 17 | Agrupación de pedidos por cercanía | ✅ Misma zona + misma ventana de 45 min. La cercanía SIN la ventana de tiempo es el consejo que hace llegar tarde a uno de los dos |
 | 33 | 22 | Aviso de dos pedidos a la misma dirección | ✅ Con normalización real: "Av. España 123" y "av espana 123" son la misma puerta |
 | 34 | 21 | Detección de dirección ambigua | ✅ Con los motivos por separado — "sin número" y "sin referencia" se arreglan con preguntas distintas |
 | 35 | 29 | Detección de comprobante duplicado | ✅ **Era más grave que el título**: el comprobante es una captura que el admin aprueba mirándola, y nada comparaba una contra las anteriores. La misma imagen respaldaba tres pedidos |
-| 36 | 20 | Auto-cierre de pedidos sin calificar | ⏳ pendiente |
+| 36 | 20 | Auto-cierre de pedidos sin calificar | ✅ A los 14 días deja de pedirla. El servidor **sigue aceptándola**: una reseña tardía es igual de válida y rechazarla sería tirar información real |
+
+### El cierre de caja destapó tres formas de mentir con el mismo número
+
+El resumen diario ya mandaba "ingresos del día", y para ESTE negocio ese número está mal
+por omisión en tres direcciones que se acumulan:
+
+1. **El delivery no es plata del negocio.** Es pass-through: el cliente lo paga dentro del
+   mismo cobro y el dueño se lo entrega al motorizado. Sumarlo hace creer que se ganaron
+   entre S/6 y S/15 más por pedido.
+2. **Un pedido pagado con crédito interno no trajo plata hoy.** Ese dinero entró cuando se
+   vendió el Plan Semanal o la tarjeta de regalo, quizá semanas antes. Contarlo hoy lo
+   cuenta dos veces.
+3. **La tarjeta no llega entera.** Culqi se queda 5.5%.
+
+Un defecto que cometí y corregí en el mismo cambio: la primera versión descontaba solo el
+reparto de los pedidos que trajeron efectivo. **Al motorizado se le paga igual aunque el
+pedido se haya pagado con crédito**, así que eso dejaba fuera una salida de caja real y el
+número salía optimista — la única dirección en la que un cierre de caja no se puede
+equivocar. Hay un test que fija que un día de puro crédito da caja NEGATIVA por el monto del
+reparto, porque eso es exactamente lo que pasa.
+
+Lo sin confirmar (Yape/Plin donde el cliente dijo que pagó y nadie miró la cuenta) va aparte
+y **no suma**: el día que sume una vez, la pantalla deja de servir para cuadrar contra el
+banco.
 
 ### La decisión de fondo del bloque de cocina
 

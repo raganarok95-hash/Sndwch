@@ -227,6 +227,22 @@ function waAdminOrder(o){
 function waAdmin(ordId){
   waAdminOrder((adminOrders||[]).find(function(x){return x.id===ordId;}));
 }
+
+// #19 — Mandarle al motorizado el link que cierra el pedido solo.
+//
+// Va por WhatsApp porque es como se le habla al motorizado hoy (ver el despacho automático,
+// que sigue bloqueado por la API de WhatsApp Business). El link no exige cuenta ni sesión:
+// el token ES la autorización, y se quema al usarse.
+function waDeliveryLink(ordId){
+  var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
+  if(!o||!o.delivery_token){showToast('Este pedido todavía no tiene link — se crea al pasarlo a EN CAMINO.');return;}
+  var link=location.origin+location.pathname+'?entrega='+encodeURIComponent(o.delivery_token);
+  var msg='Pedido '+o.ref+' — '+(o.customer_name||'')+'\n'+(o.customer_address||'')
+    +'\n\nCuando lo entregues, abre este link y queda cerrado solo:\n'+link;
+  // Sin número del motorizado configurado, wa.me sin destinatario abre el selector de
+  // contactos: es un toque más, pero funciona sin pedirle al dueño que configure nada.
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
 // El bucket de comprobantes es privado — cada tap pide una URL firmada nueva de corta
 // duración en vez de guardar una URL fija (ver actAdminReceiptUrl), así nunca queda una
 // URL permanente/pública dando vueltas.

@@ -19,7 +19,7 @@ import {
   actGoogleAuth,
 } from "./actions/auth.ts";
 import {
-  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actAdminUpdateStatus,
+  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminUpdateStatus,
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
@@ -42,7 +42,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -117,6 +117,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "credit-gift": actCreditGift,
   "credit-lookup": actCreditLookup,
   "admin-orders": actAdminOrders,
+  "confirm-delivery": actConfirmDelivery,
   "admin-update-status": actAdminUpdateStatus,
   "admin-bulk-update-status": actAdminBulkUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
@@ -152,6 +153,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-health": actAdminHealth,
   "admin-batch-plan": actAdminBatchPlan,
   "alert-cook-now": actAlertCookNow,
+  "admin-cash-close": actAdminCashClose,
   "admin-recipes": actAdminRecipes,
   "admin-recipe-set": actAdminRecipeSet,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
