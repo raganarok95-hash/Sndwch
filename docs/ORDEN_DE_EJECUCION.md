@@ -206,15 +206,28 @@ bytes y el aviso al admin NOMBRA el otro pedido. No bloquea la subida a propósi
 grupal pagado con una sola transferencia es legítimo, y rechazarlo dejaría sin avisar a
 alguien que sí pagó.
 
-## Lote E5 — Base de datos de costo (desbloquea el bloque de margen)
+## Lote E5 — Base de datos de costo ✅ HECHO (2026-08-30)
 
-| Orden | # | Qué |
-|---|---|---|
-| 37 | 38 | Precio de insumo por compra |
-| 38 | 31 | Reporte diario de conciliación |
-| 39 | 34 | Reporte mensual de comisiones Culqi |
-| 40 | 39 | Pasivo de crédito emitido |
-| 41 | 35 | Alerta de margen por pedido bajo el umbral |
+| Orden | # | Qué | Estado |
+|---|---|---|---|
+| 37 | 38 | Precio de insumo por compra | ✅ Tabla `ingredient_purchases` (cada compra es un hecho con fecha) + costo por porción derivado de las recetas. **Si falta el precio de UN ingrediente no se muestra total** |
+| 38 | 31 | Reporte diario de conciliación | ✅ Dentro de `admin-culqi-report`: lo facturado contra lo que debería depositarse, más rechazos y cargos huérfanos |
+| 39 | 34 | Reporte mensual de comisiones Culqi | ✅ Mismo reporte. A 5.5% sobre un mes de S/6 000 en tarjeta son S/330 — más que los costos fijos del negocio |
+| 40 | 39 | Pasivo de crédito emitido | ✅ En el cierre de caja, **separado y etiquetado como acumulado**: mezclarlo con el día sería el mismo error que ese cierre vino a arreglar |
+| 41 | 35 | Alerta de margen por pedido bajo el umbral | ✅ Al crear el pedido, con freno de 6 h. **La primera versión no habría saltado nunca** — ver abajo |
+
+### El #35 casi queda como código muerto
+
+Mi primera versión calculaba el costo como el 45% del precio **ya descontado**. Con eso el
+margen da 55% por construcción y `belowFloor` no sería `true` jamás: una alerta viva en el
+código y muerta en la práctica, que además da la falsa sensación de estar vigilado. Lo
+detectó una prueba que escribí esperando que saltara y no saltó.
+
+El defecto real que el ítem describe es justo el contrario: **el cliente paga menos y el
+costo no baja**. La proteína, el pan y la salsa son los mismos con combo o sin él. Ahora el
+costo se ancla al **precio de carta** de lo que se armó (`priceCartItem` sobre los ítems del
+pedido) y el descuento sale entero del margen, que es lo que pasa de verdad. Hay una prueba
+que compara los dos cálculos y falla si alguien "simplifica" quitando el precio de carta.
 
 ## Lote E6 — Higiene técnica y cumplimiento
 
