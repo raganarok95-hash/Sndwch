@@ -186,8 +186,29 @@ async function doCancelMyOrder(ordId,ref){
     _cancelMyOrderInProgress=false;render();
   }catch(e){_cancelMyOrderInProgress=false;showToast(e.message);}
 }
+// #20 — A los RATING_WINDOW_DAYS días se deja de pedir la calificación.
+//
+// Sin esto la tarjeta de estrellas se arrastra para siempre en el historial: el cliente ya
+// no se acuerda de ese sándwich y la tarjeta se vuelve parte del ruido de la pantalla, lo
+// que además le quita fuerza a la del pedido reciente, que es la única que se va a
+// responder.
+//
+// El SERVIDOR sigue aceptando la calificación pasada la ventana, a propósito: si alguien
+// vuelve al historial y quiere calificar un pedido viejo, esa reseña es igual de válida y
+// rechazarla sería tirar información real. Lo que se cierra es el PEDIDO de calificación,
+// no la posibilidad — por eso este número vive solo acá y no necesita comprobación de
+// paridad con el backend.
+var RATING_WINDOW_DAYS=14;
+function ratingWindowOpen(o){
+  var t=new Date(o.delivered_at||o.updated_at||o.created_at).getTime();
+  if(!t||isNaN(t))return true; // sin fecha utilizable, mejor seguir preguntando que callar
+  return (Date.now()-t)<=RATING_WINDOW_DAYS*86400000;
+}
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
+  // La ventana se comprueba DESPUÉS de "ya calificó": quien sí calificó tiene que seguir
+  // viendo su agradecimiento y su código de referido aunque hayan pasado dos semanas.
+  if(ratedRefs().indexOf(o.ref)<0&&!ratingWindowOpen(o))return'';
   if(ratedRefs().indexOf(o.ref)>=0){
     // Justo tras calificar (el momento de mayor satisfacción real) se resurfacea el
     // código de referido en vez del simple "gracias" — antes vivía escondido en el

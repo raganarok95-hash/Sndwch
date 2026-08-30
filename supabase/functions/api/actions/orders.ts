@@ -1418,6 +1418,83 @@ export function queueAddressFlags(
 // primero; más angosta no agruparía nunca nada.
 const NEARBY_WINDOW_MINUTES = 45;
 
+// ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────
+//
+// Hoy el pedido pasa a ENTREGADO porque el dueño lo marca, y el dueño no está en la puerta:
+// está cocinando. Entre la entrega real y el toque del botón pasan minutos u horas, y en ese
+// hueco el cliente ve "EN CAMINO" cuando ya está comiendo, la alerta de pedido estancado
+// suena por un pedido que ya llegó, y `delivered_at` —que weekly-summary usa para comparar
+// contra la promesa de entrega— guarda la hora equivocada.
+//
+// El motorizado abre un link y el pedido se cierra solo, con la hora real.
+function newDeliveryToken(): string {
+  // 32 caracteres hex de crypto: no adivinable por fuerza bruta, y corto como para caber en
+  // un mensaje de WhatsApp sin que el link se corte en dos líneas.
+  return [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Acción PÚBLICA (sin token de sesión): quien lleva el pedido no tiene cuenta. El
+// `delivery_token` es la autorización — un identificador no adivinable que solo recibe quien
+// lleva ESE pedido, el mismo criterio con el que `ref` deja a un invitado ver o cancelar el
+// suyo.
+export async function actConfirmDelivery(b: any) {
+  const token = String(b.deliveryToken || "").trim();
+  // Se exige la forma exacta antes de tocar la base: así una petición con basura ni siquiera
+  // llega a consultar, y no sirve para sondear si un token existe por el tiempo de respuesta.
+  if (!/^[0-9a-f]{32}$/.test(token)) throw new ApiError("Link de entrega inválido.", 400);
+
+  const rows = await sbGet("orders", `delivery_token=eq.${encodeURIComponent(token)}&select=id,ref,status,customer_name,customer_phone,contact_phone,customer_email,total,delivery_fee,eta_minutes`);
+  const order = rows[0];
+  // Un token que ya se usó fue BORRADO, así que acá no aparece nada. Se responde lo mismo
+  // que para un token inventado a propósito: distinguirlos le diría a cualquiera si un link
+  // existió alguna vez.
+  if (!order) throw new ApiError("Este link ya se usó o no es válido.", 404);
+  if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+  if (order.status === "ENTREGADO") return { success: true, ref: order.ref, alreadyDelivered: true };
+  if (order.status !== "EN CAMINO") {
+    // El link solo cierra un pedido que de verdad salió. Si el estado retrocedió por
+    // cualquier razón, esto no puede saltarse la cocina.
+    throw new ApiError("Este pedido todavía no está en camino.", 400);
+  }
+
+  const ahora = new Date().toISOString();
+  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+    status: "ENTREGADO",
+    status_changed_at: ahora,
+    // La hora REAL de la entrega, escrita por quien entregó.
+    delivered_at: ahora,
+    // El token se quema acá: un link reenviado por WhatsApp no puede volver a cerrar (ni
+    // reabrir) el pedido más tarde.
+    delivery_token: null,
+    alerted_stuck_progress: false,
+  });
+
+  // El cliente se entera al instante, que es la mitad del valor de esto.
+  const phone = order.customer_phone || order.contact_phone;
+  if (phone) {
+    try {
+      await sendPushToPhone(phone, {
+        title: "🥪 ¡Tu pedido llegó!",
+        body: "Que lo disfrutes. Cuando puedas, cuéntanos cómo estuvo desde la app.",
+        url: "./index.html",
+        tag: "sndwch-delivered-" + order.ref,
+      });
+    } catch {
+      // un push fallido nunca puede impedir que el pedido quede cerrado
+    }
+  }
+  try {
+    await sendPushToAdmins({
+      title: "✅ Entregado",
+      body: `${order.ref} se confirmó desde el link del motorizado.`,
+      url: "./index.html",
+      tag: "sndwch-delivered-admin-" + order.ref,
+    });
+  } catch { /* best-effort */ }
+
+  return { success: true, ref: order.ref, alreadyDelivered: false };
+}
+
 export async function actAdminOrders(b: any) {
   await requireAdmin(b.token);
   const rows = await sbGet("orders", `status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=${ADMIN_ORDERS_LIMIT + 1}`);
@@ -1571,6 +1648,12 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   // ya puesta a mano nunca se pisa.
   if (status === "EN CAMINO" && upd.eta_minutes === undefined && !order.eta_minutes) {
     upd.eta_minutes = DEFAULT_ETA_BY_ZONE[String(order.delivery_zone || "")] ?? DEFAULT_ETA_FALLBACK;
+  }
+  // #19 — El token del link de confirmación se crea justo cuando el pedido SALE, que es
+  // cuando hay alguien a quien mandárselo. Antes de eso no existe, así que no hay nada que
+  // filtrar; después de confirmar se borra, así que el link es de un solo uso.
+  if (status === "EN CAMINO" && status !== order.status) {
+    upd.delivery_token = newDeliveryToken();
   }
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
   if (status !== order.status) {

@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
@@ -1855,6 +1855,123 @@ export function miseEnPlaceGroups(
   const otros = lista.filter((i) => i && !usados.has(i.code));
   if (otros.length) grupos.push({ key: "otros", label: "Otros", items: otros });
   return grupos;
+}
+
+// ── #40: CIERRE DE CAJA DIARIO ─────────────────────────────────────────────────────────
+//
+// El correo de resumen diario ya manda "ingresos del día", y ese número miente por omisión
+// para ESTE negocio en tres formas distintas:
+//
+//   1. **El delivery no es plata del negocio.** Es pass-through: el cliente lo paga dentro
+//      del mismo cobro y el dueño se lo entrega al motorizado. Sumarlo al ingreso hace
+//      creer que se ganó entre S/6 y S/15 más por pedido de los que se ganaron.
+//   2. **Un pedido pagado con crédito interno no trae plata hoy.** Ese dinero entró cuando
+//      se compró el Plan Semanal o la tarjeta de regalo, quizá semanas antes. Contarlo como
+//      caja del día lo cuenta dos veces.
+//   3. **La tarjeta no llega entera.** Culqi se queda su comisión, y a 5.5% sobre un día de
+//      S/400 son S/22 que nunca van a estar en la cuenta.
+//
+// Cuadrar la caja es exactamente separar esas cuatro cosas. Cálculo puro y probado
+// (tests-api/cierre-caja.test.ts) porque decide un número que el dueño va a usar para saber
+// si el día le alcanzó — y equivocarlo no produce ningún error, produce una decisión mala.
+export type CashClose = {
+  orders: number;
+  gross: number;
+  deliveryPassThrough: number;
+  byMethod: { method: string; label: string; orders: number; gross: number; net: number }[];
+  cardFees: number;
+  creditUsed: number;
+  cashIn: number;
+  businessRevenue: number;
+  pendingConfirmation: { orders: number; amount: number };
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  card: "Tarjeta (Culqi)",
+  yape: "Yape",
+  plin: "Plin",
+  credit: "Crédito interno",
+  cod: "Contra entrega",
+  reward: "Recompensa (gratis)",
+};
+
+export function cashClose(
+  orders: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: number | null; delivery_fee?: number | null }[],
+  culqiFeeRate: number,
+): CashClose {
+  const lista = (Array.isArray(orders) ? orders : []).filter((o) => o && o.status !== "CANCELADO");
+  const pagados = lista.filter((o) => o.payment_status === "paid");
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  const porMetodo = new Map<string, { orders: number; gross: number; net: number }>();
+  let gross = 0, delivery = 0, cardFees = 0, creditUsed = 0;
+  for (const o of pagados) {
+    const metodo = String(o.payment_method || "desconocido");
+    const total = num(o.total);
+    const fee = num(o.delivery_fee);
+    // La comida es el total MENOS el reparto. Es el único número que de verdad es venta.
+    const comida = Math.max(0, total - fee);
+    gross += total;
+    delivery += fee;
+    if (metodo === "credit") creditUsed += total;
+    // La comisión se calcula solo sobre lo que pasó por Culqi. Aplicarla a todo restaría
+    // 5.5% de los pagos por Yape, que no la pagan — y el error va en contra del dueño.
+    if (metodo === "card") cardFees += total * culqiFeeRate;
+    const acc = porMetodo.get(metodo) || { orders: 0, gross: 0, net: 0 };
+    acc.orders += 1;
+    acc.gross += total;
+    acc.net += comida;
+    porMetodo.set(metodo, acc);
+  }
+
+  // Lo que de verdad entró HOY: todo lo cobrado, menos lo que se pagó con crédito (esa plata
+  // entró otro día), menos lo que Culqi se queda.
+  const cashIn = gross - creditUsed - cardFees;
+  // Lo que le queda al negocio: lo anterior menos TODO el reparto del día.
+  //
+  // Todo, incluido el de los pedidos pagados con crédito. Al motorizado se le paga igual: no
+  // le importa de qué bolsillo salió la venta. Descontar solo el reparto de los pedidos que
+  // trajeron efectivo dejaría fuera una salida de caja real y el número saldría optimista —
+  // que es la dirección exacta en la que un cierre de caja no se puede equivocar.
+  const businessRevenue = cashIn - delivery;
+
+  // Yape/Plin sin confirmar no es caja: el cliente dijo que pagó y nadie miró la cuenta.
+  // Va aparte y no suma, porque el día que sume una vez deja de servir para cuadrar.
+  const pendientes = lista.filter((o) => o.payment_status !== "paid");
+
+  return {
+    orders: pagados.length,
+    gross: r2(gross),
+    deliveryPassThrough: r2(delivery),
+    byMethod: [...porMetodo.entries()]
+      .map(([method, v]) => ({ method, label: METHOD_LABELS[method] || method, orders: v.orders, gross: r2(v.gross), net: r2(v.net) }))
+      .sort((a, b) => b.gross - a.gross),
+    cardFees: r2(cardFees),
+    creditUsed: r2(creditUsed),
+    cashIn: r2(cashIn),
+    businessRevenue: r2(businessRevenue),
+    pendingConfirmation: {
+      orders: pendientes.length,
+      amount: r2(pendientes.reduce((a, o) => a + num(o.total), 0)),
+    },
+  };
+}
+
+export async function actAdminCashClose(b: any) {
+  await requireAdmin(b.token);
+  // Por defecto el día en curso en hora de Lima, que es lo que significa "cerrar la caja".
+  const desde = typeof b.since === "string" && b.since ? b.since : limaDayStartIso(new Date());
+  const hasta = typeof b.until === "string" && b.until ? b.until : new Date().toISOString();
+  const rows = await sbGet(
+    "orders",
+    `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}` +
+      `&select=payment_method,payment_status,status,total,delivery_fee&limit=5000`,
+  );
+  return { since: desde, until: hasta, culqiFeeRate: CULQI_FEE_RATE, ...cashClose(rows, CULQI_FEE_RATE) };
 }
 
 // ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────

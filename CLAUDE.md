@@ -126,6 +126,36 @@ terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive
 `secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
 que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
+## El "ingreso del día" no es lo que le queda al negocio (2026-08-30)
+
+`cashClose()` (`actions/admin.ts`, pantalla Admin // Cierre de caja) existe porque el
+ingreso bruto miente por omisión de tres formas a la vez en este negocio:
+
+1. **El delivery es pass-through**: lo cobra el pedido y se lo lleva el motorizado.
+2. **Un pedido pagado con crédito interno no trajo plata hoy** — entró cuando se vendió el
+   Plan Semanal o la tarjeta de regalo.
+3. **La tarjeta no llega entera**: `CULQI_FEE_RATE` (5.5%) se queda en el camino.
+
+**El reparto se descuenta ENTERO, incluido el de los pedidos pagados con crédito**: al
+motorizado se le paga igual. Descontar solo el de los que trajeron efectivo deja fuera una
+salida de caja real y el número sale optimista — la única dirección en la que un cierre de
+caja no se puede equivocar. Un día de puro crédito da caja negativa, y eso es correcto.
+
+Lo pendiente de confirmar (Yape/Plin donde el cliente dijo que pagó y nadie miró la cuenta)
+va aparte y **no suma**. El día que sume una vez, la pantalla deja de servir para cuadrar.
+
+## Confirmación de entrega por link (#19, 2026-08-30)
+
+`orders.delivery_token` se genera al pasar el pedido a EN CAMINO y **se borra al confirmar**:
+el link es de un solo uso, así que reenviarlo por WhatsApp no puede recerrar el pedido más
+tarde. La acción `confirm-delivery` es PÚBLICA a propósito — quien reparte no tiene cuenta, y
+el token no adivinable es la autorización, mismo criterio que `ref` para un invitado.
+
+Un token inexistente y uno ya usado responden **lo mismo**: distinguirlos le diría a
+cualquiera si un link existió alguna vez. Lo que sí gana el negocio es que `delivered_at` por
+fin lo escribe quien entrega y no quien se acuerda de tocar el botón un rato después — de esa
+hora dependen la alerta de pedido estancado y la comparación contra la promesa de entrega.
+
 ## Las recetas de producción viven en la base, no en el markdown (2026-08-30)
 
 `production_recipes` (append-only: publicar inserta fila nueva, la de mayor `id` por

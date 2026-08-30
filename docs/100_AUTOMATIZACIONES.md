@@ -84,9 +84,9 @@ bloque es el que más tiempo tuyo devuelve.
     salen en un viaje. Baja lo que le pagas al motorizado. · **HOY**
 18. **Despacho al motorizado por WhatsApp** — mensaje con dirección, referencia, teléfono y
     link de mapa, sin que lo escribas. · **DUEÑO** (necesita WhatsApp Business API)
-19. **Confirmación de entrega por link** — el motorizado toca un link único y el pedido pasa
+19. ✅ **Confirmación de entrega por link** — el motorizado toca un link único y el pedido pasa
     a ENTREGADO solo. Hoy lo marcas tú. · **HOY**
-20. **Auto-cierre de pedidos sin calificar** — a los N días deja de pedir calificación en vez
+20. ✅ **Auto-cierre de pedidos sin calificar** — a los N días deja de pedir calificación en vez
     de arrastrar la tarjeta para siempre. · **HOY**
 21. ✅ **Detección de dirección ambigua** — sin número, sin referencia, o repetida con otra
     distinta. Se pregunta ANTES de despachar, no cuando el motorizado está perdido. · **HOY**
@@ -127,7 +127,7 @@ bloque es el que más tiempo tuyo devuelve.
     ser un literal escrito a mano. Es la base del 37 y del 7. · **HOY**
 39. **Pasivo de crédito emitido** — cuánto crédito interno hay vivo sin consumir (Plan
     Semanal, tarjetas de regalo). Es deuda tuya en comida, y hoy nadie la mira. · **HOY**
-40. **Cierre de caja diario** — cuánto entró por tarjeta, cuánto por Yape/Plin, cuánto en
+40. ✅ **Cierre de caja diario** — cuánto entró por tarjeta, cuánto por Yape/Plin, cuánto en
     crédito, cuadrado contra los pedidos del día. · **HOY**
 
 ## D. Marketing y adquisición
