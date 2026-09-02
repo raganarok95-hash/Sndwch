@@ -412,6 +412,35 @@ function sAdminHome(){
 // Banner de las tres señales de dirección de la cola (#22 duplicada, #21 ambigua,
 // #17 agrupable). Devuelve '' cuando no hay nada que decir — una franja permanente que casi
 // siempre dice "todo bien" se deja de leer, y entonces no se lee el día que dice otra cosa.
+// #28 — El veredicto de la lectura del comprobante.
+//
+// Tres estados y ninguno dice "pagado": el pago lo confirma el dueño mirando su cuenta. Lo
+// que esto ahorra es entrecerrar los ojos para comparar el monto y acordarse de si esa
+// captura ya la vio.
+//
+// El caso "no se pudo leer" se muestra igual que los otros dos, a propósito. Callarlo haría
+// que la ausencia de aviso pareciera aprobación — y esa es exactamente la confusión que
+// convierte una ayuda en un riesgo.
+function receiptOcrHTML(o){
+  var st=receiptOcrState[o.ref];if(!st)return '';
+  var caja=function(color,texto){
+    return '<div style="background:rgba('+color+',.12);border:1px solid rgba('+color+',.35);border-radius:8px;padding:9px 12px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+texto+'</div>';
+  };
+  if(st.loading)return caja('168,200,176','Leyendo el comprobante…');
+  if(st.error)return caja('168,200,176','No se pudo leer el comprobante ('+esc(st.error)+'). Revísalo a ojo, como siempre.');
+  var c=st.checks||{},f=st.fields||{};
+  var money=function(n){return 'S/'+(Math.round((Number(n)||0)*100)/100).toFixed(2);};
+  if(c.duplicateOpRefs&&c.duplicateOpRefs.length){
+    return caja('255,85,85','<b>Esta misma operación ya respalda '+c.duplicateOpRefs.map(esc).join(', ')+'.</b> Una transferencia no puede pagar dos pedidos — compáralos antes de confirmar.');
+  }
+  if(c.verdict==='ok'){
+    return caja('37,211,102','El monto de la captura ('+money(c.amountRead)+') coincide con el pedido'+(f.opNumber?' · op. '+esc(f.opNumber):'')+(f.dateText?' · '+esc(f.dateText):'')+'. <b>Igual confirma contra tu cuenta</b>: una captura se puede editar.');
+  }
+  if(c.verdict==='revisar'){
+    return caja('255,85,85','<b>La captura dice '+money(c.amountRead)+' y el pedido es '+money(c.expected)+'.</b> Revísalo antes de confirmar.');
+  }
+  return caja('255,165,0','No se reconoció el monto en la captura. Compáralo a ojo — que no se haya leído no significa que esté bien.');
+}
 function addressFlagsBanner(){
   var f=adminAddressFlags;if(!f)return '';
   var filas=[];
@@ -519,6 +548,9 @@ function addressFlagsBanner(){
         // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
         // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
         +(o.receipt_path?'<button onclick="viewReceipt(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px;margin-bottom:8px">'+iconTxt('clip','Ver comprobante','#A8C8B0')+'</button>':'')
+        // #28 — Lo que se leyó del comprobante. Va PEGADO al botón, que es donde el dueño
+        // está mirando cuando decide si confirma el pago.
+        +(o.receipt_path?receiptOcrHTML(o):'')
         // Imprimir/WhatsApp son acciones secundarias (se usan, pero no en cada pedido) —
         // antes ocupaban una fila completa cada una, alargando la tarjeta innecesariamente.
         // Una fila de 2 columnas compactas deja la acción principal (avanzar estado) como

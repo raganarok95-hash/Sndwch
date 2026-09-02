@@ -19,7 +19,7 @@ import {
   actGoogleAuth,
 } from "./actions/auth.ts";
 import {
-  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminUpdateStatus,
+  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actAdminUpdateStatus,
   actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
@@ -118,6 +118,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "credit-lookup": actCreditLookup,
   "admin-orders": actAdminOrders,
   "confirm-delivery": actConfirmDelivery,
+  "admin-receipt-ocr": actAdminReceiptOcr,
   "admin-update-status": actAdminUpdateStatus,
   "admin-bulk-update-status": actAdminBulkUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,

@@ -261,10 +261,28 @@ Ver `docs/PENDIENTE_DEL_DUENO.md`. Números: 13, 18, 41, 42, 43, 45, 46, 47, 53,
 
 Casi todos cuelgan de una sola cosa: **los secrets de Meta**.
 
-## Fuera de lote — con costo, decisión aparte
+## Fuera de lote — resuelto SIN COSTO ✅ (2026-08-30)
 
-- **28** (OCR del voucher de Yape). Con el volumen de la primera semana, confirmar a mano
-  es más rápido que integrar y pagar un servicio. Retomar cuando el volumen lo justifique.
+- **28** (lectura del comprobante de Yape). Estaba archivado por costo; el dueño pidió
+  buscar una opción gratuita y la hay: **Tesseract.js**, OCR en el navegador — sin cuenta,
+  sin API key, sin servicio externo y sin costo por uso. Corre SOLO en el panel del dueño y
+  SOLO al abrir un comprobante, así que los ~3 MB del motor no los descarga ningún cliente.
+
+  **Lo que NO hace, y no puede hacer: confirmar el pago.** Una captura se edita en dos
+  minutos, así que leerla automáticamente solo confirmaría una falsificación más rápido. El
+  veredicto verde dice explícitamente "igual confirma contra tu cuenta", y hay un test que
+  falla si ese texto desaparece.
+
+  **Lo que sí hace** son los tres chequeos que el dueño haría a ojo: el monto contra el
+  total del pedido, la fecha, y el **número de operación** — que detecta la MISMA
+  transferencia usada en dos pedidos. Eso es estrictamente más fuerte que el hash de la
+  imagen (#29): recapturar la pantalla cambia el hash y no el número.
+
+  **Lo que quedó sin verificar**: los rótulos que busca el parser ("N° de operación",
+  "Monto"...) se escribieron sin poder contrastarlos contra una constancia real de Yape —
+  se acabó el límite de búsquedas web a mitad de la investigación. El parser acepta varias
+  formas de decir lo mismo y **nunca inventa un dato**: lo que no reconoce vuelve `null` y
+  la pantalla lo dice. Anotado como P20 para afinarlo con una captura real.
 
 ---
 

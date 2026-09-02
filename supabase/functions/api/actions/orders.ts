@@ -1524,6 +1524,143 @@ async function alertLowMarginOrder(p: FinalizeOrderParams): Promise<void> {
   }
 }
 
+// ── #28: LECTURA DEL COMPROBANTE (OCR), SIN COSTO ──────────────────────────────────────
+//
+// El OCR corre en el NAVEGADOR del admin con Tesseract.js: sin cuenta, sin API key, sin
+// servicio externo y sin costo por uso. Los ~3 MB del motor solo los descarga el dueño la
+// primera vez que abre un comprobante — ningún cliente los ve.
+//
+// ⚠ ESTO NO CONFIRMA UN PAGO, Y NO PUEDE. Una captura se edita en dos minutos; leerla
+// automáticamente solo confirmaría una falsificación más rápido. La confirmación sigue
+// siendo del admin mirando su cuenta. Lo que esto hace es los tres chequeos que él haría a
+// ojo — monto, fecha y número de operación — para que no tenga que entrecerrar los ojos.
+//
+// El número de operación es lo verdaderamente nuevo: detecta la MISMA transferencia usada
+// en dos pedidos. Es más fuerte que el hash de la imagen (#29), porque volver a capturar la
+// pantalla cambia el hash y no el número.
+
+export type ReceiptFields = { amount: number | null; opNumber: string | null; dateText: string | null };
+
+// Parser tolerante del texto que devuelve el OCR.
+//
+// ⚠ LOS RÓTULOS SON BEST-EFFORT. No se pudo verificar contra una constancia real de Yape al
+// escribir esto, así que se aceptan varias formas de decir lo mismo y NUNCA se inventa un
+// dato: lo que no se reconoce vuelve como `null` y la pantalla lo dice. Cuando el dueño
+// mande una captura real (ver P20 en docs/PENDIENTE_DEL_DUENO.md), esta lista se ajusta con
+// una línea — el resto del mecanismo no cambia.
+export function parseTransferReceipt(text: string): ReceiptFields {
+  const raw = String(text || "");
+  // El OCR mete saltos y espacios raros; se normaliza para buscar, nunca para mostrar.
+  const t = raw.replace(/\s+/g, " ").trim();
+
+  // MONTO. Se busca la cifra pegada a un símbolo de soles, que es como aparece en todas las
+  // apps de pago peruanas. Sin el símbolo NO se toma cualquier número suelto: un número de
+  // operación de 8 dígitos se confundiría con un monto de S/12345678.
+  let amount: number | null = null;
+  const montos = [...t.matchAll(/(?:S\/\.?|s\/\.?|PEN)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+(?:[.,][0-9]{1,2})?)/g)];
+  if (montos.length) {
+    // Si hay varias cifras (comisión, saldo), manda la MAYOR: en una constancia de
+    // transferencia el monto enviado es el número grande, y quedarse con el primero tomaría
+    // un saldo o una comisión.
+    const valores = montos
+      .map((m) => {
+        const limpio = m[1].replace(/\.(?=[0-9]{3}\b)/g, "").replace(/,(?=[0-9]{3}\b)/g, "").replace(",", ".");
+        return Number(limpio);
+      })
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (valores.length) amount = Math.round(Math.max(...valores) * 100) / 100;
+  }
+
+  // NÚMERO DE OPERACIÓN. Se acepta cualquiera de los rótulos que usan las apps peruanas.
+  // Solo se toma un número que venga DETRÁS de un rótulo: agarrar el dígito más largo del
+  // texto tomaría un número de teléfono o parte de la fecha.
+  let opNumber: string | null = null;
+  const op = t.match(/(?:n[°ºo]?\.?\s*de\s*operaci[oó]n|nro\.?\s*de\s*operaci[oó]n|c[oó]digo\s*de\s*operaci[oó]n|operaci[oó]n|constancia|comprobante)\D{0,12}([0-9]{5,20})/i);
+  if (op) opNumber = op[1];
+
+  // FECHA. Se guarda como TEXTO tal como se leyó, no como Date: interpretar 03/09 como
+  // marzo o setiembre según el runtime metería un error de meses en un dato que existe
+  // justamente para detectar comprobantes viejos.
+  let dateText: string | null = null;
+  const fecha = t.match(/([0-3]?[0-9][\/\-. ](?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-z]*[\/\-. ][0-9]{2,4})/i);
+  if (fecha) dateText = fecha[1].trim();
+
+  return { amount, opNumber, dateText };
+}
+
+// Qué decirle al admin sobre lo que se leyó. Puro y probado: decide un VEREDICTO sobre
+// dinero, y equivocarlo en cualquiera de las dos direcciones es caro — un falso "todo bien"
+// deja pasar un pago que no llegó, y un falso "ojo" enseña a ignorar el aviso.
+export type ReceiptChecks = {
+  amountMatches: boolean | null;
+  amountRead: number | null;
+  expected: number;
+  duplicateOpRefs: string[];
+  verdict: "ok" | "revisar" | "sin_lectura";
+};
+
+export function receiptChecks(
+  fields: ReceiptFields,
+  expectedTotal: number,
+  otherRefsWithSameOp: string[],
+): ReceiptChecks {
+  const expected = Math.round((Number(expectedTotal) || 0) * 100) / 100;
+  const leido = fields?.amount ?? null;
+  // Tolerancia de un céntimo: el OCR puede leer una coma como punto y el total del pedido
+  // lleva decimales desde los precios .90.
+  //
+  // La comparación va en CÉNTIMOS ENTEROS, no en soles: `Math.abs(26.91 - 26.90)` da
+  // 0.010000000000001563 en punto flotante y no pasa un `<= 0.01`. Es el mismo motivo por el
+  // que el servidor compara totales con `Math.round(total * 100)` en el checkout.
+  const amountMatches = leido === null
+    ? null
+    : Math.abs(Math.round(leido * 100) - Math.round(expected * 100)) <= 1;
+  const duplicateOpRefs = (Array.isArray(otherRefsWithSameOp) ? otherRefsWithSameOp : []).filter(Boolean);
+  // Un duplicado manda sobre todo lo demás: aunque el monto cuadre, la misma transferencia
+  // no puede respaldar dos pedidos.
+  const verdict: ReceiptChecks["verdict"] = duplicateOpRefs.length
+    ? "revisar"
+    : amountMatches === null
+    ? "sin_lectura"
+    : amountMatches
+    ? "ok"
+    : "revisar";
+  return { amountMatches, amountRead: leido, expected, duplicateOpRefs, verdict };
+}
+
+// Guarda lo que el navegador del admin leyó del comprobante y devuelve el veredicto.
+//
+// Requiere sesión de ADMIN: el cliente nunca ejecuta esto, así que no hay forma de que
+// alguien mande un OCR inventado para que su pedido se vea bien. Y aunque lo hiciera, no
+// confirmaría nada — el pago lo sigue confirmando una persona.
+export async function actAdminReceiptOcr(b: any) {
+  await requireAdmin(b.token);
+  const ref = String(b.ref || "").trim().slice(0, 40);
+  if (!ref) throw new ApiError("Falta el pedido.", 400);
+  const texto = String(b.text || "").slice(0, 4000);
+
+  const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total`);
+  const order = rows[0];
+  if (!order) throw new ApiError("Pedido no encontrado.", 404);
+
+  const fields = parseTransferReceipt(texto);
+  let otras: string[] = [];
+  if (fields.opNumber) {
+    const previos = await sbGet(
+      "orders",
+      `receipt_op_number=eq.${encodeURIComponent(fields.opNumber)}&select=ref&limit=20`,
+    );
+    otras = previos.map((r: any) => String(r.ref || "")).filter((r: string) => r && r !== ref);
+  }
+  const checks = receiptChecks(fields, Number(order.total) || 0, otras);
+
+  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+    receipt_ocr: { ...fields, readAt: new Date().toISOString() },
+    receipt_op_number: fields.opNumber,
+  });
+  return { success: true, fields, checks };
+}
+
 // ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────
 //
 // Hoy el pedido pasa a ENTREGADO porque el dueño lo marca, y el dueño no está en la puerta:

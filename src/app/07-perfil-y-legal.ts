@@ -250,7 +250,59 @@ async function viewReceipt(ordId){
   try{
     var r=await api('admin-receipt-url',{token:token,orderId:ordId});
     window.open(r.url,'_blank');
+    // #28 — Además de abrir la imagen, se lee sola. Va DESPUÉS de abrirla y sin await: el
+    // dueño ya está mirando el comprobante mientras el OCR trabaja, y si el OCR falla no
+    // pasa nada — la imagen se abrió igual, que es el comportamiento de siempre.
+    readReceipt(ordId,r.url);
   }catch(e){showToast(e.message);}
+}
+
+// ── #28: LECTURA DEL COMPROBANTE, SIN COSTO ────────────────────────────────────────────
+//
+// Tesseract.js corre en ESTE navegador: sin cuenta, sin API key, sin servicio externo, sin
+// costo por uso. Se carga bajo demanda y solo acá, así que los ~3 MB del motor los descarga
+// el dueño la primera vez que abre un comprobante — ningún cliente los ve nunca.
+//
+// ⚠ NO CONFIRMA EL PAGO, y no puede: una captura se edita en dos minutos. Hace los tres
+// chequeos que el dueño haría a ojo (monto, fecha, número de operación) para que no tenga
+// que entrecerrarlos. La confirmación sigue siendo suya, mirando su cuenta.
+var receiptOcrState={},_tesseractPromise=null;
+// Versión FIJA en la URL a propósito: un "@6" flotante puede cambiar de comportamiento un
+// martes cualquiera sin que nadie toque este repo.
+var TESSERACT_CDN='https://cdn.jsdelivr.net/npm/tesseract.js@6.0.0/dist/tesseract.min.js';
+function loadTesseract(){
+  if((window as any).Tesseract)return Promise.resolve((window as any).Tesseract);
+  if(_tesseractPromise)return _tesseractPromise;
+  _tesseractPromise=new Promise(function(resolve,reject){
+    var sc=document.createElement('script');
+    sc.src=TESSERACT_CDN;
+    sc.onload=function(){resolve((window as any).Tesseract);};
+    // Sin conexión, con el CDN caído o con un bloqueador de por medio, esto rechaza y el
+    // comprobante se sigue viendo igual que siempre. El OCR es un extra, nunca un requisito.
+    sc.onerror=function(){_tesseractPromise=null;reject(new Error('No se pudo cargar el lector.'));};
+    document.head.appendChild(sc);
+  });
+  return _tesseractPromise;
+}
+async function readReceipt(ordId,url){
+  var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
+  if(!o)return;
+  receiptOcrState[o.ref]={loading:true};render();
+  try{
+    var T=await loadTesseract();
+    // 'spa' — los rótulos de la constancia están en español. El motor descarga el modelo del
+    // idioma la primera vez y lo deja en caché del navegador.
+    var res=await T.recognize(url,'spa');
+    var texto=(res&&res.data&&res.data.text)||'';
+    // El texto se manda al SERVIDOR para interpretarlo: ahí vive el parser probado, y ahí
+    // está la tabla contra la que se comprueba si esa misma operación ya respaldó otro
+    // pedido — algo que este navegador no puede saber solo.
+    var r=await api('admin-receipt-ocr',{token:token,ref:o.ref,text:texto});
+    receiptOcrState[o.ref]={fields:r.fields,checks:r.checks};
+  }catch(e){
+    receiptOcrState[o.ref]={error:e.message||'No se pudo leer el comprobante.'};
+  }
+  render();
 }
 // La ETA ahora la pone el servidor según la zona (ver DEFAULT_ETA_BY_ZONE en orders.ts),
 // pero hay pedidos que se salen de la norma: tráfico, una dirección difícil, un motorizado

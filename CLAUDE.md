@@ -126,6 +126,28 @@ terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive
 `secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
 que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
+## Leer el comprobante NO es confirmar el pago (#28, 2026-08-30)
+
+El OCR del comprobante de Yape/Plin corre con **Tesseract.js en el navegador del admin**:
+sin cuenta, sin API key, sin servicio externo y sin costo por uso. Se carga bajo demanda
+(`loadTesseract()` en `src/app/07-*`) y solo al abrir un comprobante, así que los ~3 MB del
+motor no los descarga ningún cliente. Si el CDN no responde, el comprobante se abre igual —
+el OCR es un extra y hay un test que lo fija.
+
+**Una captura se edita en dos minutos, así que esto nunca confirma un pago.** El veredicto
+verde dice explícitamente "igual confirma contra tu cuenta" y `tests/comprobante-ocr.spec.ts`
+falla si ese texto desaparece. El estado "no se pudo leer" se muestra igual que los demás a
+propósito: callarlo haría que la ausencia de aviso pareciera aprobación.
+
+Lo que sí aporta es el **número de operación**: detecta la misma transferencia usada en dos
+pedidos, y eso el hash de la imagen (#29) no lo puede ver, porque recapturar la pantalla
+cambia el hash y no el número.
+
+**Los rótulos del parser son best-effort y están sin verificar** contra una constancia real
+(se acabó el límite de búsquedas web a mitad de la investigación). `parseTransferReceipt`
+acepta varias formas de cada rótulo y **nunca inventa**: lo que no reconoce vuelve `null`.
+Ajustar la lista con una captura real es P20 en `docs/PENDIENTE_DEL_DUENO.md`.
+
 ## El costo del menú deja de ser un literal de markdown (#38, 2026-08-30)
 
 `ingredient_purchases` guarda **cada compra como un hecho con fecha** (cantidad, unidad, lo

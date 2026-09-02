@@ -40,6 +40,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | P17 | **Revisar cuántos días aguanta de verdad cada insumo tuyo** en la pantalla de Inventario | La alerta de caducidad (#5) ya funciona, pero arranca con **3 días** para todo: es el extremo conservador de la guía de USDA para carne y pollo cocidos en frío, no una medición de TUS recetas. Un encurtido o una salsa aguantan bastante más, y dejarlos en 3 hace que la alarma suene por comida buena — que es la forma en que una alarma deja de mirarse. Se cambia por insumo desde el panel, sin código |
 | P12 | **Régimen tributario y formato que pide tu contador** | #84 — exportación mensual |
 | P13 | **Decidir sobre WhatsApp Business API** (con costo) | #18 — despacho automático al motorizado |
+| P20 | **Mándame una captura real de una constancia de Yape** (tapando lo que quieras menos los rótulos) | El lector de comprobantes (#28) ya funciona y **no cuesta nada** — corre en tu navegador, sin cuenta ni servicio externo. Pero los rótulos que busca ("N° de operación", "Monto"...) los escribí **sin poder verificarlos contra una constancia real**: se me acabó el límite de búsquedas web. Con una captura tuya ajusto la lista en una línea. Mientras tanto, si no reconoce algo lo dice claro en vez de inventarlo |
 | P19 | **Revisar el contenido de marketing antes de publicarlo la primera vez** | Tres números del texto que copias a Instagram/WhatsApp estaban **desactualizados**: decía que referir daba "50 puntos a ambos" (son 400 para ti y 120 para tu invitado), que el menú secreto se abre "desde tu 5to pedido" (son 3) y repetía los precios del Plan Semanal a mano. Ya está corregido y de ahora en adelante esos números salen solos del código, así que no se vuelve a desincronizar. Lo que te pido es una lectura tuya de los 8 textos (panel → MARKETING) antes del primer post: son promesas públicas y quien las firma eres tú |
 
 ## 4. Seguridad — pendiente viejo
@@ -65,10 +66,11 @@ tengas que conseguir nada. Otras **31 necesitan historial real de ventas**, así
 que falte algo tuyo: falta que el negocio opere unas semanas.
 
 Del lote E1 (respaldo, restauración, humo en producción y caducidad de tanda) **no quedó
-nada pendiente de tu lado**: ya está funcionando. De los lotes E2 y E3 salieron tres cosas
+nada pendiente de tu lado**: ya está funcionando. De los lotes E2 a E5 salieron cuatro cosas
 para ti y **ninguna bloquea nada**: P17 (la alerta ya opera con el valor conservador), P18
-(el regalo de cumpleaños ya cambió; solo dime si lo quieres al revés) y P19 (una lectura
-tuya del contenido de marketing, ya corregido).
+(el regalo de cumpleaños ya cambió; solo dime si lo quieres al revés), P19 (una lectura tuya
+del contenido de marketing, ya corregido) y P20 (una captura de Yape para afinar el lector
+de comprobantes, que ya funciona).
 
 Solo **11** están bloqueadas por esta lista. Son las de la sección 2 y 3 de arriba, y casi
 todas cuelgan de una sola cosa: **los secrets de Meta (P5)**.

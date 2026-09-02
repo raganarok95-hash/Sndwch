@@ -102,7 +102,7 @@ bloque es el que más tiempo tuyo devuelve.
     acabó a las 5pm: avisar mientras todavía se puede cocinar o llamar al cliente. · **HECHO 2026-08-29 (`alert-scheduled-shortfall`, cada hora)**
 27. **Recordatorio al cliente 1h antes** — de su pedido programado, para que esté en casa.
     Reduce entregas fallidas. · **HECHO 2026-08-29 (segundo barrido en `alert-scheduled-orders`, 60 min antes)**
-28. **Lectura del voucher de Yape** — OCR del comprobante que ya sube el cliente, para
+28. ✅ **Lectura del voucher de Yape** — OCR del comprobante que ya sube el cliente, para
     proponer la confirmación en vez de teclearla. · **$** (servicio de OCR)
 29. ✅ **Detección de comprobante duplicado** — el mismo voucher usado en dos pedidos. · **HOY**
 30. **Alerta de nota de cocina inusual** — "sin cebolla", "soy alérgico": se resalta en la
