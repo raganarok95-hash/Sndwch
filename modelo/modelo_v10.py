@@ -36,7 +36,12 @@ CAP_POR_PERSONA = 40       # [MEDIDO] cocina por tandas, en servicio solo arma
 SUELDO          = 1500.0   # [DECISIÓN] dueño 2026-09-02
 COSTO_REFERIDO  = 7.65     # [MEDIDO] CLAUDE.md: insumo del 15CM de R06 + bebida de R05
 ADS_BASE        = 2000.0   # [DECISIÓN] fijos al mes desde el inicio, del bolsillo
-APERTURA        = date(2026, 9, 7)
+# [MEDIDO] dueño 2026-09-02: la apertura se movió por trámites de permisos a "la segunda
+# semana de octubre como máximo". Se toma el extremo TARDÍO (12 de octubre) porque es el que
+# el dueño puso como techo, y un modelo que asume la fecha optimista adelanta toda la curva
+# de ingresos sin que nada lo avise. El 12 es lunes y la tienda cierra los lunes, así que el
+# primer día operativo real es el martes 13.
+APERTURA        = date(2026, 10, 12)
 CERRADO_WEEKDAY = 0        # [MEDIDO] lunes cerrado
 
 # ── El objetivo, como camino ───────────────────────────────────────────────────────────
@@ -79,11 +84,11 @@ def dias_operativos(anio, mes_, desde=None):
     return n
 
 
-MESES_CAL = [(2026, 9), (2026, 10), (2026, 11), (2026, 12), (2027, 1), (2027, 2),
-             (2027, 3), (2027, 4), (2027, 5), (2027, 6), (2027, 7), (2027, 8)]
-DIAS = [dias_operativos(2026, 9, APERTURA)] + [dias_operativos(a, m) for a, m in MESES_CAL[1:]]
-ETIQ = ['sep-26', 'oct-26', 'nov-26', 'dic-26', 'ene-27', 'feb-27',
-        'mar-27', 'abr-27', 'may-27', 'jun-27', 'jul-27', 'ago-27']
+MESES_CAL = [(2026, 10), (2026, 11), (2026, 12), (2027, 1), (2027, 2), (2027, 3),
+             (2027, 4), (2027, 5), (2027, 6), (2027, 7), (2027, 8), (2027, 9)]
+DIAS = [dias_operativos(2026, 10, APERTURA)] + [dias_operativos(a, m) for a, m in MESES_CAL[1:]]
+ETIQ = ['oct-26', 'nov-26', 'dic-26', 'ene-27', 'feb-27', 'mar-27',
+        'abr-27', 'may-27', 'jun-27', 'jul-27', 'ago-27', 'sep-27']
 HORIZONTE = len(DIAS)
 
 
@@ -487,7 +492,7 @@ if PLAN_ELEGIDO:
   otro), retención media. Probabilidad de sostener el camino: {e_p['p_camino']*100:.0f}%.
 
   ESTOS SON PUNTOS DE CONTROL, no un pronóstico. Si el mes 1 real no se parece a la fila de
-  sep-26, el plan no está atrasado: está equivocado, y hay que rehacerlo con el dato nuevo.
+  {ETIQ[0]}, el plan no está atrasado: está equivocado, y hay que rehacerlo con el dato nuevo.
 """)
     print(f"  {'mes':<9}{'nuevos':>9}{'pedidos':>9}{'ped/día':>9}{'pers':>6}"
           f"{'neto P10':>11}{'neto P50':>11}   meta")

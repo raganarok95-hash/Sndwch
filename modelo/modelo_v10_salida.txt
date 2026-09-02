@@ -54,14 +54,14 @@
 
   mes        mejor ads   neto P50   ped/día  personas   objetivo
   --------------------------------------------------------------------
-  sep-26         1,000       -828       2.4         1   —
-  oct-26         2,000       -530       5.0         1   —
-  nov-26        12,000        806      36.3         1   S/4,000  ✗ NO LLEGA
-  dic-26        12,000      2,412      38.1         1   S/4,000  ✗ NO LLEGA
-  ene-27        24,000      3,679      74.4         2   S/4,000  ✗ NO LLEGA
-  feb-27         8,000      3,840      34.6         1   S/5,000  ✗ NO LLEGA
-  mar-27         8,000      4,004      32.1         1   S/5,000  ✗ NO LLEGA
-  abr-27         8,000      4,308      32.9         1   S/5,000  ✗ NO LLEGA
+  oct-26         1,000       -828       2.8         1   —
+  nov-26         2,000       -530       5.4         1   —
+  dic-26        12,000        859      33.6         1   S/4,000  ✗ NO LLEGA
+  ene-27        12,000      2,412      38.1         1   S/4,000  ✗ NO LLEGA
+  feb-27        16,000      3,187      59.5         2   S/4,000  ✗ NO LLEGA
+  mar-27         8,000      3,840      31.9         1   S/5,000  ✗ NO LLEGA
+  abr-27         8,000      4,004      32.1         1   S/5,000  ✗ NO LLEGA
+  may-27         8,000      4,308      32.9         1   S/5,000  ✗ NO LLEGA
 
   ►► EL MES 3 NO DA, Y NO ES CUESTIÓN DE PRESUPUESTO. Con el CAC medio, el techo de nov-26
      está muy por debajo de S/4,000 elijas el gasto que elijas. La razón es la del cuadro
@@ -80,12 +80,12 @@
 
   escenario                             ads ópt.  reinv.   neto m3   neto m6  neto m12  P(camino)
   -----------------------------------------------------------------------------------------------
-  CPM S/5 · CAC S/10.51 · viral 0.3       12,000     40%     8,418    15,787     9,864        18%
-  CPM S/5 · CAC S/10.51 · viral 1.0        8,000     60%    13,555    25,341    14,206        22%
-  CPM S/8.5 · CAC S/17.87 · viral 0.3      6,000     20%       139     3,691     3,632         0%
-  CPM S/8.5 · CAC S/17.87 · viral 1.0     12,000     40%     3,544     8,794     5,880         1%
+  CPM S/5 · CAC S/10.51 · viral 0.3        6,000     80%     7,056    16,955     2,827         0%
+  CPM S/5 · CAC S/10.51 · viral 1.0        4,000     80%    11,089    30,232    10,772         3%
+  CPM S/8.5 · CAC S/17.87 · viral 0.3      6,000     20%       139     3,768     3,632         0%
+  CPM S/8.5 · CAC S/17.87 · viral 1.0     12,000     40%     3,999     9,504     5,986         1%
   CPM S/12 · CAC S/25.23 · viral 0.3       8,000      0%    -2,097       566       864         0%
-  CPM S/12 · CAC S/25.23 · viral 1.0       8,000      0%       111     3,359     3,575         0%
+  CPM S/12 · CAC S/25.23 · viral 1.0       8,000      0%       111     3,366     3,575         0%
 
   ►► LA TABLA SE PARTE EN DOS POR EL UMBRAL. Con el CAC bueno los dos objetivos se superan
      con holgura desde el mes 3. Con el CAC medio o malo no se alcanzan a ningún presupuesto.
@@ -100,9 +100,9 @@
                  4 — POR QUÉ UN PROMEDIO BUENO NO BASTA: EL PISO NO ES LA MEDIANA                 
 ==================================================================================================
 
-  Fíjate en el mejor escenario de la tabla anterior: mediana del mes 6 de S/25,341,
+  Fíjate en el mejor escenario de la tabla anterior: mediana del mes 6 de S/30,232,
   muy por encima de la meta de S/5,000 — y aun así la probabilidad de sostener el camino
-  entero es 22%.
+  entero es 3%.
 
   La razón es que el objetivo es un PISO MENSUAL, y hay diez meses que tienen que clararlo
   todos. Con la variabilidad normal de un mes (sigma 0.18), un negocio que en promedio está
@@ -110,10 +110,10 @@
 
        mediana del mes 6   P(ese mes ≥ meta)   P(TODOS los meses ≥ meta)
   ------------------------------------------------------------------------
-                   7,202                 90%                         22%
-                  11,806                 94%                         33%
-                  25,400                 97%                         57%
-                  24,816                 95%                         38%
+                   7,621                 91%                         23%
+                  12,008                 94%                         35%
+                  26,930                 97%                         57%
+                  26,334                 96%                         39%
 
   ►► PARA QUE S/5,000 SEA UN PISO CONFIABLE HAY QUE APUNTAR MUY POR ENCIMA DE S/5,000.
      Planificar para que la mediana sea exactamente la meta es planificar para fallar la
@@ -161,11 +161,11 @@
 
     ads fijos   viral  nuevos/mes m6  ped/día m6  pers   neto m3   neto m6  P(camino)
   ------------------------------------------------------------------------------------
-       S/4000     0.3            418        29.6     1     3,168     6,088         2%
-       S/6000     0.3            586        41.7     2     4,684     7,379        25%
-       S/8000     0.3            736        52.5     2     5,474     8,768        45%
-       S/4000     1.0            599        42.5     2     5,821     8,172        59%
-       S/6000     1.0            821        59.0     2     6,975    11,415        85%  <- el plan
+       S/4000     0.3            418        27.4     1     3,168     6,088         2%
+       S/6000     0.3            586        38.5     1     4,684     7,928        25%
+       S/8000     0.3            736        48.5     2     6,068     8,768        47%
+       S/4000     1.0            599        39.2     1     5,821     8,880        59%
+       S/6000     1.0            821        54.5     2     7,369    11,415        86%  <- el plan
 
   ►► LA COMPARACIÓN QUE HAY QUE MIRAR DOS VECES: S/4,000/mes con viralidad 1.0 da MÁS
      probabilidad de sostener el camino (60%) que S/8,000/mes con viralidad 0.3 (46%).
@@ -177,25 +177,25 @@
 
 
   EL PLAN: S/6,000/mes de publicidad fija, sin reinversión, viralidad 1.0 (cada cliente trae a
-  otro), retención media. Probabilidad de sostener el camino: 85%.
+  otro), retención media. Probabilidad de sostener el camino: 86%.
 
   ESTOS SON PUNTOS DE CONTROL, no un pronóstico. Si el mes 1 real no se parece a la fila de
-  sep-26, el plan no está atrasado: está equivocado, y hay que rehacerlo con el dato nuevo.
+  oct-26, el plan no está atrasado: está equivocado, y hay que rehacerlo con el dato nuevo.
 
   mes         nuevos  pedidos  ped/día  pers   neto P10   neto P50   meta
   ----------------------------------------------------------------------------
-  sep-26         714      728     36.4     1        -56      2,188   —
-  oct-26         735      970     35.9     1      2,847      6,130   —
-  nov-26         767    1,121     44.8     2      4,456      6,910   S/4,000
-  dic-26         813    1,258     46.6     2      6,086      8,920   S/4,000
-  ene-27         876    1,389     51.5     2      6,622     10,765   S/4,000
-  feb-27         821    1,411     58.8     2      6,745     11,325   S/5,000
-  mar-27         775    1,399     53.8     2      6,976     11,308   S/5,000
-  abr-27         737    1,386     53.3     2      6,939     11,240   S/5,000
-  may-27         703    1,383     53.2     2      6,935     11,333   S/5,000
-  jun-27         674    1,344     51.7     2      6,809     10,812   S/5,000
-  jul-27         648    1,324     49.0     2      7,154     10,596   S/5,000
-  ago-27         625    1,315     50.6     2      6,801     10,544   S/5,000
+  oct-26         714      728     42.8     2        -56      1,236   —
+  nov-26         735      970     38.8     1      2,847      5,611   —
+  dic-26         767    1,121     41.5     2      4,456      7,282   S/4,000
+  ene-27         813    1,258     46.6     2      6,086      8,920   S/4,000
+  feb-27         876    1,389     57.9     2      6,266     10,765   S/4,000
+  mar-27         821    1,411     54.3     2      6,760     11,325   S/5,000
+  abr-27         775    1,399     53.8     2      6,976     11,308   S/5,000
+  may-27         737    1,386     53.3     2      6,939     11,240   S/5,000
+  jun-27         703    1,383     53.2     2      6,935     11,333   S/5,000
+  jul-27         674    1,344     49.8     2      7,109     10,812   S/5,000
+  ago-27         648    1,324     50.9     2      6,846     10,596   S/5,000
+  sep-27         625    1,315     50.6     2      6,801     10,544   S/5,000
 
 ==================================================================================================
                                              RESUMEN                                              
