@@ -1,0 +1,16 @@
+-- REVIERTE customers_dni_not_null, agregada horas antes en la misma sesión.
+--
+-- El razonamiento era correcto (el DNI obligatorio es una regla no negociable del proyecto
+-- y solo vivía en auth.ts) pero la implementación estaba mal: `NOT VALID` únicamente evita
+-- validar las filas EXISTENTES al crear la restricción. Cualquier UPDATE posterior sobre
+-- una de esas filas SÍ la re-evalúa y falla con 23514.
+--
+-- La cuenta del dueño (que además es la única cuenta admin) tiene dni null por ser anterior
+-- a que el registro lo exigiera. Con la restricción activa, `finalize_order_customer_update`
+-- reventaba al cerrar cualquier pedido suyo: no podía comprar en su propio negocio. Se
+-- descubrió al intentar poner sus contadores en cero tras borrar los pedidos de prueba.
+--
+-- Para volver a ponerla hace falta primero que esa fila tenga un DNI real — dato que solo
+-- el dueño puede dar y que no se inventa. Mientras tanto la regla sigue donde estaba:
+-- actRegister la exige en cada registro nuevo.
+alter table public.customers drop constraint if exists customers_dni_not_null;

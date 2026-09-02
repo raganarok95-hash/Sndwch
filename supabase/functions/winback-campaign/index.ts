@@ -57,8 +57,30 @@ Deno.serve(async (req: Request) => {
       if (!lastOrderByPhone[o.customer_phone] || t > lastOrderByPhone[o.customer_phone]) lastOrderByPhone[o.customer_phone] = t;
     });
 
+    // SUPRESIÓN CRUZADA (2026-08-27). `phonesTouchedToday()` de la función `api` evita que
+    // un mismo cliente reciba más de un aviso el mismo día, pero solo lo consultan los crons
+    // que viven ahí. Esta función y birthday-bonus INSERTABAN en marketing_touches sin
+    // leerla nunca. Y no es teórico: `sndwch-winback-campaign` y
+    // `sndwch-remind-high-rank-winback` están programados al MISMO minuto (0 15 * * 1), y
+    // winback no filtra por total_orders, así que un cliente de rango alto inactivo con
+    // correo entra en las dos a la vez — push y correo en el mismo minuto, diciendo lo
+    // mismo. Se replica la consulta acá porque son edge functions separadas y no comparten
+    // módulo.
+    let touchedToday = new Set<string>();
+    try {
+      const f = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" });
+      const [y, m, d] = f.format(new Date()).split("-").map(Number);
+      const since = new Date(Date.UTC(y, m - 1, d, 5, 0, 0)).toISOString();
+      const rows = await sbGet("marketing_touches", `sent_at=gte.${encodeURIComponent(since)}&select=customer_phone&limit=20000`);
+      touchedToday = new Set(rows.map((r: any) => String(r.customer_phone)));
+    } catch (e) {
+      // Mismo criterio que en `api`: ante un fallo de lectura se prefiere enviar.
+      await debugLog(SOURCE, { stage: "touched_today_failed", error: String(e) });
+    }
+
     let sent = 0;
     for (const c of customers) {
+      if (touchedToday.has(String(c.phone))) continue;
       const lastActivity = lastOrderByPhone[c.phone] ?? new Date(c.created_at).getTime();
       const daysSinceActivity = (now - lastActivity) / DAY_MS;
       if (daysSinceActivity < INACTIVE_DAYS) continue;
@@ -68,6 +90,15 @@ Deno.serve(async (req: Request) => {
       }
       try {
         const res = await sendWinbackEmail(c.email, c.name, c.points || 0);
+        // `res.ok` se registraba pero no se COMPROBABA: si Resend devolvía un error sin
+        // lanzar excepción (rate limit, dominio rebotado, o simplemente RESEND_API_KEY sin
+        // configurar, que devuelve {ok:false,skipped:true}), igual se marcaba
+        // last_winback_sent y ese cliente quedaba bloqueado 30 días para un correo que
+        // nunca recibió.
+        if (!res.ok) {
+          await debugLog(SOURCE, { stage: "email_not_ok", phone: c.phone });
+          continue;
+        }
         await sbUpdate("customers", `phone=eq.${encodeURIComponent(c.phone)}`, { last_winback_sent: new Date().toISOString() });
         // Log de marketing_touches (ver admin-campaign-performance en la función api) —
         // best-effort, un fallo acá nunca debe tumbar el envío ya hecho.

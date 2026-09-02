@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/social
 // Publicación real en Instagram/Facebook vía Meta Graph API — la única pieza del sistema
 // de marketing que de verdad sale de la app sin copiar/pegar a mano. Todo lo demás
-// (MARKETING_CONTENT) sigue siendo "nada se publica solo" a propósito; esto es la
+// (marketingContent()) sigue siendo "nada se publica solo" a propósito; esto es la
 // excepción, y solo para los canales instagram/facebook de una entrada del calendario
 // que ya tiene foto o video subido.
 //
@@ -207,7 +207,7 @@ export async function actAutoPublishCalendar(b: any) {
   const today = new Date().toISOString().slice(0, 10);
   const due = await sbGet(
     "marketing_calendar",
-    `status=eq.scheduled&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*`,
+    `status=eq.scheduled&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&limit=500`,
   );
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const entry of due) {
@@ -266,6 +266,6 @@ export async function actAdminUploadRawVideo(b: any) {
 
 export async function actAdminListRawUploads(b: any) {
   await requireAdmin(b.token);
-  const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*");
+  const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*&limit=500");
   return { uploads: rows };
 }

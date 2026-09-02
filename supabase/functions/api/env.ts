@@ -45,6 +45,35 @@ export const REFERRAL_BONUS_POINTS = 120;
 // que de verdad llega a comprar, contra un techo pagable estimado de ~S/9.3. Si REWARDS.R06
 // cambia de precio, este número debe seguirlo.
 export const REFERRER_REWARD_POINTS = 400;
+
+// #55 — REFERIDOS ESCALONADOS. Premio EXTRA al 3.º, 5.º y 10.º referido convertido, encima
+// de los 400 puntos planos de arriba que se siguen pagando por CADA uno.
+//
+// Por qué escalonado y no plano: el esfuerzo de invitar SUBE con cada referido (los amigos
+// fáciles ya están dentro) mientras el premio plano se queda igual, así que casi nadie pasa
+// del segundo. Los escalones le ponen una meta concreta al que ya demostró que invita.
+//
+// Cada escalón vale exactamente una recompensa NOMBRABLE del catálogo (REWARDS en
+// catalog.ts), no un número suelto: 120 = R05 (bebida), 400 = R06 (sándwich 15CM), 800 =
+// dos 15CM. Un premio que no se puede nombrar no se puede prometer en una notificación.
+//
+// LO QUE CUESTA, con los números que ya están en este archivo. Un referidor que llega a 10
+// conversiones cobra 10×400 + (120+400+800) = 5320 puntos. A la tasa de R06 (400 pts ≈ un
+// 15CM ≈ S/6.7-8 de insumo real), son ~S/98, o sea **~S/9.8 por cliente adquirido**.
+// Eso queda ~5% POR ENCIMA del techo pagable de ~S/9.3 que estima el comentario de
+// REFERRER_REWARD_POINTS, y es deliberado: ese techo se calculó para el referido PROMEDIO,
+// y quien trae 10 clientes que pagan no es el promedio. Sigue siendo más barato que el
+// CAC medido más bajo de Meta Ads en Perú para restaurantes (S/10.51; techo S/25.23, ver
+// modelo/FUENTES.md), que es el único otro canal de adquisición que este negocio tiene.
+// En los escalones 3 y 5 —donde estará casi todo el mundo— el costo por cliente ni siquiera
+// llega a rozar el techo: S/8.0 y S/8.3.
+//
+// DEBE coincidir con REFERRAL_MILESTONES en src/app.ts (lo verifica `npm run parity`).
+export const REFERRAL_MILESTONES: { count: number; points: number; label: string }[] = [
+  { count: 3, points: 120, label: "una bebida de la casa gratis" },
+  { count: 5, points: 400, label: "otro sándwich 15CM gratis" },
+  { count: 10, points: 800, label: "dos sándwiches 15CM gratis" },
+];
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 // Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
@@ -159,6 +188,62 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
 // coincidir con CULQI_FEE_RATE en src/app.ts (ese lado solo estima el total antes de
 // pagar; este es el que de verdad determina cuánto se cobra).
 export const CULQI_FEE_RATE = 0.055;
+
+// Tope de pedidos por hora de entrega. Vivía en actions/orders.ts, pero desde que
+// `get-store-hours` le dice al cliente qué franjas están llenas (#23) hacen falta los dos
+// lados, y hours.ts no puede importar de orders.ts sin crear un ciclo. Debe coincidir con
+// MAX_ORDERS_PER_HOUR en src/app/ — lo verifica `npm run parity`.
+//
+// Subido de 6 a 10 (2026-08-15) al conocer el método de trabajo real: la cocción se hace
+// por TANDAS 1-2 veces por semana y en hora de servicio cada pedido es solo ARMAR el
+// sándwich (~4-5 min con todo en mise en place), no cocinar desde cero. Además el dueño
+// NUNCA reparte: el motorizado es aparte, así que armar no compite con salir a entregar.
+// El 6 anterior suponía un ciclo cocinar+repartir que no es el de este negocio, y con la
+// meta de ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos
+// reales un viernes por la noche.
+export const MAX_ORDERS_PER_HOUR = 10;
+
+// Cuánto suma al estimado de entrega cada pedido que ya está en cola por delante (#16).
+// Sale del mismo dato que el tope de arriba: armar un sándwich con el mise en place hecho
+// toma ~4-5 minutos, así que cada pedido delante corre la entrega unos 5.
+//
+// El estimado que se ve ANTES de pagar era un rango fijo (25-40 min) que no miraba la
+// cola: con 8 pedidos por delante prometía lo mismo que con la cocina vacía. Un ETA que
+// miente es la causa directa de una calificación de 1 estrella, y la calificación baja
+// cuesta más que la venta que se pierde por avisar que hoy hay demora.
+export const QUEUE_MINUTES_PER_ORDER = 5;
+
+// #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
+// preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
+// dirección ("portón azul", "3er piso"): una alergia escrita ahí se pinta igual que el
+// portón y se pierde entre lo demás, justo mientras se arma el pedido con las manos
+// ocupadas.
+//
+// La lista es DELIBERADAMENTE corta y de lenguaje de restricción, no de ingredientes. Meter
+// cada alérgeno ("maní", "huevo", "leche") haría saltar la alerta con "sin cebolla" y con
+// cualquier receta que los nombre — y una alarma que salta siempre deja de mirarse, que es
+// exactamente lo que esto viene a evitar. Un "sin cebolla" sigue mostrándose como nota
+// normal: es una preferencia, no un riesgo.
+//
+// DEBE coincidir con NOTE_ALERT_WORDS en src/app/ — lo verifica `npm run parity`.
+// Tope de notificaciones push por corrida de cron. Vivía en actions/customer.ts, pero desde
+// que el recordatorio de pedido programado al cliente (#27) también manda push desde
+// orders.ts hacen falta los dos lados — y son el mismo tope, no dos.
+//
+// Existe porque los crons leían hasta 20 000 clientes y enviaban en serie dentro de una sola
+// invocación: con varios cientos, la función se cortaba a mitad por tiempo y la cola no
+// recibía nada ese día, en silencio. Lo que sobra se atiende en la corrida siguiente (las
+// ventanas de elegibilidad son de varios días) y llegar al tope queda en debug_logs.
+export const MAX_PUSH_PER_RUN = 200;
+
+export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
+
+// Compara sin acentos ni mayúsculas: quien escribe "ALERGICO" desde el teclado del celular
+// no debería recibir menos cuidado que quien escribe "alérgico".
+export function noteNeedsAttention(notes: string | null | undefined): boolean {
+  const n = String(notes || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return NOTE_ALERT_WORDS.some((w) => n.includes(w.normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
+}
 // d.getHours()/getDay()/getFullYear() usan la zona horaria del SERVIDOR (Deno Deploy
 // corre en UTC), no la de Perú (UTC-5) — así fue como "cierra a las 22:00" se aplicaba
 // como si cerrara a las 17:00 hora Perú (hallazgo en vivo tras activar Culqi: el cobro
@@ -216,6 +301,26 @@ export function limaMonthStartIso(d: Date): string {
 export function limaDayStartIso(d: Date): string {
   const f = limaFields(d);
   return new Date(Date.UTC(f.year, f.month - 1, f.day, 5, 0, 0)).toISOString();
+}
+
+// #65 — El MES PASADO completo, en hora Lima, más su clave AAAAMM.
+//
+// Existe separado de limaMonthStartIso porque el resumen mensual habla del mes que YA
+// terminó, no del que corre: se manda los primeros días del mes siguiente, cuando el mes
+// del que habla ya está cerrado y sus números no van a cambiar. Calcularlo con
+// `getMonth()-1` a mano se rompe en enero (mes -1) y desfasa cinco horas en cada frontera
+// de mes, que es justo cuando este cron corre.
+export function limaPrevMonthRange(d: Date): { startIso: string; endIso: string; ym: number } {
+  const f = limaFields(d);
+  const year = f.month === 1 ? f.year - 1 : f.year;
+  const month = f.month === 1 ? 12 : f.month - 1;
+  return {
+    // Medianoche Lima del día 1 del mes pasado = 05:00 UTC de ese día.
+    startIso: new Date(Date.UTC(year, month - 1, 1, 5, 0, 0)).toISOString(),
+    // Fin exclusivo: medianoche Lima del día 1 del mes en curso.
+    endIso: new Date(Date.UTC(f.year, f.month - 1, 1, 5, 0, 0)).toISOString(),
+    ym: year * 100 + month,
+  };
 }
 
 // Igual que loadCatalogPrices (catalog.ts) — una tabla (store_hours) sobreescribe estos

@@ -4,40 +4,68 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_LABEL, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName } from "../env.ts";
+import { logAdminAction, debugLog } from "../logging.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE } from "../env.ts";
+import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
+import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
+import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
 // avisa a quienes pidieron "avísame cuando vuelva" (ver actRequestRestockNotify,
 // customer.ts) — sin esto, esa demanda quedaba perdida en silencio: la tarjeta AGOTADO
 // ni siquiera dejaba intentar pedirlo.
+// Los códigos que un Signature consume de verdad. El servidor reserva la receta COMPLETA
+// (`priceSigBuild` arma [base, prot, ...tops, ...sauces] más el queso fijo), así que
+// preguntar solo por pan y proteína —como se hacía acá— podía anunciar "¡Ya volvió!" con un
+// topping todavía agotado, mandando al cliente a un producto que el checkout va a rechazar.
+// Mismo defecto que la disponibilidad en la tarjeta del cliente (#11).
+function sigIngredientCodes(sig: any): string[] {
+  const codes = [sig.base, sig.prot, ...(sig.tops || []), ...(sig.sauces || [])];
+  if (sig.fixedCheese) codes.push(sig.fixedCheese);
+  return [...new Set(codes.filter(Boolean).map(String))];
+}
+
 async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
   const affectedSigIds = Object.entries(SIG_DATA)
-    .filter(([, sig]) => sig.base === restockedCode || sig.prot === restockedCode)
+    .filter(([, sig]) => sigIngredientCodes(sig).includes(restockedCode))
     .map(([id]) => id);
   if (!affectedSigIds.length) return;
   for (const sigId of affectedSigIds) {
     const sig = SIG_DATA[sigId];
+    const codes = sigIngredientCodes(sig);
     const rows = await sbGet(
       "inventory",
-      `product_code=in.(${encodeURIComponent(sig.base)},${encodeURIComponent(sig.prot)})&select=product_code,in_stock`,
+      `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,in_stock&limit=100`,
     );
-    const baseRow = rows.find((r: any) => r.product_code === sig.base);
-    const protRow = rows.find((r: any) => r.product_code === sig.prot);
     // Sin fila en inventory = nunca se marcó agotado, así que cuenta como disponible.
-    const baseOk = !baseRow || baseRow.in_stock !== false;
-    const protOk = !protRow || protRow.in_stock !== false;
-    if (!baseOk || !protOk) continue;
-    const requests = await sbGet("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}&select=id,customer_phone`);
-    if (!requests.length) continue;
-    for (const r of requests) {
+    const agotado = codes.some((c) => rows.find((r: any) => r.product_code === c)?.in_stock === false);
+    if (agotado) continue;
+
+    // Quien lo PIDIÓ explícitamente ("avísame cuando vuelva") y quien lo tiene guardado como
+    // FAVORITO (#61) son dos poblaciones distintas: la segunda nunca pidió el aviso, pero ya
+    // demostró que le interesa ese sándwich guardándolo. Se juntan en un solo envío para no
+    // mandarle dos push a quien está en las dos listas.
+    const [requests, favoritos] = await Promise.all([
+      sbGet("restock_notify_requests", `sig_id=eq.${encodeURIComponent(sigId)}&select=id,customer_phone&limit=1000`),
+      sbGet("favorites", `build->>sigId=eq.${encodeURIComponent(sigId)}&select=customer_phone&limit=1000`),
+    ]);
+    const phones = [...new Set([
+      ...requests.map((r: any) => String(r.customer_phone)),
+      ...favoritos.map((f: any) => String(f.customer_phone)),
+    ].filter(Boolean))];
+    if (!phones.length) continue;
+    const pidieronAviso = new Set(requests.map((r: any) => String(r.customer_phone)));
+    for (const phone of phones) {
       try {
-        await sendPushToPhone(r.customer_phone, {
+        await sendPushToPhone(phone, {
           title: "¡Ya volvió!",
-          body: (SIG_LABEL[sigId] || "El sabor que pediste") + " ya está disponible de nuevo.",
+          // A quien lo pidió se le contesta lo que pidió; a quien no, se le explica por qué
+          // le llega — un aviso sin motivo aparente se lee como spam.
+          body: (SIG_LABEL[sigId] || "El sabor que pediste") +
+            (pidieronAviso.has(phone) ? " ya está disponible de nuevo." : " —uno de tus guardados— ya está disponible de nuevo."),
           url: "./index.html",
           tag: "sndwch-restock-" + sigId,
         });
@@ -105,7 +133,7 @@ export async function actAdminManualCredit(b: any) {
 
 export async function actAdminAccountsList(b: any) {
   await requireAdmin(b.token);
-  return { accounts: await sbGet("admin_accounts", "order=created_at.asc") };
+  return { accounts: await sbGet("admin_accounts", "order=created_at.asc&limit=200") };
 }
 // Agregar un admin nuevo es tan sensible como quitarle el acceso a uno (otorga acceso
 // administrativo total y persistente) — antes solo exigía requireAdmin, sin reconfirmar
@@ -182,6 +210,185 @@ export async function actAdminInventorySetStock(b: any) {
   return { success: true };
 }
 
+// ── Tandas: qué se cocinó cuándo, y cuánto aguanta (#5) ─────────────────────────────────
+//
+// Va por una acción propia de admin y no dentro de `get-catalog` a propósito: get-catalog es
+// PÚBLICO, y las fechas de producción de la cocina no tienen por qué viajar a cualquiera que
+// abra la app.
+export async function actAdminInventoryBatches(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet(
+    "inventory",
+    "select=product_code,product_name,stock_qty,in_stock,batch_cooked_at,shelf_life_days&limit=500",
+  );
+  const now = Date.now();
+  const { vencidos, porVencer } = batchExpiryStatus(rows as any[], now);
+  const estado: Record<string, string> = {};
+  for (const v of vencidos) estado[v.code] = "vencida";
+  for (const v of porVencer) estado[v.code] = "por-vencer";
+  const batches: Record<string, unknown> = {};
+  for (const r of rows as any[]) {
+    batches[String(r.product_code)] = {
+      cookedAt: r.batch_cooked_at || null,
+      shelfLifeDays: r.shelf_life_days == null ? BATCH_SHELF_LIFE_DEFAULT_DAYS : Number(r.shelf_life_days),
+      estado: r.batch_cooked_at ? estado[String(r.product_code)] || "ok" : "sin-tanda",
+    };
+  }
+  return { batches, warnHours: BATCH_EXPIRY_WARN_HOURS, defaultDays: BATCH_SHELF_LIFE_DEFAULT_DAYS };
+}
+
+// Tope alto a propósito: hay insumos secos o encurtidos que aguantan semanas. Lo que no
+// puede pasar es que quede en 0 o negativo, que dejaría todo vencido desde que se cocina y
+// convertiría la alerta en ruido permanente — la forma en que una alarma deja de mirarse.
+const SHELF_LIFE_MAX_DAYS = 90;
+
+export async function actAdminInventorySetShelfLife(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.code || "").trim();
+  if (!code) throw new ApiError("Falta el producto.");
+  const dias = Math.floor(Number(b.days));
+  if (!Number.isFinite(dias) || dias < 1 || dias > SHELF_LIFE_MAX_DAYS) {
+    throw new ApiError(`La vida útil debe estar entre 1 y ${SHELF_LIFE_MAX_DAYS} días.`);
+  }
+  const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(code)}&select=product_code`);
+  if (!existing.length) throw new ApiError("Ese insumo todavía no existe en el inventario: regístrale stock o una tanda primero.");
+  await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(code)}`, { shelf_life_days: dias });
+  await logAdminAction(s.phone, "inventory-set-shelf-life", code, { days: dias });
+  return { success: true, days: dias };
+}
+
+// C7 — Reposición de una TANDA. El dueño cocina por tandas 1-2 veces por semana: cuando
+// termina no sabe (ni tiene por qué calcular) el total nuevo de cada insumo, sabe cuánto
+// PRODUJO. Hasta ahora el único endpoint de stock fijaba un valor absoluto, así que
+// después de cada tanda había que hacer a mano "lo que quedaba + lo que cociné" por cada
+// insumo, que es justo donde se equivoca alguien que acaba de cocinar 4 horas — y un
+// número de stock mal puesto apaga un producto en la tienda o vende algo que ya no hay.
+//
+// Acá se manda cuánto se AGREGÓ y el servidor hace la suma leyendo la fila fresca. La
+// lectura y la escritura no son una transacción única (PostgREST no expone un incremento
+// atómico sin una RPC dedicada), pero el hueco pasa de "todo el rato que el panel estuvo
+// abierto" a los milisegundos de esta llamada, con un solo operador de por medio.
+//
+// Un insumo sin fila en `inventory` nunca se marcó agotado: arranca de 0 y queda con lo
+// que se acaba de producir, que es lo correcto — antes de la tanda no había nada.
+// C1 + C2 — Vigilancia del propio sistema, en un solo cron horario.
+//
+// Los dos chequeos comparten un mismo agujero: cuando algo se rompe DENTRO de la
+// automatización, no hay nadie mirando. La app no deja de responder, el cliente no se
+// queja, y el dueño está cocinando — así que un cron muerto o un pico de errores puede
+// durar días sin que nadie lo note. Todo lo que hay hoy son los logs del panel de
+// Supabase, que solo miras si ya sospechas que algo anda mal.
+//
+// C1 — CRONS MUERTOS. pg_cron guarda si DISPARÓ cada job, pero net.http_post() vuelve al
+// instante: "succeeded" ahí significa "se encoló la petición", no "la edge function hizo
+// su trabajo". Si el secreto de cron rota, o `api` empieza a responder 500, los 20 jobs
+// siguen marcando "succeeded" para siempre mientras nada de lo automatizado ocurre.
+// dead_cron_jobs() cruza los disparos de pg_cron con los latidos que anota `api`
+// (record_cron_heartbeat, ver index.ts) y devuelve los que dispararon 3+ veces sin un solo
+// latido bueno. El umbral es proporcional por construcción: un job de cada 3 minutos avisa
+// a los ~9 minutos, uno diario recién al tercer día — sin escribir un plazo por job.
+//
+// C2 — PICO DE ERRORES. debug_logs recibe todo fallo interno de `api`; en operación normal
+// son unos pocos por día. error_spike() compara la última hora contra el promedio horario
+// de los 7 días previos (excluyendo esa misma hora, para que el pico no se diluya solo) y
+// exige además un piso absoluto: con un promedio cercano a cero, cualquier factor se
+// dispara con 2 errores sueltos y la alerta deja de significar algo.
+//
+// Cada job muerto se avisa UNA vez (mark_cron_alerted); el aviso se rearma solo cuando ese
+// job vuelve a latir bien. Sin eso, un cron roto un fin de semana manda 48 notificaciones
+// idénticas y el dueño aprende a ignorarlas — que es peor que no tener alerta.
+export async function actAlertSystemHealth(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+
+  let deadAlerted = 0;
+  const dead: any[] = await rpc("dead_cron_jobs", { p_min_misses: 3 });
+  for (const job of dead || []) {
+    if (job.alerted_at) continue; // ya se avisó y todavía no volvió a latir
+    try {
+      const desde = job.last_ok_at
+        ? "Último latido: " + new Date(job.last_ok_at).toISOString().slice(0, 16).replace("T", " ") + " UTC."
+        : "Nunca ha latido.";
+      await sendPushToAdmins({
+        title: "Automatización caída ⚠️",
+        body: job.jobname + " disparó " + job.fired_since + " veces sin responder. " + desde
+          + (job.last_error ? " Último error: " + String(job.last_error).slice(0, 120) : ""),
+        url: "./index.html",
+        tag: "sndwch-deadcron-" + job.action,
+      });
+      await rpc("mark_cron_alerted", { p_action: job.action });
+      deadAlerted++;
+    } catch (e) {
+      console.error("alert-system-health: fallo avisando cron muerto", job.action, e);
+    }
+  }
+
+  let spikeAlerted = 0;
+  const spike: any[] = await rpc("error_spike", { p_min_errors: 10, p_factor: 4 });
+  if (spike && spike.length) {
+    try {
+      await sendPushToAdmins({
+        title: "Pico de errores 🔴",
+        body: spike[0].last_hour + " errores en la última hora (lo normal es ~"
+          + spike[0].baseline_per_hour + " por hora). Algo se rompió recién.",
+        url: "./index.html",
+        // Sin id en el tag a propósito: si el pico sigue una hora después, el aviso nuevo
+        // REEMPLAZA al anterior en la bandeja en vez de apilarse.
+        tag: "sndwch-error-spike",
+      });
+      spikeAlerted = 1;
+    } catch (e) {
+      console.error("alert-system-health: fallo avisando pico de errores", e);
+    }
+  }
+
+  return { checked: (dead || []).length, deadAlerted, spikeAlerted };
+}
+
+const RESTOCK_MAX_ITEMS = 100;
+export async function actAdminInventoryRestock(b: any) {
+  const s = await requireAdmin(b.token);
+  const raw = Array.isArray(b.items) ? b.items : [];
+  if (!raw.length) throw new ApiError("No hay insumos que reponer.");
+  if (raw.length > RESTOCK_MAX_ITEMS) throw new ApiError("Demasiados insumos en una sola reposición.");
+
+  const items = raw.map((it: any) => {
+    const code = String(it?.code || "").trim();
+    if (!code) throw new ApiError("Falta el código de un insumo.");
+    const add = Math.floor(Number(it?.add));
+    // Solo suma: para corregir un número hacia abajo está la edición normal de stock, que
+    // fija el valor exacto. Aceptar negativos acá convertiría "reponer una tanda" en una
+    // forma silenciosa de descontar.
+    if (!Number.isFinite(add) || add <= 0) throw new ApiError("La cantidad producida debe ser un número mayor a 0.");
+    return { code, name: String(it?.name || "").trim(), add };
+  });
+
+  const applied: { code: string; from: number; to: number }[] = [];
+  for (const it of items) {
+    const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(it.code)}&select=stock_qty`);
+    const from = existing.length && existing[0].stock_qty != null ? Number(existing[0].stock_qty) : 0;
+    const to = from + it.add;
+    // Reponer es EXACTAMENTE el momento en que se cocinó una tanda, y es el único momento
+    // en que el sistema puede saberlo. De acá cuelga toda la alerta de caducidad (#5): sin
+    // esta fecha, una tanda de hace cinco días y una de hoy son el mismo número de stock.
+    // La edición normal de stock NO la toca a propósito — corregir un número a mano es una
+    // corrección, no cocinar de nuevo, y refrescar la fecha ahí borraría la caducidad real.
+    const cookedAt = new Date().toISOString();
+    if (existing.length) {
+      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
+    } else {
+      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
+    }
+    // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
+    // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
+    await notifyRestockedSignatures(it.code);
+    applied.push({ code: it.code, from, to });
+  }
+  // Una sola entrada de auditoría por tanda, no una por insumo: el log se lee para
+  // reconstruir qué pasó, y 20 líneas idénticas del mismo minuto lo entierran.
+  await logAdminAction(s.phone, "inventory-restock", undefined, { items: applied });
+  return { success: true, applied };
+}
+
 const EXPORT_LIMIT = 5000;
 export async function actAdminExportOrders(b: any) {
   const s = await requireAdmin(b.token);
@@ -228,10 +435,15 @@ export async function actDashboardStats(b: any) {
 
   const now = Date.now();
   const DAY = 86400000;
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const todayStart = startOfDay(new Date(now));
+  // Los cortes de "hoy" y "este mes" se calculan en HORA LIMA, no en la del servidor.
+  // `new Date(y, m, d)` usa la zona local del proceso, que en Deno Deploy es UTC: toda
+  // venta entre las 19:00 y las 24:00 de Lima caía en el día siguiente — justo la cena,
+  // que es el pico. El RPC dashboard_aggregates ya usaba `at time zone 'America/Lima'`;
+  // el desalineado era solo de este lado. limaDayStartIso/limaMonthStartIso ya existían
+  // en env.ts y las usa el recordatorio de hora pico, pero acá nadie las había traído.
+  const todayStart = new Date(limaDayStartIso(new Date(now))).getTime();
   const weekStart = todayStart - 6 * DAY;
-  const monthStart = startOfDay(new Date(new Date(now).getFullYear(), new Date(now).getMonth(), 1));
+  const monthStart = new Date(limaMonthStartIso(new Date(now))).getTime();
   // Los pedidos solo se necesitan en JS para las métricas de ventana reciente
   // (hoy/semana/mes/tendencia de 14 días/top productos) — todo lo que es una cifra de
   // "toda la tabla" (ingresos históricos, clientes, puntos, ratings) se calcula en SQL
@@ -252,13 +464,13 @@ export async function actDashboardStats(b: any) {
       // registros/conversión, nunca cuánto dinero trajo cada canal.
       `select=total,payment_status,created_at,items,product_key,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
-    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
-    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold"),
+    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=500"),
+    sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=500"),
     // Para medir si una campaña paga (?src=... en el link del anuncio) se está pagando
     // sola — agrupado en JS en vez de SQL porque el volumen de clientes de un negocio así
     // nunca justifica una función RPC nueva solo para este conteo. `phone` se agregó para
     // poder cruzar contra `orders` y calcular ingresos/ticket promedio por fuente.
-    sbGet("customers", "select=phone,acquisition_source,total_orders&acquisition_source=not.is.null"),
+    sbGet("customers", "select=phone,acquisition_source,total_orders&acquisition_source=not.is.null&limit=20000"),
   ]);
   // trend/topProducts se calculan sobre esta ventana reciente (no toda la tabla, ver
   // comentario arriba) — si algún día hay más de DASHBOARD_WINDOW_LIMIT pedidos en los
@@ -696,7 +908,10 @@ export async function actAdminRangeReport(b: any) {
 
   const byDayMap: Record<string, { count: number; revenue: number }> = {};
   paid.forEach((o: any) => {
-    const day = String(o.created_at).slice(0, 10);
+    // slice(0,10) sobre el ISO da el día UTC, no el de Lima: un pedido de las 20:00 de
+    // Lima (01:00 UTC del día siguiente) se contaba en el día equivocado, así que la
+    // tendencia de 14 días partía la cena de cada noche entre dos barras.
+    const day = new Date(o.created_at).toLocaleDateString("en-CA", { timeZone: "America/Lima" });
     if (!byDayMap[day]) byDayMap[day] = { count: 0, revenue: 0 };
     byDayMap[day].count++;
     byDayMap[day].revenue += o.total || 0;
@@ -773,19 +988,192 @@ export async function actAdminPrepList(b: any) {
   const invRows = codes.length
     ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty`)
     : [];
-  const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
-  const ingredients = codes
+  const ingredients = prepShortfall(ingredientCounts, invRows);
+  return {
+    orders,
+    ingredients,
+    windowHours: PREP_LIST_WINDOW_HOURS,
+    // #12 — Cuándo empezar cada uno, no solo en qué orden. Es secuencial porque cocina una
+    // sola persona: el tercero de las 8pm hay que empezarlo 15 minutos antes, no 5.
+    assembly: assemblyOrder(orders, Date.now(), QUEUE_MINUTES_PER_ORDER),
+    // #10 — Los mismos ingredientes agrupados por dónde están, para armar el mise en place
+    // sin volver a la refri seis veces. Es la MISMA lista, presentada para usarse en la
+    // cocina en vez de para leerse — dos consultas distintas darían dos verdades distintas.
+    miseEnPlace: miseEnPlaceGroups(ingredients),
+    minutesPerOrder: QUEUE_MINUTES_PER_ORDER,
+  };
+}
+
+// Cruce de lo que hace falta contra lo que hay. Se extrajo de actAdminPrepList para que la
+// ALERTA (#26) use exactamente el mismo criterio que la pantalla, en vez de una segunda
+// copia que con el tiempo diverge — el mismo motivo por el que `cancellationDeltas` salió
+// de las dos cancelaciones. Y porque así se puede probar: decidir mal acá no produce un
+// error, produce una alerta que no sale.
+export type PrepIngredient = { code: string; label: string; qty: number; stockQty: number | null; shortfall: boolean };
+
+export function prepShortfall(
+  ingredientCounts: Map<string, number>,
+  invRows: { product_code: string; product_name?: string | null; in_stock?: boolean | null; stock_qty?: number | null }[],
+): PrepIngredient[] {
+  const invMap = new Map<string, any>((invRows || []).map((r) => [r.product_code, r]));
+  return [...ingredientCounts.keys()]
     .map((code) => {
       const inv = invMap.get(code);
       const qty = ingredientCounts.get(code)!;
       const stockQty = inv?.stock_qty ?? null;
       // Sin fila en inventory = nunca se marcó agotado ni se le puso cantidad — no hay
-      // forma de saber si alcanza, así que no se marca como faltante.
+      // forma de saber si alcanza, así que no se marca como faltante. Inventar un faltante
+      // acá haría sonar la alarma por insumos que el dueño nunca quiso rastrear.
       const shortfall = inv?.in_stock === false || (stockQty != null && stockQty < qty);
       return { code, label: inv?.product_name || code, qty, stockQty, shortfall };
     })
     .sort((a, b) => (a.shortfall === b.shortfall ? b.qty - a.qty : a.shortfall ? -1 : 1));
-  return { orders, ingredients, windowHours: PREP_LIST_WINDOW_HOURS };
+}
+
+// #26 — ALERTA de pedido programado sin insumo.
+//
+// La pantalla de arriba ya calcula el faltante, pero solo lo ve quien la abre. El caso que
+// importa es el contrario: el pedido es para las 8pm, algo se marcó agotado a las 5pm, y
+// nadie va a abrir esa pantalla en el medio. Avisar mientras todavía se puede cocinar o
+// llamar al cliente es la diferencia entre resolverlo y cancelar a la hora de entregar.
+//
+// Por qué esto NO es redundante con la reserva de inventario: `reserve_inventory` descuenta
+// al reservar, así que un pedido programado ya tiene sus porciones apartadas. El hueco real
+// son los insumos SIN cantidad rastreada (stock_qty nulo: la reserva no los toca, solo
+// existe el interruptor in_stock) y las correcciones manuales de stock hacia abajo, que
+// pueden dejar el número por debajo de lo ya comprometido. Ninguno de los dos casos avisa
+// solo hoy.
+const SHORTFALL_ALERT_WINDOW_HOURS = 12;
+
+export async function actAlertScheduledShortfall(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  await loadCatalogPrices();
+  const nowIso = new Date().toISOString();
+  const windowEndIso = new Date(Date.now() + SHORTFALL_ALERT_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "orders",
+    `delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEndIso)}` +
+      `&status=neq.CANCELADO&status=neq.ENTREGADO&select=ref,delivery_time,items&order=delivery_time.asc&limit=500`,
+  );
+  if (!rows.length) return { success: true, alerted: false, orders: 0 };
+
+  const ingredientCounts = new Map<string, number>();
+  for (const o of rows) {
+    if (!Array.isArray(o.items)) continue;
+    for (const it of o.items) {
+      try {
+        const priced = priceCartItem(it);
+        for (const code of priced.ingredientsPerUnit) {
+          ingredientCounts.set(code, (ingredientCounts.get(code) || 0) + priced.qty);
+        }
+      } catch {
+        // Ítem legado fuera del catálogo actual: se omite ese ítem, no la alerta entera.
+      }
+    }
+  }
+  const codes = [...ingredientCounts.keys()];
+  const invRows = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,in_stock,stock_qty&limit=500`)
+    : [];
+  const faltantes = prepShortfall(ingredientCounts, invRows).filter((i) => i.shortfall);
+  if (!faltantes.length) return { success: true, alerted: false, orders: rows.length };
+
+  // Una vez cada 3 horas como mucho: el cron corre seguido a propósito (para enterarse
+  // pronto), pero repetir el mismo aviso cada hora lo vuelve ruido y el ruido se ignora.
+  const clave = "scheduled-shortfall:" + faltantes.map((f) => f.code).sort().join(",");
+  if (!(await rpc("check_rate_limit", { p_key: clave, p_limit: 1, p_window_minutes: 180 }))) {
+    return { success: true, alerted: false, throttled: true, orders: rows.length };
+  }
+
+  const detalle = faltantes
+    .slice(0, 4)
+    .map((f) => f.label + " (hacen falta " + f.qty + (f.stockQty == null ? ", marcado agotado" : ", hay " + f.stockQty) + ")")
+    .join(", ");
+  const proximo = new Date(rows[0].delivery_time).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+  await sendPushToAdmins({
+    title: "⚠️ Pedido programado sin insumo",
+    body: `${rows.length} pedido(s) programado(s), el primero a las ${proximo}. Falta: ${detalle}${faltantes.length > 4 ? "…" : ""}. Todavía hay tiempo de cocinar o de llamar al cliente.`,
+    url: "./index.html",
+    tag: "sndwch-scheduled-shortfall",
+    renotify: true,
+  });
+  return { success: true, alerted: true, orders: rows.length, faltantes: faltantes.length };
+}
+
+// ── #32: rechazo de tarjeta alto ────────────────────────────────────────────────────────
+//
+// Si de golpe la mitad de los cobros falla, algo se rompió del lado de los pagos: Culqi, el
+// 3DS, la cuenta del comercio, o una llave mal puesta tras un deploy. Hoy el dueño se
+// enteraría por un cliente escribiendo "no me deja pagar" — es decir, después de perder
+// varias ventas y sin saber que fueron varias.
+//
+// El dato ya existe: `claimAndChargeCulqi` escribe en `debug_logs` un evento
+// 'culqi-rejected' por cada rechazo y 'charge-succeeded' por cada cobro. Nadie los cruzaba.
+const DECLINE_WINDOW_HOURS = 3;
+// Con pocos intentos, el porcentaje no significa nada: 1 rechazo de 1 es 100% y puede ser
+// simplemente una tarjeta sin fondos. El mínimo evita que la alarma suene el primer día.
+const DECLINE_MIN_CHARGES = 5;
+// La mitad. No es un umbral fino: por debajo de eso hay rechazos normales (fondos, límites,
+// tarjetas vencidas) y afinar el número sin datos reales sería inventar precisión.
+const DECLINE_RATE_THRESHOLD = 0.5;
+
+export type DeclineStats = { total: number; rejected: number; rate: number; alert: boolean; reasons: string[] };
+
+// Cálculo puro, extraído para poder probarlo: su modo de fallo es una alarma que suena por
+// nada (y entonces se ignora) o que no suena mientras se pierden ventas. Ninguno de los dos
+// se ve como un error.
+export function declineStats(
+  rows: { detail?: { event?: string; culqi?: { user_message?: string; merchant_message?: string } } | null }[],
+  opts?: { minCharges?: number; threshold?: number },
+): DeclineStats {
+  const minCharges = opts?.minCharges ?? DECLINE_MIN_CHARGES;
+  const threshold = opts?.threshold ?? DECLINE_RATE_THRESHOLD;
+  let rejected = 0;
+  let succeeded = 0;
+  const reasons: string[] = [];
+  for (const r of rows || []) {
+    const ev = r?.detail?.event;
+    if (ev === "culqi-rejected") {
+      rejected++;
+      const m = r.detail?.culqi?.user_message || r.detail?.culqi?.merchant_message;
+      if (m && !reasons.includes(m)) reasons.push(String(m).slice(0, 120));
+    } else if (ev === "charge-succeeded") {
+      succeeded++;
+    }
+    // 'culqi-fetch-failed' NO cuenta como rechazo: es la red entre nosotros y Culqi, no una
+    // tarjeta rechazada. Mezclarlos convertiría un corte de red en "tus clientes no pueden
+    // pagar con tarjeta", que manda a revisar el lugar equivocado.
+  }
+  const total = rejected + succeeded;
+  const rate = total ? rejected / total : 0;
+  return { total, rejected, rate, alert: total >= minCharges && rate >= threshold, reasons: reasons.slice(0, 3) };
+}
+
+export async function actAlertCardDeclines(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const desde = new Date(Date.now() - DECLINE_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "debug_logs",
+    `source=in.(create-charge,create-credit-charge)&created_at=gte.${encodeURIComponent(desde)}&select=detail&limit=1000`,
+  );
+  const stats = declineStats(rows as any[]);
+  if (!stats.alert) return { success: true, alerted: false, ...stats };
+
+  // Una vez cada 3 horas: mientras el problema siga, el cron lo va a seguir viendo, y
+  // repetir el mismo aviso cada hora lo vuelve ruido.
+  if (!(await rpc("check_rate_limit", { p_key: "card-declines", p_limit: 1, p_window_minutes: 180 }))) {
+    return { success: true, alerted: false, throttled: true, ...stats };
+  }
+  await sendPushToAdmins({
+    title: "💳 Muchos pagos rechazados",
+    body: `${stats.rejected} de ${stats.total} cobros con tarjeta fallaron en las últimas ${DECLINE_WINDOW_HOURS} h`
+      + (stats.reasons.length ? `. Motivo más común: ${stats.reasons[0]}` : "")
+      + ". Revisa Culqi antes de perder más ventas.",
+    url: "./index.html",
+    tag: "sndwch-card-declines",
+    renotify: true,
+  });
+  return { success: true, alerted: true, ...stats };
 }
 
 // Rendimiento por franja horaria — no hay turnos de cocina distintos (una sola persona
@@ -858,11 +1246,31 @@ export async function actAdminProblemAddresses(b: any) {
 // feed, y una idea de foto, uno distinto cada semana. Las primeras 4 semanas siguen la
 // secuencia real de lanzamiento (recién abre → prueba social → referidos → menú secreto);
 // de ahí en adelante rota entre las promociones que ya existen en la app.
-const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; photoIdea: string }[] = [
+// #50 — El contenido semanal deja de ser un literal con números escritos a mano.
+//
+// TRES NÚMEROS DE ESTE TEXTO ESTABAN MAL, y no es un detalle: esto es lo que el dueño COPIA
+// Y PEGA a Instagram y WhatsApp, o sea una promesa pública.
+//   · "ambos ganan 50 puntos" por referir — falso desde el 2026-08-15: quien invita se lleva
+//     400 (un 15CM) y el invitado 120 (una bebida). El post prometía menos de la décima parte.
+//   · "se desbloquea desde tu 5to pedido" para el menú secreto — falso desde el 2026-08-26,
+//     cuando bajó a 3. Dos pedidos de más para algo que la app ya le habría dado.
+//   · "S/95 → S/100" del Plan Semanal, escrito a mano al lado de las constantes reales.
+// Ninguno de los tres iba a avisar nunca: son texto, no cálculo.
+//
+// Por eso ahora es una FUNCIÓN y no un array: cada número sale de la constante que de verdad
+// lo manda (REFERRER_REWARD_POINTS, SIG_GATES.SIG05.minOrders, WEEKLY_PLAN_PRICE...), leída
+// en el momento de armar el texto. El umbral del menú secreto además es editable desde el
+// panel, así que un literal se desincronizaría otra vez el día que el dueño lo mueva.
+//
+// Llamar a loadCatalogPrices() antes (que arrastra loadSecretSignature) es lo que hace que
+// SIG_GATES.SIG05.minOrders sea el valor vigente y no la semilla del código.
+function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string }[] {
+  const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
+  return [
   {
     theme: "LANZAMIENTO",
-    whatsapp: "🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Tu primer pedido te regala 40 puntos.",
-    caption: "Ya abrimos // SND//WCH llega a tu zona. Sandwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — tu primer pedido te regala 40 puntos para canjear después.",
+    whatsapp: `🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos.`,
+    caption: `Ya abrimos // SND//WCH llega a tu zona. Sándwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos para canjear después.`,
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
   },
   {
@@ -873,14 +1281,14 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "REFERIDOS",
-    whatsapp: "Invita a un amigo a SND//WCH y ambos ganan 50 puntos en su primer pedido. Tu código está en tu perfil de la app.",
-    caption: "Comparte y gana // Cada amigo que invitas con tu código les da 50 puntos a ambos en su primer pedido. Entre más compartes, más rápido subes de rango.",
-    photoIdea: "Gráfico simple '50 + 50 puntos' sobre el verde/dorado de la marca, o dos sandwiches juntos.",
+    whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
+    caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
+    photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
   },
   {
     theme: "MENÚ SECRETO",
-    whatsapp: "Hay un Signature que no está en el menú público. Se desbloquea desde tu 5to pedido 👀",
-    caption: "Lo que no ves en el menú // Después de cierta cantidad de pedidos se desbloquea un Signature que no aparece para nadie más. No decimos cuál — te lo tienes que ganar.",
+    whatsapp: `Hay un Signature que no está en el menú público. Se desbloquea a partir de tu pedido número ${secretoMin} 👀`,
+    caption: `Lo que no ves en el menú // A partir de tu pedido número ${secretoMin} se desbloquea un Signature que no aparece para nadie más, y cambia cada mes. No decimos cuál — te lo tienes que ganar.`,
     photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
   },
   {
@@ -891,15 +1299,15 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
   },
   {
     theme: "PEDIDOS GRUPALES",
-    whatsapp: "¿Pedido de oficina? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo, se paga todo junto.",
-    caption: "Para la oficina o la reunión // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Perfecto para el almuerzo de equipo.",
+    whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
+    caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
   },
   {
     theme: "PLAN SEMANAL",
-    whatsapp: "Paga S/95 hoy, recibe S/100 en saldo para pedir cuando quieras esta semana. El saldo no vence.",
+    whatsapp: `Paga S/${WEEKLY_PLAN_PRICE} hoy y recibe S/${WEEKLY_PLAN_CREDIT} en saldo para pedir cuando quieras. El saldo no vence.`,
     caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
-    photoIdea: "Gráfico 'S/95 → S/100', o varios pedidos de la semana juntos.",
+    photoIdea: `Gráfico 'S/${WEEKLY_PLAN_PRICE} → S/${WEEKLY_PLAN_CREDIT}', o varios pedidos de la semana juntos.`,
   },
   {
     theme: "RECORDATORIO",
@@ -907,40 +1315,136 @@ const MARKETING_CONTENT: { theme: string; whatsapp: string; caption: string; pho
     caption: "Por si se te olvidó que existimos // Seguimos aquí, armando sandwiches todos los días. Pide por la app cuando se te antoje.",
     photoIdea: "Cualquier foto de producto que no hayas usado en semanas anteriores.",
   },
-];
+  ];
+}
 function marketingWeekIndex(offset = 0): number {
   const daysSinceEpoch = Math.floor(Date.now() / 86400000);
   const weekNumber = Math.floor(daysSinceEpoch / 7) + offset;
-  return ((weekNumber % MARKETING_CONTENT.length) + MARKETING_CONTENT.length) % MARKETING_CONTENT.length;
+  const n = marketingContent().length;
+  return ((weekNumber % n) + n) % n;
 }
 export async function actAdminMarketingContent(b: any) {
   await requireAdmin(b.token);
+  // Sin esto, SIG_GATES.SIG05.minOrders sería la semilla del código y no el umbral que el
+  // dueño tenga puesto hoy en el panel — justo el número que este texto promete en público.
+  await loadCatalogPrices();
+  const temas = marketingContent();
   return {
-    current: MARKETING_CONTENT[marketingWeekIndex()],
-    next: MARKETING_CONTENT[marketingWeekIndex(1)],
+    current: temas[marketingWeekIndex()],
+    next: temas[marketingWeekIndex(1)],
   };
 }
-// Cron semanal — no publica nada (ninguna red social está conectada a este sistema), solo
-// avisa que el contenido de la semana ya está listo para copiar en el panel admin.
+
+// ── #50: GENERAR EL CALENDARIO, NO SOLO RECORDARLO ─────────────────────────────────────
+//
+// Hasta hoy el cron semanal solo avisaba "toca publicar" y el rotador enseñaba el texto de
+// la semana. El calendario real (marketing_calendar) existía desde antes, con fechas y
+// estado — pero había que llenarlo A MANO, entrada por entrada. O sea que la parte que
+// costaba trabajo seguía siendo trabajo, y un recordatorio sin el borrador hecho es
+// exactamente el tipo de aviso que se termina ignorando.
+//
+// Ahora el cron ADELANTA los borradores: deja las próximas semanas ya escritas en estado
+// `draft`, con caption, texto de WhatsApp e idea de foto. El dueño edita o borra, que es
+// mucho más barato que escribir desde cero.
+//
+// Sigue sin publicar nada solo: no hay conector real a Instagram/TikTok en este sistema
+// (ver la sección de publicación automática en CLAUDE.md), y fingir que sí lo hay sería
+// peor que no tenerlo.
+const CALENDAR_GENERATE_WEEKS = 4;
+const CALENDAR_GENERATE_MAX_WEEKS = 12;
+
+// Cálculo puro (probado en tests-api/calendario-contenido.test.ts). Lo que decide es qué
+// fechas se van a ESCRIBIR en la base, y el modo de fallo que importa es la duplicación:
+// este generador corre cada semana sobre la misma tabla, así que sin el filtro de fechas ya
+// ocupadas la cuarta corrida dejaría cuatro borradores encima del mismo día y el calendario
+// —cuyo único valor es decir qué toca publicar hoy— se volvería ilegible.
+export function planContentCalendar(
+  desdeFecha: string,
+  semanas: number,
+  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string }[],
+  indiceInicial: number,
+  yaOcupadas: Set<string>,
+): { scheduled_date: string; title: string; caption_text: string; whatsapp_text: string; photo_idea: string }[] {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(desdeFecha) || !Array.isArray(temas) || temas.length === 0) return [];
+  const n = Math.max(0, Math.min(Math.floor(Number(semanas) || 0), CALENDAR_GENERATE_MAX_WEEKS));
+  const [y, m, d] = desdeFecha.split("-").map(Number);
+  const salida = [];
+  for (let k = 0; k < n; k++) {
+    // Aritmética en UTC y no con `new Date(str)`: sumar días sobre una fecha local hace que
+    // un cambio de mes o de año corra la fecha un día según la zona horaria del runtime.
+    const fecha = new Date(Date.UTC(y, m - 1, d + k * 7)).toISOString().slice(0, 10);
+    if (yaOcupadas.has(fecha)) continue;
+    const tema = temas[(((indiceInicial + k) % temas.length) + temas.length) % temas.length];
+    salida.push({
+      scheduled_date: fecha,
+      title: tema.theme,
+      caption_text: tema.caption,
+      whatsapp_text: tema.whatsapp,
+      photo_idea: tema.photoIdea,
+    });
+  }
+  return salida;
+}
+
+async function generarBorradores(semanas: number, creadoPor: string): Promise<{ creados: number; fechas: string[] }> {
+  await loadCatalogPrices();
+  const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10); // hora Lima
+  // Se leen las fechas que YA tienen entrada —cualquiera, no solo las generadas— para no
+  // pisar lo que el dueño planeó a mano. Su plan manda sobre el borrador automático.
+  const existentes = await sbGet(
+    "marketing_calendar",
+    `scheduled_date=gte.${hoy}&select=scheduled_date&limit=${CALENDAR_LIST_LIMIT}`,
+  );
+  const ocupadas = new Set<string>(existentes.map((r: any) => String(r.scheduled_date).slice(0, 10)));
+  const nuevas = planContentCalendar(hoy, semanas, marketingContent(), marketingWeekIndex(), ocupadas);
+  if (!nuevas.length) return { creados: 0, fechas: [] };
+  await sbInsert(
+    "marketing_calendar",
+    nuevas.map((e) => ({ ...e, channel: "instagram", status: "draft", created_by: creadoPor })),
+  );
+  return { creados: nuevas.length, fechas: nuevas.map((e) => e.scheduled_date) };
+}
+
+export async function actAdminCalendarGenerate(b: any) {
+  const s = await requireAdmin(b.token);
+  const semanas = Number(b.weeks) > 0 ? Number(b.weeks) : CALENDAR_GENERATE_WEEKS;
+  const res = await generarBorradores(semanas, s.phone);
+  await logAdminAction(s.phone, "calendar-generate", `${res.creados} borradores`, { semanas, fechas: res.fechas });
+  return { success: true, ...res };
+}
+
+// Cron semanal — no publica nada (ninguna red social está conectada a este sistema). Desde
+// #50 además de avisar DEJA LOS BORRADORES HECHOS para las próximas semanas.
 export async function actRemindMarketingContent(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const theme = MARKETING_CONTENT[marketingWeekIndex()].theme;
+  await loadCatalogPrices();
+  const theme = marketingContent()[marketingWeekIndex()].theme;
+  // Best-effort: si la generación falla, el aviso de la semana igual tiene que salir. Al
+  // revés —dejar que un error de la tabla se coma el recordatorio— el dueño se quedaría sin
+  // las dos cosas.
+  let creados = 0;
+  try {
+    creados = (await generarBorradores(CALENDAR_GENERATE_WEEKS, "cron")).creados;
+  } catch (e) {
+    console.error("calendar auto-generate failed:", e);
+  }
   await sendPushToAdmins({
     title: "Contenido de esta semana listo 📣",
-    body: "Tema: " + theme + ". Copia el texto listo desde el panel admin → MARKETING.",
+    body: `Tema: ${theme}.` + (creados ? ` Dejé ${creados} ${creados === 1 ? "borrador nuevo" : "borradores nuevos"} en el calendario.` : "") +
+      " Panel admin → MARKETING.",
     url: "./index.html",
     tag: "sndwch-weekly-marketing",
     renotify: true,
   });
-  return { success: true, theme };
+  return { success: true, theme, borradoresCreados: creados };
 }
 
 // Calendario de contenido real (marketing_calendar) — reemplaza depender solo del rotador
-// estático de arriba (MARKETING_CONTENT) para "qué publicar hoy": el dueño puede planear
+// estático de arriba (marketingContent()) para "qué publicar hoy": el dueño puede planear
 // fechas concretas, por canal, con estado real (borrador/programado/publicado). Nada de
 // esto publica solo (mismo límite que el resto del sistema de marketing — no hay conector
 // real a Instagram/TikTok/Meta en este entorno) — es la lista de acción que el dueño copia
-// a mano, igual que ya hacía con MARKETING_CONTENT, pero con fechas y estado reales en vez
+// a mano, igual que ya hacía con marketingContent(), pero con fechas y estado reales en vez
 // de un rotador de 2 semanas sin memoria de qué ya se publicó.
 const CALENDAR_CHANNELS = new Set(["instagram", "tiktok", "whatsapp", "facebook", "google_business", "otro"]);
 const CALENDAR_STATUSES = new Set(["draft", "scheduled", "posted"]);
@@ -1091,6 +1595,30 @@ export async function actAdminSecretSignatureSet(b: any) {
   if (vaultOnlyIds.some((id: string) => !allowedIds.has(id))) {
     throw new ApiError("Solo puedes marcar como exclusivo un ingrediente que sea parte de esta receta.", 400);
   }
+  // GUARDA SIMÉTRICA (2026-08-28). El panel de Signatures ya impide publicar uno público
+  // con un ingrediente reservado al menú secreto, pero la comprobación INVERSA no existía:
+  // se podía reservar como exclusivo un ingrediente que un Signature público ya usa (por
+  // ejemplo T01 Tomate, que lleva The Original). El efecto no es visible desde este panel
+  // pero sí para el cliente: priceByoBuild empieza a rechazar ese ingrediente en ARMA EL
+  // TUYO mientras el Signature público lo sigue llevando, así que se le quita un topping
+  // base al catálogo sin que nadie lo haya decidido.
+  const usadosEnPublicos = new Set<string>();
+  for (const code of Object.keys(SIG_DATA)) {
+    if (code === "SIG05") continue;
+    if (SIG_CONTENT[code] && SIG_CONTENT[code].active === false) continue;
+    const d = SIG_DATA[code];
+    usadosEnPublicos.add(d.prot);
+    for (const t of d.tops) usadosEnPublicos.add(t);
+    for (const sa of d.sauces) usadosEnPublicos.add(sa);
+  }
+  const enConflicto = vaultOnlyIds.filter((id: string) => usadosEnPublicos.has(id));
+  if (enConflicto.length) {
+    throw new ApiError(
+      "No puedes reservar al menú secreto un ingrediente que un Signature de la carta ya usa (" +
+        enConflicto.join(", ") + "). Retíralo de esa receta primero, o elige otro.",
+      400,
+    );
+  }
   const imagePath = b.imagePath ? String(b.imagePath).trim().slice(0, 300) : null;
   await sbInsert("secret_signature", {
     name,
@@ -1107,7 +1635,1117 @@ export async function actAdminSecretSignatureSet(b: any) {
   });
   await logAdminAction(s.phone, "secret-signature-set", name, { proteinId, tops, sauces, price15, price30, minOrders, vaultOnlyIds });
   await loadSecretSignature();
-  return { success: true };
+  // C3 — El menú secreto rota cada mes y el cliente que ya lo desbloqueó no tiene forma de
+  // enterarse: hay que abrir la app y mirar. Un sándwich que solo existe un mes y que solo
+  // ve quien se lo ganó pierde todo su efecto si nadie sabe que cambió.
+  const announced = await announceSecretDrop(name, minOrders, b.announce !== false);
+  return { success: true, announced };
+}
+
+// Aviso del sándwich secreto del mes a quienes YA lo desbloquearon.
+//
+// Tres reglas que no se pueden aflojar:
+// · Solo a quien alcanzó el umbral de pedidos. Avisarle a alguien que todavía no puede
+//   pedirlo convierte el mecanismo en publicidad de algo que no puede comprar, que es lo
+//   contrario de una recompensa.
+// · NUNCA se nombra un ingrediente. La composición no revelada es el mecanismo entero; el
+//   push lleva el nombre del sándwich y nada más.
+// · Un solo aviso por rotación. Publicar es append-only, así que corregir un typo inserta
+//   otra fila: sin esta guarda, arreglar una tilde manda un segundo push a todo el mundo.
+//   Se mira `marketing_touches` (la misma tabla que ya deduplica los crons de re-enganche)
+//   en vez de agregar una columna nueva.
+const SECRET_DROP_CAMPAIGN = "secret-menu-drop";
+const SECRET_DROP_COOLDOWN_HOURS = 12;
+const SECRET_DROP_MAX_RECIPIENTS = 2000;
+async function announceSecretDrop(name: string, minOrders: number, wanted: boolean): Promise<number> {
+  if (!wanted) return 0;
+  try {
+    // Antes de abrir no hay a quién avisarle y sí hay mucho que ensayar: mismo criterio
+    // que customerRemindersEnabled usa para todos los crons de marketing.
+    const settings = await sbGet("app_settings", "select=business_launched&id=eq.true");
+    if (settings?.[0]?.business_launched !== true) return 0;
+
+    const since = new Date(Date.now() - SECRET_DROP_COOLDOWN_HOURS * 3600000).toISOString();
+    const reciente = await sbGet(
+      "marketing_touches",
+      `campaign_type=eq.${SECRET_DROP_CAMPAIGN}&sent_at=gte.${encodeURIComponent(since)}&select=id&limit=1`,
+    );
+    if (reciente.length) return 0;
+
+    const destinatarios = await sbGet(
+      "customers",
+      `total_orders=gte.${minOrders}&select=phone&limit=${SECRET_DROP_MAX_RECIPIENTS}`,
+    );
+    let enviados = 0;
+    for (const c of destinatarios) {
+      try {
+        await sendPushToPhone(String(c.phone), {
+          title: "Menú secreto nuevo 🔓",
+          body: name + " ya está disponible este mes. Solo para quienes lo desbloquearon.",
+          url: "./index.html",
+          // Mismo tag para toda la rotación: si por lo que sea llegaran dos, el segundo
+          // reemplaza al primero en la bandeja en vez de apilarse.
+          tag: "sndwch-secret-drop",
+        });
+        await sbInsert("marketing_touches", { customer_phone: c.phone, campaign_type: SECRET_DROP_CAMPAIGN, channel: "push" });
+        enviados++;
+      } catch (e) {
+        console.error("announceSecretDrop: fallo avisando a", c.phone, e);
+      }
+    }
+    return enviados;
+  } catch (e) {
+    // El aviso NUNCA vale más que la publicación en sí: el sándwich ya quedó publicado y
+    // visible en la app, esto es solo el empujón para que se enteren antes.
+    console.error("announceSecretDrop failed:", e);
+    return 0;
+  }
+}
+
+// C6 — PLAN DE TANDA. El dueño cocina por tandas 1-2 veces por semana y hoy decide
+// cuánto hacer de memoria. Esto proyecta el consumo real de cada insumo y dice cuánto
+// cocinar para cubrir los próximos N días.
+//
+// ⚠ ADVERTENCIA QUE VIAJA EN LA PROPIA RESPUESTA, no solo en este comentario. Una
+// proyección sobre 3 días de ventas no es una proyección, es un número inventado con
+// aspecto de dato — y el aspecto de dato es justamente lo que hace que se le crea. Por eso
+// la respuesta trae `daysOfData`, `ordersConsidered` y `reliable`, y la pantalla muestra
+// el aviso cuando `reliable` es falso en vez de mostrar las cantidades a secas. Con el
+// negocio recién abierto esto va a ser poco fiable durante unas 3-4 semanas; sirve igual
+// desde el día uno porque va acumulando, pero se lee como referencia, no como orden.
+//
+// El cálculo, entero: consumo por insumo en la ventana de historial ÷ días transcurridos
+// = consumo diario; × días a cubrir × margen = lo que hace falta; menos el stock que ya
+// hay = lo que toca cocinar. Los pedidos ya PROGRAMADOS dentro del horizonte se toman como
+// piso: son demanda comprometida, no un promedio.
+const BATCH_LOOKBACK_DAYS = 28;
+const BATCH_MIN_DAYS_OF_DATA = 14;
+const BATCH_MIN_ORDERS = 20;
+// Cocinar exactamente el promedio significa quedarse corto la mitad de los días. Este
+// margen es un colchón, no una predicción: con datos reales de varianza se puede afinar.
+const BATCH_SAFETY_FACTOR = 1.25;
+// ── #2: AVISO DE "TOCA COCINAR" ────────────────────────────────────────────────────────
+//
+// El plan de tanda ya dice cuánto cocinar, pero solo si el dueño ABRE la pantalla. El caso
+// que importa es el contrario: está cocinando otra cosa, o repartiendo, o es martes y no
+// piensa en el jueves. Cocinar por tandas significa que enterarse tarde no se arregla con
+// una compra rápida — hay que descongelar, limpiar, cocinar y enfriar.
+//
+// Por eso el umbral NO es "te quedaste sin stock" (eso ya lo avisa la alerta de stock bajo)
+// sino "al ritmo actual te queda menos de lo que tardas en producir". Ese margen es el
+// único número que hace la diferencia entre un aviso útil y una autopsia.
+const COOK_LEAD_DAYS = 2;
+
+export type CookNowItem = { code: string; name: string; daysLeft: number; toCook: number | null };
+
+// Qué insumos hay que cocinar YA. Puro y probado (tests-api/toca-cocinar.test.ts): su modo
+// de fallo no es un error visible, es el SILENCIO — la alerta que no salió el día que se
+// necesitaba.
+export function cookNowItems(items: BatchPlanItem[], leadDays: number = COOK_LEAD_DAYS): CookNowItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    // `daysLeft === null` queda fuera a propósito: significa que no hay cantidad rastreada
+    // o que no hay consumo medido, y en ninguno de los dos casos se puede afirmar que se
+    // esté acabando. Inventar una alerta ahí enseña a ignorar las siguientes.
+    .filter((i) => i && i.daysLeft !== null && i.daysLeft <= leadDays)
+    .sort((a, b) => (a.daysLeft as number) - (b.daysLeft as number))
+    .map((i) => ({ code: i.code, name: i.name, daysLeft: i.daysLeft as number, toCook: i.toCook }));
+}
+
+export async function actAlertCookNow(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const plan = await computeBatchPlan(BATCH_DEFAULT_COVER_DAYS);
+  // Sin historial suficiente el "por día" es ruido, y una alerta construida sobre ruido
+  // manda a cocinar de más. Es el mismo freno que la pantalla del plan de tanda ya muestra
+  // ANTES que las cantidades.
+  if (!plan.reliable) return { success: true, alerted: false, reason: "sin historial suficiente" };
+
+  const urgentes = cookNowItems(plan.items);
+  if (!urgentes.length) return { success: true, alerted: false };
+
+  // Una vez al día por combinación de insumos: el cron corre a diario y repetir el mismo
+  // aviso mientras el dueño todavía no cocina lo vuelve ruido.
+  const clave = "cook-now:" + urgentes.map((u) => u.code).sort().join(",");
+  if (!(await rpc("check_rate_limit", { p_key: clave, p_limit: 1, p_window_minutes: 60 * 20 }))) {
+    return { success: true, alerted: false, throttled: true };
+  }
+  const detalle = urgentes.slice(0, 3)
+    .map((u) => `${u.name} (${u.daysLeft <= 0 ? "ya" : u.daysLeft + "d"})`)
+    .join(", ");
+  await sendPushToAdmins({
+    title: "🍳 Toca cocinar",
+    body: `Se acaba: ${detalle}${urgentes.length > 3 ? ` y ${urgentes.length - 3} más` : ""}. Panel → Plan de tanda.`,
+    url: "./index.html",
+    tag: "sndwch-cook-now",
+    renotify: true,
+  });
+  return { success: true, alerted: true, items: urgentes.length };
+}
+
+// ── #12: ORDEN DE ARMADO ───────────────────────────────────────────────────────────────
+//
+// "Orden de cocción" en el plan; en la práctica de este negocio es orden de ARMADO: el
+// dueño cocina por tandas 1-2 veces por semana y en hora de servicio solo arma (ver el
+// método de trabajo real en CLAUDE.md). Lo que se le puede decir de verdad no es "cocina
+// esto primero" sino "empieza este a las 19:05 o no llega".
+//
+// El valor está en el caso feo: tres pedidos programados para la misma hora. Ordenarlos por
+// hora de entrega no alcanza — hay que restar hacia atrás el tiempo de armado ACUMULADO,
+// porque son secuenciales (una persona sola). Sin eso, el tercero se empieza tarde siempre.
+export type AssemblySlot = { ref: string; customerName: string; deliveryTime: string; startBy: string; late: boolean };
+
+export function assemblyOrder(
+  orders: { ref: string; customerName?: string | null; deliveryTime: string }[],
+  nowMs: number,
+  minutesPerOrder: number,
+): AssemblySlot[] {
+  if (!Array.isArray(orders)) return [];
+  const validos = orders
+    .filter((o) => o && o.deliveryTime && !Number.isNaN(new Date(o.deliveryTime).getTime()))
+    .sort((a, b) => new Date(a.deliveryTime).getTime() - new Date(b.deliveryTime).getTime());
+  const mins = Math.max(1, Number(minutesPerOrder) || 1);
+  return validos.map((o, i) => {
+    // El i-ésimo pedido tiene (i+1) armados por delante contándose a sí mismo: el primero
+    // se empieza `mins` antes de su hora, el segundo `2*mins`, y así. Restar solo `mins`
+    // para todos es exactamente el error que hace que el último salga tarde.
+    const startBy = new Date(new Date(o.deliveryTime).getTime() - (i + 1) * mins * 60000);
+    return {
+      ref: o.ref,
+      customerName: o.customerName || "",
+      deliveryTime: o.deliveryTime,
+      startBy: startBy.toISOString(),
+      // `late` no es decorativo: es la única señal de que un pedido YA no llega a tiempo, y
+      // saberlo ahora permite avisarle al cliente en vez de que se entere por el retraso.
+      late: startBy.getTime() < nowMs,
+    };
+  });
+}
+
+// ── #10: MISE EN PLACE DEL DÍA ─────────────────────────────────────────────────────────
+//
+// La lista de preparación (#26) ya agrega los ingredientes de las próximas 24 h, pero como
+// una lista plana ordenada por faltante. Para USARLA en la cocina hace falta otra cosa:
+// agrupada por dónde está cada cosa, para no volver a la refri seis veces.
+//
+// Los grupos salen del prefijo del código, que es el mismo esquema que usa todo el catálogo
+// (B=pan, P=proteína, T=topping, S=salsa, D=bebida). Derivarlo así y no con una lista
+// escrita a mano es lo que hace que un ingrediente nuevo aparezca solo en su grupo.
+const MISE_GROUPS: { key: string; label: string; prefix: string }[] = [
+  { key: "prot", label: "Proteínas", prefix: "P" },
+  { key: "base", label: "Panes", prefix: "B" },
+  { key: "top", label: "Toppings", prefix: "T" },
+  { key: "sauce", label: "Salsas", prefix: "S" },
+  { key: "drink", label: "Bebidas", prefix: "D" },
+];
+
+export function miseEnPlaceGroups(
+  ingredients: PrepIngredient[],
+): { key: string; label: string; items: PrepIngredient[] }[] {
+  const lista = Array.isArray(ingredients) ? ingredients : [];
+  const usados = new Set<string>();
+  const grupos = MISE_GROUPS.map((g) => {
+    const items = lista.filter((i) => i && typeof i.code === "string" && i.code.startsWith(g.prefix));
+    items.forEach((i) => usados.add(i.code));
+    // Dentro de cada grupo mandan los faltantes: es lo que hay que resolver antes de abrir.
+    items.sort((a, b) => (Number(b.shortfall) - Number(a.shortfall)) || (b.qty - a.qty));
+    return { key: g.key, label: g.label, items };
+  }).filter((g) => g.items.length);
+  // Un código que no encaja en ningún prefijo NO se descarta: se pone en "Otros". Perderlo
+  // en silencio sería peor que mostrarlo mal — es un insumo que igual hay que preparar.
+  const otros = lista.filter((i) => i && !usados.has(i.code));
+  if (otros.length) grupos.push({ key: "otros", label: "Otros", items: otros });
+  return grupos;
+}
+
+// ── #31 / #34: CONCILIACIÓN Y COMISIONES DE CULQI ──────────────────────────────────────
+//
+// El cron horario ya concilia cargos HUÉRFANOS (un cobro real sin pedido detrás), que es el
+// caso catastrófico. Lo que faltaba es lo aburrido y constante: cuánto cobró Culqi contra
+// cuánto se facturó, y cuánto se llevó de comisión.
+//
+// La comisión de Culqi es un costo REAL que hoy no aparece en ningún reporte. A 5.5% sobre
+// un mes de S/6 000 en tarjeta son S/330 — más que los costos fijos del negocio, que están
+// por debajo de S/500. No verlo no lo hace desaparecer.
+export type CulqiReconciliation = {
+  orders: number;
+  invoiced: number;
+  fees: number;
+  netExpected: number;
+  declines: number;
+  declineRate: number | null;
+  orphanCharges: number;
+};
+
+// Cálculo puro (tests-api/conciliacion-culqi.test.ts). No consulta a Culqi: cruza lo que la
+// propia base ya sabe — los pedidos cobrados con tarjeta y los eventos que `claimAndChargeCulqi`
+// escribe en `debug_logs`. Un reporte que dependiera de la API de Culqi fallaría justo los
+// días en que Culqi tiene problemas, que son los días en que hay que mirarlo.
+export function culqiReconciliation(
+  orders: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: number | null }[],
+  logs: { detail?: { stage?: string } | null }[],
+  feeRate: number,
+  orphanCharges = 0,
+): CulqiReconciliation {
+  const cobrados = (Array.isArray(orders) ? orders : []).filter(
+    (o) => o && o.payment_method === "card" && o.payment_status === "paid" && o.status !== "CANCELADO",
+  );
+  const invoiced = cobrados.reduce((a, o) => {
+    const n = Number(o.total);
+    return a + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  const eventos = (Array.isArray(logs) ? logs : []).map((l) => l?.detail?.stage);
+  const declines = eventos.filter((e) => e === "culqi-rejected").length;
+  const exitos = eventos.filter((e) => e === "charge-succeeded").length;
+  const intentos = declines + exitos;
+  const fees = invoiced * feeRate;
+  return {
+    orders: cobrados.length,
+    invoiced: Math.round(invoiced * 100) / 100,
+    fees: Math.round(fees * 100) / 100,
+    // Lo que de verdad debería llegar a la cuenta. Es el número contra el que se compara el
+    // depósito de Culqi: si no cuadra, hay algo que revisar.
+    netExpected: Math.round((invoiced - fees) * 100) / 100,
+    declines,
+    // `null` sin intentos: 0% con cero cobros sugeriría que todo salió bien cuando en
+    // realidad no pasó nada.
+    declineRate: intentos > 0 ? Math.round((declines / intentos) * 1000) / 1000 : null,
+    orphanCharges,
+  };
+}
+
+export async function actAdminCulqiReport(b: any) {
+  await requireAdmin(b.token);
+  // Por defecto el MES en curso en hora Lima: la comisión se mira contra la liquidación
+  // mensual, no día a día.
+  const desde = typeof b.since === "string" && b.since ? b.since : limaMonthStartIso(new Date());
+  const hasta = typeof b.until === "string" && b.until ? b.until : new Date().toISOString();
+  const [orders, logs, huerfanos] = await Promise.all([
+    sbGet("orders", `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}&payment_method=eq.card&select=payment_method,payment_status,status,total&limit=5000`),
+    sbGet("debug_logs", `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}&select=detail&limit=5000`),
+    sbGet("debug_logs", `created_at=gte.${encodeURIComponent(desde)}&select=detail&limit=1000`),
+  ]);
+  const orphan = huerfanos.filter((l: any) => l?.detail?.stage === "orphan-charge-refunded" || l?.detail?.stage === "orphan-charge-found").length;
+  return { since: desde, until: hasta, feeRate: CULQI_FEE_RATE, ...culqiReconciliation(orders, logs, CULQI_FEE_RATE, orphan) };
+}
+
+// ── #38: PRECIO DE INSUMO POR COMPRA ───────────────────────────────────────────────────
+//
+// Todo el costeo del menú corre hoy sobre literales de markdown que nadie actualiza cuando
+// sube la carne. Cada compra registrada convierte eso en un número derivado de boletas
+// reales — y, cruzándolo con las recetas (que desde #9 también son dato), da el costo por
+// porción sin que nadie lo calcule a mano.
+//
+// Cuántas compras entran en el promedio. Tres y no una: una sola compra rara (un día que
+// pagaste de más por urgencia) movería el costo del menú entero. Tampoco muchas: con
+// inflación, promediar seis meses da un costo que ya no existe.
+const PURCHASE_AVG_WINDOW = 3;
+// A partir de cuánto una subida deja de ser ruido de mercado y merece decirse.
+const PURCHASE_SPIKE_PCT = 0.15;
+
+export type PurchaseRow = { product_code: string; qty: number; unit: string; total_paid: number; purchased_at: string; supplier?: string | null };
+export type IngredientCost = {
+  code: string;
+  unit: string;
+  lastUnitCost: number;
+  avgUnitCost: number;
+  purchases: number;
+  lastPurchasedAt: string;
+  spikePct: number | null;
+};
+
+// Costo unitario vigente por insumo. Puro y probado (tests-api/costo-insumos.test.ts):
+// alimenta el costo del menú, así que un error acá se propaga a toda decisión de precio.
+export function ingredientCosts(rows: PurchaseRow[]): Map<string, IngredientCost> {
+  const salida = new Map<string, IngredientCost>();
+  const porCodigo = new Map<string, PurchaseRow[]>();
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r || !r.product_code) continue;
+    const qty = Number(r.qty);
+    const pagado = Number(r.total_paid);
+    // Una compra sin cantidad no permite derivar ningún precio unitario; incluirla daría
+    // Infinity y ese número se propagaría al costo de todo el menú.
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(pagado) || pagado < 0) continue;
+    if (!porCodigo.has(r.product_code)) porCodigo.set(r.product_code, []);
+    porCodigo.get(r.product_code)!.push(r);
+  }
+  for (const [code, compras] of porCodigo) {
+    // Más reciente primero. Se ordena acá y no se confía en el orden de la consulta: esta
+    // función se prueba con listas armadas a mano y tiene que dar lo mismo.
+    compras.sort((a, b) => String(b.purchased_at).localeCompare(String(a.purchased_at)));
+    const unitario = (r: PurchaseRow) => Number(r.total_paid) / Number(r.qty);
+    const ultima = compras[0];
+    const ventana = compras.slice(0, PURCHASE_AVG_WINDOW);
+    // Promedio PONDERADO por cantidad, no promedio de precios unitarios: comprar 6 kg a S/20
+    // y 0.5 kg a S/30 no cuesta S/25 el kilo en promedio, cuesta S/20.77.
+    const totalQty = ventana.reduce((a, r) => a + Number(r.qty), 0);
+    const totalPagado = ventana.reduce((a, r) => a + Number(r.total_paid), 0);
+    const anterior = compras[1];
+    const previo = anterior ? unitario(anterior) : null;
+    const actual = unitario(ultima);
+    salida.set(code, {
+      code,
+      unit: String(ultima.unit || ""),
+      lastUnitCost: Math.round(actual * 10000) / 10000,
+      avgUnitCost: totalQty > 0 ? Math.round((totalPagado / totalQty) * 10000) / 10000 : actual,
+      purchases: compras.length,
+      lastPurchasedAt: String(ultima.purchased_at || ""),
+      // Cuánto subió respecto de la compra anterior. `null` con una sola compra: no hay
+      // contra qué comparar, y mostrar 0% ahí sugeriría que el precio está estable.
+      spikePct: previo && previo > 0 ? Math.round(((actual - previo) / previo) * 1000) / 1000 : null,
+    });
+  }
+  return salida;
+}
+
+export type RecipeCost = {
+  recipeCode: string;
+  name: string;
+  yieldPortions: number;
+  known: number;
+  total: number;
+  costPerPortion: number | null;
+  missing: string[];
+};
+
+// Costo por porción de una receta, a partir de las compras reales.
+//
+// LA PARTE QUE IMPORTA: si falta el precio de UN solo ingrediente, `costPerPortion` es
+// `null`. Un total parcial que se ve completo es exactamente el "dato con aspecto de
+// medición" que este proyecto ya decidió no producir — y sobre un costo por porción se
+// toman decisiones de precio. Se devuelve además QUÉ falta, para que la pantalla diga cómo
+// completarlo en vez de solo negarse.
+//
+// Las unidades tienen que coincidir entre la receta y la compra: comprar en kg y pedir en g
+// daría un costo mil veces menor. Cuando no coinciden, el ingrediente cuenta como faltante,
+// que es la lectura conservadora.
+export function recipeCost(
+  recipe: { recipe_code: string; name: string; yield_portions: number; ingredients?: { item: string; qty: number; unit: string; code?: string }[] },
+  costs: Map<string, IngredientCost>,
+): RecipeCost {
+  const ingredientes = Array.isArray(recipe?.ingredients) ? recipe.ingredients : [];
+  const rendimiento = Number(recipe?.yield_portions);
+  let total = 0;
+  let known = 0;
+  const missing: string[] = [];
+  for (const ing of ingredientes) {
+    // El código del insumo puede venir explícito; si no, se usa el propio nombre como clave,
+    // que es lo que el dueño escribe al registrar la compra.
+    const clave = String(ing?.code || ing?.item || "").trim();
+    const costo = costs.get(clave);
+    const qty = Number(ing?.qty);
+    if (!costo || !Number.isFinite(qty) || qty <= 0) { missing.push(String(ing?.item || clave)); continue; }
+    if (String(ing?.unit || "").toLowerCase() !== String(costo.unit || "").toLowerCase()) {
+      // Mezclar kg con g daría un costo mil veces menor sin ningún error visible.
+      missing.push(`${ing.item} (compraste en ${costo.unit}, la receta pide ${ing.unit})`);
+      continue;
+    }
+    total += qty * costo.avgUnitCost;
+    known++;
+  }
+  const completo = known === ingredientes.length && ingredientes.length > 0;
+  return {
+    recipeCode: String(recipe?.recipe_code || ""),
+    name: String(recipe?.name || ""),
+    yieldPortions: Number.isFinite(rendimiento) && rendimiento > 0 ? rendimiento : 0,
+    known,
+    total: Math.round(total * 100) / 100,
+    costPerPortion: completo && rendimiento > 0 ? Math.round((total / rendimiento) * 100) / 100 : null,
+    missing,
+  };
+}
+
+const PURCHASES_LIST_LIMIT = 500;
+
+export async function actAdminPurchases(b: any) {
+  await requireAdmin(b.token);
+  const [compras, recetas] = await Promise.all([
+    sbGet("ingredient_purchases", `select=*&order=purchased_at.desc,id.desc&limit=${PURCHASES_LIST_LIMIT}`),
+    sbGet("production_recipes", "select=*&order=id.desc&limit=500"),
+  ]);
+  const costos = ingredientCosts(compras);
+  // Solo la receta vigente de cada código (append-only, ver #9).
+  const vigentes = new Map<string, any>();
+  for (const r of recetas) if (!vigentes.has(r.recipe_code)) vigentes.set(r.recipe_code, r);
+  return {
+    purchases: compras.slice(0, 100),
+    costs: [...costos.values()].sort((a, b) => a.code.localeCompare(b.code)),
+    recipeCosts: [...vigentes.values()]
+      .filter((r) => r.active !== false)
+      .map((r) => recipeCost(r, costos)),
+    avgWindow: PURCHASE_AVG_WINDOW,
+    spikeThreshold: PURCHASE_SPIKE_PCT,
+  };
+}
+
+export async function actAdminPurchaseAdd(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.productCode || "").trim().toUpperCase().slice(0, 20);
+  const qty = Number(b.qty);
+  const totalPaid = Number(b.totalPaid);
+  const unit = String(b.unit || "").trim().slice(0, 20);
+  if (!code) throw new ApiError("Falta el código del insumo.", 400);
+  if (!Number.isFinite(qty) || qty <= 0) throw new ApiError("La cantidad tiene que ser mayor que cero.", 400);
+  if (!Number.isFinite(totalPaid) || totalPaid < 0) throw new ApiError("Lo pagado no puede ser negativo.", 400);
+  if (!unit) throw new ApiError("Falta la unidad (kg, g, unidades...).", 400);
+
+  const row = (await sbInsert("ingredient_purchases", {
+    product_code: code,
+    supplier: b.supplier ? String(b.supplier).trim().slice(0, 120) : null,
+    qty,
+    unit,
+    total_paid: totalPaid,
+    purchased_at: /^\d{4}-\d{2}-\d{2}$/.test(String(b.purchasedAt || "")) ? b.purchasedAt : undefined,
+    notes: b.notes ? String(b.notes).slice(0, 500) : null,
+    created_by: s.phone,
+  }))[0];
+
+  // Si el precio subió fuerte respecto de la compra anterior, se dice AHORA — el dueño
+  // acaba de pagar y todavía se acuerda de por qué. Enterarse un mes después, cuando el
+  // margen ya bajó, no permite hacer nada al respecto.
+  let spike: { pct: number; previous: number; current: number } | null = null;
+  try {
+    const previas = await sbGet(
+      "ingredient_purchases",
+      `product_code=eq.${encodeURIComponent(code)}&select=qty,total_paid,purchased_at,unit,product_code&order=purchased_at.desc,id.desc&limit=5`,
+    );
+    const info = ingredientCosts(previas).get(code);
+    if (info && info.spikePct !== null && info.spikePct >= PURCHASE_SPIKE_PCT) {
+      const anterior = info.lastUnitCost / (1 + info.spikePct);
+      spike = { pct: info.spikePct, previous: Math.round(anterior * 100) / 100, current: info.lastUnitCost };
+    }
+  } catch (e) {
+    // El aviso es un plus: nunca puede impedir que la compra quede registrada.
+    await debugLog({ stage: "purchase_spike_check_failed", code, error: String(e) });
+  }
+
+  await logAdminAction(s.phone, "purchase-add", code, { qty, unit, totalPaid });
+  return { success: true, purchase: row, spike };
+}
+
+// ── #39: PASIVO DE CRÉDITO EMITIDO ─────────────────────────────────────────────────────
+//
+// El crédito interno (Plan Semanal, tarjetas de regalo, saldo regalado) es plata que el
+// negocio YA COBRÓ y todavía debe en comida. Nadie lo miraba: no aparece en el dashboard ni
+// en el cierre de caja, y por diseño no puede aparecer ahí — el cierre de caja habla del
+// día, y esto es un saldo acumulado.
+//
+// Importa por dos razones distintas. La obvia: es deuda, y en un mes flojo puede ser una
+// parte grande de los pedidos que "no dejan caja". La menos obvia: crédito que nadie usa es
+// una promesa que el cliente no está cobrando, y eso ya tiene su propio recordatorio.
+export function creditLiability(
+  customers: { credit_balance?: number | null }[],
+): { customers: number; total: number; average: number; largest: number } {
+  const saldos = (Array.isArray(customers) ? customers : [])
+    .map((c) => Number(c?.credit_balance))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const total = saldos.reduce((a, n) => a + n, 0);
+  return {
+    customers: saldos.length,
+    total: Math.round(total * 100) / 100,
+    average: saldos.length ? Math.round((total / saldos.length) * 100) / 100 : 0,
+    largest: saldos.length ? Math.round(Math.max(...saldos) * 100) / 100 : 0,
+  };
+}
+
+// ── #40: CIERRE DE CAJA DIARIO ─────────────────────────────────────────────────────────
+//
+// El correo de resumen diario ya manda "ingresos del día", y ese número miente por omisión
+// para ESTE negocio en tres formas distintas:
+//
+//   1. **El delivery no es plata del negocio.** Es pass-through: el cliente lo paga dentro
+//      del mismo cobro y el dueño se lo entrega al motorizado. Sumarlo al ingreso hace
+//      creer que se ganó entre S/6 y S/15 más por pedido de los que se ganaron.
+//   2. **Un pedido pagado con crédito interno no trae plata hoy.** Ese dinero entró cuando
+//      se compró el Plan Semanal o la tarjeta de regalo, quizá semanas antes. Contarlo como
+//      caja del día lo cuenta dos veces.
+//   3. **La tarjeta no llega entera.** Culqi se queda su comisión, y a 5.5% sobre un día de
+//      S/400 son S/22 que nunca van a estar en la cuenta.
+//
+// Cuadrar la caja es exactamente separar esas cuatro cosas. Cálculo puro y probado
+// (tests-api/cierre-caja.test.ts) porque decide un número que el dueño va a usar para saber
+// si el día le alcanzó — y equivocarlo no produce ningún error, produce una decisión mala.
+export type CashClose = {
+  orders: number;
+  gross: number;
+  deliveryPassThrough: number;
+  byMethod: { method: string; label: string; orders: number; gross: number; net: number }[];
+  cardFees: number;
+  creditUsed: number;
+  cashIn: number;
+  businessRevenue: number;
+  pendingConfirmation: { orders: number; amount: number };
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  card: "Tarjeta (Culqi)",
+  yape: "Yape",
+  plin: "Plin",
+  credit: "Crédito interno",
+  cod: "Contra entrega",
+  reward: "Recompensa (gratis)",
+};
+
+export function cashClose(
+  orders: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: number | null; delivery_fee?: number | null }[],
+  culqiFeeRate: number,
+): CashClose {
+  const lista = (Array.isArray(orders) ? orders : []).filter((o) => o && o.status !== "CANCELADO");
+  const pagados = lista.filter((o) => o.payment_status === "paid");
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  const porMetodo = new Map<string, { orders: number; gross: number; net: number }>();
+  let gross = 0, delivery = 0, cardFees = 0, creditUsed = 0;
+  for (const o of pagados) {
+    const metodo = String(o.payment_method || "desconocido");
+    const total = num(o.total);
+    const fee = num(o.delivery_fee);
+    // La comida es el total MENOS el reparto. Es el único número que de verdad es venta.
+    const comida = Math.max(0, total - fee);
+    gross += total;
+    delivery += fee;
+    if (metodo === "credit") creditUsed += total;
+    // La comisión se calcula solo sobre lo que pasó por Culqi. Aplicarla a todo restaría
+    // 5.5% de los pagos por Yape, que no la pagan — y el error va en contra del dueño.
+    if (metodo === "card") cardFees += total * culqiFeeRate;
+    const acc = porMetodo.get(metodo) || { orders: 0, gross: 0, net: 0 };
+    acc.orders += 1;
+    acc.gross += total;
+    acc.net += comida;
+    porMetodo.set(metodo, acc);
+  }
+
+  // Lo que de verdad entró HOY: todo lo cobrado, menos lo que se pagó con crédito (esa plata
+  // entró otro día), menos lo que Culqi se queda.
+  const cashIn = gross - creditUsed - cardFees;
+  // Lo que le queda al negocio: lo anterior menos TODO el reparto del día.
+  //
+  // Todo, incluido el de los pedidos pagados con crédito. Al motorizado se le paga igual: no
+  // le importa de qué bolsillo salió la venta. Descontar solo el reparto de los pedidos que
+  // trajeron efectivo dejaría fuera una salida de caja real y el número saldría optimista —
+  // que es la dirección exacta en la que un cierre de caja no se puede equivocar.
+  const businessRevenue = cashIn - delivery;
+
+  // Yape/Plin sin confirmar no es caja: el cliente dijo que pagó y nadie miró la cuenta.
+  // Va aparte y no suma, porque el día que sume una vez deja de servir para cuadrar.
+  const pendientes = lista.filter((o) => o.payment_status !== "paid");
+
+  return {
+    orders: pagados.length,
+    gross: r2(gross),
+    deliveryPassThrough: r2(delivery),
+    byMethod: [...porMetodo.entries()]
+      .map(([method, v]) => ({ method, label: METHOD_LABELS[method] || method, orders: v.orders, gross: r2(v.gross), net: r2(v.net) }))
+      .sort((a, b) => b.gross - a.gross),
+    cardFees: r2(cardFees),
+    creditUsed: r2(creditUsed),
+    cashIn: r2(cashIn),
+    businessRevenue: r2(businessRevenue),
+    pendingConfirmation: {
+      orders: pendientes.length,
+      amount: r2(pendientes.reduce((a, o) => a + num(o.total), 0)),
+    },
+  };
+}
+
+export async function actAdminCashClose(b: any) {
+  await requireAdmin(b.token);
+  // Por defecto el día en curso en hora de Lima, que es lo que significa "cerrar la caja".
+  const desde = typeof b.since === "string" && b.since ? b.since : limaDayStartIso(new Date());
+  const hasta = typeof b.until === "string" && b.until ? b.until : new Date().toISOString();
+  const [rows, conSaldo] = await Promise.all([
+    sbGet(
+      "orders",
+      `created_at=gte.${encodeURIComponent(desde)}&created_at=lte.${encodeURIComponent(hasta)}` +
+        `&select=payment_method,payment_status,status,total,delivery_fee&limit=5000`,
+    ),
+    // #39 — El pasivo de crédito NO es del día: es un saldo acumulado. Viaja con el cierre
+    // de caja porque es donde el dueño está mirando plata, pero la pantalla lo separa y lo
+    // dice — mezclarlo con el día sería exactamente el error que este cierre vino a arreglar.
+    sbGet("customers", "credit_balance=gt.0&select=credit_balance&limit=20000"),
+  ]);
+  return {
+    since: desde,
+    until: hasta,
+    culqiFeeRate: CULQI_FEE_RATE,
+    ...cashClose(rows, CULQI_FEE_RATE),
+    creditLiability: creditLiability(conSaldo),
+  };
+}
+
+// ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────
+//
+// Las recetas viven en `production_recipes` (append-only: la fila de mayor id por
+// recipe_code es la vigente, mismo patrón que catalog_items y secret_signature). RECETARIO.md
+// sigue siendo la EXPLICACIÓN — por qué punta de pecho y no lomo, qué pasa si sobrecargas la
+// sartén — y ahí se queda; acá vive solo lo que hay que poder calcular.
+
+export type RecipeIngredient = { item: string; qty: number; unit: string };
+export type RecipeStep = { label: string; minutes: number | null };
+
+// #9 — Escalar una receta a las porciones que se quieren hoy.
+//
+// Puro y probado (tests-api/recetas.test.ts). Es aritmética simple y por eso mismo es fácil
+// que nadie la pruebe — pero se equivoca hacia el lado caro: un factor mal calculado hace
+// comprar 12 kg de carne en vez de 6, y eso son S/120 parados en un refri que además tiene
+// fecha de vencimiento.
+export function scaleRecipe(
+  ingredients: RecipeIngredient[],
+  baseYield: number,
+  targetPortions: number,
+): (RecipeIngredient & { scaledQty: number })[] {
+  const base = Number(baseYield);
+  const objetivo = Number(targetPortions);
+  if (!Array.isArray(ingredients) || !Number.isFinite(base) || base <= 0) return [];
+  if (!Number.isFinite(objetivo) || objetivo <= 0) return [];
+  const factor = objetivo / base;
+  return ingredients
+    .filter((i) => i && typeof i.item === "string" && Number.isFinite(Number(i.qty)))
+    .map((i) => {
+      const escalada = Number(i.qty) * factor;
+      return {
+        item: i.item,
+        qty: Number(i.qty),
+        unit: String(i.unit || ""),
+        // Se redondea a 1 decimal, no a entero: media cucharada de sal en una tanda de 2 kg
+        // sí cambia el resultado, y redondear 0.4 huevos a 0 deja la receta sin huevo.
+        scaledQty: Math.round(escalada * 10) / 10,
+      };
+    });
+}
+
+// #3 — Los tiempos de la tanda, acumulados.
+//
+// Cada etapa con su minuto de inicio contado desde el arranque, y el total. Sin el
+// acumulado, "hornear 17 min" no responde la pregunta real, que es a qué hora se termina —
+// y esa es la que decide si la tanda entra en la tarde o hay que empezar mañana.
+//
+// Una etapa SIN minutos se conserva en la lista con `minutes: null`: se muestra como paso
+// pero sin cronómetro. Inventarle una duración sería peor que no tenerla.
+export function recipeTimeline(
+  steps: RecipeStep[],
+): { steps: (RecipeStep & { startsAtMinute: number })[]; totalMinutes: number } {
+  const lista = Array.isArray(steps) ? steps : [];
+  let acumulado = 0;
+  const salida = lista
+    .filter((s) => s && typeof s.label === "string" && s.label.length > 0)
+    .map((s) => {
+      const m = Number(s.minutes);
+      const minutos = Number.isFinite(m) && m > 0 ? Math.round(m) : null;
+      const inicio = acumulado;
+      if (minutos) acumulado += minutos;
+      return { label: s.label, minutes: minutos, startsAtMinute: inicio };
+    });
+  return { steps: salida, totalMinutes: acumulado };
+}
+
+// #4 — La etiqueta que va pegada al envase.
+//
+// RECETARIO.md lo dice sin rodeos: "Sin fecha no hay rotación". En el refri, dos bolsas de
+// mechado son indistinguibles, y la única forma de saber cuál usar primero es que lo diga la
+// etiqueta.
+//
+// La vida útil llega desde `inventory.shelf_life_days` — la MISMA que usa la alerta de
+// caducidad (#5) y que el dueño edita en el panel de Inventario. No se guarda en la receta a
+// propósito: dos números para la misma cosa terminan en que uno gana en silencio.
+export function batchLabels(
+  recipe: { recipe_code: string; name: string; portion_grams?: number | null },
+  cookedAtIso: string,
+  shelfLifeDays: number | null,
+): { code: string; name: string; portionGrams: number | null; cookedAt: string; useBy: string | null } {
+  const cocinado = new Date(cookedAtIso);
+  const valido = !Number.isNaN(cocinado.getTime());
+  const dias = Number(shelfLifeDays);
+  return {
+    code: String(recipe?.recipe_code || ""),
+    name: String(recipe?.name || ""),
+    portionGrams: Number.isFinite(Number(recipe?.portion_grams)) ? Number(recipe?.portion_grams) : null,
+    cookedAt: valido ? cocinado.toISOString() : "",
+    // Sin vida útil configurada la etiqueta sale igual, con la fecha de producción y sin
+    // fecha límite. Una etiqueta sin "usar antes de" sigue permitiendo rotar; una etiqueta
+    // con una fecha inventada hace tirar comida buena o servir comida vencida.
+    useBy: valido && Number.isFinite(dias) && dias > 0
+      ? new Date(cocinado.getTime() + dias * 86400000).toISOString()
+      : null,
+  };
+}
+
+// Solo la fila vigente de cada receta: append-only significa que hay varias por código.
+export async function actAdminRecipes(b: any) {
+  await requireAdmin(b.token);
+  const rows = await sbGet("production_recipes", "select=*&order=id.desc&limit=500");
+  const vigentes = new Map<string, any>();
+  for (const r of rows) if (!vigentes.has(r.recipe_code)) vigentes.set(r.recipe_code, r);
+  const recetas = [...vigentes.values()].filter((r) => r.active !== false);
+
+  // La vida útil de cada insumo, para las etiquetas. Una sola consulta para todas las
+  // recetas en vez de una por receta.
+  const codes = recetas.map((r) => r.recipe_code);
+  const inv = codes.length
+    ? await sbGet("inventory", `product_code=in.(${codes.map((c) => encodeURIComponent(c)).join(",")})&select=product_code,shelf_life_days`)
+    : [];
+  const vida = new Map<string, number | null>(inv.map((i: any) => [i.product_code, i.shelf_life_days ?? null]));
+
+  const targetPortions = Number(b.targetPortions);
+  return {
+    recipes: recetas.map((r) => ({
+      ...r,
+      timeline: recipeTimeline(r.steps || []),
+      shelfLifeDays: vida.get(r.recipe_code) ?? null,
+      // El escalado solo viaja si se pidió: sin objetivo, la pantalla muestra la receta tal
+      // como está escrita, que es lo correcto por defecto.
+      scaled: Number.isFinite(targetPortions) && targetPortions > 0
+        ? scaleRecipe(r.ingredients || [], r.yield_portions, targetPortions)
+        : null,
+    })),
+    targetPortions: Number.isFinite(targetPortions) && targetPortions > 0 ? targetPortions : null,
+  };
+}
+
+// Guardar una receta = insertar una fila nueva (append-only). Nunca se edita in-place: así
+// queda el historial de "qué hice la vez que salió bien", que en una receta es justo lo que
+// uno quiere poder mirar.
+const RECIPE_MAX_INGREDIENTS = 60;
+const RECIPE_MAX_STEPS = 40;
+export async function actAdminRecipeSet(b: any) {
+  const s = await requireAdmin(b.token);
+  const code = String(b.recipeCode || "").trim().toUpperCase().slice(0, 20);
+  const name = String(b.name || "").trim().slice(0, 120);
+  const yieldPortions = Number(b.yieldPortions);
+  if (!code) throw new ApiError("Falta el código del insumo.", 400);
+  if (!name) throw new ApiError("Falta el nombre de la receta.", 400);
+  if (!Number.isFinite(yieldPortions) || yieldPortions <= 0) {
+    // Sin rendimiento no se puede escalar nada, así que una receta sin él no sirve para lo
+    // único que esta pantalla hace.
+    throw new ApiError("El rendimiento en porciones tiene que ser un número mayor que cero.", 400);
+  }
+  const ingredients = (Array.isArray(b.ingredients) ? b.ingredients : [])
+    .slice(0, RECIPE_MAX_INGREDIENTS)
+    .filter((i: any) => i && String(i.item || "").trim() && Number.isFinite(Number(i.qty)))
+    .map((i: any) => ({ item: String(i.item).trim().slice(0, 120), qty: Number(i.qty), unit: String(i.unit || "").trim().slice(0, 20) }));
+  const steps = (Array.isArray(b.steps) ? b.steps : [])
+    .slice(0, RECIPE_MAX_STEPS)
+    .filter((x: any) => x && String(x.label || "").trim())
+    .map((x: any) => ({ label: String(x.label).trim().slice(0, 200), minutes: Number.isFinite(Number(x.minutes)) && Number(x.minutes) > 0 ? Math.round(Number(x.minutes)) : null }));
+
+  const row = (await sbInsert("production_recipes", {
+    recipe_code: code,
+    name,
+    yield_portions: Math.round(yieldPortions),
+    portion_grams: Number.isFinite(Number(b.portionGrams)) && Number(b.portionGrams) > 0 ? Math.round(Number(b.portionGrams)) : null,
+    ingredients,
+    steps,
+    notes: b.notes ? String(b.notes).slice(0, 2000) : null,
+    active: b.active !== false,
+    created_by: s.phone,
+  }))[0];
+  await logAdminAction(s.phone, "recipe-set", code, { name, yieldPortions, ingredientes: ingredients.length, etapas: steps.length });
+  return { success: true, recipe: row };
+}
+
+// Cálculo puro del plan de tanda, extraído de actAdminBatchPlan (#2, 2026-08-30).
+//
+// Se saca acá por la misma razón que `prepShortfall` y `cancellationDeltas`: la ALERTA de
+// "toca cocinar" tiene que usar exactamente el mismo criterio que la pantalla. Dos copias
+// del mismo cálculo divergen, y el día que diverjan la pantalla dirá que alcanza mientras
+// la alerta grita, o al revés — y entonces no se le cree a ninguna de las dos.
+export type BatchPlanItem = {
+  code: string;
+  name: string;
+  usedInWindow: number;
+  perDay: number;
+  committed: number;
+  needed: number;
+  stock: number | null;
+  toCook: number | null;
+  stockTracked: boolean;
+  daysLeft: number | null;
+};
+
+export function batchPlanItems(
+  consumo: Map<string, number>,
+  comprometido: Map<string, number>,
+  invMap: Map<string, { product_name?: string | null; stock_qty?: number | null }>,
+  daysOfData: number,
+  coverDays: number,
+): BatchPlanItem[] {
+  const dias = Math.max(1, Number(daysOfData) || 1);
+  const codes = new Set<string>([...consumo.keys(), ...comprometido.keys()]);
+  return [...codes]
+    .map((code) => {
+      const usado = consumo.get(code) || 0;
+      const porDia = usado / dias;
+      const proyectado = Math.ceil(porDia * coverDays * BATCH_SAFETY_FACTOR);
+      const yaPedido = comprometido.get(code) || 0;
+      // Los pedidos ya programados son demanda comprometida: si superan la proyección,
+      // manda el compromiso — no se puede "promediar" algo que ya está vendido.
+      const necesario = Math.max(proyectado, yaPedido);
+      const inv = invMap.get(code);
+      // Sin cantidad rastreada no se puede restar nada: se informa el total necesario y se
+      // deja claro que el stock actual es desconocido, en vez de asumir cero (haría
+      // cocinar de más) o asumir que alcanza (haría quedarse corto).
+      const stock = inv?.stock_qty ?? null;
+      return {
+        code,
+        name: inv?.product_name || code,
+        usedInWindow: usado,
+        perDay: Math.round(porDia * 100) / 100,
+        committed: yaPedido,
+        needed: necesario,
+        stock,
+        toCook: stock == null ? null : Math.max(0, necesario - stock),
+        stockTracked: stock != null,
+        // #2 — Para cuántos días alcanza lo que hay, al ritmo real de consumo. Es el número
+        // que convierte "te quedan 12 porciones" (que no dice nada por sí solo) en "se te
+        // acaba el jueves". `null` cuando no hay consumo medido: dividir entre cero daría
+        // Infinity y la pantalla mostraría que alcanza para siempre.
+        daysLeft: stock == null || porDia <= 0 ? null : Math.round((stock / porDia) * 10) / 10,
+      };
+    })
+    .filter((x) => x.needed > 0)
+    .sort((a, b) => b.needed - a.needed);
+}
+
+// Lectura + cálculo del plan de tanda, compartida por la pantalla (actAdminBatchPlan) y la
+// alerta de "toca cocinar" (#2). Antes esto vivía entero dentro de la acción del panel, así
+// que la alerta habría necesitado su propia copia de las dos consultas y del promedio.
+const BATCH_DEFAULT_COVER_DAYS = 4;
+async function computeBatchPlan(coverDays: number) {
+  await loadCatalogPrices();
+  const now = Date.now();
+  const since = new Date(now - BATCH_LOOKBACK_DAYS * 86400000).toISOString();
+  const horizonEnd = new Date(now + coverDays * 86400000).toISOString();
+
+  const [historial, programados] = await Promise.all([
+    // Solo pedidos PAGADOS y no cancelados: un pedido que nunca se cobró no consumió
+    // insumos, y contarlo haría cocinar de más todas las semanas.
+    sbGet(
+      "orders",
+      `payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(since)}&select=created_at,items&order=created_at.asc&limit=5000`,
+    ),
+    sbGet(
+      "orders",
+      `delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(new Date(now).toISOString())}&delivery_time=lte.${encodeURIComponent(horizonEnd)}` +
+        `&status=neq.CANCELADO&status=neq.ENTREGADO&select=items&limit=500`,
+    ),
+  ]);
+
+  function contar(rows: any[], into: Map<string, number>) {
+    for (const o of rows) {
+      if (!Array.isArray(o.items)) continue;
+      for (const it of o.items) {
+        try {
+          const priced = priceCartItem(it);
+          for (const code of priced.ingredientsPerUnit) into.set(code, (into.get(code) || 0) + priced.qty);
+        } catch {
+          // Ítem legado que ya no encaja en el catálogo — se omite solo ese, el resto del
+          // plan sigue siendo útil (mismo criterio que la lista de preparación).
+        }
+      }
+    }
+  }
+  const consumo = new Map<string, number>();
+  contar(historial, consumo);
+  const comprometido = new Map<string, number>();
+  contar(programados, comprometido);
+
+  // Días transcurridos desde el primer pedido de la ventana, no los 28 completos: si el
+  // negocio lleva 6 días abierto, dividir entre 28 daría un consumo diario cuatro veces
+  // menor que el real y la tanda saldría corta.
+  const primero = historial.length ? new Date(historial[0].created_at).getTime() : now;
+  const daysOfData = Math.max(1, Math.min(BATCH_LOOKBACK_DAYS, Math.ceil((now - primero) / 86400000)));
+  const reliable = daysOfData >= BATCH_MIN_DAYS_OF_DATA && historial.length >= BATCH_MIN_ORDERS;
+
+  const codes = new Set<string>([...consumo.keys(), ...comprometido.keys()]);
+  const invRows = codes.size
+    ? await sbGet(
+        "inventory",
+        `product_code=in.(${[...codes].map((c) => encodeURIComponent(c)).join(",")})&select=product_code,product_name,stock_qty,in_stock`,
+      )
+    : [];
+  const invMap = new Map<string, any>(invRows.map((r: any) => [r.product_code, r]));
+
+  const items = batchPlanItems(consumo, comprometido, invMap, daysOfData, coverDays);
+
+  return {
+    coverDays,
+    lookbackDays: BATCH_LOOKBACK_DAYS,
+    daysOfData,
+    ordersConsidered: historial.length,
+    scheduledConsidered: programados.length,
+    safetyFactor: BATCH_SAFETY_FACTOR,
+    // Cuando esto es falso la pantalla NO muestra las cantidades como una indicación:
+    // muestra primero por qué todavía no se les puede creer.
+    reliable,
+    minDaysOfData: BATCH_MIN_DAYS_OF_DATA,
+    minOrders: BATCH_MIN_ORDERS,
+    items,
+  };
+}
+
+export async function actAdminBatchPlan(b: any) {
+  await requireAdmin(b.token);
+  const coverDays = Number.isInteger(b.coverDays) && b.coverDays > 0 && b.coverDays <= 14
+    ? b.coverDays
+    : BATCH_DEFAULT_COVER_DAYS;
+  return await computeBatchPlan(coverDays);
+}
+
+// C5 — SALUD DEL NEGOCIO. Una sola pantalla que responde "¿hay algo que atender ahora
+// mismo?", que es la pregunta que el dueño se hace cuando abre la app entre tandas.
+//
+// No es otro tablero de cifras: el dashboard de ingresos, el reporte de retención y la
+// cola de pedidos ya existen y son buenos, pero están repartidos en 3 pantallas distintas
+// y ninguno responde esa pregunta — hay que entrar a cada uno y deducirlo. Acá cada señal
+// viene con un veredicto (ok / atención / problema) y con lo único que importa: cuántos y
+// dónde tocar. Cocinando solo, ese es el formato que se puede leer entre dos sándwiches.
+//
+// Todas las señales son cosas que se pueden ARREGLAR hoy. Deliberadamente NO entran acá
+// las métricas de tendencia (ingresos del mes, ticket promedio, productos más vendidos):
+// son para sentarse a pensar, no para actuar en el momento, y mezclarlas haría que esta
+// pantalla se lea como "informe" y deje de mirarse a diario.
+const HEALTH_STUCK_MINUTES = 45;
+export async function actAdminHealth(b: any) {
+  await requireAdmin(b.token);
+  const now = Date.now();
+  const stuckCutoff = new Date(now - HEALTH_STUCK_MINUTES * 60000).toISOString();
+
+  const [pagosPendientes, estancados, agotados, bajoStock, reclamos, cronsMuertos, pico] = await Promise.all([
+    // Yape/Plin que el cliente dice haber pagado y nadie confirmó: la cocina no puede
+    // avanzarlos, así que cada uno es un cliente esperando comida que no se está haciendo.
+    sbGet("orders", "payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&select=id&limit=200"),
+    // Pedidos parados en el mismo estado más de HEALTH_STUCK_MINUTES. El cron ya manda un
+    // push por cada uno, pero un push se pierde: acá queda el conteo hasta que se resuelva.
+    sbGet(
+      "orders",
+      `status=in.(RECIBIDO,PREPARANDO,EN CAMINO)&status_changed_at=lt.${encodeURIComponent(stuckCutoff)}&select=id&limit=200`,
+    ),
+    sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=200"),
+    // Se piden también las columnas de tanda: el mismo viaje sirve para "por acabarse" y
+    // para la caducidad (#5), y una consulta menos en una pantalla que ya hace siete.
+    sbGet("inventory", "select=product_code,product_name,stock_qty,low_stock_threshold,in_stock,batch_cooked_at,shelf_life_days&limit=200"),
+    // Plazo legal del Libro de Reclamaciones: es el único de esta lista con consecuencia
+    // regulatoria, no solo comercial.
+    sbGet("complaints", "status=neq.atendido&select=id,claim_code,created_at&limit=200"),
+    // Las dos señales de C1/C2: si la automatización está caída, TODO lo de arriba se
+    // deja de vigilar solo, así que corresponde verlo en la misma pantalla.
+    rpc("dead_cron_jobs", { p_min_misses: 3 }).catch(() => []),
+    rpc("error_spike", { p_min_errors: 10, p_factor: 4 }).catch(() => []),
+  ]);
+
+  // `stock_qty=not.is.null` se movió del filtro de PostgREST al de acá porque la misma
+  // consulta ahora alimenta dos señales: la caducidad necesita ver TODAS las filas.
+  const bajos = (bajoStock as any[]).filter((r) => r.stock_qty != null && r.stock_qty > 0 && r.stock_qty <= (r.low_stock_threshold || 5));
+  const caducidad = batchExpiryStatus(bajoStock as any[], now);
+  const porVencer = (reclamos as any[]).filter(
+    (c) => COMPLAINT_DEADLINE_BUSINESS_DAYS - businessDaysSince(new Date(c.created_at), new Date(now)) <= DEADLINE_WARNING_BUSINESS_DAYS,
+  );
+
+  // El veredicto se calcula en el SERVIDOR, no en la pantalla: si cada cliente decidiera
+  // por su cuenta qué es "problema", dos versiones de la app pintarían distinto el mismo
+  // estado del negocio. Acá también es donde se cambia un umbral una sola vez.
+  const señales = [
+    {
+      id: "pagos",
+      label: "Pagos por confirmar",
+      count: pagosPendientes.length,
+      // Cualquiera bloquea a un cliente, así que no hay zona amarilla.
+      level: pagosPendientes.length > 0 ? "problema" : "ok",
+      hint: pagosPendientes.length ? "La cocina no puede avanzarlos hasta que confirmes que llegó el pago." : "Ninguno esperando.",
+      screen: "admin_home",
+    },
+    {
+      id: "estancados",
+      label: "Pedidos parados +" + HEALTH_STUCK_MINUTES + " min",
+      count: estancados.length,
+      level: estancados.length > 0 ? "problema" : "ok",
+      hint: estancados.length ? "Alguien está esperando y mirando el reloj." : "Todo avanzando.",
+      screen: "admin_home",
+    },
+    {
+      id: "agotados",
+      label: "Insumos agotados",
+      count: agotados.length,
+      // Un agotado no rompe nada — el cliente simplemente no lo ve — pero si es la
+      // proteína de un Signature, ese producto desaparece de la carta sin avisar.
+      level: agotados.length > 0 ? "atencion" : "ok",
+      hint: agotados.length
+        ? (agotados as any[]).map((r) => r.product_name || r.product_code).slice(0, 4).join(", ")
+        : "Nada marcado como agotado.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "bajo_stock",
+      label: "Insumos por acabarse",
+      count: bajos.length,
+      level: bajos.length > 0 ? "atencion" : "ok",
+      hint: bajos.length
+        ? bajos.map((r) => (r.product_name || r.product_code) + " (" + r.stock_qty + ")").slice(0, 4).join(", ")
+        : "Stock cómodo en todo lo que se rastrea.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "caducidad",
+      label: "Tandas vencidas o por vencer",
+      count: caducidad.vencidos.length + caducidad.porVencer.length,
+      // Una tanda VENCIDA no es "atención": es comida que no se puede servir, y es lo único
+      // de esta pantalla que puede enfermar a alguien. Una por vencer sí es aviso: todavía
+      // se puede vender antes de la fecha o planificar la siguiente tanda.
+      level: caducidad.vencidos.length > 0 ? "problema" : caducidad.porVencer.length > 0 ? "atencion" : "ok",
+      hint: caducidad.vencidos.length
+        ? "NO USAR: " + caducidad.vencidos.map((v) => v.name).slice(0, 4).join(", ")
+        : caducidad.porVencer.length
+        ? "Vencen en menos de " + BATCH_EXPIRY_WARN_HOURS + " h: " + caducidad.porVencer.map((v) => v.name).slice(0, 4).join(", ")
+        : "Ninguna tanda cerca de su fecha límite.",
+      screen: "admin_inventory",
+    },
+    {
+      id: "reclamos",
+      label: "Reclamos por vencer",
+      count: porVencer.length,
+      // El único con consecuencia legal: se marca como problema apenas hay uno.
+      level: porVencer.length > 0 ? "problema" : "ok",
+      hint: porVencer.length
+        ? "Quedan " + DEADLINE_WARNING_BUSINESS_DAYS + " días hábiles o menos para responder."
+        : "Ninguno cerca del plazo.",
+      screen: "admin_complaints",
+    },
+    {
+      id: "automatizacion",
+      label: "Automatización",
+      count: (cronsMuertos as any[]).length,
+      level: (cronsMuertos as any[]).length > 0 ? "problema" : "ok",
+      hint: (cronsMuertos as any[]).length
+        ? (cronsMuertos as any[]).map((j) => j.jobname).slice(0, 3).join(", ") + " no responde(n)."
+        : "Todos los procesos automáticos respondiendo.",
+      screen: null,
+    },
+    {
+      id: "errores",
+      label: "Errores del sistema",
+      count: (pico as any[]).length ? Number((pico as any[])[0].last_hour) : 0,
+      level: (pico as any[]).length ? "problema" : "ok",
+      hint: (pico as any[]).length
+        ? "Pico en la última hora (lo normal es ~" + (pico as any[])[0].baseline_per_hour + " por hora)."
+        : "Sin picos de error.",
+      screen: null,
+    },
+  ];
+
+  return {
+    checkedAt: new Date(now).toISOString(),
+    // "problema" gana sobre "atencion": el resumen de arriba tiene que reflejar lo peor
+    // que hay, no el promedio.
+    overall: señales.some((s) => s.level === "problema")
+      ? "problema"
+      : señales.some((s) => s.level === "atencion")
+      ? "atencion"
+      : "ok",
+    signals: señales,
+  };
 }
 
 // Reporte de retención y cohortes (RPC retention_report, ver migración

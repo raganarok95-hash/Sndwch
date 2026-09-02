@@ -6,11 +6,22 @@ afecta cualquier decisión de precio/margen.
 
 ## Estructura
 
-- **Cliente**: `src/app.ts` (toda la lógica y el tipado, un solo archivo grande, sin
-  framework) + `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__`
-  donde se inyecta `app.ts` compilado). `npm run build` compila y regenera `index.html`
-  en la raíz del repo — **ese archivo es el único artefacto servido**; nunca lo edites a
-  mano, siempre edita `src/app.ts`/`src/shell.html` y recompila.
+- **Cliente**: `src/app/NN-*.ts` (toda la lógica y el tipado, sin framework) +
+  `src/shell.html` (el resto del HTML/CSS, con el placeholder `__APP_JS__` donde se
+  inyecta el JS compilado). `npm run build` compila cada parte y las **concatena por orden
+  alfabético** para regenerar `index.html` en la raíz — **ese archivo es el único artefacto
+  servido**; nunca lo edites a mano.
+  Las 9 partes salieron de un único `src/app.ts` de 8 125 líneas (dividido el 2026-08-29).
+  Son **scripts globales, NO módulos**: no llevan `import`/`export`, comparten un mismo
+  ámbito y se ejecutan de arriba a abajo, así que **el orden importa** — hay estado
+  (catálogo, constantes de dinero, helpers) que tiene que existir antes de lo de abajo. Por
+  eso el prefijo numérico no es cosmético. `npm run check:bundle` (dentro de `verify`) exige
+  prefijos `01..NN` consecutivos y sin `import`/`export` de nivel superior; sin eso,
+  reordenar una parte no rompe la compilación, rompe la app en runtime.
+  La división se verificó comparando el JS emitido **byte a byte** contra el del archivo
+  único: idéntico. Lo único que hubo que resolver es que `tsc` antepone su propio
+  `"use strict";` a cada archivo, y los 8 sobrantes caen a mitad del bundle donde la
+  directiva no hace nada — `build.mjs` los quita al concatenar.
 - **Backend**: 8 edge functions en `supabase/functions/`:
   - **`api`** — la principal, un solo entrypoint con un action por operación (login,
     catálogo, pedidos, admin, dashboard, etc.), dividida en módulos:
@@ -30,16 +41,64 @@ afecta cualquier decisión de precio/margen.
   fijado globalmente (rompe timestamps "realistas" de otros mocks) — si un test necesita
   una hora específica (ej. evitar la promo de hora valle), usa `page.clock.setFixedTime()`
   **dentro de ese test**, no en `helpers.ts`.
-- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 109 migraciones**
+- **Migraciones DB**: `supabase/migrations/` tiene **el SQL real de las 122 migraciones**
   (un archivo `<version>_<nombre>.sql` cada una, extraído de
   `supabase_migrations.schema_migrations` el 2026-08-19 y verificado archivo por archivo
-  con md5 contra la base), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
+  con md5 contra la base; reconciliado de nuevo el 2026-08-28 — **el nombre del archivo
+  DEBE llevar la `version` exacta que quedó registrada en la base, no la hora en que lo
+  escribiste**: al aplicar con `apply_migration` y escribir el archivo unos minutos
+  después se habían colado 8 desfases y 2 migraciones sin archivo. Verificar con
+  `select version from supabase_migrations.schema_migrations` contra `ls` antes de dar por
+  cerrada una sesión que aplicó migraciones), más `INDEX.txt` y un `README.md`. **4 archivos llevan el
   secreto de cron redactado a propósito** (`<CRON_SECRET_REDACTADO>`) — el valor sigue en
   texto plano en el historial dentro de Supabase, rotarlo es tarea pendiente del dueño.
   Una migración nueva se sigue aplicando con `mcp__Supabase__apply_migration`; para que
   quede versionada, escribe el mismo SQL en un archivo de esa carpeta en la misma sesión.
   Para el schema vigente de una tabla sigue siendo más confiable `mcp__Supabase__execute_sql`
   contra `information_schema` que leer el historial.
+
+## El menú se edita desde el panel, no desde el código (2026-08-27)
+
+Los 5 Signatures públicos viven en la tabla **`catalog_items`** (append-only: publicar
+inserta fila nueva, la de mayor `id` por `item_id` es la vigente — historial gratis, igual
+que `secret_signature`). `loadCatalogItems()` en `catalog.ts` sobreescribe en cada refresco
+`SIG_DATA`, `SIG_LABEL` y el nuevo `SIG_CONTENT` (nombre, subtítulo, badge, pitch, foto,
+activo). El cliente lo recibe resuelto por `get-catalog` (campo `sigItems`) y lo vuelca
+sobre `SIGS`.
+
+**Los literales de `SIGS` (src/app.ts) y `SIG_DATA`/`SIG_LABEL`/`SIG_CONTENT` (catalog.ts)
+son SEMILLA**: el primer render antes de que resuelva el fetch, y el respaldo si la base no
+responde. Editarlos no cambia el menú.
+
+Qué se puede hacer ahora sin desplegar: renombrar, cambiar badge/pitch/foto, cambiar
+composición (pan, proteína, toppings, salsas, queso fijo), cambiar precio, y **retirar un
+Signature** publicando `active=false` — lo que con THE CHICAGO costó una sesión de código
+entera, conservando la receta en la tabla para cuando vuelva.
+
+**El precio de un Signature ya NO se toca desde `catalog_prices`.** Las filas de categoría
+`sig` se borraron en la migración y `admin-catalog-set-price` rechaza esa categoría con un
+error que apunta al panel nuevo. Si no, habría dos sitios fijando el mismo número y uno
+ganando en silencio — el mismo defecto que costó 3 semanas de precios fantasma. Para
+proteínas, bebidas y recompensas `catalog_prices` sigue siendo la fuente (ver la sección de
+abajo, que sigue vigente para ellas).
+
+SIG05 no está en `catalog_items`: el menú secreto tiene su propia tabla y su propio panel.
+`loadCatalogItems()` ignora ese id explícitamente.
+
+## ⚠ UN NÚMERO ESCRITO A MANO EN UN TEXTO ES UNA PROMESA QUE SE VA A ROMPER (2026-08-30)
+
+El contenido semanal de marketing (`marketingContent()` en `actions/admin.ts`) es lo que el
+dueño **copia y pega a Instagram y WhatsApp**: una promesa pública. Tenía TRES números
+desactualizados a la vez y ninguno iba a avisar jamás, porque son texto y no cálculo:
+"ambos ganan 50 puntos" por referir (son 400 y 120 desde el 2026-08-15 — prometía menos de
+la décima parte de lo real), "se desbloquea desde tu 5to pedido" para el menú secreto (son 3
+desde el 2026-08-26), y "S/95 → S/100" escrito al lado de las constantes que lo mandan.
+
+Ahora esos textos son plantillas que interpolan la constante real en el momento de armarse.
+**Regla para cualquier texto nuevo dirigido al cliente —push, correo, caption, pantalla—:
+si menciona una cifra que el código ya conoce, interpólala; nunca la escribas.** El umbral
+del menú secreto es el caso más claro: es editable desde el panel, así que un literal se
+desincroniza el día que el dueño lo mueva, sin tocar una línea de código.
 
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
@@ -67,23 +126,188 @@ terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive
 `secret_signature` y `loadSecretSignature()` corre DESPUÉS de `loadCatalogPrices()`, así
 que una fila en `catalog_prices` para SIG05 sería ignorada.)
 
+## Leer el comprobante NO es confirmar el pago (#28, 2026-08-30)
+
+El OCR del comprobante de Yape/Plin corre con **Tesseract.js en el navegador del admin**:
+sin cuenta, sin API key, sin servicio externo y sin costo por uso. Se carga bajo demanda
+(`loadTesseract()` en `src/app/07-*`) y solo al abrir un comprobante, así que los ~3 MB del
+motor no los descarga ningún cliente. Si el CDN no responde, el comprobante se abre igual —
+el OCR es un extra y hay un test que lo fija.
+
+**Una captura se edita en dos minutos, así que esto nunca confirma un pago.** El veredicto
+verde dice explícitamente "igual confirma contra tu cuenta" y `tests/comprobante-ocr.spec.ts`
+falla si ese texto desaparece. El estado "no se pudo leer" se muestra igual que los demás a
+propósito: callarlo haría que la ausencia de aviso pareciera aprobación.
+
+Lo que sí aporta es el **número de operación**: detecta la misma transferencia usada en dos
+pedidos, y eso el hash de la imagen (#29) no lo puede ver, porque recapturar la pantalla
+cambia el hash y no el número.
+
+**Los rótulos del parser son best-effort y están sin verificar** contra una constancia real
+(se acabó el límite de búsquedas web a mitad de la investigación). `parseTransferReceipt`
+acepta varias formas de cada rótulo y **nunca inventa**: lo que no reconoce vuelve `null`.
+Ajustar la lista con una captura real es P20 en `docs/PENDIENTE_DEL_DUENO.md`.
+
+## El costo del menú deja de ser un literal de markdown (#38, 2026-08-30)
+
+`ingredient_purchases` guarda **cada compra como un hecho con fecha** (cantidad, unidad, lo
+pagado en total), no un catálogo de precios que se sobrescribe. El precio unitario se deriva:
+`ingredientCosts()` da la última compra y el promedio **ponderado por cantidad** de las
+últimas 3 — ponderado y no simple, porque 6 kg a S/20 y 0.5 kg a S/30 no cuestan S/25 el kilo.
+
+Cruzado con `production_recipes` (#9), `recipeCost()` da el costo por porción. **Si falta el
+precio de UN solo ingrediente, devuelve `null`** y la pantalla dice cuál falta: un total
+parcial que se ve completo es un dato con aspecto de medición, y sobre un costo por porción
+se fija el precio de venta. Las unidades tienen que coincidir entre receta y compra —
+comprar en kg y pedir en g daría un costo mil veces menor sin ningún error visible.
+
+Esto NO reemplaza `MENU_FINANCIAL_ANALYSIS.md` todavía: ese documento sigue siendo la única
+fuente hasta que haya compras reales cargadas. Y **la merma sigue sin medir** (#6): el costo
+por porción que calcula esta pantalla es el del insumo CRUDO por la cantidad de la receta,
+no el de la porción terminada. Los rendimientos (res 0.54, pollo 0.64-0.69) siguen siendo
+referencias, no medición propia.
+
+## Una alerta de margen mal anclada nunca suena (#35, 2026-08-30)
+
+`orderMargin()` calcula el costo estimado sobre el **precio de carta** de lo que se armó, no
+sobre el total ya descontado. La primera versión hacía lo segundo, y con un costo plano del
+45% eso da 55% de margen SIEMPRE, por construcción: la alerta habría quedado viva en el
+código y muerta en la práctica, dando además la falsa sensación de estar vigilado.
+
+El defecto que el ítem describe es justo el contrario: el cliente paga menos (combo +
+recompensa + promo apilados) y **el costo no baja**. Por eso el descuento sale entero del
+margen. Hay una prueba en `tests-api/costo-y-margen.test.ts` que compara los dos cálculos y
+falla si alguien "simplifica" quitando el precio de carta.
+
+## El "ingreso del día" no es lo que le queda al negocio (2026-08-30)
+
+`cashClose()` (`actions/admin.ts`, pantalla Admin // Cierre de caja) existe porque el
+ingreso bruto miente por omisión de tres formas a la vez en este negocio:
+
+1. **El delivery es pass-through**: lo cobra el pedido y se lo lleva el motorizado.
+2. **Un pedido pagado con crédito interno no trajo plata hoy** — entró cuando se vendió el
+   Plan Semanal o la tarjeta de regalo.
+3. **La tarjeta no llega entera**: `CULQI_FEE_RATE` (5.5%) se queda en el camino.
+
+**El reparto se descuenta ENTERO, incluido el de los pedidos pagados con crédito**: al
+motorizado se le paga igual. Descontar solo el de los que trajeron efectivo deja fuera una
+salida de caja real y el número sale optimista — la única dirección en la que un cierre de
+caja no se puede equivocar. Un día de puro crédito da caja negativa, y eso es correcto.
+
+Lo pendiente de confirmar (Yape/Plin donde el cliente dijo que pagó y nadie miró la cuenta)
+va aparte y **no suma**. El día que sume una vez, la pantalla deja de servir para cuadrar.
+
+## Confirmación de entrega por link (#19, 2026-08-30)
+
+`orders.delivery_token` se genera al pasar el pedido a EN CAMINO y **se borra al confirmar**:
+el link es de un solo uso, así que reenviarlo por WhatsApp no puede recerrar el pedido más
+tarde. La acción `confirm-delivery` es PÚBLICA a propósito — quien reparte no tiene cuenta, y
+el token no adivinable es la autorización, mismo criterio que `ref` para un invitado.
+
+Un token inexistente y uno ya usado responden **lo mismo**: distinguirlos le diría a
+cualquiera si un link existió alguna vez. Lo que sí gana el negocio es que `delivered_at` por
+fin lo escribe quien entrega y no quien se acuerda de tocar el botón un rato después — de esa
+hora dependen la alerta de pedido estancado y la comparación contra la promesa de entrega.
+
+## Las recetas de producción viven en la base, no en el markdown (2026-08-30)
+
+`production_recipes` (append-only: publicar inserta fila nueva, la de mayor `id` por
+`recipe_code` es la vigente — mismo patrón que `catalog_items` y `secret_signature`) guarda
+lo que la app necesita CALCULAR de cada receta: ingredientes con cantidad numérica,
+rendimiento en porciones, gramaje y etapas con minutos. De ahí salen el escalado (#9), el
+temporizador por etapa (#3) y las etiquetas de tanda (#4), en Admin // Recetas.
+
+**`RECETARIO.md` no se reemplaza y no es la fuente de estos números.** Sigue siendo la
+explicación —por qué punta de pecho y no lomo, por qué la panade, qué pasa si sobrecargas la
+sartén— y ahí se queda. Markdown no se puede escalar a 40 porciones ni disparar un
+cronómetro; eso es lo único que se movió.
+
+Solo están sembradas **P01, P02 y P06**, que son las que el recetario documenta con
+cantidades y tiempos reales. Las demás las carga el dueño desde el panel: el propio recetario
+marca cuáles están investigadas a fondo y cuáles son propuesta sin cotizar, y transcribir una
+cantidad que nadie midió la convertiría en un dato con aspecto de medición.
+
+**La vida útil NO está en la receta, a propósito.** Vive en `inventory.shelf_life_days`
+(editable en el panel de Inventario) y es la que usa la alerta de caducidad (#5); las
+etiquetas la leen de ahí. Dos números para la misma cosa terminan en que uno gana en
+silencio. **Y los tiempos de las etapas NO se escalan con las porciones**: duplicar la tanda
+no duplica el braseado, y escalarlos haría planificar la jornada contra un número falso.
+
 ## Checklist antes de dar por terminado un cambio en el cliente
 
 1. `npm run typecheck` — cero errores (solo cubre `src/**`).
 2. `npm run typecheck:api` — `deno check` sobre las 8 edge functions
    (`scripts/check-backend.mjs`). El backend NO tiene otra verificación estática: el CI
    despliega sin type-check, así que un error acá llega a producción.
-3. `npm run parity` — compara las 28 constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el cliente mostraría un
-   número y el servidor cobraría otro.
-4. `npm run build` — regenera `index.html` desde `src/`.
-5. `npm test` (o `npm run verify`, que encadena las cinco) — deben pasar TODOS (revisa el
+3. `npm run test:api` — pruebas de COMPORTAMIENTO del backend, ejecutando el código real
+   (`tests-api/`, corridas por `scripts/check-money.mjs`). Existe porque había un hueco
+   estructural: los specs de Playwright mockean el endpoint `api` entero y nunca ejecutan
+   una línea del servidor, y `typecheck:api` solo mira tipos. Por ese hueco pasaron dos
+   defectos reales a producción con todo en verde — `pointsFor` devolviendo decimales
+   contra una columna `integer` (reventaba DESPUÉS del cobro de Culqi) y
+   `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
+   **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
+   `jsr:@std/assert`: jsr.io está bloqueado por el proxy, cada archivo trae su propio assert.
+   Hoy son 3 archivos / 23 pruebas: `dinero.test.ts` (`pointsFor`), `carrito.test.ts`
+   (`deriveCart` — combo vs. hora valle, recompensas, sándwich del organizador) y
+   `cancelacion.test.ts` (`cancellationDeltas`, la reversión al cancelar). El patrón para
+   que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
+   `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
+   palabra por palabra.
+4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
+   `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
+   cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
+   recompensa, umbrales, zonas de delivery (con precio y excluidas), nombres, y
+   `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
+   que esta comparación es su única defensa.
+5. `npm run build` — regenera `index.html` desde `src/`.
+5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
+   Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
+   propio Postgres, no hace falta configurar nada. Ver "Respaldo de la base".
+5c. `npm run check:smoke` — comprueba que la prueba de humo de producción
+   (`scripts/smoke-prod.mjs`, que corre tras cada deploy) de verdad SE DA CUENTA cuando
+   producción está rota: se le sirven 12 formas de romperse y tiene que señalar cada una.
+   Un chequeo de salud que siempre pasa es peor que no tener ninguno.
+6. `npm test` (o `npm run verify`, que ahora encadena nueve) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
-6. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
+7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
-7. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+
+## Respaldo de la base (2026-08-29)
+
+**El plan de Supabase de esta cuenta es `free`, que NO tiene respaldos automáticos de
+ninguna clase.** Hasta esta fecha la base no tenía ni un solo respaldo: un `delete` sin
+`where`, una migración mal escrita o una cuenta comprometida borraban pedidos, clientes,
+puntos y saldo de crédito sin vuelta atrás.
+
+`.github/workflows/backup-db.yml` corre a diario (03:10 hora Lima, tienda cerrada) y **no
+necesita ningún secret nuevo**: usa `SUPABASE_ACCESS_TOKEN`, el mismo que ya usa
+`deploy-api.yml`, contra la Management API. Por eso no depende de nada del dueño.
+
+- **Respalda DATOS, no esquema.** El esquema ya está versionado en `supabase/migrations/`;
+  duplicarlo sería una segunda fuente de verdad, el mismo defecto que costó tres semanas de
+  precios fantasma. **Restaurar de verdad = aplicar las migraciones y después cargar los
+  datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`).
+- **La lista de tablas se descubre en cada corrida** (`pg_class`), nunca está escrita a
+  mano: una lista fija dejaría fuera en silencio cualquier tabla nueva, y el día que eso
+  importe es el día del desastre.
+- **El comando de los cron jobs se guarda REDACTADO**: lleva el secreto de cron y el
+  respaldo termina como artefacto de GitHub.
+- **Las filas viajan como `row_to_json(t)::text`, no como objeto.** Si se parsean en JS,
+  todo número pasa por un `double`: un `numeric` largo o un `bigint` sobre 2^53 vuelven
+  CAMBIADOS. Probado — con la versión que parseaba, `0.10000000000000000001` se volvía
+  `0.1` y el id `9223372036854775807` se desbordaba al restaurar.
+- **El respaldo se RESTAURA en cada corrida**, no solo se guarda: el workflow levanta un
+  Postgres, carga el volcado del día (`scripts/verify-backup.mjs`) y compara conteos y
+  contenido contra el manifiesto. Un archivo que nunca se cargó no es un respaldo.
+- `npm run check:backup` (dentro de `verify`) prueba el MECANISMO con datos hostiles a
+  propósito —comillas, `$$`, saltos de línea, emoji, jsonb anidado, `text[]`, nulos, y una
+  tabla con más filas que el tamaño de página— levantando **su propio Postgres**. Los dos
+  chequeos hacen falta: el mecanismo puede estar bien y el volcado del martes venir cortado.
+- Retención de los artefactos: **90 días**, el techo del plan gratuito de GitHub.
 
 ## Cómo desplegar el backend
 
@@ -109,6 +333,15 @@ archivos de la función en una sola llamada (el bundler de Deno resuelve el graf
 imports completo y falla con `Module not found` si falta uno) — eso es lo que hace que un
 intento manual sea carísimo en tokens y fácil de arruinar a medias.
 
+**Desde 2026-08-29 el workflow termina con una prueba de humo contra producción**
+(`scripts/smoke-prod.mjs`): pide `ping`, `get-catalog` y `get-store-hours` al endpoint YA
+desplegado y falla el workflow si algo no cuadra. Comprueba CONTENIDO, no solo el 200 — un
+`get-catalog` que responde 200 con el catálogo vacío es una app sin menú, y para un chequeo
+que solo mire el código de estado, un éxito. No necesita ningún secret (usa el mismo camino
+público que un cliente). **Ese host está bloqueado por el proxy de este sandbox**, así que
+desde una sesión no se puede correr contra producción: para probar cambios al script está
+`npm run check:smoke`, que lo ejerce contra respuestas simuladas.
+
 1. Después de pushear `main`, simplemente **verifica** con
    `mcp__Supabase__list_edge_functions` (barato) que `version`/`updated_at` de la función
    que tocaste avanzó. Si tienes dudas de que el CI corrió, revisa
@@ -124,6 +357,56 @@ intento manual sea carísimo en tokens y fácil de arruinar a medias.
 3. Cualquier migración de base de datos nueva (`mcp__Supabase__apply_migration`) va antes
    del push si el código nuevo depende de ella (columnas, RPCs, cron jobs) — las
    migraciones nunca pasan por este CI, se aplican aparte.
+
+## Pedido fijo (recurrente) — NO cobra solo, y no puede (2026-08-29)
+
+`recurring_orders` guarda día de la semana + franja + el carrito completo, y el cron
+`remind-recurring-orders` (cada media hora, :05 y :35) avisa una hora antes con el carrito
+armado. El cliente lo gestiona desde PUNTOS → "Mi Pedido Fijo" y lo crea desde el carrito.
+
+**El límite es de Culqi, no del código**: el token de tarjeta es de **un solo uso y vive 5
+minutos**, así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta
+otra vez. Un cobro automático exigiría guardar la tarjeta (Culqi One Click), o sea decidir
+guardar medios de pago de los clientes — **decisión del dueño, no un detalle de
+implementación**. Tampoco se cobra contra el crédito interno aunque técnicamente se podría:
+sacarle plata a alguien sin una decisión fresca suya es la clase de sorpresa que cuesta el
+cliente entero.
+
+Por eso la app dice explícitamente "**no te cobramos sin que confirmes**" en las dos
+pantallas, y `tests/pedido-fijo.spec.ts` lo protege: si alguien "mejora" ese texto a "se
+cobra solo cada semana", la promesa se vuelve falsa y el cliente se entera el día que
+esperaba su sándwich. Misma clase de promesa que ya obligó a retirar los badges MÁS PEDIDO y
+EDICIÓN LIMITADA.
+
+**Nunca se guarda el total** de la recurrencia, solo los ítems: el precio se re-tasa el día
+del aviso. Congelarlo sería una segunda fuente de verdad, el defecto que ya costó tres
+semanas de precios fantasma.
+
+## Capacidad por hora, cola y ETA (2026-08-29)
+
+`MAX_ORDERS_PER_HOUR` (10) y `QUEUE_MINUTES_PER_ORDER` (5) viven en **`env.ts`**, no en
+`orders.ts`: `get-store-hours` también los necesita y `hours.ts` no puede importar de
+`orders.ts` sin crear un ciclo (orders ya importa `storePausedUntil` de hours). `npm run
+parity` compara los dos contra los valores por defecto del cliente.
+
+- **El tope por hora ya existía, pero solo en el servidor.** `assertHourCapacity` rechazaba
+  con 409 al pagar, así que el cliente armaba el sándwich entero, escribía la dirección y
+  recién ahí se enteraba. Mismo defecto que ya obligó a poner el selector de distrito.
+  Ahora `get-store-hours` devuelve `fullHours` (inicios de hora que llegaron al tope, 48 h
+  hacia adelante) y el selector las pinta **tachadas y sin onclick** — se muestran, no se
+  esconden: un hueco en la lista de horas no se explica solo.
+- **La "auto-pausa" del plan (#23) se reinterpretó a propósito.** Pausar la TIENDA ENTERA al
+  llenarse una hora habría bloqueado también las horas vacías: peor que lo que ya había. Lo
+  que faltaba no era otro interruptor, era que el cliente lo viera antes de elegir.
+- **La "reapertura automática" (#24) no existe como mecanismo y no debe construirse.** La
+  capacidad se calcula en vivo contra la hora actual, así que una franja deja de estar llena
+  sola cuando el reloj la pasa. Mismo criterio que la pausa temporal, que se reanuda
+  comparando contra la hora en vez de guardando un "cerrado" que después hay que apagar.
+- **El estimado de entrega ya no es ciego a la cola** (`estimatedDeliveryRange()`): suma
+  `queueAhead × 5 min` al rango base de 25-40. `queueAhead` son los pedidos en
+  RECIBIDO/PREPARANDO; los que ya salieron EN CAMINO no compiten por el tiempo de armado.
+  Si el fetch de capacidad falla, `queueAhead` es 0 y el rango vuelve a ser exactamente el
+  de antes — el peor caso es el comportamiento anterior, nunca una demora inventada.
 
 ## Flujos y funcionalidades actuales del cliente
 
@@ -154,7 +437,7 @@ que declara `sigOnly?:boolean` justamente para que los filtros `!x.sigOnly` siga
 compilando sin inventar un dato falso. No borres esa anotación "porque nadie la usa".
 
 **El menú secreto (SIG05) no se cocina hasta que alguien lo desbloquee** (decisión del
-dueño, 2026-08-22): se abre a los 5 pedidos pagados, así que en la primera semana de
+dueño, 2026-08-22): se abre a los 3 pedidos pagados (bajado de 5 el 2026-08-26), así que en la primera semana de
 operación nadie puede pedirlo y preparar una tanda de `P03` sería cocinar algo que no se
 puede vender. El Signature sigue en el catálogo; lo que cambia es solo cuándo se produce
 su proteína. No es un cambio de código.
@@ -183,8 +466,16 @@ Signature o build.
   propósito). Bono de bienvenida (registro), bono de referido (ambos lados), reto mensual
   (3 pedidos pagados = 50 pts), reto de descubrimiento (3 Signatures distintos = 50 pts).
 - **Rangos** (`RANKS`, puramente de reconocimiento, nunca cambian precio/multiplicador):
-  NUEVO → REGULAR (1) → INICIADO (5, desbloquea el menú secreto) → CÍRCULO INTERNO (15) →
+  NUEVO → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) →
   MESA FUNDADORA (30).
+  **El menú secreto YA NO cuelga de los rangos** (2026-08-26): su umbral bajó a 3 pedidos y
+  dejó de coincidir con INICIADO. Antes la tarjeta bloqueada decía "Se desbloquea en
+  <RANGO>" derivando el nombre con `rankName(minOrders)` y la celebración post-pedido se
+  disparaba con `rankUp==='INICIADO'` — con el umbral en 3 eso habría dicho "se desbloquea
+  en REGULAR" (rango que se alcanza al primer pedido, o sea contradictorio) y habría avisado
+  dos pedidos tarde. Ahora los dos textos hablan de PEDIDOS y el desbloqueo es un evento
+  propio (`_lSecretUnlock`), así que el umbral se puede mover desde el panel admin a
+  cualquier valor sin volver a tocar código.
 - **Crédito interno** (`credit_balance`, no retirable, no es dinero real):
   - Regalar saldo PROPIO a otro cliente (`credit-gift`, sin costo extra).
   - **Tarjeta de regalo** (`gift-card-purchase`): comprar crédito para OTRO cliente
@@ -192,36 +483,53 @@ Signature o build.
     un cobro Culqi que no encajaba con la intención original).
   - **Plan Semanal** (`prepare-weekly-plan`+`confirm-weekly-plan`): paga S/95 hoy con
     tarjeta (Culqi vía `create-credit-charge`), recibe S/100 en saldo propio al instante.
-- **Pedido grupal / canal de oficinas** (`create-group-order`/`add-group-item`/
-  `close-group-order`): un organizador crea un código, cualquiera con el link agrega su
-  propio sándwich sin necesitar cuenta, el organizador cierra y paga todo junto por el
-  checkout normal.
-  **Es el canal con mejor economía del negocio y desde el 2026-08-22 tiene incentivo
-  propio**: a partir de `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más
-  barato del grupo va gratis**. Un pedido de 6 sándwiches contribuye casi lo mismo que 6
-  pedidos individuales pero cuesta UN cliente en vez de seis, y el cuello de botella del
-  negocio no es la cocina (techo 40/día) ni el mercado (Trujillo tiene 1.1M) sino adquirir
-  clientes — con el agravante de que el dueño **no puede vender puerta a puerta porque sus
-  mañanas están cocinando**. Este incentivo convierte al cliente en el vendedor: comprar
-  una cuenta de oficina entera cuesta el insumo de un sándwich (~S/6) contra ~S/128-141 por
-  publicidad o por muestra dirigida.
+- **Pedido grupal** (`create-group-order`/`add-group-item`/`close-group-order`): un
+  organizador crea un código, cualquiera con el link agrega su propio sándwich sin necesitar
+  cuenta, el organizador cierra y paga todo junto por el checkout normal.
+  **NO es un canal B2B y el dueño NO sale a conseguir cuentas** (corregido explícitamente por
+  el dueño 2026-08-27, ver la advertencia de más abajo): es **el pedido de cualquier cliente**
+  que compra para varias personas — una oficina, un grupo de amigos, una familia. Llega por la
+  app como cualquier otro pedido y ese cliente se adquiere por la misma vía que todos los
+  demás. **Nunca proyectes "N oficinas conseguidas al mes"**: nadie las va a conseguir.
+  Lo que sí es cierto y medible: un pedido grupal trae **más sándwiches en un solo pedido**,
+  así que sube la contribución por pedido y reparte el costo de adquisición entre más gente
+  alcanzada. Desde el 2026-08-22 tiene incentivo propio: a partir de
+  `ORGANIZER_FREE_MIN_SANDWICHES` (5) sándwiches, el **15CM más barato del grupo va gratis**.
   Detalles que no hay que romper: se perdona el **más barato del carrito, no "el del
-  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado
-  las líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que
-  R06** (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el
-  sándwich regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo
-  regalaría también la bebida emparejada con algo que ya es gratis. El servidor lo verifica
-  entero contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código
-  válido, quien paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese
-  código de grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces).
-  El `groupCode` que manda el cliente es solo atribución, nunca autorización.
-- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Un pedido individual
-  entregado a las 12:30 en una oficina YA es una muestra gratis repartida dentro del
-  cliente objetivo; lo que faltaba era el puente hacia un pedido grupal. Ese parámetro
-  abre uno directo (pide sesión, porque el servidor necesita saber a quién cobrarle al
+  organizador"** (él paga la cuenta completa, así que es lo mismo, y en el carrito cerrado las
+  líneas vienen mezcladas con nota "De: <nombre>"); usa la **misma elegibilidad que R06**
+  (`eligibleR06`: 15CM y no RESERVE) para que no se gamee con el menú secreto; y el sándwich
+  regalado **se excluye del conteo de combo**, igual que R06 — si no, el combo regalaría
+  también la bebida emparejada con algo que ya es gratis. El servidor lo verifica entero
+  contra la base (`organizerFreeSandwichApplies` en `actions/group.ts`): código válido, quien
+  paga es quien organizó, 5+ sándwiches, y **ningún pedido cobrado ya con ese código de
+  grupo** (sin eso se podía pasar el mismo carrito por el checkout varias veces). El
+  `groupCode` que manda el cliente es solo atribución, nunca autorización.
+  **⚠ DOS ERRORES REALES COMETIDOS SOBRE ESTE CANAL — no los repitas.**
+  1. **El marco "canal de oficinas" / "comprar una cuenta de oficina entera" que este archivo
+     usó hasta el 2026-08-27 era falso.** Daba por hecho una venta B2B que el dueño nunca dijo
+     que haría, y que además contradice el hecho ya documentado de que sus mañanas están
+     cocinando. Sobre ese marco se construyó un titular de "10 oficinas dejan S/3,000 netos al
+     mes" que hubo que retirar entero. Un pedido grupal se modela como **más sándwiches en una
+     fracción de los pedidos normales**, nunca como cuentas que se adquieren aparte.
+  2. **El "~S/128-141 por publicidad" que decía este archivo NUNCA tuvo fuente.** Era una
+     estimación interna escrita como si fuera dato, y después se usó en dos modelos
+     financieros como si estuviera medida — con ella cualquier modelo concluye que la
+     publicidad destruye valor, que es lo contrario de lo que dicen los datos con fuente. El
+     CAC real de Meta Ads en Perú para rubro restaurantes (CPM S/5-12 + CTR 2.97% + CVR 1.89%
+     + IGV 18%) es de **S/10.51 a S/25.23**, entre 5 y 13 veces menor. El referido cuesta
+     **S/7.65** (el insumo del 15CM de R06 + la bebida de R05, no su precio de carta). Ver
+     `PREDICCION_V7.md`, `modelo/modelo_v7.py` y `modelo/FUENTES.md`, donde cada número lleva
+     etiqueta de origen y está la lista de lo que NO se pudo fundamentar.
+  **Sin B2B ni puerta a puerta, la publicidad pagada es prácticamente el único canal de
+  adquisición**, junto con los referidos de clientes que ya existen. Cualquier plan de
+  crecimiento parte de ahí.
+- **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Promoción **pasiva** dentro
+  de un pedido que ya entregaste: la tarjeta va en la bolsa y quien la escanea abre un pedido
+  grupal directo. No exige ningún trabajo de venta del dueño — por eso sigue vigente aunque
+  no exista canal B2B. Pide sesión, porque el servidor necesita saber a quién cobrarle al
   cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
-  login/registro). Distinto de `?group=CODE`, que es unirse a uno existente y NO pide
-  cuenta.
+  login/registro. Distinto de `?group=CODE`, que es unirse a uno existente y NO pide cuenta.
 - **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
   (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
   cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
@@ -232,11 +540,27 @@ Signature o build.
   ley — nunca modificar su texto legal), notificaciones push (Web Push/VAPID) para
   cambios de estado de pedido.
 - **Admin**: cola de pedidos (avanzar estado uno a uno, confirmar pago manual, cancelar
-  con/sin reembolso reconocido), dashboard de negocio (ingresos, tendencia 14 días, top
+  con/sin reembolso reconocido, y desde 2026-08-30 **tres señales sobre las direcciones que
+  la cola ya tenía y no decía** — `queueAddressFlags` en `actions/orders.ts`: dos pedidos a
+  la misma puerta (#22, con normalización real: "Av. España 123" y "av espana 123" son la
+  misma), dos pedidos a la misma zona dentro de 45 min (#17 — la cercanía SIN ventana de
+  tiempo es el consejo que hace llegar tarde a uno de los dos), y una dirección que el
+  motorizado no va a encontrar (#21, con los motivos por separado porque "sin número" y "sin
+  referencia" se preguntan distinto). Se calculan sobre los pedidos ya leídos: cero consultas
+  extra y no pueden contradecir a la lista de al lado), dashboard de negocio (ingresos, tendencia 14 días, top
   productos, clientes en riesgo de fuga, reporte por rango de fechas, lista de
   preparación anticipada, rendimiento por franja horaria, direcciones problemáticas),
-  gestión de inventario/cuentas admin/horario editable, exportar CSV, log de auditoría,
-  contenido de marketing semanal listo para copiar, y desde 2026-08-10 **Menú secreto**
+  gestión de inventario/cuentas admin/horario editable (con **modo tanda**: se escribe
+  cuánto se PRODUJO y `admin-inventory-restock` lo SUMA server-side a lo que quedaba, en
+  una sola llamada — el modo normal sigue fijando el valor absoluto), exportar CSV, log de
+  auditoría,
+  contenido de marketing semanal listo para copiar, **Salud del negocio**
+  (`admin-health`: una sola pantalla con lo que hay que atender HOY — pagos por confirmar,
+  pedidos parados, insumos agotados/por acabarse, reclamos cerca del plazo legal, crons
+  caídos y picos de error; el VEREDICTO de cada señal lo calcula el servidor, la pantalla
+  solo lo pinta), **Plan de tanda** (`admin-batch-plan`: cuánto cocinar de cada insumo para
+  cubrir N días, con `reliable:false` mientras no haya ~14 días y 20 pedidos de historial —
+  la pantalla muestra el motivo ANTES que las cantidades), y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
   sesión de código, ver detalle técnico abajo).
@@ -283,10 +607,70 @@ se prende sin redesplegar el cliente**; el `META_CAPI_TOKEN` nunca sale del serv
 ## Automatizaciones (crons, todas en `api`, protegidas por `verifyCronSecret`)
 
 Recordatorios al cliente: reto mensual sin reclamar, hora pico sin pedir, carrito
-abandonado, segundo pedido, re-enganche de rango alto, nunca ha pedido (3 etapas),
-aniversario de cuenta, reclamos por vencer (plazo legal). Recordatorios/alertas al
+abandonado, **pago abandonado** (llegó a la pantalla de Culqi y no terminó — la abandonada
+de mayor intención del embudo, y la única que no tenía seguimiento), segundo pedido,
+re-enganche de rango alto, nunca ha pedido (3 etapas), aniversario de cuenta,
+**resumen mensual personal** (#65, días 1-5 de cada mes: "pediste N veces, tu favorito fue
+X" — corre CINCO días y no uno porque `MAX_PUSH_PER_RUN` corta en 200 por corrida y una sola
+corrida dejaría sin resumen a todo cliente por encima de ese número hasta el mes siguiente,
+cuando la ventana ya se movió; la marca `customers.monthly_recap_ym` hace que cada corrida
+siga por donde quedó la anterior),
+**crédito sin usar** (dinero que el negocio YA cobró: Plan Semanal, tarjetas de regalo,
+crédito regalado), **post-cancelación** (a las 24 h, no al toque: en el momento la persona
+está molesta), reclamos por vencer (plazo legal).
+**Todos los crons de push tienen un tope de `MAX_PUSH_PER_RUN` (200, en `env.ts`) por corrida**: leían
+hasta 20 000 clientes y enviaban en serie dentro de una sola invocación, así que con varios
+cientos la función se cortaba a mitad por tiempo y la cola no recibía nada ese día, en
+silencio. Lo que sobra se atiende en la siguiente corrida (las ventanas de elegibilidad son
+de varios días) y llegar al tope queda en `debug_logs`, así que lo ve `error_spike()`. Recordatorios/alertas al
 negocio: pedido estancado, pedido programado por empezar, stock bajo (cruce + diario),
-contenido de marketing semanal. Limpieza/expiración: pagos manuales sin confirmar,
+**toca cocinar** (`alert-cook-now`, 08:15 hora Lima — NO es la alerta de stock bajo, que ya
+existe: esta compara el ritmo real de consumo contra lo que queda y avisa cuando quedan
+menos días de los que tarda producir una tanda (`COOK_LEAD_DAYS`). Enterarse a las 8pm no se
+arregla con una compra rápida: hay que descongelar, cocinar y enfriar. El cálculo puro es
+`batchPlanItems`/`cookNowItems`, compartido con la pantalla del plan de tanda para que las
+dos no puedan decir cosas distintas),
+**pedido programado sin insumo** (`alert-scheduled-shortfall`, cada hora en :22 — el cálculo
+ya existía en la pantalla de preparación anticipada, pero solo lo veía quien la abría; el caso
+que importa es el contrario: el pedido es para las 8pm, algo se marcó agotado a las 5pm y
+nadie va a abrir esa pantalla en el medio. Reutiliza `prepShortfall`, probado en
+`tests-api/faltante.test.ts`), **rechazo de tarjeta alto** (`alert-card-declines`, cada hora
+en :47 — cruza los eventos `culqi-rejected`/`charge-succeeded` que `claimAndChargeCulqi` ya
+escribía en `debug_logs` y nadie miraba. Exige un MÍNIMO DE VOLUMEN: 1 rechazo de 1 intento es
+100% y casi siempre es una tarjeta sin fondos, y una alarma que suena por eso deja de mirarse
+antes del día que importa. Un `culqi-fetch-failed` NO cuenta como rechazo: es la red, no la
+tarjeta, y mezclarlos manda a revisar el lugar equivocado), **caducidad de tanda**
+(`alert-batch-expiry`, 08:12 hora Lima, antes de la hora de servicio
+— es SEGURIDAD ALIMENTARIA, no merma: el dueño cocina por tandas y en servicio solo arma,
+así que hay proteína cocida esperando en frío durante días. `inventory.batch_cooked_at` la
+escribe **solo** `admin-inventory-restock`; la edición normal de stock NO la toca, porque
+corregir un número a mano es una corrección y no cocinar de nuevo. `shelf_life_days` arranca
+en 3 —extremo conservador de la guía USDA/foodsafety.gov para carne y pollo cocidos a ≤4 °C,
+que da 3-4 días— y **es editable por insumo desde el panel de Inventario**, para que mover el
+umbral no exija una sesión de código. El cálculo puro vive en `batchExpiryStatus`
+(`actions/orders.ts`) y está probado en `tests-api/caducidad.test.ts`: su modo de fallo no es
+un error, es SILENCIO —la alerta que no sale— así que no alcanza con el typecheck),
+contenido de marketing semanal (**que desde #50 no solo avisa: deja los borradores
+escritos** en `marketing_calendar` para las próximas 4 semanas, saltándose toda fecha que ya
+tenga entrada — el dueño edita en vez de escribir desde cero, y tocar el botón dos veces no
+duplica nada), y **salud del sistema** (`alert-system-health`, horario:
+crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
+`sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
+disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
+**Dead-man switch de crons (2026-08-28)**: `api` anota un latido por cada corrida de cron
+que llega (`record_cron_heartbeat`, en `index.ts`, best-effort). Existe porque pg_cron
+guarda si DISPARÓ el job, pero `net.http_post()` vuelve al instante: "succeeded" ahí
+significa "se encoló la petición", no "la edge function hizo su trabajo" — si el secreto de
+cron rota o `api` responde 500, los 20 jobs siguen en verde para siempre mientras nada
+ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin latido.
+**Las 4 RPC del latido llevan `revoke execute ... from public, anon, authenticated`** — se
+crearon sin él y `record_cron_heartbeat` quedó llamable con la anon key, o sea que
+cualquiera podía escribir un latido falso y DEJAR MUDA la alarma justo mientras la
+automatización estaba caída. Toda RPC `security definer` nueva necesita ese revoke: es el
+sexto caso del mismo defecto en este repo. Cubre
+solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
+2 de SQL puro) quedan fuera a propósito y documentados en la migración.
+Limpieza/expiración: pagos manuales sin confirmar,
 cargos Culqi pendientes, Plan Semanal sin confirmar, conciliación de cargos Culqi
 huérfanos (cobro real sin pedido/Plan Semanal detrás). Ver el mapa completo de acciones
 en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
@@ -317,12 +701,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   S/0 en los cálculos (el dueño arma los pedidos él mismo, sin planilla, mientras el
   volumen lo permita — esto deja de ser válido si el volumen crece lo suficiente como
   para necesitar contratar).
+- **⚠ EL PAN SE COTIZA POR UNIDAD, NO POR KILO — precio real del proveedor confirmado por
+  el dueño 2026-08-22.** **Pan sub S/2 la unidad**, y **el 15CM usa MEDIO pan** → S/1.00 el
+  15CM, S/2.00 el 30CM. El análisis financiero venía usando un proxy de S/11/kg × 71 g =
+  S/0.78 (15CM) / S/1.56 (30CM), o sea el pan estaba **28% subcosteado**. Ya recalculado en
+  `MENU_FINANCIAL_ANALYSIS.md`. Efecto: contribución por pedido S/16.68 → **S/16.42**, y
+  **BYO 30CM de res cruzó el techo de 45%** (43.7% → 45.6%), la única combinación del
+  catálogo que lo hace. Los 5 Signatures siguen holgados en los dos tamaños.
+  **Focaccia: S/13 la entera, pero FALTA el dato de cuántas porciones salen de una** — sin
+  eso no se puede costear. Sensibilidad: empata con el pan sub recién a 13 porciones de
+  15CM por focaccia; a 8 porciones cuesta S/1.62 (+S/0.62 por sándwich). Importa porque
+  **el tipo de pan es una elección GRATUITA del cliente** (`BASES` en `src/app.ts` y
+  `VALID_BASES` en `catalog.ts` no tienen precio), así que todo sobrecosto de la focaccia
+  sale del margen sin que el cliente pague nada extra.
 - **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
   **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
   `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
-  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg, pan ~S/9-13/kg según
-  tipo. **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
+  número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg.
+  **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
   el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
   conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
@@ -371,6 +768,19 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `p_referrer_bonus` para esto — **la reversión por cancelación tiene que descontar el monto
   de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 400
   otorgados y quedaban 350 puntos regalados por un pedido que nunca existió.
+  **Escalera de referidos (#55, 2026-08-30)**: encima de los 400 planos por CADA referido
+  convertido, hay un premio extra al 3.º (120 pts = bebida), 5.º (400 = otro 15CM) y 10.º
+  (800 = dos 15CM). Los escalones viven en `REFERRAL_MILESTONES` (`env.ts`) y **están
+  duplicados en `src/app/01-*` solo para pintarlos**, con `npm run parity` verificando los
+  dos lados — el cliente nunca suma puntos. Quién decide qué escalón toca es
+  `nextReferralMilestone()` (cálculo puro, probado en `tests-api/escalera-referidos.test.ts`,
+  incluido un test que falla si la escalera llega a costar más que el CAC más bajo medido de
+  Meta); quién lo escribe es la RPC `grant_referral_milestone`, cuyo
+  `referral_milestone_granted < p_tier` en el WHERE es lo que impide pagarlo dos veces si dos
+  referidos convierten en el mismo segundo. Esa columna es **monotónica a propósito**: una
+  cancelación baja `total_referrals` pero NO devuelve el escalón, porque los puntos pueden
+  estar ya canjeados y quitarlos dejaría el saldo en negativo; lo que sí impide es volver a
+  cobrarlo al recuperar el conteo.
 - **Método de trabajo real del dueño (confirmado 2026-08-15) — no asumir otro.** (1) **Nunca
   reparte**: el motorizado siempre es aparte y lo paga el cliente (ver punto siguiente).
   (2) **Cocina por TANDAS 1-2 veces por semana** — proteínas, salsas y vegetales quedan
@@ -383,6 +793,18 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Costos fijos mensuales: menos de S/500 — opera desde casa** (confirmado por el dueño
   2026-08-15). Sin alquiler de local. Los S/950 que usó el modelo v5 eran una estimación a
   ojo y estaban altos por casi el doble.
+- **Distrito y zona de precio son DOS cosas distintas en el checkout (desde 2026-08-28).**
+  El **distrito** (`DELIVERY_DISTRICTS` en `src/app.ts`) es obligatorio y decide si el
+  pedido se puede entregar: los que están fuera de cobertura salen listados pero
+  deshabilitados ("todavía no llegamos aquí"), y el distrito elegido se ADJUNTA al texto de
+  la dirección que va al servidor (no hay columna propia; el motorizado igual lo necesita
+  impreso). La **zona** (`DELIVERY_PRICE_ZONES`) solo fija cuánto cobra el motorizado y
+  tiene default. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
+  texto libre de la dirección: quien no lo escribía pasaba sin querer y quien sí lo escribía
+  se enteraba recién al tocar PAGAR. Ese substring (`DELIVERY_EXCLUDED_ZONES`, duplicado en
+  `src/app.ts` y `env.ts`) sigue siendo **la única defensa real** — `assertAddressAllowed`
+  en el servidor no ve el selector — así que recortar cobertura exige tocar los DOS lados,
+  no solo marcar `out:true` en la lista de distritos.
 - **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
   fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
   lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en

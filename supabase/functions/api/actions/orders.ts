@@ -5,7 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
-  CULQI_FEE_RATE,
+  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -126,7 +126,10 @@ const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 // de suponer un ciclo cocinar+repartir que no es el de este negocio, y con la meta de
 // ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos reales
 // un viernes por la noche.
-const MAX_ORDERS_PER_HOUR = 10;
+// Vive en env.ts desde que `get-store-hours` también lo necesita para decirle al cliente
+// qué franjas están llenas (#23): hours.ts no puede importar de orders.ts sin crear un
+// ciclo, porque orders.ts ya importa storePausedUntil de hours.ts.
+// (Ver MAX_ORDERS_PER_HOUR en ../env.ts)
 
 // El negocio abre el 7 de septiembre de 2026. Hasta ese momento `app_settings
 // .business_launched` es false y el home muestra el badge "AÚN NO ABRIMOS" con la lista de
@@ -178,8 +181,12 @@ async function assertHourCapacity(when: Date): Promise<void> {
   const to = encodeURIComponent(hourEnd.toISOString());
   try {
     const [scheduled, immediate] = await Promise.all([
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=gte.${from}&scheduled_for=lt.${to}&select=id&limit=100`),
-      sbGet("orders", `status=neq.CANCELADO&scheduled_for=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
+      // La columna se llama `delivery_time`, NO `scheduled_for` (verificado contra
+      // information_schema: `orders` no tiene `scheduled_for`; ese nombre solo existe en
+      // `pending_charges`). Con el nombre equivocado PostgREST devolvía 42703, el catch de
+      // abajo se lo tragaba, y el tope NUNCA se aplicó desde que se introdujo.
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=gte.${from}&delivery_time=lt.${to}&select=id&limit=100`),
+      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
     ]);
     if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
       throw new ApiError(
@@ -191,8 +198,34 @@ async function assertHourCapacity(when: Date): Promise<void> {
     // Un fallo leyendo la tabla no debe bloquear una venta real: el tope es una
     // protección operativa, no una regla de dinero. Solo se propaga el rechazo real.
     if (e instanceof ApiError) throw e;
+    // Se sigue sin bloquear la venta (el tope es operativo, no una regla de dinero), pero
+    // ahora queda registrado: el fallo anterior era invisible porque solo iba a la consola
+    // de la función, que nadie mira. Así un error de esquema se ve en el resumen diario.
     console.error("assertHourCapacity failed:", e);
+    void debugLog({ stage: "assert-hour-capacity", error: String(e) });
   }
+}
+
+// PUNTOS SIEMPRE ENTEROS (2026-08-27).
+// `customers.points` y `transactions.points` son `integer` en la base. Desde que los
+// precios llevan decimales (+S/0.90 el 2026-08-15) la resta `total − delivery` dejó de
+// dar enteros: un pedido de S/27.25 con delivery S/6.35 da 20.900000000000002, y ese
+// valor viaja como `p_points_delta` a un parámetro `integer`. PostgREST castea con la
+// función de entrada del tipo, así que revienta con 22P02 (invalid input syntax for type
+// integer) — DESPUÉS de que Culqi ya cobró.
+//
+// Es el mismo mecanismo que ya obligó a ensanchar las columnas de dinero a numeric
+// (migración 20260730210447): ahí se corrigieron las de dinero, pero las de puntos
+// quedaron integer y nadie las volvió a mirar hasta que los precios cambiaron.
+//
+// No se ha disparado en producción sólo porque los pedidos existentes son de julio, con
+// totales enteros y delivery 0. Con el catálogo de hoy fallaría en el 100% de los pedidos
+// de un cliente con cuenta.
+// Anticipación máxima de un pedido programado. El cliente ya ofrece solo HOY/MAÑANA.
+const MAX_SCHEDULE_AHEAD_HOURS = 48;
+
+export function pointsFor(total: number, deliveryFee: number): number {
+  return Math.round(total - (deliveryFee || 0));
 }
 
 type FinalizeOrderParams = {
@@ -302,19 +335,101 @@ async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void
   }
 }
 
+// #55 — Qué escalón de referidos corresponde cobrar, si es que alguno.
+//
+// Cálculo PURO a propósito, separado de la escritura en la base (la RPC
+// grant_referral_milestone): así `npm run test:api` puede ejecutar de verdad la decisión de
+// cuántos puntos regalar, que es la parte que toca dinero. Es el mismo patrón que ya
+// siguieron `cancellationDeltas` y `batchExpiryStatus`.
+//
+// Devuelve el escalón MÁS ALTO alcanzado y todavía no pagado, no "el siguiente". Si por lo
+// que sea se saltó uno —un fallo de red en la conversión anterior, dos referidos que
+// convierten casi a la vez— el referidor igual cobra el que le corresponde por su conteo
+// real, en vez de quedarse trabado para siempre en el escalón que se perdió.
+export function nextReferralMilestone(
+  totalReferrals: number,
+  alreadyGranted: number,
+  milestones: { count: number; points: number; label: string }[] = REFERRAL_MILESTONES,
+): { count: number; points: number; label: string } | null {
+  const total = Number(totalReferrals);
+  const done = Number(alreadyGranted);
+  // Basura de la base (null, NaN, negativos) tiene que terminar en "no pagar nada", nunca
+  // en un premio inventado.
+  if (!Array.isArray(milestones) || !Number.isFinite(total) || total <= 0) return null;
+  const yaPagado = Number.isFinite(done) ? done : 0;
+  let mejor: { count: number; points: number; label: string } | null = null;
+  for (const m of milestones) {
+    if (!m || !Number.isFinite(m.count) || !Number.isFinite(m.points) || m.points <= 0) continue;
+    if (m.count > total || m.count <= yaPagado) continue;
+    if (!mejor || m.count > mejor.count) mejor = m;
+  }
+  return mejor;
+}
+
 // El bono al que invita cae recién cuando su referido hace el PRIMER PEDIDO PAGADO — pero
 // hasta ahora nadie se lo decía: se enteraba solo si abría la app y miraba sus puntos. Ese
 // es justo el momento de máxima motivación para volver a invitar a alguien, y se estaba
-// desperdiciando. Un push fallido nunca debe tumbar el pedido, así que va todo en try.
-async function notifyReferrerBonus(referrerPhone: string, referredName: string): Promise<void> {
+// desperdiciando.
+//
+// Desde #55 esta función hace las dos cosas de una sola vez: paga el escalón si toca, y
+// manda UN push (no dos). Dos notificaciones seguidas por el mismo evento se leen como
+// spam justo en el momento en que más importa que se lean.
+//
+// Nada de esto puede tumbar el pedido: el bono base ya quedó otorgado dentro de
+// finalize_order_customer_update, que es la parte atómica. Si el escalón falla, la próxima
+// conversión lo recupera sola (nextReferralMilestone toma el más alto pendiente), y el
+// fallo queda en debug_logs para que lo vea error_spike().
+export async function rewardReferrer(referrerPhone: string, referredName: string): Promise<void> {
+  let hito: { count: number; points: number; label: string } | null = null;
   try {
-    await sendPushToPhone(referrerPhone, {
-      title: "🥪 ¡Te ganaste un sándwich!",
-      body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
-      url: "./index.html",
-      tag: "sndwch-referral-reward",
-      vibrate: [120, 60, 120, 60, 240],
-    });
+    const rows = await sbGet(
+      "customers",
+      `phone=eq.${encodeURIComponent(referrerPhone)}&select=total_referrals,referral_milestone_granted`,
+    );
+    const r = rows[0];
+    if (r) {
+      const candidato = nextReferralMilestone(r.total_referrals || 0, r.referral_milestone_granted || 0);
+      if (candidato) {
+        // La RPC vuelve a comprobar el escalón contra la fila (`referral_milestone_granted
+        // < p_tier` en el WHERE): si dos referidos convierten en el mismo segundo, solo una
+        // de las dos llamadas paga. Un null acá significa "ya estaba pagado", no un error.
+        const res = await rpc("grant_referral_milestone", {
+          p_phone: referrerPhone,
+          p_tier: candidato.count,
+          p_points: candidato.points,
+        });
+        if (res) {
+          hito = candidato;
+          await sbInsert("transactions", {
+            customer_phone: referrerPhone,
+            type: "earn_confirmed",
+            points: candidato.points,
+            description: `Premio por ${candidato.count} amigos referidos`,
+            confirmed: true,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    await debugLog({ stage: "referral_milestone_failed", phone: referrerPhone, error: String(e) });
+  }
+
+  try {
+    await sendPushToPhone(referrerPhone, hito
+      ? {
+        title: `🏆 ¡${hito.count} amigos referidos!`,
+        body: `${referredName} hizo su primer pedido. Además de tu sándwich, te llevas ${hito.points} puntos extra: ${hito.label}.`,
+        url: "./index.html",
+        tag: "sndwch-referral-milestone-" + hito.count,
+        vibrate: [120, 60, 120, 60, 240],
+      }
+      : {
+        title: "🥪 ¡Te ganaste un sándwich!",
+        body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
+        url: "./index.html",
+        tag: "sndwch-referral-reward",
+        vibrate: [120, 60, 120, 60, 240],
+      });
   } catch {
     // sin conexión, sin suscripción push o token vencido — el bono ya está otorgado igual
   }
@@ -413,7 +528,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     // un pass-through al motorizado (el negocio no se queda con ese margen), así que
     // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
     // que haya ingreso real detrás.
-    const basePoints = p.total - p.deliveryFee;
+    const basePoints = pointsFor(p.total, p.deliveryFee);
     let pointsDelta = basePoints;
     if (p.reward) pointsDelta -= p.reward.pts;
 
@@ -504,7 +619,8 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       }));
     }
     await Promise.all(auditInserts);
-    if (isReferral && c.referred_by) await notifyReferrerBonus(c.referred_by, p.name);
+    if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
+    await alertLowMarginOrder(p);
     reportPurchaseToMeta(p);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
@@ -705,6 +821,13 @@ export async function actPrepareOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
@@ -911,8 +1034,12 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
 
     try {
       await sendPushToAdmins({
-        title: "Nuevo pedido " + pc.ref + " 🥪",
-        body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2),
+        // #30 — La restricción va en el TÍTULO, no escondida en el cuerpo: el push se lee
+        // de reojo mientras se cocina, y ahí solo se ve la primera línea. Un aviso que hay
+        // que abrir para enterarse no sirve para algo que puede enfermar a alguien.
+        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + pc.ref + " 🥪",
+        body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2)
+          + (noteNeedsAttention(pc.notes) ? "\nNOTA: " + String(pc.notes || "").slice(0, 180) : ""),
         url: "./index.html",
         tag: "sndwch-new-order-" + pc.ref,
       });
@@ -1002,6 +1129,13 @@ export async function actPlaceOrder(b: any) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
     if (!t || t < Date.now() - 60000) throw new ApiError("La hora programada no es válida.", 400);
+    // Techo superior: sin esto, por API directa se podía programar un pedido para dentro de
+    // un año. Ese pedido reserva inventario real (reserve_inventory) y se queda vivo
+    // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
+    // MAÑANA en la UI; esto lo hace valer también fuera de ella.
+    if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
+      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+    }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     // Antes solo se validaba el horario para pedidos programados — uno "AHORA" con la
@@ -1124,9 +1258,10 @@ export async function actPlaceOrder(b: any) {
 
       try {
         await sendPushToAdmins({
-          title: "Nuevo pedido " + ref + " 🥪",
+          title: (noteNeedsAttention(b.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + ref + " 🥪",
           body: (name || "Cliente") + " — S/" + total.toFixed(2)
-            + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : ""),
+            + (paymentStatus === "pending" ? " (pago " + paymentMethod.toUpperCase() + " pendiente)" : "")
+            + (noteNeedsAttention(b.notes) ? "\nNOTA: " + String(b.notes || "").slice(0, 180) : ""),
           url: "./index.html",
           tag: "sndwch-new-order-" + ref,
         });
@@ -1172,10 +1307,449 @@ export async function actMyHistory(b: any) {
 // Pide un registro más que el límite real para poder avisar si se recortó algo, en vez
 // de que la cola/el export se vea completo cuando en realidad falta al final.
 const ADMIN_ORDERS_LIMIT = 30;
+// ── #21 / #22 / #17: LO QUE LA COLA NO DECÍA SOBRE LAS DIRECCIONES ────────────────────
+//
+// Los tres salen del MISMO dato que la cola ya tiene y nadie estaba mirando: el texto de la
+// dirección de los pedidos activos. Cada uno se descubre hoy de la peor forma posible — el
+// motorizado perdido llamando, dos viajes a la misma puerta, o dos viajes a la misma cuadra
+// con veinte minutos de diferencia.
+
+// Normalización para COMPARAR direcciones, nunca para mostrarlas. Sin esto "Av. España 123"
+// y "av espana 123" son dos direcciones distintas y no se detecta ningún duplicado.
+export function normalizeAddress(address: string): string {
+  return String(address || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    // Abreviaturas que la misma persona escribe distinto entre un pedido y otro.
+    .replace(/\b(av|avda)\b\.?/g, "avenida")
+    .replace(/\b(jr)\b\.?/g, "jiron")
+    .replace(/\b(ca|cl)\b\.?/g, "calle")
+    .replace(/\b(urb)\b\.?/g, "urbanizacion")
+    .replace(/\bnro\b\.?|\bn°|\bno\b\.?|#/g, "")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// #21 — Qué le falta a una dirección para que el motorizado la encuentre.
+//
+// Se comprueba ANTES de despachar, no cuando ya está dando vueltas. Devuelve motivos, no un
+// booleano: "sin número" y "sin referencia" se arreglan con preguntas distintas, y un aviso
+// que no dice qué preguntar obliga a abrir el pedido igual.
+export function addressIssues(address: string, hasCoords: boolean): string[] {
+  const texto = String(address || "").trim();
+  const motivos: string[] = [];
+  if (texto.length < 10) motivos.push("demasiado corta");
+  // Un número de puerta es lo único que convierte una calle en una dirección. Se busca un
+  // número suelto, no cualquier dígito: "Mz A Lt 12" cuenta, "Av. 28 de Julio" sola no.
+  if (!/\d/.test(texto.replace(/\b(28|9|2)\s*de\s*\w+/gi, ""))) motivos.push("sin número de puerta");
+  // La referencia es lo que salva una dirección que el mapa ubica mal. No hace falta si el
+  // cliente dejó el pin: ahí el motorizado tiene coordenadas exactas.
+  if (!hasCoords && texto.length < 30 && !/(ref|frente|espalda|costado|altura|cerca|entre|puerta|color|piso|dpto|depto|interior)/i.test(texto)) {
+    motivos.push("sin referencia");
+  }
+  return motivos;
+}
+
+export type QueueAddressFlags = {
+  duplicates: { address: string; refs: string[] }[];
+  ambiguous: { ref: string; address: string; reasons: string[] }[];
+  nearby: { zone: string; refs: string[] }[];
+};
+
+// #22 y #17 — Dos pedidos a la misma puerta, y dos pedidos a la misma zona en la misma
+// ventana. Son cosas distintas: el primero casi siempre es un pedido partido en dos y se
+// puede entregar en un solo timbre; el segundo son dos clientes distintos que igual se
+// pueden repartir en un viaje.
+export function queueAddressFlags(
+  orders: { ref: string; customer_address?: string | null; delivery_zone?: string | null; created_at?: string | null; lat?: number | null; lon?: number | null }[],
+  nearbyWindowMinutes: number,
+): QueueAddressFlags {
+  const lista = Array.isArray(orders) ? orders.filter((o) => o && o.ref) : [];
+
+  const porDireccion = new Map<string, { address: string; refs: string[] }>();
+  const ambiguous: { ref: string; address: string; reasons: string[] }[] = [];
+  for (const o of lista) {
+    const texto = String(o.customer_address || "");
+    const clave = normalizeAddress(texto);
+    if (clave) {
+      if (!porDireccion.has(clave)) porDireccion.set(clave, { address: texto, refs: [] });
+      porDireccion.get(clave)!.refs.push(o.ref);
+    }
+    const reasons = addressIssues(texto, o.lat != null && o.lon != null);
+    if (reasons.length) ambiguous.push({ ref: o.ref, address: texto, reasons });
+  }
+  const duplicates = [...porDireccion.values()].filter((g) => g.refs.length > 1);
+
+  // Agrupación por cercanía: la zona de delivery es la única señal de ubicación que este
+  // sistema tiene para TODOS los pedidos (el pin GPS es opcional). Se exige además que
+  // caigan en la misma ventana de tiempo — dos pedidos a la misma zona con tres horas de
+  // diferencia no se reparten juntos, y sugerirlo haría llegar tarde a uno de los dos.
+  const porZona = new Map<string, typeof lista>();
+  for (const o of lista) {
+    const zona = String(o.delivery_zone || "").trim();
+    if (!zona) continue;
+    if (!porZona.has(zona)) porZona.set(zona, []);
+    porZona.get(zona)!.push(o);
+  }
+  const ventana = Math.max(1, Number(nearbyWindowMinutes) || 1) * 60000;
+  const nearby: { zone: string; refs: string[] }[] = [];
+  for (const [zona, pedidos] of porZona) {
+    if (pedidos.length < 2) continue;
+    const conFecha = pedidos
+      .filter((o) => o.created_at && !Number.isNaN(new Date(o.created_at).getTime()))
+      .sort((a, b) => new Date(a.created_at as string).getTime() - new Date(b.created_at as string).getTime());
+    let grupo: string[] = [];
+    let inicio = 0;
+    for (const o of conFecha) {
+      const t = new Date(o.created_at as string).getTime();
+      if (!grupo.length) { grupo = [o.ref]; inicio = t; continue; }
+      if (t - inicio <= ventana) { grupo.push(o.ref); continue; }
+      if (grupo.length > 1) nearby.push({ zone: zona, refs: grupo });
+      grupo = [o.ref];
+      inicio = t;
+    }
+    if (grupo.length > 1) nearby.push({ zone: zona, refs: grupo });
+  }
+  return { duplicates, ambiguous, nearby };
+}
+
+// Ventana para considerar que dos pedidos de la misma zona salen en un viaje. 45 min: lo
+// que tarda una vuelta de reparto más el margen de armado. Más ancha haría esperar al
+// primero; más angosta no agruparía nunca nada.
+const NEARBY_WINDOW_MINUTES = 45;
+
+// ── #35: ALERTA DE MARGEN POR PEDIDO BAJO EL UMBRAL ────────────────────────────────────
+//
+// Un pedido puede apilar combo + recompensa + zona cara y quedar por debajo del piso sin que
+// nada avise: cada descuento por separado está aprobado y tiene sentido, y el problema
+// aparece solo al sumarlos. Es el mismo patrón que ya obligó a apagar el doble de atún y a
+// corregir el pDbl de 30CM — un producto que pierde plata en una combinación concreta.
+//
+// El margen se estima con el % de insumos acordado con el dueño (45% del precio de venta,
+// ver el contexto de negocio en CLAUDE.md). NO es el costo real medido: eso es el #7 y
+// necesita las compras (#38) y la merma medida (#6). Por eso esto AVISA, no bloquea.
+const MARGIN_INPUT_COST_RATE = 0.45;
+const MARGIN_FLOOR_PCT = 0.25;
+
+export type OrderMargin = {
+  ref: string;
+  listFood: number;
+  chargedFood: number;
+  discount: number;
+  estimatedCost: number;
+  contribution: number;
+  marginPct: number;
+  belowFloor: boolean;
+};
+
+export function orderMargin(
+  order: { ref?: string | null; total?: number | null; delivery_fee?: number | null; listFood?: number | null },
+  culqiFee: number,
+  inputRate = MARGIN_INPUT_COST_RATE,
+  floor = MARGIN_FLOOR_PCT,
+): OrderMargin {
+  const num = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  // Lo que el cliente PAGÓ por la comida: el reparto es pass-through al motorizado.
+  const chargedFood = Math.max(0, num(order?.total) - num(order?.delivery_fee));
+  // Lo que el sándwich VALE de carta, antes de combo, recompensa y promo.
+  //
+  // ESTA DISTINCIÓN ES TODO EL ÍTEM. Calcular el costo como un % del precio ya descontado
+  // hace que el margen dé siempre lo mismo (55%) por construcción, y la alerta no saltaría
+  // JAMÁS — un aviso que nunca suena es peor que no tenerlo, porque da la sensación de estar
+  // vigilado. El costo de los insumos no baja porque el cliente haya pagado menos: la
+  // proteína, el pan y la salsa son los mismos. Por eso el costo se ancla al precio de
+  // carta y el descuento sale ENTERO del margen, que es lo que pasa de verdad.
+  const listFood = num(order?.listFood) > 0 ? num(order.listFood) : chargedFood;
+  const estimatedCost = listFood * inputRate;
+  const contribution = chargedFood - estimatedCost - culqiFee;
+  return {
+    ref: String(order?.ref || ""),
+    listFood: r2(listFood),
+    chargedFood: r2(chargedFood),
+    discount: r2(Math.max(0, listFood - chargedFood)),
+    estimatedCost: r2(estimatedCost),
+    contribution: r2(contribution),
+    // El margen se mide contra lo que se COBRÓ: es la pregunta "de cada sol que entró,
+    // cuánto me quedó". Medirlo contra el precio de carta diría que un sándwich regalado
+    // tiene margen negativo del 100%, que es cierto pero no accionable.
+    marginPct: chargedFood > 0 ? Math.round((contribution / chargedFood) * 1000) / 1000 : 0,
+    // Sobre CERO comida cobrada el margen no es malo, es indefinido: un pedido 100% cubierto
+    // por una recompensa es un premio ya pagado con puntos, no una venta mal calibrada.
+    belowFloor: chargedFood > 0 && (contribution / chargedFood) < floor,
+  };
+}
+
+// Aviso de margen bajo, en el momento en que el pedido se crea.
+//
+// Va acá y no en un cron a propósito: el valor está en verlo cuando todavía se puede hacer
+// algo — mirar qué combinación lo produjo y decidir si esa promo sigue. Un reporte semanal
+// diría lo mismo cuando ya se cobraron veinte iguales.
+//
+// Con freno de 6 horas: si una combinación concreta está mal calibrada, va a disparar en
+// cada pedido, y veinte notificaciones idénticas se apagan antes que se corrija el precio.
+async function alertLowMarginOrder(p: FinalizeOrderParams): Promise<void> {
+  try {
+    // La comisión solo existe si el cobro pasó por Culqi. Yape/Plin, crédito y recompensa
+    // no la pagan, y cargársela les bajaría el margen en el reporte sin ninguna razón.
+    const culqiFee = p.paymentMethod === "card" ? (Number(p.total) || 0) * CULQI_FEE_RATE : 0;
+    // El precio de carta de lo que se armó, ANTES de combo/recompensa/promo. Es lo que hace
+    // que el descuento salga del margen en vez de desaparecer del cálculo.
+    let listFood = 0;
+    for (const it of p.items || []) {
+      try {
+        const priced = priceCartItem(it);
+        listFood += priced.unitPrice * priced.qty;
+      } catch {
+        // Un ítem que ya no encaja en el catálogo no puede tumbar el aviso de los demás.
+      }
+    }
+    const m = orderMargin({ ref: p.ref, total: p.total, delivery_fee: p.deliveryFee, listFood }, culqiFee);
+    if (!m.belowFloor) return;
+    const ok = await rpc("check_rate_limit", { p_key: "low-margin-order", p_limit: 1, p_window_minutes: 360 });
+    if (!ok) return;
+    await sendPushToAdmins({
+      title: "📉 Pedido bajo el margen mínimo",
+      body: `${p.ref}: cobraste S/${m.chargedFood.toFixed(2)} de S/${m.listFood.toFixed(2)} de carta y quedan S/${m.contribution.toFixed(2)} (${Math.round(m.marginPct * 100)}%). Revisa qué promos se apilaron.`,
+      url: "./index.html",
+      tag: "sndwch-low-margin",
+      renotify: true,
+    });
+  } catch {
+    // Un aviso nunca puede tumbar un pedido que ya se cobró.
+  }
+}
+
+// ── #28: LECTURA DEL COMPROBANTE (OCR), SIN COSTO ──────────────────────────────────────
+//
+// El OCR corre en el NAVEGADOR del admin con Tesseract.js: sin cuenta, sin API key, sin
+// servicio externo y sin costo por uso. Los ~3 MB del motor solo los descarga el dueño la
+// primera vez que abre un comprobante — ningún cliente los ve.
+//
+// ⚠ ESTO NO CONFIRMA UN PAGO, Y NO PUEDE. Una captura se edita en dos minutos; leerla
+// automáticamente solo confirmaría una falsificación más rápido. La confirmación sigue
+// siendo del admin mirando su cuenta. Lo que esto hace es los tres chequeos que él haría a
+// ojo — monto, fecha y número de operación — para que no tenga que entrecerrar los ojos.
+//
+// El número de operación es lo verdaderamente nuevo: detecta la MISMA transferencia usada
+// en dos pedidos. Es más fuerte que el hash de la imagen (#29), porque volver a capturar la
+// pantalla cambia el hash y no el número.
+
+export type ReceiptFields = { amount: number | null; opNumber: string | null; dateText: string | null };
+
+// Parser tolerante del texto que devuelve el OCR.
+//
+// ⚠ LOS RÓTULOS SON BEST-EFFORT. No se pudo verificar contra una constancia real de Yape al
+// escribir esto, así que se aceptan varias formas de decir lo mismo y NUNCA se inventa un
+// dato: lo que no se reconoce vuelve como `null` y la pantalla lo dice. Cuando el dueño
+// mande una captura real (ver P20 en docs/PENDIENTE_DEL_DUENO.md), esta lista se ajusta con
+// una línea — el resto del mecanismo no cambia.
+export function parseTransferReceipt(text: string): ReceiptFields {
+  const raw = String(text || "");
+  // El OCR mete saltos y espacios raros; se normaliza para buscar, nunca para mostrar.
+  const t = raw.replace(/\s+/g, " ").trim();
+
+  // MONTO. Se busca la cifra pegada a un símbolo de soles, que es como aparece en todas las
+  // apps de pago peruanas. Sin el símbolo NO se toma cualquier número suelto: un número de
+  // operación de 8 dígitos se confundiría con un monto de S/12345678.
+  let amount: number | null = null;
+  const montos = [...t.matchAll(/(?:S\/\.?|s\/\.?|PEN)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+(?:[.,][0-9]{1,2})?)/g)];
+  if (montos.length) {
+    // Si hay varias cifras (comisión, saldo), manda la MAYOR: en una constancia de
+    // transferencia el monto enviado es el número grande, y quedarse con el primero tomaría
+    // un saldo o una comisión.
+    const valores = montos
+      .map((m) => {
+        const limpio = m[1].replace(/\.(?=[0-9]{3}\b)/g, "").replace(/,(?=[0-9]{3}\b)/g, "").replace(",", ".");
+        return Number(limpio);
+      })
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (valores.length) amount = Math.round(Math.max(...valores) * 100) / 100;
+  }
+
+  // NÚMERO DE OPERACIÓN. Se acepta cualquiera de los rótulos que usan las apps peruanas.
+  // Solo se toma un número que venga DETRÁS de un rótulo: agarrar el dígito más largo del
+  // texto tomaría un número de teléfono o parte de la fecha.
+  let opNumber: string | null = null;
+  const op = t.match(/(?:n[°ºo]?\.?\s*de\s*operaci[oó]n|nro\.?\s*de\s*operaci[oó]n|c[oó]digo\s*de\s*operaci[oó]n|operaci[oó]n|constancia|comprobante)\D{0,12}([0-9]{5,20})/i);
+  if (op) opNumber = op[1];
+
+  // FECHA. Se guarda como TEXTO tal como se leyó, no como Date: interpretar 03/09 como
+  // marzo o setiembre según el runtime metería un error de meses en un dato que existe
+  // justamente para detectar comprobantes viejos.
+  let dateText: string | null = null;
+  const fecha = t.match(/([0-3]?[0-9][\/\-. ](?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-z]*[\/\-. ][0-9]{2,4})/i);
+  if (fecha) dateText = fecha[1].trim();
+
+  return { amount, opNumber, dateText };
+}
+
+// Qué decirle al admin sobre lo que se leyó. Puro y probado: decide un VEREDICTO sobre
+// dinero, y equivocarlo en cualquiera de las dos direcciones es caro — un falso "todo bien"
+// deja pasar un pago que no llegó, y un falso "ojo" enseña a ignorar el aviso.
+export type ReceiptChecks = {
+  amountMatches: boolean | null;
+  amountRead: number | null;
+  expected: number;
+  duplicateOpRefs: string[];
+  verdict: "ok" | "revisar" | "sin_lectura";
+};
+
+export function receiptChecks(
+  fields: ReceiptFields,
+  expectedTotal: number,
+  otherRefsWithSameOp: string[],
+): ReceiptChecks {
+  const expected = Math.round((Number(expectedTotal) || 0) * 100) / 100;
+  const leido = fields?.amount ?? null;
+  // Tolerancia de un céntimo: el OCR puede leer una coma como punto y el total del pedido
+  // lleva decimales desde los precios .90.
+  //
+  // La comparación va en CÉNTIMOS ENTEROS, no en soles: `Math.abs(26.91 - 26.90)` da
+  // 0.010000000000001563 en punto flotante y no pasa un `<= 0.01`. Es el mismo motivo por el
+  // que el servidor compara totales con `Math.round(total * 100)` en el checkout.
+  const amountMatches = leido === null
+    ? null
+    : Math.abs(Math.round(leido * 100) - Math.round(expected * 100)) <= 1;
+  const duplicateOpRefs = (Array.isArray(otherRefsWithSameOp) ? otherRefsWithSameOp : []).filter(Boolean);
+  // Un duplicado manda sobre todo lo demás: aunque el monto cuadre, la misma transferencia
+  // no puede respaldar dos pedidos.
+  const verdict: ReceiptChecks["verdict"] = duplicateOpRefs.length
+    ? "revisar"
+    : amountMatches === null
+    ? "sin_lectura"
+    : amountMatches
+    ? "ok"
+    : "revisar";
+  return { amountMatches, amountRead: leido, expected, duplicateOpRefs, verdict };
+}
+
+// Guarda lo que el navegador del admin leyó del comprobante y devuelve el veredicto.
+//
+// Requiere sesión de ADMIN: el cliente nunca ejecuta esto, así que no hay forma de que
+// alguien mande un OCR inventado para que su pedido se vea bien. Y aunque lo hiciera, no
+// confirmaría nada — el pago lo sigue confirmando una persona.
+export async function actAdminReceiptOcr(b: any) {
+  await requireAdmin(b.token);
+  const ref = String(b.ref || "").trim().slice(0, 40);
+  if (!ref) throw new ApiError("Falta el pedido.", 400);
+  const texto = String(b.text || "").slice(0, 4000);
+
+  const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total`);
+  const order = rows[0];
+  if (!order) throw new ApiError("Pedido no encontrado.", 404);
+
+  const fields = parseTransferReceipt(texto);
+  let otras: string[] = [];
+  if (fields.opNumber) {
+    const previos = await sbGet(
+      "orders",
+      `receipt_op_number=eq.${encodeURIComponent(fields.opNumber)}&select=ref&limit=20`,
+    );
+    otras = previos.map((r: any) => String(r.ref || "")).filter((r: string) => r && r !== ref);
+  }
+  const checks = receiptChecks(fields, Number(order.total) || 0, otras);
+
+  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+    receipt_ocr: { ...fields, readAt: new Date().toISOString() },
+    receipt_op_number: fields.opNumber,
+  });
+  return { success: true, fields, checks };
+}
+
+// ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────
+//
+// Hoy el pedido pasa a ENTREGADO porque el dueño lo marca, y el dueño no está en la puerta:
+// está cocinando. Entre la entrega real y el toque del botón pasan minutos u horas, y en ese
+// hueco el cliente ve "EN CAMINO" cuando ya está comiendo, la alerta de pedido estancado
+// suena por un pedido que ya llegó, y `delivered_at` —que weekly-summary usa para comparar
+// contra la promesa de entrega— guarda la hora equivocada.
+//
+// El motorizado abre un link y el pedido se cierra solo, con la hora real.
+function newDeliveryToken(): string {
+  // 32 caracteres hex de crypto: no adivinable por fuerza bruta, y corto como para caber en
+  // un mensaje de WhatsApp sin que el link se corte en dos líneas.
+  return [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Acción PÚBLICA (sin token de sesión): quien lleva el pedido no tiene cuenta. El
+// `delivery_token` es la autorización — un identificador no adivinable que solo recibe quien
+// lleva ESE pedido, el mismo criterio con el que `ref` deja a un invitado ver o cancelar el
+// suyo.
+export async function actConfirmDelivery(b: any) {
+  const token = String(b.deliveryToken || "").trim();
+  // Se exige la forma exacta antes de tocar la base: así una petición con basura ni siquiera
+  // llega a consultar, y no sirve para sondear si un token existe por el tiempo de respuesta.
+  if (!/^[0-9a-f]{32}$/.test(token)) throw new ApiError("Link de entrega inválido.", 400);
+
+  const rows = await sbGet("orders", `delivery_token=eq.${encodeURIComponent(token)}&select=id,ref,status,customer_name,customer_phone,contact_phone,customer_email,total,delivery_fee,eta_minutes`);
+  const order = rows[0];
+  // Un token que ya se usó fue BORRADO, así que acá no aparece nada. Se responde lo mismo
+  // que para un token inventado a propósito: distinguirlos le diría a cualquiera si un link
+  // existió alguna vez.
+  if (!order) throw new ApiError("Este link ya se usó o no es válido.", 404);
+  if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+  if (order.status === "ENTREGADO") return { success: true, ref: order.ref, alreadyDelivered: true };
+  if (order.status !== "EN CAMINO") {
+    // El link solo cierra un pedido que de verdad salió. Si el estado retrocedió por
+    // cualquier razón, esto no puede saltarse la cocina.
+    throw new ApiError("Este pedido todavía no está en camino.", 400);
+  }
+
+  const ahora = new Date().toISOString();
+  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+    status: "ENTREGADO",
+    status_changed_at: ahora,
+    // La hora REAL de la entrega, escrita por quien entregó.
+    delivered_at: ahora,
+    // El token se quema acá: un link reenviado por WhatsApp no puede volver a cerrar (ni
+    // reabrir) el pedido más tarde.
+    delivery_token: null,
+    alerted_stuck_progress: false,
+  });
+
+  // El cliente se entera al instante, que es la mitad del valor de esto.
+  const phone = order.customer_phone || order.contact_phone;
+  if (phone) {
+    try {
+      await sendPushToPhone(phone, {
+        title: "🥪 ¡Tu pedido llegó!",
+        body: "Que lo disfrutes. Cuando puedas, cuéntanos cómo estuvo desde la app.",
+        url: "./index.html",
+        tag: "sndwch-delivered-" + order.ref,
+      });
+    } catch {
+      // un push fallido nunca puede impedir que el pedido quede cerrado
+    }
+  }
+  try {
+    await sendPushToAdmins({
+      title: "✅ Entregado",
+      body: `${order.ref} se confirmó desde el link del motorizado.`,
+      url: "./index.html",
+      tag: "sndwch-delivered-admin-" + order.ref,
+    });
+  } catch { /* best-effort */ }
+
+  return { success: true, ref: order.ref, alreadyDelivered: false };
+}
+
 export async function actAdminOrders(b: any) {
   await requireAdmin(b.token);
   const rows = await sbGet("orders", `status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=${ADMIN_ORDERS_LIMIT + 1}`);
-  return { orders: rows.slice(0, ADMIN_ORDERS_LIMIT), truncated: rows.length > ADMIN_ORDERS_LIMIT };
+  const orders = rows.slice(0, ADMIN_ORDERS_LIMIT);
+  return {
+    orders,
+    truncated: rows.length > ADMIN_ORDERS_LIMIT,
+    // Se calcula sobre los pedidos YA leídos: cero consultas extra, y no puede contradecir
+    // a la lista que se muestra al lado.
+    addressFlags: queueAddressFlags(orders, NEARBY_WINDOW_MINUTES),
+    nearbyWindowMinutes: NEARBY_WINDOW_MINUTES,
+  };
 }
 
 // Cuando un pago que no se pudo verificar automáticamente (Yape, Plin, o un pedido
@@ -1190,7 +1764,7 @@ async function confirmManualPayment(order: any) {
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
   // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
   // sobre el delivery (pass-through al motorizado, sin margen real detrás).
-  const earnedPoints = order.total - (order.delivery_fee || 0);
+  const earnedPoints = pointsFor(order.total, order.delivery_fee);
 
   // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
   // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
@@ -1237,7 +1811,7 @@ async function confirmManualPayment(order: any) {
       description: "Sándwich gratis por invitar a " + order.customer_name,
       confirmed: true,
     });
-    await notifyReferrerBonus(referrerPhone, order.customer_name);
+    await rewardReferrer(referrerPhone, order.customer_name);
   }
 
   // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el
@@ -1297,20 +1871,18 @@ const DEFAULT_ETA_FALLBACK = 30;
 
 async function applyOrderStatusUpdate(orderId: string, status: string, etaMinutes?: unknown): Promise<any> {
   if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
-  // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
-  // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
-  const upd: Record<string, unknown> = { status, status_changed_at: new Date().toISOString(), alerted_stuck_progress: false };
-  // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
-  // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
-  // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
-  if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  // status_changed_at, alerted_stuck_progress y delivered_at se fijan MÁS ABAJO, solo si el
+  // estado cambia de verdad. Acá el objeto arranca sin ellos: editar la ETA de un pedido
+  // manda su mismo estado sobre sí mismo, y antes eso reiniciaba el reloj de "pedido
+  // estancado" y reescribía la hora de entrega.
+  const upd: Record<string, unknown> = { status };
   if (etaMinutes) {
     const eta = Number(etaMinutes);
     if (!Number.isFinite(eta) || eta < 0 || eta > 240) throw new ApiError("ETA inválida.", 400);
     upd.eta_minutes = eta;
   }
 
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,delivery_zone,eta_minutes`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,status,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,delivery_zone,eta_minutes`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
 
@@ -1320,7 +1892,23 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   if (status === "EN CAMINO" && upd.eta_minutes === undefined && !order.eta_minutes) {
     upd.eta_minutes = DEFAULT_ETA_BY_ZONE[String(order.delivery_zone || "")] ?? DEFAULT_ETA_FALLBACK;
   }
+  // #19 — El token del link de confirmación se crea justo cuando el pedido SALE, que es
+  // cuando hay alguien a quien mandárselo. Antes de eso no existe, así que no hay nada que
+  // filtrar; después de confirmar se borra, así que el link es de un solo uso.
+  if (status === "EN CAMINO" && status !== order.status) {
+    upd.delivery_token = newDeliveryToken();
+  }
   if (order.status === "CANCELADO") throw new ApiError("Este pedido está cancelado.", 400);
+  if (status !== order.status) {
+    // status_changed_at marca CUÁNDO entró a este estado — es lo que permite detectar un
+    // pedido colgado a mitad del flujo (created_at solo dice cuándo se hizo el pedido).
+    upd.status_changed_at = new Date().toISOString();
+    upd.alerted_stuck_progress = false;
+    // Sin esto no había forma de saber CUÁNTO tardó realmente un pedido en entregarse —
+    // solo created_at. weekly-summary lo usa para comparar contra ESTIMATED_DELIVERY_RANGE
+    // (la promesa que ve el cliente antes de pagar) y avisar si se está desviando.
+    if (status === "ENTREGADO") upd.delivered_at = new Date().toISOString();
+  }
 
   // Antes esto no revisaba el estado actual del pedido — la acción en lote
   // (actAdminBulkUpdateStatus) podía seleccionar pedidos RECIBIDO recién llegados junto
@@ -1349,9 +1937,30 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     if (claim.length) await confirmManualPayment(order);
   }
 
-  const rows = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}`, upd);
+  // El filtro por el estado que se leyó arriba hace de reclamo atómico. Sin él, este
+  // UPDATE podía pisar un CANCELADO: si "avanzar" y "cancelar" llegaban casi juntos, la
+  // cancelación reclamaba la fila, restockeaba, reembolsaba el crédito y decrementaba
+  // total_orders, y este UPDATE la reescribía como ENTREGADO — quedaba un pedido
+  // "entregado" ya reembolsado y con el stock devuelto. actAdminCancelOrder y el cron de
+  // pagos vencidos ya usaban este mismo patrón; esta ruta era la única sin él.
+  const rows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(orderId)}&status=eq.${encodeURIComponent(order.status)}`,
+    upd,
+  );
+  if (!rows.length) {
+    throw new ApiError("El pedido cambió de estado mientras lo actualizabas. Vuelve a cargar la cola.", 409);
+  }
 
-  if (order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
+  // Las notificaciones y el reinicio del reloj de "pedido estancado" SOLO cuando el estado
+  // cambia de verdad. Editar la ETA de un pedido que ya está EN CAMINO manda
+  // status:'EN CAMINO' sobre sí mismo: antes eso reenviaba el push "¡Tu pedido va en
+  // camino!" (con renotify:true) y el correo de estado por segunda vez, y además reescribía
+  // status_changed_at y alerted_stuck_progress, o sea CORREGIR la hora de un pedido que iba
+  // tarde reiniciaba justo la alarma que debía avisar que iba tarde.
+  const statusChanged = status !== order.status;
+
+  if (statusChanged && order.customer_phone && STATUS_PUSH_MESSAGES[status]) {
     const msg = STATUS_PUSH_MESSAGES[status];
     // En "EN CAMINO" con ETA cargada, reemplazamos el cuerpo genérico por una ventana de
     // hora real (ej. "9:20 - 9:40") en vez de solo "ya casi llega" — mismo tipo de dato que
@@ -1377,7 +1986,7 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   // sendOrderStatusEmail en email.ts). rows[0] (no `order`, que se seleccionó sin
   // customer_email) trae la fila completa tras el update.
   const updatedOrder = rows[0];
-  if (updatedOrder?.customer_email) {
+  if (statusChanged && updatedOrder?.customer_email) {
     try {
       await sendOrderStatusEmail(updatedOrder.customer_email, updatedOrder.customer_name || "", updatedOrder.ref, status, upd.eta_minutes as number | undefined);
     } catch {
@@ -1442,7 +2051,7 @@ export async function actAdminConfirmPayment(b: any) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
-  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,customer_name,customer_address,payment_method,payment_status,status`);
+  const orderRows = await sbGet("orders", `id=eq.${encodeURIComponent(orderId)}&select=ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status`);
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
   if (!["yape", "plin", "cod"].includes(order.payment_method)) {
@@ -1481,6 +2090,33 @@ const RECEIPT_UPLOAD_RATE_LIMIT = 6;
 const RECEIPT_UPLOAD_RATE_WINDOW_MINUTES = 60;
 const RECEIPT_MAX_BYTES = 2 * 1024 * 1024;
 const RECEIPT_MIME_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+// #29 — El SHA-256 de los bytes del comprobante. Se calcula sobre los BYTES DECODIFICADOS,
+// no sobre el base64: dos codificaciones del mismo archivo pueden diferir en el texto y ser
+// el mismo píxel por píxel, y esa diferencia es justo la que dejaría pasar el duplicado.
+export async function receiptHash(bytes: Uint8Array): Promise<string> {
+  // `bytes.slice().buffer` y no `bytes` a secas: desde TypeScript 5.7 un Uint8Array ya no
+  // encaja en BufferSource aunque en runtime funcione perfecto — es exactamente el mismo
+  // choque que ya está documentado para `storageUpload` en db.ts. El slice además garantiza
+  // que se hashea SOLO la vista y no un buffer subyacente más grande, que daría un hash
+  // distinto para el mismo archivo.
+  const digest = await crypto.subtle.digest("SHA-256", bytes.slice().buffer);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Qué otro pedido ya usó esta misma captura. Devuelve la lista de refs, no un booleano: el
+// aviso al admin tiene que DECIR cuál, porque lo primero que va a querer hacer es abrir el
+// otro pedido y comparar.
+//
+// Deliberadamente NO bloquea la subida. Hay un caso legítimo —un pedido grupal que se paga
+// con una sola transferencia, o el cliente que reenvía la captura equivocada por error— y
+// rechazarlo dejaría a alguien que sí pagó sin poder avisar. Lo que sí hace es que el admin
+// lo vea ANTES de dar el pago por bueno, que es el único momento en que sirve.
+export function duplicateReceiptRefs(rows: { ref: string }[], currentRef: string): string[] {
+  return (Array.isArray(rows) ? rows : [])
+    .map((r) => String(r?.ref || ""))
+    .filter((ref) => ref && ref !== currentRef);
+}
+
 export async function actUploadReceipt(b: any) {
   const ref = String(b.ref || "").trim().slice(0, 40);
   const mime = String(b.mime || "");
@@ -1514,20 +2150,47 @@ export async function actUploadReceipt(b: any) {
 
   const path = `${ref}.${ext}`;
   await storageUpload("payment-receipts", path, bytes, mime);
-  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path });
+
+  // #29 — Antes de guardar, ver si esta MISMA captura ya respalda otro pedido. Es la única
+  // defensa contra reenviar el comprobante de un pago que ya se usó: el admin confirma
+  // mirando la imagen, y dos pedidos seguidos del mismo cliente se ven iguales.
+  let duplicados: string[] = [];
+  try {
+    const hash = await receiptHash(bytes);
+    const previos = await sbGet("orders", `receipt_hash=eq.${encodeURIComponent(hash)}&select=ref&limit=20`);
+    duplicados = duplicateReceiptRefs(previos, ref);
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path, receipt_hash: hash });
+  } catch (e) {
+    // Un fallo del hash NUNCA puede impedir que un cliente que sí pagó suba su comprobante:
+    // el camino de siempre sigue guardando la ruta del archivo.
+    await debugLog({ stage: "receipt_hash_failed", ref, error: String(e) });
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_path: path });
+  }
 
   // Aviso opcional al admin — no bloquea la respuesta al cliente si el push falla, mismo
   // criterio que el resto de notificaciones best-effort de este archivo.
   try {
-    await sendPushToAdmins({
-      title: "📎 Comprobante subido",
-      body: `El pedido ${ref} tiene un comprobante de Yape/Plin listo para revisar.`,
-      url: "./index.html",
-      tag: `sndwch-receipt-${ref}`,
-    });
+    await sendPushToAdmins(duplicados.length
+      ? {
+        // El aviso NOMBRA el otro pedido: lo primero que el dueño va a querer es abrirlo y
+        // comparar, y un "ojo, parece repetido" sin decir con cuál no le ahorra ese paso.
+        title: "⚠️ Comprobante repetido",
+        body: `El comprobante del pedido ${ref} es idéntico al de ${duplicados.join(", ")}. Revísalo antes de confirmar el pago.`,
+        url: "./index.html",
+        tag: `sndwch-receipt-dup-${ref}`,
+        renotify: true,
+      }
+      : {
+        title: "📎 Comprobante subido",
+        body: `El pedido ${ref} tiene un comprobante de Yape/Plin listo para revisar.`,
+        url: "./index.html",
+        tag: `sndwch-receipt-${ref}`,
+      });
   } catch {
     // silencioso a propósito
   }
+  // El cliente NO recibe la lista de refs ajenos (sería filtrar pedidos de otra persona),
+  // solo el éxito de siempre. El aviso del duplicado va al admin, que es quien decide.
   return { success: true };
 }
 
@@ -1588,6 +2251,39 @@ async function restockOrderItems(items: any): Promise<void> {
 // que este cancelación lo baje a 0) como el mejor indicador disponible de "este pedido
 // fue el que lo otorgó" — debe leerse ANTES de que finalize_order_customer_update
 // decremente total_orders, nunca después.
+// Lo que hay que DESHACER en la cuenta del cliente al cancelar un pedido. Es la misma
+// aritmética para la cancelación del cliente (actCancelMyOrder) y la del admin
+// (actAdminCancelOrder) — estaba escrita dos veces palabra por palabra, que es justo
+// cómo dos copias empiezan a divergir: cada corrección futura tenía que acordarse de la
+// otra. Se extrae además porque es exactamente la clase de defecto que ya llegó a
+// producción una vez (revertir un monto distinto del que se otorgó, ver el caso de los
+// 350 puntos regalados) y sin extraerla no había forma de probarla: el resto de las dos
+// funciones toca la base y no se puede ejecutar en `npm run test:api`.
+//
+// Reglas, todas con una razón concreta detrás:
+// · Nada se revierte si el pedido nunca se pagó — un Yape/Plin todavía `pending` nunca
+//   pasó por finalize_order_customer_update, no hay nada que deshacer.
+// · Los puntos GANADOS fueron sobre total − delivery_fee (el delivery es pass-through al
+//   motorizado y nunca premió), así que la reversión resta exactamente eso; los puntos
+//   que el cliente GASTÓ en una recompensa se le devuelven. El neto puede quedar en
+//   cualquier signo y así debe mandarse.
+// · El crédito solo se devuelve si se pagó con crédito interno: el dinero real de una
+//   tarjeta no se reembolsa desde acá (eso lo coordina el dueño a mano).
+export function cancellationDeltas(order: {
+  payment_status?: string | null;
+  payment_method?: string | null;
+  total: number;
+  delivery_fee?: number | null;
+  redeemed_reward_pts?: number | null;
+}): { creditToRefund: number; pointsToRefund: number; totalOrdersDelta: number; totalRedeemedDelta: number } {
+  const paid = order.payment_status === "paid";
+  return {
+    creditToRefund: paid && order.payment_method === "credit" ? order.total : 0,
+    pointsToRefund: paid ? (order.redeemed_reward_pts || 0) - pointsFor(order.total, order.delivery_fee || 0) : 0,
+    totalOrdersDelta: paid ? -1 : 0,
+    totalRedeemedDelta: paid && order.redeemed_reward_pts ? -1 : 0,
+  };
+}
 async function referrerPhoneToReverse(phone: string): Promise<string | null> {
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=referred_by,referral_bonus_granted,total_orders`);
   const c = rows[0];
@@ -1673,13 +2369,7 @@ export async function actAdminCancelOrder(b: any) {
   // tarjeta/Yape/Plin y se reembolsó por fuera de la app, el cliente igual conservaba
   // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
   // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone
@@ -1695,6 +2385,12 @@ export async function actAdminCancelOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {
@@ -1719,6 +2415,22 @@ export async function actAdminCancelOrder(b: any) {
     await Promise.all(refundAudits);
   }
 
+  // Avisarle al cliente. Antes cancelar no mandaba nada: se enteraba abriendo la app, o no
+  // se enteraba. Es el único cambio de estado que deja a alguien esperando comida que no va
+  // a llegar, así que no puede pasar en silencio.
+  if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+    try {
+      await sendPushToPhone(order.customer_phone, {
+        title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+        body: STATUS_PUSH_MESSAGES.CANCELADO.body + " Ref: " + order.ref,
+        url: "./index.html",
+        tag: "sndwch-order-" + order.ref,
+        renotify: true,
+      });
+    } catch {
+      // un push fallido no puede tumbar una cancelación que ya se ejecutó en la base
+    }
+  }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
   return { success: true, order: claimRows[0] };
 }
@@ -1787,13 +2499,7 @@ export async function actCancelMyOrder(b: any) {
   // (y por tanto la cancelación) si el cliente ya gastó esos puntos en otra parte antes
   // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
   // insuficiente" en vez de perder la cuenta en silencio.
-  const creditToRefund = order.payment_status === "paid" && order.payment_method === "credit" ? order.total : 0;
-  // Los puntos ganados fueron sobre total-delivery_fee (ver finalizeAndInsertOrder), así
-  // que la reversión debe restar lo mismo, no order.total completo — de lo contrario se
-  // revertirían de más puntos que los que de verdad se otorgaron.
-  const pointsToRefund = order.payment_status === "paid" ? (order.redeemed_reward_pts || 0) - (order.total - (order.delivery_fee || 0)) : 0;
-  const totalOrdersDelta = order.payment_status === "paid" ? -1 : 0;
-  const totalRedeemedDelta = order.payment_status === "paid" && order.redeemed_reward_pts ? -1 : 0;
+  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
   // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
   // total_orders — ver comentario de referrerPhoneToReverse.
   const referrerToReverse = order.payment_status === "paid" && order.customer_phone
@@ -1809,6 +2515,12 @@ export async function actCancelMyOrder(b: any) {
       p_total_redeemed_delta: totalRedeemedDelta,
       p_referrer_phone: null,
       p_referral_bonus: 0,
+      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
+      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
+      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
+      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
+      // alguien pase un referrer real por acá.
+      p_referrer_bonus: 0,
     });
     const refundAudits: Promise<unknown>[] = [];
     if (pointsToRefund !== 0) {
@@ -1876,7 +2588,7 @@ export async function actExpireStaleManualPayments(b: any) {
   const cutoff = new Date(Date.now() - STALE_MANUAL_PAYMENT_HOURS * 3600000).toISOString();
   const stale = await sbGet(
     "orders",
-    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items`,
+    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items,ref,customer_phone&limit=500`,
   );
   let cancelled = 0;
   for (const order of stale) {
@@ -1895,6 +2607,19 @@ export async function actExpireStaleManualPayments(b: any) {
       if (rows.length) {
         await restockOrderItems(order.items);
         cancelled++;
+        // Mismo criterio que la cancelación del admin: nadie se puede quedar esperando un
+        // pedido que el sistema canceló solo, sin enterarse.
+        if (order.customer_phone && STATUS_PUSH_MESSAGES.CANCELADO) {
+          try {
+            await sendPushToPhone(order.customer_phone, {
+              title: STATUS_PUSH_MESSAGES.CANCELADO.title,
+              body: "No recibimos la confirmación de tu pago. Ref: " + order.ref,
+              url: "./index.html",
+              tag: "sndwch-order-" + order.ref,
+              renotify: true,
+            });
+          } catch { /* un push fallido no revierte la expiración */ }
+        }
       }
     } catch (e) {
       console.error("expire-stale-manual-payments failed for order", order.id, e);
@@ -1926,9 +2651,15 @@ export async function actAlertStuckOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const stuckMinutes = isPeakHourNowLima() ? STUCK_ORDER_MINUTES_PEAK : STUCK_ORDER_MINUTES_OFFPEAK;
   const cutoff = new Date(Date.now() - stuckMinutes * 60000).toISOString();
+  // Un pedido PROGRAMADO no está estancado: está esperando su hora. Antes esto filtraba
+  // solo por created_at, así que un pedido hecho a las 9am para las 8pm disparaba "Pedido
+  // estancado ⏰" a los pocos minutos, todos los días. El filtro correcto es sobre la hora
+  // en que el pedido DEBÍA empezar: delivery_time si lo tiene, created_at si no.
   const stuck = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}&select=id,ref,customer_name,payment_method,payment_status`,
+    `status=eq.RECIBIDO&alerted_stuck=eq.false&created_at=lt.${encodeURIComponent(cutoff)}` +
+      `&or=(delivery_time.is.null,delivery_time.lt.${encodeURIComponent(cutoff)})` +
+      `&select=id,ref,customer_name,payment_method,payment_status&limit=500`,
   );
   let alerted = 0;
   for (const order of stuck) {
@@ -1956,7 +2687,7 @@ export async function actAlertStuckOrders(b: any) {
   const progressCutoff = new Date(Date.now() - stuckMinutes * 2 * 60000).toISOString();
   const inProgress = await sbGet(
     "orders",
-    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status`,
+    `status=in.(PREPARANDO,EN CAMINO)&alerted_stuck_progress=eq.false&status_changed_at=lt.${encodeURIComponent(progressCutoff)}&select=id,ref,customer_name,status&limit=500`,
   );
   for (const order of inProgress) {
     try {
@@ -1974,7 +2705,70 @@ export async function actAlertStuckOrders(b: any) {
     }
   }
 
+  // Tercer barrido (#79): pedidos que pasaron el ETA que se le PROMETIÓ al cliente. Los dos
+  // barridos de arriba miran el reloj de la cocina; este mira la promesa. Cuando el pedido
+  // sale EN CAMINO se le manda "llega entre las X y las Y" (etaWindowText, ±5 min sobre
+  // eta_minutes) — pasado eso, el cliente ya está mirando el reloj, y lo único que todavía
+  // evita la mala calificación es escribirle antes de que escriba él.
+  const enCamino = await sbGet(
+    "orders",
+    `status=eq.EN CAMINO&alerted_eta_missed=eq.false&eta_minutes=not.is.null&select=id,ref,customer_name,contact_phone,customer_phone,eta_minutes,status_changed_at&limit=500`,
+  );
+  for (const order of etaMissed(enCamino, Date.now())) {
+    try {
+      await sendPushToAdmins({
+        title: "⏱ Pasó el tiempo prometido",
+        body: `${order.ref} (${order.customerName}) ya pasó los ${order.etaMinutes} min que le prometimos, por ${order.lateMinutes} min. Escríbele antes de que escriba él.`,
+        url: "./index.html",
+        tag: "sndwch-eta-missed-" + order.id,
+        renotify: true,
+      });
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { alerted_eta_missed: true });
+      alerted++;
+    } catch (e) {
+      console.error("alert-stuck-orders (ETA vencido) failed for order", order.id, e);
+    }
+  }
+
   return { success: true, alerted };
+}
+
+// Margen sobre el ETA antes de considerarlo incumplido. No es arbitrario: al cliente se le
+// promete una VENTANA de ±5 minutos (`etaWindowText`), así que avisar antes de que pase el
+// borde superior de esa ventana sería avisar de algo que todavía no incumple nada.
+export const ETA_GRACE_MINUTES = 5;
+
+export type EtaMissed = { id: string; ref: string; customerName: string; etaMinutes: number; lateMinutes: number };
+
+// Cuáles de estos pedidos EN CAMINO ya pasaron su promesa, y por cuánto. Se extrae del cron
+// porque su modo de fallo no es un error: un borde mal resuelto acá no rompe nada, solo
+// hace que el aviso no salga (o salga antes de tiempo, que a fuerza de repetirse termina
+// siendo lo mismo: una alarma que nadie mira).
+export function etaMissed(
+  rows: { id: string; ref: string; customer_name?: string | null; eta_minutes?: number | null; status_changed_at?: string | null }[],
+  nowMs: number,
+): EtaMissed[] {
+  const out: EtaMissed[] = [];
+  for (const o of rows || []) {
+    const eta = Number(o.eta_minutes);
+    if (!Number.isFinite(eta) || eta <= 0) continue;
+    // Sin marca de cuándo salió no se puede saber si se pasó. Suponer created_at sería
+    // inventar el dato: un pedido programado se creó horas antes de salir.
+    if (!o.status_changed_at) continue;
+    const salida = new Date(o.status_changed_at).getTime();
+    if (!Number.isFinite(salida)) continue;
+    const limite = salida + (eta + ETA_GRACE_MINUTES) * 60000;
+    if (nowMs < limite) continue;
+    out.push({
+      id: o.id,
+      ref: o.ref,
+      customerName: o.customer_name || "cliente",
+      etaMinutes: eta,
+      lateMinutes: Math.round((nowMs - salida - eta * 60000) / 60000),
+    });
+  }
+  // El más atrasado primero: si algo corta la lista, corta por el que menos urge.
+  return out.sort((a, b) => b.lateMinutes - a.lateMinutes);
 }
 
 // Reserva de Culqi (ver actPrepareOrder) que nunca llegó a cobrarse — el cliente cerró
@@ -1993,7 +2787,7 @@ export async function actExpirePendingCharges(b: any) {
   // este barrido adicional.
   const stale = await sbGet(
     "pending_charges",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref`,
+    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref&limit=500`,
   );
   let expired = 0;
   for (const pc of stale) {
@@ -2025,13 +2819,16 @@ export async function actExpirePendingCharges(b: any) {
 // re-auditoría de automatización). alerted_scheduled_reminder evita reenviar el mismo
 // aviso en cada corrida de este cron mientras el pedido sigue sin empezar.
 const SCHEDULED_REMINDER_LEAD_MINUTES = 20;
+// Al cliente se le avisa con MUCHA más anticipación que a la cocina: 20 minutos le sirven al
+// que va a armar el sándwich, pero no al que tiene que volver a su casa para recibirlo.
+const CUSTOMER_REMINDER_LEAD_MINUTES = 60;
 export async function actAlertScheduledOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
   const windowEnd = new Date(Date.now() + SCHEDULED_REMINDER_LEAD_MINUTES * 60000).toISOString();
   const upcoming = await sbGet(
     "orders",
-    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time`,
+    `status=eq.RECIBIDO&alerted_scheduled_reminder=eq.false&delivery_time=not.is.null&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(windowEnd)}&select=id,ref,customer_name,delivery_time&limit=500`,
   );
   let alerted = 0;
   for (const order of upcoming) {
@@ -2049,7 +2846,42 @@ export async function actAlertScheduledOrders(b: any) {
       console.error("alert-scheduled-orders failed for order", order.id, e);
     }
   }
-  return { success: true, alerted };
+  // #27 — Recordatorio al CLIENTE, no al negocio. El de arriba avisa "empieza a prepararlo"
+  // 20 minutos antes; este avisa al cliente con una hora, que es el tiempo que necesita
+  // para estar en casa. Un pedido programado se hace horas antes, y para cuando llega la
+  // hora el cliente puede estar en la calle: la entrega fallida cuesta el sándwich, el
+  // motorizado y casi siempre el cliente.
+  const clienteWindowEnd = new Date(Date.now() + CUSTOMER_REMINDER_LEAD_MINUTES * 60000).toISOString();
+  const paraRecordar = await sbGet(
+    "orders",
+    `status=in.(RECIBIDO,PREPARANDO)&reminded_customer_scheduled=eq.false&delivery_time=not.is.null` +
+      `&delivery_time=gte.${encodeURIComponent(nowIso)}&delivery_time=lte.${encodeURIComponent(clienteWindowEnd)}` +
+      `&select=id,ref,customer_name,customer_phone,contact_phone,delivery_time&limit=${MAX_PUSH_PER_RUN}`,
+  );
+  let recordados = 0;
+  for (const order of paraRecordar) {
+    const phone = order.customer_phone || order.contact_phone;
+    // Sin teléfono no hay a dónde mandar el push. Igual se marca la bandera: reintentarlo
+    // en cada corrida no lo va a conseguir, y dejaría la consulta cargando siempre las
+    // mismas filas imposibles.
+    try {
+      if (phone) {
+        const hora = new Date(order.delivery_time).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+        await sendPushToPhone(phone, {
+          title: "Tu pedido llega a las " + hora + " 🥪",
+          body: "Es dentro de poco — asegúrate de estar en la dirección que nos diste. Ref " + order.ref + ".",
+          url: "./index.html",
+          tag: "sndwch-sched-customer-" + order.id,
+        });
+        recordados++;
+      }
+      await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { reminded_customer_scheduled: true });
+    } catch (e) {
+      console.error("alert-scheduled-orders (recordatorio al cliente) failed for order", order.id, e);
+    }
+  }
+
+  return { success: true, alerted, recordados };
 }
 
 // Cruza los cobros recientes exitosos de Culqi contra los pedidos propios — un cobro real
@@ -2141,4 +2973,98 @@ export async function actRemindLowStock(b: any) {
     renotify: true,
   });
   return { success: true, alerted: true, outOfStock: outOfStock.length, low: low.length };
+}
+
+// ── Caducidad de tanda (#5) ──────────────────────────────────────────────────────────────
+//
+// SEGURIDAD ALIMENTARIA, no optimización de merma. El método de trabajo real del dueño es
+// cocinar por tandas 1-2 veces por semana y en hora de servicio solo ARMAR: eso significa
+// que hay proteína cocida esperando en frío durante días. Hasta acá el sistema sabía cuánto
+// queda de cada insumo pero no CUÁNDO se cocinó, así que una tanda de hace cinco días y una
+// de hoy eran el mismo número — y la única defensa era que una persona sola se acordara,
+// justo mientras está armando pedidos.
+//
+// El cálculo se extrae aparte de la acción que toca la base para poder probarlo de verdad
+// en `tests-api/` (mismo patrón que `cancellationDeltas`). Un caso límite mal resuelto acá
+// no se manifiesta como un error: se manifiesta como una alerta que no salió.
+
+// Se avisa un día antes de la fecha límite, no el mismo día: la próxima tanda hay que
+// planificarla y cocinarla, y enterarse cuando ya venció no sirve para nada.
+export const BATCH_EXPIRY_WARN_HOURS = 24;
+// Espejo del default de la columna `shelf_life_days` (migración 20260829151516): extremo
+// conservador de la guía USDA/foodsafety.gov para carne y pollo cocidos a <=4 °C (3-4 días).
+export const BATCH_SHELF_LIFE_DEFAULT_DAYS = 3;
+
+export type BatchRow = {
+  product_code: string;
+  product_name?: string | null;
+  stock_qty?: number | null;
+  in_stock?: boolean | null;
+  batch_cooked_at?: string | null;
+  shelf_life_days?: number | null;
+};
+export type BatchAlert = { code: string; name: string; horas: number; limite: string };
+
+export function batchExpiryStatus(rows: BatchRow[], nowMs: number): { vencidos: BatchAlert[]; porVencer: BatchAlert[] } {
+  const vencidos: BatchAlert[] = [];
+  const porVencer: BatchAlert[] = [];
+  for (const r of rows || []) {
+    // Sin tanda registrada no hay nada que vencer: es un insumo que se compra ya listo, o
+    // uno repuesto antes de que existiera la columna. Inventar una fecha acá sería
+    // exactamente el error que esta alerta viene a evitar.
+    if (!r.batch_cooked_at) continue;
+    // Si no queda nada, la tanda se consumió. Alertar sobre un insumo en cero sería ruido
+    // diario permanente, y una alarma que suena siempre deja de mirarse.
+    const qty = r.stock_qty == null ? null : Number(r.stock_qty);
+    if (qty == null || !(qty > 0)) continue;
+    if (r.in_stock === false) continue;
+
+    const cocinado = new Date(r.batch_cooked_at).getTime();
+    if (!Number.isFinite(cocinado)) continue;
+    const dias = Number(r.shelf_life_days);
+    const vida = Number.isFinite(dias) && dias > 0 ? dias : BATCH_SHELF_LIFE_DEFAULT_DAYS;
+    const limiteMs = cocinado + vida * 24 * 60 * 60 * 1000;
+    const horas = Math.round((limiteMs - nowMs) / (60 * 60 * 1000));
+    const item: BatchAlert = {
+      code: r.product_code,
+      name: r.product_name || r.product_code,
+      horas,
+      limite: new Date(limiteMs).toISOString(),
+    };
+    if (nowMs >= limiteMs) vencidos.push(item);
+    else if (nowMs >= limiteMs - BATCH_EXPIRY_WARN_HOURS * 60 * 60 * 1000) porVencer.push(item);
+  }
+  // Lo más urgente primero: si el aviso se corta por longitud, tiene que cortar por la cola.
+  vencidos.sort((a, b) => a.horas - b.horas);
+  porVencer.sort((a, b) => a.horas - b.horas);
+  return { vencidos, porVencer };
+}
+
+const BATCH_EXPIRY_MAX_NOMBRES = 6;
+
+export async function actAlertBatchExpiry(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const rows = await sbGet(
+    "inventory",
+    "select=product_code,product_name,in_stock,stock_qty,batch_cooked_at,shelf_life_days&limit=500",
+  );
+  const { vencidos, porVencer } = batchExpiryStatus(rows, Date.now());
+  if (!vencidos.length && !porVencer.length) return { success: true, alerted: false };
+
+  const nombres = (xs: BatchAlert[]) =>
+    xs.slice(0, BATCH_EXPIRY_MAX_NOMBRES).map((x) => x.name).join(", ") + (xs.length > BATCH_EXPIRY_MAX_NOMBRES ? "…" : "");
+  const partes: string[] = [];
+  if (vencidos.length) partes.push(`PASARON su fecha límite: ${nombres(vencidos)}`);
+  if (porVencer.length) partes.push(`vencen en menos de ${BATCH_EXPIRY_WARN_HOURS} h: ${nombres(porVencer)}`);
+
+  await sendPushToAdmins({
+    // El título cambia según haya algo ya vencido o solo por vencer: no es lo mismo "hay
+    // que cocinar mañana" que "hay que sacar eso de la refri ahora".
+    title: vencidos.length ? "🚫 Tanda vencida — no usar" : "⏳ Tanda por vencer",
+    body: partes.join(". ") + ".",
+    url: "./index.html",
+    tag: "sndwch-batch-expiry",
+    renotify: true,
+  });
+  return { success: true, alerted: true, vencidos: vencidos.length, porVencer: porVencer.length };
 }

@@ -29,3 +29,17 @@ jobs:
       - name: Resolver ruta de Chromium instalado
         run: echo "PLAYWRIGHT_CHROMIUM_PATH=$(node -e "console.log(require('@playwright/test').chromium.executablePath())")" >> "$GITHUB_ENV"
       - run: npm run verify
+      # Solo corre si `verify` falló. Sube la traza y la captura que playwright.config.ts
+      # genera `retain-on-failure`, que es lo único que permite diagnosticar una falla que
+      # no se reproduce en local. Sin este paso, el 2026-08-22 una falla de
+      # weekly-plan.spec.ts en el runner quedó sin evidencia: la corrida no dejó ningún
+      # artefacto y el test pasó 12 de 12 veces en la máquina de desarrollo.
+      # Abrir con: npx playwright show-trace <archivo .zip de la traza>
+      - name: Subir traza de Playwright si los tests fallaron
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traza-${{ github.run_id }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore

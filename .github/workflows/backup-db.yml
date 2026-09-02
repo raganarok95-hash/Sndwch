@@ -1,0 +1,64 @@
+# SND//WCH — respaldo diario de la base
+#
+# POR QUÉ EXISTE. La organización está en el plan `free` de Supabase, que NO tiene respaldos
+# automáticos de ninguna clase. Hasta el 2026-08-29 esta base no tenía ni un respaldo: un
+# `delete` sin `where`, una migración mal escrita o una cuenta comprometida borraban los
+# pedidos, los clientes, los puntos y el saldo de crédito sin vuelta atrás.
+#
+# NO PIDE NINGÚN SECRET NUEVO. Usa `SUPABASE_ACCESS_TOKEN`, el mismo que ya usa
+# deploy-api.yml. Por eso esto se pudo construir sin esperar nada del dueño.
+#
+# EL RESPALDO SE RESTAURA EN CADA CORRIDA, no solo se guarda. Un archivo que nunca se cargó
+# no es un respaldo: el modo de fallo real es que se generó todos los días durante meses y
+# el día que hizo falta resultó ilegible. Acá se levanta un Postgres desechable, se carga el
+# volcado del día y se comparan los conteos contra el manifiesto. Si no carga, el workflow
+# falla y se ve en la pestaña de Actions.
+name: Respaldo de la base
+
+on:
+  schedule:
+    # 08:10 UTC = 03:10 hora Lima, con la tienda cerrada: el volcado no compite con pedidos.
+    - cron: '10 8 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  respaldar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Volcar la base
+        run: node scripts/backup-db.mjs
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          BACKUP_DIR: backup
+
+      - name: Generar el SQL de restauración
+        run: node scripts/backup-to-sql.mjs --ddl backup > backup/restaurar.sql
+
+      # ── Restaurar de verdad, contra un Postgres real ────────────────────────────────────
+      # El runner de ubuntu-latest ya trae Postgres instalado y parado; se arranca en vez de
+      # levantar un contenedor, que sería una dependencia más para lo mismo.
+      - name: Arrancar Postgres
+        run: |
+          sudo systemctl start postgresql || sudo service postgresql start
+          sudo -u postgres psql -c "alter user postgres password 'postgres'"
+          sudo -u postgres psql -c "create database verificacion"
+
+      - name: Cargar el respaldo del día y comprobar que coincide
+        run: node scripts/verify-backup.mjs backup "postgresql://postgres:postgres@localhost/verificacion"
+
+      - name: Guardar el respaldo
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ github.run_id }}
+          path: backup/
+          # 90 días es el techo de retención de artefactos en el plan gratuito de GitHub.
+          retention-days: 90
+          if-no-files-found: error

@@ -1,0 +1,102 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>SND//WCH — Análisis a 6 meses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=EB+Garamond:ital,wght@0,400..700;1,400..600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1E3932;--panel:#2D5246;--line:#3A6B58;--gold:#E9C98A;--gold2:#CBA258;
+--cream:#F2F0EB;--mut:#A8C8B0;--neg:#E58B7B}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--cream);font-family:'EB Garamond',Georgia,serif;
+font-variant-numeric:lining-nums tabular-nums;line-height:1.55;padding:0 0 64px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+header{padding:56px 0 36px;border-bottom:1px solid var(--line);margin-bottom:40px}
+.wm{font-family:'Fraunces',serif;font-weight:620;font-size:clamp(34px,7vw,54px);
+letter-spacing:.01em;display:inline-flex;align-items:center;color:#fff}
+.wm-mark{display:inline-flex;align-items:center;gap:.13em;margin:0 .08em;vertical-align:-.04em}
+.wm-mark i{display:inline-block;width:.15em;height:.82em;
+background:linear-gradient(180deg,var(--gold),var(--gold2));transform:skewX(-16deg);border-radius:1px}
+.sub{font-family:'Fraunces',serif;font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+color:var(--gold);margin-top:14px}
+.date{color:var(--mut);font-style:italic;font-size:15px;margin-top:6px}
+h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;letter-spacing:.02em;
+color:#fff;margin:44px 0 4px;display:flex;align-items:center;gap:10px}
+/* Regla decorativa, NO el mark: sin sesgo a propósito — una sola barra sesgada se leería
+   como medio "//", y el "//" de la marca son dos barras idénticas que no se reinterpretan. */
+h2::before{content:"";width:3px;height:20px;background:linear-gradient(180deg,var(--gold),var(--gold2));
+border-radius:1px;flex:none}
+.hint{color:var(--mut);font-style:italic;font-size:14px;margin:0 0 16px 13px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
+border-radius:12px;background:var(--panel);margin-bottom:16px}
+table.t{width:100%;border-collapse:collapse;font-size:15px;min-width:660px}
+table.t.sm{font-size:14px;min-width:600px}
+table.t th,table.t td{padding:11px 14px;text-align:right;white-space:nowrap;
+border-bottom:1px solid rgba(58,107,88,.55)}
+table.t tbody tr:last-child td{border-bottom:none}
+table.t th{font-family:'Fraunces',serif;font-weight:600;font-size:12px;letter-spacing:.12em;
+text-transform:uppercase;color:var(--gold);background:rgba(0,0,0,.16)}
+table.t .l{text-align:left;color:var(--cream);font-weight:600}
+table.t th.l{color:var(--gold)}
+table.t tr.big td{font-size:19px;font-weight:600;padding-top:15px;padding-bottom:15px}
+table.t tr.big{background:rgba(233,201,138,.06)}
+table.t tr.soft td{color:var(--mut);font-size:14px}
+table.t td.neg{color:var(--neg)!important}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:8px 0 4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card .k{font-family:'Fraunces',serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.card .v{font-family:'Fraunces',serif;font-weight:600;font-size:30px;color:var(--gold);margin-top:6px}
+.card .n{font-size:13px;color:var(--mut);font-style:italic;margin-top:4px;line-height:1.4}
+.nota{border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;
+background:rgba(0,0,0,.18);padding:16px 18px;margin:34px 0 0;font-size:14px;color:var(--mut)}
+.nota b{color:var(--cream)}
+footer{margin-top:48px;padding-top:22px;border-top:1px solid var(--line);
+font-size:13px;color:var(--mut);font-style:italic}
+@media(max-width:600px){header{padding:36px 0 26px}h2{font-size:18px}}
+</style></head><body><div class="wrap">
+<header><div class="wm">SND<span class="wm-mark"><i></i><i></i></span>WCH</div>
+<div class="sub">Análisis interno · 3 escenarios</div>
+<div class="date">Setiembre 2026 — Febrero 2027 · Trujillo</div></header>
+
+<h2>La condición de rentabilidad, en una desigualdad</h2>
+<div class="hint">De aquí sale todo lo demás.</div>
+<div class="cards">
+<div class="card"><div class="k">Regla</div>
+<div class="v" style="font-size:19px;line-height:1.35">contribución &gt; CAC</div>
+<div class="n">Si el costo de traer un cliente supera lo que deja su primer pedido, cada
+cliente nace perdiendo y gastar más pierde más rápido. Ningún presupuesto lo arregla.</div></div>
+<div class="card"><div class="k">Escala mínima, cumplida la regla</div>
+<div class="v" style="font-size:17px;line-height:1.35">500 × CAC<br>÷ (contrib − CAC)</div>
+<div class="n">Recién entonces el presupuesto decide el resultado.</div></div>
+<div class="card"><div class="k">Contribución si nada es grupal</div><div class="v">S/16.42</div>
+<div class="n">Un pedido, un sándwich, 25% con bebida</div></div>
+<div class="card"><div class="k">Contribución con 10% grupales</div><div class="v">S/23.88</div>
+<div class="n">El pedido grupal no trae clientes: hace que los que ya tienes valgan más</div></div>
+</div>
+
+<h2>Los tres escenarios, con S/1 500 al mes</h2>
+<div class="hint">Mismo presupuesto en los tres: lo que cambia es lo incierto.</div>
+<div class="scroll"><table class="t"><thead><tr><th class="l">Escenario</th><th>Pesimista</th><th>Base</th><th>Optimista</th></tr></thead><tbody><tr class=""><td class="l">Pedidos por día · Febrero</td><td class="" style="color:#B4C2A8">5.7</td><td class="" style="color:#E9C98A">8.5</td><td class="" style="color:#F0D9A0">11.9</td></tr><tr class=""><td class="l">Pedidos en el mes · Febrero</td><td class="" style="color:#B4C2A8">138</td><td class="" style="color:#E9C98A">204</td><td class="" style="color:#F0D9A0">286</td></tr><tr class="big"><td class="l">Utilidad neta · Febrero</td><td class="" style="color:#B4C2A8">S/774</td><td class="" style="color:#E9C98A">S/2 869</td><td class="" style="color:#F0D9A0">S/5 890</td></tr><tr class="big"><td class="l">Utilidad neta acumulada · 6 meses</td><td class="" style="color:#B4C2A8">S/2 498</td><td class="" style="color:#E9C98A">S/12 820</td><td class="" style="color:#F0D9A0">S/27 193</td></tr><tr class="soft"><td class="l">Uso de la capacidad instalada</td><td class="" style="color:#B4C2A8">14 %</td><td class="" style="color:#E9C98A">21 %</td><td class="" style="color:#F0D9A0">30 %</td></tr></tbody></table></div>
+<div class="scroll"><table class="t"><thead><tr><th class="l">Supuesto</th><th>Pesimista</th><th>Base</th><th>Optimista</th></tr></thead><tbody><tr><td class="l">Clientes que repiten</td><td>22.6 %</td><td>28.0 %</td><td>34.0 %</td></tr><tr><td class="l">Pedidos por cliente</td><td>2.34</td><td>2.66</td><td>3.02</td></tr><tr><td class="l">Pedidos grupales</td><td>5 %</td><td>10 %</td><td>15 %</td></tr><tr><td class="l">Contribución por pedido</td><td>S/20.15</td><td>S/23.88</td><td>S/27.61</td></tr><tr><td class="l">Clientes por referido</td><td>20 %</td><td>20 %</td><td>40 %</td></tr><tr><td class="l">Costo de traer un cliente</td><td>S/16.73</td><td>S/12.33</td><td>S/9.66</td></tr><tr><td class="l">Valor de un cliente</td><td>S/47</td><td>S/64</td><td>S/83</td></tr><tr><td class="l">Inversión en publicidad · mes</td><td>S/1 500</td><td>S/1 500</td><td>S/1 500</td></tr></tbody></table></div>
+
+<h2>Mes a mes</h2>
+<div class="scroll"><table class="t sm"><thead><tr><th class="l">Pesimista</th><th>Set</th><th>Oct</th><th>Nov</th><th>Dic</th><th>Ene</th><th>Feb</th></tr></thead><tbody><tr><td class="l">Pedidos</td><td class="">90</td><td class="">110</td><td class="">121</td><td class="">128</td><td class="">133</td><td class="">138</td></tr><tr><td class="l">Pedidos por día</td><td class="">4.5</td><td class="">4.1</td><td class="">4.8</td><td class="">4.7</td><td class="">4.9</td><td class="">5.7</td></tr><tr><td class="l">Utilidad neta del mes</td><td class="neg">−S/193</td><td class="">S/215</td><td class="">S/434</td><td class="">S/580</td><td class="">S/689</td><td class="">S/774</td></tr><tr><td class="l">Acumulado</td><td class="neg">−S/193</td><td class="">S/22</td><td class="">S/455</td><td class="">S/1 035</td><td class="">S/1 724</td><td class="">S/2 498</td></tr></tbody></table></div><div class="scroll"><table class="t sm"><thead><tr><th class="l">Base</th><th>Set</th><th>Oct</th><th>Nov</th><th>Dic</th><th>Ene</th><th>Feb</th></tr></thead><tbody><tr><td class="l">Pedidos</td><td class="">122</td><td class="">156</td><td class="">174</td><td class="">187</td><td class="">196</td><td class="">204</td></tr><tr><td class="l">Pedidos por día</td><td class="">6.1</td><td class="">5.8</td><td class="">7.0</td><td class="">6.9</td><td class="">7.3</td><td class="">8.5</td></tr><tr><td class="l">Utilidad neta del mes</td><td class="">S/905</td><td class="">S/1 719</td><td class="">S/2 166</td><td class="">S/2 468</td><td class="">S/2 692</td><td class="">S/2 869</td></tr><tr><td class="l">Acumulado</td><td class="">S/905</td><td class="">S/2 624</td><td class="">S/4 790</td><td class="">S/7 258</td><td class="">S/9 951</td><td class="">S/12 820</td></tr></tbody></table></div><div class="scroll"><table class="t sm"><thead><tr><th class="l">Optimista</th><th>Set</th><th>Oct</th><th>Nov</th><th>Dic</th><th>Ene</th><th>Feb</th></tr></thead><tbody><tr><td class="l">Pedidos</td><td class="">155</td><td class="">208</td><td class="">238</td><td class="">259</td><td class="">274</td><td class="">286</td></tr><tr><td class="l">Pedidos por día</td><td class="">7.8</td><td class="">7.7</td><td class="">9.5</td><td class="">9.6</td><td class="">10.1</td><td class="">11.9</td></tr><tr><td class="l">Utilidad neta del mes</td><td class="">S/2 287</td><td class="">S/3 745</td><td class="">S/4 574</td><td class="">S/5 138</td><td class="">S/5 558</td><td class="">S/5 890</td></tr><tr><td class="l">Acumulado</td><td class="">S/2 287</td><td class="">S/6 032</td><td class="">S/10 606</td><td class="">S/15 744</td><td class="">S/21 303</td><td class="">S/27 193</td></tr></tbody></table></div>
+
+<h2>Llegar a S/5 000 netos en diciembre</h2>
+<div class="hint">Diciembre es el mes 4. Para entonces ya vuelven clientes de setiembre,
+octubre y noviembre, así que cada sol de publicidad rinde más que en el mes 1.</div>
+<div class="scroll"><table class="t"><thead><tr><th class="l">Escenario</th><th>Publicidad al mes</th><th>Neto en diciembre</th><th>Uso del techo</th><th>Capital necesario</th></tr></thead><tbody><tr><td class="l">Pesimista</td><td>S/7 650</td><td style="color:var(--gold)">S/5 008</td><td>60 %</td><td>S/0</td></tr><tr><td class="l">Base</td><td>S/2 800</td><td style="color:var(--gold)">S/5 040</td><td>32 %</td><td>S/0</td></tr><tr><td class="l">Optimista</td><td>S/1 500</td><td style="color:var(--gold)">S/5 138</td><td>24 %</td><td>S/0</td></tr></tbody></table></div>
+
+<h2>El camino, escenario Base</h2>
+<div class="hint">S/2 800 al mes de publicidad · 10% de pedidos grupales · 20% de clientes por
+referido · CAC mezclado S/12.33</div>
+<div class="scroll"><table class="t"><thead><tr><th class="l">Mes</th><th>Set</th><th>Oct</th><th>Nov</th><th>Dic</th><th>Ene</th><th>Feb</th></tr></thead><tbody><tr><td class="l">Pedidos</td><td class="">227</td><td class="">291</td><td class="">326</td><td class="">349</td><td class="">367</td><td class="">381</td></tr><tr><td class="l">Pedidos por día</td><td class="">11.4</td><td class="">10.8</td><td class="">13.0</td><td class="">12.9</td><td class="">13.6</td><td class="">15.9</td></tr><tr><td class="l">Uso del techo</td><td class="">28 %</td><td class="">27 %</td><td class="">33 %</td><td class="">32 %</td><td class="">34 %</td><td class="">40 %</td></tr><tr><td class="l">Utilidad neta del mes</td><td class="">S/2 123</td><td class="">S/3 641</td><td class="">S/4 477</td><td class="">S/5 040</td><td class="">S/5 459</td><td class="">S/5 789</td></tr><tr><td class="l">Acumulado</td><td class="">S/2 123</td><td class="">S/5 764</td><td class="">S/10 242</td><td class="">S/15 282</td><td class="">S/20 741</td><td class="">S/26 530</td></tr></tbody></table></div>
+
+<div class="nota"><b>Lo que este documento no puede decirte.</b> No hay una sola venta real
+todavía: los tres números externos del modelo (22,6% de recompra, 6,93 pedidos por cliente
+que vuelve, 33 días entre pedidos) están tomados de estudios del sector, no de tu negocio.
+El más frágil de todos es el CAC: el rango de S/10,51 a S/25,23 sale de los CPM publicados
+para Perú, y tu ticket está por encima del único ticket de delivery con fuente para provincia
+peruana (S/15). Si la conversión real fuera la mitad del benchmark, el CAC se duplica y el
+escenario Pesimista pasa a ser el realista. Todo esto se mide en la primera semana de campaña
+con el Pixel que ya está programado.</div>
+<footer>Modelo de cohortes v8 · 27 de agosto de 2026 · modelo/escenarios_v8.py y modelo/FUENTES.md</footer></div></body></html>

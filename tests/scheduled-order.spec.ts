@@ -29,6 +29,7 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
   await page.locator('#o-nom').fill('Cliente Programado');
   await page.locator('#o-phone').fill('987654321');
   await page.locator('#o-addr').fill('Jr. Pizarro 456, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
 
   // El método de pago se elige ANTES de tocar el horario: seleccionarlo dispara
   // confirmRerender() (ver index.html), que reconstruye el DOM del formulario y

@@ -12,6 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # PUERTA DE TIPOS ANTES DE DESPLEGAR (2026-08-27).
+      # Antes este workflow desplegaba directo: nada acá comprobaba que el backend
+      # compilara. verify-pr.yml solo corre en pull_request, así que un push directo a
+      # main —o un merge sin que la protección de rama exija ese check, que es
+      # configuración fuera del repo— mandaba a producción un backend que ni siquiera
+      # pasa `deno check`. El propio CLAUDE.md ya advertía "el CI despliega sin
+      # type-check, así que un error acá llega a producción"; esto lo cierra.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck:api
+      # Y las pruebas de comportamiento de la lógica de dinero: el type-check no las cubre.
+      - run: npm run test:api
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -27,3 +42,22 @@ jobs:
       - run: supabase functions deploy weekly-summary --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # birthday-bonus entra al workflow el 2026-08-29. Estaba fuera —como daily-summary,
+      # winback-campaign y send-order-email— y eso significaba que cualquier cambio exigía un
+      # deploy MANUAL que había que acordarse de hacer. Un cambio commiteado y no desplegado
+      # es peor que uno no hecho: el repo dice una cosa y producción hace otra, que es
+      # exactamente el defecto que en este proyecto ya costó tres semanas de precios
+      # fantasma. Se agrega ahora porque el cupón de cumpleaños (#54) la cambió de verdad.
+      - run: supabase functions deploy birthday-bonus --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # PRUEBA DE HUMO DESPUÉS DEL DEPLOY (2026-08-29, automatización #99).
+      # Todo lo de arriba verifica ANTES de desplegar: `deno check`, las pruebas de dinero,
+      # y recién entonces el deploy. Después del deploy no verificaba nadie, y ahí es
+      # justamente donde vive lo que el CI no puede ver: un secret que no está puesto en
+      # producción aunque el código compile, una migración que no se aplicó y deja al código
+      # nuevo consultando una columna inexistente, o un deploy que devolvió éxito y dejó la
+      # versión anterior corriendo. No necesita ningún secret: golpea el mismo endpoint
+      # público que usa un cliente real.
+      - name: Prueba de humo en producción
+        run: node scripts/smoke-prod.mjs

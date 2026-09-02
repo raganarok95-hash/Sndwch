@@ -5,9 +5,15 @@
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "parity": "node scripts/parity.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run parity && npm run build && npm test",
-    "typecheck:api": "node scripts/check-backend.mjs"
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:backup && npm run check:smoke && npm run build && npm test",
+    "typecheck:api": "node scripts/check-backend.mjs",
+    "test:api": "node scripts/check-money.mjs",
+    "check:backup": "node scripts/check-backup.mjs",
+    "backup": "node scripts/backup-db.mjs",
+    "check:smoke": "node scripts/check-smoke.mjs",
+    "smoke": "node scripts/smoke-prod.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
