@@ -5,6 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
+  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
   CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
@@ -239,6 +240,7 @@ type FinalizeOrderParams = {
   notes: string | null;
   total: number;
   deliveryFee: number;
+  deliveryKm?: number | null;
   deliveryZone: string | null;
   paymentStatus: string;
   paymentId: string | null;
@@ -485,6 +487,11 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
       notes: p.notes,
       total: p.total,
       delivery_fee: p.deliveryFee,
+      // Los km que se COBRARON, guardados con el pedido. Se podrían recalcular desde
+      // lat/lon, pero guardarlos deja el número inmune a un cambio futuro del factor de
+      // ruta — y todo el sentido de esto es poder comparar contra lo que cobró el
+      // motorizado ese día, no contra lo que hoy diría la fórmula.
+      delivery_km: p.deliveryKm ?? null,
       delivery_zone: p.deliveryZone,
       status: "RECIBIDO",
       payment_status: p.paymentStatus,
@@ -784,6 +791,72 @@ function deliveryFeeForZoneCard(zone: string): number {
   return Math.round((realFee / (1 - CULQI_FEE_RATE)) * 100) / 100;
 }
 
+// ── DELIVERY POR DISTANCIA REAL (2026-09-02) ──────────────────────────────────────────
+//
+// Distancia en línea recta entre dos puntos. Es la misma fórmula que el cliente usa para el
+// banner "estás cerca" — pero acá es la que COBRA, así que el servidor la recalcula siempre
+// desde las coordenadas y nunca acepta ni el km ni el monto que reporte el cliente. Mismo
+// criterio que el resto del catálogo.
+export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const rad = (x: number) => (x * Math.PI) / 180;
+  const dLat = rad(lat2 - lat1);
+  const dLon = rad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Kilómetros COBRABLES: la línea recta corregida por el factor de ruta. Devuelve null si las
+// coordenadas no son utilizables — y `null` significa "no se puede medir", nunca 0: un 0
+// silencioso cobraría el mínimo a alguien que vive a 10 km.
+export function billableKm(lat: unknown, lon: unknown): number | null {
+  const la = Number(lat), lo = Number(lon);
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
+  if (la === 0 && lo === 0) return null;          // el "null island" clásico de un GPS roto
+  if (Math.abs(la) > 90 || Math.abs(lo) > 180) return null;
+  const recta = haversineKm(la, lo, STORE_LAT, STORE_LON);
+  if (!Number.isFinite(recta)) return null;
+  return Math.round(recta * DELIVERY_ROAD_FACTOR * 100) / 100;
+}
+
+// Tarifa a partir de los kilómetros. Se redondea hacia ARRIBA al medio sol: el motorizado
+// cobra en efectivo y un monto como S/7.43 no existe en la práctica; y redondear hacia arriba
+// y no al más cercano deja el error del lado del que paga al motorizado, nunca del lado de
+// quedarse corto — el delivery es pass-through y no tiene margen del que salga la diferencia.
+export function deliveryFeeForKm(km: number): number {
+  const bruto = Math.max(DELIVERY_MIN_FEE, km * DELIVERY_KM_RATE);
+  return Math.ceil(bruto * 2) / 2;
+}
+
+// El monto que se cobra, resuelto desde las coordenadas del pedido.
+//
+// SI NO HAY COORDENADAS, CAE A LA ZONA — y eso es a propósito, no una omisión. El cliente ya
+// exige el pin al guardar una dirección nueva, así que un pedido sin coordenadas solo puede
+// venir de un shell viejo servido por un service worker desactualizado (le pasó a este
+// negocio el 2026-08-21, con el shell viejo pegado a la vez en tres dispositivos). Ese
+// cliente tiene que poder pagar igual: romperle el checkout sería un fallo total por una
+// mejora de tarifa.
+export function resolveDeliveryFee(lat: unknown, lon: unknown, zone: string): { fee: number; km: number | null } {
+  const km = billableKm(lat, lon);
+  if (km === null) return { fee: deliveryFeeForZone(zone), km: null };
+  if (km > DELIVERY_MAX_KM) {
+    throw new ApiError(
+      `Tu ubicación está a ${km.toFixed(1)} km del local y por ahora llegamos hasta ${DELIVERY_MAX_KM} km. Revisa el punto en el mapa.`,
+      400,
+    );
+  }
+  return { fee: deliveryFeeForKm(km), km };
+}
+
+// Versión para el flujo de tarjeta: el fee se "engorda" por la comisión de Culqi, igual que
+// hacía deliveryFeeForZoneCard, para que después del descuento quede el monto real para el
+// motorizado. El km NO se engorda: es la distancia, no dinero.
+export function resolveDeliveryFeeCard(lat: unknown, lon: unknown, zone: string): { fee: number; km: number | null } {
+  const { fee, km } = resolveDeliveryFee(lat, lon, zone);
+  return { fee: Math.round((fee / (1 - CULQI_FEE_RATE)) * 100) / 100, km };
+}
+
 // Antes el cobro real con Culqi pasaba en el cliente ANTES de que place-order validara
 // horario/inventario/carrito — cualquier rechazo posterior (el bug de zona horaria que
 // se arregló en vivo, inventario agotado a media compra, un fallo transitorio al
@@ -803,7 +876,7 @@ export async function actPrepareOrder(b: any) {
   const clientTotal = Number(b.total || 0);
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   const deliveryZone = String(b.deliveryZone || "");
-  const deliveryFee = deliveryFeeForZoneCard(deliveryZone);
+  const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFeeCard(b.lat, b.lon, deliveryZone);
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
   assertAddressAllowed(address);
 
@@ -945,6 +1018,7 @@ export async function actPrepareOrder(b: any) {
         summary: b.summary || "",
         expected_total: expectedTotal,
         delivery_fee: deliveryFee,
+        delivery_km: deliveryKm,
         delivery_zone: deliveryZone,
         reserved_codes: codes,
         reserved_qtys: qtys,
@@ -1014,6 +1088,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
       notes: pc.notes,
       total,
       deliveryFee: Number(pc.delivery_fee || 0),
+      deliveryKm: pc.delivery_km === null || pc.delivery_km === undefined ? null : Number(pc.delivery_km),
       deliveryZone: pc.delivery_zone || null,
       paymentStatus: "paid",
       paymentId: chargeId,
@@ -1147,7 +1222,7 @@ export async function actPlaceOrder(b: any) {
   await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
 
   const deliveryZone = String(b.deliveryZone || "");
-  const deliveryFee = deliveryFeeForZone(deliveryZone);
+  const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFee(b.lat, b.lon, deliveryZone);
 
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
@@ -1246,7 +1321,7 @@ export async function actPlaceOrder(b: any) {
       const { order, customer } = await finalizeAndInsertOrder({
         ref, phone, contactPhone, name, email, address,
         summary: b.summary || "", notes: b.notes || null, total,
-        deliveryFee, deliveryZone,
+        deliveryFee, deliveryKm, deliveryZone,
         paymentStatus, paymentId: null, paymentMethod,
         items: sanitizedItems, scheduledFor, reward, useCredit,
         ...readCoords(b),

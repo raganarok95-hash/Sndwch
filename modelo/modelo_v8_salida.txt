@@ -1,0 +1,191 @@
+
+==============================================================================================
+            MODELO v8 (2ª versión) — AUDITORÍA DE SUPUESTOS ANTES DE CALCULAR NADA            
+==============================================================================================
+
+  Cada número que entra a un modelo es una promesa sobre el mundo. Estos son los de este
+  modelo, con lo que de verdad se sabe de cada uno:
+
+  -- LO QUE ESTÁ MEDIDO Y SE PUEDE USAR ------------------------------------------------
+  · Contribución por pedido S/16.42        MENU_FINANCIAL_ANALYSIS.md, con merma y pan real
+  · Costos fijos < S/500/mes               opera desde casa, sin planilla
+  · 40 pedidos/día por persona             cocina por tandas, en servicio solo arma
+  · Comisión Culqi, tarifas de zona, horario   todo en el código, en producción
+
+  -- LO QUE ES BENCHMARK PRESTADO (de EE.UU., no de Trujillo) --------------------------
+  · 22.6% hace un 2º pedido -> 2.34 pedidos/cliente     Bloom Intelligence
+  · 33 días entre pedidos                              Paytronix
+  · CAC Meta Perú S/10.51 - S/25.23                    ibo.pe + get-ryze + IGV
+
+  -- LO QUE YO INVENTÉ EN LA PRIMERA VERSIÓN Y NO DEBIÓ ENTRAR --------------------------
+  X "1.25 sándwiches por pedido". NO es un dato ni un pronóstico: lo despejé hacia atrás
+    para que la cuenta cerrara y después lo presenté como plan. No existe una sola fuente
+    —ni interna ni externa— de cuánto sube el attach un cambio en el carrito.
+  X "1.00 sándwiches por pedido" como punto de partida. Tampoco está medido: el negocio no
+    ha abierto. Los DOS extremos de mi palanca eran inventados.
+  X Aplicar los S/16.16 de contribución MEDIA al sándwich MARGINAL. El segundo sándwich de
+    un pedido no tiene por qué ser el promedio del catálogo, y si se lo empuja con un combo
+    o un descuento, contribuye menos.
+  X Presentar como "plan" un escenario que corría al 100% de la capacidad de una persona
+    todos los días del mes. Eso no es un plan: es un mes sin un solo día malo.
+
+  -- LO QUE SIGUE SIN MODELAR, Y AHORA IMPORTA MÁS QUE TODO LO DEMÁS -------------------
+  ! El CAC se supone CONSTANTE a cualquier nivel de gasto. Es falso y se sabe que es falso:
+    la audiencia barata se agota y el costo sube. Sin esto, el modelo cree que se puede
+    comprar cualquier cantidad de clientes al mismo precio.
+  ! No hay tamaño de mercado. El modelo adquiriría 50,000 clientes en Trujillo sin
+    inmutarse. Abajo se calcula CUÁNTOS hacen falta, para que el número se pueda contrastar
+    contra la realidad — pero no se inventa un mercado direccionable.
+  ! Los fijos se quedan en S/500 aunque el volumen se multiplique por veinte.
+  ! El reparto se supone neutro. Cobras por zona y te cobran por kilómetro (ver el final).
+
+
+==============================================================================================
+               1 — EL CASO BASE: SOLO CON LO MEDIDO, Y SIN TECHO DE PRODUCCIÓN                
+==============================================================================================
+
+  Sin ninguna palanca inventada: cada pedido lleva lo que hoy lleva (S/16.42 de
+  contribución). La producción deja de ser un tope y pasa a ser un COSTO — cada 40 pedidos/día
+  extra son un sueldo de S/1500. El dueño es la persona 1 y no cobra sueldo.
+
+  Pregunta: ¿qué hace falta para S/10,000 netos en el mes 6 (feb-27, 24 días abiertos)?
+
+         CAC     ads/mes   pedidos   ped/día  personas   nuevos/mes       neto
+  ------------------------------------------------------------------------------
+     S/10.51      S/8579      1253      52.2         2          816     10,000
+     S/13.50     S/13830      1573      65.5         2         1024     10,000
+     S/18.00     S/37430      3193     133.0         4         2079     10,000
+     S/25.23           —         —         —         —            —  imposible
+
+  ►► LA RESTRICCIÓN NUNCA ESTUVO EN LA COCINA. Liberada la producción, el objetivo se
+     alcanza con 2 personas y sin inventar ninguna palanca de producto — SI el CAC
+     se porta como su mejor valor documentado. Lo que decide todo es el CAC, y el CAC es
+     justo el número que nadie ha medido todavía.
+
+     De S/10.51 a S/13.50 de CAC el gasto necesario pasa de S/8,579 a S/13,830/mes.
+     A S/18.00 ya son S/37,430/mes y 4 personas. En el peor extremo documentado
+     (S/25.23) el objetivo del mes 6 es inalcanzable a cualquier gasto.
+
+==============================================================================================
+             2 — LA PREGUNTA QUE EL MODELO NO PUEDE RESPONDER: ¿HAY TANTA GENTE?              
+==============================================================================================
+
+  El modelo compra clientes al mismo precio sin importar cuántos lleve. Eso es falso, y es
+  la debilidad más grande que le queda. No voy a inventar un mercado direccionable de
+  Trujillo para taparlo — pongo el número que hay que contrastar contra la realidad:
+
+         CAC    nuevos/mes    nuevos por día abierto   clientes distintos en 6 meses
+  ------------------------------------------------------------------------------------
+     S/10.51           816                        34                           4,897
+     S/13.50          1024                        43                           6,147
+     S/18.00          2079                        87                          12,477
+
+  ►► ESTE ES EL NÚMERO QUE HAY QUE MIRAR A LOS OJOS. Sostener el objetivo exige conseguir
+     entre 816 y 1024 clientes NUEVOS cada mes, todos los meses — unas 34 a 43
+     personas distintas por día abierto, sin repetir.
+
+     No sé si Trujillo da eso a ese precio, y cualquiera que te dé una cifra hoy la está
+     inventando. Es LA incógnita del plan, y se despeja midiendo el CAC real en la primera
+     semana de publicidad — no discutiéndola ahora.
+
+==============================================================================================
+             3 — QUÉ APORTARÍA LA PALANCA DE SÁNDWICHES POR PEDIDO (SI EXISTIERA)             
+==============================================================================================
+
+  [SIN MEDIR] Nadie sabe si un cambio en el carrito sube los sándwiches por pedido, ni
+  cuánto. Por eso NO está en el caso base. Lo que sí se puede decir con honestidad es
+  cuánto VALDRÍA si se lograra — y así se decide si vale la pena intentarlo.
+
+  Se usa una contribución marginal CASTIGADA: S/12.12 en vez de los S/16.16 del promedio
+  (−25%), porque un segundo sándwich empujado con combo o descuento contribuye menos que el
+  promedio del catálogo. Ese castigo es una elección a ojo, y va declarada como tal.
+
+    sándwiches/pedido   contrib   ads/mes (CAC S/13.50)   ahorro vs 1.00  personas
+  ----------------------------------------------------------------------------------
+                 1.00     16.42                 S/13830              S/0         2
+                 1.05     17.03                 S/12812           S/1018         2
+                 1.10     17.63                 S/11934           S/1896         2
+                 1.25     19.45                  S/9898           S/3932         2
+                 1.50     22.48                  S/6744           S/7086         1
+
+  ►► LA PALANCA ES REAL PERO NO ES EL PLAN. Un +5% de sándwiches por pedido —objetivo
+     modesto y medible— ahorra publicidad todos los meses sin cambiar nada más. Pero el
+     objetivo NO depende de ella: el caso base ya llega sin inventar nada, y esta palanca
+     solo lo abarata. Ese es el lugar correcto para una idea sin evidencia.
+
+     Y lo primero no es construirla: es MEDIR cuánto vale hoy. `retention_report` ya
+     devuelve `attach.avgUnits`. El día 1 de ventas reales ese número existe, y recién ahí
+     se sabe si hay algo que mover.
+
+==============================================================================================
+                                     4 — EL PISO HONESTO                                      
+==============================================================================================
+
+  Flyvbjerg, Holm & Buhl (JAPA 71(2), 210 proyectos): los pronósticos de demanda se
+  sobreestiman +106% en promedio, y 9 de cada 10 se sobreestiman. Es una corrección al
+  PRONOSTICADOR, no al negocio: castiga dar por hecho que la gente pedirá al ritmo del
+  benchmark estadounidense.
+
+         CAC       ads/mes   ped/día  personas   ¿llega al mes 6?
+  ----------------------------------------------------------------------
+     S/10.51      S/182392     539.0        14   sí, pero mira el gasto
+     S/13.50             —         —         —   NO, a ningún gasto
+     S/25.23             —         —         —   NO, a ningún gasto
+
+  ►► Con la corrección aplicada, el objetivo del mes 6 exige gastos que no tienen sentido o
+     directamente no se alcanza. Las dos tablas juntas son el resultado honesto: el mes 6
+     depende por completo de que el CAC real de Trujillo caiga en el BUEN extremo de un
+     rango prestado Y de que la demanda se parezca al benchmark. Ninguna de las dos está
+     medida, y son independientes: pueden fallar las dos a la vez.
+
+==============================================================================================
+                   5 — LA FUGA QUE SÍ ESTÁ MEDIDA Y NADIE MIRA: EL REPARTO                    
+==============================================================================================
+
+  [MEDIDO 2026-09-02] El reparto lo hace un tercero con 50+ motorizados que cobra
+  S/2 POR KILÓMETRO. La app cobra por ZONA, un monto plano que elige el cliente.
+
+    cerca        cobra S/6    -> cubre 3.0 km a S/2/km
+    media        cobra S/8    -> cubre 4.0 km a S/2/km
+    lejos        cobra S/12   -> cubre 6.0 km a S/2/km
+    muy_lejos    cobra S/15   -> cubre 7.5 km a S/2/km
+
+  CLAUDE.md afirma que "el negocio no gana ni subsidia el reparto". Eso solo es cierto si la
+  zona coincide con los kilómetros reales, y NADIE lo ha comprobado.
+
+  Al volumen del objetivo (1,573 pedidos/mes):
+
+      descuadre por pedido    pérdida/mes   % del objetivo
+  --------------------------------------------------------
+                    S/0.50            787             7.9%
+                    S/1.00          1,573            15.7%
+                    S/2.00          3,146            31.5%
+                    S/3.00          4,719            47.2%
+
+  ►► A diferencia de todo lo demás de este modelo, esto NO es un pronóstico: es una fuga que
+     o existe o no existe HOY, y se resuelve con una libreta y dos semanas de anotar
+     kilómetros. Es el dato más barato de conseguir de toda la lista.
+
+==============================================================================================
+                                           RESUMEN                                            
+==============================================================================================
+
+  1. RETIRO LA RESPUESTA ANTERIOR. El "sí se puede con 1.25 sándwiches por pedido" estaba
+     construido sobre un número que despejé hacia atrás y presenté como plan.
+
+  2. LIBERADA LA PRODUCCIÓN, EL OBJETIVO NO NECESITA NINGUNA PALANCA INVENTADA. Con lo
+     medido y nada más, el mes 6 llega a S/10,000 con S/8,579/mes de publicidad y
+     2 personas — si el CAC es S/10.51. A CAC S/13.50 son S/13,830/mes y 2 personas.
+
+  3. LA RESTRICCIÓN SE MUDÓ DE LA COCINA AL MERCADO. Ya no es cuántos sándwiches puedes
+     armar: es si Trujillo tiene 816-1024 clientes nuevos cada mes a ese precio.
+     Ningún modelo puede responder eso. Lo responde la primera semana de publicidad real.
+
+  4. EL CAC ES AHORA EL ÚNICO NÚMERO QUE IMPORTA. Todo el plan vive o muere ahí, y hoy es un
+     rango prestado de 2.4x de ancho. Medirlo es la primera tarea, no la última.
+
+  5. LA PALANCA DE SÁNDWICHES POR PEDIDO SIGUE VALIENDO LA PENA — pero como AHORRO, no como
+     plan, y primero se MIDE (`attach.avgUnits` ya existe) antes de construir nada.
+
+  6. EL REPARTO ES LO ÚNICO ACCIONABLE HOY, y no depende de ningún pronóstico.
+

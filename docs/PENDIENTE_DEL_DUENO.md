@@ -1,6 +1,6 @@
 # Lo que depende de ti — SND//WCH
 
-Última actualización: 2026-08-29 · **Apertura: lunes 7 de septiembre de 2026 (faltan 9 días)**
+Última actualización: 2026-09-02 · **Apertura: a más tardar la 2ª semana de octubre de 2026** (movida desde el 7 de septiembre por trámites de permisos)
 
 Todo lo de esta lista está bloqueado por algo que **solo tú** puedes conseguir: una cuenta,
 un secret, una cotización, una fecha real. Yo no lo puedo inventar — es la misma regla que
@@ -54,7 +54,8 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | # | Qué |
 |---|---|
 | P15 | Definir la variación A de la mascota "El cocinero" |
-| P16 | Confirmar de dónde salió el dibujo del mono antes de imprimirlo |
+| ~~P16~~ | ~~Confirmar de dónde salió el dibujo del mono~~ — **RESUELTO 2026-09-02: lo dibujó el dueño.** Sin riesgo de procedencia. |
+
 
 ---
 
@@ -71,6 +72,22 @@ para ti y **ninguna bloquea nada**: P17 (la alerta ya opera con el valor conserv
 (el regalo de cumpleaños ya cambió; solo dime si lo quieres al revés), P19 (una lectura tuya
 del contenido de marketing, ya corregido) y P20 (una captura de Yape para afinar el lector
 de comprobantes, que ya funciona).
+
+### P21 — calibrar el factor de ruta del delivery (2026-09-02)
+
+Desde hoy el envío se cobra por **distancia real**: los kilómetros del pin del cliente por
+S/2, que es lo que te cobra tu grupo de motorizados. Antes el cliente elegía su zona de un
+desplegable, o sea elegía cuánto pagar de envío.
+
+El mínimo ya está resuelto: **S/5** por viaje corto, confirmado por ti el 2026-09-02. Por
+debajo de 2.5 km la tarifa la fija ese piso y no los kilómetros. **Nada pendiente acá.**
+
+Lo que sí queda es un dato que vale la pena que midas tú, aunque no bloquea nada: **los
+kilómetros reales de una muestra de entregas**, para calibrar el factor de 1.3 que convierte
+la línea recta en ruta de moto. `orders.delivery_km` ya guarda lo que se cobró en cada
+pedido, así que la comparación contra lo que te cobre el motorizado es directa.
+
+---
 
 Solo **11** están bloqueadas por esta lista. Son las de la sección 2 y 3 de arriba, y casi
 todas cuelgan de una sola cosa: **los secrets de Meta (P5)**.

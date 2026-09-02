@@ -364,9 +364,9 @@ function confirmMap(){
   closeMap();
   // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
   // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
-  // porque el aviso de zona vs. pin (deliveryZoneMismatchHTML) vive en el picker de zona
-  // y sin un render no aparecería hasta que el cliente tocara cualquier otra cosa — o
-  // sea, justo cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
+  // porque la tarifa de envío se calcula desde el pin (ver deliveryFeeBase) y sin un render
+  // el cliente no vería el monto nuevo hasta tocar cualquier otra cosa — o sea, justo
+  // cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
   // que nada de lo escrito se pierda; addrText se fija después porque la dirección que
   // vale es la que se acaba de elegir en el mapa, no la que había en el input.
   syncConfirmFields();
@@ -525,6 +525,8 @@ function renderScreen(){
     case'admin_recipes':h=sAdminRecipes();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;
     case'admin_cash':h=sAdminCashClose();break;
+    case'admin_tech':h=sAdminTechHealth();break;
+    case'admin_compliance':h=sAdminCompliance();break;
     case'admin_purchases':h=sAdminPurchases();break;
     case'admin_culqi':h=sAdminCulqiReport();break;
     case'admin_time_report':h=sAdminTimeReport();break;
@@ -2918,4 +2920,185 @@ function sAdminCulqiReport(){
   h+='</div>';
   h+=BTN('Actualizar //','loadCulqiReport()',true);
   return h+'</div>';
+}
+
+// ── E6 · Salud técnica (#97 base, #98 latencia, #88 cuentas admin) ─────────────────────
+// Una sola pantalla para lo técnico. El dueño no va a entrar a tres sitios distintos a
+// revisar si la base se está llenando, si la función responde lenta y si hay una cuenta
+// admin de alguien que ya no está. Las señales de NEGOCIO (#77, #78, #86) van aparte, en
+// Cumplimiento: se miran en otro momento y con otra cabeza.
+var techHealthData=null;
+async function loadTechHealth(){
+  sndScreen='admin_tech';busy=true;busyMsg='Revisando la infraestructura...';render();
+  try{techHealthData=await api('admin-tech-health',{token:token});}
+  catch(e){techHealthData=null;}
+  busy=false;render();
+}
+function fmtBytes(n: any){
+  var b=Number(n)||0;
+  if(b>=1048576)return (Math.round(b/1048576*10)/10)+' MB';
+  if(b>=1024)return Math.round(b/1024)+' KB';
+  return b+' B';
+}
+function sAdminTechHealth(){
+  var h=H('SALUD TÉCNICA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!techHealthData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadTechHealth()')+'</div>';
+  }
+  var d=techHealthData;
+  var db=d.db||{};
+  var pct=Math.round((Number(db.usedPct)||0)*1000)/10;
+
+  // El espacio de la base primero, porque es el único de esta pantalla que puede DETENER el
+  // negocio: el plan `free` no degrada con aviso, pasa a solo-lectura y deja de tomar pedidos.
+  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(db.warn?'#ff8888':GOLD)+';border-radius:12px;padding:18px;margin-bottom:16px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">ESPACIO EN LA BASE //</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+(db.warn?'#ff8888':GOLD)+';line-height:1.1">'+pct+'%</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+fmtBytes(db.usedBytes)+' de '+fmtBytes(db.limitBytes)+'</div>'
+    +'<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.12);margin:10px 0 8px;overflow:hidden"><div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+(db.warn?'#ff8888':GOLD)+'"></div></div>'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">'
+    +(db.warn
+      ? 'Al llegar al tope, la base pasa a <b>solo lectura</b> y la app deja de tomar pedidos. Borra registros viejos de <i>debug_logs</i> o sube de plan antes de llegar.'
+      : 'El plan gratuito da 500 MB. Al topar no hay aviso ni degradación: la base pasa a solo lectura y deja de entrar cualquier pedido.')
+    +'</div></div>';
+
+  if(db.tables&&db.tables.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">LAS QUE MÁS PESAN //</div>';
+    h+=db.tables.map(function(t: any){
+      return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 14px;margin-bottom:6px">'
+        +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(String(t.table_name||''))+'</div>'
+        +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+GOLD+'">'+fmtBytes(t.total_bytes)+'</div></div>';
+    }).join('');
+  }
+
+  // Latencia. Se mide sobre las peticiones LENTAS que la función ya anota: escribir una
+  // fila por request duplicaría el tráfico a la base para medir sobre todo peticiones sanas.
+  var lat=d.latency||{};
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 8px">VELOCIDAD DE RESPUESTA //</div>';
+  if(!lat.samples){
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+      +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Ninguna petición pasó del segundo y medio esta semana. <span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">Eso es lo que se quiere ver: solo se anotan las lentas.</span></div></div>';
+  }else{
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+(lat.warn?'#ff8888':'var(--sw-border-soft,#1c1c1c)')+';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+      +'<div style="display:flex;gap:18px;flex-wrap:wrap">'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(lat.warn?'#ff8888':GOLD)+'">'+lat.p95+' ms</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">p95</div></div>'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+lat.worst+' ms</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">la peor</div></div>'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+lat.samples+'</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">peticiones lentas (7 días)</div></div>'
+      +'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:10px">'
+      +'Se mira el p95 y no el promedio: una petición de 8 segundos entre 99 rápidas no mueve el promedio, y es justo la que hace abandonar un carrito.'
+      +'</div></div>';
+  }
+
+  // Cuentas admin. Hoy hay una sola, y por eso mismo está acá antes de que haga falta.
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">CUENTAS ADMIN //</div>';
+  var stale=d.staleAdmins||[];
+  if(!stale.length){
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px">'
+      +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+(d.adminCount||0)+' cuenta'+((d.adminCount||0)===1?'':'s')+' con acceso, ninguna abandonada.</div></div>';
+  }else{
+    h+=stale.map(function(a: any){
+      return'<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:12px 14px;margin-bottom:6px">'
+        +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)"><b>'+esc(a.name||a.phone)+'</b> · '+esc(a.phone)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:2px">'
+        +(a.neverLoggedIn?'Nunca ha entrado desde que se registra el acceso.':'Sin entrar hace '+a.daysSince+' días.')
+        +' Si esta persona ya no trabaja contigo, quítale el acceso en <b>Administradores</b>.</div></div>';
+    }).join('');
+  }
+  return h+'</div>';
+}
+
+// ── E6 · Cumplimiento y promesa (#78 entrega, #77 queja repetida, #86 Libro) ───────────
+var complianceData=null;
+async function loadCompliance(){
+  sndScreen='admin_compliance';busy=true;busyMsg='Revisando entregas y reclamos...';render();
+  try{complianceData=await api('admin-compliance',{token:token});}
+  catch(e){complianceData=null;}
+  busy=false;render();
+}
+function sAdminCompliance(){
+  var h=H('CUMPLIMIENTO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!complianceData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadCompliance()')+'</div>';
+  }
+  var d=complianceData;
+  var dl=d.delivery||{};
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:14px">Últimos '+(d.windowDays||90)+' días</div>';
+
+  // #78 — Lo prometido contra lo cumplido.
+  if(!dl.measured){
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">ENTREGA //</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Todavía no hay ningún pedido con hora de entrega registrada. <span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">La hora la escribe el link de confirmación que abre quien reparte; sin ella no se puede medir la promesa contra nada.</span></div></div>';
+  }else{
+    var pctOk=Math.round((Number(dl.onTimePct)||0)*1000)/10;
+    var malo=pctOk<80;
+    h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(malo?'#ff8888':GOLD)+';border-radius:12px;padding:18px;margin-bottom:12px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">LLEGARON A TIEMPO //</div>'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:30px;font-weight:640;color:'+(malo?'#ff8888':GOLD)+';line-height:1.1">'+pctOk+'%</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+dl.onTime+' de '+dl.measured+' pedidos medidos</div>'
+      +'<div style="display:flex;gap:18px;margin-top:12px">'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+dl.avgMinutes+' min</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">promedio</div></div>'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+dl.p90Minutes+' min</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">9 de cada 10 llegan antes de</div></div>'
+      +'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:10px">El promedio esconde la cola: con nueve entregas de 30 minutos y una de tres horas el promedio dice 47, y el cliente de las tres horas no vuelve.</div>'
+      +'</div>';
+    if(dl.worst&&dl.worst.length){
+      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">LOS QUE MÁS SE PASARON //</div>';
+      h+=dl.worst.map(function(w: any){
+        var exceso=w.minutes-w.promised;
+        return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 14px;margin-bottom:6px">'
+          +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(w.ref||'')+'</div>'
+          +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(exceso>0?'#ff8888':GOLD)+'">'+w.minutes+' min <span style="font-size:10px;opacity:.8">(prometido '+w.promised+')</span></div></div>';
+      }).join('');
+    }
+  }
+
+  // #77 — Queja repetida. Dos reclamos del mismo cliente no son un cliente difícil: son un
+  // problema de proceso que ya se manifestó dos veces.
+  var rep=d.repeatComplaints||[];
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 8px">RECLAMÓ MÁS DE UNA VEZ //</div>';
+  if(!rep.length){
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+      +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">Nadie ha reclamado dos veces.</div></div>';
+  }else{
+    h+=rep.map(function(r: any){
+      return'<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:12px 14px;margin-bottom:6px">'
+        +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)"><b>'+esc(r.name||r.phone)+'</b> · '+r.count+' veces</div>'
+        +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:2px">'+esc((r.codes||[]).join(' · '))+'</div></div>';
+    }).join('');
+  }
+
+  // #86 — El consolidado del Libro de Reclamaciones. Va entero y sin recortar: un reporte
+  // al que le falta un campo obligatorio no sirve el día que Indecopi lo pide.
+  var cs=d.complaints||[];
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">LIBRO DE RECLAMACIONES //</div>';
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
+    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+cs.length+' registro'+(cs.length===1?'':'s')+' en la ventana. '
+    +'<span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">Exporta el consolidado con todos los campos del Libro para tenerlo listo si te lo piden.</span></div></div>';
+  h+=BTN('Descargar consolidado //','exportComplianceCsv()');
+  return h+'</div>';
+}
+// El CSV se arma en el navegador con lo que la pantalla YA tiene: pedirlo otra vez al
+// servidor abriría la puerta a que el archivo y lo que se ve en pantalla digan cosas
+// distintas.
+function exportComplianceCsv(){
+  var cs=(complianceData&&complianceData.complaints)||[];
+  if(!cs.length){showToast('No hay reclamos que exportar.','info');return;}
+  // Cabeceras en español y con los nombres del Libro, no las claves internas: el archivo se
+  // entrega a un tercero que no conoce el modelo de datos de esta app.
+  var rows=cs.map(function(r: any){
+    return{
+      'Codigo':r.claimCode||'','Fecha':r.createdAt||'','Tipo':r.kind||'',
+      'Consumidor':r.consumerName||'','DNI':r.consumerDni||'','Pedido':r.orderRef||'',
+      'Monto reclamado':r.claimedAmount==null?'':r.claimedAmount,
+      'Estado':r.status||'','Respondido':r.respondedAt||'',
+    };
+  });
+  var csv=toCsv(rows);
+  var url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  var a=document.createElement('a');
+  a.href=url;a.download='sndwch-libro-reclamaciones-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
 }

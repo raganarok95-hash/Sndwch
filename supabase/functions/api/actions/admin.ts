@@ -6,10 +6,11 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
+import { sendRetentionEmail } from "../email.ts";
 import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
@@ -1927,6 +1928,380 @@ export async function actAdminCulqiReport(b: any) {
   const orphan = huerfanos.filter((l: any) => l?.detail?.stage === "orphan-charge-refunded" || l?.detail?.stage === "orphan-charge-found").length;
   return { since: desde, until: hasta, feeRate: CULQI_FEE_RATE, ...culqiReconciliation(orders, logs, CULQI_FEE_RATE, orphan) };
 }
+
+// ── LOTE E6: HIGIENE TÉCNICA Y CUMPLIMIENTO ────────────────────────────────────────────
+
+// #78 — Tiempo real de entrega contra el prometido.
+//
+// `delivered_at` se llena desde hace tiempo y desde #19 la escribe quien entrega, no quien
+// se acuerda de tocar el botón. Faltaba el reporte, que es el único dato que dice si el ETA
+// que se le muestra al cliente ANTES de pagar es verdad o marketing.
+//
+// Un ETA que miente es la causa directa de una calificación de 1 estrella, y el negocio se
+// enteraría por la reseña en vez de por el reloj.
+export type DeliveryPerformance = {
+  delivered: number;
+  measured: number;
+  onTime: number;
+  onTimePct: number | null;
+  avgMinutes: number | null;
+  p90Minutes: number | null;
+  worst: { ref: string; minutes: number; promised: number }[];
+};
+
+export function deliveryPerformance(
+  orders: { ref?: string | null; created_at?: string | null; delivered_at?: string | null; eta_minutes?: number | null }[],
+  fallbackPromise: number,
+): DeliveryPerformance {
+  const lista = Array.isArray(orders) ? orders : [];
+  const medidos: { ref: string; minutes: number; promised: number }[] = [];
+  for (const o of lista) {
+    const inicio = new Date(String(o?.created_at || "")).getTime();
+    const fin = new Date(String(o?.delivered_at || "")).getTime();
+    // Sin las dos horas no se puede medir NADA. Rellenar con la hora actual o con el
+    // promedio metería pedidos inventados en el número que mide la promesa.
+    if (!Number.isFinite(inicio) || !Number.isFinite(fin) || fin <= inicio) continue;
+    const minutes = Math.round((fin - inicio) / 60000);
+    const promised = Number(o?.eta_minutes) > 0 ? Number(o.eta_minutes) : fallbackPromise;
+    medidos.push({ ref: String(o?.ref || ""), minutes, promised });
+  }
+  if (!medidos.length) {
+    return { delivered: lista.length, measured: 0, onTime: 0, onTimePct: null, avgMinutes: null, p90Minutes: null, worst: [] };
+  }
+  const onTime = medidos.filter((m) => m.minutes <= m.promised).length;
+  const ordenados = [...medidos].sort((a, b) => a.minutes - b.minutes);
+  // p90 y no solo el promedio: el promedio esconde la cola. Con 9 entregas de 30 min y una
+  // de 3 horas el promedio dice 47 y el cliente de las 3 horas ya no vuelve.
+  const idx = Math.min(ordenados.length - 1, Math.floor(ordenados.length * 0.9));
+  return {
+    delivered: lista.length,
+    measured: medidos.length,
+    onTime,
+    onTimePct: Math.round((onTime / medidos.length) * 1000) / 1000,
+    avgMinutes: Math.round(medidos.reduce((a, m) => a + m.minutes, 0) / medidos.length),
+    p90Minutes: ordenados[idx].minutes,
+    // Los peores, que son los que hay que mirar uno por uno.
+    worst: [...medidos].sort((a, b) => (b.minutes - b.promised) - (a.minutes - a.promised)).slice(0, 5),
+  };
+}
+
+// #77 — Detección de queja repetida.
+//
+// El mismo cliente reclamando dos veces no es un cliente difícil: es un problema de proceso
+// que ya se manifestó dos veces. Verlo agregado es lo que convierte dos reclamos sueltos en
+// una causa.
+export function repeatComplaints(
+  complaints: { consumer_phone?: string | null; consumer_name?: string | null; kind?: string | null; created_at?: string | null; claim_code?: string | null }[],
+): { phone: string; name: string; count: number; kinds: string[]; codes: string[]; lastAt: string }[] {
+  const porCliente = new Map<string, { phone: string; name: string; kinds: Set<string>; codes: string[]; lastAt: string; count: number }>();
+  for (const c of Array.isArray(complaints) ? complaints : []) {
+    const phone = String(c?.consumer_phone || "").trim();
+    // Sin teléfono no hay forma de saber si es la misma persona. Agrupar por nombre sería
+    // peor: dos "Juan Pérez" distintos aparecerían como un reincidente.
+    if (!phone) continue;
+    const acc = porCliente.get(phone) || { phone, name: String(c?.consumer_name || ""), kinds: new Set<string>(), codes: [], lastAt: "", count: 0 };
+    acc.count++;
+    if (c?.kind) acc.kinds.add(String(c.kind));
+    if (c?.claim_code) acc.codes.push(String(c.claim_code));
+    const fecha = String(c?.created_at || "");
+    if (fecha > acc.lastAt) acc.lastAt = fecha;
+    porCliente.set(phone, acc);
+  }
+  return [...porCliente.values()]
+    .filter((x) => x.count > 1)
+    .map((x) => ({ phone: x.phone, name: x.name, count: x.count, kinds: [...x.kinds], codes: x.codes, lastAt: x.lastAt }))
+    .sort((a, b) => b.count - a.count || b.lastAt.localeCompare(a.lastAt));
+}
+
+// #88 — Cuentas admin que llevan mucho sin entrar.
+//
+// Una cuenta admin viva de alguien que ya no trabaja acá es la puerta abierta que nadie
+// mira. `null` en lastLoginAt significa "nunca entró desde que se empezó a registrar",
+// que es una señal MÁS fuerte que una fecha vieja, no más débil.
+const ADMIN_STALE_DAYS = 60;
+export function staleAdmins(
+  admins: { phone?: string | null; name?: string | null; last_login_at?: string | null; created_at?: string | null }[],
+  nowMs: number,
+  staleDays = ADMIN_STALE_DAYS,
+): { phone: string; name: string; daysSince: number | null; neverLoggedIn: boolean }[] {
+  return (Array.isArray(admins) ? admins : [])
+    .map((a) => {
+      const t = new Date(String(a?.last_login_at || "")).getTime();
+      const valido = Number.isFinite(t);
+      return {
+        phone: String(a?.phone || ""),
+        name: String(a?.name || ""),
+        daysSince: valido ? Math.floor((nowMs - t) / 86400000) : null,
+        neverLoggedIn: !valido,
+      };
+    })
+    .filter((a) => a.phone && (a.neverLoggedIn || (a.daysSince as number) >= staleDays))
+    .sort((a, b) => (b.daysSince ?? Number.MAX_SAFE_INTEGER) - (a.daysSince ?? Number.MAX_SAFE_INTEGER));
+}
+
+// #94 — Envío automático del reporte de cohortes.
+//
+// El RPC `retention_report` existe desde hace tiempo y es el mejor dato del panel: mide si
+// los clientes VUELVEN, que es lo que decide si el negocio funciona, mientras el resto del
+// dashboard mide cuánto entró. El problema no era el cálculo, era que **hay que acordarse de
+// abrir la pantalla**. Una cifra que solo existe cuando alguien va a buscarla no cambia
+// ninguna decisión.
+//
+// Va MENSUAL y no semanal a propósito: una cohorte se mueve en meses. Un correo semanal con
+// el mismo número movido dos décimas es el camino más corto a que se deje de abrir, y
+// entonces se pierde también el mes en que sí cambió.
+//
+// LA SALVAGUARDA DE FIABILIDAD VA PRIMERO, antes de las cifras — mismo criterio que el plan
+// de tanda. Con 12 clientes, "el 33% volvió" son 4 personas: mover una cambia el número 8
+// puntos. Un porcentaje así no es una medición, es ruido con aspecto de dato, y el aspecto
+// de dato es exactamente lo que hace que se le crea y se decida un precio con él.
+const RETENTION_DIGEST_MIN_CUSTOMERS = 30;
+export function retentionDigest(
+  report: any,
+  minCustomers = RETENTION_DIGEST_MIN_CUSTOMERS,
+): {
+  reliable: boolean;
+  reason: string | null;
+  customers: number;
+  repeatRatePct: number | null;
+  rolling30Pct: number | null;
+  daysToSecondMedian: number | null;
+  contributionPerOrder: number | null;
+  atRisk: number;
+  headline: string;
+} {
+  const overall = report?.overall || {};
+  const customers = Number(overall.customers) || 0;
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : null);
+  const gap = report?.daysToSecond || {};
+  const reliable = customers >= minCustomers;
+  const repeatRatePct = customers > 0 ? num(overall.repeatRatePct) : null;
+  return {
+    reliable,
+    reason: reliable ? null : `Solo hay ${customers} clientes con al menos un pedido pagado; hacen falta ${minCustomers} para que estos porcentajes signifiquen algo.`,
+    customers,
+    repeatRatePct,
+    rolling30Pct: Number(report?.rolling30?.active) > 0 ? num(report?.rolling30?.returningPct) : null,
+    // La mediana de días al segundo pedido solo se manda si hay segundos pedidos que medir:
+    // con n=0 el RPC devuelve 0, y "vuelven a los 0 días" diría lo contrario de la verdad.
+    daysToSecondMedian: Number(gap.n) > 0 ? num(gap.median) : null,
+    contributionPerOrder: Number(report?.margin?.orders) > 0 ? num(report?.margin?.perOrder) : null,
+    atRisk: Number(report?.segments?.enRiesgo) || 0,
+    headline: !reliable
+      ? "Todavía no hay clientes suficientes para medir retención."
+      : repeatRatePct === null
+      ? "Sin datos de repetición este mes."
+      : `${repeatRatePct}% de tus clientes hizo un segundo pedido.`,
+  };
+}
+
+export async function actSendRetentionReport(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const report = await rpc("retention_report", { p_cohort_months: RETENTION_COHORT_MONTHS });
+  const digest = retentionDigest(report);
+  await sendRetentionEmail(digest, report?.cohorts || []);
+  // El push lleva SOLO el titular. El detalle es para sentarse a leerlo, y una notificación
+  // con seis cifras no se lee en el celular ni se vuelve a abrir después.
+  await sendPushToAdmins({
+    title: "📈 Tu reporte de retención del mes",
+    body: digest.headline + (digest.reliable ? " Te lo mandamos por correo con el detalle." : ""),
+    url: "./index.html",
+    tag: "sndwch-retention-report",
+    renotify: false,
+  });
+  return { success: true, ...digest };
+}
+
+// #89 — Intentos de acceso fallidos contra la cuenta admin.
+//
+// El bloqueo por intentos fallidos ya existe desde hace tiempo y ya frena el ataque. Lo que
+// no existía es que alguien se ENTERE de que ocurrió: `login_attempts` borra la fila al
+// primer acceso correcto, así que el peor caso —veinte intentos y al veintiuno entró— no
+// dejaba huella. El rastro durable lo escribe `recordAdminLoginFailure` en debug_logs.
+//
+// EXIGE UN MÍNIMO, igual que la alerta de rechazos de tarjeta. Un aviso que suena porque el
+// dueño se equivocó de PIN tres veces deja de mirarse antes del día que importa. El bloqueo
+// corta a los MAX_LOGIN_ATTEMPTS (5) intentos y obliga a esperar LOCKOUT_MINUTES (15), así
+// que pasar de 10 en una hora significa haberse comido dos bloqueos enteros a propósito —
+// cosa que quien recupera su propio PIN no hace: usa la recuperación.
+//
+// El otro disparador es la FORMA, no el volumen: los mismos intentos repartidos entre varias
+// fuentes distintas no son alguien olvidadizo, son alguien rotando de conexión. Se piden 3
+// fuentes y no 2 porque pasar de wifi a datos móviles ya da dos huellas por sí solo.
+export const ADMIN_ACCESS_WINDOW_HOURS = 1;
+const ADMIN_ACCESS_MIN_ATTEMPTS = 10;
+const ADMIN_ACCESS_MIN_SOURCES = 3;
+export function adminAccessAttempts(
+  rows: { detail?: { stage?: string; phone?: string; src?: string; reason?: string } | null; created_at?: string | null }[],
+  minAttempts = ADMIN_ACCESS_MIN_ATTEMPTS,
+  minSources = ADMIN_ACCESS_MIN_SOURCES,
+): {
+  total: number;
+  sources: { src: string; count: number; phones: string[] }[];
+  phones: string[];
+  alert: boolean;
+  reason: string | null;
+} {
+  const porFuente = new Map<string, { src: string; count: number; phones: Set<string> }>();
+  const telefonos = new Set<string>();
+  let total = 0;
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const d = r?.detail;
+    if (!d || d.stage !== "admin-login-failed") continue;
+    total++;
+    const src = String(d.src || "desconocida");
+    const acc = porFuente.get(src) || { src, count: 0, phones: new Set<string>() };
+    acc.count++;
+    if (d.phone) {
+      acc.phones.add(String(d.phone));
+      telefonos.add(String(d.phone));
+    }
+    porFuente.set(src, acc);
+  }
+  const sources = [...porFuente.values()]
+    .map((f) => ({ src: f.src, count: f.count, phones: [...f.phones] }))
+    .sort((a, b) => b.count - a.count);
+  const porVolumen = total >= minAttempts;
+  const porDispersion = sources.length >= minSources && total >= MAX_LOGIN_ATTEMPTS;
+  return {
+    total,
+    sources,
+    phones: [...telefonos],
+    alert: porVolumen || porDispersion,
+    // El motivo va en el aviso: "muchos intentos" y "muchas fuentes" se revisan distinto.
+    reason: porDispersion ? "varias-fuentes" : porVolumen ? "muchos-intentos" : null,
+  };
+}
+
+export async function actAlertAdminAccess(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const desde = new Date(Date.now() - ADMIN_ACCESS_WINDOW_HOURS * 3600000).toISOString();
+  const rows = await sbGet(
+    "debug_logs",
+    `source=eq.api&created_at=gte.${encodeURIComponent(desde)}&select=detail,created_at&limit=2000`,
+  );
+  const stats = adminAccessAttempts(rows as any[]);
+  if (!stats.alert) return { success: true, alerted: false, ...stats };
+  // Mientras el intento siga, el cron lo va a seguir viendo cada hora. Repetirlo cada hora
+  // lo vuelve ruido; cada 3 sigue siendo a tiempo para cambiar el PIN.
+  if (!(await rpc("check_rate_limit", { p_key: "admin-access", p_limit: 1, p_window_minutes: 180 }))) {
+    return { success: true, alerted: false, throttled: true, ...stats };
+  }
+  await sendPushToAdmins({
+    title: "🔐 Intentos de entrar a tu panel",
+    body: stats.reason === "varias-fuentes"
+      ? `${stats.total} intentos fallidos contra tu cuenta admin desde ${stats.sources.length} conexiones distintas en la última hora. Cambia tu PIN.`
+      : `${stats.total} intentos fallidos contra tu cuenta admin en la última hora. Cambia tu PIN.`,
+    url: "./index.html",
+    tag: "sndwch-admin-access",
+    renotify: true,
+  });
+  return { success: true, alerted: true, ...stats };
+}
+
+// #97 — Cuánto espacio queda antes de topar el plan.
+//
+// El plan `free` de Supabase da 500 MB, y topar ese límite no degrada nada con aviso: la
+// base pasa a solo-lectura y el negocio deja de tomar pedidos.
+const DB_LIMIT_BYTES = 500 * 1024 * 1024;
+const DB_WARN_PCT = 0.7;
+export function dbGrowth(
+  sizeBytes: number,
+  limitBytes = DB_LIMIT_BYTES,
+  warnPct = DB_WARN_PCT,
+): { usedBytes: number; limitBytes: number; usedPct: number; warn: boolean } {
+  const used = Number(sizeBytes);
+  const limite = Number(limitBytes) > 0 ? Number(limitBytes) : DB_LIMIT_BYTES;
+  const seguro = Number.isFinite(used) && used >= 0 ? used : 0;
+  return {
+    usedBytes: seguro,
+    limitBytes: limite,
+    usedPct: Math.round((seguro / limite) * 1000) / 1000,
+    warn: seguro / limite >= warnPct,
+  };
+}
+
+// #98 — Latencia de la edge function.
+//
+// Si `api` empieza a responder lento, se nota en la conversión antes que en cualquier otro
+// sitio: el cliente abandona el checkout y nadie registra un error. Se mide con lo que la
+// función ya escribe en `debug_logs` (ver el registro de duración en index.ts).
+//
+// Se usa el p95 y no el promedio: una petición de 8 segundos entre 99 rápidas no mueve el
+// promedio y es exactamente la que hace abandonar un carrito.
+const LATENCY_P95_WARN_MS = 3000;
+export function latencyStats(
+  rows: { detail?: { ms?: number } | null }[],
+  warnMs = LATENCY_P95_WARN_MS,
+): { samples: number; p50: number | null; p95: number | null; worst: number | null; warn: boolean } {
+  const ms = (Array.isArray(rows) ? rows : [])
+    .map((r) => Number(r?.detail?.ms))
+    .filter((n) => Number.isFinite(n) && n >= 0)
+    .sort((a, b) => a - b);
+  if (!ms.length) return { samples: 0, p50: null, p95: null, worst: null, warn: false };
+  const pick = (p: number) => ms[Math.min(ms.length - 1, Math.floor(ms.length * p))];
+  const p95 = pick(0.95);
+  return { samples: ms.length, p50: pick(0.5), p95, worst: ms[ms.length - 1], warn: p95 >= warnMs };
+}
+
+// Una sola pantalla para todo el bloque técnico: el dueño no va a entrar a seis pantallas
+// distintas a revisar salud. Las señales de negocio (#77, #78, #86) van aparte porque se
+// miran en otro momento y con otra cabeza.
+export async function actAdminTechHealth(b: any) {
+  await requireAdmin(b.token);
+  const desde = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [size, tablas, admins, lat] = await Promise.all([
+    rpc("db_size_bytes", {}).catch(() => 0),
+    rpc("table_sizes", { p_limit: 6 }).catch(() => []),
+    sbGet("admin_accounts", "select=phone,name,last_login_at,created_at&limit=200"),
+    sbGet("debug_logs", `created_at=gte.${encodeURIComponent(desde)}&select=detail&limit=5000`),
+  ]);
+  const latRows = (lat || []).filter((r: any) => r?.detail?.stage === "request-timing");
+  return {
+    db: { ...dbGrowth(Number(size) || 0), tables: tablas || [] },
+    latency: latencyStats(latRows),
+    staleAdmins: staleAdmins(admins || [], Date.now()),
+    adminCount: (admins || []).length,
+    staleDays: ADMIN_STALE_DAYS,
+  };
+}
+
+// #78 / #77 / #86 — Las tres señales de cumplimiento y promesa, en una sola lectura.
+const COMPLIANCE_WINDOW_DAYS = 90;
+export async function actAdminCompliance(b: any) {
+  await requireAdmin(b.token);
+  const desde = new Date(Date.now() - COMPLIANCE_WINDOW_DAYS * 86400000).toISOString();
+  const [entregados, quejas] = await Promise.all([
+    sbGet(
+      "orders",
+      `status=eq.ENTREGADO&created_at=gte.${encodeURIComponent(desde)}&select=ref,created_at,delivered_at,eta_minutes&limit=5000`,
+    ),
+    // #86 — El consolidado para Indecopi: TODOS los campos del Libro, sin recortar. Un
+    // reporte al que le falta un campo obligatorio no sirve el día que lo piden.
+    sbGet("complaints", `created_at=gte.${encodeURIComponent(desde)}&select=*&order=created_at.desc&limit=2000`),
+  ]);
+  return {
+    windowDays: COMPLIANCE_WINDOW_DAYS,
+    delivery: deliveryPerformance(entregados || [], DEFAULT_ETA_FALLBACK_MINUTES),
+    repeatComplaints: repeatComplaints(quejas || []),
+    complaints: (quejas || []).map((c: any) => ({
+      claimCode: c.claim_code,
+      createdAt: c.created_at,
+      kind: c.kind,
+      consumerName: c.consumer_name,
+      consumerDni: c.consumer_dni,
+      orderRef: c.order_ref,
+      claimedAmount: c.claimed_amount,
+      status: c.status,
+      respondedAt: c.responded_at,
+    })),
+  };
+}
+
+// La promesa por defecto cuando un pedido no llegó a tener ETA propia. Es el techo del rango
+// que ve el cliente antes de pagar (25-40 min), no el piso: medir contra el piso marcaría
+// como tarde entregas que el cliente vivió como puntuales.
+const DEFAULT_ETA_FALLBACK_MINUTES = 40;
 
 // ── #38: PRECIO DE INSUMO POR COMPRA ───────────────────────────────────────────────────
 //

@@ -820,9 +820,45 @@ function willPayWithCard(){
   // paymentMethodPickerHTML(), no ocultando el monto real que se va a cobrar.
   return true;
 }
+// ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
+//
+// El motorizado (un tercero con 50+ repartidores, coordinado por WhatsApp) cobra S/2 POR
+// KILÓMETRO. Hasta hoy la app cobraba un monto plano por ZONA que elegía el cliente, con
+// "media" por defecto: el cliente elegía su propio precio de envío y elegir el más barato no
+// le costaba nada. El pin del mapa existía pero SOLO AVISABA del desajuste.
+//
+// Estas cuatro constantes DEBEN coincidir con las de supabase/functions/api/env.ts — el
+// servidor es el que de verdad cobra y recalcula todo desde las coordenadas; acá solo se
+// muestra. `npm run parity` compara los dos lados.
+var DELIVERY_KM_RATE=2;          // S/ por kilómetro
+var DELIVERY_ROAD_FACTOR=1.3;    // línea recta → ruta real en moto
+var DELIVERY_MIN_FEE=5;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
+var DELIVERY_MAX_KM=12;          // techo de cobertura
+// Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
+// 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
+function deliveryKmNow(){
+  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
+  if(window._mLat===0&&window._mLon===0)return null;
+  var recta=haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
+  if(!isFinite(recta))return null;
+  return Math.round(recta*DELIVERY_ROAD_FACTOR*100)/100;
+}
+// La tarifa antes de la comisión de tarjeta. Se redondea hacia ARRIBA al medio sol: el
+// motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
+// cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
+// delivery es pass-through y no tiene margen del que salga la diferencia.
+function deliveryFeeBase(){
+  var km=deliveryKmNow();
+  if(km===null){
+    // Sin pin se cae a la zona, exactamente como antes. Es el respaldo para un shell viejo
+    // servido por un service worker desactualizado; el checkout exige el pin antes de pagar.
+    var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
+    return z?z.fee:0;
+  }
+  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+}
 function deliveryFeeAmount(){
-  var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var fee=z?z.fee:0;
+  var fee=deliveryFeeBase();
   if(!fee)return 0;
   return money(willPayWithCard()?fee/(1-CULQI_FEE_RATE):fee);
 }

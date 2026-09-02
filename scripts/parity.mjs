@@ -192,6 +192,31 @@ cmp('COMBO_DISCOUNT_PER_PAIR',
 cmp('GIFT_CARD_POINTS_PER_SOL',
   scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
+// Cobro del delivery por DISTANCIA REAL (2026-09-02). Estas cinco son la única defensa
+// contra el defecto clásico de este repo: el cliente muestra un monto de envío y el servidor
+// cobra otro. Y acá duele más que en el catálogo, porque el delivery es pass-through — si el
+// servidor cobra de menos, la diferencia sale del bolsillo del dueño al pagarle al motorizado.
+cmp('DELIVERY_KM_RATE (S/ por km)',
+  scalar(app, 'DELIVERY_KM_RATE', /var DELIVERY_KM_RATE=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_KM_RATE', /const DELIVERY_KM_RATE = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_ROAD_FACTOR (recta -> ruta)',
+  scalar(app, 'DELIVERY_ROAD_FACTOR', /var DELIVERY_ROAD_FACTOR=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_ROAD_FACTOR', /const DELIVERY_ROAD_FACTOR = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_MIN_FEE (piso de la tarifa)',
+  scalar(app, 'DELIVERY_MIN_FEE', /var DELIVERY_MIN_FEE=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_MIN_FEE', /const DELIVERY_MIN_FEE = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_MAX_KM (techo de cobertura)',
+  scalar(app, 'DELIVERY_MAX_KM', /var DELIVERY_MAX_KM=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_MAX_KM', /const DELIVERY_MAX_KM = ([\d.]+)/, 'env.ts'));
+// El punto de despacho: si los dos lados no miden desde el MISMO sitio, toda la tarifa se
+// desplaza sin que nada falle.
+cmp('STORE_LAT (punto de despacho)',
+  scalar(app, 'STORE_LAT', /var STORE_LAT=(-?[\d.]+)/, 'src/app/'),
+  scalar(env, 'STORE_LAT', /const STORE_LAT = (-?[\d.]+)/, 'env.ts'));
+cmp('STORE_LON (punto de despacho)',
+  scalar(app, 'STORE_LON', /STORE_LON=(-?[\d.]+)/, 'src/app/'),
+  scalar(env, 'STORE_LON', /const STORE_LON = (-?[\d.]+)/, 'env.ts'));
+
 cmp('CULQI_FEE_RATE',
   scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app/'),
   scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));

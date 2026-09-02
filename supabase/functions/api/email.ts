@@ -126,3 +126,69 @@ export async function sendComplaintNotification(
   `, { maxWidth: 520, wordmarkSize: 22 });
   return sendResend([CONTACT_EMAIL], `[${kindLabel}] ${claimCode} — ${BUSINESS_LEGAL_NAME}`, html);
 }
+
+// #94 — El reporte de cohortes, al correo del negocio, una vez al mes.
+//
+// LA ADVERTENCIA DE FIABILIDAD VA ARRIBA DEL TODO, antes de cualquier cifra. Si va al pie,
+// se lee después de haber creído los números — y con pocas cohortes esos números se mueven
+// varios puntos porque volvió una persona más. Mismo criterio que el plan de tanda.
+//
+// El correo lleva el detalle y el push solo el titular: son dos momentos distintos, uno se
+// mira de pie y el otro sentado.
+export async function sendRetentionEmail(
+  digest: {
+    reliable: boolean; reason: string | null; customers: number; repeatRatePct: number | null;
+    rolling30Pct: number | null; daysToSecondMedian: number | null; contributionPerOrder: number | null;
+    atRisk: number; headline: string;
+  },
+  cohorts: { month?: string; customers?: number; withSecond?: number; secondPct?: number; avgOrders?: number; revenue?: number }[],
+): Promise<boolean> {
+  const fila = (etiqueta: string, valor: string, nota: string) => `
+    <tr>
+      <td style="padding:7px 0;font-size:12px;color:#8BAF9A">${escHtml(etiqueta)}</td>
+      <td style="padding:7px 0;font-size:15px;color:#F2F0EB;text-align:right;white-space:nowrap"><b>${escHtml(valor)}</b></td>
+    </tr>
+    <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:#6E8A7A;line-height:1.5">${escHtml(nota)}</td></tr>`;
+  // Un guion, nunca un 0. Un 0 se lee como "medimos y dio cero"; el guion dice "no hay dato".
+  const n = (v: number | null, suf = "") => (v === null ? "—" : `${v}${suf}`);
+
+  const aviso = digest.reliable
+    ? ""
+    : `<p style="background:#3a2a1a;border-left:3px solid #C8963E;padding:10px 12px;font-size:12px;color:#E8C88A;line-height:1.6;margin:0 0 16px">
+         <b>Todavía no te fíes de estos porcentajes.</b><br>${escHtml(digest.reason || "")}
+       </p>`;
+
+  const filasCohorte = (Array.isArray(cohorts) ? cohorts : []).map((c) => `
+    <tr>
+      <td style="padding:5px 0;font-size:12px;color:#A8C8B0">${escHtml(String(c.month || ""))}</td>
+      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.customers ?? 0))}</td>
+      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.secondPct ?? 0))}%</td>
+      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.avgOrders ?? 0))}</td>
+    </tr>`).join("");
+
+  const html = emailShell("RETENCIÓN DEL MES", `
+    ${aviso}
+    <p style="font-size:15px;color:#F2F0EB;line-height:1.6;margin:0 0 18px">${escHtml(digest.headline)}</p>
+    <table style="width:100%;border-collapse:collapse">
+      ${fila("Clientes con al menos un pedido", String(digest.customers), "La base sobre la que se calcula todo lo demás.")}
+      ${fila("Hicieron un segundo pedido", n(digest.repeatRatePct, "%"), "El número que decide si el negocio funciona: adquirir sale caro, el segundo pedido es donde se recupera.")}
+      ${fila("De los que compraron este mes, ya eran clientes", n(digest.rolling30Pct, "%"), "Si esto baja mientras las ventas suben, estás creciendo comprando clientes nuevos cada mes.")}
+      ${fila("Días hasta el segundo pedido (mediana)", n(digest.daysToSecondMedian), "Calibra cuándo tiene sentido el recordatorio de vuelta. Mediana, no promedio: un cliente que volvió a los 6 meses no debe mover la ventana.")}
+      ${fila("Contribución por pedido (90 días)", digest.contributionPerOrder === null ? "—" : `S/${digest.contributionPerOrder}`, "Lo que queda después de insumos y comisión de pasarela. No es utilidad: no descuenta tu tiempo ni los fijos.")}
+      ${fila("Clientes en riesgo de fuga", String(digest.atRisk), "Compraron y llevan entre 30 y 60 días sin volver. Todavía se pueden recuperar.")}
+    </table>
+    ${filasCohorte ? `
+    <p style="font-size:12px;color:#8BAF9A;margin:22px 0 6px"><b>Por mes de primera compra</b></p>
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="font-size:11px;color:#6E8A7A;padding-bottom:4px">Mes</td>
+        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">Clientes</td>
+        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">2do pedido</td>
+        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">Pedidos/cliente</td>
+      </tr>
+      ${filasCohorte}
+    </table>` : ""}
+    <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Detalle completo → sndwch.app → PUNTOS → PANEL ADMIN → RETENCIÓN</p>
+  `, { maxWidth: 560, wordmarkSize: 22 });
+  return sendResend([CONTACT_EMAIL], `SND//WCH — Retención del mes: ${digest.headline}`, html);
+}

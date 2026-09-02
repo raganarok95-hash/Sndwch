@@ -42,7 +42,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminPurchases, actAdminPurchaseAdd, actAdminCulqiReport, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminPurchases, actAdminPurchaseAdd, actAdminCulqiReport, actAdminTechHealth, actAdminCompliance, actAlertAdminAccess, actSendRetentionReport, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -158,6 +158,10 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-purchases": actAdminPurchases,
   "admin-purchase-add": actAdminPurchaseAdd,
   "admin-culqi-report": actAdminCulqiReport,
+  "admin-tech-health": actAdminTechHealth,
+  "alert-admin-access": actAlertAdminAccess,
+  "send-retention-report": actSendRetentionReport,
+  "admin-compliance": actAdminCompliance,
   "admin-recipes": actAdminRecipes,
   "admin-recipe-set": actAdminRecipeSet,
   "admin-catalog-set-price": actAdminCatalogSetPrice,
@@ -254,9 +258,11 @@ Deno.serve(async (req: Request) => {
   // (ej. register) puedan aplicar rate limiting por IP — ver actRegister.
   body._ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
 
+  const startedAt = Date.now();
   try {
     const result = await handler(body);
     await recordCronHeartbeat(body, action, true);
+    recordSlowRequest(action, Date.now() - startedAt);
     return json(result);
   } catch (e) {
     // El latido se anota también cuando falla: un cron que llega y revienta todas las
@@ -269,6 +275,26 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Error interno del servidor." }, 500);
   }
 });
+
+// #98 — Registro de latencia de la edge function.
+//
+// Si `api` empieza a responder lento, se nota en la CONVERSIÓN antes que en cualquier otro
+// sitio: el cliente abandona el checkout y no queda ningún error que mirar. Es el modo de
+// fallo más caro que no produce un error.
+//
+// Solo se anotan las peticiones LENTAS, no todas. Escribir una fila por request duplicaría
+// el tráfico a la base y llenaría `debug_logs` (que además ya tiene su propia alerta de
+// crecimiento, #97) para medir sobre todo peticiones sanas que no dicen nada. El p95 se
+// calcula sobre esa cola, que es exactamente la parte que importa.
+//
+// Sin await y en try: medir nunca puede costarle latencia a la petición que está midiendo.
+const SLOW_REQUEST_MS = 1200;
+function recordSlowRequest(action: string, ms: number) {
+  if (!Number.isFinite(ms) || ms < SLOW_REQUEST_MS) return;
+  try {
+    debugLog({ stage: "request-timing", action, ms }).catch(() => {});
+  } catch (_e) { /* nunca vale más que la respuesta */ }
+}
 
 // C1 — Latido del dead-man switch de crons. pg_cron ya guarda si DISPARÓ cada job, pero
 // net.http_post() vuelve al instante: "succeeded" ahí significa "se encoló la petición",

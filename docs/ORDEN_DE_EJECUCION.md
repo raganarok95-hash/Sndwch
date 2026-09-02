@@ -229,7 +229,7 @@ costo se ancla al **precio de carta** de lo que se armó (`priceCartItem` sobre 
 pedido) y el descuento sale entero del margen, que es lo que pasa de verdad. Hay una prueba
 que compara los dos cálculos y falla si alguien "simplifica" quitando el precio de carta.
 
-## Lote E6 — Higiene técnica y cumplimiento
+## Lote E6 — Higiene técnica y cumplimiento ✅ HECHO (2026-09-02)
 
 | Orden | # | Qué |
 |---|---|---|
@@ -242,6 +242,60 @@ que compara los dos cálculos y falla si alguien "simplifica" quitando el precio
 | 48 | 77 | Detección de queja repetida |
 | 49 | 78 | Tiempo real de entrega vs. prometido |
 | 50 | 94 | Envío automático del reporte de cohortes |
+
+**Las nueve comparten un solo modo de fallo: silencio.** Ninguna avisa de algo que produzca
+un error. La base topando los 500 MB no degrada con aviso, pasa a solo lectura y el negocio
+deja de tomar pedidos. Una petición de 8 segundos no lanza excepción: el cliente abandona el
+checkout y no queda nada que mirar. Un shell viejo pegado responde 200 y sirve la versión
+anterior. Por eso este lote no es "mantenimiento": es la única forma de que estas cosas
+tengan un momento de aparecer.
+
+Quedaron en **dos pantallas** y no en nueve: *Salud técnica* (lo que puede tumbar el
+servicio) y *Cumplimiento* (lo que se le prometió al cliente y a Indecopi). Se miran en
+momentos distintos y con otra cabeza; mezclarlas habría hecho que ninguna se abra.
+
+Decisiones que no hay que deshacer:
+
+- **El p95 y el p90, nunca el promedio.** Con nueve entregas de 30 minutos y una de tres
+  horas, el promedio dice 45 y suena bien — y el cliente de las tres horas no vuelve. Lo
+  mismo con la latencia: una petición de 8 segundos entre 99 rápidas no mueve el promedio y
+  es exactamente la que hace abandonar un carrito.
+- **Sin `delivered_at` no hay porcentaje de cumplimiento.** Rellenar los pedidos sin hora
+  con la hora actual o con el promedio daría un "100% a tiempo" calculado sobre cero
+  entregas medidas. Un número inventado que se ve bien es peor que la ausencia de número, y
+  hay pruebas de los dos lados (servidor y pantalla) que lo fijan.
+- **#89 no se ancla en la IP, aunque el ítem lo decía.** Rotar de IP es trivial; lo que el
+  atacante no puede rotar es a QUIÉN ataca. Así que se registra el intento fallido cuando el
+  teléfono es de una cuenta admin — dato que `actLogin` ya tenía en la mano, sin consulta
+  extra. La IP entra solo como **huella hasheada** para distinguir "muchos intentos desde una
+  conexión" de "pocos desde muchas": guardar la dirección real convertiría un registro
+  técnico en uno de datos personales sin ganar nada.
+- **Y no se anota en `login_attempts`, que es donde parecía natural.** Esa tabla se BORRA al
+  primer login correcto, así que el caso que más importa —probaron veinte veces y a la
+  veintiuna entraron— no dejaba huella. El rastro va a `debug_logs`, que no se borra.
+- **La alerta de acceso exige un mínimo, igual que la de rechazos de tarjeta.** El bloqueo
+  corta a los 5 intentos: una alarma a los 5 sonaría cada vez que el dueño se equivoca de
+  PIN, y una alarma así se deja de mirar antes del día que importa. Son 10 en una hora (dos
+  bloqueos enteros a propósito) o 3 conexiones distintas — tres y no dos, porque salir de
+  casa con el celular ya cambia de wifi a datos y produce dos huellas.
+- **#88 se escribe en el login y no en cada petición admin.** El dato se mira una vez al mes;
+  un write por request sería un costo permanente por nada. Y una cuenta que **nunca** entró
+  es la señal más FUERTE, no la más débil: es la que nadie recuerda haber creado.
+- **#90 compara contenido, no el código de estado.** El fallo real del 2026-08-21 (shell
+  viejo pegado a la vez en la app instalada, el celular y la PC) respondía 200 en todo. Se
+  comparan dos sellos que ya existían: el `APP_BUILD` de index.html (hash del JS compilado) y
+  la `VERSION` de sw.js — son dos fallos distintos, y un index nuevo servido por un service
+  worker viejo es exactamente el caso que ocurrió. El script **reintenta con espera** hasta 5
+  minutos porque Vercel publica de forma asíncrona: preguntar una sola vez mediría la carrera
+  y no el resultado, y un chequeo que falla en falso se apaga a la semana.
+  `npm run check:shell` (dentro de `verify`) le sirve 6 formas de estar desactualizado y
+  exige que señale cada una — desde este entorno el proxy bloquea `sndwch.app`, así que es la
+  única forma de probarlo sin desplegar.
+- **#94 va mensual y con la salvaguarda de fiabilidad ARRIBA de las cifras.** Una cohorte se
+  mueve en meses: un correo semanal con el mismo número movido dos décimas se deja de abrir,
+  y con él se pierde el mes en que sí cambió. Y con 12 clientes "el 33% volvió" son 4
+  personas —mover una cambia el número 8 puntos—, así que la advertencia va antes de que se
+  hayan creído los números, no al pie.
 
 ## Lote E7 — Necesitan historial real (después de abrir)
 
@@ -286,9 +340,18 @@ Casi todos cuelgan de una sola cosa: **los secrets de Meta**.
 
 ---
 
-## Nota sobre el tamaño de esto
+## Dónde estamos (2026-09-02)
 
-Son 50 automatizaciones en los lotes E1-E6 que se pueden construir ya, más 31 que esperan
-datos y 11 que te esperan a ti. **No entra en una sesión.** Se va por lotes, cada uno con
-sus pruebas y su `npm run verify` en verde antes de pasar al siguiente, y cada lote se
-mergea a `main` para que se despliegue solo.
+**Los lotes E1 a E6 están terminados: las 50 automatizaciones que se podían construir sin
+ventas reales ya están en producción**, cada una con sus pruebas y su `npm run verify` en
+verde, y cada lote mergeado a `main` para que se despliegue solo.
+
+Lo que queda no es trabajo pendiente de escribir, es trabajo que **todavía no se puede
+hacer bien**:
+
+- **E7 (31 ítems)** necesita historial real. Construirlos hoy produciría números con aspecto
+  de dato sobre 10 pedidos de prueba, y el aspecto de dato es lo que hace que se les crea.
+  Recomendación sin cambios: **empezar la semana del 28 de septiembre**, con ~3 semanas de
+  ventas encima.
+- **E8 (11 ítems)** depende de ti, casi todo colgando de los secrets de Meta. Ver
+  `docs/PENDIENTE_DEL_DUENO.md`.

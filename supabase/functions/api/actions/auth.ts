@@ -9,6 +9,7 @@ import {
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
 } from "../session.ts";
 import { sendRecoveryEmail, maskEmail } from "../email.ts";
+import { debugLog } from "../logging.ts";
 import { pointsFor, rewardReferrer } from "./orders.ts";
 
 // Verifica un id_token de Google Identity Services contra el propio endpoint de Google
@@ -247,6 +248,42 @@ export async function actRegister(b: any) {
   return { customer, isAdmin: false, token };
 }
 
+// #89 — Rastro durable de los intentos fallidos contra una cuenta ADMIN.
+//
+// El bloqueo por intentos fallidos (login_attempts) ya existía y ya frena el ataque; lo que
+// faltaba es que alguien SE ENTERE. Y esa tabla no sirve para enterarse: `reset_login_attempts`
+// BORRA la fila al primer login correcto, así que el caso que más importa —alguien probó
+// veinte veces y a la veintiuna entró— no deja ni una huella. Por eso el rastro va a
+// `debug_logs`, que no se borra, y de ahí lo lee `alert-admin-access`.
+//
+// Solo se anota cuando el teléfono ES de una cuenta admin. Un fallo contra una cuenta de
+// cliente cualquiera es ruido de gente que olvidó su PIN; contra la única cuenta que puede
+// cancelar pedidos, cambiar precios y ver los datos de todos los clientes, no lo es.
+// `fetchIsAdmin` ya se pidió en paralelo más arriba, así que saberlo no cuesta una consulta.
+//
+// LA IP SE GUARDA HASHEADA, nunca en claro. Lo único que hace falta responder es "¿son
+// muchos intentos desde la misma fuente o desde muchas?", y para eso alcanza con que
+// fuentes distintas den huellas distintas. Guardar la dirección real convertiría un registro
+// técnico en un registro de datos personales sin ganar nada.
+async function ipFingerprint(ip: string): Promise<string> {
+  try {
+    const bytes = new TextEncoder().encode(`sndwch-admin-access:${ip}`);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)].slice(0, 6).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return "desconocida";
+  }
+}
+
+async function recordAdminLoginFailure(phone: string, ip: string, reason: string) {
+  // Sin await sobre la respuesta del login: registrar el intento nunca puede retrasar (ni
+  // hacer fallar) la respuesta 401 que el atacante ya va a recibir igual.
+  try {
+    const src = await ipFingerprint(ip);
+    debugLog({ stage: "admin-login-failed", phone, src, reason }).catch(() => {});
+  } catch (_e) { /* el registro nunca vale más que la respuesta */ }
+}
+
 export async function actLogin(b: any) {
   const phone = String(b.phone || "").trim();
   const pin = String(b.pin || "").trim();
@@ -266,15 +303,23 @@ export async function actLogin(b: any) {
   ]);
   if (!rows.length) {
     await registerLoginFailure(phone);
+    if (isAdminEarly) await recordAdminLoginFailure(phone, String(b._ip || "unknown"), "sin-cuenta");
     throw new ApiError("Teléfono o PIN incorrecto.", 401);
   }
   const row = rows[0];
   const ok = await rpc("verify_pin", { p_phone: phone, plain: pin });
   if (!ok) {
     await registerLoginFailure(phone);
+    if (isAdminEarly) await recordAdminLoginFailure(phone, String(b._ip || "unknown"), "pin-incorrecto");
     throw new ApiError("Teléfono o PIN incorrecto.", 401);
   }
   await resetLoginAttempts(phone);
+  // #88 — La fecha del último acceso se escribe ACÁ y no en cada petición admin: el dato se
+  // mira una vez al mes (auditoría de cuentas inactivas) y un write por request sería un
+  // costo permanente por nada. Best-effort: que falle no puede impedir entrar.
+  if (isAdminEarly) {
+    sbUpdate("admin_accounts", `phone=eq.${encodeURIComponent(phone)}`, { last_login_at: new Date().toISOString() }).catch(() => {});
+  }
   const token = await signToken({ phone, isAdmin: isAdminEarly, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
   return { customer: safeCustomer(row), isAdmin: isAdminEarly, token };
 }

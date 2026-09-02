@@ -1,0 +1,138 @@
+
+================================================================================================
+                  MODELO v9 — CON VARIANZA, CON RETENCIÓN REAL Y CON REFERIDOS                  
+================================================================================================
+
+  PRESUPUESTO [DECISIÓN del dueño]: S/2,000/mes fijos desde el inicio, de su bolsillo, MÁS una
+  fracción de lo que el negocio genere, reinvertida encima. Y aparte, el escenario sin
+  límite de dinero (sección 4).
+
+  CADA ESCENARIO SON MILES DE CORRIDAS, no un número. Se sortean en cada una:
+     · el CPM de Meta ................ S/5 a S/12          [FUENTE]
+     · la tasa de 2º pedido .......... 22.6% a 40%          [FUENTE, rango de industria]
+     · los días entre pedidos ........ 28 a 43            [FUENTE]
+     · un ruido mensual de demanda ... sigma 0.18         [MÉTODO, elección declarada]
+  Y se aplica un arranque en frío: CAC x1.6 el primer mes, normalizando al mes 4.
+
+
+================================================================================================
+                        1 — LA ARITMÉTICA QUE MANDA SOBRE TODO LO DEMÁS                         
+================================================================================================
+
+  Antes de cualquier tabla, el número que explica el resto:
+
+     Un cliente recién comprado entrega UN pedido en el mes en que lo compras.
+     Ese pedido deja ................................. S/16.42
+     Comprarlo cuesta (CAC medio, cuenta madura) ..... S/17.87
+     Comprarlo cuesta en el arranque en frío ......... S/28.59
+     El resto de sus pedidos llegan en los MESES SIGUIENTES.
+
+  ►► DE AHÍ SALE TODO. La publicidad casi no se paga sola dentro del mes en que se gasta:
+     se paga con los pedidos que ese cliente hace DESPUÉS. Por eso reinvertir solo lo
+     generado no arranca ningún motor, y por eso la retención no es "una palanca más" —
+     es lo único que convierte publicidad en negocio.
+
+
+================================================================================================
+                    2 — EL PLAN REAL: S/2,000/MES FIJOS + REINVERSIÓN ENCIMA                    
+================================================================================================
+
+  Retención sorteada en todo el rango de industria, viralidad 0.3 [SIN MEDIR, escenario]:
+
+   reinversión   ads mes 6  ped/día m6  pers          neto mes 6 (P10/P50/P90)  P(≥10k m6)  P(llega 12m)
+  --------------------------------------------------------------------------------------------------------
+           0%       2,000        10.1     1           -50/    1,220/    3,319          0%            0%
+          30%       3,304        15.5     1           -48/    1,876/    6,593          2%            8%
+          60%       6,047        26.2     1           -75/    3,032/   12,596         15%           36%
+          90%      11,700        48.1     2          -313/    4,159/   25,470         30%           54%
+
+================================================================================================
+                         3 — LAS DOS PALANCAS QUE EL v8 TENÍA APAGADAS                          
+================================================================================================
+
+  Con S/2,000/mes fijos y reinversión al 60%:
+
+     retención 2º pedido   viral  ped/cliente   neto m6 P50   neto m12 P50  P(≥10k m6)  P(llega 12m)
+  --------------------------------------------------------------------------------------------------
+            22.6% (piso)     0.0         2.34           476          2,139          1%           10%
+            22.6% (piso)     0.3         2.34         1,960          5,481          9%           26%
+            22.6% (piso)     0.6         2.34         3,486         11,067         18%           39%
+           31.8% (medio)     0.0         2.88         1,068          4,369          3%           18%
+           31.8% (medio)     0.3         2.88         3,265         10,727         16%           38%
+           31.8% (medio)     0.6         2.88         4,927         20,008         27%           52%
+              40% (tope)     0.0         3.37         1,884          6,781          7%           27%
+              40% (tope)     0.3         3.37         4,190         16,123         21%           48%
+              40% (tope)     0.6         3.37         6,751         35,981         37%           69%
+
+================================================================================================
+                 4 — SIN LÍMITE DE DINERO PARA MARKETING: ¿CUÁNTO HARÍA FALTA?                  
+================================================================================================
+
+  Acá el presupuesto deja de ser una restricción y se convierte en la incógnita: ¿cuánta
+  publicidad mensual pone la MEDIANA del mes 6 en S/10,000? Se busca por bisección sobre
+  miles de corridas, con reinversión del 60% encima de esa base.
+
+       retención   viral   ads/mes necesarios   ped/día m6  personas  clientes nuevos/mes
+  ----------------------------------------------------------------------------------------
+      22.6% piso     0.0              S/34479        249.9         7                4,435
+      22.6% piso     0.3              S/10724        120.4         4                2,175
+     31.8% medio     0.0              S/15332        133.0         4                2,146
+     31.8% medio     0.3               S/6641         93.2         3                1,534
+        40% tope     0.0              S/10153        106.8         3                1,549
+        40% tope     0.3               S/5019         82.6         3                1,283
+
+  ►► SIN LÍMITE DE DINERO EL OBJETIVO SÍ SE ALCANZA EN EL MES 6 — pero mira las dos últimas
+     columnas antes de celebrarlo. Esa es la cantidad de personas DISTINTAS que hay que
+     conseguir en Trujillo cada mes, y de gente que hay que contratar. El modelo compra
+     clientes sin que suba el precio y sin que se acabe el mercado: ninguna de las dos cosas
+     es cierta en la vida real, así que estos números son un PISO de dificultad, no un plan.
+
+================================================================================================
+                          5 — ¿QUÉ DECIDE MÁS? (una variable a la vez)                          
+================================================================================================
+
+  Caso medio: S/2,000/mes + 60% de reinversión, viral 0.3, retención 31.8%
+  Neto mes 6 P50 = S/2,937   ·   Neto mes 12 P50 = S/9,590
+
+                                          cambio   neto m6 P50   efecto m6   neto m12 P50   efecto m12
+  ----------------------------------------------------------------------------------------------------
+                       retención al piso (22.6%)         1,921      -1,016          5,492       -4,098
+                         retención al tope (40%)         4,234      +1,298         15,912       +6,322
+                               sin viralidad (0)         1,318      -1,619          4,739       -4,851
+                            viralidad alta (0.6)         5,005      +2,068         19,992      +10,402
+       publicidad fija S/5,000 en vez de S/2,000         7,111      +4,175         25,129      +15,539
+      publicidad fija S/10,000 en vez de S/2,000        14,123     +11,187         47,712      +38,122
+                sin reinversión (solo los fijos)         1,238      -1,699          1,865       -7,725
+                                 reinversión 90%         3,947      +1,010         31,081      +21,491
+     sin arranque en frío (lo que suponía el v8)         4,365      +1,429         12,106       +2,516
+
+  ►► EL ORDEN CAMBIA SEGÚN EL HORIZONTE, y eso es lo importante de este cuadro: en el mes 6
+     manda lo que empuja al principio (cuánta publicidad se pone). A 12 meses la retención
+     y la viralidad se pagan solas y pasan al frente. Un plan optimizado solo para el mes 6
+     compra crecimiento caro; uno que además mueve la retención lo compra una vez.
+
+  ►► Y EL EXTREMO ALTO DE TODAS ESTAS DISTRIBUCIONES NO ES CREÍBLE. Este modelo no tiene
+     tamaño de mercado ni encarecimiento del CAC al escalar, así que en las corridas
+     afortunadas compra clientes sin límite y sin que suba el precio. La mediana y el P10
+     son los números que sirven; el P90 es un artefacto de lo que al modelo le falta.
+
+================================================================================================
+                                            RESUMEN                                             
+================================================================================================
+
+  1. CON EL PLAN REAL (S/2,000/mes + 60% de reinversión, retención sorteada en todo el rango,
+     viralidad 0.3): el mes 6 queda en S/2,954 de mediana, con un 15% de
+     probabilidad de llegar a S/10,000 y un 35% de llegar en algún momento de los 12
+     meses. El rango del mes 6 va de S/-110 (P10) a S/12,692 (P90).
+
+  2. LA PUBLICIDAD NO SE PAGA DENTRO DEL MES. Un cliente comprado deja S/16.42 en su primer
+     pedido y cuesta S/17.87-28.59. El negocio se hace con el que VUELVE, no con el que
+     compras. Por eso la retención es el motor y no un adorno.
+
+  3. SIN LÍMITE DE DINERO EL MES 6 SE ALCANZA, pero exige una cantidad de clientes nuevos
+     por mes que ningún modelo puede validar. Ese número hay que contrastarlo con Trujillo.
+
+  4. LO QUE ESTE MODELO SIGUE SIN SABER, y no se despeja discutiendo: el CAC real de
+     Trujillo, cuánto sube al escalar, cuánta viralidad hay, y si el mercado alcanza. Las
+     cuatro se miden en las primeras semanas de venta.
+

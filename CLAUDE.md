@@ -233,6 +233,82 @@ etiquetas la leen de ahí. Dos números para la misma cosa terminan en que uno g
 silencio. **Y los tiempos de las etapas NO se escalan con las porciones**: duplicar la tanda
 no duplica el braseado, y escalarlos haría planificar la jornada contra un número falso.
 
+## Lo que no produce ningún error es lo que hay que vigilar (lote E6, 2026-09-02)
+
+Nueve automatizaciones que comparten un solo modo de fallo: **silencio**. Ninguna avisa de
+algo que lance una excepción, así que ni el typecheck ni un catch las ven.
+
+- **La base tiene 500 MB y el plan `free` no degrada con aviso**: al topar pasa a solo
+  lectura y el negocio deja de tomar pedidos. `dbGrowth()` avisa al 70% (`db_size_bytes()` y
+  `table_sizes()`, las dos `security definer` **con su `revoke`** — es el séptimo caso del
+  mismo defecto en este repo).
+- **La latencia se mide con p95, nunca con el promedio**, y solo se anotan las peticiones
+  LENTAS (`recordSlowRequest` en `index.ts`, ≥1200 ms, `stage: "request-timing"` en
+  `debug_logs`). Escribir una fila por request duplicaría el tráfico a la base para medir
+  sobre todo peticiones sanas. Una petición de 8 s entre 99 rápidas no mueve el promedio y es
+  justo la que hace abandonar un carrito.
+- **#78 se mide con p90 por lo mismo**: nueve entregas de 30 min y una de tres horas dan un
+  promedio de 45 que suena bien. Y **sin `delivered_at` no hay porcentaje**: rellenar los
+  pedidos sin hora daría un "100% a tiempo" sobre cero entregas medidas.
+- **#77 agrupa por TELÉFONO, no por nombre.** Dos "Juan Pérez" distintos saldrían como un
+  reincidente y mandarían a buscar un problema de proceso que no existe.
+
+### #89 — la alerta de acceso admin NO se ancla en la IP, aunque el ítem lo pedía
+
+Rotar de IP es trivial; lo que un atacante no puede rotar es **a quién ataca**. Se registra el
+intento fallido cuando el teléfono es de una cuenta admin — dato que `actLogin` ya tenía en la
+mano (`fetchIsAdmin` se pide en paralelo), así que no cuesta una consulta. La IP entra solo
+como **huella hasheada**, para separar "muchos intentos desde una conexión" de "pocos desde
+muchas"; guardar la dirección real convertiría un registro técnico en uno de datos personales
+sin ganar nada.
+
+**Y el rastro va a `debug_logs`, no a `login_attempts`.** Esa tabla se BORRA al primer login
+correcto (`reset_login_attempts`), así que el caso que más importa —probaron veinte veces y a
+la veintiuna entraron— no dejaba ni una huella.
+
+**Exige un mínimo**, igual que la alerta de rechazos de tarjeta: el bloqueo ya corta a los 5
+intentos, así que avisar a los 5 sonaría cada vez que el dueño se equivoca de PIN. Son 10 en
+una hora (dos bloqueos enteros a propósito) **o** 3 conexiones distintas — tres y no dos,
+porque salir de casa con el celular ya cambia de wifi a datos y produce dos huellas.
+
+`admin_accounts.last_login_at` (#88) se escribe **en el login y no en cada petición admin**:
+el dato se mira una vez al mes y un write por request sería un costo permanente por nada. Un
+`last_login_at` nulo es la señal **más fuerte**, no la más débil — es la cuenta que nadie
+recuerda haber creado.
+
+### #90 — verificar el shell desplegado compara CONTENIDO, no el código de estado
+
+El fallo real del 2026-08-21 (shell viejo pegado a la vez en la app instalada, el celular y la
+PC) respondía 200 en todo. `scripts/shell-live.mjs` compara dos sellos que ya existían contra
+lo que hay en el repo: el `APP_BUILD` de `index.html` (hash del JS compilado, lo pone
+`build.mjs`) y la `VERSION` de `sw.js`. **Son dos fallos distintos** — un index nuevo servido
+por un service worker viejo es exactamente lo que ocurrió.
+
+**Reintenta con espera creciente hasta 5 minutos** porque Vercel publica de forma asíncrona
+tras el push: preguntar una sola vez mediría la carrera y no el resultado, y un chequeo que
+falla en falso se apaga a la semana. Corre en `.github/workflows/verify-shell.yml` (push a
+`main` que toque `index.html`/`sw.js`) — sin `npm ci`, no usa ninguna dependencia.
+
+**`sndwch.app` está bloqueado por el proxy de este sandbox** (403 en el CONNECT, igual que el
+host de Supabase), así que desde una sesión no se puede correr contra producción: para probar
+cambios al script está `npm run check:shell`, que le sirve 6 formas de estar desactualizado y
+exige que señale cada una. Va DESPUÉS de `build` en `verify`, porque compara contra el
+`index.html` recién construido.
+
+### #94 — el reporte de cohortes se manda solo, mensual, y avisa cuando no hay que creerle
+
+`retention_report` existía desde hace tiempo y es el mejor dato del panel; el problema nunca
+fue el cálculo sino que **hay que acordarse de abrir la pantalla**. Ahora `send-retention-report`
+(cron, día 1 de cada mes) manda el correo con el detalle y un push con solo el titular.
+
+**Mensual y no semanal**: una cohorte se mueve en meses, y un correo semanal con el mismo
+número movido dos décimas se deja de abrir — y con él se pierde el mes en que sí cambió.
+
+**La salvaguarda de fiabilidad va ARRIBA de las cifras, no al pie** (`retentionDigest`, mínimo
+30 clientes): con 12 clientes "el 33% volvió" son 4 personas, y mover una cambia el número 8
+puntos. Al pie se lee después de haberles creído. Mismo criterio que el plan de tanda. Y donde
+no hay dato va un guion, nunca un 0: un 0 se lee como "medimos y dio cero".
+
 ## Checklist antes de dar por terminado un cambio en el cliente
 
 1. `npm run typecheck` — cero errores (solo cubre `src/**`).
@@ -268,7 +344,12 @@ no duplica el braseado, y escalarlos haría planificar la jornada contra un núm
    (`scripts/smoke-prod.mjs`, que corre tras cada deploy) de verdad SE DA CUENTA cuando
    producción está rota: se le sirven 12 formas de romperse y tiene que señalar cada una.
    Un chequeo de salud que siempre pasa es peor que no tener ninguno.
-6. `npm test` (o `npm run verify`, que ahora encadena nueve) — deben pasar TODOS (revisa el
+5d. `npm run check:shell` — comprueba que la verificación del shell desplegado
+   (`scripts/shell-live.mjs`, la que corre en `verify-shell.yml` tras cada push que toca el
+   cliente) de verdad SE DA CUENTA cuando producción sirve una versión vieja: se le sirven 6
+   formas de estar desactualizada y tiene que señalar cada una. Va DESPUÉS de `build` porque
+   compara contra el `index.html` recién construido.
+6. `npm test` (o `npm run verify`, que ahora encadena diez) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
@@ -560,7 +641,11 @@ Signature o build.
   caídos y picos de error; el VEREDICTO de cada señal lo calcula el servidor, la pantalla
   solo lo pinta), **Plan de tanda** (`admin-batch-plan`: cuánto cocinar de cada insumo para
   cubrir N días, con `reliable:false` mientras no haya ~14 días y 20 pedidos de historial —
-  la pantalla muestra el motivo ANTES que las cantidades), y desde 2026-08-10 **Menú secreto**
+  la pantalla muestra el motivo ANTES que las cantidades), **Salud técnica**
+  (`admin-tech-health`: espacio en la base contra el tope de 500 MB, p95 de latencia, cuentas
+  admin abandonadas) y **Cumplimiento** (`admin-compliance`: entrega real contra la prometida,
+  quién reclamó más de una vez, y el consolidado del Libro de Reclamaciones descargable),
+  y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
   sesión de código, ver detalle técnico abajo).
@@ -653,7 +738,10 @@ un error, es SILENCIO —la alerta que no sale— así que no alcanza con el typ
 contenido de marketing semanal (**que desde #50 no solo avisa: deja los borradores
 escritos** en `marketing_calendar` para las próximas 4 semanas, saltándose toda fecha que ya
 tenga entrada — el dueño edita en vez de escribir desde cero, y tocar el botón dos veces no
-duplica nada), y **salud del sistema** (`alert-system-health`, horario:
+duplica nada), **intentos de acceso a tu panel** (`alert-admin-access`, horario en :53 — ver la sección de
+E6: el bloqueo por intentos ya existía, lo que faltaba era que alguien SE ENTERE), **reporte de
+cohortes al correo** (`send-retention-report`, día 1 de cada mes),
+y **salud del sistema** (`alert-system-health`, horario:
 crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
 `sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
 disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
@@ -679,7 +767,10 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 ## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
 
 - **El negocio aún NO ha abierto** — fecha de apertura confirmada por el dueño 2026-08-01:
-  **lunes 7 de septiembre de 2026**. Todo lo que hay hoy en `orders`/`customers` en
+  **a más tardar la segunda semana de octubre de 2026** (movida desde el 7 de septiembre por
+  trámites de permisos, confirmado por el dueño 2026-09-02 — los modelos de `modelo/` que
+  arrancan en `date(2026, 9, 7)` quedan desfasados y hay que re-correrlos con la fecha nueva:
+  el "mes 3" y el "mes 6" se mueven con ella). Todo lo que hay hoy en `orders`/`customers` en
   Supabase es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales.
   Cualquier proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
   referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
@@ -798,18 +889,42 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   pedido se puede entregar: los que están fuera de cobertura salen listados pero
   deshabilitados ("todavía no llegamos aquí"), y el distrito elegido se ADJUNTA al texto de
   la dirección que va al servidor (no hay columna propia; el motorizado igual lo necesita
-  impreso). La **zona** (`DELIVERY_PRICE_ZONES`) solo fija cuánto cobra el motorizado y
-  tiene default. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
+  impreso). La **zona de precio ya no existe desde el 2026-09-02** — el envío se cobra por
+  distancia real (ver abajo); `DELIVERY_PRICE_ZONES`/`DELIVERY_ZONE_FEES` sobreviven SOLO
+  como respaldo del servidor para un cliente sin coordenadas. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
   texto libre de la dirección: quien no lo escribía pasaba sin querer y quien sí lo escribía
   se enteraba recién al tocar PAGAR. Ese substring (`DELIVERY_EXCLUDED_ZONES`, duplicado en
   `src/app.ts` y `env.ts`) sigue siendo **la única defensa real** — `assertAddressAllowed`
   en el servidor no ve el selector — así que recortar cobertura exige tocar los DOS lados,
   no solo marcar `out:true` en la lista de distritos.
-- **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
-  fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
-  lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en
-  `src/app.ts`, deben coincidir) y ese monto se cobra dentro del mismo pago del pedido;
-  el dueño le paga al motorizado con ese dinero. El negocio no gana ni subsidia el
+- **El delivery se cobra por DISTANCIA REAL desde el 2026-09-02, no por zona.** El reparto
+  lo hace un tercero con 50+ motorizados, coordinado por un grupo de WhatsApp, que cobra
+  **S/2 por kilómetro** (dato del dueño). Hasta esa fecha la app cobraba un monto plano por
+  ZONA **que elegía el propio cliente** en un desplegable, con `media` (S/8) por defecto: el
+  cliente elegía su propio precio de envío y elegir el más barato no le costaba nada. El pin
+  del mapa existía pero **solo AVISABA** del desajuste, y su texto llegaba a decir "puede que
+  el motorizado te pida la diferencia al llegar" — una promesa sobre lo que haría un tercero.
+  El dueño creía que la app ya cobraba por distancia; no lo hacía.
+  Ahora: `km cobrables = haversine(pin, local) × DELIVERY_ROAD_FACTOR` y
+  `tarifa = techo(max(DELIVERY_MIN_FEE, km × DELIVERY_KM_RATE) al medio sol)`. Las cuatro
+  constantes más `STORE_LAT`/`STORE_LON` están duplicadas cliente/servidor y las compara
+  `npm run parity` — si se desajustan, el cliente muestra un monto y el servidor cobra otro,
+  y la diferencia sale del bolsillo del dueño al pagarle al motorizado.
+  Detalles que no hay que romper: **el redondeo va hacia ARRIBA** (el error nunca puede caer
+  del lado de quedarse corto, porque el delivery no tiene margen del que salga la
+  diferencia); **`billableKm` devuelve `null` y nunca 0** cuando no puede medir (un 0 le
+  cobraría el mínimo a alguien a 10 km); **el pin se pide una sola vez por dirección**
+  (`saved_addresses.lat/lon` ya existían y `pickAddr` las restaura — si la dirección guardada
+  no las tiene, se LIMPIAN, porque cobrar la distancia de la dirección anterior es el peor
+  error posible acá); y **el servidor cae al cobro por zona si no recibe coordenadas**, a
+  propósito, para que un shell viejo servido por un service worker desactualizado pueda pagar
+  igual en vez de encontrarse el checkout roto.
+  **`DELIVERY_MIN_FEE = 5`** es el mínimo real que el grupo de motorizados le cobra al dueño
+  por un viaje corto (confirmado 2026-09-02): por debajo de 2.5 km la tarifa la fija ese piso
+  y no los kilómetros. `orders.delivery_km` guarda los km cobrados para poder comparar contra lo que
+  el motorizado cobró ese día.
+  El monto se cobra dentro del mismo pago del pedido; el dueño le paga al motorizado con ese
+  dinero. El negocio no gana ni subsidia el
   reparto. En pagos con tarjeta el fee se "engorda" por `CULQI_FEE_RATE` para que la
   comisión de Culqi no se coma el pass-through. **Error real cometido 2026-08-15**: el
   modelo financiero v5 metió al motorizado como costo fijo de S/1,100/mes y al reparto

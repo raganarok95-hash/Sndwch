@@ -176,6 +176,34 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
   lejos: 12,
   muy_lejos: 15,
 };
+// ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
+//
+// POR QUÉ CAMBIÓ. El motorizado —un tercero con 50+ repartidores, coordinado por WhatsApp—
+// cobra S/2 POR KILÓMETRO. La app cobraba un monto plano por ZONA que elegía el cliente en
+// un desplegable, con "media" por defecto. O sea: el cliente elegía su propio precio de
+// envío, y elegir el más barato no le costaba nada. El pin del mapa existía pero solo
+// AVISABA del desajuste; el cobro seguía saliendo de la zona elegida.
+//
+// El dueño creía que la app ya cobraba por distancia. No lo hacía. Ahora sí.
+export const DELIVERY_KM_RATE = 2;      // [MEDIDO] dueño 2026-09-02: S/2 por km del tercero
+// La distancia que se puede calcular sin depender de nadie es la de LÍNEA RECTA entre el
+// punto de despacho y el pin del cliente. La ruta real en moto siempre es más larga (calles,
+// sentidos, óvalos). 1.3 es el factor de corrección de ciudad acordado con el dueño
+// [DECISIÓN 2026-09-02] — se prefirió sobre una API de ruteo real porque esa tiene costo por
+// consulta y una cuenta que contratar, y porque un factor editable se calibra contra lo que
+// los motorizados cobran de verdad.
+export const DELIVERY_ROAD_FACTOR = 1.3;
+// Piso de la tarifa. A S/2/km, alguien a 800 m pagaría S/1.60 y ningún motorizado toma ese
+// viaje. [MEDIDO] dueño 2026-09-02: el mínimo que le cobra su grupo por un viaje corto es
+// S/5. Por debajo de 2.5 km, entonces, la tarifa la fija este piso y no los kilómetros.
+export const DELIVERY_MIN_FEE = 5;
+// Punto de despacho — mismas coordenadas que STORE_LAT/STORE_LON en el cliente, que ya se
+// usaban para el banner "estás cerca". `npm run parity` compara los dos lados.
+export const STORE_LAT = -8.139599;
+export const STORE_LON = -79.039458;
+// Techo de cobertura. Más allá de esto no se entrega: sin un tope, un pin mal puesto (o una
+// dirección en otra ciudad) generaría una tarifa absurda que el cliente vería en el checkout.
+export const DELIVERY_MAX_KM = 12;
 // El delivery es pass-through puro (arriba): el negocio no gana nada con él, solo lo
 // cobra para pagarle exacto al motorizado. Pero cuando se paga con TARJETA, Culqi
 // descuenta su comisión (~4-5.5%, confirmado por el dueño) del cargo COMPLETO, incluido

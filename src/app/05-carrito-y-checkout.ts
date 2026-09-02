@@ -163,6 +163,12 @@ function pickAddr(id){
   if(!a)return;
   syncConfirmFields();
   pickedAddrId=id;addrText=a.address;
+  // Se restauran las coordenadas guardadas con esa dirección: por eso el pin se pide UNA
+  // sola vez por dirección y no en cada pedido. Si la dirección es vieja y no las tiene, se
+  // limpian para que el checkout vuelva a pedir el pin en vez de cobrar la distancia de la
+  // dirección ANTERIOR, que es el peor error posible acá.
+  window._mLat=typeof a.lat==='number'?a.lat:null;
+  window._mLon=typeof a.lon==='number'?a.lon:null;
   // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
   // tiene que volver a elegir algo que ya escribió cuando la guardó.
   var inferred=districtFromAddress(a.address);
@@ -216,52 +222,12 @@ function comboDrinkNudgeHTML(){
 // checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
 // ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
 // no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
-// C4 — Distancia máxima (km) que cubre cada zona de PRECIO, derivada del único dato de
-// tarifa que el propio negocio publica al cliente: "~S/2 por km" (ver el texto bajo el
-// home). Con esa tarifa el fee de cada zona describe su alcance: S/6 → 3 km, S/8 → 4 km,
-// S/12 → 6 km, y de ahí para arriba MUY LEJOS. No es una geocerca ni una validación:
-// existe solo para AVISAR cuando la zona elegida y el pin del mapa no cuadran. Nunca
-// bloquea el pedido — un pin puede caer mal (GPS en interiores, mapa arrastrado a ojo) y
-// el cliente conoce su dirección mejor que el navegador. El cobro real lo sigue fijando
-// la zona que él eligió.
-var DELIVERY_ZONE_MAX_KM={cerca:3,media:4,lejos:6};
-function zoneForKm(km){
-  if(km<=DELIVERY_ZONE_MAX_KM.cerca)return'cerca';
-  if(km<=DELIVERY_ZONE_MAX_KM.media)return'media';
-  if(km<=DELIVERY_ZONE_MAX_KM.lejos)return'lejos';
-  return'muy_lejos';
-}
-// Distancia entre el pin que el cliente confirmó en el mapa y el punto de despacho.
-// Devuelve null si nunca tocó el mapa/GPS — sin pin no hay nada que comparar y no se
-// muestra ningún aviso (la mayoría de los pedidos escriben la dirección a mano).
-function pinDistanceKm(){
-  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
-  return haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
-}
-function applySuggestedZone(z){deliveryZone=z;confirmRerender();}
-// Aviso de zona vs. pin. Las dos direcciones del desajuste importan, por motivos
-// distintos: si el cliente eligió una zona más BARATA de lo que dice el pin, el dueño
-// pone la diferencia de su bolsillo (el delivery es pass-through, no tiene margen del
-// que salga); si eligió una más CARA, está pagando de más y avisarle es lo honesto.
-// Por eso los dos casos se avisan, con texto distinto.
-function deliveryZoneMismatchHTML(){
-  var km=pinDistanceKm();
-  if(km===null)return'';
-  var sug=zoneForKm(km);
-  if(sug===deliveryZone)return'';
-  var zSel=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var zSug=DELIVERY_PRICE_ZONES.find(function(x){return x.id===sug;});
-  if(!zSel||!zSug)return'';
-  var masCaro=zSug.fee>zSel.fee;
-  var txt=masCaro
-    ?'Tu pin está a ~'+km.toFixed(1)+' km, que corresponde a '+zSug.l.toUpperCase()+'. Si dejas '+zSel.l.toUpperCase()+', puede que el motorizado te pida la diferencia al llegar.'
-    :'Tu pin está a ~'+km.toFixed(1)+' km: te alcanza '+zSug.l.toUpperCase()+' ('+SOLES_TXT+zSug.fee+') y estás pagando '+SOLES_TXT+zSel.fee+'.';
-  var color=masCaro?'#ffb84d':GOLD;
-  return'<div style="margin-top:10px;background:rgba(203,162,88,.08);border:1px solid '+color+';border-radius:8px;padding:10px 12px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.45">'+esc(txt)+'</div>'
-    +'<button onclick="applySuggestedZone(\''+sug+'\')" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:8px;background:transparent;border:1px solid '+color+';color:'+color+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar a '+esc(zSug.l.toUpperCase())+' // '+SOLES_TXT+zSug.fee+'</button>'
-    +'</div>';
-}
+// El aviso de "tu zona no cuadra con tu pin" vivía acá y se retiró el 2026-09-02, junto con
+// zoneForKm/applySuggestedZone/DELIVERY_ZONE_MAX_KM. Existía porque el cobro salía de la zona
+// que el cliente elegía y el pin solo podía AVISAR del desajuste; su texto llegaba a decir
+// "puede que el motorizado te pida la diferencia al llegar", que era una promesa sobre lo que
+// haría un tercero. Ahora el envío se cobra por distancia real (ver deliveryFeeBase en
+// src/app/01-*) y no hay zona que pueda desajustarse: no hay nada que avisar.
 function districtPickerHTML(){
   var opts=DELIVERY_DISTRICTS.map(function(d){
     var sel=deliveryDistrict===d.id;
@@ -286,19 +252,33 @@ function pickDistrict(id){
     :'Por ahora no llegamos a '+DELIVERY_DISTRICTS.filter(function(d){return d.out;}).map(function(d){return d.l;}).join(' y ')+'.';
 }
 function deliveryZonePickerHTML(){
-  var h='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
-  h+=DELIVERY_PRICE_ZONES.map(function(z){
-    var sel=deliveryZone===z.id;
-    // La zona seleccionada muestra el fee REAL que se va a cobrar (inflado si el pedido
-    // va por Culqi, ver willPayWithCard()) — antes siempre mostraba el fee plano de
-    // catálogo aunque el total ya llevara el recargo de tarjeta sumado, dejando sin
-    // explicar por qué zona+comida no sumaban el total mostrado (residual del mismo
-    // hallazgo P2, auditoría UX).
-    var shownFee=sel?deliveryFeeAmount():z.fee;
-    return'<div onclick="deliveryZone=\''+z.id+'\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+z.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?GOLD:'#A8C8B0')+';margin-top:2px">'+SOLES_TXT+shownFee+'</div></div>';
-  }).join('');
-  h+='</div>'+deliveryZoneMismatchHTML()+'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
-  return h;
+  var km=deliveryKmNow();
+  // CON PIN: se muestra la tarifa real por distancia. Ya no hay nada que elegir — antes el
+  // cliente escogía su zona de un desplegable, o sea escogía cuánto pagar de envío.
+  if(km!==null){
+    var base=deliveryFeeBase();
+    var lejos=km>DELIVERY_MAX_KM;
+    return'<div style="margin-top:14px">'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+      +'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(lejos?'#ff8888':'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:12px 14px">'
+      +(lejos
+        ?'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;line-height:1.5">Tu punto está a '+km.toFixed(1)+' km y por ahora llegamos hasta '+DELIVERY_MAX_KM+' km. Revisa el pin en el mapa.</div>'
+        :'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
+          +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+km.toFixed(1)+' km hasta tu punto</div>'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:'+GOLD+'">'+SOLES_TXT+pz(base)+'</div></div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+      +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
+      +'</div></div>';
+  }
+  // SIN PIN: no hay tarifa que mostrar todavía. No se ofrece el desplegable de zonas de
+  // vuelta a propósito — volvería a dejar que el cliente elija su propio precio de envío.
+  return'<div style="margin-top:14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+    +'<div style="background:rgba(203,162,88,.08);border:1px solid '+GOLD+';border-radius:10px;padding:12px 14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro.</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
+    +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:'+GOLD+';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+    +'</div></div>';
 }
 function checkoutExtrasHTML(){
   var t=cartFinalTotal();
@@ -955,6 +935,16 @@ async function doOrder(){
     if(errEl)errEl.textContent='Todavía no abrimos. Déjanos tu teléfono en la pantalla de inicio y te avisamos apenas arranquemos.';
     return;
   }
+  // El envío se cobra por DISTANCIA REAL desde el 2026-09-02, así que sin un punto
+  // confirmado en el mapa no hay tarifa que cobrar. Se pide UNA VEZ por dirección: al
+  // guardarla queda con sus coordenadas y los pedidos siguientes no vuelven a pedirlo
+  // [DECISIÓN del dueño]. Antes de esto el cliente elegía su propia zona de un desplegable,
+  // o sea elegía cuánto pagar de envío.
+  if(deliveryKmNow()===null){
+    if(errEl)errEl.textContent='Confirma tu ubicación en el mapa para calcular el envío — se cobra por distancia real.';
+    doGPS();
+    return;
+  }
   if(errEl)errEl.textContent='';
   var ref=oref();
   var t=payableTotal();
@@ -969,7 +959,8 @@ async function doOrder(){
     if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
   });
   if(notes)lines.push('','📝 '+notes);
-  lines.push('','🛵 Delivery ('+(DELIVERY_PRICE_ZONES.find(function(z){return z.id===deliveryZone;})||{}).l+'): S/'+deliveryFeeAmount());
+  var _km=deliveryKmNow();
+  lines.push('','🛵 Delivery ('+(_km===null?(DELIVERY_PRICE_ZONES.find(function(z){return z.id===deliveryZone;})||{}).l:_km.toFixed(1)+' km')+'): S/'+deliveryFeeAmount());
   lines.push('*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
   var ingredients=[];
@@ -1062,7 +1053,9 @@ async function prepareThenPayWithCulqi(amountSoles,email){
   if(!po)return;
   busy=true;busyMsg='Verificando tu pedido...';render();
   try{
-    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,...metaAttribution()});
+    // lat/lon van también acá: prepare-order es el que fija el monto que Culqi va a cobrar,
+    // así que si no las recibe cobraría por zona mientras place-order cobra por distancia.
+    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,lat:po.lat,lon:po.lon,...metaAttribution()});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);

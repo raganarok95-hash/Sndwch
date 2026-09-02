@@ -395,6 +395,10 @@ function adminToolsSections(){
       ['franjas','Franjas horarias','loadTimeWindowReport()'],
       ['direccion','Direcciones','loadProblemAddresses()'],
     ]],
+    ['Salud del sistema //',[
+      ['warning','Salud técnica','loadTechHealth()'],
+      ['reclamo','Cumplimiento','loadCompliance()'],
+    ]],
   ];
 }
 // Grid de 2 columnas agrupado por sección — mismo HTML que ya usaba admin_home, ahora

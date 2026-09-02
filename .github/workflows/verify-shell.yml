@@ -1,0 +1,37 @@
+name: Verificar el shell desplegado
+
+# AUTOMATIZACIÓN #90 — "confirmar que el service worker sirvió la versión nueva".
+#
+# El backend ya tenía prueba de humo después del deploy (deploy-api.yml → smoke-prod.mjs).
+# El CLIENTE no tenía ninguna, y es la mitad que ya falló de verdad: el 2026-08-21 un shell
+# viejo se quedó pegado a la vez en la app instalada, en el celular y en la PC, y nadie se
+# enteró por una alarma sino porque alguien reportó que ARMA EL TUYO no funcionaba.
+#
+# Ese fallo no produce ningún error: todo responde 200 y lo que se sirve es la versión
+# anterior. Por eso el chequeo compara CONTENIDO —el sello APP_BUILD de index.html y la
+# VERSION de sw.js— contra lo que hay en este commit, no el código de estado.
+#
+# El deploy del cliente lo hace Vercel de forma asíncrona tras el push, así que el script
+# reintenta con espera creciente hasta 5 minutos antes de fallar: preguntar una sola vez
+# mediría la carrera y no el resultado, y un chequeo que falla en falso se apaga a la semana.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'sw.js'
+  workflow_dispatch: {}
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Sin `npm ci` a propósito: el script no usa ninguna dependencia, solo fetch y fs.
+      # Instalar Playwright acá costaría minutos para no usarlo.
+      - name: Comparar el shell de producción con el de este commit
+        run: node scripts/shell-live.mjs
