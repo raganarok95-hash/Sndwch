@@ -154,6 +154,52 @@ def una_tinta(entrada, salida):
     return out
 
 
+def silueta(entrada, salida, tinta=VERDE, calar=False, umbral_calado=16):
+    """SILUETA a una sola tinta: la forma sólida, sin medios tonos ni detalle tonal.
+
+    Dos variantes, y la diferencia decide si el logo sobrevive:
+
+    · PURA (calar=False) — toda la forma en tinta plena. Es lo más barato y lo más robusto
+      de imprimir: una plancha, sin registro que pueda salir corrido. Pero pierde la cara
+      entera: a este dibujo lo deja como una mancha con orejas.
+
+    · CALADA (calar=True) — la misma forma sólida, pero los rasgos del dibujo (ojos,
+      dientes, espiral, capas del sándwich) se dejan SIN tinta, o sea en papel. Sigue siendo
+      UNA tinta, porque el papel no es un color: es la ausencia de tinta. Y así el
+      personaje se sigue reconociendo.
+
+      EL CALADO ES CONTRA EL ENTORNO LOCAL, NO CONTRA UN UMBRAL FIJO. Con un umbral fijo el
+      resultado sale partido al medio: el lado izquierdo del dibujo es oscuro (pelaje verde,
+      cara marrón) y no cala nada, el derecho es claro (pelaje celeste, cara rosa) y cala
+      todo. Comparando cada píxel contra el promedio de su vecindario, un rasgo claro se
+      detecta igual esté sobre fondo claro o sobre fondo oscuro — que es lo que hace que la
+      cara izquierda y la derecha queden equilibradas.
+
+    Se limpia la silueta con un filtro de mediana sobre el canal alfa: el archivo original
+    trae motitas sueltas de un píxel que en imprenta salen como suciedad.
+    """
+    im = Image.open(entrada).convert("RGBA")
+    alfa = im.getchannel("A").point(lambda v: 255 if v > 128 else 0)
+    alfa = alfa.filter(ImageFilter.MedianFilter(5))
+    lum = im.convert("L")
+    # El "entorno local": el mismo dibujo desenfocado. Un rasgo cala si es bastante más
+    # claro que su vecindario, no si supera un número absoluto.
+    entorno = lum.filter(ImageFilter.GaussianBlur(18))
+    out = Image.new("RGB", im.size, PAPEL)
+    dst, mask = out.load(), alfa.load()
+    pl, pe = lum.load(), entorno.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            if not mask[x, y]:
+                continue
+            if calar and pl[x, y] > pe[x, y] + umbral_calado:
+                continue              # más claro que su entorno -> papel, sin tinta
+            dst[x, y] = tinta
+    out.save(salida)
+    return out
+
+
 def prueba_tamano(img, salida, ancho_mm=25, dpi=300):
     """La prueba que de verdad decide: reduce al tamaño REAL que va a tener en el empaque.
     Un logo se aprueba mirando esto, no mirando el archivo grande."""
@@ -175,6 +221,10 @@ if __name__ == "__main__":
     d = una_tinta(entrada, carpeta / "logo-1tinta-verde.png")
 
     e = linea_y_masas(entrada, carpeta / "logo-2tintas-linea-y-masas.png")
+    f = silueta(entrada, carpeta / "silueta-pura-verde.png")
+    g_ = silueta(entrada, carpeta / "silueta-calada-verde.png", calar=True)
+    prueba_tamano(f, carpeta / "prueba-25mm-silueta-pura.png")
+    prueba_tamano(g_, carpeta / "prueba-25mm-silueta-calada.png")
 
     for img, nombre in ((a, "azul-claro"), (b, "azul-hondo"), (c, "planas"),
                         (d, "1tinta"), (e, "linea")):
