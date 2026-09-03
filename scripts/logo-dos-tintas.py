@@ -40,6 +40,10 @@ AZUL = (0x88, 0xC8, 0xE8)
 # Azul más profundo, para papel kraft/manteca donde un celeste claro casi no se ve.
 AZUL_HONDO = (0x2E, 0x7F, 0xB0)
 PAPEL = (0xFF, 0xFF, 0xFF)
+# Negro de imprenta, no #000000. Un negro puro sobre papel manteca o kraft se ve duro y
+# "digital"; este es el negro cálido que usan las serigrafías y el que empata con un dibujo
+# hecho a mano. Si tu imprenta pide un valor plano, dile negro 100% de una tinta.
+NEGRO = (0x14, 0x14, 0x12)
 
 # Umbrales. Van acá arriba y con nombre porque son las tres perillas que hay que mover si la
 # prueba de imprenta sale mal, y quien la mueva no tiene por qué leer el resto del archivo.
@@ -99,7 +103,7 @@ def separar(entrada, salida, azul=AZUL, tintes=True):
     return out
 
 
-def linea_y_masas(entrada, salida, azul=AZUL_HONDO):
+def linea_y_masas(entrada, salida, azul=AZUL_HONDO, oscuro=None):
     """La vía que de verdad funciona a dos tintas: LÍNEA Y MASAS PLANAS, sin medios tonos.
 
     Por qué. El verde de marca (#1E3932) es muy oscuro y desaturado: cualquier trama suya
@@ -125,7 +129,7 @@ def linea_y_masas(entrada, salida, azul=AZUL_HONDO):
                 continue
             lum = 0.299 * r + 0.587 * g + 0.114 * b
             if lum < LUM_CONTORNO:
-                dst[x, y] = VERDE
+                dst[x, y] = oscuro or VERDE
             elif b - r > FRIO_MIN and lum < 242:
                 # El techo va alto (242 y no 215) a proposito: los brillos que el dibujo
                 # tiene DENTRO del pelaje azul son casi blancos, y dejarlos sin tinta abria
@@ -223,8 +227,13 @@ if __name__ == "__main__":
     e = linea_y_masas(entrada, carpeta / "logo-2tintas-linea-y-masas.png")
     f = silueta(entrada, carpeta / "silueta-pura-verde.png")
     g_ = silueta(entrada, carpeta / "silueta-calada-verde.png", calar=True)
-    prueba_tamano(f, carpeta / "prueba-25mm-silueta-pura.png")
-    prueba_tamano(g_, carpeta / "prueba-25mm-silueta-calada.png")
+    fn = silueta(entrada, carpeta / "silueta-pura-negra.png", tinta=NEGRO)
+    gn = silueta(entrada, carpeta / "silueta-calada-negra.png", tinta=NEGRO, calar=True)
+    ln = linea_y_masas(entrada, carpeta / "logo-1tinta-negro-linea.png", azul=NEGRO, oscuro=NEGRO)
+    for img, nombre in ((f, "silueta-pura"), (g_, "silueta-calada"),
+                        (fn, "silueta-pura-negra"), (gn, "silueta-calada-negra"),
+                        (ln, "1tinta-negro")):
+        prueba_tamano(img, carpeta / f"prueba-25mm-{nombre}.png")
 
     for img, nombre in ((a, "azul-claro"), (b, "azul-hondo"), (c, "planas"),
                         (d, "1tinta"), (e, "linea")):

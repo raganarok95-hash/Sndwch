@@ -128,6 +128,62 @@ identificadores hasheados con Meta. No la toco sin que lo pidas.
 
 ---
 
+## 4b. Las tres fugas de margen que el repo ya identificó y nadie cerró
+
+Estas no necesitan **un solo cliente más**. Están documentadas en `CLAUDE.md`, con número, y
+siguen abiertas. Al volumen del plan (1,411 pedidos/mes en el mes 6):
+
+| palanca | S//mes | S//año |
+|---|---|---|
+| Bajar el pago con tarjeta de 60% a 30% (empujar Yape/Plin) | **S/487** | S/5,842 |
+| +S/1 en ARMA EL TUYO | **S/423** | S/5,080 |
+| Cobrar o medir la focaccia | **S/175** | S/2,100 |
+| **Total** | **S/1,085** | **S/13,021** |
+
+**Las tres juntas son el 22% de la meta mensual, sin adquirir a nadie.**
+
+**1. La comisión de Culqi.** Cada pedido con tarjeta deja S/0.69 en la pasarela; Yape/Plin no
+cobra nada. Hoy se estima 60% con tarjeta. Bajarlo a 30% vale S/487/mes. El costo de hacerlo
+es tu tiempo confirmando pagos manuales — y eso ya se abarató con el lector de comprobantes
+(#28). **Ojo: el lector NO confirma el pago**, solo lo lee; el veredicto sigue siendo tuyo
+contra tu cuenta.
+
+**2. ARMA EL TUYO quedó sin subir.** La subida de margen del 2026-08-22 tocó los 5 Signatures
+y **no** el BYO, porque autorizaste los Signatures. Con el pan recosteado a S/2 la unidad,
+**BYO 30CM de res cruzó el techo de 45%** (llegó a 45.6%) y el de atún quedó en 43.2%: son
+las dos combinaciones más ajustadas del catálogo y las únicas que se pasan del objetivo.
+
+**3. La focaccia es una elección GRATUITA del cliente y no está costeada.** Falta un solo
+dato: **cuántas porciones de 15CM salen de una focaccia de S/13**. A 13 porciones empata con
+el pan sub; a 8 cuesta S/0.62 más por sándwich, y ese sobrecosto sale entero de tu margen
+porque el cliente no paga nada extra por elegirla.
+
+⚠ Y una cuarta, sin cifra porque no se puede calcular sin ventas: **la tasa de puntos quedó
+invertida.** R03 cuesta 40 pts/sol y R04 53 pts/sol, contra 20 pts/sol de R05 y R06 — o sea
+las recompensas caras salen más baratas en puntos que las baratas. Está anotado en
+`CLAUDE.md` como detectado y no resuelto. Se revisa con los primeros canjes reales.
+
+---
+
+## 4c. ¿Y si las metas se pueden subir?
+
+Preguntaste también cómo mejorarlas. La respuesta honesta:
+
+Con el plan recomendado (S/6,000/mes de publicidad, boca a boca fuerte, CAC bueno), la
+**mediana** del mes 6 es **S/11,415** — más del doble de la meta de S/5,000. Y las tres fugas
+de arriba suman otros S/1,085.
+
+Pero eso **no significa que la meta esté mal puesta**. Significa que el rango es ancho: el P10
+de ese mismo escenario está mucho más abajo, y con el CAC medio o malo no se llega ni a
+S/5,000. **La meta de S/5,000 no es un pronóstico, es un piso** — y un piso se pone donde
+puedas dormir tranquilo, no donde esperas terminar.
+
+**Cuándo subirla:** cuando tengas 3 semanas de CAC real. Si cae debajo de S/15.92, súbela sin
+miedo. Si cae encima, la meta de S/5,000 ya era optimista y hay que replantear el gasto, no
+la meta.
+
+---
+
 ## 5. Sistemas — qué falta construir
 
 De las 93 automatizaciones vigentes, **50 ya están en producción** (lotes E1-E6). Lo que
