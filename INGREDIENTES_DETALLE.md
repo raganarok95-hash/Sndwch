@@ -116,12 +116,44 @@ mozzarella Braedt se investigó a **~S/22.50/kg**, o sea el proxy la sobrecostea
 
 *El 30CM se asume el doble; el recetario solo declara el 15CM.
 
-**Los 7 juntos en un 15CM son 106 g.** A `[PROXY]` S/4/kg eso da **S/0.42**.
+**Los 6 públicos juntos en un 15CM son 94 g** (106 g si se cuenta el jalapeño, que es
+exclusivo del menú secreto). A **S/4/kg `[COTIZADO]`** eso da **S/0.38** (S/0.42 con jalapeño).
 
-⚠ **Este es el dato más flojo de todo el costeo.** S/4/kg es un proxy de "mezcla de vegetales"
-aplicado por igual a tomate fresco y a aceituna negra deshuesada en frasco, que cuesta varias
-veces más. **Ningún topping tiene precio propio cotizado.** Como son gratis e ilimitados, es
-también el rubro donde un cliente puede cargar el sándwich sin que nadie lo cobre.
+El S/4/kg es el precio real que tenemos, no una estimación. Es una tarifa **única para los
+siete**, así que el modelo no distingue un gramo de tomate de un gramo de aceituna — para el
+costo total da igual, porque todos entran a la misma tasa; solo importaría si algún día se
+cotiza cada uno por separado y alguno se sale mucho de esa media.
+
+⚠ Lo que sí sigue abierto: **son gratis e ilimitados**, así que el precio tiene que cubrir al
+cliente que se lleva los 94 g, no al que se lleva 50.
+
+### ¿Estamos al nivel de Subway? (comparación pedida por el dueño, 2026-09-03)
+
+Porciones estándar del **6-inch de Subway** (= nuestro 15CM), de su propia información
+nutricional, contra las nuestras:
+
+| topping | nuestro 15CM | Subway 6" | diferencia |
+|---|---|---|---|
+| **Lechuga** | **no está en el catálogo** | **21 g** | ⚠ **falta entera** |
+| **Tomate** | 25 g | 35 g (3 wheels) | **−29%** ⚠ |
+| Pepinillo | 15 g | 12 g (3 chips) | +25% |
+| Cebolla | 12 g | 7 g | +71% |
+| Pimiento | 18 g | 7 g | +157% |
+| Aceituna | 12 g | 3 g (3 rings) | +300% |
+| Apio | 12 g | — | Subway no lo tiene |
+| **Total** | **94 g** | **85 g** | **+9 g** |
+
+**En gramos totales estamos por encima** (94 contra 85). Pero el reparto está invertido:
+pesados en lo que viene en frasco, y **sin lechuga**, que es el mayor volumen del estándar de
+Subway y lo que más hace que un sándwich se vea lleno.
+
+**Igualar a Subway donde estamos por debajo cuesta S/0.12 por 15CM** (lechuga 21 g + tomate
+10 g = 31 g a S/4/kg). Sobre el peor caso de Res 15CM eso mueve el insumo de 48.4% a 49.2% —
+menos de un punto.
+
+**La carne ya está al nivel de Subway.** Nuestra porción es 85 g (15CM) y 170 g (30CM); el
+6-inch de Subway declara 24 g de proteína en roast beef y 26 g en pavo, que a ~28-30 g de
+proteína por 100 g de carne cocida son ~80-90 g. No hay hueco que cerrar ahí.
 
 **Notas del recetario que valen plata:**
 - **El tomate va en 5 de los 7 Signatures y es el que más agua suelta.** Cortar **por el ecuador**
@@ -224,10 +256,11 @@ insumo; con envase real cae a **56-66%**.
 
 | | 15CM | 30CM | Confianza |
 |---|---|---|---|
-| Empaque (papel manteca brandeado + bolsa) | S/1.10 | S/1.10 | `[FALTA]` sin cotizar, y describe empaque **genérico** |
+| Empaque (papel manteca brandeado + bolsa) | S/1.10–1.50 | S/1.10–1.50 | `[COTIZADO]` dueño 2026-09-03 |
 
-⚠ Es el número que estás por convertir en una compra real, y **40 céntimos de más llevan el ARMA
-EL TUYO de 7 a 10 combinaciones fuera del techo de 45%**.
+El rango cotizado es de **S/1.10 a S/1.50 en total**. La diferencia entre los dos extremos
+mueve el ARMA EL TUYO de **8 a 10** combinaciones fuera del techo de 45%, así que conviene
+cerrar en qué punto del rango queda — pero **ya no es un dato faltante.**
 
 ---
 
@@ -254,15 +287,17 @@ en todos, después toppings. Baja de 5×N pasadas a 5.
 
 ## 9. Lo que falta cotizar, en orden de cuánto mueve
 
-1. **Empaque** — sin cotizar, y es una compra inminente.
-2. **Atún (P04)** — S/67/kg investigado online, sin proveedor. El insumo de peor margen.
-   El recetario dice dónde está el ahorro: **cotizar lata institucional de 1 kg+ en Makro**
-   antes de comprar latas de 170 g.
-3. **Toppings** — ninguno tiene precio propio; todos usan un proxy de S/4/kg que es
-   evidentemente falso para aceituna, jalapeño y pimiento en frasco.
-4. **Envase de bebida** — ~S/1 estimado.
-5. **Quesos** — S/35/kg proxy, cuando ya hay un dato de S/22.50/kg para mozzarella.
-6. **Rendimiento real de P05 y P06** — estimados, no medidos.
+**Ya NO están en esta lista** (corregido por el dueño 2026-09-03): el **empaque** está cotizado
+en S/1.10–1.50, y los **toppings** están cotizados a S/4/kg. Los tenía marcados como faltantes
+y no lo eran.
+
+1. **Atún (P04)** — S/67/kg investigado online, sin proveedor. El insumo de peor margen del
+   catálogo. El recetario dice dónde está el ahorro: **cotizar lata institucional de 1 kg+ en
+   Makro** antes de comprar latas de 170 g.
+2. **Envase de bebida** — ~S/1 estimado. Es lo que baja el margen de bebidas de 61-84% a 56-66%.
+3. **Quesos** — S/35/kg proxy, cuando ya hay un dato investigado de S/22.50/kg para mozzarella
+   (Braedt). El proxy la sobrecostea un 55%.
+4. **Rendimiento real de P05 y P06** — estimados, no medidos.
 
 **Todo esto se carga en Admin // Compras y costos** (`ingredient_purchases`), que ya está
 construido: guarda cada compra con fecha y cantidad, y deriva el precio unitario como promedio
