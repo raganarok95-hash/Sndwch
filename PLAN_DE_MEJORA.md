@@ -133,30 +133,41 @@ identificadores hasheados con Meta. No la toco sin que lo pidas.
 Estas no necesitan **un solo cliente más**. Están documentadas en `CLAUDE.md`, con número, y
 siguen abiertas. Al volumen del plan (1,411 pedidos/mes en el mes 6):
 
-| palanca | S//mes | S//año |
-|---|---|---|
-| Bajar el pago con tarjeta de 60% a 30% (empujar Yape/Plin) | **S/487** | S/5,842 |
-| +S/1 en ARMA EL TUYO | **S/423** | S/5,080 |
-| Cobrar o medir la focaccia | **S/175** | S/2,100 |
-| **Total** | **S/1,085** | **S/13,021** |
+| palanca | S//mes | S//año | estado |
+|---|---|---|---|
+| Bajar el pago con tarjeta de 60% a 30% (empujar Yape/Plin) | **S/487** | S/5,842 | ✅ **cerrada** 2026-09-03 |
+| +S/1 en ARMA EL TUYO | **S/423** | S/5,080 | ⏳ abierta — decisión de precio tuya |
+| Cobrar o medir la focaccia | **S/175** | S/2,100 | ✅ **cerrada** 2026-09-03 |
+| **Total** | **S/1,085** | **S/13,021** | |
 
-**Las tres juntas son el 22% de la meta mensual, sin adquirir a nadie.**
+**Las tres juntas son el 22% de la meta mensual, sin adquirir a nadie. Dos ya están
+cerradas** (~S/662/mes): Yape/Plin pasó a ser el método de pago por defecto, y la focaccia
+se mide (10 porciones de 15CM por unidad de S/13) y se cobra (+S/0.50 / +S/1.00).
+**La que queda es la única que sube un precio de carta**, y esa es tuya.
 
-**1. La comisión de Culqi.** Cada pedido con tarjeta deja S/0.69 en la pasarela; Yape/Plin no
-cobra nada. Hoy se estima 60% con tarjeta. Bajarlo a 30% vale S/487/mes. El costo de hacerlo
-es tu tiempo confirmando pagos manuales — y eso ya se abarató con el lector de comprobantes
-(#28). **Ojo: el lector NO confirma el pago**, solo lo lee; el veredicto sigue siendo tuyo
-contra tu cuenta.
+**1. La comisión de Culqi — CERRADA el 2026-09-03.** Cada pedido con tarjeta deja S/0.69 en
+la pasarela; Yape/Plin no cobra nada. La app tenía la **tarjeta como método por defecto**: quien
+no tocaba el selector pagaba la comisión sin haber elegido nada. Ahora el default es Yape/Plin,
+con el ahorro escrito en el botón y el nombre del titular a la vista para que la transferencia
+no se caiga por desconfianza. La tarjeta sigue a un tap, así que nadie queda encerrado.
+**El costo lo pagas tú en tiempo**: cada pago manual hay que confirmarlo contra tu cuenta. Eso
+ya está abaratado con el lector de comprobantes (#28) y la confirmación por lotes del panel —
+pero **el lector NO confirma el pago**, solo lo lee; el veredicto sigue siendo tuyo.
+**Si un día la confirmación manual te come más tiempo del que ahorra, el default se revierte
+en una línea** — es una decisión de negocio, no una restricción técnica.
 
-**2. ARMA EL TUYO quedó sin subir.** La subida de margen del 2026-08-22 tocó los 5 Signatures
+**2. ARMA EL TUYO quedó sin subir — LA ÚNICA QUE SIGUE ABIERTA, y es tuya.** La subida de margen del 2026-08-22 tocó los 5 Signatures
 y **no** el BYO, porque autorizaste los Signatures. Con el pan recosteado a S/2 la unidad,
 **BYO 30CM de res cruzó el techo de 45%** (llegó a 45.6%) y el de atún quedó en 43.2%: son
 las dos combinaciones más ajustadas del catálogo y las únicas que se pasan del objetivo.
 
-**3. La focaccia es una elección GRATUITA del cliente y no está costeada.** Falta un solo
-dato: **cuántas porciones de 15CM salen de una focaccia de S/13**. A 13 porciones empata con
-el pan sub; a 8 cuesta S/0.62 más por sándwich, y ese sobrecosto sale entero de tu margen
-porque el cliente no paga nada extra por elegirla.
+**3. La focaccia — CERRADA el 2026-09-03.** Faltaba un solo dato y lo mediste: **de una
+focaccia de S/13 salen 10 de 15CM o 5 de 30CM**. Eso es S/1.30 y S/2.60 de pan contra S/1.00 y
+S/2.00 del pan sub — cayó del lado malo (empataba recién a 13 porciones). Ya no es una elección
+gratuita: se cobra **+S/0.50 y +S/1.00**, algo por encima del sobrecosto real, y el monto se ve
+en la tarjeta del pan **antes** de elegirlo. Las recompensas que regalan un sándwich (R06) o el
+upgrade a 30CM (R03) lo perdonan entero: un "gratis" que después cobra S/0.50 es una promesa
+rota, la misma clase que ya obligó a retirar dos badges del menú.
 
 ⚠ Y una cuarta, sin cifra porque no se puede calcular sin ventas: **la tasa de puntos quedó
 invertida.** R03 cuesta 40 pts/sol y R04 53 pts/sol, contra 20 pts/sol de R05 y R06 — o sea

@@ -42,7 +42,17 @@ function sOBuild(){
   if(byoStep===0){
     h+=SZTOG();
     h+=ST('','Pan','');
-    h+=BASES.map(function(b){var av=isAvail(b.id);return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()'):CARDOFF(b);}).join('');
+    // El recargo del pan se muestra EN la tarjeta, antes de elegir. La focaccia dejó de ser
+    // gratis el 2026-09-03 (su sobrecosto real salía del margen), y un precio que aparece
+    // recién en el carrito es la clase de sorpresa que hace abandonar el pedido.
+    h+=BASES.map(function(b){
+      var av=isAvail(b.id);
+      var extra=size?baseSurcharge(b.id,size):0;
+      var tag=extra>0
+        ?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(base===b.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">+'+SOLES+pz(extra)+'</span>'
+        :'';
+      return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()',tag):CARDOFF(b);
+    }).join('');
   }else if(byoStep===1){
     h+=ST('','Proteína','');
     h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');

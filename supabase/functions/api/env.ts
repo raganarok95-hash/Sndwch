@@ -176,6 +176,29 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
   lejos: 12,
   muy_lejos: 15,
 };
+// ── RECARGO POR PAN DE FOCACCIA (2026-09-03) ──────────────────────────────────────────
+//
+// El tipo de pan era una elección GRATUITA del cliente, y la focaccia cuesta más que el pan
+// sub. Hasta hoy ese sobrecosto salía entero del margen sin que el cliente pagara nada por
+// elegirla, y no se podía ni medir porque faltaba el rendimiento de la focaccia.
+//
+// [MEDIDO] dueño 2026-09-03: de una focaccia de S/13 salen 10 sándwiches de 15CM o 5 de
+// 30CM. O sea S/1.30 y S/2.60 por sándwich, contra S/1.00 y S/2.00 del pan sub:
+// **+S/0.30 en 15CM y +S/0.60 en 30CM** de sobrecosto real.
+//
+// [DECISIÓN] dueño 2026-09-03: se cobra S/0.50 y S/1.00. Cubre el sobrecosto con holgura y
+// deja la focaccia como lo que es —una opción premium— en vez de una fuga silenciosa.
+//
+// Solo B03 lleva recargo; B01 (Classic) es el pan sub y no cambia. DEBE coincidir con
+// BASE_SURCHARGE en src/app/ — lo verifica `npm run parity`.
+export const BASE_SURCHARGE: Record<string, { p15: number; p30: number }> = {
+  B03: { p15: 0.5, p30: 1 },
+};
+export function baseSurcharge(base: string, size: "15" | "30"): number {
+  const s = BASE_SURCHARGE[base];
+  return s ? (size === "15" ? s.p15 : s.p30) : 0;
+}
+
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
 //
 // POR QUÉ CAMBIÓ. El motorizado —un tercero con 50+ repartidores, coordinado por WhatsApp—

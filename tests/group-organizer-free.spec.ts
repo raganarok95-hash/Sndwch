@@ -159,9 +159,11 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
 
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
   await expect(page.locator('text=sándwich del organizador')).not.toBeVisible();
-  // 4 × SIG01 (20.90) = S/83.60 de comida, sin ningún descuento, más el delivery de zona
-  // 'media'. Sin método de pago elegido todavía el fee va engordado para tarjeta
-  // (8/(1-0.055)=8.47) → S/92.07. Con el descuento indebido serían S/71.17.
-  await expect(page.locator('text=S/92.07').first()).toBeVisible();
+  // 4 × SIG01 (20.90) = S/83.60 de comida, sin ningún descuento, más S/8 de delivery →
+  // S/91.60. Con el descuento indebido serían S/70.70.
+  // Era S/92.07 hasta el 2026-09-03, cuando el fee iba engordado para tarjeta
+  // (8/(1-0.055)=8.47) porque el método por defecto era la tarjeta. Hoy el default es
+  // Yape/Plin, que no paga comisión (ver tests/yape-por-defecto.spec.ts).
+  await expect(page.locator('text=S/91.60').first()).toBeVisible();
   expect(calls.length).toBeGreaterThan(0);
 });

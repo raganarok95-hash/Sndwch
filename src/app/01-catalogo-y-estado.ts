@@ -47,6 +47,11 @@ var CULQI_PUBLIC_KEY='pk_live_q82LnGIDlmQ0bpUC';
 // Yape y Plin confirmados activos en este número (el mismo de WhatsApp).
 var YAPE_PLIN_PHONE='930957640';
 var YAPE_PLIN_NAME='SND//WCH';
+// El TITULAR real de la cuenta, que es el nombre que Yape le muestra al cliente cuando
+// escribe el número — no la marca. Sale de BIZ_NAME (el titular del RUC del negocio), no
+// está inventado. Si Yape lo muestra de otra forma (solo nombre y una inicial, por
+// ejemplo), corregir acá: el punto es que coincida con lo que el cliente ve en su pantalla.
+var YAPE_PLIN_HOLDER=BIZ_NAME;
 // Ventana real antes de que el cron cancele solo un pedido Yape/Plin sin confirmar —
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
@@ -803,9 +808,14 @@ var CULQI_FEE_RATE=0.055;
 // con deliveryFeeAmount() de abajo — si el crédito alcanza para cubrir el total real, o
 // hay un método manual elegido, nunca se pasa por Culqi y el fee nunca se engorda.
 function willPayWithCard(){
-  var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var realFee=z?z.fee:0;
-  var t0=cartFinalTotal()+realFee;
+  // ⚠ Esto leía la tarifa de ZONA hasta el 2026-09-03. Desde que el envío se cobra por
+  // distancia, la zona y el monto real dejaron de coincidir, y este total intermedio es
+  // el que decide si el crédito alcanza — con la zona por defecto (S/8) un pedido a 6 km
+  // (S/12) parecía cubierto por un crédito que no llegaba, y el servidor lo rechazaba
+  // después de que el cliente ya había tocado pagar. deliveryFeeBase() es la MISMA
+  // función que produce el monto que se muestra y se cobra, así que no pueden separarse.
+  // No hay ciclo: deliveryFeeBase() nunca llama a willPayWithCard(), solo deliveryFeeAmount().
+  var t0=cartFinalTotal()+deliveryFeeBase();
   if(t0===0)return false;
   if(useCredit&&cust&&(cust.credit_balance||0)>=t0)return false;
   if(manualPayMethod)return false;
@@ -820,6 +830,18 @@ function willPayWithCard(){
   // paymentMethodPickerHTML(), no ocultando el monto real que se va a cobrar.
   return true;
 }
+// ── RECARGO POR PAN DE FOCACCIA (2026-09-03) ──────────────────────────────────────────
+//
+// El tipo de pan era una elección GRATUITA y la focaccia cuesta más que el pan sub, así que
+// ese sobrecosto salía entero del margen. Medido por el dueño el 2026-09-03: de una focaccia
+// de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
+// del pan sub. Se cobra S/0.50 y S/1.00.
+//
+// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
+// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
+var BASE_SURCHARGE={B03:{p15:0.5,p30:1}};
+function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='15'?b.p15:b.p30):0;}
+
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
 //
 // El motorizado (un tercero con 50+ repartidores, coordinado por WhatsApp) cobra S/2 POR
@@ -1123,10 +1145,27 @@ var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
 // el cliente dice que tiene uno.
 var promoFieldOpen=false;
-var manualPayMethod=null;
+// ── YAPE/PLIN ES EL MÉTODO POR DEFECTO (2026-09-03) ──────────────────────────────────
+//
+// Arrancaba en null, o sea TARJETA: quien no tocaba el selector terminaba en Culqi, que
+// cobra CULQI_FEE_RATE (5.5%) de cada pedido. El método por defecto no es un detalle de
+// interfaz — es el que elige la mayoría, porque la mayoría no elige. Al volumen del plan
+// mover el reparto tarjeta/Yape del 60% al 30% vale ~S/487 al mes sin adquirir a nadie
+// (ver PLAN_DE_MEJORA.md §4b), y es la única de las fugas de margen que no le cuesta un
+// sol más al cliente: paga lo mismo o menos, porque el recargo de delivery engordado
+// (deliveryFeeAmount) desaparece.
+//
+// Lo que NO cambia: la tarjeta sigue a un tap de distancia y con su propia razón escrita
+// al lado ("Automático"). Esto es un default, no un embudo — quien prefiera pagar con
+// tarjeta la ve en el mismo sitio de siempre.
+//
+// El costo real de este default lo paga el dueño en tiempo: cada pago manual hay que
+// confirmarlo contra la cuenta. Eso ya está abaratado con el lector de comprobantes (#28)
+// y la confirmación por lotes del panel — pero el lector NO confirma el pago, solo lo lee.
+var manualPayMethod='yape';
 // true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
-// pagas?" (Yape/Plin o Tarjeta) — solo controla el resaltado visual de los botones
-// (payMethodBtn) y el mensaje de "Confirmar con tarjeta". NO controla si el recargo de
+// pagas?" (Yape/Plin o Tarjeta) — hoy solo sirve para saber si el cliente ya decidió por
+// su cuenta, y así no pisarle la elección al prender/apagar el crédito interno. NO controla si el recargo de
 // Culqi se aplica: eso lo decide willPayWithCard() mirando el mismo enrutamiento real
 // que usa doOrder() (¿alcanza el crédito? ¿hay método manual elegido? si no, va por
 // Culqi sea cual sea el estado de este flag) — server-side, actPrepareOrder SIEMPRE

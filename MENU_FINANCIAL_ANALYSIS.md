@@ -44,12 +44,21 @@
 > antes de usarlo: The Original 15CM = P01 3.15 + pan 0.781 + empaque 1.10 + 2 salsas 0.532
 > + vegetales 0.26 = **S/5.823**, contra los S/5.82 que ya decía la tabla. Coincide.
 >
-> **Falta la focaccia.** S/13 la entera, pero no está medido cuántas porciones salen de una,
-> y sin eso no se puede costear. Empata con el pan sub recién a **13 porciones de 15CM por
-> focaccia**; a 8 porciones cuesta S/1.62, o sea +S/0.62 por sándwich. No es un detalle
-> menor: **el tipo de pan es una elección gratuita del cliente** (`BASES` en `src/app.ts` y
-> `VALID_BASES` en `catalog.ts` no llevan precio), así que cualquier sobrecosto de la
-> focaccia sale entero del margen.
+> **La focaccia ya está medida (dueño, 2026-09-03): S/13 la entera → 10 porciones de 15CM
+> o 5 de 30CM.** O sea **S/1.30 el 15CM y S/2.60 el 30CM**, contra S/1.00 y S/2.00 del pan
+> sub: **+S/0.30 y +S/0.60 de sobrecosto**. Cayó del lado malo de la sensibilidad que esta
+> nota tenía escrita — empataba con el pan sub recién a 13 porciones, y salen 10.
+>
+> **Y desde esa fecha el tipo de pan dejó de ser una elección gratuita**: se cobra
+> **S/0.50 (15CM) y S/1.00 (30CM)** por la focaccia (`BASE_SURCHARGE`, duplicado
+> cliente/servidor y comparado por `npm run parity`). Se cobra por encima del sobrecosto a
+> propósito: el error de un cargo así no puede caer del lado de subsidiar el pan, que es
+> exactamente lo que venía pasando.
+>
+> ⚠ **Esto no arregla el hueco de margen del BYO.** La combinación que cruza el techo de
+> 45% —BYO 30CM de res, 45.6%— lo cruza con **pan sub**, donde la focaccia nunca entró.
+> Cobrar la focaccia recupera lo que se estaba regalando; no sube el BYO. Ese caso sigue
+> abierto y depende de una decisión de precio del dueño.
 >
 > ## Margen real por Signature, con los precios del 2026-08-22 y el pan real
 >
@@ -57,9 +66,26 @@
 > |---|---|---|---|---|---|---|---|---|
 > | The Original | 20.90 | 6.04 | 28.9% | 14.86 | 26.90 | 10.99 | 40.8% | 15.91 |
 > | The Marinara | 21.90 | 4.35 | 19.9% | 17.55 | 28.90 | 7.60 | 26.3% | 21.30 |
-> | The Smoke | 23.90 | 7.30 | 30.5% | 16.60 | 34.90 | 13.51 | 38.7% | 21.39 |
+> | The Smoke ⁽¹⁾ | 23.90 | 7.60 | 31.8% | 16.30 | 34.90 | 14.11 | 40.4% | 20.79 |
 > | The Fresh | 20.90 | 7.45 | 35.6% | 13.45 | 34.90 | 13.79 | 39.5% | 21.11 |
 > | The Teriyaki | 19.90 | 5.36 | 26.9% | 14.54 | 25.90 | 9.64 | 37.2% | 16.26 |
+>
+> ⁽¹⁾ **THE SMOKE es el único Signature que se arma sobre focaccia** (`base: "B03"`, tanto en
+> la semilla del código como en la fila vigente de `catalog_items` — verificado contra la base
+> el 2026-09-03). Su costo estaba calculado con pan sub; con el rendimiento medido de la
+> focaccia sube **+S/0.30 (15CM) y +S/0.60 (30CM)**, que es lo que corrige esta fila.
+>
+> ⚠ **Y ese sobrecosto es permanente**: el recargo de `BASE_SURCHARGE` solo aplica a ARMA EL
+> TUYO, donde el pan es una elección del cliente. En un Signature el pan lo fija la receta, así
+> que no hay nada que recargarle — sale del margen y ahí se queda. Con holgura de sobra (31.8%
+> y 40.4% contra un techo de 45%), así que no pide ninguna decisión; pero si algún día se
+> publica otro Signature sobre focaccia, este es el número que hay que volver a mirar.
+>
+> **El menú secreto (SIG05) también va sobre focaccia** (`base: "B03"`, S/24.90 / S/30.90,
+> fila vigente de `secret_signature` verificada el 2026-09-03) y le pasa lo mismo. Su
+> proteína es la más barata de las cocidas (P03, pollo cajún, S/2.49 la porción de 15CM), así
+> que aun con el pan caro queda en ~23% de insumos — el producto más rentable del catálogo,
+> que es justamente lo que se busca de un menú secreto.
 >
 > Los diez siguen pasando el techo de 45% de insumos+empaque, con holgura. THE CHICAGO
 > (SIG07) salió del catálogo el 2026-08-22 por costo de producción, no por margen.
@@ -79,7 +105,8 @@
 >
 > ## Contribución por pedido y punto de equilibrio
 >
-> - Contribución media por sándwich (mezcla 80% en 15CM): **S/16.16**
+> - Contribución media por sándwich (mezcla 80% en 15CM): **S/16.16** — no se mueve de forma
+>   apreciable al corregir THE SMOKE: es 1 de 5 Signatures y el ajuste es de S/0.30-0.60
 > - Bebida: contribución media **S/4.79**; en combo (−S/1) deja **S/3.79**
 > - Comisión Culqi estimada: **−S/0.69/pedido** (60% paga con tarjeta, ~5%)
 > - **Contribución neta por pedido: S/16.42** (asumiendo 25% de pedidos con bebida) — bajó

@@ -331,11 +331,13 @@ no hay dato va un guion, nunca un 0: un 0 se lee como "medimos y dio cero".
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
 4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
+   `supabase/functions/api/**` (`scripts/parity.mjs`, 88 comprobaciones hoy). Si falla, el
    cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
-   recompensa, umbrales, zonas de delivery (con precio y excluidas), nombres, y
-   `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
-   que esta comparación es su única defensa.
+   recompensa, umbrales, zonas de delivery (con precio y excluidas), tarifa por distancia
+   (`DELIVERY_KM_RATE`/`ROAD_FACTOR`/`MIN_FEE`/`MAX_KM` + `STORE_LAT`/`STORE_LON`), nombres, y
+   los DOS precios del catálogo que NO viven en `catalog_prices` —`EXTRA_SAUCE_PRICE` y
+   `BASE_SURCHARGE` (el recargo del pan de focaccia)—, para los que esta comparación es la
+   única defensa.
 5. `npm run build` — regenera `index.html` desde `src/`.
 5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
    Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
@@ -799,12 +801,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `MENU_FINANCIAL_ANALYSIS.md`. Efecto: contribución por pedido S/16.68 → **S/16.42**, y
   **BYO 30CM de res cruzó el techo de 45%** (43.7% → 45.6%), la única combinación del
   catálogo que lo hace. Los 5 Signatures siguen holgados en los dos tamaños.
-  **Focaccia: S/13 la entera, pero FALTA el dato de cuántas porciones salen de una** — sin
-  eso no se puede costear. Sensibilidad: empata con el pan sub recién a 13 porciones de
-  15CM por focaccia; a 8 porciones cuesta S/1.62 (+S/0.62 por sándwich). Importa porque
-  **el tipo de pan es una elección GRATUITA del cliente** (`BASES` en `src/app.ts` y
-  `VALID_BASES` en `catalog.ts` no tienen precio), así que todo sobrecosto de la focaccia
-  sale del margen sin que el cliente pague nada extra.
+  **Focaccia: S/13 la entera → 10 porciones de 15CM o 5 de 30CM** (medido por el dueño
+  2026-09-03; hasta esa fecha el rendimiento faltaba y la focaccia no se podía costear).
+  Costo del pan: **S/1.30 el 15CM y S/2.60 el 30CM**, contra S/1.00 y S/2.00 del pan sub →
+  sobrecosto real **+S/0.30 y +S/0.60**. Quedó del lado malo de la sensibilidad que este
+  archivo tenía anotada (empataba recién a 13 porciones).
+  **El tipo de pan ya NO es una elección gratuita**: `BASE_SURCHARGE` (duplicado en
+  `env.ts` y `src/app/01-*`, comparado por `npm run parity`) cobra **S/0.50 y S/1.00** por
+  la focaccia — se cobra más que el sobrecosto a propósito, porque el error nunca puede
+  caer del lado de subsidiar el pan. Tres detalles que no hay que romper, todos con prueba
+  en `tests-api/recargo-pan.test.ts`:
+  el recargo va **DENTRO de `basePrice`**, para que **R06** (15CM gratis) lo perdone entero
+  en vez de dejar al cliente pagando S/0.50 por un sándwich anunciado como gratis;
+  `sizeUpgradeDiff` incluye el salto de pan, para que **R03** (subir a 30CM gratis) también
+  lo perdone; y **un pan sin fila en `BASE_SURCHARGE` cobra 0**, nunca un recargo inventado.
+  Un **Signature no lleva recargo**: ahí la receta fija el pan, el cliente no lo elige.
+  El monto se muestra en la tarjeta del pan **antes** de elegirlo, no en el carrito.
+  ⚠ Esto NO cierra el hueco de margen del BYO: **BYO 30CM de res sigue en 45.6%** con pan
+  sub, que es donde la focaccia nunca entró. Ese caso se arregla subiendo el BYO, decisión
+  que el dueño todavía no ha tomado.
 - **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
   **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
@@ -937,6 +952,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
   rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo
   preferencia operativa.
+- **Yape/Plin es el MÉTODO DE PAGO POR DEFECTO desde el 2026-09-03** (`manualPayMethod`
+  arranca en `'yape'`, no en `null`). Antes arrancaba en null, que es TARJETA: quien no
+  tocaba el selector terminaba en Culqi pagando 5.5%. **El default no es un detalle de
+  interfaz — es el que elige la mayoría, porque la mayoría no elige.** Al volumen del plan,
+  mover el reparto tarjeta/Yape del 60% al 30% vale ~S/487/mes sin adquirir a nadie, y es
+  la única de las tres fugas de margen que además le cuesta MENOS al cliente: el recargo de
+  delivery engordado (`deliveryFeeAmount`) desaparece. Es un default, no un embudo: la
+  tarjeta sigue a un tap, con su razón escrita al lado ("Automático") y el aviso del
+  recargo. Lo que hay que cuidar al tocar esto (todo con prueba en
+  `tests/yape-por-defecto.spec.ts`, cuyo modo de fallo es **silencio**: si alguien devuelve
+  el estado inicial a `null` nada revienta, el negocio solo vuelve a pagar comisión):
+  el botón de Yape muestra el ahorro **hipotético** de la tarjeta y por eso NO puede
+  calcularse con `deliveryFeeAmount()`, que ya no engorda nada cuando Yape está elegido;
+  y prender/apagar el crédito interno pasa por `toggleCredit()`, que **devuelve** el default
+  al apagarse — el `manualPayMethod=null` que había escrito dentro del `onclick` dejaba al
+  cliente en tarjeta después de dos taps en una casilla que quedó desmarcada.
+  El costo real de este default lo paga el dueño en tiempo: cada pago manual hay que
+  confirmarlo contra la cuenta (abaratado por el lector de comprobantes #28 —que NO confirma
+  el pago, solo lo lee— y la confirmación por lotes del panel).
 - **Subida de margen del 2026-08-22 (decisión del dueño, ya aplicada en código Y en
   `catalog_prices`).** Se hizo DESPUÉS de recostear todo el menú con la merma real; los 5
   Signatures ya cumplían el techo de 45% y esta subida es para ganar margen, no para tapar

@@ -192,6 +192,16 @@ cmp('COMBO_DISCOUNT_PER_PAIR',
 cmp('GIFT_CARD_POINTS_PER_SOL',
   scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
+// Recargo por pan de focaccia (2026-09-03). Es el segundo precio del catálogo que NO vive
+// en `catalog_prices` (el otro es EXTRA_SAUCE_PRICE), así que esta comparación es su única
+// defensa contra que el cliente muestre un monto y el servidor cobre otro.
+cmp('BASE_SURCHARGE B03 15CM (focaccia)',
+  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:([\d.]+)/, 'src/app/'),
+  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: ([\d.]+)/, 'env.ts'));
+cmp('BASE_SURCHARGE B03 30CM (focaccia)',
+  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:[\d.]+,p30:([\d.]+)/, 'src/app/'),
+  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: [\d.]+, p30: ([\d.]+)/, 'env.ts'));
+
 // Cobro del delivery por DISTANCIA REAL (2026-09-02). Estas cinco son la única defensa
 // contra el defecto clásico de este repo: el cliente muestra un monto de envío y el servidor
 // cobra otro. Y acá duele más que en el catálogo, porque el delivery es pass-through — si el

@@ -293,7 +293,18 @@ function checkoutExtrasHTML(){
     // quedaba NINGUNA confirmación de que la recompensa ya aplicada seguía activa (el
     // descuento sí sigue funcionando en el monto a transferir, pero visualmente parecía
     // perdida) — hallazgo de auditoría UX, MEDIO.
-    +(manualPayMethod
+    // ⚠ La condición era `manualPayMethod` a secas, y eso se rompió solo el día que Yape
+    // pasó a ser el DEFAULT (2026-09-03): el selector de recompensas y el campo de código
+    // promocional desaparecían del checkout para todo cliente que no tocara el selector de
+    // pago — o sea la mayoría. Un cliente con puntos entraba a pagar y no veía dónde
+    // canjearlos. Ese es exactamente el modo de fallo que este archivo documenta en otros
+    // lados: nada revienta, nada avisa, simplemente deja de existir una función entera.
+    //
+    // Lo que la regla protegía sigue protegido: ocultarlo tiene sentido cuando el cliente ya
+    // ELIGIÓ transferir (payMethodChosen) y tiene el monto en pantalla listo para yapear —
+    // cambiar la recompensa ahí mueve el número después de que él lo copió. Un default que
+    // nadie tocó todavía no es ese momento.
+    +(manualPayMethod&&payMethodChosen
       ?(appliedReward?(function(){var r=RWDS.find(function(x){return x.id===appliedReward;});return r?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;margin-top:14px;font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+'Recompensa aplicada: '+esc(r.n+' '+r.s)+'</div>':'';})():'')
       :rewardsPickerHTML()+promoCodeHTML())
     // "Contacto y entrega //" y "Entrega y horario //" — antes esto era ~9 bloques
@@ -318,7 +329,7 @@ function checkoutExtrasHTML(){
     +(scheduleMode==='now'&&!storeStatus().open?'<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">'+icon('horario',13,'#ff8888')+'<span>'+esc(storeStatus().label)+' — elige "Programar" para pedir dentro de nuestro horario.</span></div>':'')
     +(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
     +'</div></details>'
-    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'toggleCredit()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
     // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
     // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
     // antes) para un pedido que no cuesta nada.
@@ -674,11 +685,24 @@ function paymentMethodPickerHTML(t){
   // función) el total YA incluye el recargo real. Esta línea lo hace explícito en vez de
   // dejar que el cliente note el aumento recién al ver el total — resuelve el hallazgo
   // P2 original (recargo invisible) sin cambiar el monto real que se cobra.
-  var cardFeeNote=willPayWithCard()&&!manualPayMethod
-    ?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye '+SOLES_TXT+(deliveryFeeAmount()-(function(){var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});return z?z.fee:0;})()).toFixed(2)+' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
+  // Lo que la tarjeta agrega al total: el fee de envío "engordado" menos el fee real.
+  //
+  // ⚠ Esto restaba la tarifa de ZONA hasta el 2026-09-03, y desde que el envío se cobra por
+  // distancia esa resta daba un número sin sentido que igual se le mostraba al cliente. Se
+  // compara contra deliveryFeeBase(), que es la misma función que produce el monto real.
+  // ⚠ Esto era `deliveryFeeAmount()-deliveryFeeBase()` y se rompió solo el día que Yape
+  // pasó a ser el default: deliveryFeeAmount() solo engorda el fee cuando el pedido VA a
+  // salir por tarjeta, así que con Yape elegido la resta daba 0 y el botón dejaba de decir
+  // cuánto se ahorra — justo en el único estado en que el cliente necesita esa razón.
+  // El número que hay que mostrar es el recargo HIPOTÉTICO de la tarjeta, que no depende
+  // del método elegido ahora mismo.
+  var feeBase=deliveryFeeBase();
+  var cardExtra=feeBase?money(feeBase/(1-CULQI_FEE_RATE)-feeBase):0;
+  var cardFeeNote=willPayWithCard()&&!manualPayMethod&&cardExtra>0
+    ?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye '+SOLES_TXT+pz(cardExtra)+' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
     :'';
   return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
-    +payMethodBtn('yape','Yape / Plin',true,'Recomendado')
+    +payMethodBtn('yape','Yape / Plin',true,cardExtra>0?'Ahorras '+SOLES_TXT+pz(cardExtra):'Recomendado')
     +(culqiConfigured?payMethodBtn('culqi','Tarjeta',true,'Automático'):'')
     +'</div>'
     // El widget de Culqi ya trae Yape integrado como pestaña (paymentMethods.yape=true,
@@ -710,14 +734,28 @@ function paymentMethodPickerHTML(t){
 // necesita: el texto ya identifica el método, sin arriesgar además un uso no autorizado
 // de la marca de Yape/Plin.
 function payMethodBtn(id,label,enabled,badge){
-  // Ninguno aparece pre-seleccionado hasta que el cliente toca uno — antes Tarjeta se
-  // veía marcada por defecto sin ninguna elección real, lo que reforzaba la sensación de
-  // que el recargo ya estaba decidido de antemano (mismo hallazgo P2 de arriba).
+  // Yape/Plin arranca marcado (es el default desde el 2026-09-03, ver 01-*). Durante un
+  // tiempo NINGUNO aparecía marcado, porque el que venía por defecto era Tarjeta y verla
+  // pre-seleccionada hacía sentir que el recargo estaba decidido de antemano (hallazgo P2).
+  // Con el default invertido ese problema desaparece solo: lo que queda marcado es el
+  // método SIN recargo, y el cliente ve exactamente lo que va a pagar si no toca nada.
   var sel=id==='culqi'?(payMethodChosen&&!manualPayMethod):manualPayMethod===id;
   return'<div onclick="'+(enabled?'selectPayMethod(\''+id+'\')':'')+'" style="flex:1;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 6px;cursor:'+(enabled?'pointer':'not-allowed')+';opacity:'+(enabled?1:.4)+'">'
     +(badge?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:'+GOLD+';letter-spacing:.08em;margin-bottom:3px">'+badge+'</div>':'')
     +'<div style="display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+label+'</div>'
     +(enabled?'':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;letter-spacing:.05em">Pronto</div>')+'</div>';
+}
+// Prender el crédito apaga el método manual (si el crédito cubre el total no hace falta
+// ninguno). Apagarlo tiene que DEVOLVER el default, no dejar al cliente en tarjeta sin
+// haberla elegido nunca — que es lo que pasaba cuando esto era un `manualPayMethod=null`
+// escrito dentro del onclick: el cliente tocaba dos veces el crédito y salía pagando la
+// comisión de Culqi sin haber elegido la tarjeta. Si ya eligió a mano (payMethodChosen),
+// se respeta su elección.
+function toggleCredit(){
+  useCredit=!useCredit;
+  if(useCredit)manualPayMethod=null;
+  else if(!payMethodChosen)manualPayMethod='yape';
+  confirmRerender();
 }
 function selectPayMethod(m){
   manualPayMethod=(m==='culqi'?null:m);
@@ -749,6 +787,11 @@ function manualPayInstructionsHTML(t){
   return'<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px">'
     +'<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:2px">Monto a transferir //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:38px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</div></div>'
     +payStep(1,'Transfiere por Yape o Plin a','<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0)">'+esc(YAPE_PLIN_NAME)+(recurring?' · ya usaste este número antes ✓':'')+'</div></div></div>'
+      // El nombre que Yape muestra al escribir el número es el del TITULAR de la cuenta, no
+      // el de la marca. Ver un nombre personal donde esperabas "SND//WCH" es el momento
+      // exacto en que alguien se detiene a preguntarse si se equivocó de destinatario — y en
+      // una transferencia manual esa duda es un pedido perdido. Decirlo antes la borra.
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:8px;background:var(--sw-card,#2D5246);border-radius:8px;padding:9px 11px">En Yape te va a aparecer a nombre de <b style="color:var(--sw-text-body,#F2F0EB)">'+esc(YAPE_PLIN_HOLDER)+'</b>. Es la cuenta del negocio — estás en el sitio correcto.</div>'
       // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
       // paso copia el número); en desktop no hay app que abrir, así que el único botón
       // útil es copiar.
@@ -1205,7 +1248,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   cart=[];
   pendingGroupCode=null;
   resetBuilder();mode=null;
-  useCredit=false;manualPayMethod=null;payMethodChosen=false;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
+  useCredit=false;manualPayMethod='yape';payMethodChosen=false;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
   saveCart();

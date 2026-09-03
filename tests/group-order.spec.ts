@@ -108,9 +108,11 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   // De aquí en adelante es el checkout normal — confirma que el carrito trae los 2 items
   // del grupo, no que reimplemente el pago (eso ya lo cubre checkout.spec.ts).
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
-  // S/42.80 de comida (SIG01 20.90 + SIG02 21.90, ambos 15CM) + delivery de zona 'media'.
-  // Sin método de pago elegido todavía, el fee va engordado para tarjeta (8.47) → S/51.27.
-  await expect(page.locator('text=S/51.27').first()).toBeVisible();
+  // S/42.80 de comida (SIG01 20.90 + SIG02 21.90, ambos 15CM) + S/8 de delivery = S/50.80.
+  // El delivery va SIN engordar porque desde el 2026-09-03 el método por defecto es Yape/Plin,
+  // que no paga comisión de Culqi. Hasta esa fecha este número era S/51.27 (fee de 8.47): el
+  // cliente que no tocaba el selector pagaba S/0.47 de más sin haber elegido la tarjeta.
+  await expect(page.locator('text=S/50.80').first()).toBeVisible();
 
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');

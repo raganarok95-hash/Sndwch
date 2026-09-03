@@ -4,7 +4,7 @@
 // reporte el cliente, todo se recalcula aquí a partir de estos datos.
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
-import { computeRankName } from "./env.ts";
+import { computeRankName , baseSurcharge } from "./env.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -649,10 +649,19 @@ function priceByoBuild(
   // dejaba a R02 ("4TA SALSA GRATIS") canjeable sin haber llegado siquiera a una 3ra
   // salsa (hallazgo de auditoría financiera).
   if (extraSauce && !sauces.length) throw new ApiError("Selecciona al menos una salsa antes de pedir salsa extra.");
-  const basePrice = size === "15" ? protInfo.p15 : protInfo.p30;
+  // El recargo del pan va DENTRO de basePrice, no como un cargo aparte: así fluye solo por
+  // unitPrice, por el total esperado y por R06 (que perdona el 15CM entero — si el recargo
+  // quedara fuera, la recompensa dejaría al cliente pagando S/0.50 por un sándwich "gratis").
+  const panExtra = baseSurcharge(base, size);
+  const basePrice = (size === "15" ? protInfo.p15 : protInfo.p30) + panExtra;
   if (doubleProt && NO_DOUBLE_PROTS.has(prot)) throw new ApiError("Esa proteína no admite doble porción.");
   const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
-  const sizeUpgradeDiff = size === "15" ? Math.max(0, protInfo.p30 - protInfo.p15) : 0;
+  // R03 sube un 15CM a 30CM gratis, así que la diferencia que perdona tiene que incluir
+  // TAMBIÉN el salto del pan (la focaccia de 30CM cuesta más que la de 15CM). Sin esto, un
+  // cliente con focaccia canjeaba el upgrade y seguía debiendo la diferencia del pan.
+  const sizeUpgradeDiff = size === "15"
+    ? Math.max(0, (protInfo.p30 + baseSurcharge(base, "30")) - (protInfo.p15 + baseSurcharge(base, "15")))
+    : 0;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
   // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
