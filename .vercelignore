@@ -1,0 +1,51 @@
+# Qué NO se sube a Vercel.
+#
+# `vercel.json` tiene `outputDirectory: "."`, así que TODO archivo del repo que no
+# esté acá queda servido como archivo estático en el dominio público. Sin este
+# archivo, `sndwch.app/MENU_FINANCIAL_ANALYSIS.md` devolvía la estructura de costos
+# completa, y `sndwch.app/propuesta-negocio.html` la propuesta de negocio entera.
+#
+# Es una lista de EXCLUSIÓN a propósito, no de inclusión: una lista de inclusión mal
+# escrita deja el sitio sin `index.html` y no hay forma de probarlo desde una sesión
+# (el proxy bloquea sndwch.app y el dominio de preview). El costo de esa elección es
+# que un archivo interno NUEVO de un tipo no listado acá se filtra en silencio —
+# **si agregas un HTML o un directorio interno, agrégalo también acá.**
+#
+# Lo único que el cliente necesita servido: index.html, sw.js, manifest.json, los 4
+# iconos, img/ y qr.png.
+
+# Documentación interna: costos, márgenes, recetas, estrategia, el propio CLAUDE.md.
+*.md
+
+# Páginas de análisis internas (NO son parte de la app).
+FLUJO_DEL_NEGOCIO.html
+analisis-6-meses.html
+propuesta-negocio.html
+
+# Modelo financiero, recetas detalladas, documentación y material de marca.
+modelo/
+recetas/
+docs/
+marca/
+
+# Código fuente y backend. `index.html` es el único artefacto servido; `src/` es de
+# dónde se compila, y `supabase/` incluye las migraciones y las edge functions.
+src/
+supabase/
+scripts/
+
+# Pruebas y sus resultados.
+tests/
+tests-api/
+test-results/
+playwright.config.ts
+
+# Configuración de build y dependencias: nada de esto se sirve.
+package.json
+package-lock.json
+node_modules/
+tsconfig.json
+tsconfig.build.json
+.github/
+.claude/
+.impeccable/
