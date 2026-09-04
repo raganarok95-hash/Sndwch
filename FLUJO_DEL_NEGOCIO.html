@@ -1,0 +1,374 @@
+<title>SND//WCH — El negocio completo</title>
+<style>
+:root{
+  --fondo:#0D1A16; --sup:#16302A; --sup2:#1E3932; --linea:#2C4E43;
+  --texto:#EAF2EC; --mudo:#8FB29B; --oro:#CBA258;
+  --calmo:#4E8F73; --loco:#88C8E8; --alerta:#E07A5F; --ok:#7FBF9A;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:ui-sans-serif,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--fondo);color:var(--texto);font-family:var(--sans);
+     line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:48px 24px 96px}
+
+/* ── marca ── */
+.mark{display:inline-flex;align-items:center;gap:.13em;vertical-align:baseline}
+.mark i{display:block;width:.15em;height:.82em;background:currentColor;
+        transform:skewX(-16deg);border-radius:1px}
+.eyebrow{font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+         color:var(--oro);font-weight:600}
+
+header{border-bottom:1px solid var(--linea);padding-bottom:32px;margin-bottom:8px}
+h1{font-family:var(--serif);font-size:clamp(32px,5vw,52px);font-weight:600;
+   margin:14px 0 12px;letter-spacing:-.01em;text-wrap:balance}
+.lede{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--mudo);
+      max-width:62ch;margin:0}
+.meta{margin-top:20px;font-size:12px;color:var(--mudo);display:flex;gap:20px;flex-wrap:wrap}
+.meta b{color:var(--texto);font-weight:600}
+
+/* ── umbral ── */
+.umbral{background:linear-gradient(135deg,var(--sup2),var(--sup));
+        border:1px solid var(--oro);border-radius:14px;padding:28px 32px;margin:36px 0 8px}
+.umbral h2{font-family:var(--serif);font-size:24px;margin:10px 0 6px;font-weight:600}
+.umbral p{color:var(--mudo);margin:0 0 20px;max-width:70ch;font-size:14px}
+.cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.cifra{background:rgba(0,0,0,.28);border-radius:10px;padding:14px 16px;
+       border-left:3px solid var(--linea)}
+.cifra.gana{border-left-color:var(--ok)} .cifra.pierde{border-left-color:var(--alerta)}
+.cifra .n{font-family:var(--serif);font-size:26px;font-weight:600;
+          font-variant-numeric:tabular-nums;line-height:1.1}
+.cifra .l{font-size:11px;color:var(--mudo);margin-top:4px;line-height:1.35}
+
+/* ── etapas ── */
+.etapa{margin-top:44px;scroll-margin-top:20px}
+.eh{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--linea);
+    padding-bottom:12px;margin-bottom:6px}
+.num{font-family:var(--serif);font-size:40px;font-weight:600;color:var(--oro);
+     line-height:1;opacity:.55;min-width:52px}
+.eh h3{font-family:var(--serif);font-size:23px;margin:0;font-weight:600}
+.eh .tesis{font-family:var(--serif);font-style:italic;color:var(--mudo);
+           font-size:13.5px;margin-left:auto;text-align:right;max-width:44ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin-top:18px}
+.card{background:var(--sup);border:1px solid var(--linea);border-radius:11px;
+      padding:15px 17px;position:relative}
+.card.calmo{border-left:3px solid var(--calmo)}
+.card.loco{border-left:3px solid var(--loco)}
+.card.oro{border-left:3px solid var(--oro)}
+.card.mal{border-left:3px solid var(--alerta)}
+.card h4{font-size:13.5px;margin:0 0 6px;font-weight:650;letter-spacing:-.005em}
+.card p{font-size:12.5px;color:var(--mudo);margin:0;line-height:1.5}
+.card p+p{margin-top:7px}
+.card b{color:var(--texto);font-weight:600}
+.chip{display:inline-block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+      font-weight:700;padding:2px 7px;border-radius:20px;margin-bottom:8px}
+.c-ok{background:rgba(127,191,154,.14);color:var(--ok)}
+.c-pend{background:rgba(203,162,88,.14);color:var(--oro)}
+.c-ciego{background:rgba(224,122,95,.15);color:var(--alerta)}
+.flecha{text-align:center;color:var(--linea);font-size:20px;margin:22px 0 -6px;letter-spacing:.5em}
+
+/* ── tablas ── */
+.tabla{width:100%;border-collapse:collapse;margin-top:16px;font-size:12.5px}
+.tabla th{text-align:left;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+          color:var(--oro);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--linea)}
+.tabla td{padding:9px 10px;border-bottom:1px solid rgba(44,78,67,.4);
+          font-variant-numeric:tabular-nums}
+.tabla td:first-child{color:var(--texto);font-weight:600}
+.tabla td:not(:first-child){color:var(--mudo)}
+.no{color:var(--alerta)!important;font-weight:600}
+.si{color:var(--ok)!important}
+.scroll{overflow-x:auto}
+
+/* ── nota ── */
+.nota{background:rgba(224,122,95,.07);border:1px solid rgba(224,122,95,.3);
+      border-radius:10px;padding:14px 18px;margin-top:18px;font-size:12.5px;color:var(--mudo)}
+.nota b{color:var(--alerta)}
+.nota.gold{background:rgba(203,162,88,.06);border-color:rgba(203,162,88,.3)}
+.nota.gold b{color:var(--oro)}
+
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--linea);
+       font-size:11.5px;color:var(--mudo)}
+@media(max-width:640px){
+  .eh{flex-wrap:wrap} .eh .tesis{margin-left:0;text-align:left;max-width:none;width:100%}
+  .num{font-size:30px;min-width:38px}
+}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">SND<span class="mark" style="margin:0 .1em"><i></i><i></i></span>WCH · Trujillo · abre 2ª semana de octubre 2026</div>
+  <h1>El negocio completo, de punta a punta</h1>
+  <p class="lede">Desde cómo llega un cliente hasta el gramo de proteína que se pierde en la
+  sartén. Cada casilla dice si está <b style="color:var(--ok)">construido</b>,
+  <b style="color:var(--oro)">pendiente</b>, o si es un <b style="color:var(--alerta)">punto
+  ciego</b> — algo que hoy nadie mide.</p>
+  <div class="meta">
+    <span><b>50</b> automatizaciones en producción</span>
+    <span><b>26</b> tareas programadas</span>
+    <span><b>508</b> pruebas automáticas</span>
+    <span><b>0</b> ventas reales todavía</span>
+  </div>
+</header>
+
+<div class="umbral">
+  <div class="eyebrow">Todo cuelga de un solo número</div>
+  <h2>Un cliente nuevo deja S/15.92 en su primer pedido</h2>
+  <p>Si traerlo cuesta menos que eso, el negocio escala pagando publicidad. Si cuesta más,
+  cada cliente comprado es una pérdida que solo se recupera si vuelve — y en los primeros
+  meses casi nadie ha vuelto todavía. <b style="color:var(--texto)">El rango documentado
+  cruza esa línea por el medio</b>, así que hoy nadie sabe de qué lado está el negocio.</p>
+  <div class="cifras">
+    <div class="cifra gana"><div class="n">S/7.65</div><div class="l">Referido — el único canal que gana siempre</div></div>
+    <div class="cifra gana"><div class="n">S/10.51</div><div class="l">Meta Ads, mejor caso</div></div>
+    <div class="cifra pierde"><div class="n">S/17.87</div><div class="l">Meta Ads, caso medio — pierde</div></div>
+    <div class="cifra pierde"><div class="n">S/25.23</div><div class="l">Meta Ads, peor caso</div></div>
+  </div>
+</div>
+
+<!-- 1 -->
+<section class="etapa">
+  <div class="eh"><div class="num">1</div><h3>Atracción</h3>
+    <div class="tesis">Sin B2B ni puerta a puerta, la publicidad pagada y el referido son
+    prácticamente los únicos canales.</div></div>
+  <div class="grid">
+    <div class="card mal"><span class="chip c-ciego">Bloqueado</span>
+      <h4>Meta Ads</h4>
+      <p>Píxel + Conversions API con deduplicación por <b>event_id</b>, ya construidos.
+      <b>Apagados</b>: faltan tres secrets de Meta.</p>
+      <p>Es el bloqueo nº1 del negocio, y no por el marketing: <b>sin el píxel no se puede
+      medir el CAC</b>, que es el número del que cuelga todo.</p></div>
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Referido — S/7.65</h4>
+      <p>400 pts a quien invita, 120 al invitado, más escalones al 3.º, 5.º y 10.º.</p>
+      <p>El modelo dice que <b>S/4,000/mes de ads con boca a boca fuerte le gana a
+      S/8,000/mes sin él</b>.</p></div>
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>QR en la bolsa</h4>
+      <p><b>?grupo=1</b> abre un pedido grupal. Promoción pasiva dentro de un pedido ya
+      entregado: no exige ningún trabajo de venta.</p></div>
+    <div class="card loco"><span class="chip c-ok">Listo</span>
+      <h4>Pedido grupal</h4>
+      <p>Cualquiera se une por link sin cuenta. Desde 5 sándwiches, <b>el 15CM más barato
+      va gratis</b>.</p>
+      <p><b>No es un canal B2B.</b> Nadie sale a conseguir oficinas.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 2 -->
+<section class="etapa">
+  <div class="eh"><div class="num">2</div><h3>La app</h3>
+    <div class="tesis">Dos caminos, y son los dos hermanos: receta cerrada o elección libre.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Signatures — el hermano calmado</h4>
+      <p>6 recetas cerradas. <b>Todas dentro del techo de 45%</b> (19.6% a 41.9%), porque
+      la receta fija los ingredientes.</p></div>
+    <div class="card loco"><span class="chip c-ok">Listo</span>
+      <h4>ARMA EL TUYO — el alocado</h4>
+      <p>Pan, proteína, <b>toppings sin límite</b>, queso y 3 salsas, todo gratis.</p>
+      <p><b>Aquí se rompe el margen</b>: un armador de elección libre no es una receta
+      costeada.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Checkout</h4>
+      <p>Nombre, teléfono, dirección, <b>distrito obligatorio</b> y <b>pin en el mapa</b>
+      (una vez por dirección).</p>
+      <p>Capacidad por hora visible: las horas llenas salen tachadas, no escondidas.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Descuentos</h4>
+      <p>Combo −S/1 · bebida gratis en hora valle (hasta S/6) · recompensas R02-R06 ·
+      código promocional.</p>
+      <p><b>Combo y hora valle nunca se suman</b>, solo el mayor.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 3 -->
+<section class="etapa">
+  <div class="eh"><div class="num">3</div><h3>Pago</h3>
+    <div class="tesis">El método por defecto es el que elige la mayoría, porque la mayoría no elige.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Yape / Plin — por defecto</h4>
+      <p><b>0% de comisión.</b> Vale ~S/487/mes contra el default anterior.</p>
+      <p>Cuesta tu tiempo: cada pago hay que confirmarlo contra la cuenta.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Tarjeta (Culqi)</h4>
+      <p><b>5.5%</b> de comisión. A un tap, con el recargo escrito al lado.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Crédito interno</h4>
+      <p>Plan Semanal (S/95 → S/100), tarjeta de regalo con puntos, crédito regalado.</p>
+      <p><b>No es dinero real ni retirable</b>, y al usarse no entra plata ese día.</p></div>
+    <div class="card mal"><span class="chip c-ciego">Riesgo</span>
+      <h4>Lo pendiente de confirmar</h4>
+      <p>Un Yape que el cliente dice haber hecho y nadie miró <b>no suma al cierre de caja</b>.
+      El día que sume, la pantalla deja de servir para cuadrar.</p>
+      <p>El lector de comprobantes <b>lee, no confirma</b>.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 4 -->
+<section class="etapa">
+  <div class="eh"><div class="num">4</div><h3>Cocina</h3>
+    <div class="tesis">Se cocina 1-2 veces por semana; en servicio solo se arma. El cuello de botella es la demanda, no la cocina.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Tandas</h4>
+      <p>Proteínas, salsas y vegetales listos. Porciones <b>pesadas</b> y congeladas, cada
+      una con su jugo de servicio.</p>
+      <p>Res: 6 kg crudos → 38 porciones de 85 g.</p></div>
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Armado</h4>
+      <p><b>4-5 min</b> por sándwich. Orden fijo: pan → queso → proteína → toppings → salsas.</p>
+      <p>Techo real: <b>10 pedidos/hora</b>, ~40 al día.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Cuatro alarmas</h4>
+      <p><b>Toca cocinar</b> (08:15) · <b>caducidad de tanda</b> (08:12) · <b>stock bajo</b> ·
+      <b>pedido programado sin insumo</b> (cada hora).</p>
+      <p>Enterarse a las 8pm no se arregla: hay que descongelar, cocinar y enfriar.</p></div>
+    <div class="card oro"><span class="chip c-pend">Sin datos</span>
+      <h4>Compras y costos</h4>
+      <p>Construido: cada compra es un hecho con fecha, y el precio unitario sale del
+      <b>promedio ponderado</b> de las últimas 3.</p>
+      <p>Vacío hasta que cargues compras reales.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 5 -->
+<section class="etapa">
+  <div class="eh"><div class="num">5</div><h3>Entrega</h3>
+    <div class="tesis">El reparto es pass-through puro: lo cobra el pedido y se lo lleva el motorizado.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Cobro por distancia</h4>
+      <p><b>S/2/km</b> × 1.3 de factor de calle, mínimo <b>S/5</b>, redondeado hacia
+      arriba al medio sol.</p>
+      <p>Antes el cliente elegía su propia zona: elegir la más barata no le costaba nada.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Confirmación por link</h4>
+      <p>Token de <b>un solo uso</b> que se borra al confirmar. Quien reparte no necesita
+      cuenta.</p>
+      <p>Así <b>delivered_at</b> lo escribe quien entrega, no quien se acuerda después.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Tres señales en la cola</h4>
+      <p>Dos pedidos a la misma puerta · dos a la misma zona en 45 min · una dirección que
+      el motorizado no va a encontrar.</p></div>
+    <div class="card mal"><span class="chip c-ciego">Cuidado</span>
+      <h4>El delivery no deja margen</h4>
+      <p>Ni un céntimo. <b>Se descuenta entero en el cierre de caja</b>, incluso el de los
+      pedidos pagados con crédito: al motorizado se le paga igual.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 6 -->
+<section class="etapa">
+  <div class="eh"><div class="num">6</div><h3>Después de entregar</h3>
+    <div class="tesis">El segundo pedido es donde se gana o se pierde el negocio: 77% de los clientes de un restaurante no vuelven nunca.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Puntos y rangos</h4>
+      <p>1 punto por sol. Rangos de puro reconocimiento: <b>nunca cambian el precio</b>.</p></div>
+    <div class="card loco"><span class="chip c-ok">Listo</span>
+      <h4>Menú secreto</h4>
+      <p>Se abre a los <b>3 pedidos</b> pagados. Rotación mensual desde el panel, sin tocar
+      código.</p>
+      <p>No se cocina hasta que alguien lo desbloquee.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Calificación</h4>
+      <p>Post-entrega, 1-5 estrellas.</p>
+      <p><b>El momento de 4-5 estrellas es el único en que el cliente está contento y con el
+      teléfono en la mano</b> — y ahí todavía no se le pide que refiera.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Libro de reclamaciones</h4>
+      <p>Público, exigido por ley, con alarma antes del plazo legal.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 7 -->
+<section class="etapa">
+  <div class="eh"><div class="num">7</div><h3>Retención automática</h3>
+    <div class="tesis">Del piso al techo del rango de industria, los pedidos por cliente pasan de 2.34 a 3.37 sin gastar un sol más.</div></div>
+  <div class="grid">
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Al cliente</h4>
+      <p>Carrito abandonado · <b>pago abandonado</b> · segundo pedido · crédito sin usar ·
+      post-cancelación (a las 24 h, no al toque) · aniversario · cumpleaños · reto mensual ·
+      hora pico · resumen mensual.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Al negocio</h4>
+      <p>Pedido estancado · programado por empezar · rechazos de tarjeta · intentos de
+      acceso al panel · salud del sistema · cohortes al correo.</p></div>
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Dead-man switch</h4>
+      <p>pg_cron dice si <b>disparó</b>, no si funcionó. Un latido por corrida cruza las dos
+      fuentes y avisa a los 3 disparos sin señal.</p></div>
+    <div class="card mal"><span class="chip c-pend">Hueco</span>
+      <h4>Entre el pedido 1 y el 2</h4>
+      <p>El menú secreto está a 3 pedidos. <b>Entre el primero y el segundo no hay ningún
+      gancho concreto</b>, y ahí es donde se pierde el 77%.</p></div>
+  </div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 8 -->
+<section class="etapa">
+  <div class="eh"><div class="num">8</div><h3>Mermas y fugas</h3>
+    <div class="tesis">Todo lo que se compra y no se cobra.</div></div>
+  <div class="scroll"><table class="tabla">
+    <tr><th>Fuga</th><th>Cuánto</th><th>¿Se mide?</th><th>Estado</th></tr>
+    <tr><td>Merma de cocción</td><td>Res 46% · Pollo 31-36%</td><td class="si">Sí, con fuentes</td><td>Ya está dentro del costo por porción</td></tr>
+    <tr><td>Merma de servicio</td><td>—</td><td class="no">NO</td><td>El recorte, lo que cae, la porción mal pesada. Nadie lo cuenta.</td></tr>
+    <tr><td>Caducidad de tanda</td><td>3 días por defecto</td><td class="si">Sí</td><td>Alarma a las 08:12, antes de la hora de servicio</td></tr>
+    <tr><td>Comisión Culqi</td><td>5.5%</td><td class="si">Sí</td><td>Mitigada: Yape es el default</td></tr>
+    <tr><td>Descuentos apilados</td><td>Variable</td><td class="si">Sí</td><td>El descuento sale entero del margen: el costo no baja</td></tr>
+    <tr><td>Pedido cancelado</td><td>Variable</td><td class="si">Sí</td><td>Reversión de puntos y bonos por separado</td></tr>
+    <tr><td>Vegetales que se marchitan</td><td>—</td><td class="no">NO</td><td>Lechuga, tomate y apio se cortan al día. Lo que sobra no se registra.</td></tr>
+    <tr><td>Bebida vencida</td><td>4-7 días</td><td class="no">NO</td><td>Tandas de 3 L. La menta dura 4 días.</td></tr>
+  </table></div>
+  <div class="nota"><b>El punto ciego más grande es la merma de servicio.</b> El costo por
+  porción que usa todo el modelo es el del insumo <b>crudo por la cantidad de la receta</b>,
+  no el de la porción que de verdad sale del mostrador. Los rendimientos de cocción están
+  medidos; lo que se pierde armando, no. Se cierra pesando lo que se bota durante dos
+  semanas — no hace falta ningún sistema.</div>
+</section>
+<div class="flecha">↓</div>
+
+<!-- 9 -->
+<section class="etapa">
+  <div class="eh"><div class="num">9</div><h3>El dinero</h3>
+    <div class="tesis">El ingreso bruto miente por omisión de tres formas a la vez.</div></div>
+  <div class="grid">
+    <div class="card oro"><span class="chip c-ok">Listo</span>
+      <h4>Cierre de caja</h4>
+      <p>Descuenta el delivery entero, separa lo pagado con crédito (esa plata entró antes)
+      y resta la comisión de tarjeta.</p>
+      <p><b>Un día de puro crédito da caja negativa, y eso es correcto.</b></p></div>
+    <div class="card calmo"><span class="chip c-ok">Listo</span>
+      <h4>Costos fijos</h4>
+      <p>Menos de <b>S/500/mes</b>. Opera desde casa, sin alquiler y sin planilla.</p>
+      <p>Mano de obra S/0 mientras el volumen lo permita.</p></div>
+    <div class="card calmo"><span class="chip c-ok">Cerrado</span>
+      <h4>Las tres fugas de margen</h4>
+      <p>Yape por defecto <b>S/487</b> · focaccia cobrada <b>S/175</b> · +S/2 en el 30CM
+      <b>S/423</b>.</p>
+      <p>Suman <b>S/1,085/mes</b> sin adquirir a nadie.</p></div>
+    <div class="card oro"><span class="chip c-pend">Meta</span>
+      <h4>El objetivo</h4>
+      <p><b>S/5,000 netos</b> desde el mes 6 (mar-27), con S/4,000 desde el mes 3 (dic-26).</p>
+      <p>Es un <b>piso</b>, no un pronóstico: se pone donde puedas dormir tranquilo.</p></div>
+  </div>
+  <div class="nota gold"><b>Lo que no hay que hacer todavía:</b> subir el presupuesto de
+  publicidad. Mientras no se sepa de qué lado del umbral está el CAC real, gastar más puede
+  estar comprando pérdidas más rápido — y el modelo muestra que pasado cierto punto,
+  <b>más gasto empeora el neto del mes</b>.</div>
+</section>
+
+<footer>
+  Reconstruido desde el código, la base de datos y los documentos del repo · 2026-09-04 ·
+  Las cifras de CAC, retención y proyección son <b>simulación</b> hasta que haya ventas reales.
+</footer>
+</div>
