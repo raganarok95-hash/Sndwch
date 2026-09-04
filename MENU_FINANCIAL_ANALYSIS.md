@@ -37,9 +37,8 @@
 > TUYO pasa de 51.3%/51.9% a **42.0%/41.7%** — sano en los dos tamaños, sin tocar su precio de
 > venta. THE FRESH (SIG04) mejora en la misma proporción.
 >
-> ⚠ **Falta confirmar si los 140 g son peso ESCURRIDO o contenido neto.** Si fueran escurrido,
-> el kilo sale a S/28.57 y la porción de 85 g a S/2.20 — todavía mejor. **La conclusión no
-> cambia en ninguna lectura**, por eso se usa la conservadora.
+> **Confirmado por el dueño 2026-09-04: los 140 g son CONTENIDO NETO.** La lectura
+> conservadora es la correcta y el número queda cerrado en S/43.96/kg escurrido.
 >
 > ## ⚠ El pan estaba subcosteado un 28% — corregido con precio real (2026-08-22)
 >

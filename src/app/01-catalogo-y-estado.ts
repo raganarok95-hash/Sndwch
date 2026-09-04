@@ -140,12 +140,12 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
   // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:22.9,pDbl:7,pDbl30:14},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:21.9,pDbl:6,pDbl30:11},
+  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:24.9,pDbl:7,pDbl30:14},
+  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:21.9,pDbl:6,pDbl30:11,vaultOnly:true},
+  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:23.9,pDbl:6,pDbl30:11,vaultOnly:true},
   // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
   // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
   // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -159,13 +159,13 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
   // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
   // en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
+  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
   // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:30.9,pDbl:9.9,pDbl30:19.9},
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -173,7 +173,7 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
   // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
   // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:24.9,pDbl:6,pDbl30:6}
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:6}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -207,7 +207,9 @@ var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?
   // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
   // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
   // con VALID_TOPS en supabase/functions/api/catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado'},
+  // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
+  // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
+  {id:'T08',l:'Apio',     s:'Picado',sigOnly:true},
   // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
   // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
   // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.

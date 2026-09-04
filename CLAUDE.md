@@ -794,9 +794,8 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de **S/4.82 a S/3.25**, y la de 170 g de S/9.64 a S/6.50. **El atún deja de ser la proteína
   de peor margen del catálogo y pasa a estar sana en los dos tamaños** (42.0% y 41.7% contra
   51.3% y 51.9%). Su precio de venta NO se tocó: lo que cambió es el costo.
-  ⚠ **Falta confirmar si los 140 g son peso ESCURRIDO o contenido neto.** Si fueran
-  escurrido, el kilo sale a S/28.57 y la porción a S/2.20 — todavía mejor. La conclusión no
-  cambia en ninguna lectura, por eso se usa la conservadora.
+  **Confirmado por el dueño 2026-09-04: los 140 g son CONTENIDO NETO**, así que la lectura
+  conservadora (S/43.96/kg escurrido) es la correcta y ya no hay incertidumbre acá.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
   de venta — deliberadamente conservador/alto a propósito. Un cálculo directo con precios
   reales de Perú investigados dio ~26-36% según el producto; el dueño pidió trabajar con
@@ -854,6 +853,26 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   ⚠ **Subway no cobra las salsas: son gratis e ilimitadas.** Nosotros incluimos 3 y cobramos
   la 4ta a S/2. Cualquier propuesta de cortar la 3ra salsa va EN CONTRA de la paridad con
   Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
+  **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
+  S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
+- **El apio (T08) salió de ARMA EL TUYO el 2026-09-04** (decisión del dueño) pero **NO se borró
+  del catálogo**: pasó a `SIG_ONLY_TOPS`/`sigOnly:true` porque **THE FRESH (SIG04) lo lleva y es
+  su único elemento crocante** — entró ahí el 2026-08-08 justamente porque el pimiento curado
+  no aportaba crocancia. Borrarlo dejaría ese Signature sin la textura por la que se eligió.
+  Es el primer uso real del mecanismo `sigOnly` desde que se fue THE CHICAGO, y la razón por la
+  que este archivo insiste en no borrar esa anotación de tipo "porque nadie la usa".
+- **+S/2 en el 30CM de las 6 proteínas de ARMA EL TUYO (2026-09-04, decisión del dueño).**
+  Quedan: Res 24.90 · Pollo teriyaki 23.90 · Pollo cajún 23.90 · Atún 32.90 · Embutido 32.90 ·
+  Albóndiga 26.90. El 30CM era donde el BYO se rompía: pan y proteína se duplican pero el
+  precio solo subía S/8, así que el piso fijo (S/6.40 a 30CM) se comía el margen. El dueño
+  eligió S/2 y no los S/5.32 que harían falta para llevar res exactamente al 45%. **Aplicado en
+  código Y en `catalog_prices`** (migración `20260904025131_subir_p30_byo_dos_soles`).
+  **Por qué se pasaban pollo y embutido, que es la pregunta que lo destrabó:** el precio que
+  cada proteína necesita en 15CM es `S/8.56 + 2.22 × (costo de la proteína)`. El pollo se
+  pasaba por 14-19 CÉNTIMOS porque su precio es el más bajo del catálogo y el piso fijo se come
+  el 27.7% antes de la proteína; el embutido se pasa por S/1.19 porque su costo es el MÁS ALTO
+  de todos (S/4.29 = S/48/kg real) y se cobra igual que el atún, que ahora cuesta S/3.25 — una
+  paridad heredada de cuando se creía que ambos costaban ~S/38/kg.
 - **NO habrá acompañamientos de comida — decisión del dueño 2026-08-15.** Nada de papas
   fritas, nachos, ni ningún side sólido. El único "acompañamiento" del catálogo son las 4
   bebidas de la casa (que en el código viven bajo `SIDES`/`SIDE_PRICE` por razones

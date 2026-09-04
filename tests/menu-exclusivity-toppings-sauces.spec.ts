@@ -95,3 +95,34 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
   const po = calls.find((c) => c.action === 'place-order')!;
   expect(JSON.stringify(po.body.items)).toContain('T09');
 });
+
+// APIO (T08) — sacado de ARMA EL TUYO el 2026-09-04, pero NO borrado del catálogo.
+//
+// POR QUÉ TIENE PRUEBA, Y POR QUÉ SON DOS ASERCIONES OPUESTAS. THE FRESH (SIG04) lleva apio
+// y es su ÚNICO elemento crocante — entró ahí el 2026-08-08 justamente porque el pimiento
+// curado no aportaba crocancia y la receta quedaba sin ninguna. Si alguien "limpia" el
+// catálogo borrando T08 en vez de marcarlo sigOnly, ese Signature pierde en silencio la
+// textura por la que se eligió: no falla ningún tipo, no revienta nada, el sándwich sale
+// distinto y nadie se entera.
+test('el APIO ya no se puede elegir en ARMA EL TUYO, pero sigue en THE FRESH', async ({ page }) => {
+  await gotoApp(page, {});
+
+  // 1) No se ofrece en el armador.
+  await page.locator('text=Arma el tuyo').click();
+  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
+  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await page.locator('[onclick^="base="]').first().click();
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await page.locator('[onclick^="prot="]').first().click();
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await expect(page.locator('[onclick*="\'T08\'"]')).toHaveCount(0);
+  // La lechuga sí, para confirmar que estamos mirando el paso correcto.
+  await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
+
+  // 2) Pero sigue vivo en la receta de THE FRESH.
+  const apioSigueEnLaReceta = await page.evaluate(
+    () => (window as any).SIGS.find((s: any) => s.id === 'SIG04')?.tops?.includes('T08'),
+  );
+  expect(apioSigueEnLaReceta).toBe(true);
+});

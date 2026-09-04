@@ -129,16 +129,25 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // Se sube SOLO donde el costo pasaba el techo de 45%: P06 se queda en 6/6 porque ya estaba
 // sano (22% y 45%) — el 45% es un techo, no una meta a la que haya que subir.
 // DEBEN coincidir con PROTS en src/app.ts.
+// +S/2 en TODOS los p30 el 2026-09-04 (decisión del dueño). El 30CM es donde el ARMA EL
+// TUYO se rompía: el pan y la proteína se duplican pero el precio solo subía S/8, así que el
+// piso fijo (S/6.40 a 30CM) se comía el margen. Con esto res 30CM baja de 55.5% a 51.0% y
+// pollo de 51.8% a 47.5% — todavía sobre el techo, pero el dueño eligió S/2 y no los S/5.32
+// que harían falta para llevar res exactamente al 45%: una subida así en el producto de
+// ticket alto, en un negocio que aún no abre, cuesta más de lo que el techo vale.
+// ⚠ Un cambio de precio NO está terminado hasta que `catalog_prices` lo refleje.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number; pDbl30: number }> = {
-  P01: { p15: 14.9, p30: 22.9, pDbl: 7, pDbl30: 14 },
-  P02: { p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11 },
-  P03: { p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11 },
-  P04: { p15: 16.9, p30: 30.9, pDbl: 10.9, pDbl30: 21.9 },
-  P05: { p15: 16.9, p30: 30.9, pDbl: 9.9, pDbl30: 19.9 },
+  P01: { p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14 },
+  P02: { p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
+  // P03 sube igual que los demás por coherencia de la tabla, aunque no tiene efecto público:
+  // es vaultOnly, así que no se puede pedir por ARMA EL TUYO.
+  P03: { p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
+  P04: { p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9 },
+  P05: { p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9 },
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
-  P06: { p15: 14.9, p30: 24.9, pDbl: 6, pDbl30: 6 },
+  P06: { p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 6 },
   // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
   // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
@@ -172,7 +181,13 @@ export let SECRET_SIGNATURE_NAME = "Menú secreto";
 // mismo que va a hacer falta cuando SIG07 vuelva, o cuando aparezca otro Signature con
 // un ingrediente propio.
 export const SIG_ONLY_SAUCES = new Set<string>([]);
-export const SIG_ONLY_TOPS = new Set<string>([]);
+// T08 (Apio) pasa a SIG-ONLY el 2026-09-04 (decisión del dueño: sacarlo de ARMA EL TUYO).
+// NO se borra del catálogo: THE FRESH (SIG04) lo lleva, y es su ÚNICO elemento crocante —
+// entró ahí el 2026-08-08 justamente porque el pimiento curado no aportaba crocancia y la
+// receta quedaba sin ninguna. Borrarlo dejaría a ese Signature sin la textura por la que se
+// eligió. `sigOnly` es exactamente el mecanismo para esto: el cliente no lo ve en el
+// armador, la receta lo sigue usando, y deriveCart lo sigue tasando.
+export const SIG_ONLY_TOPS = new Set<string>(["T08"]);
 export const SIG_ONLY_PROTS = new Set<string>([]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
