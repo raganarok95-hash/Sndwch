@@ -1,7 +1,24 @@
 # SND//WCH — Gramajes Subway y el camino del margen
 
-**2026-09-04.** Sale de `modelo/menu_v3_subway.py`. Todos los costos son cotizados salvo el
-atún, el embutido y la albóndiga, que siguen siendo estimados.
+**2026-09-04.** Sale de `modelo/menu_v3_subway.py`.
+
+> ## ✅ DECISIONES TOMADAS POR EL DUEÑO (2026-09-04)
+>
+> - **Paso 1 aplicado**: gramajes al estándar de Subway y **lechuga (T09) agregada al
+>   catálogo**. Ya está en código, en el recetario y con prueba.
+> - **El queso sigue GRATIS.** No se cobra.
+> - **Atún cotizado: S/4 la lata de 140 g al por mayor.** Su costo cae de S/4.82 a S/3.25 la
+>   porción de 15CM, y **deja de cruzar el techo** (51.3% → 42.0%).
+> - **Sobre las salsas — dato que corrige lo que este documento proponía:** *Subway no cobra
+>   las salsas, son gratis e ilimitadas.* Nosotros ya incluimos 3 y cobramos la 4ta. **Cortar
+>   la 3ra iría EN CONTRA de la paridad con Subway**, no a favor. Sigue siendo una decisión
+>   posible, pero no se puede presentar como "igualar a Subway".
+>
+> **Estado con esas decisiones: 8 de 12 combinaciones siguen sobre el techo de 45%** (eran
+> 10). Las 8 son de res, pollo y embutido; el atún y la albóndiga quedaron sanos.
+> Ver §4-Paso 3: lo único que queda sobre la mesa es el precio del 30CM.
+
+Todos los costos son cotizados salvo el embutido y la albóndiga, que siguen siendo estimados.
 
 ---
 

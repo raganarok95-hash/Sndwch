@@ -787,6 +787,16 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   (atún ~S/4.82/S/9.64), P05 (embutido ~S/4.29/S/8.59) y P06 (albóndiga ~S/1.34/S/2.68)
   son **estimados sin cotizar**. Cualquier cálculo de margen parte de estos números, no
   del precio del insumo crudo.
+  **⚠ El atún YA ESTÁ COTIZADO desde el 2026-09-04: S/4 la lata de 140 g, al por mayor**
+  (dato del dueño). Eso es **S/43.96/kg escurrido** con la lectura conservadora (140 g de
+  contenido neto, 65% de rendimiento al escurrir), contra los **S/67/kg investigados online**
+  que usaba el modelo. La porción de 85 g de ensalada (68 g de atún + 17 g de mayonesa) pasa
+  de **S/4.82 a S/3.25**, y la de 170 g de S/9.64 a S/6.50. **El atún deja de ser la proteína
+  de peor margen del catálogo y pasa a estar sana en los dos tamaños** (42.0% y 41.7% contra
+  51.3% y 51.9%). Su precio de venta NO se tocó: lo que cambió es el costo.
+  ⚠ **Falta confirmar si los 140 g son peso ESCURRIDO o contenido neto.** Si fueran
+  escurrido, el kilo sale a S/28.57 y la porción a S/2.20 — todavía mejor. La conclusión no
+  cambia en ninguna lectura, por eso se usa la conservadora.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
   de venta — deliberadamente conservador/alto a propósito. Un cálculo directo con precios
   reales de Perú investigados dio ~26-36% según el producto; el dueño pidió trabajar con
@@ -831,6 +841,19 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
+- **Gramajes de toppings al estándar de Subway desde el 2026-09-04** (decisión del dueño).
+  Entró **T09 Lechuga** (21 g), que era el único ingrediente del set estándar de Subway que no
+  existía en el catálogo — y el de mayor volumen al menor costo por gramo, o sea lo que más
+  hace que un sándwich se vea lleno por lo que menos cuesta. Tomate subió de 25 a 35 g;
+  aceituna, pimiento, cebolla y apio bajaron a su nivel de Subway. **Total 92 g contra 94 g
+  antes: el cambio cuesta dos céntimos MENOS.** No fue una decisión de costo sino de reparto.
+  La carne ya estaba al nivel (85 g/170 g contra los ~80-90 g que implican los 24-26 g de
+  proteína del 6-inch de Subway). **La lechuga NO se agregó a ninguna receta de Signature** —
+  entró solo al catálogo de ARMA EL TUYO, donde el cliente elige; meterla en una receta
+  cerrada es una decisión de producto que el dueño no ha tomado.
+  ⚠ **Subway no cobra las salsas: son gratis e ilimitadas.** Nosotros incluimos 3 y cobramos
+  la 4ta a S/2. Cualquier propuesta de cortar la 3ra salsa va EN CONTRA de la paridad con
+  Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
 - **NO habrá acompañamientos de comida — decisión del dueño 2026-08-15.** Nada de papas
   fritas, nachos, ni ningún side sólido. El único "acompañamiento" del catálogo son las 4
   bebidas de la casa (que en el código viven bajo `SIDES`/`SIDE_PRICE` por razones

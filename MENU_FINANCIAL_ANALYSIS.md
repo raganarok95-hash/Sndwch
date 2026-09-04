@@ -20,13 +20,26 @@
 > | P01 res mechada | 10% | 40% | **0.54** | S/3.15 | S/6.30 |
 > | P02 pollo teriyaki | 8% | 25% | **0.690** | S/2.47 | S/4.95 |
 > | P03 pollo cajún | 8% | 30% | **0.644** | S/2.49 | S/4.97 |
-> | P04 atún *(estimado)* | — | — | — | S/4.82 | S/9.64 |
+> | P04 atún **COTIZADO 2026-09-04** | — | 0.65 al escurrir | — | **S/3.25** | **S/6.50** |
 > | P05 embutido *(estimado)* | 5% laminado | — | 0.95 | S/4.29 | S/8.59 |
 > | P06 albóndiga *(estimado)* | — | 25% | 0.75 | S/1.34 | S/2.68 |
 >
-> P01/P02/P03 vienen de investigación con fuentes citadas. **P04/P05/P06 son estimación
-> sin cotizar** — el atún es el más débil (usa ~S/67/kg investigado online, sin cotización
-> real de proveedor).
+> P01/P02/P03 vienen de investigación con fuentes citadas. **P05/P06 siguen siendo estimación
+> sin cotizar.**
+>
+> **⚠ EL ATÚN YA ESTÁ COTIZADO (dueño, 2026-09-04): S/4 la lata de 140 g, al por mayor.**
+> Con la lectura conservadora (140 g de contenido neto, 65% de rendimiento al escurrir) son
+> **S/43.96/kg escurrido**, contra los S/67/kg investigados online que usaba este documento.
+> La porción de 85 g de ensalada (68 g de atún + 17 g de mayonesa, ratio 4:1 del recetario)
+> pasa de **S/4.82 a S/3.25**, y la de 170 g de S/9.64 a S/6.50.
+>
+> **Consecuencia: el atún deja de ser la proteína de peor margen del catálogo.** En ARMA EL
+> TUYO pasa de 51.3%/51.9% a **42.0%/41.7%** — sano en los dos tamaños, sin tocar su precio de
+> venta. THE FRESH (SIG04) mejora en la misma proporción.
+>
+> ⚠ **Falta confirmar si los 140 g son peso ESCURRIDO o contenido neto.** Si fueran escurrido,
+> el kilo sale a S/28.57 y la porción de 85 g a S/2.20 — todavía mejor. **La conclusión no
+> cambia en ninguna lectura**, por eso se usa la conservadora.
 >
 > ## ⚠ El pan estaba subcosteado un 28% — corregido con precio real (2026-08-22)
 >

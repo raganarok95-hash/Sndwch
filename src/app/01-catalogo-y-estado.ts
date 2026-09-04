@@ -207,7 +207,11 @@ var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?
   // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
   // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
   // con VALID_TOPS en supabase/functions/api/catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado'}
+  {id:'T08',l:'Apio',     s:'Picado'},
+  // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
+  // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
+  // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
+  {id:'T09',l:'Lechuga',  s:'Fresca'}
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico

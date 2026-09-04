@@ -47,3 +47,51 @@ test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no apar
   await expect(page.locator('text=Spicy').first()).not.toBeVisible();
   await expect(page.locator('text=Picante // Miel')).not.toBeVisible();
 });
+
+// LECHUGA (T09) — agregada el 2026-09-04 al igualar los gramajes al estándar de Subway.
+//
+// POR QUÉ TIENE PRUEBA. Era el único ingrediente del set estándar de Subway que no existía
+// en el catálogo, y el de MAYOR volumen (21 g) al menor costo por gramo — lo que más hace
+// que un sándwich se vea lleno, por lo que menos cuesta. Su modo de fallo es silencioso: un
+// topping que desaparece del array no rompe nada, solo deja al sándwich viéndose más vacío
+// y a nadie le salta un error.
+test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) => {
+  const calls = await gotoApp(page, {
+    'place-order': (body: any) => ({
+      success: true,
+      order: { id: 'ord-lechuga', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total },
+      customer: null,
+    }),
+  });
+
+  await page.locator('text=Arma el tuyo').click();
+  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
+  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await page.locator('[onclick^="base="]').first().click();
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await page.locator('[onclick^="prot="]').first().click();
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+
+  // Paso de toppings: la lechuga se lista y se puede elegir.
+  await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
+  await page.locator('[onclick*="\'T09\'"]').first().click();
+
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // queso
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // salsas
+  await page.locator('[onclick*="sauces.push("]').first().click();
+  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
+
+  await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
+  await page.locator('#o-nom').fill('Cliente Lechuga');
+  await page.locator('#o-phone').fill('987654399');
+  await page.locator('#o-addr').fill('Av. España 123, Trujillo');
+  await page.locator('#o-district').selectOption('trujillo');
+  await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+
+  // La lechuga viaja al servidor dentro del ítem, no se pierde en el camino.
+  const po = calls.find((c) => c.action === 'place-order')!;
+  expect(JSON.stringify(po.body.items)).toContain('T09');
+});

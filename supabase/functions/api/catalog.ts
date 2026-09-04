@@ -67,7 +67,11 @@ export const VALID_BASES = new Set(["B01", "B03"]);
 // cambio en TOPS en src/app.ts.
 // T07 (Giardiniera) fuera desde el 2026-08-22: se retiró con THE CHICAGO (SIG07), su
 // único consumidor. Ver el comentario del retiro en SIG_DATA más abajo.
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T08"]);
+// T09 (Lechuga) agregado 2026-09-04 (decisión del dueño: igualar los gramajes al estándar
+// de Subway). Era el único ingrediente de su set estándar que no existía en el catálogo, y
+// además el de MAYOR volumen (21 g en el 6-inch) y el más barato por gramo — o sea lo que
+// más hace que un sándwich se vea lleno, por lo que menos cuesta. Ver CAMINO_MENU.md §1.
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T08", "T09"]);
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
@@ -513,6 +517,7 @@ export const TOP_LABEL: Record<string, string> = {
   T05: "Aceituna // Negra en rodajas",
   T06: "Pimiento // Curado",
   T08: "Apio // Picado",
+  T09: "Lechuga // Fresca",
 };
 export const SAUCE_LABEL: Record<string, string> = {
   S01: "Aioli // Signature",
