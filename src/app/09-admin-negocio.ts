@@ -1722,6 +1722,9 @@ function mktBlock(pkg,week){
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:4px">Caption (Instagram/Facebook) //</div>'
     +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:6px">'+esc(pkg.caption)+'</div>'
     +'<button onclick="copyMktText(\''+week+'\',\'caption\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">Copiar</button>'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:4px">Guion de video //</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:6px;white-space:pre-wrap">'+esc(pkg.videoIdea||'')+'</div>'
+    +'<button onclick="copyMktText(\''+week+'\',\'videoIdea\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#0d0d0d;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">Copiar</button>'
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:4px">Idea de foto //</div>'
     +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">'+esc(pkg.photoIdea)+'</div>'
     +'</div>';
@@ -2003,7 +2006,9 @@ function sAdminCalendar(){
     h+=calendarData.map(function(e){
       var next=e.status==='draft'?'scheduled':(e.status==='scheduled'?'posted':null);
       var nextLabel=e.status==='draft'?'Programar':(e.status==='scheduled'?'Marcar publicado':null);
-      var texts=[e.caption_text?'Post: '+e.caption_text:'',e.whatsapp_text?'WhatsApp: '+e.whatsapp_text:'',e.photo_idea?'Foto: '+e.photo_idea:''].filter(Boolean);
+      // El guion va ANTES de la idea de foto: es lo que hay que grabar y lo que la pauta
+      // consume, y en una lista larga lo primero es lo que se lee.
+      var texts=[e.caption_text?'Post: '+e.caption_text:'',e.whatsapp_text?'WhatsApp: '+e.whatsapp_text:'',e.video_idea?'Video: '+e.video_idea:'',e.photo_idea?'Foto: '+e.photo_idea:''].filter(Boolean);
       // Publicar de verdad (Meta Graph API) solo tiene sentido para instagram/facebook, y
       // solo una vez que la entrada tiene una foto real subida — el resto de canales
       // (whatsapp/google_business/otro) siguen siendo copiar/pegar a mano, igual que

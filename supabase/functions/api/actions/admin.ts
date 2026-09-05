@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
@@ -1265,7 +1265,27 @@ export async function actAdminProblemAddresses(b: any) {
 //
 // Llamar a loadCatalogPrices() antes (que arrastra loadSecretSignature) es lo que hace que
 // SIG_GATES.SIG05.minOrders sea el valor vigente y no la semilla del código.
-function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string }[] {
+//
+// ── EL GUION DE VIDEO NO ES UN EXTRA: ES EL FORMATO QUE DE VERDAD SE PAUTA ──────────────
+//
+// Hasta el 2026-09-04 los 8 temas proponían una FOTO y ninguno un video, mientras
+// `marketing_calendar` ya soportaba `media_type='video'` y la publicación automática a
+// IG/FB ya estaba construida. O sea que la única parte que costaba trabajo —decidir qué
+// grabar— seguía sin resolverse justo para el formato que la pauta necesita.
+//
+// Cada `videoIdea` es un guion RODABLE, no una idea: formato, duración, y qué pasa en cada
+// tramo. Los formatos (A..E) y las reglas que llevan dentro salen de `FLUJO_VIDEO_ANUNCIOS.md`
+// y cada una tiene fuente de plataforma o de estudio:
+//   · 9:16 y 12-18 s — 9:16 con audio dio 34.5% menor costo por resultado que imagen en Reels.
+//   · El gancho va en el fotograma 1 y el logo AL FINAL — abrir con marca tira el video.
+//   · El "//" y el sándwich en el mismo plano que la cara — es la mitigación medida del
+//     efecto vampiro (que el personaje se robe el recuerdo de la marca).
+// Los hermanos casi nunca comparten plano cerrado: está reportado que la identidad de los
+// personajes se degrada en Flow cuando dos comparten primer plano.
+//
+// Las cifras se interpolan igual que en los otros tres campos, por la misma razón: un número
+// escrito a mano en un texto que el dueño copia y pega es una promesa que se rompe sola.
+export function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string }[] {
   const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
   return [
   {
@@ -1273,48 +1293,56 @@ function marketingContent(): { theme: string; whatsapp: string; caption: string;
     whatsapp: `🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos.`,
     caption: `Ya abrimos // SND//WCH llega a tu zona. Sándwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos para canjear después.`,
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
+    videoIdea: `A · EL PLEITO — 9:16, 15 s. 0-2s plano dividido, sin música: el calmado pone UNA salsa con cuidado, el alocado echa cinco de golpe. 2-6s CALMADO: "Está terminado." ALOCADO: "Le falta." 6-12s los dos sándwiches al centro, los dos se ven bien (ninguno es el chiste). 12-15s el "//" entra entre ambos: "Los dos están en la carta. Ya abrimos." Sobreimpreso al cierre: crear tu cuenta te da ${WELCOME_BONUS_POINTS} puntos.`,
   },
   {
     theme: "PRUEBA SOCIAL",
     whatsapp: "¿Ya probaste SND//WCH? Calificar tu pedido te toma 10 segundos y nos ayuda un montón 🙏",
     caption: "La mejor publicidad la hacen ustedes // Si ya pediste con nosotros, califica tu experiencia desde la app (PUNTOS → MIS PEDIDOS). Cada reseña le muestra a más gente por qué vale la pena.",
     photoIdea: "Captura de una calificación de 5 estrellas (con permiso del cliente), o foto de alguien recibiendo su pedido.",
+    videoIdea: "A · EL PLEITO — 9:16, 14 s. 0-2s los dos miran el mismo celular. 2-7s ALOCADO: \"Cinco estrellas. Fue el mío.\" CALMADO, sin mirarlo: \"No dice cuál.\" 7-11s los dos sándwiches en el mismo plano que sus caras. 11-14s cierre: \"Califica el tuyo desde la app y dinos de quién fue.\" Ojo: si usas una reseña real necesitas permiso del cliente.",
   },
   {
     theme: "REFERIDOS",
     whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
     caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
     photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
+    videoIdea: `E · LA MESA LARGA — 9:16, 16 s. Único formato donde colaboran. 0-2s el alocado arrastra a alguien fuera de cuadro hacia la mesa. 2-8s el calmado le sirve un sándwich al recién llegado, sin decir nada. 8-13s los dos sándwiches y el "//" en cuadro. 13-16s cierre: quien invita se gana un 15CM (${REFERRER_REWARD_POINTS} pts) y el invitado una bebida (${REFERRAL_BONUS_POINTS} pts).`,
   },
   {
     theme: "MENÚ SECRETO",
     whatsapp: `Hay un Signature que no está en el menú público. Se desbloquea a partir de tu pedido número ${secretoMin} 👀`,
     caption: `Lo que no ves en el menú // A partir de tu pedido número ${secretoMin} se desbloquea un Signature que no aparece para nadie más, y cambia cada mes. No decimos cuál — te lo tienes que ganar.`,
     photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
+    videoIdea: `D · EL SECRETO — 9:16, 12 s. Oscuro, el más corto de los cinco. 0-2s el alocado se acerca a cámara: "Hay uno que no está en el—". 2-5s el calmado le tapa la boca. 5-9s silencio, solo el "//" iluminado. 9-12s texto en pantalla: se desbloquea en tu pedido número ${secretoMin}. NO se muestra el producto: no se puede. ⚠ Usa este formato POCO — lo "interesante" da un pico de conversación y no lo sostiene.`,
   },
   {
     theme: "COMBO / HORA VALLE",
     whatsapp: "En hora valle tu bebida sale gratis con cualquier sándwich. Se aplica solo, sin código.",
     caption: "Combo inteligente // Agrega una bebida a tu sándwich y ahorra automático — en hora valle, hasta gratis. Válido solo desde la app.",
     photoIdea: "Sándwich + bebida juntos, estilo flat lay.",
+    videoIdea: "A · EL PLEITO — 9:16, 14 s. 0-2s el alocado pone la bebida al lado del sándwich de un golpe. 2-6s CALMADO: \"No la pediste.\" ALOCADO: \"No la pagué.\" 6-11s sándwich + bebida + el \"//\" en cuadro con las dos caras. 11-14s cierre: en hora valle la bebida va gratis, se aplica sola y sin código.",
   },
   {
     theme: "PEDIDOS GRUPALES",
     whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
     caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
+    videoIdea: `E · LA MESA LARGA — 9:16, 16 s. 0-2s manos distintas entrando en cuadro por los dos lados. 2-9s los hermanos reparten sándwiches distintos sin pelearse — cada uno entrega los suyos. 9-13s plano cenital de la mesa llena, el "//" al centro. 13-16s cierre: un link, cada quien arma el suyo, y desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches invitamos el 15CM más barato.`,
   },
   {
     theme: "PLAN SEMANAL",
     whatsapp: `Paga S/${WEEKLY_PLAN_PRICE} hoy y recibe S/${WEEKLY_PLAN_CREDIT} en saldo para pedir cuando quieras. El saldo no vence.`,
     caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
     photoIdea: `Gráfico 'S/${WEEKLY_PLAN_PRICE} → S/${WEEKLY_PLAN_CREDIT}', o varios pedidos de la semana juntos.`,
+    videoIdea: `C · LA RECETA DEL CALMADO — 9:16, 15 s. Casi sin diálogo, es el formato de textura. 0-3s sonido real del pan y el cuchillo, sin música. 3-10s el calmado arma un Signature en orden, plano cerrado de las manos. 10-13s el alocado asoma al fondo y no toca nada. 13-15s cierre: paga S/${WEEKLY_PLAN_PRICE} y recibe S/${WEEKLY_PLAN_CREDIT} de saldo, que no vence. Un Signature distinto cada vez que uses este formato.`,
   },
   {
     theme: "RECORDATORIO",
     whatsapp: "SND//WCH — pedidos todos los días. Arma el tuyo o elige un Signature curado por nosotros.",
     caption: "Por si se te olvidó que existimos // Seguimos aquí, armando sandwiches todos los días. Pide por la app cuando se te antoje.",
     photoIdea: "Cualquier foto de producto que no hayas usado en semanas anteriores.",
+    videoIdea: "B · EL RETO DEL ALOCADO — 9:16, 15 s. 0-2s el alocado ya está agregando cosas, arranca a media acción. 2-9s sigue apilando, el calmado lo mira sin decir una palabra. 9-13s el sándwich terminado en el mismo plano que su cara y el \"//\". 13-15s cierre: \"Y sí, puedes pedirlo así.\" ⚠ Excesivo pero RECONOCIBLE como sándwich: la comida que se ve típica genera más engagement que la rara.",
   },
   ];
 }
@@ -1362,10 +1390,10 @@ const CALENDAR_GENERATE_MAX_WEEKS = 12;
 export function planContentCalendar(
   desdeFecha: string,
   semanas: number,
-  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string }[],
+  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string }[],
   indiceInicial: number,
   yaOcupadas: Set<string>,
-): { scheduled_date: string; title: string; caption_text: string; whatsapp_text: string; photo_idea: string }[] {
+): { scheduled_date: string; title: string; caption_text: string; whatsapp_text: string; photo_idea: string; video_idea: string }[] {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(desdeFecha) || !Array.isArray(temas) || temas.length === 0) return [];
   const n = Math.max(0, Math.min(Math.floor(Number(semanas) || 0), CALENDAR_GENERATE_MAX_WEEKS));
   const [y, m, d] = desdeFecha.split("-").map(Number);
@@ -1382,6 +1410,7 @@ export function planContentCalendar(
       caption_text: tema.caption,
       whatsapp_text: tema.whatsapp,
       photo_idea: tema.photoIdea,
+      video_idea: tema.videoIdea,
     });
   }
   return salida;
@@ -1474,6 +1503,10 @@ export async function actAdminCalendarCreate(b: any) {
     caption_text: b.captionText ? String(b.captionText).slice(0, 2000) : null,
     whatsapp_text: b.whatsappText ? String(b.whatsappText).slice(0, 2000) : null,
     photo_idea: b.photoIdea ? String(b.photoIdea).slice(0, 500) : null,
+    // 1500 y no 500: un guion por tramos (formato, duración, qué pasa en cada tramo) no
+    // entra en el mismo tope que "sándwich + bebida, flat lay". Cortarlo a 500 dejaría el
+    // cierre —que es justo donde va la oferta— fuera del texto guardado.
+    video_idea: b.videoIdea ? String(b.videoIdea).slice(0, 1500) : null,
     campaign_tag: b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null,
     created_by: s.phone,
     posted_at: status === "posted" ? new Date().toISOString() : null,
@@ -1503,6 +1536,7 @@ export async function actAdminCalendarUpdate(b: any) {
   if (b.captionText !== undefined) patch.caption_text = b.captionText ? String(b.captionText).slice(0, 2000) : null;
   if (b.whatsappText !== undefined) patch.whatsapp_text = b.whatsappText ? String(b.whatsappText).slice(0, 2000) : null;
   if (b.photoIdea !== undefined) patch.photo_idea = b.photoIdea ? String(b.photoIdea).slice(0, 500) : null;
+  if (b.videoIdea !== undefined) patch.video_idea = b.videoIdea ? String(b.videoIdea).slice(0, 1500) : null;
   if (b.campaignTag !== undefined) patch.campaign_tag = b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null;
   if (b.status !== undefined) {
     if (!CALENDAR_STATUSES.has(b.status)) throw new ApiError("Estado inválido.", 400);

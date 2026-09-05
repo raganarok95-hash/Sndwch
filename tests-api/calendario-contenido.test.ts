@@ -18,9 +18,9 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 import { planContentCalendar } from "../supabase/functions/api/actions/admin.ts";
 
 const TEMAS = [
-  { theme: "A", whatsapp: "wa-a", caption: "cap-a", photoIdea: "foto-a" },
-  { theme: "B", whatsapp: "wa-b", caption: "cap-b", photoIdea: "foto-b" },
-  { theme: "C", whatsapp: "wa-c", caption: "cap-c", photoIdea: "foto-c" },
+  { theme: "A", whatsapp: "wa-a", caption: "cap-a", photoIdea: "foto-a", videoIdea: "video-a" },
+  { theme: "B", whatsapp: "wa-b", caption: "cap-b", photoIdea: "foto-b", videoIdea: "video-b" },
+  { theme: "C", whatsapp: "wa-c", caption: "cap-c", photoIdea: "foto-c", videoIdea: "video-c" },
 ];
 
 Deno.test("genera una entrada por semana, separadas 7 días", () => {
@@ -37,6 +37,11 @@ Deno.test("cada entrada trae el texto completo, no solo el tema", () => {
   assertEquals(e.caption_text, "cap-a");
   assertEquals(e.whatsapp_text, "wa-a");
   assertEquals(e.photo_idea, "foto-a");
+  // El guion es el campo que la pauta consume: `marketing_calendar` ya sabía guardar un
+  // video y publicarlo solo, pero hasta el 2026-09-04 ningún tema decía qué grabar. Su modo
+  // de fallo es SILENCIO — si alguien deja de propagarlo, el borrador se sigue creando y el
+  // dueño vuelve a quedarse sin guion sin que nada avise.
+  assertEquals(e.video_idea, "video-a");
 });
 
 Deno.test("los temas rotan y vuelven a empezar sin repetir dos seguidos", () => {
