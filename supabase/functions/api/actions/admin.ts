@@ -1295,19 +1295,32 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
     videoIdea: `A · EL PLEITO — 9:16, 15 s. 0-2s plano dividido, sin música: el calmado pone UNA salsa con cuidado, el alocado echa cinco de golpe. 2-6s CALMADO: "Está terminado." ALOCADO: "Le falta." 6-12s los dos sándwiches al centro, los dos se ven bien (ninguno es el chiste). 12-15s el "//" entra entre ambos: "Los dos están en la carta. Ya abrimos." Sobreimpreso al cierre: crear tu cuenta te da ${WELCOME_BONUS_POINTS} puntos.`,
   },
-  {
-    theme: "PRUEBA SOCIAL",
-    whatsapp: "¿Ya probaste SND//WCH? Calificar tu pedido te toma 10 segundos y nos ayuda un montón 🙏",
-    caption: "La mejor publicidad la hacen ustedes // Si ya pediste con nosotros, califica tu experiencia desde la app (PUNTOS → MIS PEDIDOS). Cada reseña le muestra a más gente por qué vale la pena.",
-    photoIdea: "Captura de una calificación de 5 estrellas (con permiso del cliente), o foto de alguien recibiendo su pedido.",
-    videoIdea: "A · EL PLEITO — 9:16, 14 s. 0-2s los dos miran el mismo celular. 2-7s ALOCADO: \"Cinco estrellas. Fue el mío.\" CALMADO, sin mirarlo: \"No dice cuál.\" 7-11s los dos sándwiches en el mismo plano que sus caras. 11-14s cierre: \"Califica el tuyo desde la app y dinos de quién fue.\" Ojo: si usas una reseña real necesitas permiso del cliente.",
-  },
+  // ⚠ EL ORDEN DE ESTE ARRAY NO ES COSMÉTICO: ES LA ROTACIÓN DE FORMATOS DE VIDEO.
+  //
+  // `marketingWeekIndex()` avanza una posición por semana y la pantalla de MARKETING enseña
+  // SIEMPRE dos temas seguidos ("esta semana" y "próxima semana"). Con LANZAMIENTO y PRUEBA
+  // SOCIAL juntos —los dos EL PLEITO— el panel mostraba el mismo formato dos veces y parecía
+  // que el sistema entero era un solo formato. REFERIDOS (LA MESA LARGA) va en el medio para
+  // romper eso.
+  //
+  // La regla la fija `tests-api/guion-de-video.test.ts`: **dos temas consecutivos nunca
+  // comparten formato, contando el salto del último al primero** (la rotación es circular, así
+  // que RECORDATORIO → LANZAMIENTO también es un par consecutivo). Si mueves, agregas o
+  // quitas un tema, esa prueba te avisa; sin ella el defecto vuelve en silencio, porque
+  // reordenar no rompe nada que compile.
   {
     theme: "REFERIDOS",
     whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
     caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
     photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
     videoIdea: `E · LA MESA LARGA — 9:16, 16 s. Único formato donde colaboran. 0-2s el alocado arrastra a alguien fuera de cuadro hacia la mesa. 2-8s el calmado le sirve un sándwich al recién llegado, sin decir nada. 8-13s los dos sándwiches y el "//" en cuadro. 13-16s cierre: quien invita se gana un 15CM (${REFERRER_REWARD_POINTS} pts) y el invitado una bebida (${REFERRAL_BONUS_POINTS} pts).`,
+  },
+  {
+    theme: "PRUEBA SOCIAL",
+    whatsapp: "¿Ya probaste SND//WCH? Calificar tu pedido te toma 10 segundos y nos ayuda un montón 🙏",
+    caption: "La mejor publicidad la hacen ustedes // Si ya pediste con nosotros, califica tu experiencia desde la app (PUNTOS → MIS PEDIDOS). Cada reseña le muestra a más gente por qué vale la pena.",
+    photoIdea: "Captura de una calificación de 5 estrellas (con permiso del cliente), o foto de alguien recibiendo su pedido.",
+    videoIdea: "A · EL PLEITO — 9:16, 14 s. 0-2s los dos miran el mismo celular. 2-7s ALOCADO: \"Cinco estrellas. Fue el mío.\" CALMADO, sin mirarlo: \"No dice cuál.\" 7-11s los dos sándwiches en el mismo plano que sus caras. 11-14s cierre: \"Califica el tuyo desde la app y dinos de quién fue.\" Ojo: si usas una reseña real necesitas permiso del cliente.",
   },
   {
     theme: "MENÚ SECRETO",

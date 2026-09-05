@@ -1184,7 +1184,16 @@ function sAdminSecretSignature(){
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
     +'<div style="margin-bottom:14px">'+BASES.map(function(b){return ssChip(ssBase===b.id,b.l+' '+b.s,"ssBase='"+b.id+"';render()");}).join('')+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
-    +'<div style="margin-bottom:14px">'+PROTS.filter(function(p){return!p.sigOnly;}).map(function(p){return ssChip(ssProt===p.id,p.l+' '+p.s,"ssProt='"+p.id+"';var vi=ssVaultIds.indexOf('"+p.id+"');render()");}).join('')+'</div>'
+    // ⚠ ACÁ NO SE FILTRA POR `sigOnly`, y es a propósito (2026-09-05).
+    //
+    // `sigOnly` significa "no se puede armar en ARMA EL TUYO", NO "no se puede usar en un
+    // Signature" — es literalmente lo contrario. El menú secreto ES un Signature, así que
+    // filtrarlo acá estaba invertido y nadie lo notaba mientras el Set estuvo vacío.
+    //
+    // Dejó de ser teórico el día que P01 (Res) y P05 (Embutido) pasaron a `sigOnly` por
+    // rentabilidad: con el filtro puesto, el dueño perdía la posibilidad de poner RES —la
+    // proteína insignia— en el menú secreto del mes, sin ningún aviso y sin que nada fallara.
+    +'<div style="margin-bottom:14px">'+PROTS.map(function(p){return ssChip(ssProt===p.id,p.l+' '+p.s,"ssProt='"+p.id+"';var vi=ssVaultIds.indexOf('"+p.id+"');render()");}).join('')+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 ('+ssTops.length+'/3)</div>'
     +'<div style="margin-bottom:14px">'+TOPS.filter(function(t){return!t.sigOnly;}).map(function(t){return ssChip(ssTops.indexOf(t.id)>=0,t.l+' '+t.s,"ssToggle(ssTops,'"+t.id+"',3)");}).join('')+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 ('+ssSauces.length+'/2)</div>'

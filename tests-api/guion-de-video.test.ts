@@ -93,6 +93,38 @@ Deno.test("el guion del menú secreto no muestra el producto", () => {
   assert(/NO se muestra el producto/i.test(g), "el guion del menú secreto no advierte que no se muestra");
 });
 
+Deno.test("dos temas consecutivos nunca comparten formato", () => {
+  // Es el defecto que el dueño vio: LANZAMIENTO y PRUEBA SOCIAL eran los dos EL PLEITO y
+  // estaban pegados, así que la pantalla de MARKETING —que enseña SIEMPRE "esta semana" y
+  // "próxima semana"— mostraba el mismo formato dos veces y parecía que el sistema entero
+  // era un solo formato.
+  //
+  // La rotación es CIRCULAR: `marketingWeekIndex()` da la vuelta, así que el par
+  // (último, primero) también es consecutivo y también cuenta.
+  //
+  // Modo de fallo: SILENCIO. Reordenar el array, agregar un tema o cambiarle el formato a
+  // uno no rompe nada que compile — solo vuelve a juntar dos iguales.
+  const f = marketingContent().map((t) => t.videoIdea[0]);
+  for (let i = 0; i < f.length; i++) {
+    const j = (i + 1) % f.length;
+    assert(
+      f[i] !== f[j],
+      `los temas ${i} y ${j} comparten el formato ${f[i]}: la pantalla los muestra juntos`,
+    );
+  }
+});
+
+Deno.test("ningún formato acapara la rotación", () => {
+  // EL PLEITO es el principal a propósito, pero "principal" no es "único". Con 8 temas, más
+  // de 3 del mismo formato es una rotación que se lee como repetición.
+  const f = marketingContent().map((t) => t.videoIdea[0]);
+  const cuenta = new Map<string, number>();
+  for (const x of f) cuenta.set(x, (cuenta.get(x) ?? 0) + 1);
+  for (const [fmt, n] of cuenta) {
+    assert(n <= 3, `el formato ${fmt} aparece ${n} veces de ${f.length}: acapara la rotación`);
+  }
+});
+
 Deno.test("los formatos usados son de los cinco definidos", () => {
   const usados = new Set(marketingContent().map((t) => t.videoIdea[0]));
   for (const f of usados) assert("ABCDE".includes(f), `formato desconocido: ${f}`);

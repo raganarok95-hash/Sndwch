@@ -258,8 +258,46 @@ function yapeAppOpenUrl() {
         return 'yape://';
     return null;
 }
-function openYapeApp() { var u = yapeAppOpenUrl(); if (u)
-    window.location.href = u; }
+// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
+//
+// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
+// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
+// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
+// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
+//
+// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
+// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
+// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
+// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
+function yapeOpenFailed() {
+    var m = document.getElementById('ypc-msg');
+    if (!m)
+        return;
+    m.style.color = '#ffcc66';
+    m.textContent = 'No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
+}
+function openYapeApp() {
+    var u = yapeAppOpenUrl();
+    if (!u) {
+        yapeOpenFailed();
+        return;
+    }
+    var abrio = false;
+    function marcar() { abrio = true; }
+    document.addEventListener('visibilitychange', marcar, { once: true });
+    window.addEventListener('pagehide', marcar, { once: true });
+    setTimeout(function () {
+        document.removeEventListener('visibilitychange', marcar);
+        if (!abrio && !document.hidden)
+            yapeOpenFailed();
+    }, 1200);
+    try {
+        window.location.href = u;
+    }
+    catch (e) {
+        yapeOpenFailed();
+    }
+}
 var showYapeQR = false;
 function toggleYapeQR() { showYapeQR = !showYapeQR; confirmRerender(); }
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -326,7 +364,11 @@ var PROTS = [
     // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
     // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
     // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-    { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14 },
+    // sigOnly desde el 2026-09-05 (decisión del dueño): sale de ARMA EL TUYO por RENTABILIDAD.
+    // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
+    // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
+    // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
+    { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14, sigOnly: true },
     { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Tiras marinadas en teriyaki', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
     // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
@@ -351,7 +393,9 @@ var PROTS = [
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
     // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
     // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9 },
+    // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
+    // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
+    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9, sigOnly: true },
     // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
     // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
     // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -359,7 +403,13 @@ var PROTS = [
     // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
     // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
     // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 6 }
+    // ⚠ pDbl30 corregido de 6 a 12 el 2026-09-05: era la ÚNICA proteína del catálogo cuyo
+    // doble costaba lo mismo en 15CM que en 30CM, o sea un precio que no escaló con la porción
+    // que agrega. El costo pasaba de 22.3% a 44.7% solo por eso — a un pelo del techo de 45%,
+    // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
+    // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
+    // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
+    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 }
     // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
     // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
     // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -382,7 +432,9 @@ var PROTS = [
 // SIG_ONLY_TOPS en catalog.ts.
 var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco' },
-    { id: 'T02', l: 'Pepinillo', s: 'Encurtido' },
+    // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
+    // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
+    { id: 'T02', l: 'Pepinillo', s: 'Encurtido', sigOnly: true },
     { id: 'T03', l: 'Cebolla', s: 'Morada juliana' },
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
@@ -567,8 +619,16 @@ var SIGS = [
     // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
     // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
     // de dulzor, no inventar una solución sin pedido explícito.
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T08'], sauces: ['S11'], p15: 20.9, p30: 34.9,
-        pitch: 'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.' },
+    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: [], sauces: [], p15: 20.9, p30: 34.9,
+        // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
+        // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
+        // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
+        // un ítem del catálogo (ver RECETARIO.md).
+        //
+        // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
+        // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
+        // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
+        pitch: 'Atún premium escurrido, con la mayonesa de la receta original y un golpe de pimienta. Nada más: así es como se hace en Estados Unidos, y así es como debe saber.' },
     // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
     // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
     // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -714,10 +774,14 @@ var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/pro
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
 var RWDS = [
-    { id: 'R02', pts: 40, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
-    { id: 'R04', pts: 120, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
-    { id: 'R05', pts: 120, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
-    { id: 'R03', pts: 160, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
+    // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
+    // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
+    // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
+    // comentario largo en REWARDS (catalog.ts) con la tabla completa.
+    { id: 'R02', pts: 20, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
+    { id: 'R04', pts: 160, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
+    { id: 'R05', pts: 160, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
+    { id: 'R03', pts: 320, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
     { id: 'R06', pts: 400, n: 'Sándwich', s: 'Gratis', d: 'Sándwich 15CM gratis — no aplica a Signatures Reserve', sizeOnly: '15' }
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -1156,7 +1220,21 @@ var RESERVE_SIGS = new Set(['SIG05']);
 // Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
 // hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
 // entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[15, 18]];
+// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
+// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
+// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
+//
+// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
+// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
+// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
+// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
+// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
+// entrar. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
+// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
+// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 var OFFPEAK_DRINK_PROMO_CAP = 6;
@@ -1467,7 +1545,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'dbcb93804a';
+var APP_BUILD = '78e95f9155';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3449,20 +3527,18 @@ function sOBuild() {
     else if (byoStep === 1) {
         h += ST('', 'Proteína', '');
         h += PROTS.filter(function (p) { return !p.vaultOnly && !p.sigOnly; }).map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + protPrice(p) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="' + esc(p.l + ' ' + p.s) + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (prot === p.id ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
+        // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
+        // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
+        // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
+        // ya trae aprendido: el queso se pone sobre la proteína porque va debajo, y porque es lo
+        // que se funde al tostar. Antes acá era pan -> proteína -> vegetales -> queso -> salsas,
+        // que obliga a levantar todo lo de encima para meter el queso abajo.
+        //
+        // Solo se intercambió el CONTENIDO de los pasos 2 y 3. Los índices no significan nada por
+        // sí mismos: `byoStepOK`/`byoStepHint` solo validan los pasos 0 y 1, así que este cambio
+        // no toca ninguna validación.
     }
     else if (byoStep === 2) {
-        h += ST('', 'Toppings', 'Sin límite, elige los que quieras.');
-        h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        h += TOPS.filter(function (t) { return !t.vaultOnly && !t.sigOnly; }).map(function (t) {
-            var av = isAvail(t.id);
-            if (!av)
-                return TOPOFF(t);
-            var sel = tops.indexOf(t.id) >= 0;
-            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
-        }).join('');
-        h += '</div>';
-    }
-    else if (byoStep === 3) {
         h += ST('', 'Queso', 'Opcional — incluido sin costo si eliges 1.');
         h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
         h += CHEESE.map(function (c) {
@@ -3471,6 +3547,20 @@ function sOBuild() {
                 return TOPOFF(c);
             var sel = cheese === c.id;
             return '<div onclick="cheese=(cheese===\'' + c.id + '\'?null:\'' + c.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + c.l + '</div></div>';
+        }).join('');
+        h += '</div>';
+    }
+    else if (byoStep === 3) {
+        // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el
+        // cliente peruano ya trae. "Toppings" es jerga de heladería y de pizza.
+        h += ST('', 'Vegetales', 'Sin límite, elige los que quieras.');
+        h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+        h += TOPS.filter(function (t) { return !t.vaultOnly && !t.sigOnly; }).map(function (t) {
+            var av = isAvail(t.id);
+            if (!av)
+                return TOPOFF(t);
+            var sel = tops.indexOf(t.id) >= 0;
+            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
         }).join('');
         h += '</div>';
     }
@@ -3531,7 +3621,7 @@ function sOItemConfirm() {
     if (mode !== 'sig') {
         rows.push({ k: 'Pan', v: fn(BASES, base) });
         rows.push({ k: 'Proteína', v: fn(PROTS, prot), p: protPrice(pr) });
-        rows.push({ k: 'Toppings', v: tops.length ? tops.map(function (id) { return fn(TOPS, id); }).join(' · ') : '—' });
+        rows.push({ k: 'Vegetales', v: tops.length ? tops.map(function (id) { return fn(TOPS, id); }).join(' · ') : '—' });
         rows.push({ k: 'Queso', v: cheese ? fn(CHEESE, cheese) : 'sin queso' });
         rows.push({ k: 'Salsas', v: sauces.length ? sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ') : '—' });
     }
@@ -3830,15 +3920,31 @@ function comboDrinkNudgeHTML() {
     var hasSandwichNoDrink = cart.some(function (it) { return it.type !== 'side'; }) && cartComboCount() < cart.reduce(function (s, it) { return s + (it.type !== 'side' ? it.qty : 0); }, 0);
     if (!hasSandwichNoDrink)
         return '';
+    // La rama de hora valle se queda escrita a propósito aunque hoy nunca se cumpla: la promo
+    // se apagó vaciando su ventana horaria (ver OFFPEAK_DRINK_PROMO_HOURS_LIMA), no borrando el
+    // mecanismo. Si el dueño la reactiva poniendo horas, el texto vuelve solo — y mientras
+    // esté apagada, este anuncio NO puede aparecer: prometer una bebida gratis que el servidor
+    // ya no descuenta es la clase de promesa rota que se descubre recién al pagar.
     var offPeak = isOffPeakDrinkPromoActiveNow();
     var titulo = offPeak
         ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + OFFPEAK_DRINK_PROMO_CAP + ')'
         : '¿Le sumas algo de tomar? Ahorras ' + SOLES_TXT + COMBO_DISCOUNT_PER_PAIR + ' en combo';
+    // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
+    //
+    // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
+    // "The Bloom // Hibiscus · S/6" no le dice a nadie qué está comprando: son infusiones de
+    // la casa, no gaseosas de marca conocida, así que el nombre solo no vende. La descripción
+    // ya existía en el catálogo (`d`) y solo se usaba en la pantalla de bebidas — o sea que el
+    // texto de venta no estaba en el momento de la venta.
+    //
+    // Dos columnas en vez de cuatro para que la descripción entre legible. Es el único empujón
+    // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
+    // contribución del pedido más de lo que sube el ticket.
     var chips = SIDES.map(function (d) {
-        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1;min-width:72px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
-            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">' + esc(d.s) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:4px">+' + SOLES_TXT + d.p + '</div>'
+        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+            + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + esc(d.s) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';white-space:nowrap">+' + SOLES_TXT + d.p + '</div></div>'
+            + (d.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">' + esc(d.d) + '</div>' : '')
             + '</div>';
     }).join('');
     return '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
@@ -4543,9 +4649,25 @@ function manualPayInstructionsHTML(t) {
             // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
             // paso copia el número); en desktop no hay app que abrir, así que el único botón
             // útil es copiar.
-            + '<button onclick="' + (mobile ? 'copyYapePlinPhone();openYapeApp()' : 'copyYapePlinPhone()') + '" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + (mobile ? iconTxt('phone', 'Abrir Yape', '#0d0d0d') : 'Copiar número') + '</button>'
-            + '<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">' + (showYapeQR ? 'ocultar código QR' : 'o escanea el código QR con tu número guardado') + '</span></div>'
-            + (showYapeQR ? '<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px">' + qrSvgHTML('MECARD:N:' + YAPE_PLIN_NAME + ';TEL:' + YAPE_PLIN_PHONE + ';;', 148) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">Guarda nuestro número en tus contactos escaneando — no reemplaza la transferencia, solo evita escribirlo a mano.</div></div>' : '')
+            + '<button onclick="' + (mobile ? 'copyYapePlinPhone();openYapeApp()' : 'copyYapePlinPhone()') + '" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + (mobile ? iconTxt('phone', 'Copiar número y abrir Yape', '#0d0d0d') : 'Copiar número') + '</button>'
+            // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
+            //
+            // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
+            // `MECARD:` — o sea una TARJETA DE CONTACTO. Escanearlo con la cámara guardaba el
+            // número en la agenda; escanearlo DENTRO de Yape no hacía absolutamente nada, porque
+            // Yape espera su propio formato emitido por el banco. El rótulo decía "escanea el
+            // código QR", así que cualquiera esperaba pagar con él y no pasaba nada: el modo de
+            // fallo era SILENCIO, y el dueño lo encontró probando el flujo.
+            //
+            // `img/yape-qr.png` es el QR personal de cobro que el dueño exportó de "Mi QR" en su
+            // app de Yape. Ese sí cobra. NO se regenera ni se dibuja: es una imagen que solo el
+            // dueño puede emitir, igual que el RUC o la razón social.
+            //
+            // Y se muestra ABIERTO en escritorio y plegado en celular a propósito: en la compu el
+            // QR es LA vía (lo escaneas con el celular), mientras que en el celular no puedes
+            // escanear tu propia pantalla y lo útil es el número. Antes estaba plegado en los dos.
+            + '<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">' + ((showYapeQR || !mobile) ? 'ocultar código QR' : 'o paga escaneando nuestro QR de Yape') + '</span></div>'
+            + ((showYapeQR || !mobile) ? '<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px;line-height:0"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a ' + esc(YAPE_PLIN_HOLDER) + '" width="148" height="148" style="display:block;width:148px;height:148px"></div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">' + (mobile ? 'Escanéalo desde otro celular, o usa el número de arriba.' : 'Abre Yape en tu celular y escanea este código.') + '</div></div>' : '')
             + '<div id="ypc-msg" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-top:6px;min-height:12px"></div>')
         + payStep(2, 'Confirma aquí abajo', '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">Toca "Ya realicé el pago". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
         + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">' + icon('lock', 12, '#A8C8B0') + '<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
@@ -4553,6 +4675,10 @@ function manualPayInstructionsHTML(t) {
 }
 function copyYapePlinPhone() {
     var m = document.getElementById('ypc-msg');
+    // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
+    // toque mostraría "✓ Número copiado" pintado como si fuera un aviso de error.
+    if (m)
+        m.style.color = '#25D366';
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function () { if (m)
             m.textContent = '✓ Número copiado'; }).catch(function () { if (m)
@@ -9393,7 +9519,16 @@ function sAdminSecretSignature() {
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
         + '<div style="margin-bottom:14px">' + BASES.map(function (b) { return ssChip(ssBase === b.id, b.l + ' ' + b.s, "ssBase='" + b.id + "';render()"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
-        + '<div style="margin-bottom:14px">' + PROTS.filter(function (p) { return !p.sigOnly; }).map(function (p) { return ssChip(ssProt === p.id, p.l + ' ' + p.s, "ssProt='" + p.id + "';var vi=ssVaultIds.indexOf('" + p.id + "');render()"); }).join('') + '</div>'
+        // ⚠ ACÁ NO SE FILTRA POR `sigOnly`, y es a propósito (2026-09-05).
+        //
+        // `sigOnly` significa "no se puede armar en ARMA EL TUYO", NO "no se puede usar en un
+        // Signature" — es literalmente lo contrario. El menú secreto ES un Signature, así que
+        // filtrarlo acá estaba invertido y nadie lo notaba mientras el Set estuvo vacío.
+        //
+        // Dejó de ser teórico el día que P01 (Res) y P05 (Embutido) pasaron a `sigOnly` por
+        // rentabilidad: con el filtro puesto, el dueño perdía la posibilidad de poner RES —la
+        // proteína insignia— en el menú secreto del mes, sin ningún aviso y sin que nada fallara.
+        + '<div style="margin-bottom:14px">' + PROTS.map(function (p) { return ssChip(ssProt === p.id, p.l + ' ' + p.s, "ssProt='" + p.id + "';var vi=ssVaultIds.indexOf('" + p.id + "');render()"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 (' + ssTops.length + '/3)</div>'
         + '<div style="margin-bottom:14px">' + TOPS.filter(function (t) { return !t.sigOnly; }).map(function (t) { return ssChip(ssTops.indexOf(t.id) >= 0, t.l + ' ' + t.s, "ssToggle(ssTops,'" + t.id + "',3)"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 (' + ssSauces.length + '/2)</div>'

@@ -71,7 +71,36 @@ function yapeAppOpenUrl(){
   if(/iPhone|iPad|iPod/i.test(ua))return'yape://';
   return null;
 }
-function openYapeApp(){var u=yapeAppOpenUrl();if(u)window.location.href=u;}
+// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
+//
+// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
+// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
+// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
+// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
+//
+// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
+// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
+// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
+// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
+function yapeOpenFailed(){
+  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
+  if(!m)return;
+  m.style.color='#ffcc66';
+  m.textContent='No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
+}
+function openYapeApp(){
+  var u=yapeAppOpenUrl();
+  if(!u){yapeOpenFailed();return;}
+  var abrio=false;
+  function marcar(){abrio=true;}
+  document.addEventListener('visibilitychange',marcar,{once:true});
+  window.addEventListener('pagehide',marcar,{once:true});
+  setTimeout(function(){
+    document.removeEventListener('visibilitychange',marcar);
+    if(!abrio&&!document.hidden)yapeOpenFailed();
+  },1200);
+  try{window.location.href=u;}catch(e){yapeOpenFailed();}
+}
 var showYapeQR=false;
 function toggleYapeQR(){showYapeQR=!showYapeQR;confirmRerender();}
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -140,7 +169,11 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
   // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:24.9,pDbl:7,pDbl30:14},
+  // sigOnly desde el 2026-09-05 (decisión del dueño): sale de ARMA EL TUYO por RENTABILIDAD.
+  // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
+  // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
+  // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
+  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:24.9,pDbl:7,pDbl30:14,sigOnly:true},
   {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
@@ -165,7 +198,9 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
   // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9},
+  // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
+  // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9,sigOnly:true},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -173,7 +208,13 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
   // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
   // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:6}
+  // ⚠ pDbl30 corregido de 6 a 12 el 2026-09-05: era la ÚNICA proteína del catálogo cuyo
+  // doble costaba lo mismo en 15CM que en 30CM, o sea un precio que no escaló con la porción
+  // que agrega. El costo pasaba de 22.3% a 44.7% solo por eso — a un pelo del techo de 45%,
+  // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
+  // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
+  // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:12}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -196,7 +237,9 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
 // SIG_ONLY_TOPS en catalog.ts.
 var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=[
   {id:'T01',l:'Tomate',   s:'Fresco'},
-  {id:'T02',l:'Pepinillo',s:'Encurtido'},
+  // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
+  // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
+  {id:'T02',l:'Pepinillo',s:'Encurtido',sigOnly:true},
   {id:'T03',l:'Cebolla',  s:'Morada juliana'},
   {id:'T04',l:'Jalapeño', s:'Encurtido',vaultOnly:true},
   {id:'T05',l:'Aceituna', s:'Negra en rodajas'},
@@ -381,8 +424,16 @@ var SIGS:any[]=[
   // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
   // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
   // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:20.9,p30:34.9,
-    pitch:'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:[],sauces:[],p15:20.9,p30:34.9,
+    // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
+    // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
+    // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
+    // un ítem del catálogo (ver RECETARIO.md).
+    //
+    // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
+    // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
+    // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
+    pitch:'Atún premium escurrido, con la mayonesa de la receta original y un golpe de pimienta. Nada más: así es como se hace en Estados Unidos, y así es como debe saber.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
   // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -527,10 +578,14 @@ var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jp
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
 var RWDS=[
-  {id:'R02',pts:40, n:'Salsa',    s:'Extra',  d:'Perdona el cargo de salsa extra (S/2)'},
-  {id:'R04',pts:120,n:'Doble',    s:'Proteína',d:'Doble proteína gratis'},
-  {id:'R05',pts:120,n:'Bebida',   s:'Gratis', d:'Bebida a elección'},
-  {id:'R03',pts:160,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
+  // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
+  // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
+  // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
+  // comentario largo en REWARDS (catalog.ts) con la tabla completa.
+  {id:'R02',pts:20, n:'Salsa',    s:'Extra',  d:'Perdona el cargo de salsa extra (S/2)'},
+  {id:'R04',pts:160,n:'Doble',    s:'Proteína',d:'Doble proteína gratis'},
+  {id:'R05',pts:160,n:'Bebida',   s:'Gratis', d:'Bebida a elección'},
+  {id:'R03',pts:320,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R06',pts:400,n:'Sándwich', s:'Gratis', d:'Sándwich 15CM gratis — no aplica a Signatures Reserve',sizeOnly:'15'}
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -938,7 +993,21 @@ var RESERVE_SIGS=new Set(['SIG05']);
 // Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
 // hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
 // entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA=[[15,18]];
+// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
+// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
+// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
+//
+// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
+// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
+// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
+// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
+// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
+// entrar. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
+// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
+// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=[];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 var OFFPEAK_DRINK_PROMO_CAP=6;

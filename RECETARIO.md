@@ -617,7 +617,7 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 | **SIG01** The Original | B01 | — | P01 85/170 g | Tomate 35 · Pepinillo 12 · Cebolla 7 | S01 + S04, 14/28 g | Mechado seco si se recalienta mal |
 | **SIG02** The Marinara | B01 tostado | **C01 fijo, abajo** | 3 albóndigas + 10 g salsa | Tomate 35 · Cebolla 7 · Aceituna 3 | S06 14/28 g | **Pan empapado. Máx 10 g de marinara** |
 | **SIG03** The Smoke | B03 tostado | **C02 fijo** | 34 jamón + 30 cabanossi + 21 paté | Cebolla 7 · Pepinillo 12 · Tomate 35 | S03 14/28 g | Humedad + sabor cargado |
-| **SIG04** The Fresh | B01 | — | P04 85/170 g | Tomate 35 · Pepinillo 12 · **Apio 7 al momento** | S11 14/28 g **+ limón exprimido** | **Temperatura. El más sensible** |
+| **SIG04** The Fresh | B01 | — | P04 85/170 g | **ninguno** | **ninguna** | **Temperatura. El más sensible** |
 | **SIG06** The Teriyaki | B01 tostado | — | P02 85/170 g **+ reglaseado 90 s** | Tomate 35 · Pimiento 7 | S10 + S05, 14/28 g | **Doble dulce sin ácido** ⬇ |
 | **SIG05** Menú secreto | B03 | — | P03 85/170 g + cubo de jugo | Jalapeño 7 · Pimiento 7 · Cebolla 7 | S02 + S12, 14/28 g | Tres picantes apilados |
 
@@ -631,10 +631,13 @@ una receta ya cerrada, y eso es una decisión de producto que el dueño no ha to
 
 1. **SIG06 tiene dos fuentes dulces y ningún elemento ácido.** El pollo marinado es dulce, el satay
    es dulce, y quitaste el pepinillo. S05 salva la situación porque es salada, pero no aporta acidez.
-   **El arreglo más barato si al probarlo empalaga: pepinillo de vuelta, o un chorrito de limón como
-   ya hace SIG04.** Cuesta cero. Es decisión tuya.
-2. **SIG04 no tiene ningún elemento dulce.** Dijon + limón apilan ácido sobre una base de mayonesa.
-   Se sostiene, pero es un sándwich de un solo registro.
+   **El arreglo más barato si al probarlo empalaga: un chorrito de limón.** Cuesta cero. Es decisión
+   tuya. *(Ojo: el pepinillo ya no está en ARMA EL TUYO desde el 2026-09-05 — sigue en el catálogo
+   como `sigOnly` para SIG01 y SIG03, así que reponerlo acá no cuesta nada.)*
+2. **SIG04 quedó en su forma más desnuda posible** (2026-09-05, decisión del dueño): atún escurrido,
+   mayonesa y pimienta, sin un solo vegetal ni salsa. Es la receta original de Estados Unidos y su
+   argumento es exactamente ése — pero significa que **el sándwich entero descansa en la calidad del
+   escurrido**. Atún mal escurrido acá no tiene nada que lo tape.
 *(La tercera tensión de la v1 era que THE CHICAGO se veía vacío con un solo topping al precio más
 alto del catálogo. Se resolvió sola al sacarlo del menú de apertura.)*
 

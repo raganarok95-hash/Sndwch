@@ -196,15 +196,31 @@ function pickAddr(id){
 function comboDrinkNudgeHTML(){
   var hasSandwichNoDrink=cart.some(function(it){return it.type!=='side';})&&cartComboCount()<cart.reduce(function(s,it){return s+(it.type!=='side'?it.qty:0);},0);
   if(!hasSandwichNoDrink)return'';
+  // La rama de hora valle se queda escrita a propósito aunque hoy nunca se cumpla: la promo
+  // se apagó vaciando su ventana horaria (ver OFFPEAK_DRINK_PROMO_HOURS_LIMA), no borrando el
+  // mecanismo. Si el dueño la reactiva poniendo horas, el texto vuelve solo — y mientras
+  // esté apagada, este anuncio NO puede aparecer: prometer una bebida gratis que el servidor
+  // ya no descuenta es la clase de promesa rota que se descubre recién al pagar.
   var offPeak=isOffPeakDrinkPromoActiveNow();
   var titulo=offPeak
     ?'Es hora valle — tu bebida va GRATIS (hasta '+SOLES_TXT+OFFPEAK_DRINK_PROMO_CAP+')'
     :'¿Le sumas algo de tomar? Ahorras '+SOLES_TXT+COMBO_DISCOUNT_PER_PAIR+' en combo';
+  // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
+  //
+  // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
+  // "The Bloom // Hibiscus · S/6" no le dice a nadie qué está comprando: son infusiones de
+  // la casa, no gaseosas de marca conocida, así que el nombre solo no vende. La descripción
+  // ya existía en el catálogo (`d`) y solo se usaba en la pantalla de bebidas — o sea que el
+  // texto de venta no estaba en el momento de la venta.
+  //
+  // Dos columnas en vez de cuatro para que la descripción entre legible. Es el único empujón
+  // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
+  // contribución del pedido más de lo que sube el ticket.
   var chips=SIDES.map(function(d){
-    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1;min-width:72px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">'+esc(d.l)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">'+esc(d.s)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:4px">+'+SOLES_TXT+d.p+'</div>'
+    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">'+esc(d.l)+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+esc(d.s)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';white-space:nowrap">+'+SOLES_TXT+d.p+'</div></div>'
+      +(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">'+esc(d.d)+'</div>':'')
       +'</div>';
   }).join('');
   return'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
@@ -795,16 +811,35 @@ function manualPayInstructionsHTML(t){
       // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
       // paso copia el número); en desktop no hay app que abrir, así que el único botón
       // útil es copiar.
-      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+(mobile?iconTxt('phone','Abrir Yape','#0d0d0d'):'Copiar número')+'</button>'
-      +'<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">'+(showYapeQR?'ocultar código QR':'o escanea el código QR con tu número guardado')+'</span></div>'
-      +(showYapeQR?'<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px">'+qrSvgHTML('MECARD:N:'+YAPE_PLIN_NAME+';TEL:'+YAPE_PLIN_PHONE+';;',148)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">Guarda nuestro número en tus contactos escaneando — no reemplaza la transferencia, solo evita escribirlo a mano.</div></div>':'')
+      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+(mobile?iconTxt('phone','Copiar número y abrir Yape','#0d0d0d'):'Copiar número')+'</button>'
+      // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
+      //
+      // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
+      // `MECARD:` — o sea una TARJETA DE CONTACTO. Escanearlo con la cámara guardaba el
+      // número en la agenda; escanearlo DENTRO de Yape no hacía absolutamente nada, porque
+      // Yape espera su propio formato emitido por el banco. El rótulo decía "escanea el
+      // código QR", así que cualquiera esperaba pagar con él y no pasaba nada: el modo de
+      // fallo era SILENCIO, y el dueño lo encontró probando el flujo.
+      //
+      // `img/yape-qr.png` es el QR personal de cobro que el dueño exportó de "Mi QR" en su
+      // app de Yape. Ese sí cobra. NO se regenera ni se dibuja: es una imagen que solo el
+      // dueño puede emitir, igual que el RUC o la razón social.
+      //
+      // Y se muestra ABIERTO en escritorio y plegado en celular a propósito: en la compu el
+      // QR es LA vía (lo escaneas con el celular), mientras que en el celular no puedes
+      // escanear tu propia pantalla y lo útil es el número. Antes estaba plegado en los dos.
+      +'<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">'+((showYapeQR||!mobile)?'ocultar código QR':'o paga escaneando nuestro QR de Yape')+'</span></div>'
+      +((showYapeQR||!mobile)?'<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px;line-height:0"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER)+'" width="148" height="148" style="display:block;width:148px;height:148px"></div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">'+(mobile?'Escanéalo desde otro celular, o usa el número de arriba.':'Abre Yape en tu celular y escanea este código.')+'</div></div>':'')
       +'<div id="ypc-msg" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-top:6px;min-height:12px"></div>')
     +payStep(2,'Confirma aquí abajo','<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">Toca "Ya realicé el pago". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
     +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">'+icon('lock',12,'#A8C8B0')+'<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
     +'</div>';
 }
 function copyYapePlinPhone(){
-  var m=(document.getElementById('ypc-msg') as HTMLInputElement | null);
+  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
+  // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
+  // toque mostraría "✓ Número copiado" pintado como si fuera un aviso de error.
+  if(m)m.style.color='#25D366';
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Número copiado';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
   }else if(m){m.textContent=YAPE_PLIN_PHONE;}

@@ -31,7 +31,32 @@ EMP = 1.30                       # [COTIZADO] punto medio del rango S/1.10-1.50
 SALSA = (0.266, 0.532); QUESO = (0.385, 0.77); TOPS_KG = 4.0
 PAN = {"B01": (1.00, 2.00), "B03": (1.30, 2.60)}
 MIX15 = 0.80                     # [HIPÓTESIS del dueño] 80% de los pedidos en 15CM
-DRINK_ATTACH, DRINK_CONTRIB = 0.25, 3.79
+# ── LAS BEBIDAS, RECOSTEADAS DESDE SUS COMPONENTES (2026-09-05) ───────────────────────
+#
+# Antes acá había `DRINK_ATTACH, DRINK_CONTRIB = 0.25, 3.79`: UNA sola cifra para las cuatro
+# bebidas, que además no correspondía a ninguna situación real. Tres defectos a la vez:
+#
+#   1. El S/3.79 salía de "S/4.79 de contribución media, menos S/1 de combo", o sea asumía
+#      que TODA bebida se vende en combo. Y ese S/4.79 no cuadraba con el margen declarado
+#      porque NO incluía el envase — que ya está cotizado (S/0.69) y sí entra acá.
+#   2. Ignoraba por completo la bebida GRATIS de hora valle, que era contribución NEGATIVA.
+#      Un promedio que omite el peor caso no es un promedio.
+#   3. Atribuía el descuento del combo a la BEBIDA. El combo es −S/1 sobre el total del
+#      pedido, no sobre una línea; atribuirlo a la bebida —la línea de menor precio— hacía
+#      que tres de las cuatro parecieran pasarse del techo de 45%.
+#
+# Ahora se deriva de los precios reales y se declara qué se asume:
+#   · El COSTO se arma por componente: envase [COTIZADO] + insumo por vaso [ESTIMADO].
+#   · El combo se descuenta del SÁNDWICH (decisión del dueño 2026-09-05), que tiene margen
+#     de sobra, así que ya no toca la contribución de la bebida.
+#   · La hora valle se RETIRÓ, así que el caso negativo desapareció del catálogo.
+DRINK_PRICES = [6.0, 5.0, 6.0, 9.0]      # [MEDIDO] catalog_prices, categoría 'side'
+# [COTIZADO 2026-09-05] envase S/138/200 = S/0.69 la botella (estaba estimado en ~S/1, o sea
+# 31% más caro). El insumo por vaso sigue ESTIMADO: ~S/0.465 las infusiones, S/1.55 el chai.
+DRINK_COST_PCT = (0.465*3 + 1.55 + 0.69*4) / sum(DRINK_PRICES)
+DRINK_ATTACH = 0.25                       # [MÉTODO] 1 de cada 4 pedidos lleva bebida — sin medir
+DRINK_CONTRIB = sum(p * (1 - DRINK_COST_PCT) for p in DRINK_PRICES) / len(DRINK_PRICES)
+COMBO_DISCOUNT = 1.0                      # [MEDIDO] COMBO_DISCOUNT_PER_PAIR en catalog.ts
 CULQI, TICKET = 0.055, 22.0
 NS_BYO, FQ_BYO = 2, 0.60         # [MÉTODO] el cliente medio pone 2 salsas y 60% pone queso
 FRAC_BYO = 0.50                  # [MÉTODO] mitad de los pedidos por ARMA EL TUYO
@@ -41,22 +66,35 @@ def veg(g, s): return (g if s == "15" else g * 2) / 1000 * TOPS_KG
 PROT_V = {"P01":(3.15,6.30),"P02":(2.47,4.95),"P04":(4.82,9.64),"P05":(4.29,8.59),"P06":(1.34,2.68)}
 PROT_N = {**PROT_V, "P04": (3.25, 6.50)}          # atún cotizado
 BYO_V = {"P01":(14.90,22.90),"P02":(13.90,21.90),"P04":(16.90,30.90),"P05":(16.90,30.90),"P06":(14.90,24.90)}
-BYO_N = {"P01":(14.90,24.90),"P02":(13.90,23.90),"P04":(16.90,32.90),"P05":(16.90,32.90),"P06":(14.90,26.90)}
-SIGS = {"SIG01":("B01","P01",2,False,20.90,26.90),"SIG02":("B01","P06",1,True,21.90,28.90),
-        "SIG03":("B03","P05",1,True,23.90,34.90),"SIG04":("B01","P04",1,False,20.90,34.90),
-        "SIG06":("B01","P02",2,False,19.90,25.90)}
+# ⚠ EL ARMADOR YA NO OFRECE RES NI EMBUTIDO (2026-09-05, decisión del dueño). Las dos salieron
+# por rentabilidad: cada una cruzaba el techo de 45% de costo en un tamaño (Res 30CM al 47.6%,
+# Embutido 15CM al 45.7%) y eran las dos únicas que lo hacían. Siguen vivas en SIG01 y SIG03.
+# Promediar el ARMA EL TUYO incluyéndolas daría un número que ningún cliente puede pedir — y
+# además SUBESTIMA la contribución, porque justo eran las dos peores del armador.
+BYO_N = {"P02":(13.90,23.90),"P04":(16.90,32.90),"P06":(14.90,26.90)}
+# SIG04 pasa a 0 salsas el 2026-09-05: la receta volvió a la original de Estados Unidos
+# (atún escurrido, mayonesa y pimienta), sin toppings ni salsas. La mayonesa ya está dentro
+# de P04 y la pimienta es parte de su preparación.
+SIGS_V = {"SIG01":("B01","P01",2,False,20.90,26.90),"SIG02":("B01","P06",1,True,21.90,28.90),
+          "SIG03":("B03","P05",1,True,23.90,34.90),"SIG04":("B01","P04",1,False,20.90,34.90),
+          "SIG06":("B01","P02",2,False,19.90,25.90)}
+SIGS_N = {**SIGS_V, "SIG04": ("B01","P04",0,False,20.90,34.90)}
+# SIG04 pasa a 0 g de vegetales: la receta nueva no lleva ninguno.
 SIG_TOPS = {"anterior":{"SIG01":52,"SIG02":49,"SIG03":52,"SIG04":52,"SIG06":43},
-            "actual":  {"SIG01":54,"SIG02":45,"SIG03":54,"SIG04":54,"SIG06":42},
-            "subway":  {"SIG01":54,"SIG02":45,"SIG03":54,"SIG04":54,"SIG06":42}}
-VER = {"anterior": (PROT_V, BYO_V,  94, 0.60),
-       "actual":   (PROT_N, BYO_N,  92, 0.30),
-       "subway":   (PROT_N, BYO_N, 120, 0.30)}
+            "actual":  {"SIG01":54,"SIG02":45,"SIG03":54,"SIG04":0, "SIG06":42},
+            "subway":  {"SIG01":54,"SIG02":45,"SIG03":54,"SIG04":0, "SIG06":42}}
+# El gramaje del armador baja de 92 a 73 g: salieron apio (7 g) y pepinillo (12 g). El
+# cliente puede llevarse TODOS los vegetales disponibles, así que este número es la suma de
+# lo que hay, no una selección típica — es el peor caso de costo, que es el que hay que costear.
+VER = {"anterior": (PROT_V, BYO_V, SIGS_V,  94, 0.60),
+       "actual":   (PROT_N, BYO_N, SIGS_N,  73, 0.30),
+       "subway":   (PROT_N, BYO_N, SIGS_N, 101, 0.30)}
 NOMBRE = {"anterior":"MENÚ ANTERIOR","actual":"MENÚ ACTUAL","subway":"MÁS CERCA DE SUBWAY"}
 
 def partes(ver):
-    prot, byo, tg, card = VER[ver]
+    prot, byo, sigs, tg, card = VER[ver]
     sig = []
-    for k,(base,p,ns,q,p15,p30) in SIGS.items():
+    for k,(base,p,ns,q,p15,p30) in sigs.items():
         v = 0
         for size,pr in (("15",p15),("30",p30)):
             i = 0 if size=="15" else 1
@@ -76,7 +114,13 @@ def partes(ver):
 
 def contrib(ver, frac_byo=FRAC_BYO):
     s, b, card = partes(ver)
-    return (1-frac_byo)*s + frac_byo*b + DRINK_ATTACH*DRINK_CONTRIB - card*CULQI*TICKET
+    # El combo (−S/1 por par sándwich+bebida) se resta UNA vez por pedido con bebida, y sale
+    # del sándwich. Antes estaba escondido dentro de DRINK_CONTRIB, lo que además lo aplicaba
+    # como si toda bebida fuera en combo.
+    return ((1-frac_byo)*s + frac_byo*b
+            + DRINK_ATTACH*DRINK_CONTRIB
+            - DRINK_ATTACH*COMBO_DISCOUNT
+            - card*CULQI*TICKET)
 
 # ── BLOQUE 2 — CARGAR EL MODELO v10 SIN SU SALIDA ─────────────────────────────────────
 _src = io.open(os.path.join(RAIZ, "modelo_v10.py"), encoding="utf-8").read()

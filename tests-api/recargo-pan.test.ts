@@ -23,8 +23,11 @@ import { BASE_SURCHARGE, baseSurcharge } from "../supabase/functions/api/env.ts"
 const COSTO_FOCACCIA = { p15: 13 / 10, p30: 13 / 5 };
 const COSTO_SUB = { p15: 1.0, p30: 2.0 };
 
+// P02 y no P01: el 2026-09-05 la res pasó a `sigOnly` (sale de ARMA EL TUYO por
+// rentabilidad) y el servidor rechaza armarla por BYO. Esta prueba mide el RECARGO DEL PAN,
+// que no depende de la proteína — lo único que hacía falta era una que siga en el armador.
 const byo = (base: string, size: "15" | "30") => priceCartItem({
-  type: "byo", base, prot: "P01", tops: [], sauces: ["S01"], size, qty: 1,
+  type: "byo", base, prot: "P02", tops: [], sauces: ["S01"], size, qty: 1,
 });
 
 Deno.test("el pan sub no cobra nada extra", () => {
@@ -81,7 +84,7 @@ Deno.test("R03 (subir a 30CM gratis) también perdona el salto del pan", () => {
 });
 
 Deno.test("el recargo se multiplica por la cantidad, como cualquier precio", () => {
-  const tres = priceCartItem({ type: "byo", base: "B03", prot: "P01", tops: [], sauces: ["S01"], size: "15", qty: 3 });
+  const tres = priceCartItem({ type: "byo", base: "B03", prot: "P02", tops: [], sauces: ["S01"], size: "15", qty: 3 });
   const uno = byo("B03", "15");
   assertEquals(Math.round((tres.unitPrice - uno.unitPrice) * 100), 0, "el unitario no cambia con la cantidad");
   assertEquals(tres.qty, 3);

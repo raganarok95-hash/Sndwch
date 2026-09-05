@@ -92,6 +92,23 @@ test('el checkout dice a nombre de quién llega la transferencia', async ({ page
   await expect(page.locator('text=Es la cuenta del negocio')).toBeVisible();
 });
 
+test('el QR de pago es el QR real de Yape, no un código de contacto generado', async ({ page }) => {
+  // Hasta el 2026-09-05 acá se dibujaba un QR generado que codificaba un `MECARD:` — una
+  // TARJETA DE CONTACTO. Escanearlo dentro de Yape no hacía nada, porque Yape espera su
+  // propio formato emitido por el banco; el rótulo igual decía "escanea el código QR".
+  //
+  // Modo de fallo: SILENCIO. El cliente escanea, no pasa nada, y no hay error en ningún
+  // lado. Por eso lo que se fija es que la fuente sea la IMAGEN que el dueño exportó de su
+  // app, y que NO haya vuelto un SVG generado en su lugar.
+  await gotoApp(page);
+  await alCheckoutSinElegirPago(page);
+  const qr = page.locator('img[src="img/yape-qr.png"]');
+  await expect(qr).toBeVisible();
+  // El navegador de escritorio no puede escanear su propia pantalla, así que el QR va
+  // ABIERTO por defecto ahí: es LA vía de pago en compu, no un extra plegado.
+  await expect(page.locator('text=Abre Yape en tu celular y escanea')).toBeVisible();
+});
+
 test('elegir tarjeta a propósito sí aplica el recargo, y se le avisa al cliente', async ({ page }) => {
   // El default no puede convertirse en un embudo: la tarjeta tiene que seguir estando a un
   // tap, cobrar lo que cobra, y decirlo.

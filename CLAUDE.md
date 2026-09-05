@@ -1029,8 +1029,13 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
      defecto que ya había obligado a apagar el doble de atún (`noDouble`), solo que ahí se
      apagó el producto en vez de corregir la estructura. Se subió solo donde pasaba el 45%.
   3. **Bebidas +S/2 (y +S/3 el chai)**: 6/5/6/9. El margen de 61-84% que se venía usando
-     costeaba SOLO el insumo, nunca el envase — con botella con tapa a rosca a ~S/1
-     (estimado, **falta cotizar**) el margen real era 56-66%.
+     costeaba SOLO el insumo, nunca el envase. **El envase ya está COTIZADO Y COMPRADO
+     (dueño 2026-09-05): S/138 por 200 unidades = S/0.69 la botella**, bastante menos que el
+     ~S/1 que se venía estimando. Con eso el costo real de las bebidas es **19-25% del
+     precio** (promedio ponderado 21.9%), no el 39% que se asumía — son la parte MÁS rentable
+     del catálogo, muy por debajo del techo de 45%. Lo que sigue estimado es el insumo por
+     vaso (~S/0.465 las tres infusiones, ~S/1.55 el chai), derivado de las tandas del
+     RECETARIO.md y no de facturas.
   4. **Combo bajado de S/2 a S/1** y **topes de bebida gratis (R05_FLAT_WAIVER y
      OFFPEAK_DRINK_PROMO_CAP) subidos de 4 a 6**. Lo primero porque a S/2 el combo se comía
      del 58% al 118% de lo que deja una bebida (THE MIDNIGHT en combo dejaba −S/0.31); lo

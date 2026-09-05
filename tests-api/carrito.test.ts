@@ -48,19 +48,29 @@ Deno.test("combo: sándwich + bebida descuenta S/1 una vez por par", () => {
   assertSoles(r.expectedTotal, SIG15 + D07 - 1);
 });
 
-Deno.test("combo y hora valle NUNCA se suman — se aplica solo el mayor", () => {
-  // Mismo carrito, dentro de la ventana: la bebida gratis (S/5) es mayor que el combo
-  // (S/1), así que manda ella sola. Si se sumaran, el pedido saldría S/1 más barato de
-  // lo que el negocio decidió regalar.
+// ── LA BEBIDA GRATIS DE HORA VALLE SE RETIRÓ EL 2026-09-05 ────────────────────────────
+//
+// Era la ÚNICA operación del catálogo con contribución NEGATIVA: regalar una bebida de hasta
+// S/6 cuesta ~S/2.34 de insumo y devuelve S/0, así que la contribución media de una bebida
+// pasaba de +S/3.97 a −S/1.79 (ver RENTABILIDAD_POR_PARTE.md).
+//
+// Se apagó VACIANDO su ventana horaria, no borrando el mecanismo. Por eso estas pruebas no
+// se borran: ahora fijan que dentro de la que ERA la ventana ya no se regala nada. Su modo de
+// fallo es SILENCIO en las dos direcciones — si alguien repone las horas "porque el array
+// vacío parece un error", el negocio vuelve a regalar bebidas a pérdida sin que nada falle.
+Deno.test("en la que era la ventana de hora valle ya no se regala la bebida", () => {
+  // Mismo carrito y misma hora que antes daban SIG15 pelado (la bebida iba gratis). Ahora
+  // solo queda el combo de S/1, exactamente igual que fuera de la ventana.
   const r = deriveCart([sig15(), bebida("D07")], null, HORA_VALLE);
-  assertSoles(r.expectedTotal, SIG15);
+  assertSoles(r.expectedTotal, SIG15 + D07 - 1);
 });
 
-Deno.test("hora valle: la bebida gratis está topada, no regala la bebida más cara", () => {
-  // THE SPICE CHAI cuesta S/9 y el tope es S/6 — sin el tope, "BEBIDA // GRATIS"
-  // regalaría S/3 de margen extra sobre la bebida de mejor precio del catálogo.
-  const r = deriveCart([sig15(), bebida("D09")], null, HORA_VALLE);
-  assertSoles(r.expectedTotal, SIG15 + D09 - 6);
+Deno.test("la hora valle da el mismo total que cualquier otra hora", () => {
+  // La prueba más fuerte de que la promo está apagada: la hora dejó de mover el precio.
+  const valle = deriveCart([sig15(), bebida("D09")], null, HORA_VALLE);
+  const normal = deriveCart([sig15(), bebida("D09")], null, HORA_NORMAL);
+  assertSoles(valle.expectedTotal, normal.expectedTotal);
+  assertSoles(valle.expectedTotal, SIG15 + D09 - 1);
 });
 
 Deno.test("R06 (sándwich gratis) no regala además la bebida del combo", () => {
@@ -144,8 +154,10 @@ Deno.test("un carrito vacío nunca produce un total de S/0 cobrable", () => {
 });
 
 Deno.test("el total nunca baja de cero por acumulación de descuentos", () => {
-  // Una bebida sola en hora valle: el descuento (S/5) iguala el precio, no lo pasa.
-  const r = deriveCart([bebida("D07")], null, HORA_VALLE);
+  // Antes esto se probaba con la bebida gratis de hora valle, que igualaba exactamente el
+  // precio de una bebida sola. Retirada esa promo, el caso que queda es R05: regala la
+  // bebida entera, así que una bebida sola con R05 tiene que dar 0 y no un negativo.
+  const r = deriveCart([bebida("D07")], "R05", HORA_NORMAL);
   assertSoles(r.expectedTotal, 0);
   assertEquals(r.expectedTotal >= 0, true);
 });

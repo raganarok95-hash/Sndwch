@@ -26,10 +26,15 @@ test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no apar
   await page.locator('[onclick^="prot="]').first().click();
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
 
-  // Paso de toppings: Jalapeño no debe listarse.
+  // ⚠ El orden del armador cambió el 2026-09-05 al de Subway: pan -> proteína -> QUESO ->
+  // vegetales -> salsas. Sin este salto extra la aserción caía en el paso del queso, donde
+  // "Jalapeño" no aparece jamás — o sea que pasaba en falso y habría seguido pasando aunque
+  // el jalapeño volviera a listarse entre los vegetales.
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // queso -> vegetales
+
+  // Paso de vegetales: Jalapeño no debe listarse.
   await expect(page.locator('text=Jalapeño')).not.toBeVisible();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // toppings -> queso
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // queso -> salsas
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // vegetales -> salsas
 
   // Otras salsas siguen disponibles normalmente.
   await expect(page.locator('text=Aioli').first()).toBeVisible();
@@ -72,13 +77,16 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
   await page.locator('[onclick^="prot="]').first().click();
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  // Paso de QUESO: desde el 2026-09-05 el armador sigue el orden de Subway (pan -> proteína
+  // -> queso -> vegetales -> salsas), así que hay un paso más antes de los vegetales. Se
+  // salta sin elegir nada — el queso es opcional.
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
 
-  // Paso de toppings: la lechuga se lista y se puede elegir.
+  // Paso de vegetales: la lechuga se lista y se puede elegir.
   await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
   await page.locator('[onclick*="\'T09\'"]').first().click();
 
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // queso
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // salsas
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // vegetales -> salsas
   await page.locator('[onclick*="sauces.push("]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
@@ -98,16 +106,19 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
 
 // APIO (T08) — sacado de ARMA EL TUYO el 2026-09-04, pero NO borrado del catálogo.
 //
-// POR QUÉ TIENE PRUEBA, Y POR QUÉ SON DOS ASERCIONES OPUESTAS. THE FRESH (SIG04) lleva apio
-// y es su ÚNICO elemento crocante — entró ahí el 2026-08-08 justamente porque el pimiento
-// curado no aportaba crocancia y la receta quedaba sin ninguna. Si alguien "limpia" el
-// catálogo borrando T08 en vez de marcarlo sigOnly, ese Signature pierde en silencio la
-// textura por la que se eligió: no falla ningún tipo, no revienta nada, el sándwich sale
-// distinto y nadie se entera.
-test('el APIO ya no se puede elegir en ARMA EL TUYO, pero sigue en THE FRESH', async ({ page }) => {
+// POR QUÉ SIGUE TENIENDO PRUEBA DESPUÉS DE QUE EL APIO SALIÓ DE TODO (2026-09-05). El apio
+// también salió de THE FRESH cuando el dueño rehizo esa receta a la original de Estados
+// Unidos (atún escurrido, mayonesa y pimienta), así que hoy T08 no tiene ningún consumidor.
+// Lo que se fija acá es que **el mecanismo `sigOnly` siga funcionando**, porque de él dependen
+// ahora T02 (Pepinillo), P01 (Res) y P05 (Embutido) — y esos tres SÍ tienen consumidor.
+//
+// Su modo de fallo es SILENCIO: si el filtro `!x.sigOnly` del armador se rompe, el cliente
+// vuelve a poder armar res y embutido por BYO —las dos que salieron por rentabilidad— sin que
+// nada falle, sin que ningún tipo se queje, y con el margen sangrando otra vez.
+test('lo marcado como sigOnly no aparece en ARMA EL TUYO, pero sigue en sus Signatures', async ({ page }) => {
   await gotoApp(page, {});
 
-  // 1) No se ofrece en el armador.
+  // 1) No se ofrecen en el armador: ni apio, ni pepinillo.
   await page.locator('text=Arma el tuyo').click();
   await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
   await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
@@ -116,13 +127,21 @@ test('el APIO ya no se puede elegir en ARMA EL TUYO, pero sigue en THE FRESH', a
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
   await page.locator('[onclick^="prot="]').first().click();
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  // Un paso más: el queso va antes de los vegetales desde el reorden Subway (2026-09-05).
+  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
   await expect(page.locator('[onclick*="\'T08\'"]')).toHaveCount(0);
-  // La lechuga sí, para confirmar que estamos mirando el paso correcto.
+  await expect(page.locator('[onclick*="\'T02\'"]')).toHaveCount(0);
+  // La lechuga sí, para confirmar que estamos mirando el paso correcto — y porque es
+  // justamente la que el dueño puso EN LUGAR del pepinillo.
   await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
 
-  // 2) Pero sigue vivo en la receta de THE FRESH.
-  const apioSigueEnLaReceta = await page.evaluate(
-    () => (window as any).SIGS.find((s: any) => s.id === 'SIG04')?.tops?.includes('T08'),
+  // 2) Pero el pepinillo sigue vivo en las recetas que lo usan: si alguien lo borra del
+  //    catálogo en vez de marcarlo, THE ORIGINAL y THE SMOKE cambian de sabor en silencio.
+  const pepinilloEnRecetas = await page.evaluate(
+    () => (window as any).SIGS
+      .filter((s: any) => (s.tops || []).includes('T02'))
+      .map((s: any) => s.id),
   );
-  expect(apioSigueEnLaReceta).toBe(true);
+  expect(pepinilloEnRecetas).toContain('SIG01');
+  expect(pepinilloEnRecetas).toContain('SIG03');
 });

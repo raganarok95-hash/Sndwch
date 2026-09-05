@@ -56,17 +56,17 @@ function sOBuild(){
   }else if(byoStep===1){
     h+=ST('','Proteína','');
     h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+protPrice(p):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
+  // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
+  // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
+  // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
+  // ya trae aprendido: el queso se pone sobre la proteína porque va debajo, y porque es lo
+  // que se funde al tostar. Antes acá era pan -> proteína -> vegetales -> queso -> salsas,
+  // que obliga a levantar todo lo de encima para meter el queso abajo.
+  //
+  // Solo se intercambió el CONTENIDO de los pasos 2 y 3. Los índices no significan nada por
+  // sí mismos: `byoStepOK`/`byoStepHint` solo validan los pasos 0 y 1, así que este cambio
+  // no toca ninguna validación.
   }else if(byoStep===2){
-    h+=ST('','Toppings','Sin límite, elige los que quieras.');
-    h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    h+=TOPS.filter(function(t){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
-      var av=isAvail(t.id);
-      if(!av)return TOPOFF(t);
-      var sel=tops.indexOf(t.id)>=0;
-      return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+t.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+t.s+'</span>'+(t.spicy?icon('chili',12,'#ff8a5c'):'')+'</div>'+(t.d?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'+t.d+'</div>':'')+'</div>';
-    }).join('');
-    h+='</div>';
-  }else if(byoStep===3){
     h+=ST('','Queso','Opcional — incluido sin costo si eliges 1.');
     h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
     h+=CHEESE.map(function(c){
@@ -74,6 +74,18 @@ function sOBuild(){
       if(!av)return TOPOFF(c);
       var sel=cheese===c.id;
       return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+c.l+'</div></div>';
+    }).join('');
+    h+='</div>';
+  }else if(byoStep===3){
+    // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el
+    // cliente peruano ya trae. "Toppings" es jerga de heladería y de pizza.
+    h+=ST('','Vegetales','Sin límite, elige los que quieras.');
+    h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=TOPS.filter(function(t){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
+      var av=isAvail(t.id);
+      if(!av)return TOPOFF(t);
+      var sel=tops.indexOf(t.id)>=0;
+      return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+t.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+t.s+'</span>'+(t.spicy?icon('chili',12,'#ff8a5c'):'')+'</div>'+(t.d?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'+t.d+'</div>':'')+'</div>';
     }).join('');
     h+='</div>';
   }else{
@@ -130,7 +142,7 @@ function sOItemConfirm(){
   // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
   // solo repite lo que ya dice el nombre del sándwich. Solo BUILD YOUR OWN (donde el
   // cliente sí eligió cada ingrediente) muestra ese desglose completo.
-  if(mode!=='sig'){rows.push({k:'Pan',v:fn(BASES,base)});rows.push({k:'Proteína',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'Toppings',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'Queso',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'Salsas',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
+  if(mode!=='sig'){rows.push({k:'Pan',v:fn(BASES,base)});rows.push({k:'Proteína',v:fn(PROTS,prot),p:protPrice(pr)});rows.push({k:'Vegetales',v:tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'—'});rows.push({k:'Queso',v:cheese?fn(CHEESE,cheese):'sin queso'});rows.push({k:'Salsas',v:sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'—'});}
   if(doubleProt&&dbl)rows.push({k:'Doble',v:'Doble '+dbl.l+' // '+dbl.s,p:dblFee(dbl,size)});
   if(extraSauce)rows.push({k:'Salsa extra',v:'Salsa adicional a tu elección',p:2});
   // Queso opcional — mecanismo para un futuro Signature que lo ofrezca a elección (ver

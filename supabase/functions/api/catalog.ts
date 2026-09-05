@@ -53,11 +53,33 @@ import { computeRankName , baseSurcharge } from "./env.ts";
 // (categoría 'reward'), que es la fuente real en runtime: loadCatalogPrices() los carga
 // encima de estos literales, así que cambiar solo esto no cambia nada.
 export const REWARDS: Record<string, { pts: number; label: string }> = {
-  R02: { pts: 40, label: "SALSA // EXTRA" },
-  R04: { pts: 120, label: "DOBLE // PROTEÍNA" },
-  R05: { pts: 120, label: "BEBIDA // GRATIS" },
-  R03: { pts: 160, label: "TAMAÑO // 30CM" },
-  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },
+  // ── PUNTOS RECALIBRADOS EL 2026-09-05: TODAS DEVUELVEN LO MISMO ───────────────────────
+  //
+  // Un punto se gana 1:1 por sol gastado, así que "puntos que cuesta" es literalmente "soles
+  // que hay que gastar". Dividir lo que a NOSOTROS nos cuesta honrar el canje entre esos
+  // puntos da el descuento efectivo que cada recompensa entrega. Estaba así de disparejo:
+  //
+  //     4ta salsa ......  40 pts, nos cuesta S/0.27  ->  devuelve 0.67%
+  //     15CM gratis .... 400 pts, nos cuesta S/5.90  ->  devuelve 1.48%
+  //     bebida gratis .. 120 pts, nos cuesta S/2.34  ->  devuelve 1.95%
+  //     doble proteína . 120 pts, nos cuesta S/2.47  ->  devuelve 2.06%
+  //     subir a 30CM ... 160 pts, nos cuesta S/4.61  ->  devuelve 2.88%
+  //
+  // Un FACTOR 4.3 entre la más barata y la más cara PARA EL NEGOCIO. Un cliente que mira los
+  // números canjea siempre "subir a 30CM" y nunca las otras cuatro, que quedan de decorado —
+  // y el programa termina pagando el canje más caro cada vez.
+  //
+  // Todo queda anclado en R06, que NO se puede mover: `REFERRER_REWARD_POINTS` debe valer
+  // exactamente lo mismo y `npm run parity` lo verifica. Su tasa (1.48%) es la de referencia.
+  // Dispersión resultante: de 4.3x a 1.2x.
+  //
+  // ⚠ Estos números son SEMILLA. La fuente en runtime es `catalog_prices` (categoría
+  // `reward`), actualizada en la misma sesión — cambiar solo esta línea no cambia nada.
+  R02: { pts: 20, label: "SALSA // EXTRA" },        // devuelve 1.33%
+  R04: { pts: 160, label: "DOBLE // PROTEÍNA" },    // devuelve 1.54%
+  R05: { pts: 160, label: "BEBIDA // GRATIS" },     // devuelve 1.46%
+  R03: { pts: 320, label: "TAMAÑO // 30CM" },       // devuelve 1.44%
+  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },   // devuelve 1.48% — el ancla, no se mueve
 };
 
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
@@ -147,7 +169,9 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
-  P06: { p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 6 },
+  // pDbl30 corregido de 6 a 12 el 2026-09-05: era la única proteína cuyo doble costaba lo
+  // mismo en los dos tamaños. Ver el comentario largo en PROTS.P06 (src/app/01-*).
+  P06: { p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 },
   // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
   // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
@@ -187,8 +211,26 @@ export const SIG_ONLY_SAUCES = new Set<string>([]);
 // receta quedaba sin ninguna. Borrarlo dejaría a ese Signature sin la textura por la que se
 // eligió. `sigOnly` es exactamente el mecanismo para esto: el cliente no lo ve en el
 // armador, la receta lo sigue usando, y deriveCart lo sigue tasando.
-export const SIG_ONLY_TOPS = new Set<string>(["T08"]);
-export const SIG_ONLY_PROTS = new Set<string>([]);
+// T02 (Pepinillo) se suma el 2026-09-05: el dueño lo cambia por LECHUGA (T09) en ARMA EL
+// TUYO. No se borra — SIG01 (The Original) y SIG03 (The Smoke) lo llevan en su receta.
+export const SIG_ONLY_TOPS = new Set<string>(["T08", "T02"]);
+// P01 (Res) y P05 (Embutido) salen de ARMA EL TUYO el 2026-09-05 (decisión del dueño), por
+// RENTABILIDAD y no por producto. Cada una se pasaba del techo de 45% de costo en un tamaño:
+//   · Res 30CM ....... 47.6%  (el 15CM estaba en 44.2%)
+//   · Embutido 15CM .. 45.7%  (el 30CM estaba en 43.0%)
+// Son las dos únicas del armador que lo cruzaban. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// NO se borran, por lo mismo que el apio: THE ORIGINAL (SIG01) lleva P01 y THE SMOKE (SIG03)
+// lleva P05. En una receta cerrada el costo está calculado y las dos rinden — el problema es
+// el armador de elección libre, donde el cliente combina el tamaño caro con el pan caro y
+// nadie costeó esa combinación. `sigOnly` es exactamente ese mecanismo.
+//
+// ⚠ CONSECUENCIA A NO OLVIDAR: con estas dos fuera, ARMA EL TUYO queda con TRES proteínas
+// visibles (P02 pollo teriyaki, P04 atún, P06 albóndiga), porque P03 es exclusiva del menú
+// secreto. Tres es poco para una sección cuyo argumento entero es que tú eliges — si vuelve
+// a haber margen (proveedor más barato, o subir el precio), lo primero que hay que revisar
+// es devolver P01 acá.
+export const SIG_ONLY_PROTS = new Set<string>(["P01", "P05"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05, el menú secreto, S/24.90) muy por encima del
@@ -264,7 +306,9 @@ export const SIG_DATA: Record<string, { base: string; prot: string; tops: string
   // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
   // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
   // en src/app.ts.
-  SIG04: { base: "B01", prot: "P04", tops: ["T01", "T02", "T08"], sauces: ["S11"], p15: 20.9, p30: 34.9 },
+  // T08 (Apio) sale de la receta el 2026-09-05 (decisión del dueño). Semilla alineada con
+  // catalog_items, que es la fuente vigente — ver 20260905183956_the_fresh_sin_apio.sql.
+  SIG04: { base: "B01", prot: "P04", tops: [], sauces: [], p15: 20.9, p30: 34.9 },
   // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
   // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
   // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
@@ -953,7 +997,21 @@ const R05_FLAT_WAIVER = 6;
 // exactamente lo que esta promo NO debe hacer. Empezar a las 15:00 recorta la parte de
 // la ventana que se solapa con demanda real sin tocar la franja verdaderamente muerta
 // (16:00-18:00).
-const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [[15, 18]];
+// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
+// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveLima` devuelve false
+// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
+//
+// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
+// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
+// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
+// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
+// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
+// entrar. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
+// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
+// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
+const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 const OFFPEAK_DRINK_PROMO_CAP = 6;

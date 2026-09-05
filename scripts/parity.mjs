@@ -452,10 +452,14 @@ function hourWindows(src, re, file) {
     problems.push(`OFFPEAK_DRINK_PROMO_HOURS_LIMA: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
     return null;
   }
-  return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? null;
+  // `?? []` y no `?? null`: desde el 2026-09-05 la promo se apaga VACIANDO la ventana, así
+  // que "cero ventanas" es un estado válido y no un fallo de parseo. Con null los dos lados
+  // se leían como ilegibles y la comprobación dejaba de comparar nada — justo cuando lo que
+  // hay que verificar es que los DOS estén apagados.
+  return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? [];
 }
 cmp('OFFPEAK_DRINK_PROMO_HOURS_LIMA (ventana de la bebida gratis)',
-  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA=(\[[\s\S]*?\]);/, 'src/app/'),
+  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA(?::[^=]+)?=(\[[\s\S]*?\]);/, 'src/app/'),
   hourWindows(catalog, /const OFFPEAK_DRINK_PROMO_HOURS_LIMA: \[number, number\]\[\] = (\[[\s\S]*?\]);/, 'catalog.ts'));
 
 // Rangos. Son de puro reconocimiento (nunca cambian precio ni multiplicador), pero el
