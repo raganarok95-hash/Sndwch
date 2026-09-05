@@ -93,9 +93,42 @@ export async function stubWindowOpen(page: Page) {
   });
 }
 
+// Punto de entrega por defecto de los tests. Desde el 2026-09-02 el envío se cobra por
+// DISTANCIA REAL y el checkout exige un pin confirmado antes de pagar, así que sin esto todo
+// test que llegue a pagar se queda en la puerta.
+//
+// Estas coordenadas están elegidas para dar exactamente 4.00 km cobrables = **S/8**, que es el
+// mismo monto que cobraba la zona "media" (la que venía por defecto) en el esquema anterior.
+// Así los totales esperados de los tests que ya existían siguen siendo válidos y siguen
+// probando lo que probaban, en vez de convertirse en una reescritura de números.
+//
+// Representa al cliente NORMAL: el que ya confirmó su ubicación una vez y la tiene guardada.
+// El caso sin pin tiene su propio test en tests/delivery-distancia.spec.ts.
+export const PIN_TEST = { lat: -8.111962, lon: -79.039458, km: 4.0, fee: 8 };
+
+export async function setDeliveryPin(page: Page, lat = PIN_TEST.lat, lon = PIN_TEST.lon) {
+  await page.evaluate(([la, lo]) => {
+    (window as any)._mLat = la;
+    (window as any)._mLon = lo;
+  }, [lat, lon]);
+}
+
+export async function clearDeliveryPin(page: Page) {
+  await page.evaluate(() => {
+    (window as any)._mLat = null;
+    (window as any)._mLon = null;
+  });
+}
+
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   const calls = await mockBackend(page, handlers);
   await stubWindowOpen(page);
+  // Se inyecta ANTES de que corra el bundle: así el pin ya está puesto en el primer render y
+  // ningún test tiene que acordarse de ponerlo.
+  await page.addInitScript(([la, lo]) => {
+    (window as any)._mLat = la;
+    (window as any)._mLon = lo;
+  }, [PIN_TEST.lat, PIN_TEST.lon]);
   await page.goto(APP_FILE);
   await page.waitForSelector('text=SIGNATURE');
   return calls;

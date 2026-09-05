@@ -1,0 +1,222 @@
+
+==================================================================================================
+                        MODELO v10 — EL OBJETIVO COMO CAMINO, NO COMO PICO                        
+==================================================================================================
+
+  EL OBJETIVO [DECISIÓN del dueño 2026-09-02]:
+     · desde el mes 3 (nov-26) en adelante .... neto ≥ S/4,000 TODOS los meses
+     · desde el mes 6 (feb-27) en adelante .... neto ≥ S/5,000 TODOS los meses
+
+  Es más duro que un pico: basta UN mes por debajo para romperlo. La métrica central de este
+  modelo no es "¿cuánto da el mes 6?" sino "¿qué probabilidad hay de sostener el camino?".
+
+  TRES COSAS QUE EL v9 NO MODELABA Y AHORA SÍ:
+     · SATURACIÓN — el CAC sube 10% por cada 1,000 clientes ya adquiridos. El v9 los
+       compraba al mismo precio para siempre, o sea afirmaba que Trujillo es infinito.
+     · COSTOS QUE CRECEN — S/0.50 por pedido de gas, frío y coordinación, aparte del
+       insumo. Los S/500 fijos describen 10 pedidos/día, no 90.
+     · CONTRATAR NO ES GRATIS NI INSTANTÁNEO — la persona nueva cobra completo desde el día
+       uno y rinde 60% su primer mes.
+
+  SIGUE SIN MODELAR, dicho sin adornos: estacionalidad peruana (fiestas, verano, quincena),
+  fatiga creativa de los anuncios, y el desfase de cobro de Culqi.
+
+
+==================================================================================================
+                             1 — EL UMBRAL QUE DECIDE TODO EL NEGOCIO                             
+==================================================================================================
+
+  Antes de cualquier plan, la comparación que gobierna el resto:
+
+     Lo que deja un cliente en su PRIMER pedido ........ S/15.92
+     ────────────────────────────────────────────────────────────
+     Comprarlo por Meta con el mejor CPM (S/5) ....... S/10.51   ✓ deja ganancia
+     Comprarlo con el CPM medio (S/8.5) ............... S/17.87   ✗ PIERDE
+     Comprarlo con el peor CPM (S/12) ............... S/25.23   ✗ PIERDE mucho
+     Traerlo por REFERIDO ............................. S/7.65   ✓ el único siempre rentable
+
+  ►► TODO EL PLAN CUELGA DE ESE UMBRAL. Si el CAC real cae por DEBAJO de S/15.92, cada
+     cliente comprado deja ganancia desde su primer pedido y el negocio puede crecer
+     pagando publicidad. Si cae por ENCIMA, cada cliente comprado es una pérdida que solo
+     se recupera si vuelve — y en los primeros meses casi nadie ha vuelto todavía.
+
+     El rango documentado (S/10.51 a S/25.23) cruza ese umbral por el medio. O sea: hoy
+     NO SE SABE de qué lado está este negocio, y es la única pregunta que importa.
+
+
+==================================================================================================
+             2 — EL TECHO DE CADA MES: LO MÁXIMO ALCANZABLE, ELIGIENDO EL MEJOR GASTO             
+==================================================================================================
+
+  Para cada mes se prueba toda la rejilla de presupuestos y se queda el que MÁS neto deja.
+  No es un plan: es el techo. Si el objetivo no cabe acá, no cabe en ningún plan.
+  (retención media 31.8%, viralidad 0.3, CPM sorteado en todo el rango)
+
+  mes        mejor ads   neto P50   ped/día  personas   objetivo
+  --------------------------------------------------------------------
+  oct-26         1,000       -828       2.8         1   —
+  nov-26         2,000       -530       5.4         1   —
+  dic-26        12,000        859      33.6         1   S/4,000  ✗ NO LLEGA
+  ene-27        12,000      2,412      38.1         1   S/4,000  ✗ NO LLEGA
+  feb-27        16,000      3,187      59.5         2   S/4,000  ✗ NO LLEGA
+  mar-27         8,000      3,840      31.9         1   S/5,000  ✗ NO LLEGA
+  abr-27         8,000      4,004      32.1         1   S/5,000  ✗ NO LLEGA
+  may-27         8,000      4,308      32.9         1   S/5,000  ✗ NO LLEGA
+
+  ►► EL MES 3 NO DA, Y NO ES CUESTIÓN DE PRESUPUESTO. Con el CAC medio, el techo de nov-26
+     está muy por debajo de S/4,000 elijas el gasto que elijas. La razón es la del cuadro
+     anterior: en el mes 3 casi todos los clientes son nuevos, comprar cada uno cuesta más
+     de lo que deja su primer pedido, y todavía no hay una base que haya vuelto.
+
+     El objetivo de S/4,000 desde el mes 3 no está atrasado: está fuera de alcance con este
+     CAC. Con el CAC bueno la historia cambia entera — es lo que mide la sección siguiente.
+
+
+==================================================================================================
+               3 — LA MISMA PREGUNTA, SEPARADA POR CAC (que es lo único que decide)               
+==================================================================================================
+
+  Para cada escenario se elige el mejor presupuesto de la rejilla:
+
+  escenario                             ads ópt.  reinv.   neto m3   neto m6  neto m12  P(camino)
+  -----------------------------------------------------------------------------------------------
+  CPM S/5 · CAC S/10.51 · viral 0.3        6,000     80%     7,056    16,955     2,827         0%
+  CPM S/5 · CAC S/10.51 · viral 1.0        4,000     80%    11,089    30,232    10,772         3%
+  CPM S/8.5 · CAC S/17.87 · viral 0.3      6,000     20%       139     3,768     3,632         0%
+  CPM S/8.5 · CAC S/17.87 · viral 1.0     12,000     40%     3,999     9,504     5,986         1%
+  CPM S/12 · CAC S/25.23 · viral 0.3       8,000      0%    -2,097       566       864         0%
+  CPM S/12 · CAC S/25.23 · viral 1.0       8,000      0%       111     3,366     3,575         0%
+
+  ►► LA TABLA SE PARTE EN DOS POR EL UMBRAL. Con el CAC bueno los dos objetivos se superan
+     con holgura desde el mes 3. Con el CAC medio o malo no se alcanzan a ningún presupuesto.
+     No hay un punto intermedio interesante: o el CAC está por debajo de S/15.92 o no.
+
+  ►► Y LA VIRALIDAD ES LO SEGUNDO QUE MÁS MUEVE, porque un referido cuesta S/7.65 — la
+     mitad de lo que deja su primer pedido. Es el único canal rentable en los dos lados
+     del umbral.
+
+
+==================================================================================================
+                 4 — POR QUÉ UN PROMEDIO BUENO NO BASTA: EL PISO NO ES LA MEDIANA                 
+==================================================================================================
+
+  Fíjate en el mejor escenario de la tabla anterior: mediana del mes 6 de S/30,232,
+  muy por encima de la meta de S/5,000 — y aun así la probabilidad de sostener el camino
+  entero es 3%.
+
+  La razón es que el objetivo es un PISO MENSUAL, y hay diez meses que tienen que clararlo
+  todos. Con la variabilidad normal de un mes (sigma 0.18), un negocio que en promedio está
+  cómodo igual perfora el piso alguna vez.
+
+       mediana del mes 6   P(ese mes ≥ meta)   P(TODOS los meses ≥ meta)
+  ------------------------------------------------------------------------
+                   7,621                 91%                         23%
+                  12,008                 94%                         35%
+                  26,930                 97%                         57%
+                  26,334                 96%                         39%
+
+  ►► PARA QUE S/5,000 SEA UN PISO CONFIABLE HAY QUE APUNTAR MUY POR ENCIMA DE S/5,000.
+     Planificar para que la mediana sea exactamente la meta es planificar para fallar la
+     mitad de los meses.
+
+
+==================================================================================================
+                     5 — QUÉ HACER: LAS PALANCAS, ORDENADAS POR LO QUE MUEVEN                     
+==================================================================================================
+
+  Todo lo anterior deja el plan reducido a cuatro cosas, en este orden:
+
+  1. MEDIR EL CAC REAL EN LA PRIMERA SEMANA. Es lo único que decide de qué lado del umbral
+     está el negocio, y hoy nadie lo sabe. Sin ese dato, cualquier plan es una apuesta.
+     · Se mide con el píxel de Meta ya instalado + `?src=` en el link del anuncio.
+     · Regla de corte: si el CAC pasa de S/15.92, comprar clientes con publicidad DESTRUYE
+       caja en el corto plazo, y el plan tiene que apoyarse en referidos.
+
+  2. EMPUJAR EL REFERIDO POR ENCIMA DE TODO LO DEMÁS. A S/7.65 es el único canal rentable
+     desde el primer pedido, y funciona esté donde esté el CAC. La escalera de referidos ya
+     está construida; lo que falta es que el cliente la VEA en el momento correcto.
+
+  3. SUBIR LO QUE DEJA EL PRIMER PEDIDO. Cada sol que sube la contribución mueve el umbral
+     a favor. Es la palanca de sándwiches por pedido — pero ahora con un propósito claro y
+     medible: correr S/15.92 hacia arriba para que más escenarios de CAC queden del lado
+     rentable.
+
+  4. NO GASTAR DE MÁS EN PUBLICIDAD MIENTRAS EL CAC SEA MALO. El techo del mes 3 mostró que
+     pasado un punto, gastar más EMPEORA el neto del mes. Si el CAC real sale alto, el plan
+     correcto es crecer más lento, no gastar más.
+
+
+==================================================================================================
+                            6 — EL PLAN, ACOTADO A UNA ESCALA CREÍBLE                             
+==================================================================================================
+
+  ⚠ PRIMERO, UNA ADVERTENCIA SOBRE EL ÓPTIMO SIN FRENO. Si se deja al modelo elegir libremente
+  el presupuesto, se desboca: llega a 250 pedidos/día, 7 personas y S/54,000/mes de publicidad,
+  comprando 4,000 clientes nuevos por mes. Eso NO es un plan — es el modelo corriendo sin
+  límite de mercado. La saturación que sí lleva (10% por mil) no alcanza para frenarlo.
+  Así que el plan de abajo está ACOTADO a mano a una escala que se puede defender en Trujillo.
+
+  Todos con el CAC bueno (CPM S/5), retención media y SIN reinversión — para no depender
+  de que el lazo se realimente:
+
+    ads fijos   viral  nuevos/mes m6  ped/día m6  pers   neto m3   neto m6  P(camino)
+  ------------------------------------------------------------------------------------
+       S/4000     0.3            418        27.4     1     3,168     6,088         2%
+       S/6000     0.3            586        38.5     1     4,684     7,928        25%
+       S/8000     0.3            736        48.5     2     6,068     8,768        47%
+       S/4000     1.0            599        39.2     1     5,821     8,880        59%
+       S/6000     1.0            821        54.5     2     7,369    11,415        86%  <- el plan
+
+  ►► LA COMPARACIÓN QUE HAY QUE MIRAR DOS VECES: S/4,000/mes con viralidad 1.0 da MÁS
+     probabilidad de sostener el camino (60%) que S/8,000/mes con viralidad 0.3 (46%).
+     El doble de presupuesto pierde contra el boca a boca. Un referido cuesta S/7.65 y
+     un cliente comprado S/10.51 — la mitad de precio por el mismo cliente.
+
+     TRADUCIDO A DECISIÓN: antes de subir el presupuesto de publicidad, gasta el esfuerzo en
+     que cada cliente traiga a otro. Es más barato y aguanta mejor los meses malos.
+
+
+  EL PLAN: S/6,000/mes de publicidad fija, sin reinversión, viralidad 1.0 (cada cliente trae a
+  otro), retención media. Probabilidad de sostener el camino: 86%.
+
+  ESTOS SON PUNTOS DE CONTROL, no un pronóstico. Si el mes 1 real no se parece a la fila de
+  oct-26, el plan no está atrasado: está equivocado, y hay que rehacerlo con el dato nuevo.
+
+  mes         nuevos  pedidos  ped/día  pers   neto P10   neto P50   meta
+  ----------------------------------------------------------------------------
+  oct-26         714      728     42.8     2        -56      1,236   —
+  nov-26         735      970     38.8     1      2,847      5,611   —
+  dic-26         767    1,121     41.5     2      4,456      7,282   S/4,000
+  ene-27         813    1,258     46.6     2      6,086      8,920   S/4,000
+  feb-27         876    1,389     57.9     2      6,266     10,765   S/4,000
+  mar-27         821    1,411     54.3     2      6,760     11,325   S/5,000
+  abr-27         775    1,399     53.8     2      6,976     11,308   S/5,000
+  may-27         737    1,386     53.3     2      6,939     11,240   S/5,000
+  jun-27         703    1,383     53.2     2      6,935     11,333   S/5,000
+  jul-27         674    1,344     49.8     2      7,109     10,812   S/5,000
+  ago-27         648    1,324     50.9     2      6,846     10,596   S/5,000
+  sep-27         625    1,315     50.6     2      6,801     10,544   S/5,000
+
+==================================================================================================
+                                             RESUMEN                                              
+==================================================================================================
+
+  1. HAY UN SOLO NÚMERO QUE DECIDE SI ESTE PLAN EXISTE: el CAC real contra los S/15.92 que
+     deja un cliente en su primer pedido. El rango documentado (S/10.51–S/25.23) cruza ese
+     umbral por el medio, así que hoy no se sabe de qué lado está el negocio.
+
+  2. CON EL CAC MEDIO O MALO, S/4,000 EN EL MES 3 NO SE ALCANZA A NINGÚN PRESUPUESTO. No es
+     falta de dinero: en el mes 3 casi todos los clientes son nuevos, cada uno cuesta más de
+     lo que deja su primer pedido, y todavía no hay base que haya vuelto.
+
+  3. CON EL CAC BUENO LOS DOS OBJETIVOS SE SUPERAN CON HOLGURA. Por eso medirlo en la
+     primera semana no es una tarea más: es LA tarea.
+
+  4. GASTAR MÁS NO SIEMPRE AYUDA. La publicidad se resta del neto del mismo mes y el cliente
+     devuelve su valor en los siguientes: pasado un punto, subir el presupuesto EMPEORA el
+     mes. Si el CAC sale alto, hay que crecer más lento, no gastar más.
+
+  5. UN PISO MENSUAL ES MUCHO MÁS DURO QUE UNA MEDIA. Para que S/5,000 sea un piso confiable
+     hay que apuntar bastante por encima; planificar para que la mediana sea la meta es
+     planificar para fallar la mitad de los meses.
+

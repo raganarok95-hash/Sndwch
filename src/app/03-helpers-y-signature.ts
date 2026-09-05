@@ -281,7 +281,8 @@ function initCheckoutFields(){
   scheduleMode='now';schedDay='today';schedSlot=null;
   useCredit=false;
   promoFieldOpen=false;
-  manualPayMethod=null;
+  // 'yape', no null: null es TARJETA. Ver el comentario del default en 01-*.
+  manualPayMethod='yape';
   payMethodChosen=false;
   checkoutLocked=false;lockedMsg='';
   _payingInProgress=false;
@@ -318,7 +319,9 @@ function itemUnitPrice(item){
   }
   var pr2=PROTS.find(function(x){return x.id===item.prot;});
   if(!pr2)return 0;
-  var bp2=item.size==='15'?pr2.p15:pr2.p30;
+  // El recargo del pan solo existe en ARMA EL TUYO: en un Signature la receta fija el pan y
+  // el cliente no lo elige, así que no hay nada que recargar.
+  var bp2=(item.size==='15'?pr2.p15:pr2.p30)+baseSurcharge(item.base,item.size);
   var dbl2=item.doubleProt?dblFee(pr2,item.size):0;
   var sc2=item.extraSauce?EXTRA_SAUCE_PRICE:0;
   return bp2+dbl2+sc2;

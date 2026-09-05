@@ -109,16 +109,20 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
   expect(placeOrderCall2!.body.total).toBe(31.9);
 });
 
-// Regresión del bug crítico de esta sesión: un cliente que nunca toca el selector
-// "¿Cómo pagas?" (ni Yape/Plin ni Tarjeta) sigue cayendo por el camino rápido de Culqi
-// (ver doOrder()) — antes, el total que el cliente mandaba a prepare-order no incluía el
-// recargo de tarjeta que el servidor SIEMPRE calcula para cualquier pedido que va a
-// Culqi (deliveryFeeForZoneCard en orders.ts), así que el servidor rechazaba el pedido
-// con "El total no coincide con los productos del pedido." en su camino más común. Este
-// test no puede ejercer el rechazo real del servidor (prepare-order está mockeado), pero
-// sí confirma que el cliente ya calcula y manda el total inflado sin que el cliente haya
-// elegido nada — que es la mitad que de verdad se rompió.
-test('invitado paga sin tocar el selector de método (camino rápido) y el total ya incluye el recargo de tarjeta', async ({ page }) => {
+// Regresión de un bug crítico real: cuando un pedido sale por Culqi, el servidor SIEMPRE
+// calcula el delivery con el recargo de la pasarela (deliveryFeeForZoneCard en orders.ts).
+// Si el cliente manda un total sin ese recargo, el servidor rechaza el pedido con "El total
+// no coincide con los productos del pedido." Este test no puede ejercer el rechazo real
+// (prepare-order está mockeado), pero sí confirma que el cliente calcula y manda el total
+// inflado — que es la mitad que de verdad se rompió.
+//
+// ⚠ Este test decía "sin tocar el selector (camino rápido)" hasta el 2026-09-03, porque no
+// elegir nada significaba TARJETA. Desde que el método por defecto es Yape/Plin eso dejó de
+// ser cierto, así que ahora la tarjeta se elige a propósito — que es el único caso en que
+// hoy corresponde el recargo. **El caso de "no toca nada" no se perdió**: vive en
+// tests/yape-por-defecto.spec.ts, donde lo que se exige es lo contrario, que el total NO
+// lleve el recargo.
+test('elegir tarjeta manda a prepare-order el total con el recargo que el servidor va a exigir', async ({ page }) => {
   const calls = await gotoApp(page, {
     'prepare-order': () => ({ success: true }),
   });
@@ -136,15 +140,15 @@ test('invitado paga sin tocar el selector de método (camino rápido) y el total
   await page.locator('#o-addr').fill('Av. España 123, Trujillo');
   await page.locator('#o-district').selectOption('trujillo');
 
-  // Nunca toca "Yape / Plin" ni "Tarjeta" — pasa directo a pagar.
+  await page.locator('[onclick*="selectPayMethod(\'culqi\')"]').click();
   await page.getByRole('button', { name: 'Pagar ahora //' }).click();
 
   await expect
     .poll(() => calls.find((c) => c.action === 'prepare-order'), { timeout: 10000 })
     .toBeTruthy();
   const prepareOrderCall = calls.find((c) => c.action === 'prepare-order')!;
-  // SIG03 15CM = S/23.90, zona 'media' = S/8 reales, pero engordado para tarjeta:
-  // 8/(1-0.055) = 8.47 → total = 32.37, no 31.90 (el fee sin engordar).
+  // SIG03 15CM = S/23.90, delivery real S/8 (el pin de los tests da 4 km exactos), pero
+  // engordado para tarjeta: 8/(1-0.055) = 8.47 → total = 32.37, no 31.90.
   expect(prepareOrderCall.body.total).toBe(32.37);
   expect(prepareOrderCall.body.deliveryZone).toBe('media');
 });

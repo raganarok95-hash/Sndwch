@@ -46,12 +46,14 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await page.getByRole('button', { name: 'Aplicar' }).click();
   await expect(page.locator('text=PROMO10 aplicado')).toBeVisible();
 
-  // 20.90 (comida) - 3 (promo) = 17.90, más el delivery de zona 'media'. Todavía no se
-  // eligió método de pago, así que el fee va engordado para tarjeta (8/(1-0.055)=8.47):
-  // total mostrado = 26.37. Prueba de que el descuento ya se restó client-side.
-  await expect(page.locator('text=S/26.37').first()).toBeVisible({ timeout: 10000 });
+  // 20.90 (comida) - 3 (promo) = 17.90, más S/8 de delivery → total mostrado S/25.90.
+  // Prueba de que el descuento ya se restó client-side.
+  // Era S/26.37 hasta el 2026-09-03, cuando el fee iba engordado para tarjeta
+  // (8/(1-0.055)=8.47) porque el método por defecto era la tarjeta. Hoy el default es
+  // Yape/Plin, que no paga comisión (ver tests/yape-por-defecto.spec.ts).
+  await expect(page.locator('text=S/25.90').first()).toBeVisible({ timeout: 10000 });
 
-  await page.locator('[onclick*="useCredit=!useCredit"]').click();
+  await page.locator('[onclick*="toggleCredit()"]').click();
   await expect(page.getByRole('button', { name: 'Confirmar con crédito //' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirmar con crédito //' }).click();
 

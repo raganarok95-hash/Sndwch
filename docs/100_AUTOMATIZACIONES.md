@@ -1,6 +1,6 @@
 # Automatizaciones para SND//WCH — 93 vigentes de 100 propuestas
 
-Fecha: 2026-08-29 · Apertura: lunes 7 de septiembre de 2026
+Fecha: 2026-08-29 · Apertura: **a más tardar la 2ª semana de octubre de 2026** (movida por permisos, 2026-09-02)
 
 ## Cómo leer esta lista
 
@@ -208,9 +208,9 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 ## G. Calidad y reputación
 
 76. ~~**Seguimiento tras 1-2 estrellas**~~ — **DESCARTADO por el dueño (2026-08-29).**
-77. **Detección de queja repetida** — el mismo cliente reclamando dos veces es un problema de
+77. ✅ **Detección de queja repetida** — el mismo cliente reclamando dos veces es un problema de
     proceso, no un cliente difícil. · **HOY**
-78. **Tiempo real de entrega vs. prometido** — la columna `delivered_at` ya se llena; falta el
+78. ✅ **Tiempo real de entrega vs. prometido** — la columna `delivered_at` ya se llena; falta el
     reporte. Es el dato que dice si tu ETA miente. · **HOY**
 79. **Alerta de pedido que pasó el ETA** — mientras todavía puedes avisarle al cliente, que es
     lo que evita la mala calificación. · **HECHO 2026-08-29 (tercer barrido en `alert-stuck-orders`, contra la promesa hecha al cliente)**
@@ -224,12 +224,15 @@ canal. Este bloque va sobre no desperdiciar esa plata.
     trae respaldos de ninguna clase)
 84. **Exportación mensual para el contador** — ventas del mes en el formato que te pida. · **DUEÑO**
 85. ~~**Recordatorio de declaración de impuestos**~~ — **DESCARTADO por el dueño (2026-08-29).**
-86. **Reporte del Libro de Reclamaciones** — consolidado para Indecopi si lo piden. · **HOY**
+86. ✅ **Reporte del Libro de Reclamaciones** — consolidado para Indecopi si lo piden. · **HOY**
 87. **Rotación del secreto de cron** — el valor sigue en texto plano en el historial de
     migraciones dentro de Supabase. Está pendiente desde hace tiempo. · **DUEÑO**
-88. **Auditoría de cuentas admin inactivas** — hoy hay una sola, pero el día que haya más. · **HOY**
-89. **Alerta de intentos de acceso admin fallidos** — repetidos desde la misma IP. · **HOY**
-90. **Verificación de que el shell se actualizó** — tras cada deploy, confirmar que el service
+88. ✅ **Auditoría de cuentas admin inactivas** — hoy hay una sola, pero el día que haya más. · **HOY**
+89. ✅ **Alerta de intentos de acceso admin fallidos** — repetidos desde la misma IP. · **HOY**
+    · *Se construyó anclada al TELÉFONO atacado, no a la IP: rotar de IP es trivial y rotar a
+    quién se ataca no. La IP entra solo como huella hasheada, para separar "muchos intentos
+    desde una conexión" de "pocos desde muchas".*
+90. ✅ **Verificación de que el shell se actualizó** — tras cada deploy, confirmar que el service
     worker sirvió la versión nueva. Ya hubo un caso de shell viejo sobreviviendo. · **HOY**
 
 ## I. Datos y decisión
@@ -241,14 +244,14 @@ canal. Este bloque va sobre no desperdiciar esa plata.
 92. **Recalcular el modelo financiero cada mes** — con ventas reales en vez de simulación. · **DATOS**
 93. **Alerta de supuesto roto** — cuando un número del modelo deja de parecerse a la
     realidad, avisar en vez de seguir decidiendo con él. · **DATOS**
-94. **Envío automático del reporte de cohortes** — el RPC ya existe, nadie lo lee. · **HOY**
+94. ✅ **Envío automático del reporte de cohortes** — el RPC ya existe, nadie lo lee. · **HOY**
 95. **Qué día y hora deja más margen** — no más ventas: más margen. No son lo mismo. · **DATOS**
 96. **Detección de estacionalidad** — quincena, feriados, clima. · **DATOS** (mucho historial)
 
 ## J. Infraestructura
 
-97. **Alerta de crecimiento de la base** — antes de topar el plan de Supabase. · **HOY**
-98. **Alerta de latencia de la edge function** — si `api` empieza a responder lento, se nota
+97. ✅ **Alerta de crecimiento de la base** — antes de topar el plan de Supabase. · **HOY**
+98. ✅ **Alerta de latencia de la edge function** — si `api` empieza a responder lento, se nota
     en la conversión antes que en cualquier otro sitio. · **HOY**
 99. **Prueba de humo en producción tras cada deploy** — pedir el catálogo y verificar que
     responde. Hoy el CI verifica antes de desplegar, nadie verifica después.

@@ -233,6 +233,82 @@ etiquetas la leen de ahí. Dos números para la misma cosa terminan en que uno g
 silencio. **Y los tiempos de las etapas NO se escalan con las porciones**: duplicar la tanda
 no duplica el braseado, y escalarlos haría planificar la jornada contra un número falso.
 
+## Lo que no produce ningún error es lo que hay que vigilar (lote E6, 2026-09-02)
+
+Nueve automatizaciones que comparten un solo modo de fallo: **silencio**. Ninguna avisa de
+algo que lance una excepción, así que ni el typecheck ni un catch las ven.
+
+- **La base tiene 500 MB y el plan `free` no degrada con aviso**: al topar pasa a solo
+  lectura y el negocio deja de tomar pedidos. `dbGrowth()` avisa al 70% (`db_size_bytes()` y
+  `table_sizes()`, las dos `security definer` **con su `revoke`** — es el séptimo caso del
+  mismo defecto en este repo).
+- **La latencia se mide con p95, nunca con el promedio**, y solo se anotan las peticiones
+  LENTAS (`recordSlowRequest` en `index.ts`, ≥1200 ms, `stage: "request-timing"` en
+  `debug_logs`). Escribir una fila por request duplicaría el tráfico a la base para medir
+  sobre todo peticiones sanas. Una petición de 8 s entre 99 rápidas no mueve el promedio y es
+  justo la que hace abandonar un carrito.
+- **#78 se mide con p90 por lo mismo**: nueve entregas de 30 min y una de tres horas dan un
+  promedio de 45 que suena bien. Y **sin `delivered_at` no hay porcentaje**: rellenar los
+  pedidos sin hora daría un "100% a tiempo" sobre cero entregas medidas.
+- **#77 agrupa por TELÉFONO, no por nombre.** Dos "Juan Pérez" distintos saldrían como un
+  reincidente y mandarían a buscar un problema de proceso que no existe.
+
+### #89 — la alerta de acceso admin NO se ancla en la IP, aunque el ítem lo pedía
+
+Rotar de IP es trivial; lo que un atacante no puede rotar es **a quién ataca**. Se registra el
+intento fallido cuando el teléfono es de una cuenta admin — dato que `actLogin` ya tenía en la
+mano (`fetchIsAdmin` se pide en paralelo), así que no cuesta una consulta. La IP entra solo
+como **huella hasheada**, para separar "muchos intentos desde una conexión" de "pocos desde
+muchas"; guardar la dirección real convertiría un registro técnico en uno de datos personales
+sin ganar nada.
+
+**Y el rastro va a `debug_logs`, no a `login_attempts`.** Esa tabla se BORRA al primer login
+correcto (`reset_login_attempts`), así que el caso que más importa —probaron veinte veces y a
+la veintiuna entraron— no dejaba ni una huella.
+
+**Exige un mínimo**, igual que la alerta de rechazos de tarjeta: el bloqueo ya corta a los 5
+intentos, así que avisar a los 5 sonaría cada vez que el dueño se equivoca de PIN. Son 10 en
+una hora (dos bloqueos enteros a propósito) **o** 3 conexiones distintas — tres y no dos,
+porque salir de casa con el celular ya cambia de wifi a datos y produce dos huellas.
+
+`admin_accounts.last_login_at` (#88) se escribe **en el login y no en cada petición admin**:
+el dato se mira una vez al mes y un write por request sería un costo permanente por nada. Un
+`last_login_at` nulo es la señal **más fuerte**, no la más débil — es la cuenta que nadie
+recuerda haber creado.
+
+### #90 — verificar el shell desplegado compara CONTENIDO, no el código de estado
+
+El fallo real del 2026-08-21 (shell viejo pegado a la vez en la app instalada, el celular y la
+PC) respondía 200 en todo. `scripts/shell-live.mjs` compara dos sellos que ya existían contra
+lo que hay en el repo: el `APP_BUILD` de `index.html` (hash del JS compilado, lo pone
+`build.mjs`) y la `VERSION` de `sw.js`. **Son dos fallos distintos** — un index nuevo servido
+por un service worker viejo es exactamente lo que ocurrió.
+
+**Reintenta con espera creciente hasta 5 minutos** porque Vercel publica de forma asíncrona
+tras el push: preguntar una sola vez mediría la carrera y no el resultado, y un chequeo que
+falla en falso se apaga a la semana. Corre en `.github/workflows/verify-shell.yml` (push a
+`main` que toque `index.html`/`sw.js`) — sin `npm ci`, no usa ninguna dependencia.
+
+**`sndwch.app` está bloqueado por el proxy de este sandbox** (403 en el CONNECT, igual que el
+host de Supabase), así que desde una sesión no se puede correr contra producción: para probar
+cambios al script está `npm run check:shell`, que le sirve 6 formas de estar desactualizado y
+exige que señale cada una. Va DESPUÉS de `build` en `verify`, porque compara contra el
+`index.html` recién construido.
+
+### #94 — el reporte de cohortes se manda solo, mensual, y avisa cuando no hay que creerle
+
+`retention_report` existía desde hace tiempo y es el mejor dato del panel; el problema nunca
+fue el cálculo sino que **hay que acordarse de abrir la pantalla**. Ahora `send-retention-report`
+(cron, día 1 de cada mes) manda el correo con el detalle y un push con solo el titular.
+
+**Mensual y no semanal**: una cohorte se mueve en meses, y un correo semanal con el mismo
+número movido dos décimas se deja de abrir — y con él se pierde el mes en que sí cambió.
+
+**La salvaguarda de fiabilidad va ARRIBA de las cifras, no al pie** (`retentionDigest`, mínimo
+30 clientes): con 12 clientes "el 33% volvió" son 4 personas, y mover una cambia el número 8
+puntos. Al pie se lee después de haberles creído. Mismo criterio que el plan de tanda. Y donde
+no hay dato va un guion, nunca un 0: un 0 se lee como "medimos y dio cero".
+
 ## Checklist antes de dar por terminado un cambio en el cliente
 
 1. `npm run typecheck` — cero errores (solo cubre `src/**`).
@@ -255,11 +331,13 @@ no duplica el braseado, y escalarlos haría planificar la jornada contra un núm
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
 4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`, 71 comprobaciones hoy). Si falla, el
+   `supabase/functions/api/**` (`scripts/parity.mjs`, 88 comprobaciones hoy). Si falla, el
    cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
-   recompensa, umbrales, zonas de delivery (con precio y excluidas), nombres, y
-   `EXTRA_SAUCE_PRICE` — el único precio del catálogo que NO vive en `catalog_prices`, así
-   que esta comparación es su única defensa.
+   recompensa, umbrales, zonas de delivery (con precio y excluidas), tarifa por distancia
+   (`DELIVERY_KM_RATE`/`ROAD_FACTOR`/`MIN_FEE`/`MAX_KM` + `STORE_LAT`/`STORE_LON`), nombres, y
+   los DOS precios del catálogo que NO viven en `catalog_prices` —`EXTRA_SAUCE_PRICE` y
+   `BASE_SURCHARGE` (el recargo del pan de focaccia)—, para los que esta comparación es la
+   única defensa.
 5. `npm run build` — regenera `index.html` desde `src/`.
 5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
    Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
@@ -268,7 +346,12 @@ no duplica el braseado, y escalarlos haría planificar la jornada contra un núm
    (`scripts/smoke-prod.mjs`, que corre tras cada deploy) de verdad SE DA CUENTA cuando
    producción está rota: se le sirven 12 formas de romperse y tiene que señalar cada una.
    Un chequeo de salud que siempre pasa es peor que no tener ninguno.
-6. `npm test` (o `npm run verify`, que ahora encadena nueve) — deben pasar TODOS (revisa el
+5d. `npm run check:shell` — comprueba que la verificación del shell desplegado
+   (`scripts/shell-live.mjs`, la que corre en `verify-shell.yml` tras cada push que toca el
+   cliente) de verdad SE DA CUENTA cuando producción sirve una versión vieja: se le sirven 6
+   formas de estar desactualizada y tiene que señalar cada una. Va DESPUÉS de `build` porque
+   compara contra el `index.html` recién construido.
+6. `npm test` (o `npm run verify`, que ahora encadena diez) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
@@ -560,7 +643,11 @@ Signature o build.
   caídos y picos de error; el VEREDICTO de cada señal lo calcula el servidor, la pantalla
   solo lo pinta), **Plan de tanda** (`admin-batch-plan`: cuánto cocinar de cada insumo para
   cubrir N días, con `reliable:false` mientras no haya ~14 días y 20 pedidos de historial —
-  la pantalla muestra el motivo ANTES que las cantidades), y desde 2026-08-10 **Menú secreto**
+  la pantalla muestra el motivo ANTES que las cantidades), **Salud técnica**
+  (`admin-tech-health`: espacio en la base contra el tope de 500 MB, p95 de latencia, cuentas
+  admin abandonadas) y **Cumplimiento** (`admin-compliance`: entrega real contra la prometida,
+  quién reclamó más de una vez, y el consolidado del Libro de Reclamaciones descargable),
+  y desde 2026-08-10 **Menú secreto**
   (publicar el sándwich secreto del mes — nombre/pan/proteína/toppings/salsas/precio/
   pedidos mínimos/foto/qué ingredientes quedan exclusivos ese ciclo — sin depender de una
   sesión de código, ver detalle técnico abajo).
@@ -653,7 +740,10 @@ un error, es SILENCIO —la alerta que no sale— así que no alcanza con el typ
 contenido de marketing semanal (**que desde #50 no solo avisa: deja los borradores
 escritos** en `marketing_calendar` para las próximas 4 semanas, saltándose toda fecha que ya
 tenga entrada — el dueño edita en vez de escribir desde cero, y tocar el botón dos veces no
-duplica nada), y **salud del sistema** (`alert-system-health`, horario:
+duplica nada), **intentos de acceso a tu panel** (`alert-admin-access`, horario en :53 — ver la sección de
+E6: el bloqueo por intentos ya existía, lo que faltaba era que alguien SE ENTERE), **reporte de
+cohortes al correo** (`send-retention-report`, día 1 de cada mes),
+y **salud del sistema** (`alert-system-health`, horario:
 crons caídos vía `dead_cron_jobs()` + pico de errores vía `error_spike()`; el job
 `sndwch-alert-system-health` corre en el minuto :37 a propósito — 20 de los 26 jobs
 disparan en :00 y este LEE el resultado de los otros, así que le conviene correr después).
@@ -679,7 +769,10 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 ## Contexto de negocio (mantener actualizado — afecta toda decisión de precio/margen)
 
 - **El negocio aún NO ha abierto** — fecha de apertura confirmada por el dueño 2026-08-01:
-  **lunes 7 de septiembre de 2026**. Todo lo que hay hoy en `orders`/`customers` en
+  **a más tardar la segunda semana de octubre de 2026** (movida desde el 7 de septiembre por
+  trámites de permisos, confirmado por el dueño 2026-09-02 — los modelos de `modelo/` que
+  arrancan en `date(2026, 9, 7)` quedan desfasados y hay que re-correrlos con la fecha nueva:
+  el "mes 3" y el "mes 6" se mueven con ella). Todo lo que hay hoy en `orders`/`customers` en
   Supabase es data de prueba (unos 10 pedidos, 2 clientes) — NO representa ventas reales.
   Cualquier proyección financiera hecha antes del lanzamiento es una SIMULACIÓN basada en
   referencias/benchmarks, nunca un pronóstico con historial real — debe reconstruirse con
@@ -694,6 +787,15 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   (atún ~S/4.82/S/9.64), P05 (embutido ~S/4.29/S/8.59) y P06 (albóndiga ~S/1.34/S/2.68)
   son **estimados sin cotizar**. Cualquier cálculo de margen parte de estos números, no
   del precio del insumo crudo.
+  **⚠ El atún YA ESTÁ COTIZADO desde el 2026-09-04: S/4 la lata de 140 g, al por mayor**
+  (dato del dueño). Eso es **S/43.96/kg escurrido** con la lectura conservadora (140 g de
+  contenido neto, 65% de rendimiento al escurrir), contra los **S/67/kg investigados online**
+  que usaba el modelo. La porción de 85 g de ensalada (68 g de atún + 17 g de mayonesa) pasa
+  de **S/4.82 a S/3.25**, y la de 170 g de S/9.64 a S/6.50. **El atún deja de ser la proteína
+  de peor margen del catálogo y pasa a estar sana en los dos tamaños** (42.0% y 41.7% contra
+  51.3% y 51.9%). Su precio de venta NO se tocó: lo que cambió es el costo.
+  **Confirmado por el dueño 2026-09-04: los 140 g son CONTENIDO NETO**, así que la lectura
+  conservadora (S/43.96/kg escurrido) es la correcta y ya no hay incertidumbre acá.
 - **Margen de insumos+empaque**: base de trabajo acordada con el dueño de 45% del precio
   de venta — deliberadamente conservador/alto a propósito. Un cálculo directo con precios
   reales de Perú investigados dio ~26-36% según el producto; el dueño pidió trabajar con
@@ -708,12 +810,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `MENU_FINANCIAL_ANALYSIS.md`. Efecto: contribución por pedido S/16.68 → **S/16.42**, y
   **BYO 30CM de res cruzó el techo de 45%** (43.7% → 45.6%), la única combinación del
   catálogo que lo hace. Los 5 Signatures siguen holgados en los dos tamaños.
-  **Focaccia: S/13 la entera, pero FALTA el dato de cuántas porciones salen de una** — sin
-  eso no se puede costear. Sensibilidad: empata con el pan sub recién a 13 porciones de
-  15CM por focaccia; a 8 porciones cuesta S/1.62 (+S/0.62 por sándwich). Importa porque
-  **el tipo de pan es una elección GRATUITA del cliente** (`BASES` en `src/app.ts` y
-  `VALID_BASES` en `catalog.ts` no tienen precio), así que todo sobrecosto de la focaccia
-  sale del margen sin que el cliente pague nada extra.
+  **Focaccia: S/13 la entera → 10 porciones de 15CM o 5 de 30CM** (medido por el dueño
+  2026-09-03; hasta esa fecha el rendimiento faltaba y la focaccia no se podía costear).
+  Costo del pan: **S/1.30 el 15CM y S/2.60 el 30CM**, contra S/1.00 y S/2.00 del pan sub →
+  sobrecosto real **+S/0.30 y +S/0.60**. Quedó del lado malo de la sensibilidad que este
+  archivo tenía anotada (empataba recién a 13 porciones).
+  **El tipo de pan ya NO es una elección gratuita**: `BASE_SURCHARGE` (duplicado en
+  `env.ts` y `src/app/01-*`, comparado por `npm run parity`) cobra **S/0.50 y S/1.00** por
+  la focaccia — se cobra más que el sobrecosto a propósito, porque el error nunca puede
+  caer del lado de subsidiar el pan. Tres detalles que no hay que romper, todos con prueba
+  en `tests-api/recargo-pan.test.ts`:
+  el recargo va **DENTRO de `basePrice`**, para que **R06** (15CM gratis) lo perdone entero
+  en vez de dejar al cliente pagando S/0.50 por un sándwich anunciado como gratis;
+  `sizeUpgradeDiff` incluye el salto de pan, para que **R03** (subir a 30CM gratis) también
+  lo perdone; y **un pan sin fila en `BASE_SURCHARGE` cobra 0**, nunca un recargo inventado.
+  Un **Signature no lleva recargo**: ahí la receta fija el pan, el cliente no lo elige.
+  El monto se muestra en la tarjeta del pan **antes** de elegirlo, no en el carrito.
+  ⚠ Esto NO cierra el hueco de margen del BYO: **BYO 30CM de res sigue en 45.6%** con pan
+  sub, que es donde la focaccia nunca entró. Ese caso se arregla subiendo el BYO, decisión
+  que el dueño todavía no ha tomado.
 - **Precios de insumos (Perú, julio-agosto 2026)**: res ~S/20/kg, pollo ~S/17/kg,
   **embutido premium (jamón/paté/cabanossi) S/48/kg — precio real confirmado por el dueño
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
@@ -725,6 +840,39 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
+- **Gramajes de toppings al estándar de Subway desde el 2026-09-04** (decisión del dueño).
+  Entró **T09 Lechuga** (21 g), que era el único ingrediente del set estándar de Subway que no
+  existía en el catálogo — y el de mayor volumen al menor costo por gramo, o sea lo que más
+  hace que un sándwich se vea lleno por lo que menos cuesta. Tomate subió de 25 a 35 g;
+  aceituna, pimiento, cebolla y apio bajaron a su nivel de Subway. **Total 92 g contra 94 g
+  antes: el cambio cuesta dos céntimos MENOS.** No fue una decisión de costo sino de reparto.
+  La carne ya estaba al nivel (85 g/170 g contra los ~80-90 g que implican los 24-26 g de
+  proteína del 6-inch de Subway). **La lechuga NO se agregó a ninguna receta de Signature** —
+  entró solo al catálogo de ARMA EL TUYO, donde el cliente elige; meterla en una receta
+  cerrada es una decisión de producto que el dueño no ha tomado.
+  ⚠ **Subway no cobra las salsas: son gratis e ilimitadas.** Nosotros incluimos 3 y cobramos
+  la 4ta a S/2. Cualquier propuesta de cortar la 3ra salsa va EN CONTRA de la paridad con
+  Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
+  **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
+  S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
+- **El apio (T08) salió de ARMA EL TUYO el 2026-09-04** (decisión del dueño) pero **NO se borró
+  del catálogo**: pasó a `SIG_ONLY_TOPS`/`sigOnly:true` porque **THE FRESH (SIG04) lo lleva y es
+  su único elemento crocante** — entró ahí el 2026-08-08 justamente porque el pimiento curado
+  no aportaba crocancia. Borrarlo dejaría ese Signature sin la textura por la que se eligió.
+  Es el primer uso real del mecanismo `sigOnly` desde que se fue THE CHICAGO, y la razón por la
+  que este archivo insiste en no borrar esa anotación de tipo "porque nadie la usa".
+- **+S/2 en el 30CM de las 6 proteínas de ARMA EL TUYO (2026-09-04, decisión del dueño).**
+  Quedan: Res 24.90 · Pollo teriyaki 23.90 · Pollo cajún 23.90 · Atún 32.90 · Embutido 32.90 ·
+  Albóndiga 26.90. El 30CM era donde el BYO se rompía: pan y proteína se duplican pero el
+  precio solo subía S/8, así que el piso fijo (S/6.40 a 30CM) se comía el margen. El dueño
+  eligió S/2 y no los S/5.32 que harían falta para llevar res exactamente al 45%. **Aplicado en
+  código Y en `catalog_prices`** (migración `20260904025131_subir_p30_byo_dos_soles`).
+  **Por qué se pasaban pollo y embutido, que es la pregunta que lo destrabó:** el precio que
+  cada proteína necesita en 15CM es `S/8.56 + 2.22 × (costo de la proteína)`. El pollo se
+  pasaba por 14-19 CÉNTIMOS porque su precio es el más bajo del catálogo y el piso fijo se come
+  el 27.7% antes de la proteína; el embutido se pasa por S/1.19 porque su costo es el MÁS ALTO
+  de todos (S/4.29 = S/48/kg real) y se cobra igual que el atún, que ahora cuesta S/3.25 — una
+  paridad heredada de cuando se creía que ambos costaban ~S/38/kg.
 - **NO habrá acompañamientos de comida — decisión del dueño 2026-08-15.** Nada de papas
   fritas, nachos, ni ningún side sólido. El único "acompañamiento" del catálogo son las 4
   bebidas de la casa (que en el código viven bajo `SIDES`/`SIDE_PRICE` por razones
@@ -798,18 +946,42 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   pedido se puede entregar: los que están fuera de cobertura salen listados pero
   deshabilitados ("todavía no llegamos aquí"), y el distrito elegido se ADJUNTA al texto de
   la dirección que va al servidor (no hay columna propia; el motorizado igual lo necesita
-  impreso). La **zona** (`DELIVERY_PRICE_ZONES`) solo fija cuánto cobra el motorizado y
-  tiene default. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
+  impreso). La **zona de precio ya no existe desde el 2026-09-02** — el envío se cobra por
+  distancia real (ver abajo); `DELIVERY_PRICE_ZONES`/`DELIVERY_ZONE_FEES` sobreviven SOLO
+  como respaldo del servidor para un cliente sin coordenadas. Antes la cobertura se adivinaba buscando el nombre del distrito dentro del
   texto libre de la dirección: quien no lo escribía pasaba sin querer y quien sí lo escribía
   se enteraba recién al tocar PAGAR. Ese substring (`DELIVERY_EXCLUDED_ZONES`, duplicado en
   `src/app.ts` y `env.ts`) sigue siendo **la única defensa real** — `assertAddressAllowed`
   en el servidor no ve el selector — así que recortar cobertura exige tocar los DOS lados,
   no solo marcar `out:true` en la lista de distritos.
-- **El delivery lo paga el CLIENTE y es pass-through puro — el motorizado NO es un costo
-  fijo del negocio.** El cliente elige zona en el checkout (S/6 cerca · S/8 media · S/12
-  lejos · S/15 muy lejos, `DELIVERY_ZONE_FEES` en `env.ts` y `DELIVERY_PRICE_ZONES` en
-  `src/app.ts`, deben coincidir) y ese monto se cobra dentro del mismo pago del pedido;
-  el dueño le paga al motorizado con ese dinero. El negocio no gana ni subsidia el
+- **El delivery se cobra por DISTANCIA REAL desde el 2026-09-02, no por zona.** El reparto
+  lo hace un tercero con 50+ motorizados, coordinado por un grupo de WhatsApp, que cobra
+  **S/2 por kilómetro** (dato del dueño). Hasta esa fecha la app cobraba un monto plano por
+  ZONA **que elegía el propio cliente** en un desplegable, con `media` (S/8) por defecto: el
+  cliente elegía su propio precio de envío y elegir el más barato no le costaba nada. El pin
+  del mapa existía pero **solo AVISABA** del desajuste, y su texto llegaba a decir "puede que
+  el motorizado te pida la diferencia al llegar" — una promesa sobre lo que haría un tercero.
+  El dueño creía que la app ya cobraba por distancia; no lo hacía.
+  Ahora: `km cobrables = haversine(pin, local) × DELIVERY_ROAD_FACTOR` y
+  `tarifa = techo(max(DELIVERY_MIN_FEE, km × DELIVERY_KM_RATE) al medio sol)`. Las cuatro
+  constantes más `STORE_LAT`/`STORE_LON` están duplicadas cliente/servidor y las compara
+  `npm run parity` — si se desajustan, el cliente muestra un monto y el servidor cobra otro,
+  y la diferencia sale del bolsillo del dueño al pagarle al motorizado.
+  Detalles que no hay que romper: **el redondeo va hacia ARRIBA** (el error nunca puede caer
+  del lado de quedarse corto, porque el delivery no tiene margen del que salga la
+  diferencia); **`billableKm` devuelve `null` y nunca 0** cuando no puede medir (un 0 le
+  cobraría el mínimo a alguien a 10 km); **el pin se pide una sola vez por dirección**
+  (`saved_addresses.lat/lon` ya existían y `pickAddr` las restaura — si la dirección guardada
+  no las tiene, se LIMPIAN, porque cobrar la distancia de la dirección anterior es el peor
+  error posible acá); y **el servidor cae al cobro por zona si no recibe coordenadas**, a
+  propósito, para que un shell viejo servido por un service worker desactualizado pueda pagar
+  igual en vez de encontrarse el checkout roto.
+  **`DELIVERY_MIN_FEE = 5`** es el mínimo real que el grupo de motorizados le cobra al dueño
+  por un viaje corto (confirmado 2026-09-02): por debajo de 2.5 km la tarifa la fija ese piso
+  y no los kilómetros. `orders.delivery_km` guarda los km cobrados para poder comparar contra lo que
+  el motorizado cobró ese día.
+  El monto se cobra dentro del mismo pago del pedido; el dueño le paga al motorizado con ese
+  dinero. El negocio no gana ni subsidia el
   reparto. En pagos con tarjeta el fee se "engorda" por `CULQI_FEE_RATE` para que la
   comisión de Culqi no se coma el pass-through. **Error real cometido 2026-08-15**: el
   modelo financiero v5 metió al motorizado como costo fijo de S/1,100/mes y al reparto
@@ -822,6 +994,25 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de análisis — estimar ~4-5.5% efectivo sobre pagos con tarjeta en cualquier cálculo de
   rentabilidad. Yape/Plin manual no paga esta comisión — es ahorro real, no solo
   preferencia operativa.
+- **Yape/Plin es el MÉTODO DE PAGO POR DEFECTO desde el 2026-09-03** (`manualPayMethod`
+  arranca en `'yape'`, no en `null`). Antes arrancaba en null, que es TARJETA: quien no
+  tocaba el selector terminaba en Culqi pagando 5.5%. **El default no es un detalle de
+  interfaz — es el que elige la mayoría, porque la mayoría no elige.** Al volumen del plan,
+  mover el reparto tarjeta/Yape del 60% al 30% vale ~S/487/mes sin adquirir a nadie, y es
+  la única de las tres fugas de margen que además le cuesta MENOS al cliente: el recargo de
+  delivery engordado (`deliveryFeeAmount`) desaparece. Es un default, no un embudo: la
+  tarjeta sigue a un tap, con su razón escrita al lado ("Automático") y el aviso del
+  recargo. Lo que hay que cuidar al tocar esto (todo con prueba en
+  `tests/yape-por-defecto.spec.ts`, cuyo modo de fallo es **silencio**: si alguien devuelve
+  el estado inicial a `null` nada revienta, el negocio solo vuelve a pagar comisión):
+  el botón de Yape muestra el ahorro **hipotético** de la tarjeta y por eso NO puede
+  calcularse con `deliveryFeeAmount()`, que ya no engorda nada cuando Yape está elegido;
+  y prender/apagar el crédito interno pasa por `toggleCredit()`, que **devuelve** el default
+  al apagarse — el `manualPayMethod=null` que había escrito dentro del `onclick` dejaba al
+  cliente en tarjeta después de dos taps en una casilla que quedó desmarcada.
+  El costo real de este default lo paga el dueño en tiempo: cada pago manual hay que
+  confirmarlo contra la cuenta (abaratado por el lector de comprobantes #28 —que NO confirma
+  el pago, solo lo lee— y la confirmación por lotes del panel).
 - **Subida de margen del 2026-08-22 (decisión del dueño, ya aplicada en código Y en
   `catalog_prices`).** Se hizo DESPUÉS de recostear todo el menú con la merma real; los 5
   Signatures ya cumplían el techo de 45% y esta subida es para ganar margen, no para tapar
@@ -838,8 +1029,13 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
      defecto que ya había obligado a apagar el doble de atún (`noDouble`), solo que ahí se
      apagó el producto en vez de corregir la estructura. Se subió solo donde pasaba el 45%.
   3. **Bebidas +S/2 (y +S/3 el chai)**: 6/5/6/9. El margen de 61-84% que se venía usando
-     costeaba SOLO el insumo, nunca el envase — con botella con tapa a rosca a ~S/1
-     (estimado, **falta cotizar**) el margen real era 56-66%.
+     costeaba SOLO el insumo, nunca el envase. **El envase ya está COTIZADO Y COMPRADO
+     (dueño 2026-09-05): S/138 por 200 unidades = S/0.69 la botella**, bastante menos que el
+     ~S/1 que se venía estimando. Con eso el costo real de las bebidas es **19-25% del
+     precio** (promedio ponderado 21.9%), no el 39% que se asumía — son la parte MÁS rentable
+     del catálogo, muy por debajo del techo de 45%. Lo que sigue estimado es el insumo por
+     vaso (~S/0.465 las tres infusiones, ~S/1.55 el chai), derivado de las tandas del
+     RECETARIO.md y no de facturas.
   4. **Combo bajado de S/2 a S/1** y **topes de bebida gratis (R05_FLAT_WAIVER y
      OFFPEAK_DRINK_PROMO_CAP) subidos de 4 a 6**. Lo primero porque a S/2 el combo se comía
      del 58% al 118% de lo que deja una bebida (THE MIDNIGHT en combo dejaba −S/0.31); lo

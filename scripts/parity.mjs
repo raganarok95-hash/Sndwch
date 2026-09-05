@@ -192,6 +192,41 @@ cmp('COMBO_DISCOUNT_PER_PAIR',
 cmp('GIFT_CARD_POINTS_PER_SOL',
   scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
+// Recargo por pan de focaccia (2026-09-03). Es el segundo precio del catálogo que NO vive
+// en `catalog_prices` (el otro es EXTRA_SAUCE_PRICE), así que esta comparación es su única
+// defensa contra que el cliente muestre un monto y el servidor cobre otro.
+cmp('BASE_SURCHARGE B03 15CM (focaccia)',
+  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:([\d.]+)/, 'src/app/'),
+  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: ([\d.]+)/, 'env.ts'));
+cmp('BASE_SURCHARGE B03 30CM (focaccia)',
+  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:[\d.]+,p30:([\d.]+)/, 'src/app/'),
+  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: [\d.]+, p30: ([\d.]+)/, 'env.ts'));
+
+// Cobro del delivery por DISTANCIA REAL (2026-09-02). Estas cinco son la única defensa
+// contra el defecto clásico de este repo: el cliente muestra un monto de envío y el servidor
+// cobra otro. Y acá duele más que en el catálogo, porque el delivery es pass-through — si el
+// servidor cobra de menos, la diferencia sale del bolsillo del dueño al pagarle al motorizado.
+cmp('DELIVERY_KM_RATE (S/ por km)',
+  scalar(app, 'DELIVERY_KM_RATE', /var DELIVERY_KM_RATE=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_KM_RATE', /const DELIVERY_KM_RATE = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_ROAD_FACTOR (recta -> ruta)',
+  scalar(app, 'DELIVERY_ROAD_FACTOR', /var DELIVERY_ROAD_FACTOR=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_ROAD_FACTOR', /const DELIVERY_ROAD_FACTOR = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_MIN_FEE (piso de la tarifa)',
+  scalar(app, 'DELIVERY_MIN_FEE', /var DELIVERY_MIN_FEE=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_MIN_FEE', /const DELIVERY_MIN_FEE = ([\d.]+)/, 'env.ts'));
+cmp('DELIVERY_MAX_KM (techo de cobertura)',
+  scalar(app, 'DELIVERY_MAX_KM', /var DELIVERY_MAX_KM=([\d.]+)/, 'src/app/'),
+  scalar(env, 'DELIVERY_MAX_KM', /const DELIVERY_MAX_KM = ([\d.]+)/, 'env.ts'));
+// El punto de despacho: si los dos lados no miden desde el MISMO sitio, toda la tarifa se
+// desplaza sin que nada falle.
+cmp('STORE_LAT (punto de despacho)',
+  scalar(app, 'STORE_LAT', /var STORE_LAT=(-?[\d.]+)/, 'src/app/'),
+  scalar(env, 'STORE_LAT', /const STORE_LAT = (-?[\d.]+)/, 'env.ts'));
+cmp('STORE_LON (punto de despacho)',
+  scalar(app, 'STORE_LON', /STORE_LON=(-?[\d.]+)/, 'src/app/'),
+  scalar(env, 'STORE_LON', /const STORE_LON = (-?[\d.]+)/, 'env.ts'));
+
 cmp('CULQI_FEE_RATE',
   scalar(app, 'CULQI_FEE_RATE', /var CULQI_FEE_RATE=([\d.]+)/, 'src/app/'),
   scalar(env, 'CULQI_FEE_RATE', /const CULQI_FEE_RATE = ([\d.]+)/, 'env.ts'));
@@ -417,10 +452,14 @@ function hourWindows(src, re, file) {
     problems.push(`OFFPEAK_DRINK_PROMO_HOURS_LIMA: no se encontró en ${file} — el formato cambió y este script quedó ciego`);
     return null;
   }
-  return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? null;
+  // `?? []` y no `?? null`: desde el 2026-09-05 la promo se apaga VACIANDO la ventana, así
+  // que "cero ventanas" es un estado válido y no un fallo de parseo. Con null los dos lados
+  // se leían como ilegibles y la comprobación dejaba de comparar nada — justo cuando lo que
+  // hay que verificar es que los DOS estén apagados.
+  return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? [];
 }
 cmp('OFFPEAK_DRINK_PROMO_HOURS_LIMA (ventana de la bebida gratis)',
-  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA=(\[[\s\S]*?\]);/, 'src/app/'),
+  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA(?::[^=]+)?=(\[[\s\S]*?\]);/, 'src/app/'),
   hourWindows(catalog, /const OFFPEAK_DRINK_PROMO_HOURS_LIMA: \[number, number\]\[\] = (\[[\s\S]*?\]);/, 'catalog.ts'));
 
 // Rangos. Son de puro reconocimiento (nunca cambian precio ni multiplicador), pero el

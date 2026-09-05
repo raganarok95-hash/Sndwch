@@ -232,6 +232,11 @@ var CULQI_PUBLIC_KEY = 'pk_live_q82LnGIDlmQ0bpUC';
 // Yape y Plin confirmados activos en este número (el mismo de WhatsApp).
 var YAPE_PLIN_PHONE = '930957640';
 var YAPE_PLIN_NAME = 'SND//WCH';
+// El TITULAR real de la cuenta, que es el nombre que Yape le muestra al cliente cuando
+// escribe el número — no la marca. Sale de BIZ_NAME (el titular del RUC del negocio), no
+// está inventado. Si Yape lo muestra de otra forma (solo nombre y una inicial, por
+// ejemplo), corregir acá: el punto es que coincida con lo que el cliente ve en su pantalla.
+var YAPE_PLIN_HOLDER = BIZ_NAME;
 // Ventana real antes de que el cron cancele solo un pedido Yape/Plin sin confirmar —
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
@@ -253,8 +258,46 @@ function yapeAppOpenUrl() {
         return 'yape://';
     return null;
 }
-function openYapeApp() { var u = yapeAppOpenUrl(); if (u)
-    window.location.href = u; }
+// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
+//
+// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
+// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
+// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
+// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
+//
+// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
+// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
+// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
+// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
+function yapeOpenFailed() {
+    var m = document.getElementById('ypc-msg');
+    if (!m)
+        return;
+    m.style.color = '#ffcc66';
+    m.textContent = 'No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
+}
+function openYapeApp() {
+    var u = yapeAppOpenUrl();
+    if (!u) {
+        yapeOpenFailed();
+        return;
+    }
+    var abrio = false;
+    function marcar() { abrio = true; }
+    document.addEventListener('visibilitychange', marcar, { once: true });
+    window.addEventListener('pagehide', marcar, { once: true });
+    setTimeout(function () {
+        document.removeEventListener('visibilitychange', marcar);
+        if (!abrio && !document.hidden)
+            yapeOpenFailed();
+    }, 1200);
+    try {
+        window.location.href = u;
+    }
+    catch (e) {
+        yapeOpenFailed();
+    }
+}
 var showYapeQR = false;
 function toggleYapeQR() { showYapeQR = !showYapeQR; confirmRerender(); }
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -321,12 +364,16 @@ var PROTS = [
     // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
     // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
     // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-    { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14.9, p30: 22.9, pDbl: 7, pDbl30: 14 },
-    { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Tiras marinadas en teriyaki', p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11 },
+    // sigOnly desde el 2026-09-05 (decisión del dueño): sale de ARMA EL TUYO por RENTABILIDAD.
+    // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
+    // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
+    // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
+    { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14, sigOnly: true },
+    { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Tiras marinadas en teriyaki', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
     // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
     // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-    { id: 'P03', l: 'Pollo', s: 'Cajun', d: 'Pechuga deshilachada, condimento cajún', p15: 13.9, p30: 21.9, pDbl: 6, pDbl30: 11, vaultOnly: true },
+    { id: 'P03', l: 'Pollo', s: 'Cajun', d: 'Pechuga deshilachada, condimento cajún', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11, vaultOnly: true },
     // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
     // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
     // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -340,13 +387,15 @@ var PROTS = [
     // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
     // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
     // en supabase/functions/api/catalog.ts.
-    { id: 'P04', l: 'Atún', s: 'House', d: 'Atún premium con mayonesa clásica', p15: 16.9, p30: 30.9, pDbl: 10.9, pDbl30: 21.9, noDouble: true },
+    { id: 'P04', l: 'Atún', s: 'House', d: 'Atún premium con mayonesa clásica', p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9, noDouble: true },
     // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
     // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
     // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
     // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16.9, p30: 30.9, pDbl: 9.9, pDbl30: 19.9 },
+    // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
+    // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
+    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9, sigOnly: true },
     // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
     // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
     // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -354,7 +403,13 @@ var PROTS = [
     // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
     // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
     // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 24.9, pDbl: 6, pDbl30: 6 }
+    // ⚠ pDbl30 corregido de 6 a 12 el 2026-09-05: era la ÚNICA proteína del catálogo cuyo
+    // doble costaba lo mismo en 15CM que en 30CM, o sea un precio que no escaló con la porción
+    // que agrega. El costo pasaba de 22.3% a 44.7% solo por eso — a un pelo del techo de 45%,
+    // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
+    // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
+    // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
+    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 }
     // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
     // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
     // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -377,7 +432,9 @@ var PROTS = [
 // SIG_ONLY_TOPS en catalog.ts.
 var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco' },
-    { id: 'T02', l: 'Pepinillo', s: 'Encurtido' },
+    // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
+    // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
+    { id: 'T02', l: 'Pepinillo', s: 'Encurtido', sigOnly: true },
     { id: 'T03', l: 'Cebolla', s: 'Morada juliana' },
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
@@ -388,7 +445,13 @@ var TOPS = [
     // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
     // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
     // con VALID_TOPS en supabase/functions/api/catalog.ts.
-    { id: 'T08', l: 'Apio', s: 'Picado' }
+    // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
+    // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
+    { id: 'T08', l: 'Apio', s: 'Picado', sigOnly: true },
+    // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
+    // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
+    // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
+    { id: 'T09', l: 'Lechuga', s: 'Fresca' }
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
@@ -556,8 +619,16 @@ var SIGS = [
     // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
     // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
     // de dulzor, no inventar una solución sin pedido explícito.
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: ['T01', 'T02', 'T08'], sauces: ['S11'], p15: 20.9, p30: 34.9,
-        pitch: 'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.' },
+    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Cítrico', base: 'B01', prot: 'P04', tops: [], sauces: [], p15: 20.9, p30: 34.9,
+        // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
+        // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
+        // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
+        // un ítem del catálogo (ver RECETARIO.md).
+        //
+        // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
+        // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
+        // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
+        pitch: 'Atún premium escurrido, con la mayonesa de la receta original y un golpe de pimienta. Nada más: así es como se hace en Estados Unidos, y así es como debe saber.' },
     // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
     // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
     // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -703,10 +774,14 @@ var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/pro
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
 var RWDS = [
-    { id: 'R02', pts: 40, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
-    { id: 'R04', pts: 120, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
-    { id: 'R05', pts: 120, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
-    { id: 'R03', pts: 160, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
+    // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
+    // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
+    // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
+    // comentario largo en REWARDS (catalog.ts) con la tabla completa.
+    { id: 'R02', pts: 20, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
+    { id: 'R04', pts: 160, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
+    { id: 'R05', pts: 160, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
+    { id: 'R03', pts: 320, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
     { id: 'R06', pts: 400, n: 'Sándwich', s: 'Gratis', d: 'Sándwich 15CM gratis — no aplica a Signatures Reserve', sizeOnly: '15' }
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -1015,9 +1090,14 @@ var CULQI_FEE_RATE = 0.055;
 // con deliveryFeeAmount() de abajo — si el crédito alcanza para cubrir el total real, o
 // hay un método manual elegido, nunca se pasa por Culqi y el fee nunca se engorda.
 function willPayWithCard() {
-    var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
-    var realFee = z ? z.fee : 0;
-    var t0 = cartFinalTotal() + realFee;
+    // ⚠ Esto leía la tarifa de ZONA hasta el 2026-09-03. Desde que el envío se cobra por
+    // distancia, la zona y el monto real dejaron de coincidir, y este total intermedio es
+    // el que decide si el crédito alcanza — con la zona por defecto (S/8) un pedido a 6 km
+    // (S/12) parecía cubierto por un crédito que no llegaba, y el servidor lo rechazaba
+    // después de que el cliente ya había tocado pagar. deliveryFeeBase() es la MISMA
+    // función que produce el monto que se muestra y se cobra, así que no pueden separarse.
+    // No hay ciclo: deliveryFeeBase() nunca llama a willPayWithCard(), solo deliveryFeeAmount().
+    var t0 = cartFinalTotal() + deliveryFeeBase();
     if (t0 === 0)
         return false;
     if (useCredit && cust && (cust.credit_balance || 0) >= t0)
@@ -1035,9 +1115,59 @@ function willPayWithCard() {
     // paymentMethodPickerHTML(), no ocultando el monto real que se va a cobrar.
     return true;
 }
+// ── RECARGO POR PAN DE FOCACCIA (2026-09-03) ──────────────────────────────────────────
+//
+// El tipo de pan era una elección GRATUITA y la focaccia cuesta más que el pan sub, así que
+// ese sobrecosto salía entero del margen. Medido por el dueño el 2026-09-03: de una focaccia
+// de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
+// del pan sub. Se cobra S/0.50 y S/1.00.
+//
+// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
+// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
+var BASE_SURCHARGE = { B03: { p15: 0.5, p30: 1 } };
+function baseSurcharge(base, size) { var b = BASE_SURCHARGE[base]; return b ? (size === '15' ? b.p15 : b.p30) : 0; }
+// ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
+//
+// El motorizado (un tercero con 50+ repartidores, coordinado por WhatsApp) cobra S/2 POR
+// KILÓMETRO. Hasta hoy la app cobraba un monto plano por ZONA que elegía el cliente, con
+// "media" por defecto: el cliente elegía su propio precio de envío y elegir el más barato no
+// le costaba nada. El pin del mapa existía pero SOLO AVISABA del desajuste.
+//
+// Estas cuatro constantes DEBEN coincidir con las de supabase/functions/api/env.ts — el
+// servidor es el que de verdad cobra y recalcula todo desde las coordenadas; acá solo se
+// muestra. `npm run parity` compara los dos lados.
+var DELIVERY_KM_RATE = 2; // S/ por kilómetro
+var DELIVERY_ROAD_FACTOR = 1.3; // línea recta → ruta real en moto
+var DELIVERY_MIN_FEE = 5; // piso real del motorizado por viaje corto (dueño 2026-09-02)
+var DELIVERY_MAX_KM = 12; // techo de cobertura
+// Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
+// 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
+function deliveryKmNow() {
+    if (typeof window._mLat !== 'number' || typeof window._mLon !== 'number')
+        return null;
+    if (window._mLat === 0 && window._mLon === 0)
+        return null;
+    var recta = haversineKm(window._mLat, window._mLon, STORE_LAT, STORE_LON);
+    if (!isFinite(recta))
+        return null;
+    return Math.round(recta * DELIVERY_ROAD_FACTOR * 100) / 100;
+}
+// La tarifa antes de la comisión de tarjeta. Se redondea hacia ARRIBA al medio sol: el
+// motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
+// cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
+// delivery es pass-through y no tiene margen del que salga la diferencia.
+function deliveryFeeBase() {
+    var km = deliveryKmNow();
+    if (km === null) {
+        // Sin pin se cae a la zona, exactamente como antes. Es el respaldo para un shell viejo
+        // servido por un service worker desactualizado; el checkout exige el pin antes de pagar.
+        var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
+        return z ? z.fee : 0;
+    }
+    return Math.ceil(Math.max(DELIVERY_MIN_FEE, km * DELIVERY_KM_RATE) * 2) / 2;
+}
 function deliveryFeeAmount() {
-    var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
-    var fee = z ? z.fee : 0;
+    var fee = deliveryFeeBase();
     if (!fee)
         return 0;
     return money(willPayWithCard() ? fee / (1 - CULQI_FEE_RATE) : fee);
@@ -1090,7 +1220,21 @@ var RESERVE_SIGS = new Set(['SIG05']);
 // Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
 // hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
 // entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [[15, 18]];
+// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
+// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
+// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
+//
+// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
+// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
+// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
+// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
+// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
+// entrar. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
+// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
+// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 var OFFPEAK_DRINK_PROMO_CAP = 6;
@@ -1332,10 +1476,27 @@ var useCredit = false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
 // el cliente dice que tiene uno.
 var promoFieldOpen = false;
-var manualPayMethod = null;
+// ── YAPE/PLIN ES EL MÉTODO POR DEFECTO (2026-09-03) ──────────────────────────────────
+//
+// Arrancaba en null, o sea TARJETA: quien no tocaba el selector terminaba en Culqi, que
+// cobra CULQI_FEE_RATE (5.5%) de cada pedido. El método por defecto no es un detalle de
+// interfaz — es el que elige la mayoría, porque la mayoría no elige. Al volumen del plan
+// mover el reparto tarjeta/Yape del 60% al 30% vale ~S/487 al mes sin adquirir a nadie
+// (ver PLAN_DE_MEJORA.md §4b), y es la única de las fugas de margen que no le cuesta un
+// sol más al cliente: paga lo mismo o menos, porque el recargo de delivery engordado
+// (deliveryFeeAmount) desaparece.
+//
+// Lo que NO cambia: la tarjeta sigue a un tap de distancia y con su propia razón escrita
+// al lado ("Automático"). Esto es un default, no un embudo — quien prefiera pagar con
+// tarjeta la ve en el mismo sitio de siempre.
+//
+// El costo real de este default lo paga el dueño en tiempo: cada pago manual hay que
+// confirmarlo contra la cuenta. Eso ya está abaratado con el lector de comprobantes (#28)
+// y la confirmación por lotes del panel — pero el lector NO confirma el pago, solo lo lee.
+var manualPayMethod = 'yape';
 // true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
-// pagas?" (Yape/Plin o Tarjeta) — solo controla el resaltado visual de los botones
-// (payMethodBtn) y el mensaje de "Confirmar con tarjeta". NO controla si el recargo de
+// pagas?" (Yape/Plin o Tarjeta) — hoy solo sirve para saber si el cliente ya decidió por
+// su cuenta, y así no pisarle la elección al prender/apagar el crédito interno. NO controla si el recargo de
 // Culqi se aplica: eso lo decide willPayWithCard() mirando el mismo enrutamiento real
 // que usa doOrder() (¿alcanza el crédito? ¿hay método manual elegido? si no, va por
 // Culqi sea cual sea el estado de este flag) — server-side, actPrepareOrder SIEMPRE
@@ -1384,7 +1545,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4514a4e120';
+var APP_BUILD = '78e95f9155';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2208,7 +2369,8 @@ function initCheckoutFields() {
     schedSlot = null;
     useCredit = false;
     promoFieldOpen = false;
-    manualPayMethod = null;
+    // 'yape', no null: null es TARJETA. Ver el comentario del default en 01-*.
+    manualPayMethod = 'yape';
     payMethodChosen = false;
     checkoutLocked = false;
     lockedMsg = '';
@@ -2256,7 +2418,9 @@ function itemUnitPrice(item) {
     var pr2 = PROTS.find(function (x) { return x.id === item.prot; });
     if (!pr2)
         return 0;
-    var bp2 = item.size === '15' ? pr2.p15 : pr2.p30;
+    // El recargo del pan solo existe en ARMA EL TUYO: en un Signature la receta fija el pan y
+    // el cliente no lo elige, así que no hay nada que recargar.
+    var bp2 = (item.size === '15' ? pr2.p15 : pr2.p30) + baseSurcharge(item.base, item.size);
     var dbl2 = item.doubleProt ? dblFee(pr2, item.size) : 0;
     var sc2 = item.extraSauce ? EXTRA_SAUCE_PRICE : 0;
     return bp2 + dbl2 + sc2;
@@ -3348,25 +3512,33 @@ function sOBuild() {
     if (byoStep === 0) {
         h += SZTOG();
         h += ST('', 'Pan', '');
-        h += BASES.map(function (b) { var av = isAvail(b.id); return av ? CARD(b, base === b.id, 'base=\'' + b.id + '\';render()') : CARDOFF(b); }).join('');
+        // El recargo del pan se muestra EN la tarjeta, antes de elegir. La focaccia dejó de ser
+        // gratis el 2026-09-03 (su sobrecosto real salía del margen), y un precio que aparece
+        // recién en el carrito es la clase de sorpresa que hace abandonar el pedido.
+        h += BASES.map(function (b) {
+            var av = isAvail(b.id);
+            var extra = size ? baseSurcharge(b.id, size) : 0;
+            var tag = extra > 0
+                ? '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (base === b.id ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '">+' + SOLES + pz(extra) + '</span>'
+                : '';
+            return av ? CARD(b, base === b.id, 'base=\'' + b.id + '\';render()', tag) : CARDOFF(b);
+        }).join('');
     }
     else if (byoStep === 1) {
         h += ST('', 'Proteína', '');
         h += PROTS.filter(function (p) { return !p.vaultOnly && !p.sigOnly; }).map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + protPrice(p) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="' + esc(p.l + ' ' + p.s) + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (prot === p.id ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
+        // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
+        // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
+        // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
+        // ya trae aprendido: el queso se pone sobre la proteína porque va debajo, y porque es lo
+        // que se funde al tostar. Antes acá era pan -> proteína -> vegetales -> queso -> salsas,
+        // que obliga a levantar todo lo de encima para meter el queso abajo.
+        //
+        // Solo se intercambió el CONTENIDO de los pasos 2 y 3. Los índices no significan nada por
+        // sí mismos: `byoStepOK`/`byoStepHint` solo validan los pasos 0 y 1, así que este cambio
+        // no toca ninguna validación.
     }
     else if (byoStep === 2) {
-        h += ST('', 'Toppings', 'Sin límite, elige los que quieras.');
-        h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        h += TOPS.filter(function (t) { return !t.vaultOnly && !t.sigOnly; }).map(function (t) {
-            var av = isAvail(t.id);
-            if (!av)
-                return TOPOFF(t);
-            var sel = tops.indexOf(t.id) >= 0;
-            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
-        }).join('');
-        h += '</div>';
-    }
-    else if (byoStep === 3) {
         h += ST('', 'Queso', 'Opcional — incluido sin costo si eliges 1.');
         h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
         h += CHEESE.map(function (c) {
@@ -3375,6 +3547,20 @@ function sOBuild() {
                 return TOPOFF(c);
             var sel = cheese === c.id;
             return '<div onclick="cheese=(cheese===\'' + c.id + '\'?null:\'' + c.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + c.l + '</div></div>';
+        }).join('');
+        h += '</div>';
+    }
+    else if (byoStep === 3) {
+        // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el
+        // cliente peruano ya trae. "Toppings" es jerga de heladería y de pizza.
+        h += ST('', 'Vegetales', 'Sin límite, elige los que quieras.');
+        h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:' + GOLD + ';margin-bottom:12px">' + tL + ' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+        h += TOPS.filter(function (t) { return !t.vaultOnly && !t.sigOnly; }).map(function (t) {
+            var av = isAvail(t.id);
+            if (!av)
+                return TOPOFF(t);
+            var sel = tops.indexOf(t.id) >= 0;
+            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
         }).join('');
         h += '</div>';
     }
@@ -3435,7 +3621,7 @@ function sOItemConfirm() {
     if (mode !== 'sig') {
         rows.push({ k: 'Pan', v: fn(BASES, base) });
         rows.push({ k: 'Proteína', v: fn(PROTS, prot), p: protPrice(pr) });
-        rows.push({ k: 'Toppings', v: tops.length ? tops.map(function (id) { return fn(TOPS, id); }).join(' · ') : '—' });
+        rows.push({ k: 'Vegetales', v: tops.length ? tops.map(function (id) { return fn(TOPS, id); }).join(' · ') : '—' });
         rows.push({ k: 'Queso', v: cheese ? fn(CHEESE, cheese) : 'sin queso' });
         rows.push({ k: 'Salsas', v: sauces.length ? sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ') : '—' });
     }
@@ -3699,6 +3885,12 @@ function pickAddr(id) {
     syncConfirmFields();
     pickedAddrId = id;
     addrText = a.address;
+    // Se restauran las coordenadas guardadas con esa dirección: por eso el pin se pide UNA
+    // sola vez por dirección y no en cada pedido. Si la dirección es vieja y no las tiene, se
+    // limpian para que el checkout vuelva a pedir el pin en vez de cobrar la distancia de la
+    // dirección ANTERIOR, que es el peor error posible acá.
+    window._mLat = typeof a.lat === 'number' ? a.lat : null;
+    window._mLon = typeof a.lon === 'number' ? a.lon : null;
     // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
     // tiene que volver a elegir algo que ya escribió cuando la guardó.
     var inferred = districtFromAddress(a.address);
@@ -3728,15 +3920,31 @@ function comboDrinkNudgeHTML() {
     var hasSandwichNoDrink = cart.some(function (it) { return it.type !== 'side'; }) && cartComboCount() < cart.reduce(function (s, it) { return s + (it.type !== 'side' ? it.qty : 0); }, 0);
     if (!hasSandwichNoDrink)
         return '';
+    // La rama de hora valle se queda escrita a propósito aunque hoy nunca se cumpla: la promo
+    // se apagó vaciando su ventana horaria (ver OFFPEAK_DRINK_PROMO_HOURS_LIMA), no borrando el
+    // mecanismo. Si el dueño la reactiva poniendo horas, el texto vuelve solo — y mientras
+    // esté apagada, este anuncio NO puede aparecer: prometer una bebida gratis que el servidor
+    // ya no descuenta es la clase de promesa rota que se descubre recién al pagar.
     var offPeak = isOffPeakDrinkPromoActiveNow();
     var titulo = offPeak
         ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + OFFPEAK_DRINK_PROMO_CAP + ')'
         : '¿Le sumas algo de tomar? Ahorras ' + SOLES_TXT + COMBO_DISCOUNT_PER_PAIR + ' en combo';
+    // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
+    //
+    // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
+    // "The Bloom // Hibiscus · S/6" no le dice a nadie qué está comprando: son infusiones de
+    // la casa, no gaseosas de marca conocida, así que el nombre solo no vende. La descripción
+    // ya existía en el catálogo (`d`) y solo se usaba en la pantalla de bebidas — o sea que el
+    // texto de venta no estaba en el momento de la venta.
+    //
+    // Dos columnas en vez de cuatro para que la descripción entre legible. Es el único empujón
+    // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
+    // contribución del pedido más de lo que sube el ticket.
     var chips = SIDES.map(function (d) {
-        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1;min-width:72px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
-            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">' + esc(d.s) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:4px">+' + SOLES_TXT + d.p + '</div>'
+        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+            + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + esc(d.s) + '</div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';white-space:nowrap">+' + SOLES_TXT + d.p + '</div></div>'
+            + (d.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">' + esc(d.d) + '</div>' : '')
             + '</div>';
     }).join('');
     return '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
@@ -3754,59 +3962,12 @@ function comboDrinkNudgeHTML() {
 // checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
 // ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
 // no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
-// C4 — Distancia máxima (km) que cubre cada zona de PRECIO, derivada del único dato de
-// tarifa que el propio negocio publica al cliente: "~S/2 por km" (ver el texto bajo el
-// home). Con esa tarifa el fee de cada zona describe su alcance: S/6 → 3 km, S/8 → 4 km,
-// S/12 → 6 km, y de ahí para arriba MUY LEJOS. No es una geocerca ni una validación:
-// existe solo para AVISAR cuando la zona elegida y el pin del mapa no cuadran. Nunca
-// bloquea el pedido — un pin puede caer mal (GPS en interiores, mapa arrastrado a ojo) y
-// el cliente conoce su dirección mejor que el navegador. El cobro real lo sigue fijando
-// la zona que él eligió.
-var DELIVERY_ZONE_MAX_KM = { cerca: 3, media: 4, lejos: 6 };
-function zoneForKm(km) {
-    if (km <= DELIVERY_ZONE_MAX_KM.cerca)
-        return 'cerca';
-    if (km <= DELIVERY_ZONE_MAX_KM.media)
-        return 'media';
-    if (km <= DELIVERY_ZONE_MAX_KM.lejos)
-        return 'lejos';
-    return 'muy_lejos';
-}
-// Distancia entre el pin que el cliente confirmó en el mapa y el punto de despacho.
-// Devuelve null si nunca tocó el mapa/GPS — sin pin no hay nada que comparar y no se
-// muestra ningún aviso (la mayoría de los pedidos escriben la dirección a mano).
-function pinDistanceKm() {
-    if (typeof window._mLat !== 'number' || typeof window._mLon !== 'number')
-        return null;
-    return haversineKm(window._mLat, window._mLon, STORE_LAT, STORE_LON);
-}
-function applySuggestedZone(z) { deliveryZone = z; confirmRerender(); }
-// Aviso de zona vs. pin. Las dos direcciones del desajuste importan, por motivos
-// distintos: si el cliente eligió una zona más BARATA de lo que dice el pin, el dueño
-// pone la diferencia de su bolsillo (el delivery es pass-through, no tiene margen del
-// que salga); si eligió una más CARA, está pagando de más y avisarle es lo honesto.
-// Por eso los dos casos se avisan, con texto distinto.
-function deliveryZoneMismatchHTML() {
-    var km = pinDistanceKm();
-    if (km === null)
-        return '';
-    var sug = zoneForKm(km);
-    if (sug === deliveryZone)
-        return '';
-    var zSel = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; });
-    var zSug = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === sug; });
-    if (!zSel || !zSug)
-        return '';
-    var masCaro = zSug.fee > zSel.fee;
-    var txt = masCaro
-        ? 'Tu pin está a ~' + km.toFixed(1) + ' km, que corresponde a ' + zSug.l.toUpperCase() + '. Si dejas ' + zSel.l.toUpperCase() + ', puede que el motorizado te pida la diferencia al llegar.'
-        : 'Tu pin está a ~' + km.toFixed(1) + ' km: te alcanza ' + zSug.l.toUpperCase() + ' (' + SOLES_TXT + zSug.fee + ') y estás pagando ' + SOLES_TXT + zSel.fee + '.';
-    var color = masCaro ? '#ffb84d' : GOLD;
-    return '<div style="margin-top:10px;background:rgba(203,162,88,.08);border:1px solid ' + color + ';border-radius:8px;padding:10px 12px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.45">' + esc(txt) + '</div>'
-        + '<button onclick="applySuggestedZone(\'' + sug + '\')" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:8px;background:transparent;border:1px solid ' + color + ';color:' + color + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar a ' + esc(zSug.l.toUpperCase()) + ' // ' + SOLES_TXT + zSug.fee + '</button>'
-        + '</div>';
-}
+// El aviso de "tu zona no cuadra con tu pin" vivía acá y se retiró el 2026-09-02, junto con
+// zoneForKm/applySuggestedZone/DELIVERY_ZONE_MAX_KM. Existía porque el cobro salía de la zona
+// que el cliente elegía y el pin solo podía AVISAR del desajuste; su texto llegaba a decir
+// "puede que el motorizado te pida la diferencia al llegar", que era una promesa sobre lo que
+// haría un tercero. Ahora el envío se cobra por distancia real (ver deliveryFeeBase en
+// src/app/01-*) y no hay zona que pueda desajustarse: no hay nada que avisar.
 function districtPickerHTML() {
     var opts = DELIVERY_DISTRICTS.map(function (d) {
         var sel = deliveryDistrict === d.id;
@@ -3832,19 +3993,33 @@ function pickDistrict(id) {
             : 'Por ahora no llegamos a ' + DELIVERY_DISTRICTS.filter(function (d) { return d.out; }).map(function (d) { return d.l; }).join(' y ') + '.';
 }
 function deliveryZonePickerHTML() {
-    var h = '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
-    h += DELIVERY_PRICE_ZONES.map(function (z) {
-        var sel = deliveryZone === z.id;
-        // La zona seleccionada muestra el fee REAL que se va a cobrar (inflado si el pedido
-        // va por Culqi, ver willPayWithCard()) — antes siempre mostraba el fee plano de
-        // catálogo aunque el total ya llevara el recargo de tarjeta sumado, dejando sin
-        // explicar por qué zona+comida no sumaban el total mostrado (residual del mismo
-        // hallazgo P2, auditoría UX).
-        var shownFee = sel ? deliveryFeeAmount() : z.fee;
-        return '<div onclick="deliveryZone=\'' + z.id + '\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + z.l + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? GOLD : '#A8C8B0') + ';margin-top:2px">' + SOLES_TXT + shownFee + '</div></div>';
-    }).join('');
-    h += '</div>' + deliveryZoneMismatchHTML() + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">' + icon('moto', 11, '#A8C8B0') + '<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
-    return h;
+    var km = deliveryKmNow();
+    // CON PIN: se muestra la tarifa real por distancia. Ya no hay nada que elegir — antes el
+    // cliente escogía su zona de un desplegable, o sea escogía cuánto pagar de envío.
+    if (km !== null) {
+        var base = deliveryFeeBase();
+        var lejos = km > DELIVERY_MAX_KM;
+        return '<div style="margin-top:14px">'
+            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+            + '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + (lejos ? '#ff8888' : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:12px 14px">'
+            + (lejos
+                ? '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;line-height:1.5">Tu punto está a ' + km.toFixed(1) + ' km y por ahora llegamos hasta ' + DELIVERY_MAX_KM + ' km. Revisa el pin en el mapa.</div>'
+                : '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + km.toFixed(1) + ' km hasta tu punto</div>'
+                    + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:' + GOLD + '">' + SOLES_TXT + pz(base) + '</div></div>'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, ' + SOLES_TXT + DELIVERY_KM_RATE + ' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+            + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
+            + '</div></div>';
+    }
+    // SIN PIN: no hay tarifa que mostrar todavía. No se ofrece el desplegable de zonas de
+    // vuelta a propósito — volvería a dejar que el cliente elija su propio precio de envío.
+    return '<div style="margin-top:14px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+        + '<div style="background:rgba(203,162,88,.08);border:1px solid ' + GOLD + ';border-radius:10px;padding:12px 14px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + DELIVERY_KM_RATE + ' por kilómetro.</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
+        + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+        + '</div></div>';
 }
 function checkoutExtrasHTML() {
     var t = cartFinalTotal();
@@ -3859,7 +4034,18 @@ function checkoutExtrasHTML() {
         // quedaba NINGUNA confirmación de que la recompensa ya aplicada seguía activa (el
         // descuento sí sigue funcionando en el monto a transferir, pero visualmente parecía
         // perdida) — hallazgo de auditoría UX, MEDIO.
-        + (manualPayMethod
+        // ⚠ La condición era `manualPayMethod` a secas, y eso se rompió solo el día que Yape
+        // pasó a ser el DEFAULT (2026-09-03): el selector de recompensas y el campo de código
+        // promocional desaparecían del checkout para todo cliente que no tocara el selector de
+        // pago — o sea la mayoría. Un cliente con puntos entraba a pagar y no veía dónde
+        // canjearlos. Ese es exactamente el modo de fallo que este archivo documenta en otros
+        // lados: nada revienta, nada avisa, simplemente deja de existir una función entera.
+        //
+        // Lo que la regla protegía sigue protegido: ocultarlo tiene sentido cuando el cliente ya
+        // ELIGIÓ transferir (payMethodChosen) y tiene el monto en pantalla listo para yapear —
+        // cambiar la recompensa ahí mueve el número después de que él lo copió. Un default que
+        // nadie tocó todavía no es ese momento.
+        + (manualPayMethod && payMethodChosen
             ? (appliedReward ? (function () { var r = RWDS.find(function (x) { return x.id === appliedReward; }); return r ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;margin-top:14px;font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366;display:flex;align-items:center;gap:6px">' + icon('gift', 12, '#25D366') + 'Recompensa aplicada: ' + esc(r.n + ' ' + r.s) + '</div>' : ''; })() : '')
             : rewardsPickerHTML() + promoCodeHTML())
         // "Contacto y entrega //" y "Entrega y horario //" — antes esto era ~9 bloques
@@ -3884,7 +4070,7 @@ function checkoutExtrasHTML() {
         + (scheduleMode === 'now' && !storeStatus().open ? '<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">' + icon('horario', 13, '#ff8888') + '<span>' + esc(storeStatus().label) + ' — elige "Programar" para pedir dentro de nuestro horario.</span></div>' : '')
         + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
         + '</div></details>'
-        + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= payT; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()' : '') + '" style="margin-top:16px;background:' + (checked ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + (cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
+        + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= payT; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'toggleCredit()' : '') + '" style="margin-top:16px;background:' + (checked ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + (cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
         // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
         // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
         // antes) para un pedido que no cuesta nada.
@@ -4346,11 +4532,24 @@ function paymentMethodPickerHTML(t) {
     // función) el total YA incluye el recargo real. Esta línea lo hace explícito en vez de
     // dejar que el cliente note el aumento recién al ver el total — resuelve el hallazgo
     // P2 original (recargo invisible) sin cambiar el monto real que se cobra.
-    var cardFeeNote = willPayWithCard() && !manualPayMethod
-        ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye ' + SOLES_TXT + (deliveryFeeAmount() - (function () { var z = DELIVERY_PRICE_ZONES.find(function (x) { return x.id === deliveryZone; }); return z ? z.fee : 0; })()).toFixed(2) + ' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
+    // Lo que la tarjeta agrega al total: el fee de envío "engordado" menos el fee real.
+    //
+    // ⚠ Esto restaba la tarifa de ZONA hasta el 2026-09-03, y desde que el envío se cobra por
+    // distancia esa resta daba un número sin sentido que igual se le mostraba al cliente. Se
+    // compara contra deliveryFeeBase(), que es la misma función que produce el monto real.
+    // ⚠ Esto era `deliveryFeeAmount()-deliveryFeeBase()` y se rompió solo el día que Yape
+    // pasó a ser el default: deliveryFeeAmount() solo engorda el fee cuando el pedido VA a
+    // salir por tarjeta, así que con Yape elegido la resta daba 0 y el botón dejaba de decir
+    // cuánto se ahorra — justo en el único estado en que el cliente necesita esa razón.
+    // El número que hay que mostrar es el recargo HIPOTÉTICO de la tarjeta, que no depende
+    // del método elegido ahora mismo.
+    var feeBase = deliveryFeeBase();
+    var cardExtra = feeBase ? money(feeBase / (1 - CULQI_FEE_RATE) - feeBase) : 0;
+    var cardFeeNote = willPayWithCard() && !manualPayMethod && cardExtra > 0
+        ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye ' + SOLES_TXT + pz(cardExtra) + ' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
         : '';
     return '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
-        + payMethodBtn('yape', 'Yape / Plin', true, 'Recomendado')
+        + payMethodBtn('yape', 'Yape / Plin', true, cardExtra > 0 ? 'Ahorras ' + SOLES_TXT + pz(cardExtra) : 'Recomendado')
         + (culqiConfigured ? payMethodBtn('culqi', 'Tarjeta', true, 'Automático') : '')
         + '</div>'
         // El widget de Culqi ya trae Yape integrado como pestaña (paymentMethods.yape=true,
@@ -4382,14 +4581,30 @@ function paymentMethodPickerHTML(t) {
 // necesita: el texto ya identifica el método, sin arriesgar además un uso no autorizado
 // de la marca de Yape/Plin.
 function payMethodBtn(id, label, enabled, badge) {
-    // Ninguno aparece pre-seleccionado hasta que el cliente toca uno — antes Tarjeta se
-    // veía marcada por defecto sin ninguna elección real, lo que reforzaba la sensación de
-    // que el recargo ya estaba decidido de antemano (mismo hallazgo P2 de arriba).
+    // Yape/Plin arranca marcado (es el default desde el 2026-09-03, ver 01-*). Durante un
+    // tiempo NINGUNO aparecía marcado, porque el que venía por defecto era Tarjeta y verla
+    // pre-seleccionada hacía sentir que el recargo estaba decidido de antemano (hallazgo P2).
+    // Con el default invertido ese problema desaparece solo: lo que queda marcado es el
+    // método SIN recargo, y el cliente ve exactamente lo que va a pagar si no toca nada.
     var sel = id === 'culqi' ? (payMethodChosen && !manualPayMethod) : manualPayMethod === id;
     return '<div onclick="' + (enabled ? 'selectPayMethod(\'' + id + '\')' : '') + '" style="flex:1;text-align:center;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:8px;padding:10px 6px;cursor:' + (enabled ? 'pointer' : 'not-allowed') + ';opacity:' + (enabled ? 1 : .4) + '">'
         + (badge ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:' + GOLD + ';letter-spacing:.08em;margin-bottom:3px">' + badge + '</div>' : '')
         + '<div style="display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">' + label + '</div>'
         + (enabled ? '' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;letter-spacing:.05em">Pronto</div>') + '</div>';
+}
+// Prender el crédito apaga el método manual (si el crédito cubre el total no hace falta
+// ninguno). Apagarlo tiene que DEVOLVER el default, no dejar al cliente en tarjeta sin
+// haberla elegido nunca — que es lo que pasaba cuando esto era un `manualPayMethod=null`
+// escrito dentro del onclick: el cliente tocaba dos veces el crédito y salía pagando la
+// comisión de Culqi sin haber elegido la tarjeta. Si ya eligió a mano (payMethodChosen),
+// se respeta su elección.
+function toggleCredit() {
+    useCredit = !useCredit;
+    if (useCredit)
+        manualPayMethod = null;
+    else if (!payMethodChosen)
+        manualPayMethod = 'yape';
+    confirmRerender();
 }
 function selectPayMethod(m) {
     manualPayMethod = (m === 'culqi' ? null : m);
@@ -4426,12 +4641,33 @@ function manualPayInstructionsHTML(t) {
     return '<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid ' + GOLD + ';border-radius:10px;padding:14px 16px">'
         + '<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:2px">Monto a transferir //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:38px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</div></div>'
         + payStep(1, 'Transfiere por Yape o Plin a', '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff">' + YAPE_PLIN_PHONE + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0)">' + esc(YAPE_PLIN_NAME) + (recurring ? ' · ya usaste este número antes ✓' : '') + '</div></div></div>'
+            // El nombre que Yape muestra al escribir el número es el del TITULAR de la cuenta, no
+            // el de la marca. Ver un nombre personal donde esperabas "SND//WCH" es el momento
+            // exacto en que alguien se detiene a preguntarse si se equivocó de destinatario — y en
+            // una transferencia manual esa duda es un pedido perdido. Decirlo antes la borra.
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:8px;background:var(--sw-card,#2D5246);border-radius:8px;padding:9px 11px">En Yape te va a aparecer a nombre de <b style="color:var(--sw-text-body,#F2F0EB)">' + esc(YAPE_PLIN_HOLDER) + '</b>. Es la cuenta del negocio — estás en el sitio correcto.</div>'
             // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
             // paso copia el número); en desktop no hay app que abrir, así que el único botón
             // útil es copiar.
-            + '<button onclick="' + (mobile ? 'copyYapePlinPhone();openYapeApp()' : 'copyYapePlinPhone()') + '" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + (mobile ? iconTxt('phone', 'Abrir Yape', '#0d0d0d') : 'Copiar número') + '</button>'
-            + '<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">' + (showYapeQR ? 'ocultar código QR' : 'o escanea el código QR con tu número guardado') + '</span></div>'
-            + (showYapeQR ? '<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px">' + qrSvgHTML('MECARD:N:' + YAPE_PLIN_NAME + ';TEL:' + YAPE_PLIN_PHONE + ';;', 148) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">Guarda nuestro número en tus contactos escaneando — no reemplaza la transferencia, solo evita escribirlo a mano.</div></div>' : '')
+            + '<button onclick="' + (mobile ? 'copyYapePlinPhone();openYapeApp()' : 'copyYapePlinPhone()') + '" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + (mobile ? iconTxt('phone', 'Copiar número y abrir Yape', '#0d0d0d') : 'Copiar número') + '</button>'
+            // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
+            //
+            // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
+            // `MECARD:` — o sea una TARJETA DE CONTACTO. Escanearlo con la cámara guardaba el
+            // número en la agenda; escanearlo DENTRO de Yape no hacía absolutamente nada, porque
+            // Yape espera su propio formato emitido por el banco. El rótulo decía "escanea el
+            // código QR", así que cualquiera esperaba pagar con él y no pasaba nada: el modo de
+            // fallo era SILENCIO, y el dueño lo encontró probando el flujo.
+            //
+            // `img/yape-qr.png` es el QR personal de cobro que el dueño exportó de "Mi QR" en su
+            // app de Yape. Ese sí cobra. NO se regenera ni se dibuja: es una imagen que solo el
+            // dueño puede emitir, igual que el RUC o la razón social.
+            //
+            // Y se muestra ABIERTO en escritorio y plegado en celular a propósito: en la compu el
+            // QR es LA vía (lo escaneas con el celular), mientras que en el celular no puedes
+            // escanear tu propia pantalla y lo útil es el número. Antes estaba plegado en los dos.
+            + '<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">' + ((showYapeQR || !mobile) ? 'ocultar código QR' : 'o paga escaneando nuestro QR de Yape') + '</span></div>'
+            + ((showYapeQR || !mobile) ? '<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px;line-height:0"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a ' + esc(YAPE_PLIN_HOLDER) + '" width="148" height="148" style="display:block;width:148px;height:148px"></div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">' + (mobile ? 'Escanéalo desde otro celular, o usa el número de arriba.' : 'Abre Yape en tu celular y escanea este código.') + '</div></div>' : '')
             + '<div id="ypc-msg" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-top:6px;min-height:12px"></div>')
         + payStep(2, 'Confirma aquí abajo', '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">Toca "Ya realicé el pago". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
         + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">' + icon('lock', 12, '#A8C8B0') + '<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
@@ -4439,6 +4675,10 @@ function manualPayInstructionsHTML(t) {
 }
 function copyYapePlinPhone() {
     var m = document.getElementById('ypc-msg');
+    // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
+    // toque mostraría "✓ Número copiado" pintado como si fuera un aviso de error.
+    if (m)
+        m.style.color = '#25D366';
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function () { if (m)
             m.textContent = '✓ Número copiado'; }).catch(function () { if (m)
@@ -4672,6 +4912,17 @@ async function doOrder() {
             errEl.textContent = 'Todavía no abrimos. Déjanos tu teléfono en la pantalla de inicio y te avisamos apenas arranquemos.';
         return;
     }
+    // El envío se cobra por DISTANCIA REAL desde el 2026-09-02, así que sin un punto
+    // confirmado en el mapa no hay tarifa que cobrar. Se pide UNA VEZ por dirección: al
+    // guardarla queda con sus coordenadas y los pedidos siguientes no vuelven a pedirlo
+    // [DECISIÓN del dueño]. Antes de esto el cliente elegía su propia zona de un desplegable,
+    // o sea elegía cuánto pagar de envío.
+    if (deliveryKmNow() === null) {
+        if (errEl)
+            errEl.textContent = 'Confirma tu ubicación en el mapa para calcular el envío — se cobra por distancia real.';
+        doGPS();
+        return;
+    }
     if (errEl)
         errEl.textContent = '';
     var ref = oref();
@@ -4689,7 +4940,8 @@ async function doOrder() {
     });
     if (notes)
         lines.push('', '📝 ' + notes);
-    lines.push('', '🛵 Delivery (' + (DELIVERY_PRICE_ZONES.find(function (z) { return z.id === deliveryZone; }) || {}).l + '): S/' + deliveryFeeAmount());
+    var _km = deliveryKmNow();
+    lines.push('', '🛵 Delivery (' + (_km === null ? (DELIVERY_PRICE_ZONES.find(function (z) { return z.id === deliveryZone; }) || {}).l : _km.toFixed(1) + ' km') + '): S/' + deliveryFeeAmount());
     lines.push('*TOTAL: S/' + t + '*');
     if (cust)
         lines.push('Cliente: ' + cust.name + ' (' + cust.phone + ')');
@@ -4808,7 +5060,9 @@ async function prepareThenPayWithCulqi(amountSoles, email) {
     busyMsg = 'Verificando tu pedido...';
     render();
     try {
-        await api('prepare-order', { token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode, ...metaAttribution() });
+        // lat/lon van también acá: prepare-order es el que fija el monto que Culqi va a cobrar,
+        // así que si no las recibe cobraría por zona mientras place-order cobra por distancia.
+        await api('prepare-order', { token: token, ref: po.ref, name: po.nom, phone: po.phone, email: po.email, address: po.addr, notes: po.notes, summary: po.summary, total: po.total, items: po.items, scheduledFor: po.scheduledFor, rewardId: po.rewardId, deliveryZone: po.deliveryZone, promoCode: po.promoCode, lat: po.lat, lon: po.lon, ...metaAttribution() });
     }
     catch (e) {
         busy = false;
@@ -5009,7 +5263,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     resetBuilder();
     mode = null;
     useCredit = false;
-    manualPayMethod = null;
+    manualPayMethod = 'yape';
     payMethodChosen = false;
     scheduleMode = 'now';
     schedDay = 'today';
@@ -7371,6 +7625,10 @@ function adminToolsSections() {
                 ['franjas', 'Franjas horarias', 'loadTimeWindowReport()'],
                 ['direccion', 'Direcciones', 'loadProblemAddresses()'],
             ]],
+        ['Salud del sistema //', [
+                ['warning', 'Salud técnica', 'loadTechHealth()'],
+                ['reclamo', 'Cumplimiento', 'loadCompliance()'],
+            ]],
     ];
 }
 // Grid de 2 columnas agrupado por sección — mismo HTML que ya usaba admin_home, ahora
@@ -8127,9 +8385,9 @@ function confirmMap() {
     closeMap();
     // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
     // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
-    // porque el aviso de zona vs. pin (deliveryZoneMismatchHTML) vive en el picker de zona
-    // y sin un render no aparecería hasta que el cliente tocara cualquier otra cosa — o
-    // sea, justo cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
+    // porque la tarifa de envío se calcula desde el pin (ver deliveryFeeBase) y sin un render
+    // el cliente no vería el monto nuevo hasta tocar cualquier otra cosa — o sea, justo
+    // cuando ya no sirve. syncConfirmFields() antes del render es lo que hace
     // que nada de lo escrito se pierda; addrText se fija después porque la dirección que
     // vale es la que se acaba de elegir en el mapa, no la que había en el input.
     syncConfirmFields();
@@ -8395,6 +8653,12 @@ function renderScreen() {
             break;
         case 'admin_cash':
             h = sAdminCashClose();
+            break;
+        case 'admin_tech':
+            h = sAdminTechHealth();
+            break;
+        case 'admin_compliance':
+            h = sAdminCompliance();
             break;
         case 'admin_purchases':
             h = sAdminPurchases();
@@ -9255,7 +9519,16 @@ function sAdminSecretSignature() {
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Pan //</div>'
         + '<div style="margin-bottom:14px">' + BASES.map(function (b) { return ssChip(ssBase === b.id, b.l + ' ' + b.s, "ssBase='" + b.id + "';render()"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Proteína //</div>'
-        + '<div style="margin-bottom:14px">' + PROTS.filter(function (p) { return !p.sigOnly; }).map(function (p) { return ssChip(ssProt === p.id, p.l + ' ' + p.s, "ssProt='" + p.id + "';var vi=ssVaultIds.indexOf('" + p.id + "');render()"); }).join('') + '</div>'
+        // ⚠ ACÁ NO SE FILTRA POR `sigOnly`, y es a propósito (2026-09-05).
+        //
+        // `sigOnly` significa "no se puede armar en ARMA EL TUYO", NO "no se puede usar en un
+        // Signature" — es literalmente lo contrario. El menú secreto ES un Signature, así que
+        // filtrarlo acá estaba invertido y nadie lo notaba mientras el Set estuvo vacío.
+        //
+        // Dejó de ser teórico el día que P01 (Res) y P05 (Embutido) pasaron a `sigOnly` por
+        // rentabilidad: con el filtro puesto, el dueño perdía la posibilidad de poner RES —la
+        // proteína insignia— en el menú secreto del mes, sin ningún aviso y sin que nada fallara.
+        + '<div style="margin-bottom:14px">' + PROTS.map(function (p) { return ssChip(ssProt === p.id, p.l + ' ' + p.s, "ssProt='" + p.id + "';var vi=ssVaultIds.indexOf('" + p.id + "');render()"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Toppings // hasta 3 (' + ssTops.length + '/3)</div>'
         + '<div style="margin-bottom:14px">' + TOPS.filter(function (t) { return !t.sigOnly; }).map(function (t) { return ssChip(ssTops.indexOf(t.id) >= 0, t.l + ' ' + t.s, "ssToggle(ssTops,'" + t.id + "',3)"); }).join('') + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Salsas // hasta 2 (' + ssSauces.length + '/2)</div>'
@@ -9954,6 +10227,9 @@ function mktBlock(pkg, week) {
         + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">Caption (Instagram/Facebook) //</div>'
         + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:6px">' + esc(pkg.caption) + '</div>'
         + '<button onclick="copyMktText(\'' + week + '\',\'caption\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">Copiar</button>'
+        + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">Guion de video //</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;margin-bottom:6px;white-space:pre-wrap">' + esc(pkg.videoIdea || '') + '</div>'
+        + '<button onclick="copyMktText(\'' + week + '\',\'videoIdea\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:10px;font-weight:600;padding:7px 12px;border-radius:6px;margin-bottom:14px;display:inline-block">Copiar</button>'
         + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">Idea de foto //</div>'
         + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">' + esc(pkg.photoIdea) + '</div>'
         + '</div>';
@@ -10356,7 +10632,9 @@ function sAdminCalendar() {
         h += calendarData.map(function (e) {
             var next = e.status === 'draft' ? 'scheduled' : (e.status === 'scheduled' ? 'posted' : null);
             var nextLabel = e.status === 'draft' ? 'Programar' : (e.status === 'scheduled' ? 'Marcar publicado' : null);
-            var texts = [e.caption_text ? 'Post: ' + e.caption_text : '', e.whatsapp_text ? 'WhatsApp: ' + e.whatsapp_text : '', e.photo_idea ? 'Foto: ' + e.photo_idea : ''].filter(Boolean);
+            // El guion va ANTES de la idea de foto: es lo que hay que grabar y lo que la pauta
+            // consume, y en una lista larga lo primero es lo que se lee.
+            var texts = [e.caption_text ? 'Post: ' + e.caption_text : '', e.whatsapp_text ? 'WhatsApp: ' + e.whatsapp_text : '', e.video_idea ? 'Video: ' + e.video_idea : '', e.photo_idea ? 'Foto: ' + e.photo_idea : ''].filter(Boolean);
             // Publicar de verdad (Meta Graph API) solo tiene sentido para instagram/facebook, y
             // solo una vez que la entrada tiene una foto real subida — el resto de canales
             // (whatsapp/google_business/otro) siguen siendo copiar/pegar a mano, igual que
@@ -11455,6 +11733,206 @@ function sAdminCulqiReport() {
     h += '</div>';
     h += BTN('Actualizar //', 'loadCulqiReport()', true);
     return h + '</div>';
+}
+// ── E6 · Salud técnica (#97 base, #98 latencia, #88 cuentas admin) ─────────────────────
+// Una sola pantalla para lo técnico. El dueño no va a entrar a tres sitios distintos a
+// revisar si la base se está llenando, si la función responde lenta y si hay una cuenta
+// admin de alguien que ya no está. Las señales de NEGOCIO (#77, #78, #86) van aparte, en
+// Cumplimiento: se miran en otro momento y con otra cabeza.
+var techHealthData = null;
+async function loadTechHealth() {
+    sndScreen = 'admin_tech';
+    busy = true;
+    busyMsg = 'Revisando la infraestructura...';
+    render();
+    try {
+        techHealthData = await api('admin-tech-health', { token: token });
+    }
+    catch (e) {
+        techHealthData = null;
+    }
+    busy = false;
+    render();
+}
+function fmtBytes(n) {
+    var b = Number(n) || 0;
+    if (b >= 1048576)
+        return (Math.round(b / 1048576 * 10) / 10) + ' MB';
+    if (b >= 1024)
+        return Math.round(b / 1024) + ' KB';
+    return b + ' B';
+}
+function sAdminTechHealth() {
+    var h = H('SALUD TÉCNICA', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (!techHealthData) {
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadTechHealth()') + '</div>';
+    }
+    var d = techHealthData;
+    var db = d.db || {};
+    var pct = Math.round((Number(db.usedPct) || 0) * 1000) / 10;
+    // El espacio de la base primero, porque es el único de esta pantalla que puede DETENER el
+    // negocio: el plan `free` no degrada con aviso, pasa a solo-lectura y deja de tomar pedidos.
+    h += '<div style="background:var(--sw-card2,#1A3028);border:1px solid ' + (db.warn ? '#ff8888' : GOLD) + ';border-radius:12px;padding:18px;margin-bottom:16px">'
+        + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">ESPACIO EN LA BASE //</div>'
+        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + (db.warn ? '#ff8888' : GOLD) + ';line-height:1.1">' + pct + '%</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + fmtBytes(db.usedBytes) + ' de ' + fmtBytes(db.limitBytes) + '</div>'
+        + '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.12);margin:10px 0 8px;overflow:hidden"><div style="height:100%;width:' + Math.min(100, pct) + '%;background:' + (db.warn ? '#ff8888' : GOLD) + '"></div></div>'
+        + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">'
+        + (db.warn
+            ? 'Al llegar al tope, la base pasa a <b>solo lectura</b> y la app deja de tomar pedidos. Borra registros viejos de <i>debug_logs</i> o sube de plan antes de llegar.'
+            : 'El plan gratuito da 500 MB. Al topar no hay aviso ni degradación: la base pasa a solo lectura y deja de entrar cualquier pedido.')
+        + '</div></div>';
+    if (db.tables && db.tables.length) {
+        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">LAS QUE MÁS PESAN //</div>';
+        h += db.tables.map(function (t) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 14px;margin-bottom:6px">'
+                + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(String(t.table_name || '')) + '</div>'
+                + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + GOLD + '">' + fmtBytes(t.total_bytes) + '</div></div>';
+        }).join('');
+    }
+    // Latencia. Se mide sobre las peticiones LENTAS que la función ya anota: escribir una
+    // fila por request duplicaría el tráfico a la base para medir sobre todo peticiones sanas.
+    var lat = d.latency || {};
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 8px">VELOCIDAD DE RESPUESTA //</div>';
+    if (!lat.samples) {
+        h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+            + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Ninguna petición pasó del segundo y medio esta semana. <span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">Eso es lo que se quiere ver: solo se anotan las lentas.</span></div></div>';
+    }
+    else {
+        h += '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + (lat.warn ? '#ff8888' : 'var(--sw-border-soft,#1c1c1c)') + ';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+            + '<div style="display:flex;gap:18px;flex-wrap:wrap">'
+            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:' + (lat.warn ? '#ff8888' : GOLD) + '">' + lat.p95 + ' ms</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">p95</div></div>'
+            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + lat.worst + ' ms</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">la peor</div></div>'
+            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + lat.samples + '</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">peticiones lentas (7 días)</div></div>'
+            + '</div>'
+            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:10px">'
+            + 'Se mira el p95 y no el promedio: una petición de 8 segundos entre 99 rápidas no mueve el promedio, y es justo la que hace abandonar un carrito.'
+            + '</div></div>';
+    }
+    // Cuentas admin. Hoy hay una sola, y por eso mismo está acá antes de que haga falta.
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">CUENTAS ADMIN //</div>';
+    var stale = d.staleAdmins || [];
+    if (!stale.length) {
+        h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px">'
+            + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + (d.adminCount || 0) + ' cuenta' + ((d.adminCount || 0) === 1 ? '' : 's') + ' con acceso, ninguna abandonada.</div></div>';
+    }
+    else {
+        h += stale.map(function (a) {
+            return '<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:12px 14px;margin-bottom:6px">'
+                + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)"><b>' + esc(a.name || a.phone) + '</b> · ' + esc(a.phone) + '</div>'
+                + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:2px">'
+                + (a.neverLoggedIn ? 'Nunca ha entrado desde que se registra el acceso.' : 'Sin entrar hace ' + a.daysSince + ' días.')
+                + ' Si esta persona ya no trabaja contigo, quítale el acceso en <b>Administradores</b>.</div></div>';
+        }).join('');
+    }
+    return h + '</div>';
+}
+// ── E6 · Cumplimiento y promesa (#78 entrega, #77 queja repetida, #86 Libro) ───────────
+var complianceData = null;
+async function loadCompliance() {
+    sndScreen = 'admin_compliance';
+    busy = true;
+    busyMsg = 'Revisando entregas y reclamos...';
+    render();
+    try {
+        complianceData = await api('admin-compliance', { token: token });
+    }
+    catch (e) {
+        complianceData = null;
+    }
+    busy = false;
+    render();
+}
+function sAdminCompliance() {
+    var h = H('CUMPLIMIENTO', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (!complianceData) {
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadCompliance()') + '</div>';
+    }
+    var d = complianceData;
+    var dl = d.delivery || {};
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:14px">Últimos ' + (d.windowDays || 90) + ' días</div>';
+    // #78 — Lo prometido contra lo cumplido.
+    if (!dl.measured) {
+        h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+            + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">ENTREGA //</div>'
+            + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Todavía no hay ningún pedido con hora de entrega registrada. <span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">La hora la escribe el link de confirmación que abre quien reparte; sin ella no se puede medir la promesa contra nada.</span></div></div>';
+    }
+    else {
+        var pctOk = Math.round((Number(dl.onTimePct) || 0) * 1000) / 10;
+        var malo = pctOk < 80;
+        h += '<div style="background:var(--sw-card2,#1A3028);border:1px solid ' + (malo ? '#ff8888' : GOLD) + ';border-radius:12px;padding:18px;margin-bottom:12px">'
+            + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">LLEGARON A TIEMPO //</div>'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:30px;font-weight:640;color:' + (malo ? '#ff8888' : GOLD) + ';line-height:1.1">' + pctOk + '%</div>'
+            + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + dl.onTime + ' de ' + dl.measured + ' pedidos medidos</div>'
+            + '<div style="display:flex;gap:18px;margin-top:12px">'
+            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + dl.avgMinutes + ' min</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">promedio</div></div>'
+            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + dl.p90Minutes + ' min</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">9 de cada 10 llegan antes de</div></div>'
+            + '</div>'
+            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:10px">El promedio esconde la cola: con nueve entregas de 30 minutos y una de tres horas el promedio dice 47, y el cliente de las tres horas no vuelve.</div>'
+            + '</div>';
+        if (dl.worst && dl.worst.length) {
+            h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">LOS QUE MÁS SE PASARON //</div>';
+            h += dl.worst.map(function (w) {
+                var exceso = w.minutes - w.promised;
+                return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:9px 14px;margin-bottom:6px">'
+                    + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(w.ref || '') + '</div>'
+                    + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + (exceso > 0 ? '#ff8888' : GOLD) + '">' + w.minutes + ' min <span style="font-size:10px;opacity:.8">(prometido ' + w.promised + ')</span></div></div>';
+            }).join('');
+        }
+    }
+    // #77 — Queja repetida. Dos reclamos del mismo cliente no son un cliente difícil: son un
+    // problema de proceso que ya se manifestó dos veces.
+    var rep = d.repeatComplaints || [];
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 8px">RECLAMÓ MÁS DE UNA VEZ //</div>';
+    if (!rep.length) {
+        h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+            + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">Nadie ha reclamado dos veces.</div></div>';
+    }
+    else {
+        h += rep.map(function (r) {
+            return '<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:12px 14px;margin-bottom:6px">'
+                + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)"><b>' + esc(r.name || r.phone) + '</b> · ' + r.count + ' veces</div>'
+                + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:2px">' + esc((r.codes || []).join(' · ')) + '</div></div>';
+        }).join('');
+    }
+    // #86 — El consolidado del Libro de Reclamaciones. Va entero y sin recortar: un reporte
+    // al que le falta un campo obligatorio no sirve el día que Indecopi lo pide.
+    var cs = d.complaints || [];
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">LIBRO DE RECLAMACIONES //</div>';
+    h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
+        + '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">' + cs.length + ' registro' + (cs.length === 1 ? '' : 's') + ' en la ventana. '
+        + '<span style="font-style:italic;color:var(--sw-text-muted,#A8C8B0)">Exporta el consolidado con todos los campos del Libro para tenerlo listo si te lo piden.</span></div></div>';
+    h += BTN('Descargar consolidado //', 'exportComplianceCsv()');
+    return h + '</div>';
+}
+// El CSV se arma en el navegador con lo que la pantalla YA tiene: pedirlo otra vez al
+// servidor abriría la puerta a que el archivo y lo que se ve en pantalla digan cosas
+// distintas.
+function exportComplianceCsv() {
+    var cs = (complianceData && complianceData.complaints) || [];
+    if (!cs.length) {
+        showToast('No hay reclamos que exportar.', 'info');
+        return;
+    }
+    // Cabeceras en español y con los nombres del Libro, no las claves internas: el archivo se
+    // entrega a un tercero que no conoce el modelo de datos de esta app.
+    var rows = cs.map(function (r) {
+        return {
+            'Codigo': r.claimCode || '', 'Fecha': r.createdAt || '', 'Tipo': r.kind || '',
+            'Consumidor': r.consumerName || '', 'DNI': r.consumerDni || '', 'Pedido': r.orderRef || '',
+            'Monto reclamado': r.claimedAmount == null ? '' : r.claimedAmount,
+            'Estado': r.status || '', 'Respondido': r.respondedAt || '',
+        };
+    });
+    var csv = toCsv(rows);
+    var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'sndwch-libro-reclamaciones-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
 }
 
 </script>

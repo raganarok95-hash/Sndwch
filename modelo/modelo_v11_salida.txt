@@ -1,0 +1,147 @@
+
+====================================================================================================
+                SND//WCH — MODELO v11 · PROYECCIÓN A 3 Y 6 MESES · 20,000 ESCENARIOS                
+====================================================================================================
+
+  Apertura: 12 de October de 2026 (el techo que puso el dueño). Lunes cerrado.
+  Mes 3 = dic-26  ·  Mes 6 = mar-27   ← derivados del calendario, no escritos a mano
+  Objetivo [DECISIÓN del dueño]: neto >= S/4,000 desde el mes 3 y >= S/5,000 desde el mes 6,
+  TODOS los meses. No es un pico: basta un mes por debajo para romperlo.
+
+  ⚠ CORRECCIÓN QUE CAMBIA TODAS LAS PROYECCIONES ANTERIORES
+     El v8, v9 y v10 usaron una contribución por pedido de S/16.42, que es el promedio de
+     los CINCO SIGNATURES y de ningun ARMA EL TUYO. Con la mitad de los pedidos por BYO
+     —lo unico honesto mientras nadie mida la mezcla real— la contribucion es S/14.19.
+     Son S/2.23 menos por pedido, un 14% de sobrestimacion arrastrada por tres modelos.
+
+  ⚠ MECANISMO NUEVO: LA FASE DE APRENDIZAJE DE META
+     Meta necesita ~50 conversiones por conjunto de anuncios cada 7 dias
+     (= 217 al mes) para salir de la fase de aprendizaje. Por debajo, la entrega es
+     mas cara. Con un CAC limpio de S/17.87 (CPM medio), salir de aprendizaje cuesta
+     S/3,885/mes. Ese es el piso real, y ningun modelo anterior lo tenia.
+     El castigo por no salir (30% mas caro) es una ASUNCION, no una medicion — se recorre abajo.
+
+
+====================================================================================================
+                      1 · EL ESCENARIO BASE — publicidad fija, sin reinversion                      
+====================================================================================================
+  20,000 escenarios por celda. Percentiles P10 / P50 / P90 del neto mensual.
+
+    ads/mes                   neto mes 3                   neto mes 6   P(mes3)   P(mes6)  P(camino)
+                  P10      P50       P90       P10      P50       P90
+  ------------------------------------------------------------------------------------------------
+          0      -500     -500      -500      -500     -500      -500      0.0%      0.0%       0.0%
+      1,000    -1,030     -801      -403      -792     -439       174      0.0%      0.0%       0.0%
+      2,000    -1,542   -1,055      -182    -1,045     -317     1,049      0.0%      0.0%       0.0%
+      3,000    -2,016   -1,251       203    -1,247      -49     2,158      0.0%      0.3%       0.0%
+      4,000    -2,454   -1,349       739    -1,391      268     3,024      0.1%      1.9%       0.0%
+      6,000    -3,137   -1,426     1,349    -1,544      759     4,444      1.0%      7.4%       0.0%
+      8,000    -3,899   -1,774     1,821    -2,059      874     4,808      2.3%      8.4%       0.0%
+
+====================================================================================================
+                               2 · DONDE ESTA EL OPTIMO DE PUBLICIDAD                               
+====================================================================================================
+
+  La publicidad se RESTA del neto del mismo mes y el cliente devuelve su valor en los meses
+  siguientes. Por eso no es cierto que "mas presupuesto = mas neto": hay un optimo intermedio
+  y pasarse EMPEORA el resultado. Se busca por rejilla fina, no por biseccion.
+
+    ads/mes   neto m3 (P50)   neto m6 (P50)  pedidos/dia m6  sale aprend. m6  P(camino)
+  ------------------------------------------------------------------------------------------------
+          0            -500            -500             0.0               0%       0.0%
+        500            -656            -477             1.5               0%       0.0%
+      1,000            -796            -426             3.1               0%       0.0%
+      1,500            -938            -388             4.7               0%       0.0%
+      2,000          -1,052            -313             6.4               0%       0.0%
+      2,500          -1,153            -192             8.2               0%       0.0%
+      3,000          -1,272             -39            10.0              14%       0.0%
+      3,500          -1,299             169            12.1              29%       0.0%
+      4,000          -1,364             254            13.8              42%       0.0%
+      5,000          -1,350             589            17.7              72%       0.0%
+      6,000          -1,427             768            21.1             100%       0.0%
+      8,000          -1,809             893            27.3             100%       0.1%
+     10,000          -2,187             842            33.0             100%       0.1%
+     14,000          -3,229            -886            43.4             100%       0.1%
+
+  OPTIMO por neto del mes 6 (mediana) ....... S/8,000/mes  ->  neto S/893
+  OPTIMO por probabilidad de sostener ....... S/14,000/mes  ->  0.1% de exito
+
+
+====================================================================================================
+         3 · SENSIBILIDAD AL CASTIGO POR NO SALIR DE APRENDIZAJE (la palanca mas incierta)          
+====================================================================================================
+
+  Con 1.00 el mecanismo se APAGA y el modelo vuelve a ser el v10. Cuanto mas alto el castigo,
+  mas obligatorio es concentrar el presupuesto en un solo conjunto y superar el piso.
+
+   castigo        1,000       2,000       3,000       4,000       6,000
+  ----------------------------------------------------------------------
+      1.00         -190          39         310         502         771
+      1.15         -321        -135         115         364         722
+      1.30         -451        -326         -50         274         618
+      1.50         -578        -536        -294         105         684
+      1.80         -721        -814        -739        -164         723
+
+  (neto mediano del mes 6, en soles, para cada combinacion)
+
+====================================================================================================
+                      4 · CUANTO HAY QUE VENDER — la meta traducida a pedidos                       
+====================================================================================================
+
+  Invirtiendo la ecuacion del neto, con la contribucion real de S/14.19:
+
+                    meta    ads/mes   pedidos/mes   pedidos/dia   clientes nuevos/mes
+  ------------------------------------------------------------------------------------
+          mes 3 (dic-26)      2,000           491          18.2                   141
+          mes 3 (dic-26)      3,000           567          21.0                   202
+          mes 3 (dic-26)      4,000           642          23.8                   262
+          mes 6 (mar-27)      2,000           567          21.8                   146
+          mes 6 (mar-27)      3,000           642          24.7                   206
+          mes 6 (mar-27)      4,000           718          27.6                   267
+
+====================================================================================================
+              5 · SENSIBILIDAD A LA MEZCLA DE MENU (cuantos pedidos son ARMA EL TUYO)               
+====================================================================================================
+
+  Es la incertidumbre mas grande del lado del producto, y nadie la ha medido todavia:
+  `retention_report` ya devuelve `attach.size30Pct`, asi que se reemplaza con dato real
+  apenas haya ventas. Un Signature deja ~S/6 mas que un ARMA EL TUYO.
+
+   % ARMA EL TUYO   contribucion   neto m3 (P50)   neto m6 (P50)   P(camino)
+  --------------------------------------------------------------------------
+              20%        S/15.78            -980             313        0.0%
+              35%        S/14.98          -1,117             162        0.0%
+              50%        S/14.19          -1,210              -8        0.0%
+              65%        S/13.40          -1,384            -266        0.0%
+              80%        S/12.61          -1,501            -479        0.0%
+
+====================================================================================================
+                6 · QUE PASA SI LO ORGANICO FUNCIONA (referidos por pedido servido)                 
+====================================================================================================
+
+  Si el presupuesto no alcanza para comprar volumen —que es lo que dice MARKETING_HALLAZGOS—
+  lo organico deja de ser complemento. Aca se ve cuanto vale cada punto de viralidad.
+
+   referidos/100 pedidos   neto m3 (P50)   neto m6 (P50)   P(camino)
+  ------------------------------------------------------------------
+                      0           -1,333            -253        0.0%
+                      3           -1,255            -140        0.0%
+                      6           -1,258             -72        0.0%
+                     10           -1,174              65        0.0%
+                     15           -1,130             260        0.0%
+                     25             -979             657        0.0%
+
+====================================================================================================
+                                   7 · LO QUE ESTE MODELO NO SABE                                   
+====================================================================================================
+
+  · El CPM, CTR y CVR salen de blogs de agencia, no de medicion auditada (ver
+    MARKETING_HALLAZGOS.md). Todo el CAC —y por lo tanto el optimo de publicidad— cuelga de
+    ahi. Medir el CAC real la primera semana no es una mejora: es lo unico que convierte
+    esto en un pronostico.
+  · El castigo por no salir de aprendizaje es una asuncion declarada, no un dato.
+  · No hay estacionalidad peruana, ni fatiga creativa, ni tiempo de cobro de Culqi, ni
+    competencia que reaccione.
+  · La mezcla Signature/ARMA EL TUYO no esta medida; se asume mitad y mitad.
+  · No existe ni un solo dato publico de una sandwicheria o delivery en Trujillo.
+

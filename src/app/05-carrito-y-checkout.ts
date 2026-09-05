@@ -163,6 +163,12 @@ function pickAddr(id){
   if(!a)return;
   syncConfirmFields();
   pickedAddrId=id;addrText=a.address;
+  // Se restauran las coordenadas guardadas con esa dirección: por eso el pin se pide UNA
+  // sola vez por dirección y no en cada pedido. Si la dirección es vieja y no las tiene, se
+  // limpian para que el checkout vuelva a pedir el pin en vez de cobrar la distancia de la
+  // dirección ANTERIOR, que es el peor error posible acá.
+  window._mLat=typeof a.lat==='number'?a.lat:null;
+  window._mLon=typeof a.lon==='number'?a.lon:null;
   // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
   // tiene que volver a elegir algo que ya escribió cuando la guardó.
   var inferred=districtFromAddress(a.address);
@@ -190,15 +196,31 @@ function pickAddr(id){
 function comboDrinkNudgeHTML(){
   var hasSandwichNoDrink=cart.some(function(it){return it.type!=='side';})&&cartComboCount()<cart.reduce(function(s,it){return s+(it.type!=='side'?it.qty:0);},0);
   if(!hasSandwichNoDrink)return'';
+  // La rama de hora valle se queda escrita a propósito aunque hoy nunca se cumpla: la promo
+  // se apagó vaciando su ventana horaria (ver OFFPEAK_DRINK_PROMO_HOURS_LIMA), no borrando el
+  // mecanismo. Si el dueño la reactiva poniendo horas, el texto vuelve solo — y mientras
+  // esté apagada, este anuncio NO puede aparecer: prometer una bebida gratis que el servidor
+  // ya no descuenta es la clase de promesa rota que se descubre recién al pagar.
   var offPeak=isOffPeakDrinkPromoActiveNow();
   var titulo=offPeak
     ?'Es hora valle — tu bebida va GRATIS (hasta '+SOLES_TXT+OFFPEAK_DRINK_PROMO_CAP+')'
     :'¿Le sumas algo de tomar? Ahorras '+SOLES_TXT+COMBO_DISCOUNT_PER_PAIR+' en combo';
+  // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
+  //
+  // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
+  // "The Bloom // Hibiscus · S/6" no le dice a nadie qué está comprando: son infusiones de
+  // la casa, no gaseosas de marca conocida, así que el nombre solo no vende. La descripción
+  // ya existía en el catálogo (`d`) y solo se usaba en la pantalla de bebidas — o sea que el
+  // texto de venta no estaba en el momento de la venta.
+  //
+  // Dos columnas en vez de cuatro para que la descripción entre legible. Es el único empujón
+  // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
+  // contribución del pedido más de lo que sube el ticket.
   var chips=SIDES.map(function(d){
-    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1;min-width:72px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">'+esc(d.l)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">'+esc(d.s)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:4px">+'+SOLES_TXT+d.p+'</div>'
+    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">'+esc(d.l)+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+esc(d.s)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';white-space:nowrap">+'+SOLES_TXT+d.p+'</div></div>'
+      +(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">'+esc(d.d)+'</div>':'')
       +'</div>';
   }).join('');
   return'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
@@ -216,52 +238,12 @@ function comboDrinkNudgeHTML(){
 // checkout ya lleno. Los distritos fuera de cobertura salen listados y deshabilitados
 // ("todavía no llegamos aquí") en vez de ocultos: ocultarlos hace parecer que el negocio
 // no existe para esa persona; mostrarlos apagados dice que existe y todavía no llega.
-// C4 — Distancia máxima (km) que cubre cada zona de PRECIO, derivada del único dato de
-// tarifa que el propio negocio publica al cliente: "~S/2 por km" (ver el texto bajo el
-// home). Con esa tarifa el fee de cada zona describe su alcance: S/6 → 3 km, S/8 → 4 km,
-// S/12 → 6 km, y de ahí para arriba MUY LEJOS. No es una geocerca ni una validación:
-// existe solo para AVISAR cuando la zona elegida y el pin del mapa no cuadran. Nunca
-// bloquea el pedido — un pin puede caer mal (GPS en interiores, mapa arrastrado a ojo) y
-// el cliente conoce su dirección mejor que el navegador. El cobro real lo sigue fijando
-// la zona que él eligió.
-var DELIVERY_ZONE_MAX_KM={cerca:3,media:4,lejos:6};
-function zoneForKm(km){
-  if(km<=DELIVERY_ZONE_MAX_KM.cerca)return'cerca';
-  if(km<=DELIVERY_ZONE_MAX_KM.media)return'media';
-  if(km<=DELIVERY_ZONE_MAX_KM.lejos)return'lejos';
-  return'muy_lejos';
-}
-// Distancia entre el pin que el cliente confirmó en el mapa y el punto de despacho.
-// Devuelve null si nunca tocó el mapa/GPS — sin pin no hay nada que comparar y no se
-// muestra ningún aviso (la mayoría de los pedidos escriben la dirección a mano).
-function pinDistanceKm(){
-  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
-  return haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
-}
-function applySuggestedZone(z){deliveryZone=z;confirmRerender();}
-// Aviso de zona vs. pin. Las dos direcciones del desajuste importan, por motivos
-// distintos: si el cliente eligió una zona más BARATA de lo que dice el pin, el dueño
-// pone la diferencia de su bolsillo (el delivery es pass-through, no tiene margen del
-// que salga); si eligió una más CARA, está pagando de más y avisarle es lo honesto.
-// Por eso los dos casos se avisan, con texto distinto.
-function deliveryZoneMismatchHTML(){
-  var km=pinDistanceKm();
-  if(km===null)return'';
-  var sug=zoneForKm(km);
-  if(sug===deliveryZone)return'';
-  var zSel=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var zSug=DELIVERY_PRICE_ZONES.find(function(x){return x.id===sug;});
-  if(!zSel||!zSug)return'';
-  var masCaro=zSug.fee>zSel.fee;
-  var txt=masCaro
-    ?'Tu pin está a ~'+km.toFixed(1)+' km, que corresponde a '+zSug.l.toUpperCase()+'. Si dejas '+zSel.l.toUpperCase()+', puede que el motorizado te pida la diferencia al llegar.'
-    :'Tu pin está a ~'+km.toFixed(1)+' km: te alcanza '+zSug.l.toUpperCase()+' ('+SOLES_TXT+zSug.fee+') y estás pagando '+SOLES_TXT+zSel.fee+'.';
-  var color=masCaro?'#ffb84d':GOLD;
-  return'<div style="margin-top:10px;background:rgba(203,162,88,.08);border:1px solid '+color+';border-radius:8px;padding:10px 12px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.45">'+esc(txt)+'</div>'
-    +'<button onclick="applySuggestedZone(\''+sug+'\')" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:8px;background:transparent;border:1px solid '+color+';color:'+color+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar a '+esc(zSug.l.toUpperCase())+' // '+SOLES_TXT+zSug.fee+'</button>'
-    +'</div>';
-}
+// El aviso de "tu zona no cuadra con tu pin" vivía acá y se retiró el 2026-09-02, junto con
+// zoneForKm/applySuggestedZone/DELIVERY_ZONE_MAX_KM. Existía porque el cobro salía de la zona
+// que el cliente elegía y el pin solo podía AVISAR del desajuste; su texto llegaba a decir
+// "puede que el motorizado te pida la diferencia al llegar", que era una promesa sobre lo que
+// haría un tercero. Ahora el envío se cobra por distancia real (ver deliveryFeeBase en
+// src/app/01-*) y no hay zona que pueda desajustarse: no hay nada que avisar.
 function districtPickerHTML(){
   var opts=DELIVERY_DISTRICTS.map(function(d){
     var sel=deliveryDistrict===d.id;
@@ -286,19 +268,33 @@ function pickDistrict(id){
     :'Por ahora no llegamos a '+DELIVERY_DISTRICTS.filter(function(d){return d.out;}).map(function(d){return d.l;}).join(' y ')+'.';
 }
 function deliveryZonePickerHTML(){
-  var h='<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Zona de entrega //</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
-  h+=DELIVERY_PRICE_ZONES.map(function(z){
-    var sel=deliveryZone===z.id;
-    // La zona seleccionada muestra el fee REAL que se va a cobrar (inflado si el pedido
-    // va por Culqi, ver willPayWithCard()) — antes siempre mostraba el fee plano de
-    // catálogo aunque el total ya llevara el recargo de tarjeta sumado, dejando sin
-    // explicar por qué zona+comida no sumaban el total mostrado (residual del mismo
-    // hallazgo P2, auditoría UX).
-    var shownFee=sel?deliveryFeeAmount():z.fee;
-    return'<div onclick="deliveryZone=\''+z.id+'\';confirmRerender()" style="flex:1;min-width:110px;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 8px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:'+(sel?'#fff':'#A8C8B0')+'">'+z.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?GOLD:'#A8C8B0')+';margin-top:2px">'+SOLES_TXT+shownFee+'</div></div>';
-  }).join('');
-  h+='</div>'+deliveryZoneMismatchHTML()+'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;display:flex;align-items:center;gap:6px">'+icon('moto',11,'#A8C8B0')+'<span>El delivery se paga junto con tu pedido — el motorizado te lo entrega en la puerta.</span></div></div>';
-  return h;
+  var km=deliveryKmNow();
+  // CON PIN: se muestra la tarifa real por distancia. Ya no hay nada que elegir — antes el
+  // cliente escogía su zona de un desplegable, o sea escogía cuánto pagar de envío.
+  if(km!==null){
+    var base=deliveryFeeBase();
+    var lejos=km>DELIVERY_MAX_KM;
+    return'<div style="margin-top:14px">'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+      +'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(lejos?'#ff8888':'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:12px 14px">'
+      +(lejos
+        ?'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;line-height:1.5">Tu punto está a '+km.toFixed(1)+' km y por ahora llegamos hasta '+DELIVERY_MAX_KM+' km. Revisa el pin en el mapa.</div>'
+        :'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
+          +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+km.toFixed(1)+' km hasta tu punto</div>'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:'+GOLD+'">'+SOLES_TXT+pz(base)+'</div></div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+      +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
+      +'</div></div>';
+  }
+  // SIN PIN: no hay tarifa que mostrar todavía. No se ofrece el desplegable de zonas de
+  // vuelta a propósito — volvería a dejar que el cliente elija su propio precio de envío.
+  return'<div style="margin-top:14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
+    +'<div style="background:rgba(203,162,88,.08);border:1px solid '+GOLD+';border-radius:10px;padding:12px 14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro.</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
+    +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:'+GOLD+';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+    +'</div></div>';
 }
 function checkoutExtrasHTML(){
   var t=cartFinalTotal();
@@ -313,7 +309,18 @@ function checkoutExtrasHTML(){
     // quedaba NINGUNA confirmación de que la recompensa ya aplicada seguía activa (el
     // descuento sí sigue funcionando en el monto a transferir, pero visualmente parecía
     // perdida) — hallazgo de auditoría UX, MEDIO.
-    +(manualPayMethod
+    // ⚠ La condición era `manualPayMethod` a secas, y eso se rompió solo el día que Yape
+    // pasó a ser el DEFAULT (2026-09-03): el selector de recompensas y el campo de código
+    // promocional desaparecían del checkout para todo cliente que no tocara el selector de
+    // pago — o sea la mayoría. Un cliente con puntos entraba a pagar y no veía dónde
+    // canjearlos. Ese es exactamente el modo de fallo que este archivo documenta en otros
+    // lados: nada revienta, nada avisa, simplemente deja de existir una función entera.
+    //
+    // Lo que la regla protegía sigue protegido: ocultarlo tiene sentido cuando el cliente ya
+    // ELIGIÓ transferir (payMethodChosen) y tiene el monto en pantalla listo para yapear —
+    // cambiar la recompensa ahí mueve el número después de que él lo copió. Un default que
+    // nadie tocó todavía no es ese momento.
+    +(manualPayMethod&&payMethodChosen
       ?(appliedReward?(function(){var r=RWDS.find(function(x){return x.id===appliedReward;});return r?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(37,211,102,.3);border-radius:8px;padding:10px 14px;margin-top:14px;font-family:\'EB Garamond\',serif;font-size:12px;color:#25D366;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+'Recompensa aplicada: '+esc(r.n+' '+r.s)+'</div>':'';})():'')
       :rewardsPickerHTML()+promoCodeHTML())
     // "Contacto y entrega //" y "Entrega y horario //" — antes esto era ~9 bloques
@@ -338,7 +345,7 @@ function checkoutExtrasHTML(){
     +(scheduleMode==='now'&&!storeStatus().open?'<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">'+icon('horario',13,'#ff8888')+'<span>'+esc(storeStatus().label)+' — elige "Programar" para pedir dentro de nuestro horario.</span></div>':'')
     +(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
     +'</div></details>'
-    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'useCredit=!useCredit;if(useCredit)manualPayMethod=null;confirmRerender()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'toggleCredit()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
     // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
     // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
     // antes) para un pedido que no cuesta nada.
@@ -694,11 +701,24 @@ function paymentMethodPickerHTML(t){
   // función) el total YA incluye el recargo real. Esta línea lo hace explícito en vez de
   // dejar que el cliente note el aumento recién al ver el total — resuelve el hallazgo
   // P2 original (recargo invisible) sin cambiar el monto real que se cobra.
-  var cardFeeNote=willPayWithCard()&&!manualPayMethod
-    ?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye '+SOLES_TXT+(deliveryFeeAmount()-(function(){var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});return z?z.fee:0;})()).toFixed(2)+' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
+  // Lo que la tarjeta agrega al total: el fee de envío "engordado" menos el fee real.
+  //
+  // ⚠ Esto restaba la tarifa de ZONA hasta el 2026-09-03, y desde que el envío se cobra por
+  // distancia esa resta daba un número sin sentido que igual se le mostraba al cliente. Se
+  // compara contra deliveryFeeBase(), que es la misma función que produce el monto real.
+  // ⚠ Esto era `deliveryFeeAmount()-deliveryFeeBase()` y se rompió solo el día que Yape
+  // pasó a ser el default: deliveryFeeAmount() solo engorda el fee cuando el pedido VA a
+  // salir por tarjeta, así que con Yape elegido la resta daba 0 y el botón dejaba de decir
+  // cuánto se ahorra — justo en el único estado en que el cliente necesita esa razón.
+  // El número que hay que mostrar es el recargo HIPOTÉTICO de la tarjeta, que no depende
+  // del método elegido ahora mismo.
+  var feeBase=deliveryFeeBase();
+  var cardExtra=feeBase?money(feeBase/(1-CULQI_FEE_RATE)-feeBase):0;
+  var cardFeeNote=willPayWithCard()&&!manualPayMethod&&cardExtra>0
+    ?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">El total ya incluye '+SOLES_TXT+pz(cardExtra)+' de comisión por pagar con tarjeta — con Yape/Plin no se cobra.</div>'
     :'';
   return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cómo pagas? //</div><div style="display:flex;gap:8px">'
-    +payMethodBtn('yape','Yape / Plin',true,'Recomendado')
+    +payMethodBtn('yape','Yape / Plin',true,cardExtra>0?'Ahorras '+SOLES_TXT+pz(cardExtra):'Recomendado')
     +(culqiConfigured?payMethodBtn('culqi','Tarjeta',true,'Automático'):'')
     +'</div>'
     // El widget de Culqi ya trae Yape integrado como pestaña (paymentMethods.yape=true,
@@ -730,14 +750,28 @@ function paymentMethodPickerHTML(t){
 // necesita: el texto ya identifica el método, sin arriesgar además un uso no autorizado
 // de la marca de Yape/Plin.
 function payMethodBtn(id,label,enabled,badge){
-  // Ninguno aparece pre-seleccionado hasta que el cliente toca uno — antes Tarjeta se
-  // veía marcada por defecto sin ninguna elección real, lo que reforzaba la sensación de
-  // que el recargo ya estaba decidido de antemano (mismo hallazgo P2 de arriba).
+  // Yape/Plin arranca marcado (es el default desde el 2026-09-03, ver 01-*). Durante un
+  // tiempo NINGUNO aparecía marcado, porque el que venía por defecto era Tarjeta y verla
+  // pre-seleccionada hacía sentir que el recargo estaba decidido de antemano (hallazgo P2).
+  // Con el default invertido ese problema desaparece solo: lo que queda marcado es el
+  // método SIN recargo, y el cliente ve exactamente lo que va a pagar si no toca nada.
   var sel=id==='culqi'?(payMethodChosen&&!manualPayMethod):manualPayMethod===id;
   return'<div onclick="'+(enabled?'selectPayMethod(\''+id+'\')':'')+'" style="flex:1;text-align:center;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:8px;padding:10px 6px;cursor:'+(enabled?'pointer':'not-allowed')+';opacity:'+(enabled?1:.4)+'">'
     +(badge?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:'+GOLD+';letter-spacing:.08em;margin-bottom:3px">'+badge+'</div>':'')
     +'<div style="display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+label+'</div>'
     +(enabled?'':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:7px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;letter-spacing:.05em">Pronto</div>')+'</div>';
+}
+// Prender el crédito apaga el método manual (si el crédito cubre el total no hace falta
+// ninguno). Apagarlo tiene que DEVOLVER el default, no dejar al cliente en tarjeta sin
+// haberla elegido nunca — que es lo que pasaba cuando esto era un `manualPayMethod=null`
+// escrito dentro del onclick: el cliente tocaba dos veces el crédito y salía pagando la
+// comisión de Culqi sin haber elegido la tarjeta. Si ya eligió a mano (payMethodChosen),
+// se respeta su elección.
+function toggleCredit(){
+  useCredit=!useCredit;
+  if(useCredit)manualPayMethod=null;
+  else if(!payMethodChosen)manualPayMethod='yape';
+  confirmRerender();
 }
 function selectPayMethod(m){
   manualPayMethod=(m==='culqi'?null:m);
@@ -769,19 +803,43 @@ function manualPayInstructionsHTML(t){
   return'<div style="margin-top:10px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:10px;padding:14px 16px">'
     +'<div style="text-align:center;margin-bottom:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em;margin-bottom:2px">Monto a transferir //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:38px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</div></div>'
     +payStep(1,'Transfiere por Yape o Plin a','<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border-radius:8px;padding:8px 10px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff">'+YAPE_PLIN_PHONE+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#A8C8B0)">'+esc(YAPE_PLIN_NAME)+(recurring?' · ya usaste este número antes ✓':'')+'</div></div></div>'
+      // El nombre que Yape muestra al escribir el número es el del TITULAR de la cuenta, no
+      // el de la marca. Ver un nombre personal donde esperabas "SND//WCH" es el momento
+      // exacto en que alguien se detiene a preguntarse si se equivocó de destinatario — y en
+      // una transferencia manual esa duda es un pedido perdido. Decirlo antes la borra.
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:8px;background:var(--sw-card,#2D5246);border-radius:8px;padding:9px 11px">En Yape te va a aparecer a nombre de <b style="color:var(--sw-text-body,#F2F0EB)">'+esc(YAPE_PLIN_HOLDER)+'</b>. Es la cuenta del negocio — estás en el sitio correcto.</div>'
       // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
       // paso copia el número); en desktop no hay app que abrir, así que el único botón
       // útil es copiar.
-      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+(mobile?iconTxt('phone','Abrir Yape','#0d0d0d'):'Copiar número')+'</button>'
-      +'<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">'+(showYapeQR?'ocultar código QR':'o escanea el código QR con tu número guardado')+'</span></div>'
-      +(showYapeQR?'<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px">'+qrSvgHTML('MECARD:N:'+YAPE_PLIN_NAME+';TEL:'+YAPE_PLIN_PHONE+';;',148)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">Guarda nuestro número en tus contactos escaneando — no reemplaza la transferencia, solo evita escribirlo a mano.</div></div>':'')
+      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+(mobile?iconTxt('phone','Copiar número y abrir Yape','#0d0d0d'):'Copiar número')+'</button>'
+      // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
+      //
+      // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
+      // `MECARD:` — o sea una TARJETA DE CONTACTO. Escanearlo con la cámara guardaba el
+      // número en la agenda; escanearlo DENTRO de Yape no hacía absolutamente nada, porque
+      // Yape espera su propio formato emitido por el banco. El rótulo decía "escanea el
+      // código QR", así que cualquiera esperaba pagar con él y no pasaba nada: el modo de
+      // fallo era SILENCIO, y el dueño lo encontró probando el flujo.
+      //
+      // `img/yape-qr.png` es el QR personal de cobro que el dueño exportó de "Mi QR" en su
+      // app de Yape. Ese sí cobra. NO se regenera ni se dibuja: es una imagen que solo el
+      // dueño puede emitir, igual que el RUC o la razón social.
+      //
+      // Y se muestra ABIERTO en escritorio y plegado en celular a propósito: en la compu el
+      // QR es LA vía (lo escaneas con el celular), mientras que en el celular no puedes
+      // escanear tu propia pantalla y lo útil es el número. Antes estaba plegado en los dos.
+      +'<div style="text-align:center;margin-top:8px"><span onclick="toggleYapeQR()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-decoration:underline;letter-spacing:.05em">'+((showYapeQR||!mobile)?'ocultar código QR':'o paga escaneando nuestro QR de Yape')+'</span></div>'
+      +((showYapeQR||!mobile)?'<div style="display:flex;flex-direction:column;align-items:center;margin-top:10px"><div style="padding:8px;background:#fff;border-radius:10px;line-height:0"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER)+'" width="148" height="148" style="display:block;width:148px;height:148px"></div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;text-align:center;max-width:220px">'+(mobile?'Escanéalo desde otro celular, o usa el número de arriba.':'Abre Yape en tu celular y escanea este código.')+'</div></div>':'')
       +'<div id="ypc-msg" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-top:6px;min-height:12px"></div>')
     +payStep(2,'Confirma aquí abajo','<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4">Toca "Ya realicé el pago". Tu pedido pasa a cocina recién cuando lo verifiquemos.</div>')
     +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">'+icon('lock',12,'#A8C8B0')+'<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
     +'</div>';
 }
 function copyYapePlinPhone(){
-  var m=(document.getElementById('ypc-msg') as HTMLInputElement | null);
+  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
+  // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
+  // toque mostraría "✓ Número copiado" pintado como si fuera un aviso de error.
+  if(m)m.style.color='#25D366';
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Número copiado';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
   }else if(m){m.textContent=YAPE_PLIN_PHONE;}
@@ -955,6 +1013,16 @@ async function doOrder(){
     if(errEl)errEl.textContent='Todavía no abrimos. Déjanos tu teléfono en la pantalla de inicio y te avisamos apenas arranquemos.';
     return;
   }
+  // El envío se cobra por DISTANCIA REAL desde el 2026-09-02, así que sin un punto
+  // confirmado en el mapa no hay tarifa que cobrar. Se pide UNA VEZ por dirección: al
+  // guardarla queda con sus coordenadas y los pedidos siguientes no vuelven a pedirlo
+  // [DECISIÓN del dueño]. Antes de esto el cliente elegía su propia zona de un desplegable,
+  // o sea elegía cuánto pagar de envío.
+  if(deliveryKmNow()===null){
+    if(errEl)errEl.textContent='Confirma tu ubicación en el mapa para calcular el envío — se cobra por distancia real.';
+    doGPS();
+    return;
+  }
   if(errEl)errEl.textContent='';
   var ref=oref();
   var t=payableTotal();
@@ -969,7 +1037,8 @@ async function doOrder(){
     if(idx===rewardTargetIdx&&rewardObj)lines.push('   🎁 '+rewardObj.n+' // '+rewardObj.s);
   });
   if(notes)lines.push('','📝 '+notes);
-  lines.push('','🛵 Delivery ('+(DELIVERY_PRICE_ZONES.find(function(z){return z.id===deliveryZone;})||{}).l+'): S/'+deliveryFeeAmount());
+  var _km=deliveryKmNow();
+  lines.push('','🛵 Delivery ('+(_km===null?(DELIVERY_PRICE_ZONES.find(function(z){return z.id===deliveryZone;})||{}).l:_km.toFixed(1)+' km')+'): S/'+deliveryFeeAmount());
   lines.push('*TOTAL: S/'+t+'*');
   if(cust)lines.push('Cliente: '+cust.name+' ('+cust.phone+')');
   var ingredients=[];
@@ -1062,7 +1131,9 @@ async function prepareThenPayWithCulqi(amountSoles,email){
   if(!po)return;
   busy=true;busyMsg='Verificando tu pedido...';render();
   try{
-    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,...metaAttribution()});
+    // lat/lon van también acá: prepare-order es el que fija el monto que Culqi va a cobrar,
+    // así que si no las recibe cobraría por zona mientras place-order cobra por distancia.
+    await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,lat:po.lat,lon:po.lon,...metaAttribution()});
   }catch(e){
     busy=false;_payingInProgress=false;render();
     var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
@@ -1212,7 +1283,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   cart=[];
   pendingGroupCode=null;
   resetBuilder();mode=null;
-  useCredit=false;manualPayMethod=null;payMethodChosen=false;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
+  useCredit=false;manualPayMethod='yape';payMethodChosen=false;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;
   appliedReward=null;
   saveCart();

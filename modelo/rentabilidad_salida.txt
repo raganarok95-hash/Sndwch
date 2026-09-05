@@ -1,0 +1,179 @@
+
+============================================================================================
+                     SND//WCH — RENTABILIDAD DE CADA PARTE DEL NEGOCIO                      
+============================================================================================
+
+  Precios y recetas leidos de `catalog_prices` y `catalog_items` (la base) el 2026-09-05,
+  no de los literales del codigo. Techo acordado con el dueno: costo de insumos+empaque
+  <= 45% del precio. Mas alto es PEOR.
+
+
+============================================================================================
+                                    1 · LOS 5 SIGNATURES                                    
+============================================================================================
+
+  15CM
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  SIG01 The Original                   20.90    6.20    14.70    29.7%
+  SIG02 The Marinara                   21.90    4.47    17.43    20.4%
+  SIG03 The Smoke                      23.90    7.76    16.14    32.5%
+  SIG04 The Fresh                      20.90    6.03    14.87    28.9%
+  SIG06 The Teriyaki                   19.90    5.47    14.43    27.5%
+
+  30CM
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  SIG01 The Original                   26.90   11.10    15.80    41.2%
+  SIG02 The Marinara                   28.90    7.64    21.26    26.4%
+  SIG03 The Smoke                      34.90   14.22    20.68    40.8%
+  SIG04 The Fresh                      34.90   10.76    24.14    30.8%
+  SIG06 The Teriyaki                   25.90    9.65    16.25    37.3%
+
+============================================================================================
+                             2 · ARMA EL TUYO — las 6 proteinas                             
+============================================================================================
+
+  15CM
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  Res asada                            14.90    6.58     8.32    44.2%
+  Pollo teriyaki                       13.90    5.90     8.00    42.5%
+  Pollo cajún                          13.90    5.92     7.98    42.6%
+  Atún                                 16.90    6.68    10.22    39.5%
+  Embutido                             16.90    7.72     9.18    45.7%  <-- PASA EL TECHO
+  Albóndiga                            14.90    4.77    10.13    32.0%
+
+  30CM
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  Res asada                            24.90   11.86    13.04    47.6%  <-- PASA EL TECHO
+  Pollo teriyaki                       23.90   10.51    13.39    44.0%
+  Pollo cajún                          23.90   10.53    13.37    44.1%
+  Atún                                 32.90   12.06    20.84    36.7%
+  Embutido                             32.90   14.15    18.75    43.0%
+  Albóndiga                            26.90    8.24    18.66    30.6%
+
+  DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  Res asada 15CM                        7.00    3.15     3.85    45.0%
+  Res asada 30CM                       14.00    6.30     7.70    45.0%
+  Pollo teriyaki 15CM                   6.00    2.47     3.53    41.2%
+  Pollo teriyaki 30CM                  11.00    4.95     6.05    45.0%
+  Pollo cajún 15CM                      6.00    2.49     3.51    41.5%
+  Pollo cajún 30CM                     11.00    4.97     6.03    45.2%  <-- PASA EL TECHO
+  Atún 15CM                            10.90    3.25     7.65    29.8%
+  Atún 30CM                            21.90    6.50    15.40    29.7%
+  Embutido 15CM                         9.90    4.29     5.61    43.3%
+  Embutido 30CM                        19.90    8.59    11.31    43.2%
+  Albóndiga 15CM                        6.00    1.34     4.66    22.3%
+  Albóndiga 30CM                        6.00    2.68     3.32    44.7%
+
+============================================================================================
+                                     3 · LAS 4 BEBIDAS                                      
+============================================================================================
+
+  ⚠ EL COSTO DE LAS BEBIDAS NO ESTA COTIZADO. No existe el dato. CLAUDE.md dice que el
+  margen real es 56-66% "con botella con tapa a rosca a ~S/1 (estimado, falta cotizar)".
+  Aca se toma el punto medio (61% de margen) y se dice que es una suposicion, no una
+  medicion. Cotizar el envase es lo unico que convierte esta tabla en un dato.
+
+
+  a precio de carta
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  The Bloom // Hibiscus                 6.00    2.34     3.66    39.0%
+  The Midnight // Brew                  5.00    1.95     3.05    39.0%
+  The Cool // Mint                      6.00    2.34     3.66    39.0%
+  The Spice // Chai                     9.00    3.51     5.49    39.0%
+
+  en combo (-S/1)
+                                      precio   costo     deja  costo %
+  ----------------------------------------------------------------------------
+  The Bloom // Hibiscus                 5.00    2.34     2.66    46.8%  <-- PASA EL TECHO
+  The Midnight // Brew                  4.00    1.95     2.05    48.8%  <-- PASA EL TECHO
+  The Cool // Mint                      5.00    2.34     2.66    46.8%  <-- PASA EL TECHO
+  The Spice // Chai                     8.00    3.51     4.49    43.9%
+
+============================================================================================
+             4 · LOS MECANISMOS QUE REGALAN — cuanto cuesta cada uno de verdad              
+============================================================================================
+
+  Un punto se gana 1:1 por sol gastado. Asi que "cuantos soles hay que gastar para ganarse
+  esto" es el descuento efectivo que el programa entrega. Se compara contra lo que a nosotros
+  nos CUESTA honrarlo, que es lo unico que sale del bolsillo.
+
+  recompensa                          puntos  nos cuesta  = descuento   pts/sol
+  ------------------------------------------------------------------------------
+  4ta salsa gratis                        40        0.27        0.67%     150.4
+  sube a 30CM gratis (tope S/8)          160        5.28        3.30%      30.3
+  doble proteína gratis                  120        3.15        2.62%      38.1
+  bebida gratis (tope S/6)               120        2.34        1.95%      51.3
+  sándwich 15CM gratis                   400        5.90        1.48%      67.8
+
+  La ultima columna es la "tasa de cambio" del programa: cuantos puntos cuesta cada sol de
+  costo real. Si dos recompensas tienen tasas muy distintas, el cliente racional canjea
+  siempre la mas barata y las otras son decorado.
+
+
+============================================================================================
+                       5 · CREDITO, PLAN SEMANAL Y TARJETA DE REGALO                        
+============================================================================================
+
+  PLAN SEMANAL — paga S/95 hoy, recibe S/100 de saldo.
+     Entra ............ S/  95.00
+     Comision Culqi ... S/   5.22   (se cobra SIEMPRE con tarjeta)
+     Entra limpio ..... S/  89.78
+     Compromiso ....... S/ 100.00 de consumo futuro
+     Descuento real ...    10.2%  sobre todo lo que compre con ese saldo
+
+     Es un descuento del 10.2% a cambio de cobrar por adelantado. Con el costo de
+     insumos al 45%, el pedido pagado con ese saldo sigue dejando margen — pero el descuento
+     sale ENTERO de la contribucion, igual que cualquier promo.
+
+  TARJETA DE REGALO — 40 puntos = S/1 de saldo para otro cliente.
+     No entra plata: se convierten puntos ya ganados en credito. Cuesta 2.5% de lo
+     que el cliente gasto para ganar esos puntos. Es la misma tasa que R05 y R06, o sea
+     coherente — y es la unica recompensa que ademas TRAE un cliente nuevo.
+
+  CREDITO REGALADO — mueve saldo entre clientes, sin costo extra. Neutro.
+
+  REFERIDO — 400 pts a quien invita + 120 al invitado = S/7.65 de costo real.
+     Contra un CAC pagado de ~S/17.87, el referido cuesta 43% de lo que cuesta comprar el
+     mismo cliente en Meta. Es el canal mas barato que tiene el negocio.
+
+
+============================================================================================
+                          6 · DELIVERY — pass-through, verificado                           
+============================================================================================
+
+  El cliente paga el envio y el dueno se lo paga al motorizado. El negocio no gana ni
+  subsidia. Dos detalles que lo mantienen en cero y que NO hay que romper:
+     · En pago con tarjeta la tarifa se "engorda" por la comision de Culqi, para que el 5.5%
+       no se coma el pass-through. Sin eso, cada envio con tarjeta perderia ~5.5% del flete.
+     · El redondeo va hacia ARRIBA y `billableKm` devuelve null (nunca 0) cuando no puede
+       medir: un 0 le cobraria el minimo a alguien a 10 km y esa diferencia la paga el dueno.
+
+  CONCLUSION: el delivery esta bien construido y no es donde se pierde plata. Lo que SI hay
+  que vigilar es que `orders.delivery_km` se compare de verdad contra lo que el motorizado
+  cobro ese dia — la columna existe justo para eso y nadie la ha mirado todavia.
+
+
+============================================================================================
+                             7 · LO QUE PASA EL TECHO, EN ORDEN                             
+============================================================================================
+
+  parte                                      costo %   cuanto se pasa
+  ----------------------------------------------------------------------
+  The Midnight // Brew en combo                48.8%            3.8 pts
+  BYO Res asada 30CM                           47.6%            2.6 pts
+  The Bloom // Hibiscus en combo               46.8%            1.8 pts
+  The Cool // Mint en combo                    46.8%            1.8 pts
+  BYO Embutido 15CM                            45.7%            0.7 pts
+  doble Pollo cajún 30CM                       45.2%            0.2 pts
+
+  ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el
+  volumen de lo que ya esta mal. Por eso hacer rentable cada parte va ANTES de gastar en
+  captar, y no despues.
+

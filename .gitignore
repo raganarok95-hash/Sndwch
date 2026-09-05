@@ -16,3 +16,6 @@ skills-lock.json
 # design.json y critique/ SÍ se commitean (son artefactos durables), esto no.
 .impeccable/live/
 deno.lock
+
+# Cache de Python de los modelos de modelo/ — se regenera solo.
+modelo/__pycache__/

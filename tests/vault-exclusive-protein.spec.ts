@@ -18,8 +18,9 @@ test('POLLO CAJÚN (proteína exclusiva del menú secreto) no aparece en ARMA EL
   await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
   await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
   await page.locator('[onclick*="size=\'15\'"]').click();
-  // ARMA EL TUYO es un asistente de 5 pasos (tamaño+pan, proteína, toppings, queso,
-  // salsas) — hay que elegir un pan y avanzar antes de llegar al paso de proteína.
+  // ARMA EL TUYO es un asistente de 5 pasos. Desde el 2026-09-05 sigue el orden del
+  // mostrador de Subway: tamaño+pan, proteína, QUESO, vegetales, salsas — hay que elegir un
+  // pan y avanzar antes de llegar al paso de proteína, que es el que mira este test.
   await page.locator('[onclick^="base="]').first().click();
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
 

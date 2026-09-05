@@ -47,6 +47,11 @@ var CULQI_PUBLIC_KEY='pk_live_q82LnGIDlmQ0bpUC';
 // Yape y Plin confirmados activos en este número (el mismo de WhatsApp).
 var YAPE_PLIN_PHONE='930957640';
 var YAPE_PLIN_NAME='SND//WCH';
+// El TITULAR real de la cuenta, que es el nombre que Yape le muestra al cliente cuando
+// escribe el número — no la marca. Sale de BIZ_NAME (el titular del RUC del negocio), no
+// está inventado. Si Yape lo muestra de otra forma (solo nombre y una inicial, por
+// ejemplo), corregir acá: el punto es que coincida con lo que el cliente ve en su pantalla.
+var YAPE_PLIN_HOLDER=BIZ_NAME;
 // Ventana real antes de que el cron cancele solo un pedido Yape/Plin sin confirmar —
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
@@ -66,7 +71,36 @@ function yapeAppOpenUrl(){
   if(/iPhone|iPad|iPod/i.test(ua))return'yape://';
   return null;
 }
-function openYapeApp(){var u=yapeAppOpenUrl();if(u)window.location.href=u;}
+// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
+//
+// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
+// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
+// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
+// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
+//
+// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
+// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
+// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
+// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
+function yapeOpenFailed(){
+  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
+  if(!m)return;
+  m.style.color='#ffcc66';
+  m.textContent='No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
+}
+function openYapeApp(){
+  var u=yapeAppOpenUrl();
+  if(!u){yapeOpenFailed();return;}
+  var abrio=false;
+  function marcar(){abrio=true;}
+  document.addEventListener('visibilitychange',marcar,{once:true});
+  window.addEventListener('pagehide',marcar,{once:true});
+  setTimeout(function(){
+    document.removeEventListener('visibilitychange',marcar);
+    if(!abrio&&!document.hidden)yapeOpenFailed();
+  },1200);
+  try{window.location.href=u;}catch(e){yapeOpenFailed();}
+}
 var showYapeQR=false;
 function toggleYapeQR(){showYapeQR=!showYapeQR;confirmRerender();}
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -135,12 +169,16 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
   // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
   // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:22.9,pDbl:7,pDbl30:14},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:21.9,pDbl:6,pDbl30:11},
+  // sigOnly desde el 2026-09-05 (decisión del dueño): sale de ARMA EL TUYO por RENTABILIDAD.
+  // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
+  // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
+  // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
+  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:24.9,pDbl:7,pDbl30:14,sigOnly:true},
+  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:21.9,pDbl:6,pDbl30:11,vaultOnly:true},
+  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:23.9,pDbl:6,pDbl30:11,vaultOnly:true},
   // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
   // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
   // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -154,13 +192,15 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
   // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
   // en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:30.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
+  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
   // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:30.9,pDbl:9.9,pDbl30:19.9},
+  // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
+  // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9,sigOnly:true},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -168,7 +208,13 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
   // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
   // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:24.9,pDbl:6,pDbl30:6}
+  // ⚠ pDbl30 corregido de 6 a 12 el 2026-09-05: era la ÚNICA proteína del catálogo cuyo
+  // doble costaba lo mismo en 15CM que en 30CM, o sea un precio que no escaló con la porción
+  // que agrega. El costo pasaba de 22.3% a 44.7% solo por eso — a un pelo del techo de 45%,
+  // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
+  // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
+  // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:12}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -191,7 +237,9 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
 // SIG_ONLY_TOPS en catalog.ts.
 var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=[
   {id:'T01',l:'Tomate',   s:'Fresco'},
-  {id:'T02',l:'Pepinillo',s:'Encurtido'},
+  // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
+  // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
+  {id:'T02',l:'Pepinillo',s:'Encurtido',sigOnly:true},
   {id:'T03',l:'Cebolla',  s:'Morada juliana'},
   {id:'T04',l:'Jalapeño', s:'Encurtido',vaultOnly:true},
   {id:'T05',l:'Aceituna', s:'Negra en rodajas'},
@@ -202,7 +250,13 @@ var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?
   // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
   // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
   // con VALID_TOPS en supabase/functions/api/catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado'}
+  // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
+  // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
+  {id:'T08',l:'Apio',     s:'Picado',sigOnly:true},
+  // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
+  // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
+  // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
+  {id:'T09',l:'Lechuga',  s:'Fresca'}
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
@@ -370,8 +424,16 @@ var SIGS:any[]=[
   // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
   // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
   // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:['T01','T02','T08'],sauces:['S11'],p15:20.9,p30:34.9,
-    pitch:'Atún premium con mayonesa clásica, con el crocante fresco del apio y un chorrito de limón que corta la cremosidad, y el carácter justo de la mostaza dijon. Fresco en cada bocado — ideal para cualquier hora del día.'},
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:[],sauces:[],p15:20.9,p30:34.9,
+    // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
+    // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
+    // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
+    // un ítem del catálogo (ver RECETARIO.md).
+    //
+    // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
+    // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
+    // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
+    pitch:'Atún premium escurrido, con la mayonesa de la receta original y un golpe de pimienta. Nada más: así es como se hace en Estados Unidos, y así es como debe saber.'},
   // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
   // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
   // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
@@ -516,10 +578,14 @@ var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jp
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
 var RWDS=[
-  {id:'R02',pts:40, n:'Salsa',    s:'Extra',  d:'Perdona el cargo de salsa extra (S/2)'},
-  {id:'R04',pts:120,n:'Doble',    s:'Proteína',d:'Doble proteína gratis'},
-  {id:'R05',pts:120,n:'Bebida',   s:'Gratis', d:'Bebida a elección'},
-  {id:'R03',pts:160,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
+  // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
+  // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
+  // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
+  // comentario largo en REWARDS (catalog.ts) con la tabla completa.
+  {id:'R02',pts:20, n:'Salsa',    s:'Extra',  d:'Perdona el cargo de salsa extra (S/2)'},
+  {id:'R04',pts:160,n:'Doble',    s:'Proteína',d:'Doble proteína gratis'},
+  {id:'R05',pts:160,n:'Bebida',   s:'Gratis', d:'Bebida a elección'},
+  {id:'R03',pts:320,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R06',pts:400,n:'Sándwich', s:'Gratis', d:'Sándwich 15CM gratis — no aplica a Signatures Reserve',sizeOnly:'15'}
 ];
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
@@ -803,9 +869,14 @@ var CULQI_FEE_RATE=0.055;
 // con deliveryFeeAmount() de abajo — si el crédito alcanza para cubrir el total real, o
 // hay un método manual elegido, nunca se pasa por Culqi y el fee nunca se engorda.
 function willPayWithCard(){
-  var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var realFee=z?z.fee:0;
-  var t0=cartFinalTotal()+realFee;
+  // ⚠ Esto leía la tarifa de ZONA hasta el 2026-09-03. Desde que el envío se cobra por
+  // distancia, la zona y el monto real dejaron de coincidir, y este total intermedio es
+  // el que decide si el crédito alcanza — con la zona por defecto (S/8) un pedido a 6 km
+  // (S/12) parecía cubierto por un crédito que no llegaba, y el servidor lo rechazaba
+  // después de que el cliente ya había tocado pagar. deliveryFeeBase() es la MISMA
+  // función que produce el monto que se muestra y se cobra, así que no pueden separarse.
+  // No hay ciclo: deliveryFeeBase() nunca llama a willPayWithCard(), solo deliveryFeeAmount().
+  var t0=cartFinalTotal()+deliveryFeeBase();
   if(t0===0)return false;
   if(useCredit&&cust&&(cust.credit_balance||0)>=t0)return false;
   if(manualPayMethod)return false;
@@ -820,9 +891,57 @@ function willPayWithCard(){
   // paymentMethodPickerHTML(), no ocultando el monto real que se va a cobrar.
   return true;
 }
+// ── RECARGO POR PAN DE FOCACCIA (2026-09-03) ──────────────────────────────────────────
+//
+// El tipo de pan era una elección GRATUITA y la focaccia cuesta más que el pan sub, así que
+// ese sobrecosto salía entero del margen. Medido por el dueño el 2026-09-03: de una focaccia
+// de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
+// del pan sub. Se cobra S/0.50 y S/1.00.
+//
+// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
+// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
+var BASE_SURCHARGE={B03:{p15:0.5,p30:1}};
+function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='15'?b.p15:b.p30):0;}
+
+// ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
+//
+// El motorizado (un tercero con 50+ repartidores, coordinado por WhatsApp) cobra S/2 POR
+// KILÓMETRO. Hasta hoy la app cobraba un monto plano por ZONA que elegía el cliente, con
+// "media" por defecto: el cliente elegía su propio precio de envío y elegir el más barato no
+// le costaba nada. El pin del mapa existía pero SOLO AVISABA del desajuste.
+//
+// Estas cuatro constantes DEBEN coincidir con las de supabase/functions/api/env.ts — el
+// servidor es el que de verdad cobra y recalcula todo desde las coordenadas; acá solo se
+// muestra. `npm run parity` compara los dos lados.
+var DELIVERY_KM_RATE=2;          // S/ por kilómetro
+var DELIVERY_ROAD_FACTOR=1.3;    // línea recta → ruta real en moto
+var DELIVERY_MIN_FEE=5;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
+var DELIVERY_MAX_KM=12;          // techo de cobertura
+// Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
+// 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
+function deliveryKmNow(){
+  if(typeof window._mLat!=='number'||typeof window._mLon!=='number')return null;
+  if(window._mLat===0&&window._mLon===0)return null;
+  var recta=haversineKm(window._mLat,window._mLon,STORE_LAT,STORE_LON);
+  if(!isFinite(recta))return null;
+  return Math.round(recta*DELIVERY_ROAD_FACTOR*100)/100;
+}
+// La tarifa antes de la comisión de tarjeta. Se redondea hacia ARRIBA al medio sol: el
+// motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
+// cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
+// delivery es pass-through y no tiene margen del que salga la diferencia.
+function deliveryFeeBase(){
+  var km=deliveryKmNow();
+  if(km===null){
+    // Sin pin se cae a la zona, exactamente como antes. Es el respaldo para un shell viejo
+    // servido por un service worker desactualizado; el checkout exige el pin antes de pagar.
+    var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
+    return z?z.fee:0;
+  }
+  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+}
 function deliveryFeeAmount(){
-  var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
-  var fee=z?z.fee:0;
+  var fee=deliveryFeeBase();
   if(!fee)return 0;
   return money(willPayWithCard()?fee/(1-CULQI_FEE_RATE):fee);
 }
@@ -874,7 +993,21 @@ var RESERVE_SIGS=new Set(['SIG05']);
 // Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
 // hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
 // entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA=[[15,18]];
+// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
+// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
+// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
+//
+// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
+// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
+// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
+// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
+// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
+// entrar. Ver RENTABILIDAD_POR_PARTE.md.
+//
+// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
+// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
+// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=[];
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 var OFFPEAK_DRINK_PROMO_CAP=6;
@@ -1087,10 +1220,27 @@ var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
 // el cliente dice que tiene uno.
 var promoFieldOpen=false;
-var manualPayMethod=null;
+// ── YAPE/PLIN ES EL MÉTODO POR DEFECTO (2026-09-03) ──────────────────────────────────
+//
+// Arrancaba en null, o sea TARJETA: quien no tocaba el selector terminaba en Culqi, que
+// cobra CULQI_FEE_RATE (5.5%) de cada pedido. El método por defecto no es un detalle de
+// interfaz — es el que elige la mayoría, porque la mayoría no elige. Al volumen del plan
+// mover el reparto tarjeta/Yape del 60% al 30% vale ~S/487 al mes sin adquirir a nadie
+// (ver PLAN_DE_MEJORA.md §4b), y es la única de las fugas de margen que no le cuesta un
+// sol más al cliente: paga lo mismo o menos, porque el recargo de delivery engordado
+// (deliveryFeeAmount) desaparece.
+//
+// Lo que NO cambia: la tarjeta sigue a un tap de distancia y con su propia razón escrita
+// al lado ("Automático"). Esto es un default, no un embudo — quien prefiera pagar con
+// tarjeta la ve en el mismo sitio de siempre.
+//
+// El costo real de este default lo paga el dueño en tiempo: cada pago manual hay que
+// confirmarlo contra la cuenta. Eso ya está abaratado con el lector de comprobantes (#28)
+// y la confirmación por lotes del panel — pero el lector NO confirma el pago, solo lo lee.
+var manualPayMethod='yape';
 // true recién cuando el cliente toca explícitamente un botón del selector "¿Cómo
-// pagas?" (Yape/Plin o Tarjeta) — solo controla el resaltado visual de los botones
-// (payMethodBtn) y el mensaje de "Confirmar con tarjeta". NO controla si el recargo de
+// pagas?" (Yape/Plin o Tarjeta) — hoy solo sirve para saber si el cliente ya decidió por
+// su cuenta, y así no pisarle la elección al prender/apagar el crédito interno. NO controla si el recargo de
 // Culqi se aplica: eso lo decide willPayWithCard() mirando el mismo enrutamiento real
 // que usa doOrder() (¿alcanza el crédito? ¿hay método manual elegido? si no, va por
 // Culqi sea cual sea el estado de este flag) — server-side, actPrepareOrder SIEMPRE

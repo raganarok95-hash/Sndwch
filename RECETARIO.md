@@ -514,15 +514,31 @@ En láminas, **debajo de la proteína caliente** para que derrita con su calor (
 
 ## Toppings — corte, gramaje y qué se compra vs. qué se hace
 
-| id | Topping | Corte | 15CM | ¿Comprar o hacer? |
-|---|---|---|---|---|
-| T01 | Tomate | Rodajas de **4-5 mm**, cortadas **por el ecuador** | 25 g | Comprar. Ver nota ⬇ |
-| T02 | Pepinillo | Rodajas de 3 mm | 15 g | **Comprar** en frasco. Hacerlo no ahorra nada |
-| T03 | Cebolla morada | Juliana **fina, 2 mm** | 12 g | Comprar. Ver nota ⬇ |
-| T04 | Jalapeño | Rodajas de 3 mm | 12 g | **Comprar** en frasco |
-| T05 | Aceituna negra | Rodajas de 3 mm | 12 g | **Comprar** ya deshuesada |
-| T06 | Pimiento curado | Tiras de 1 cm | 18 g | Comprar en frasco, o asar y pelar tú |
-| T08 | Apio | Picado de 3-4 mm | 12 g | Comprar fresco. **Se pica al día**, no antes |
+**Gramajes actualizados el 2026-09-04 al estándar de Subway** (decisión del dueño). Ver
+`CAMINO_MENU.md` §1. La columna "antes" se deja a propósito: el cambio no fue por costo —los
+92 g nuevos cuestan DOS CÉNTIMOS MENOS que los 94 g anteriores— sino por reparto. Entró la
+lechuga y subió el tomate (los dos más baratos por gramo y los que más llenan visualmente), y
+bajaron aceituna, pimiento y cebolla, que estaban entre 2x y 4x por encima de Subway y son
+justo los que vienen en frasco.
+
+| id | Topping | Corte | 15CM | antes | Subway 6" | ¿Comprar o hacer? |
+|---|---|---|---|---|---|---|
+| **T09** | **Lechuga** | **Chiffonade, 3-4 mm** | **21 g** | **no existía** | 21 g | **Comprar.** Ver nota ⬇ |
+| T01 | Tomate | Rodajas de **4-5 mm**, cortadas **por el ecuador** | **35 g** | 25 g | 35 g | Comprar. Ver nota ⬇ |
+| T02 | Pepinillo | Rodajas de 3 mm | **12 g** | 15 g | 12 g | **Comprar** en frasco. Hacerlo no ahorra nada |
+| T03 | Cebolla morada | Juliana **fina, 2 mm** | **7 g** | 12 g | 7 g | Comprar. Ver nota ⬇ |
+| T04 | Jalapeño *(menú secreto)* | Rodajas de 3 mm | **7 g** | 12 g | — | **Comprar** en frasco |
+| T05 | Aceituna negra | Rodajas de 3 mm | **3 g** | 12 g | 3 g | **Comprar** ya deshuesada |
+| T06 | Pimiento curado | Tiras de 1 cm | **7 g** | 18 g | 7 g | Comprar en frasco, o asar y pelar tú |
+| T08 | Apio | Picado de 3-4 mm | **7 g** | 12 g | no lo tiene* | Comprar fresco. **Se pica al día**, no antes |
+
+*Subway no tiene apio; se lleva al nivel de sus vegetales menores (7 g), que es el criterio
+equivalente. **Total: 92 g** en 15CM contra 94 g antes. El 30CM lleva el doble.
+
+**La lechuga es nueva y tiene su propia trampa:** es lo que más agua suelta después del
+tomate y lo que antes se marchita. **Córtala en chiffonade el mismo día, escúrrela y sécala**;
+nunca la laves y la guardes mojada. Si el sándwich va a esperar más de 20 minutos en la moto,
+va **arriba de las salsas**, no debajo — así no se empapa desde abajo.
 
 **El tomate merece atención aparte** — va en 5 de los 7 Signatures y es el que más agua suelta:
 **corta por el ecuador** (perpendicular al tallo), no por el polo: las rodajas ecuatoriales tienen las
@@ -598,12 +614,16 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 
 | Signature | Pan | Queso | Proteína 15/30 | Toppings 15CM | Salsa 15/30 | Riesgo específico |
 |---|---|---|---|---|---|---|
-| **SIG01** The Original | B01 | — | P01 85/170 g | Tomate 25 · Pepinillo 15 · Cebolla 12 | S01 + S04, 14/28 g | Mechado seco si se recalienta mal |
-| **SIG02** The Marinara | B01 tostado | **C01 fijo, abajo** | 3 albóndigas + 10 g salsa | Tomate 25 · Cebolla 12 · Aceituna 12 | S06 14/28 g | **Pan empapado. Máx 10 g de marinara** |
-| **SIG03** The Smoke | B03 tostado | **C02 fijo** | 34 jamón + 30 cabanossi + 21 paté | Cebolla 12 · Pepinillo 15 · Tomate 25 | S03 14/28 g | Humedad + sabor cargado |
-| **SIG04** The Fresh | B01 | — | P04 85/170 g | Tomate 25 · Pepinillo 15 · **Apio 12 al momento** | S11 14/28 g **+ limón exprimido** | **Temperatura. El más sensible** |
-| **SIG06** The Teriyaki | B01 tostado | — | P02 85/170 g **+ reglaseado 90 s** | Tomate 25 · Pimiento 18 | S10 + S05, 14/28 g | **Doble dulce sin ácido** ⬇ |
-| **SIG05** Menú secreto | B03 | — | P03 85/170 g + cubo de jugo | Jalapeño 12 · Pimiento 18 · Cebolla 12 | S02 + S12, 14/28 g | Tres picantes apilados |
+| **SIG01** The Original | B01 | — | P01 85/170 g | Tomate 35 · Pepinillo 12 · Cebolla 7 | S01 + S04, 14/28 g | Mechado seco si se recalienta mal |
+| **SIG02** The Marinara | B01 tostado | **C01 fijo, abajo** | 3 albóndigas + 10 g salsa | Tomate 35 · Cebolla 7 · Aceituna 3 | S06 14/28 g | **Pan empapado. Máx 10 g de marinara** |
+| **SIG03** The Smoke | B03 tostado | **C02 fijo** | 34 jamón + 30 cabanossi + 21 paté | Cebolla 7 · Pepinillo 12 · Tomate 35 | S03 14/28 g | Humedad + sabor cargado |
+| **SIG04** The Fresh | B01 | — | P04 85/170 g | **ninguno** | **ninguna** | **Temperatura. El más sensible** |
+| **SIG06** The Teriyaki | B01 tostado | — | P02 85/170 g **+ reglaseado 90 s** | Tomate 35 · Pimiento 7 | S10 + S05, 14/28 g | **Doble dulce sin ácido** ⬇ |
+| **SIG05** Menú secreto | B03 | — | P03 85/170 g + cubo de jugo | Jalapeño 7 · Pimiento 7 · Cebolla 7 | S02 + S12, 14/28 g | Tres picantes apilados |
+
+⚠ **La lechuga (T09) NO se agregó a ninguna receta de Signature.** Entró al catálogo para
+ARMA EL TUYO, donde el cliente elige. Meterla en un Signature cambia el sabor y la textura de
+una receta ya cerrada, y eso es una decisión de producto que el dueño no ha tomado.
 
 **Tiempo objetivo: 4-5 min por sándwich.** Con el reglaseado de SIG06, ~6 min.
 
@@ -611,10 +631,13 @@ proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas to
 
 1. **SIG06 tiene dos fuentes dulces y ningún elemento ácido.** El pollo marinado es dulce, el satay
    es dulce, y quitaste el pepinillo. S05 salva la situación porque es salada, pero no aporta acidez.
-   **El arreglo más barato si al probarlo empalaga: pepinillo de vuelta, o un chorrito de limón como
-   ya hace SIG04.** Cuesta cero. Es decisión tuya.
-2. **SIG04 no tiene ningún elemento dulce.** Dijon + limón apilan ácido sobre una base de mayonesa.
-   Se sostiene, pero es un sándwich de un solo registro.
+   **El arreglo más barato si al probarlo empalaga: un chorrito de limón.** Cuesta cero. Es decisión
+   tuya. *(Ojo: el pepinillo ya no está en ARMA EL TUYO desde el 2026-09-05 — sigue en el catálogo
+   como `sigOnly` para SIG01 y SIG03, así que reponerlo acá no cuesta nada.)*
+2. **SIG04 quedó en su forma más desnuda posible** (2026-09-05, decisión del dueño): atún escurrido,
+   mayonesa y pimienta, sin un solo vegetal ni salsa. Es la receta original de Estados Unidos y su
+   argumento es exactamente ése — pero significa que **el sándwich entero descansa en la calidad del
+   escurrido**. Atún mal escurrido acá no tiene nada que lo tape.
 *(La tercera tensión de la v1 era que THE CHICAGO se veía vacío con un solo topping al precio más
 alto del catálogo. Se resolvió sola al sacarlo del menú de apertura.)*
 
