@@ -204,11 +204,43 @@ function ratingWindowOpen(o){
   if(!t||isNaN(t))return true; // sin fecha utilizable, mejor seguir preguntando que callar
   return (Date.now()-t)<=RATING_WINDOW_DAYS*86400000;
 }
+// ── LA INVITACIÓN A REFERIR YA NO CUELGA DE QUE EL CLIENTE CALIFIQUE (2026-09-06) ─────
+//
+// POR QUÉ. `PREDICCION_V12.md` mide que la viralidad es la ÚNICA palanca que convierte
+// "la meta no se alcanza nunca" en "se sostiene desde feb-27": un referido cuesta S/7.65
+// contra ~S/17.87 de comprar el mismo cliente en Meta. El modelo asume 6 referidos por cada
+// 100 pedidos y hace falta llegar a 25.
+//
+// Y la invitación estaba DOBLEMENTE condicionada: aparecía solo si el cliente calificaba, y
+// solo en el render inmediato después de hacerlo (`justRatedRef`). Calificar es opcional, así
+// que el momento de mayor intención —acaba de recibir su comida— quedaba sin usar para todo
+// el que no calificara. Y las dos pantallas donde no aparecía no mostraban nada en su lugar:
+// eran espacio muerto.
+//
+// Esto NO le quita sitio al pedido de calificación, que sigue intacto y primero: la tarjeta
+// solo ocupa los dos estados que hoy están vacíos —ya calificó, o la ventana se cerró sin
+// calificar—. El modo de fallo es SILENCIO: si alguien la vuelve a condicionar, nada revienta
+// y el negocio simplemente deja de pedir el referido en el único momento en que conviene.
+function refInviteHTML(compacta: boolean){
+  // El código de referido ES el teléfono del cliente, así que un invitado no tiene ninguno.
+  if(!cust)return'';
+  return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:'+(compacta?'14px':'18px')+';text-align:center">'
+    +(compacta?'':'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div>')
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div>'
+    // Los DOS bonos se interpolan de las constantes, nunca escritos a mano: es la regla que
+    // ya costó tres promesas rotas a la vez en los textos de marketing. `npm run parity`
+    // verifica además que REFERRER_REWARD_POINTS valga exactamente lo mismo que R06, que es
+    // lo que hace cierta la frase "un sándwich 15CM gratis".
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts) cuando tu invitado haga su primer pedido, y él arranca con '+REFERRAL_BONUS_POINTS+' pts — una bebida de la casa.</div>'
+    +BTN('Compartir //','shareReferral()')+'</div>';
+}
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
   // La ventana se comprueba DESPUÉS de "ya calificó": quien sí calificó tiene que seguir
   // viendo su agradecimiento y su código de referido aunque hayan pasado dos semanas.
-  if(ratedRefs().indexOf(o.ref)<0&&!ratingWindowOpen(o))return'';
+  // Ventana de calificación cerrada sin calificar. Antes esto devolvía '' y la pantalla
+  // quedaba vacía; ahora al menos pide el referido, que es lo que el modelo necesita.
+  if(ratedRefs().indexOf(o.ref)<0&&!ratingWindowOpen(o))return refInviteHTML(true);
   if(ratedRefs().indexOf(o.ref)>=0){
     // Justo tras calificar (el momento de mayor satisfacción real) se resurfacea el
     // código de referido en vez del simple "gracias" — antes vivía escondido en el
@@ -223,15 +255,28 @@ function ratingHTML(o){
       // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
       // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
       // satisfacción de siempre, sin lógica nueva.
-      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un sándwich 15CM GRATIS cuando tu invitado haga su primer pedido — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
+      return refInviteHTML(false);
     }
-    return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
+    // Ya calificó, en una visita posterior. Antes esto era solo el "gracias" y nada más:
+    // espacio muerto en la pantalla que el cliente más contento vuelve a abrir.
+    return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>'+refInviteHTML(true);
   }
   // El consentimiento de testimonio NUNCA viene marcado por defecto — el cliente tiene
   // que elegirlo activamente cada vez (hallazgo del checklist de pre-lanzamiento: la
   // web/redes van a necesitar reseñas reales para publicar, pero nunca sin permiso
   // explícito de a quién pertenecen).
-  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><label style="display:flex;align-items:flex-start;gap:8px;font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rt-consent" onchange="rtConsent=this.checked" '+(rtConsent?'checked':'')+' style="accent-color:'+GOLD+';margin-top:2px;flex-shrink:0">Autorizo que SND//WCH use esta reseña como testimonio público (redes sociales, web) — opcional.</label><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>';
+  // ⚠ LA INVITACIÓN VA TAMBIÉN ACÁ, DEBAJO DEL FORMULARIO DE CALIFICACIÓN (2026-09-06).
+  //
+  // Sin esto el cambio no servía de nada donde importa: la ventana de calificación está
+  // ABIERTA justo en el momento de mayor intención —el pedido acaba de llegar— así que un
+  // cliente que no califica pasaba por esa pantalla sin que se le pidiera el referido, que es
+  // exactamente el caso que este cambio venía a resolver. Llenar solo los estados tardíos
+  // (ya calificó, o la ventana se cerró) es llenar los momentos en que ya no está contento.
+  //
+  // Va DEBAJO y no arriba: el pedido de calificación sigue siendo lo primero y no se toca.
+  // La calificación tiene valor propio —testimonios, y enterarse de un problema— y cambiarla
+  // de sitio por el referido sería canjear una cosa por la otra en vez de sumar.
+  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><label style="display:flex;align-items:flex-start;gap:8px;font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rt-consent" onchange="rtConsent=this.checked" '+(rtConsent?'checked':'')+' style="accent-color:'+GOLD+';margin-top:2px;flex-shrink:0">Autorizo que SND//WCH use esta reseña como testimonio público (redes sociales, web) — opcional.</label><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>'+refInviteHTML(true);
 }
 async function doSubmitRating(ref){
   if(!rtStars){rtMsg='Elige de 1 a 5 estrellas.';render();return;}

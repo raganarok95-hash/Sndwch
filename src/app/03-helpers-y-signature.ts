@@ -815,7 +815,33 @@ function sOHome(){
           var av=isAvail(b.id);
           return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888">Agotado</span>')+'</div>';
         }).join('')
-        +'<div style="margin-top:14px">'+BTN('Ver el paso a paso completo →',"startOrder('byo')",true)+'</div></div>';
+        +'<div style="margin-top:14px">'+BTN('Ver el paso a paso completo →',"startOrder('byo')",true)+'</div>'
+        // ── EL PUENTE DE VUELTA A LOS SIGNATURES (2026-09-06) ──────────────────────────
+        //
+        // POR QUÉ. `PREDICCION_V12.md` mide la mezcla Signature / ARMA EL TUYO como una de
+        // las tres palancas de la meta: un Signature deja ~S/5.50 más que un armado, y mover
+        // la mezcla de 50/50 a 65/35 vale ~S/0.82 por pedido. El modelo asume mitad y mitad,
+        // y a partir de hoy se MIDE (pantalla "Las tres palancas"), así que este puente se
+        // puede evaluar en vez de suponer que sirvió.
+        //
+        // ⚠ NO SE DEGRADA ARMA EL TUYO PARA CONSEGUIRLO, y eso no es escrúpulo: el armador es
+        // la mitad de la identidad de la marca (los dos hermanos — el calmado son las recetas
+        // cerradas, el alocado es donde elige el cliente). Esconderlo o encarecerlo para
+        // empujar la mezcla rompería el producto para ganar céntimos.
+        //
+        // Va DEBAJO de la lista de panes y no arriba: quien tocó esta pestaña ya eligió armar
+        // el suyo, y cortarle el paso al entrar sería ponerle un obstáculo, no una opción. Lo
+        // ve quien bajó hasta el final sin decidirse, que es justo a quien le sirve.
+        //
+        // El nombre sale del catálogo (que el servidor refresca), nunca escrito a mano: si el
+        // dueño renombra o retira ese Signature desde el panel, este texto lo sigue solo.
+        +(function(){
+          var rec=visibleSigs.filter(function(x){return x.recommended&&sigInStock(x);})[0]||visibleSigs.filter(sigInStock)[0];
+          if(!rec)return'';
+          return'<div onclick="startOrderWithSig(\''+rec.id+'\')" style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
+            +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+rec.p15+' en 15CM.</div></div>';
+        })()
+        +'</div>';
       var vaultCard=secretSig?(function(){
         var myTotal=cust?(cust.total_orders||0):0;
         var missing=Math.max(0,secretSig.minOrders-myTotal);

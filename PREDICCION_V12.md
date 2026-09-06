@@ -159,6 +159,35 @@ todos los horizontes.
 
 ---
 
+## 4b · Lo que ya quedó hecho de esa lista (2026-09-06)
+
+Los puntos 2, 3 y 4 se ejecutaron, y **antes de empujarlos se construyó la medición**: sin
+ella, dentro de tres meses nadie sabría cuál de los tres empujones funcionó.
+
+- **Las tres palancas ahora se miden.** `retention_report` devuelve `palancas` (mezcla,
+  attach de bebida, referidos por 100 pedidos) y la pantalla **Admin // Marketing // Las tres
+  palancas** las enseña contra lo que el modelo asume. La salvaguarda de fiabilidad (mínimo
+  20 pedidos) va arriba de las cifras, y donde no hay dato va un guion, nunca un 0.
+- **Se destapó que el reporte de cohortes no era alcanzable desde la app**: su acción estaba
+  importada y nunca registrada en la tabla del servidor. Solo lo veía el correo mensual.
+- **Referido** (punto 2): la invitación estaba condicionada a que el cliente calificara —y
+  solo en el render inmediato tras hacerlo—. Ahora aparece en los tres estados de un pedido
+  entregado, debajo del formulario de calificación, que no se tocó.
+- **Bebida** (punto 3): el empujón ya estaba bien construido; encabezaba con el ahorro de S/1
+  sobre un producto de S/5-6. Ahora encabeza con el producto.
+- **Mezcla** (punto 4): el menú ya abría en Signatures. Se agregó un puente desde ARMA EL TUYO
+  al Signature recomendado, **sin degradar el armador** — es la mitad de la identidad de la
+  marca, y esconderlo para mover la mezcla rompería el producto para ganar céntimos.
+
+Los puntos **1 (secrets de Meta)**, **5 (Google Business Profile)** y **6 (medir la
+saturación)** siguen pendientes y son del dueño o necesitan datos reales.
+
+> ⚠ **Ninguno de estos empujones tiene efecto medido todavía**, y no puede tenerlo: el negocio
+> no ha abierto. Lo que se construyó son los mecanismos y, sobre todo, la forma de saber si
+> sirvieron. Las cifras de esta proyección son lo que valdrían **si** funcionan.
+
+---
+
 ## 5 · Lo que este modelo no sabe
 
 - **El CAC** (CPM S/5-12, CTR 2.97%, CVR 1.89%) es `[AGENCIA]`, no medición auditada.

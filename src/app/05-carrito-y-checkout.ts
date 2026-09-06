@@ -202,9 +202,23 @@ function comboDrinkNudgeHTML(){
   // esté apagada, este anuncio NO puede aparecer: prometer una bebida gratis que el servidor
   // ya no descuenta es la clase de promesa rota que se descubre recién al pagar.
   var offPeak=isOffPeakDrinkPromoActiveNow();
+  // ── EL TÍTULO ENCABEZA CON EL PRODUCTO, NO CON EL DESCUENTO (2026-09-06) ────────────
+  //
+  // Decía "¿Le sumas algo de tomar? Ahorras S/1 en combo". El combo bajó de S/2 a S/1 el
+  // 2026-08-22 y nadie revisó este texto: quedó ofreciendo un ahorro de S/1 sobre un
+  // producto de S/5-6, o sea encabezando con el argumento más débil que tiene.
+  //
+  // Lo que de verdad vende estas bebidas es que NO son gaseosas de reventa: son infusiones
+  // de la casa, y esa es justamente la razón por la que D01-D05 se retiraron del catálogo.
+  // El descuento sigue nombrado, pero de segundo — que es el orden en que importa.
+  //
+  // No es cosmético para el negocio: `PREDICCION_V12.md` mide el attach de bebida como una
+  // de las tres palancas de la meta, y vale ~S/0.48 por pedido cada 15 puntos. Ahora además
+  // se MIDE (pantalla "Las tres palancas"), así que este cambio se puede evaluar en vez de
+  // suponer que funcionó.
   var titulo=offPeak
     ?'Es hora valle — tu bebida va GRATIS (hasta '+SOLES_TXT+OFFPEAK_DRINK_PROMO_CAP+')'
-    :'¿Le sumas algo de tomar? Ahorras '+SOLES_TXT+COMBO_DISCOUNT_PER_PAIR+' en combo';
+    :'Infusiones de la casa, hechas acá — y el combo te descuenta '+SOLES_TXT+COMBO_DISCOUNT_PER_PAIR;
   // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
   //
   // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.

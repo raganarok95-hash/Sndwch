@@ -525,6 +525,7 @@ function renderScreen(){
     case'admin_recipes':h=sAdminRecipes();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;
     case'admin_cash':h=sAdminCashClose();break;
+    case'admin_palancas':h=sAdminPalancas();break;
     case'admin_tech':h=sAdminTechHealth();break;
     case'admin_compliance':h=sAdminCompliance();break;
     case'admin_purchases':h=sAdminPurchases();break;
@@ -3018,6 +3019,98 @@ function sAdminTechHealth(){
         +(a.neverLoggedIn?'Nunca ha entrado desde que se registra el acceso.':'Sin entrar hace '+a.daysSince+' días.')
         +' Si esta persona ya no trabaja contigo, quítale el acceso en <b>Administradores</b>.</div></div>';
     }).join('');
+  }
+  return h+'</div>';
+}
+
+// ── LAS TRES PALANCAS DEL MODELO, MEDIDAS (2026-09-06) ────────────────────────────────
+//
+// POR QUÉ EXISTE ESTA PANTALLA. `PREDICCION_V12.md` concluye que la meta de S/5,000 netos
+// sostenidos NO se decide con más publicidad —a S/20,000/mes el resultado empeora— sino con
+// tres números: qué fracción de los sándwiches se arma en ARMA EL TUYO, cuántos pedidos
+// llevan bebida, y cuántos clientes trae cada 100 pedidos servidos.
+//
+// Ninguno de los tres estaba medido. El modelo los ASUME, y mover cualquiera unos puntos
+// cambia la conclusión entera. Empujar una palanca sin medirla es cómo, dentro de tres
+// meses, nadie sabría cuál de los tres empujones funcionó.
+//
+// ⚠ Y el reporte de cohortes del que cuelga todo esto —el mejor dato del panel— tenía su
+// acción IMPORTADA Y NUNCA REGISTRADA en la tabla del servidor: no se podía abrir desde la
+// app, solo lo veía el correo mensual. Modo de fallo puro silencio.
+//
+// Los valores que el modelo asume llegan DEL SERVIDOR (`modelo` en la respuesta), nunca
+// escritos acá: un número a mano en la pantalla se desincroniza el día que el modelo cambie
+// y nada falla. `npm run parity` verifica que el servidor y el Python no se separen.
+var palancasData=null;
+async function loadPalancas(){
+  sndScreen='admin_palancas';busy=true;busyMsg='Midiendo las palancas...';render();
+  try{palancasData=await api('admin-retention-report',{token:token});}
+  catch(e){palancasData=null;}
+  busy=false;render();
+}
+// Una palanca puede ir por encima o por debajo del supuesto, y en las tres "más es mejor"
+// menos en la mezcla: ahí lo bueno es MENOS armado, porque un Signature deja ~S/5.50 más.
+function palancaCard(titulo: string, real: any, meta: number, sufijo: string, menosEsMejor: boolean, explica: string){
+  var hay=real!==null&&real!==undefined;
+  var mejor=hay&&(menosEsMejor?Number(real)<=meta:Number(real)>=meta);
+  var col=!hay?'var(--sw-text-muted,#A8C8B0)':(mejor?'#25D366':'#ffa500');
+  return'<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(hay?(mejor?'rgba(37,211,102,.35)':'rgba(255,165,0,.35)'):'var(--sw-border,#3A6B58)')+';border-radius:12px;padding:16px;margin-bottom:10px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">'+esc(titulo)+' //</div>'
+    +'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:30px;font-weight:640;color:'+col+';line-height:1">'
+    // Un guion y NUNCA un 0 donde no hay dato: un 0 se lee como "medimos y dio cero".
+    +(hay?(real+sufijo):'—')+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">el modelo asume '+meta+sufijo+'</div>'
+    +'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:8px">'+explica+'</div>'
+    +'</div>';
+}
+function sAdminPalancas(){
+  var h=H('LAS TRES PALANCAS',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!palancasData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:#ff8888;letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadPalancas()')+'</div>';
+  }
+  var p=palancasData.palancas||{};
+  var m=palancasData.modelo||{};
+
+  // LA SALVAGUARDA VA ARRIBA DE LAS CIFRAS, NO AL PIE. Al pie se lee después de haberles
+  // creído. Mismo criterio que el plan de tanda y el reporte de cohortes.
+  if(!p.reliable){
+    h+='<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:#ffa500;margin-bottom:4px">Todavía no le creas a estos números</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'
+      +'Van '+(p.orders||0)+' pedidos pagados en 90 días. Con menos de 20, un pedido de más mueve el porcentaje varios puntos: es ruido con forma de medición.</div></div>';
+  }
+
+  h+=palancaCard('MEZCLA — cuánto se arma', p.byoPct, m.byoPct, '%', true,
+    'Es la fracción de SÁNDWICHES armados en ARMA EL TUYO (no de pedidos: uno puede llevar de los dos). '
+    +'Un Signature deja ~S/5.50 más que un armado, así que acá lo bueno es que baje. '
+    +(p.sigUnits!==undefined?('Van '+p.sigUnits+' Signature contra '+p.byoUnits+' armados.'):''));
+
+  h+=palancaCard('BEBIDA — cuántos pedidos la llevan', p.drinkPct, m.drinkPct, '%', false,
+    'La palanca más barata de las tres: no exige adquirir a nadie y las bebidas están al 19-32% de costo. '
+    +'Cada 15 puntos de attach valen ~S/0.48 más por pedido.');
+
+  h+=palancaCard('REFERIDOS — por cada 100 pedidos', p.referralsPer100, m.referralsPer100, '', false,
+    'Clientes captados por referido, por cada 100 pedidos servidos. '
+    +'Es la palanca que en el modelo convierte "no llega nunca" en "sostiene desde feb-27": un referido cuesta S/7.65 contra ~S/17.87 de comprarlo en Meta. '
+    +(p.referredCustomers!==undefined?('Van '+p.referredCustomers+' clientes por referido en 90 días.'):''));
+
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-top:16px">'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">'
+    +'<b style="font-style:normal;color:var(--sw-text-body,#F2F0EB)">Lo que NO está acá y decide igual de fuerte:</b> el CAC real. '
+    +'Sale de blogs de agencia, no de medición propia, y todo el modelo cuelga de él. Se mide poniendo los secrets de Meta — es el bloqueo número uno del negocio.'
+    +'</div></div>';
+
+  // El reporte de cohortes completo, que hasta hoy no se podía abrir desde la app.
+  var ov=palancasData.overall||{};
+  if(ov.customers){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:22px 0 10px">RETENCIÓN //</div>'
+      +'<div style="display:flex;gap:18px;flex-wrap:wrap;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px">'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+'">'+ov.repeatRatePct+'%</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">vuelve a pedir</div></div>'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+ov.avgOrdersIfReturned+'</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">pedidos si vuelve</div></div>'
+      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+ov.customers+'</div><div style="font-family:EB Garamond,serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">clientes</div></div>'
+      +'</div>';
   }
   return h+'</div>';
 }

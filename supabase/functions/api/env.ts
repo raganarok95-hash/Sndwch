@@ -391,3 +391,32 @@ export async function loadStoreHours(): Promise<void> {
     console.error("loadStoreHours failed:", e);
   }
 }
+
+// ── LOS SUPUESTOS DEL MODELO FINANCIERO, EN UN SOLO SITIO (2026-09-06) ─────────────────
+//
+// `PREDICCION_V12.md` concluye que la meta de S/5,000 netos sostenidos se decide por TRES
+// números, y que ninguno estaba medido. Ahora `retention_report` los mide (ver la migración
+// `retention_report_mide_las_tres_palancas_del_modelo`), y estos son los valores que el
+// modelo ASUME — lo que la pantalla necesita para poder decir "vas mejor" o "vas peor" en
+// vez de solo enseñar un porcentaje suelto.
+//
+// ⚠ VIVEN ACÁ Y NO EN EL CLIENTE A PROPÓSITO. Un número escrito a mano en la pantalla se
+// desincroniza del modelo el día que el modelo cambie, sin que nada falle — que es
+// exactamente el defecto que este repo ya documenta para los textos de marketing. La
+// pantalla los recibe del servidor y nunca los escribe.
+//
+// ⚠ DEBEN COINCIDIR CON EL PYTHON: `FRAC_BYO` y `DRINK_ATTACH` en
+// `modelo/comparativa_menu.py`, y `VIRAL` en `modelo/modelo_v11_metas.py`. Lo verifica
+// `npm run parity`, que es la única defensa contra que estas dos copias se separen.
+export const MODELO_SUPUESTOS = {
+  // Fracción de sándwiches armados en ARMA EL TUYO. Un armado deja ~S/5.50 menos que un
+  // Signature, así que mover esto 15 puntos mueve la contribución casi un sol.
+  byoPct: 50,
+  // Fracción de pedidos que llevan bebida. Es la palanca más barata de las tres: no exige
+  // adquirir a nadie y las bebidas están al 19-32% de costo.
+  drinkPct: 25,
+  // Clientes captados por referido, por cada 100 pedidos servidos. Es la palanca que
+  // convierte "no llega nunca" en "sostiene desde feb-27": el referido cuesta S/7.65
+  // contra S/17.87 del CAC pagado.
+  referralsPer100: 6,
+};

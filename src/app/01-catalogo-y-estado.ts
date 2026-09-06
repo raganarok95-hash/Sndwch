@@ -1082,6 +1082,14 @@ var GIFT_CARD_POINTS_PER_SOL=40;
 // otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
 // supabase/functions/api/env.ts.
 var REFERRAL_BONUS_POINTS=120;
+// Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido — 400 pts = un
+// sándwich 15CM gratis. Solo se usa para el copy; quien otorga los puntos es el servidor.
+// DEBE coincidir con REFERRER_REWARD_POINTS en supabase/functions/api/env.ts, que a su vez
+// DEBE valer exactamente lo mismo que R06 — las dos cosas las verifica `npm run parity`.
+// Es lo que hace CIERTA la frase "un sándwich 15CM gratis" que ve el cliente: si alguien
+// mueve uno de los dos números y no el otro, la app promete un sándwich que la recompensa
+// ya no alcanza a pagar.
+var REFERRER_REWARD_POINTS=400;
 // #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
 // (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
 // REFERRAL_MILESTONES en supabase/functions/api/env.ts — lo verifica `npm run parity`.

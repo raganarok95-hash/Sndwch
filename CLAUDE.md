@@ -1109,6 +1109,62 @@ conservar, así que queda fuera de la alerta de caducidad de tanda.
 Con esto, `modelo/rentabilidad_por_parte.py` reporta por primera vez **"Nada pasa el techo"** en
 todo el catálogo.
 
+## Las tres palancas del modelo: medidas, no supuestas (2026-09-06)
+
+`PREDICCION_V12.md` concluye que la meta de **S/5,000 netos sostenidos NO se alcanza con más
+publicidad** —a S/20,000/mes el resultado empeora— sino con tres números. Ninguno estaba
+medido: el modelo los ASUME y mover cualquiera unos puntos cambia la conclusión entera.
+
+| palanca | el modelo asume | por qué importa |
+|---|---|---|
+| mezcla ARMA EL TUYO | 50% | un Signature deja ~S/5.50 más que un armado |
+| attach de bebida | 25% | +15 puntos valen ~S/0.48 por pedido, sin adquirir a nadie |
+| referidos por 100 pedidos | 6 | la ÚNICA que convierte "no llega nunca" en "sostiene desde feb-27" |
+
+**Ahora se miden.** `retention_report` devuelve un bloque `palancas` con las tres, y la
+pantalla **Admin // Marketing // Las tres palancas** las enseña contra lo que el modelo asume.
+Dos detalles que no hay que romper: la salvaguarda de fiabilidad (mínimo 20 pedidos) va
+**ARRIBA** de las cifras y no al pie, y donde no hay dato va un **guion, nunca un 0** — un 0 se
+lee como "medimos y dio cero". La mezcla se cuenta en **UNIDADES y no en pedidos**: un pedido
+puede llevar un Signature y un armado a la vez.
+
+**Los supuestos del modelo viven en `MODELO_SUPUESTOS` (`env.ts`) y viajan al cliente desde el
+servidor**, nunca escritos en la pantalla. `npm run parity` los compara contra el Python
+(`FRAC_BYO`/`DRINK_ATTACH` en `modelo/comparativa_menu.py`, `VIRAL` en
+`modelo/modelo_v11_metas.py`) — es el único chequeo del script que cruza lenguajes, y la única
+defensa contra que la pantalla mida contra una meta que el modelo ya movió.
+
+### ⚠ `actAdminRetentionReport` estaba importada y NUNCA registrada
+
+El reporte de cohortes —que este archivo llama "el mejor dato del panel"— no era alcanzable
+desde la app: solo lo veía el correo mensual, que llama al RPC por su cuenta. Modo de fallo
+puro silencio: la importación compila y `deno check` no marca un import sin usar dentro de un
+objeto. Ya está en `ACTIONS`. **Al agregar una acción nueva, registrarla es un paso aparte de
+importarla y nada avisa si falta.**
+
+### Lo que se empujó, y lo que deliberadamente no
+
+- **Referido**: la invitación estaba DOBLEMENTE condicionada — solo si el cliente calificaba, y
+  solo en el render inmediato tras hacerlo. Calificar es opcional, así que el momento de mayor
+  intención quedaba sin usar. Ahora aparece en los tres estados de un pedido entregado, y
+  **debajo** del formulario de calificación, que sigue primero y sin tocar: la calificación
+  tiene valor propio (testimonios, y enterarse de un problema) y cambiarla de sitio sería
+  canjear una cosa por otra en vez de sumar. Los dos bonos se interpolan de las constantes.
+- **Bebida**: el mecanismo ya estaba bien construido (empujón en los dos flujos, con
+  descripción y de un toque). Lo único débil era el título, que encabezaba con el ahorro de
+  S/1 —el combo bajó de S/2 y nadie revisó el texto— sobre un producto de S/5-6. Ahora
+  encabeza con el producto y nombra el descuento de segundo.
+- **Mezcla**: el menú YA abre en Signatures (`homeTab='sig'`), así que el empujón estructural
+  existía. Se agregó un puente desde ARMA EL TUYO hacia el Signature recomendado, **debajo** de
+  la lista de panes: quien tocó esa pestaña ya eligió armar el suyo, y cortarle el paso al
+  entrar sería un obstáculo. **NO se degradó ARMA EL TUYO para mover la mezcla** — es la mitad
+  de la identidad de la marca (los dos hermanos), y esconderlo o encarecerlo rompería el
+  producto para ganar céntimos. `tests/palancas-del-modelo.spec.ts` fija las dos cosas a la vez.
+
+**Lo que sigue sin medirse y decide igual de fuerte: el CAC real.** Sale de blogs de agencia,
+no de medición propia, y todo el modelo cuelga de él. Se mide poniendo los secrets de Meta
+(`docs/CONFIGURAR_META.md`) — es el bloqueo número uno del negocio.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y

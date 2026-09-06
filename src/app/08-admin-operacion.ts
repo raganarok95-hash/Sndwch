@@ -370,6 +370,10 @@ function adminToolsSections(){
       ['megaphone','Contenido semanal','loadMarketingContent()'],
       ['precios','Códigos promo','loadPromoCodes()'],
       ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
+      // Las tres palancas del modelo financiero, medidas contra lo que el modelo asume.
+      // Va en Marketing y no en "Salud del sistema" porque las tres se mueven con
+      // decisiones de marketing y producto, no con infraestructura.
+      ['reportes','Las tres palancas','loadPalancas()'],
       ['clientes','Lista de espera','loadWaitlist()'],
     ]],
     ['Catálogo //',[
