@@ -214,7 +214,18 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
   // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
   // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:12}
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:12},
+  // P08 entra el 2026-09-06 (decisión del dueño). Devuelve el armador a CUATRO proteínas
+  // después de que res y embutido salieran por rentabilidad.
+  //
+  // ⚠ LO QUE LA HACE VIABLE ES QUE NO TIENE MERMA DE COCCIÓN: es fiambre, 1 kg comprado es
+  // 1 kg servido. Todas las demás pierden en la olla (res 0.54, pollo 0.64-0.69), así que su
+  // costo por porción es ~1.85x el del insumo crudo. Acá el precio del insumo ES el costo de
+  // la porción — por eso una proteína más cara por kilo que la res sale más barata por
+  // sándwich. 85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51 → 44.7% de costo en los dos
+  // tamaños, justo debajo del techo de 45%.
+  // DEBE coincidir con PROT_PRICE.P08 en supabase/functions/api/catalog.ts.
+  {id:'P08',l:'Pavo',   s:'Horneado',   d:'Pechuga de pavo horneada, en lonjas finas',p15:15.9,p30:28.9,pDbl:9,pDbl30:17}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -588,25 +599,34 @@ var RWDS=[
   {id:'R03',pts:320,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R06',pts:400,n:'Sándwich', s:'Gratis', d:'Sándwich 15CM gratis — no aplica a Signatures Reserve',sizeOnly:'15'}
 ];
-// BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
+// BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D08). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
 // otro local — el catálogo ahora se queda solo con las bebidas propias sin jugos.
-// `icon` distingue visualmente las 4 infusiones en BEBIDAS Y SIDES — antes eran
+// `icon` distingue visualmente las 3 infusiones en BEBIDAS Y SIDES — antes eran
 // idénticas salvo el texto (hallazgo de auditoría UX), sin nada que distinguirlas de un
 // vistazo en una lista donde se comparan una junto a otra.
-// PRECIOS +S/2 (y +S/3 en el chai) el 2026-08-22, decisión del dueño. El margen de
-// 61-84% que el negocio venía usando para las bebidas costeaba SOLO el insumo, nunca el
-// envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen
-// real era 56-66%, no 84%. El chai lleva +S/3 y no +S/2 porque es el único con costo de
-// insumo alto de verdad (leche, cardamomo, jengibre: ~S/1.55 por vaso contra S/0.31-0.62
-// de las infusiones). DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
+// PRECIOS +S/2 el 2026-08-22, decisión del dueño. El margen de 61-84% que el negocio venía
+// usando para las bebidas costeaba SOLO el insumo, nunca el envase.
+// El envase YA ESTÁ COTIZADO Y COMPRADO (dueño 2026-09-05): S/138 por 200 unidades = S/0.69
+// la botella. Con eso, y costeando por MEDIO LITRO —que es el envase real, no el vaso de
+// 350 ml que suponía el recetario— las tres quedan en 19-32% de costo, menos de la mitad del
+// techo de 45%: son la parte más rentable del catálogo (ver modelo/costo_bebidas.py).
+// DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
+// D09 (The Spice // Chai) sale del menú el 2026-09-06, decisión del dueño. Costeado por
+// BOTELLA DE MEDIO LITRO —el envase real que ya se compró, no el vaso de 300 ml que suponía
+// el recetario— quedaba en 42.5% de costo contra 19-32% de las otras tres. Era la única
+// bebida cerca del techo de 45%, y por un motivo estructural: media botella de chai es media
+// botella de LECHE, un insumo que se compra; en las otras tres el volumen es agua.
+// Para restaurarlo: esta entrada más D09 en SIDE_PRICE/SIDE_LABEL (catalog.ts) y una fila en
+// catalog_prices. (Se describe en prosa a propósito: scripts/parity.mjs parsea este array con
+// regex y tomaría un literal comentado como una bebida viva, reportando una falsa diferencia
+// con el servidor.)
 var SIDES=[
   // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
   {id:'D06',l:'The Bloom',    s:'Hibiscus',p:6,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
   {id:'D07',l:'The Midnight', s:'Brew',    p:5,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
-  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'},
-  {id:'D09',l:'The Spice',    s:'Chai',    p:9,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.',icon:'vapor'}
+  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'}
 ];
 
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver

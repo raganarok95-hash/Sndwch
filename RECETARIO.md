@@ -336,6 +336,45 @@ Salsa caliente + queso derretido + vinagreta + viaje en moto. Cuatro cosas concr
 
 ---
 
+## P08 · PAVO // HORNEADO — solo ARMA EL TUYO
+
+**No se cocina. Se lamina y se pesa.** Es la segunda proteína del catálogo que es fiambre, junto con
+el embutido de P05 — y eso es exactamente lo que la hace rentable.
+
+> ⚠ **NO TIENE MERMA DE COCCIÓN, y ése es todo el argumento económico.** Un kilo comprado es un kilo
+> servido. La res rinde 0.54 y el pollo 0.64-0.69, así que en esas dos el costo real de la porción
+> terminada es **~1.85x** el precio del insumo crudo. Acá el precio del insumo **es** el costo de la
+> porción. Por eso el pavo, que cuesta más del doble por kilo que la res (S/44.20 contra S/20), sale
+> **más barato por sándwich**.
+
+| tamaño | porción | costo del insumo | precio | costo % |
+|---|---|---|---|---|
+| 15CM | 85 g | S/3.76 | S/15.90 | 44.7% |
+| 30CM | 170 g | S/7.51 | S/28.90 | 44.7% |
+
+**Grosor: 1-1.5 mm, y va EN PLIEGUES, nunca plano.** Es la misma regla que el jamón de P05 y no es
+estética: el pliegue es lo que hace que el sándwich se vea lleno con el mismo gramaje. Laminado
+plano, 85 g de pavo desaparecen dentro del pan.
+
+**Lamina el mismo día que se usa, o como mucho el día antes.** El fiambre laminado se oxida y se
+seca mucho más rápido que la pieza entera: guarda la pieza entera envuelta y lamina lo del día. Es
+la única proteína del catálogo que **no pasa por el ciclo de tandas** — no hay nada que cocinar,
+enfriar ni conservar, así que tampoco entra en la alerta de caducidad de tanda.
+
+> ⚠ **A verificar comprando:** se costea a **S/44.20/kg**, derivado del precio RETAIL de jamón de
+> pavo Braedt en Metro/Vivanda (S/43.75/kg). **Falta cotización propia al por mayor** — Makro tiene
+> local en Trujillo y ahí debería estar por debajo. El error cae del lado seguro: si consigues mejor
+> precio, el margen real es mayor que el calculado, nunca menor.
+>
+> El proveedor importa menos de lo que parece: **Sigma Alimentos es dueño de Braedt, Otto Kunz y La
+> Segoviana a la vez**, así que entre esas tres no hay competencia real de precio. Los independientes
+> son **San Fernando** y **Laive** — cotiza al menos uno de ellos contra Braedt antes de cerrar.
+
+**Nota de producto:** entra solo a ARMA EL TUYO. **Ningún Signature lo lleva**, y meterlo en una
+receta cerrada es una decisión de producto que todavía no está tomada.
+
+---
+
 # PARTE 2 — SALSAS
 
 > **Todas las cantidades de esta parte son propuesta mía, sin cotización en Trujillo.**
@@ -554,50 +593,85 @@ vinagre. Pierde el filo y gana crocancia. Escúrrela bien.
 
 # PARTE 4 — BEBIDAS
 
-Margen bruto 61-84%, el mejor del negocio. **Cada bebida vendida mueve más la caja que subir el
-precio de un sándwich.**
+La parte más rentable del catálogo, y ya no es una estimación: **19-32% de costo por botella**,
+menos de la mitad del techo de 45%. **Cada bebida vendida mueve más la caja que subir el precio de
+un sándwich.**
 
-**Decisión pendiente que bloquea el costeo: el tamaño del vaso.** Recomiendo **350 ml** para D06,
-D07 y D08, y **300 ml** para D09 (el chai es más denso y más caro). Botella o vaso **con tapa a
-rosca** — en moto, la tapa a presión se sale.
+**El tamaño del vaso ya está decidido: MEDIO LITRO (500 ml).** Era la decisión pendiente que
+bloqueaba el costeo, y la resolvió el envase comprado. Botella con tapa **a rosca** — en moto, la
+tapa a presión se sale.
+
+**El envase está cotizado y comprado:** S/138 por 200 unidades = **S/0.69 la botella**.
+
+| bebida | precio | insumo (500 ml) | envase | costo | deja | costo % |
+|---|---|---|---|---|---|---|
+| D06 The Bloom | S/6 | S/1.20 | S/0.69 | S/1.89 | **S/4.11** | 31.5% |
+| D07 The Midnight | S/5 | S/0.72 | S/0.69 | S/1.41 | **S/3.59** | 28.2% |
+| D08 The Cool | S/6 | S/0.48 | S/0.69 | S/1.17 | **S/4.83** | 19.4% |
+
+> **El envase es la mitad del costo de una infusión, y no escala con el volumen.** Por eso pasar de
+> 350 ml a 500 ml sube el costo mucho menos de lo que parece: The Cool sube 2.4 puntos, de 17.1% a
+> 19.4%, y a cambio el cliente recibe 43% más bebida. Es la palanca más barata de valor percibido
+> que tiene el negocio. El cálculo completo, con el origen de cada precio, está en
+> `modelo/costo_bebidas.py`.
+
+> **Lo que sigue estimado es el precio por kilo de las hierbas** (jamaica y té negro se costean a
+> S/97/kg, precio publicado de Campo Grande Perú; el resto son supuestos de trabajo). Falta
+> cotización propia. El envase, que pesa más que todos ellos juntos, sí está cotizado.
 
 ## D06 · THE BLOOM // Hibiscus — S/6
-**Tanda 3 L (≈8 vasos de 350 ml):** flor de jamaica seca 60 g · agua 3 L · canela 2 ramas ·
+**Tanda 3 L (6 botellas de medio litro):** flor de jamaica seca 60 g · agua 3 L · canela 2 ramas ·
 azúcar 250 g.
 Hierve el agua, apaga, echa la flor y la canela, **infusiona tapada 15 min y cuela**.
 **No la hiervas con la flor dentro más de 5 min** — se pone astringente y áspera.
 Azúcar en caliente, enfría rápido. **5 días refrigerada.**
 
 ## D07 · THE MIDNIGHT // Brew — S/5 — la de mejor margen
-**Tanda 3 L:** té negro a granel 40 g · agua fría 3 L. **En frío, refrigerado, 8-12 h. Cuela.**
+**Tanda 3 L (6 botellas de medio litro):** té negro a granel 40 g · agua fría 3 L. **En frío, refrigerado, 8-12 h. Cuela.**
 **El "sin amargor" del pitch viene exactamente de esto:** en frío no se extraen los taninos que
 amargan. **Si lo haces en caliente y lo enfrías, el pitch deja de ser cierto.** No hay atajo — hay
 que preverlo con 12 h de anticipación.
 Azúcar aparte, al gusto (es la que mejor funciona sin azúcar). **7 días refrigerada.**
 
 ## D08 · THE COOL // Mint — S/6
-**Tanda 3 L:** hierba luisa 40 g · menta fresca 30 g · agua 3 L · azúcar 200 g.
+**Tanda 3 L (6 botellas de medio litro):** hierba luisa 40 g · menta fresca 30 g · agua 3 L · azúcar 200 g.
 Agua hirviendo, apaga, **infusiona tapada solo 10 min y cuela de inmediato**. Pasados 15 min la menta
 se pone amarga y pierde el aroma, que es todo lo que estás vendiendo.
 **Enfría rápido** (la olla en un lavadero con agua fría). **4 días** — es la de vida más corta porque
 es la más aromática y el aroma se va antes que la seguridad.
 
-## D09 · THE SPICE // Chai — S/9
-**La leche no se puede stockear** (alta humedad, pH casi neutro: el peor perfil microbiológico del
-catálogo). **Solución: concentrado sin leche, y la leche se agrega al momento.**
+## D09 · THE SPICE // Chai — RETIRADO 2026-09-06
 
-**Concentrado, tanda 1.5 L:** agua 1.5 L · té negro 80 g · canela 6 ramas · cardamomo 30 vainas
-machacadas · clavo 20 · jengibre fresco 100 g en rodajas · pimienta negra 10 granos · azúcar 300 g.
-Hierve las especias en el agua **20 min tapado**, apaga, echa el té, **5 min**, cuela, disuelve el
-azúcar. **Concentrado: 7 días refrigerado.**
+**Salió del menú por costo, no por producto.** Al costearlo por botella de medio litro —el envase
+real, no el vaso de 300 ml que este documento suponía— quedaba en **42.5% de costo** contra 19-32%
+de las tres infusiones. Era la única bebida cerca del techo de 45%.
 
-**Al servir: 50% concentrado + 50% leche.** Un vaso de 300 ml = 150 ml de concentrado + 150 ml de
-leche. Frío o caliente, los dos funcionan.
+**Y el motivo es estructural, no de proveedor:** media botella de chai es media botella de LECHE, un
+insumo que se compra. En las otras tres, el 99% del volumen es agua. Ninguna cotización arregla eso;
+lo único que lo movería es venderlo en un formato más chico que el resto, y entonces deja de ser
+comparable en la carta.
+
+Era además la única bebida con un insumo que **no se puede stockear** (la leche: alta humedad, pH
+casi neutro, el peor perfil microbiológico del catálogo), lo que obligaba a un concentrado aparte y
+a mezclar al momento.
+
+**La receta se conserva completa por si vuelve** (por ejemplo, en formato de 300 ml a S/9, donde sí
+rinde, o como bebida de temporada):
+
+> **Concentrado, tanda 1.5 L:** agua 1.5 L · té negro 80 g · canela 6 ramas · cardamomo 30 vainas
+> machacadas · clavo 20 · jengibre fresco 100 g en rodajas · pimienta negra 10 granos · azúcar 300 g.
+> Hierve las especias en el agua **20 min tapado**, apaga, echa el té, **5 min**, cuela, disuelve el
+> azúcar. **Concentrado: 7 días refrigerado.**
+>
+> **Al servir: 50% concentrado + 50% leche.** Frío o caliente, los dos funcionan.
+>
+> Para restaurarlo en código: `D09` en `SIDE_PRICE`/`SIDE_LABEL` (`catalog.ts`), la entrada en
+> `SIDES` (`src/app/01-*`), y una fila en `catalog_prices`.
 
 ## El problema del hielo en delivery
 Si mandas hielo, en 30 minutos el cliente recibe agua con sabor. Si no mandas nada, llega tibia.
 **Solución: botella pre-enfriada, refrigerada desde la noche anterior, y nada de hielo.** Una botella
-de 350 ml que sale a 4°C llega a ~10°C en media hora: fresca, sin diluir.
+de medio litro que sale a 4°C llega a ~10°C en media hora: fresca, sin diluir.
 Si vas a mandar hielo igual (algún cliente lo pide), **manda la bebida un 20% más concentrada** para
 que al diluirse quede en su punto.
 

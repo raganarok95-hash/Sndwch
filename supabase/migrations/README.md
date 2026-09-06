@@ -57,7 +57,7 @@ con secreto redactado van a diferir a propósito.
 
 ## Índice
 
-`INDEX.txt` lista las 109 con versión y nombre en orden. Regenerarlo con:
+`INDEX.txt` lista las 160 con versión y nombre en orden. Regenerarlo con:
 
 ```sql
 select string_agg(version || '  ' || coalesce(name,'(sin nombre)'), E'\n' order by version)

@@ -39,9 +39,10 @@ salen 1 kg de mechado — ese error infló los márgenes de este negocio hasta a
 | P01 | Res // Asado | 0.54 (limpieza 10% + cocción 40%) | S/3.15 | S/6.30 | `[FUENTE]` |
 | P02 | Pollo // Teriyaki | 0.69 (limpieza 8% + cocción 25%) | S/2.47 | S/4.95 | `[FUENTE]` |
 | P03 | Pollo // Cajún *(menú secreto)* | 0.644 (8% + 30%) | S/2.49 | S/4.97 | `[FUENTE]` |
-| P04 | Atún // House | no se cocina | S/4.82 | S/9.64 | `[FALTA]` sin cotizar |
+| P04 | Atún // House | no se cocina | S/3.25 | S/6.50 | `[COTIZADO]` dueño 2026-09-04: S/4 la lata de 140 g neto |
 | P05 | Embutido // Italiano | 0.95 (merma de laminado 5%) | S/4.29 | S/8.59 | `[FALTA]` sin cotizar |
 | P06 | Albóndiga // Marinara | 0.75 | S/1.34 | S/2.68 | `[FALTA]` sin cotizar |
+| P08 | Pavo // Horneado | **1.00 — no se cocina** | S/3.76 | S/7.51 | `[WEB]` S/43.75/kg retail Braedt; falta cotizar al por mayor |
 
 ### Detalle de composición
 
@@ -74,6 +75,14 @@ operación del catálogo con margen negativo (−26.6%).
 El jamón da volumen y pliegue (hace que el sándwich se vea lleno), el cabanossi da mordida y
 grasa, el paté es el más intenso: **más de 25% y tapa todo lo demás**, incluido el cheddar y el
 BBQ que ese sándwich también lleva.
+
+**P08 Pavo // Horneado** — no se cocina, **se lamina y se pesa**, igual que P05. Es la única
+proteína del catálogo con **rendimiento 1.00**: un kilo comprado es un kilo servido. Todas las
+demás pierden en la olla (res 0.54, pollo 0.64-0.69), así que su costo real por porción es ~1.85x
+el del insumo crudo — acá el precio del insumo **es** el costo de la porción. Por eso el pavo,
+más del doble de caro por kilo que la res, sale **más barato por sándwich**.
+Grosor 1-1.5 mm y **en pliegues, nunca plano**: el pliegue es lo que hace que 85 g se vean llenos.
+Lamina el día que se usa. Solo ARMA EL TUYO — ningún Signature lo lleva.
 
 **P06 Albóndiga // Marinara** — tanda de 2000 g de carne molida (15-20% grasa) + panade (pan
 del día anterior sin corteza 200 g) + queso rallado 100 g + ajo 20 g + perejil 25 g + sal 24 g
@@ -216,17 +225,21 @@ elemento ácido.
 
 ---
 
-## 6. BEBIDAS — 4, todas de la casa
+## 6. BEBIDAS — 3, todas de la casa
 
-Vaso recomendado **350 ml** (D06/D07/D08) y **300 ml** (D09, más denso y más caro).
-Botella o vaso **con tapa a rosca** — en moto la tapa a presión se sale.
+**Botella de MEDIO LITRO, tapa a rosca** — en moto la tapa a presión se sale. El envase está
+cotizado y comprado: S/138 por 200 unidades = **S/0.69 la botella**.
 
-| id | Bebida | Precio | Tanda | Rinde | Vida útil |
-|---|---|---|---|---|---|
-| D06 | The Bloom // Hibiscus | S/6 | 3 L | ≈8 vasos | 5 días |
-| D07 | The Midnight // Brew | S/5 | 3 L | ≈8 vasos | 7 días |
-| D08 | The Cool // Mint | S/6 | 3 L | ≈8 vasos | **4 días** |
-| D09 | The Spice // Chai | S/9 | 1.5 L concentrado | — | 7 días el concentrado |
+| id | Bebida | Precio | Tanda | Rinde | Costo | Costo % | Vida útil |
+|---|---|---|---|---|---|---|---|
+| D06 | The Bloom // Hibiscus | S/6 | 3 L | 6 botellas | S/1.89 | 31.5% | 5 días |
+| D07 | The Midnight // Brew | S/5 | 3 L | 6 botellas | S/1.41 | 28.2% | 7 días |
+| D08 | The Cool // Mint | S/6 | 3 L | 6 botellas | S/1.17 | 19.4% | **4 días** |
+
+**D09 The Spice // Chai salió del menú el 2026-09-06**: a medio litro quedaba en 42.5% de costo,
+la única bebida cerca del techo de 45%, porque media botella de chai es media botella de leche
+—un insumo que se compra— mientras que en las otras tres el volumen es agua. La receta completa
+queda guardada en `RECETARIO.md` PARTE 4.
 
 - **D06 Bloom** — flor de jamaica 60 g · agua 3 L · canela 2 ramas · azúcar 250 g. Hervir el agua,
   **apagar**, infusionar tapada 15 min y colar. **No hervir con la flor dentro más de 5 min** — se
@@ -237,15 +250,11 @@ Botella o vaso **con tapa a rosca** — en moto la tapa a presión se sale.
 - **D08 Cool** — hierba luisa 40 g · menta fresca 30 g · agua 3 L · azúcar 200 g. Infusionar
   tapada **solo 10 min** y colar de inmediato: pasados 15 min la menta amarga y pierde el aroma,
   que es todo lo que estás vendiendo.
-- **D09 Chai** — concentrado 1.5 L: agua 1.5 L · té negro 80 g · canela 6 ramas · cardamomo 30
-  vainas machacadas · clavo 20 · jengibre fresco 100 g · pimienta 10 granos · azúcar 300 g.
-  Especias 20 min tapado, apagar, té 5 min, colar, disolver azúcar.
-  **Al servir: 50% concentrado + 50% leche** (vaso de 300 ml = 150 + 150).
-  **La leche no se stockea** — es el peor perfil microbiológico del catálogo.
+*(La receta del chai retirado queda completa en `RECETARIO.md` PARTE 4.)*
 
 **El hielo en delivery:** si mandas hielo, en 30 min el cliente recibe agua con sabor. Si no
 mandas nada, llega tibia. **Botella pre-enfriada desde la noche anterior y nada de hielo**: una de
-350 ml que sale a 4 °C llega a ~10 °C en media hora.
+medio litro que sale a 4 °C llega a ~10 °C en media hora.
 
 ⚠ **El envase no está cotizado** (~S/1 estimado). El margen "61-84%" del recetario costea solo el
 insumo; con envase real cae a **56-66%**.
