@@ -93,6 +93,17 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  // ESPERAR A QUE EL LOGIN RESUELVA ANTES DE NAVEGAR. Sin esto hay una carrera real: el
+  // fetch de `login` sigue en vuelo mientras el test ya cambió de pestaña y abrió el pedido
+  // grupal, y cuando la respuesta llega la app vuelve a renderizar y pisa la pantalla del
+  // grupo — con lo que el aviso de "Faltan N sándwiches" desaparece antes de que la
+  // aserción lo encuentre. Local resuelve en milisegundos y nunca se ve; el runner de
+  // GitHub, con los 151 tests en paralelo, sí entra en esa ventana (falló así el
+  // 2026-09-06, con 20 corridas locales en verde). Es el mismo motivo por el que
+  // `tests/yape-por-defecto.spec.ts` espera acá, y el mismo patrón que playwright.config.ts
+  // ya documenta para el fallo de `weekly-plan.spec.ts` del 2026-08-22.
+  // La espera NO relaja lo que se comprueba: fija una precondición que el test ya asumía.
+  await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
@@ -148,10 +159,26 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  // ESPERAR A QUE EL LOGIN RESUELVA ANTES DE NAVEGAR. Sin esto hay una carrera real: el
+  // fetch de `login` sigue en vuelo mientras el test ya cambió de pestaña y abrió el pedido
+  // grupal, y cuando la respuesta llega la app vuelve a renderizar y pisa la pantalla del
+  // grupo — con lo que el aviso de "Faltan N sándwiches" desaparece antes de que la
+  // aserción lo encuentre. Local resuelve en milisegundos y nunca se ve; el runner de
+  // GitHub, con los 151 tests en paralelo, sí entra en esa ventana (falló así el
+  // 2026-09-06, con 20 corridas locales en verde). Es el mismo motivo por el que
+  // `tests/yape-por-defecto.spec.ts` espera acá, y el mismo patrón que playwright.config.ts
+  // ya documenta para el fallo de `weekly-plan.spec.ts` del 2026-08-22.
+  // La espera NO relaja lo que se comprueba: fija una precondición que el test ya asumía.
+  await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
-  await expect(page.locator('text=Faltan 1 sándwich para que uno vaya gratis')).toBeVisible();
+  // 10 s y no los 5 por defecto: entre el clic y este texto hay SEIS peticiones encadenadas
+  // (login, addresses-list, favorites-list, my-orders, create-group-order y get-group-order),
+  // comprobado instrumentando el flujo. La pantalla se pinta recién con la última. Es el
+  // mismo timeout que ya usan los specs de admin por la misma razón, y no relaja lo que se
+  // comprueba: el texto exigido es idéntico.
+  await expect(page.locator('text=Faltan 1 sándwich para que uno vaya gratis')).toBeVisible({ timeout: 10000 });
 
   await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
