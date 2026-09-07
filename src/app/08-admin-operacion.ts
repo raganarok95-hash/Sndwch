@@ -274,19 +274,21 @@ function sAdminBatchPlan(){
 // esa se deja como está: sin la key el servidor responde con instrucciones en vez de
 // fallar, y el prompt igual sirve para pegarlo a mano en Flow, que es lo que el dueño ya
 // hace.
-var vidScript=null,vidSigId='',vidAngle='',vidErr='';
+var vidScript=null,vidSigId='',vidAngle='',vidFormato='',vidErr='';
 async function loadVideoScript(){
   sndScreen='admin_video';vidErr='';
   if(!vidSigId){var first=SIGS.find(function(x){return !x.secret;});vidSigId=first?first.id:'SIG01';}
   busy=true;busyMsg='Armando el guion...';render();
   try{
-    vidScript=await api('admin-video-script',{token:token,sigId:vidSigId,angle:vidAngle||undefined});
+    vidScript=await api('admin-video-script',{token:token,sigId:vidSigId,angle:vidAngle||undefined,formato:vidFormato||undefined});
     if(!vidAngle&&vidScript&&vidScript.angle)vidAngle=vidScript.angle.key;
+    if(!vidFormato&&vidScript&&vidScript.formato)vidFormato=vidScript.formato.key;
   }catch(e){vidScript=null;vidErr=e.message;}
   busy=false;render();
 }
 function pickVideoSig(id){vidSigId=id;loadVideoScript();}
 function pickVideoAngle(k){vidAngle=k;loadVideoScript();}
+function pickVideoFormato(k){vidFormato=k;loadVideoScript();}
 function sAdminVideo(){
   var h=H('GUION DE VIDEO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:16px">El guion y el prompt salen de la receta real del Signature, así que si cambias la composición desde el panel, el video que generes ya refleja el cambio.</div>';
@@ -302,7 +304,20 @@ function sAdminVideo(){
     return h+'</div>';
   }
   if(!vidScript)return h+'</div>';
-  if(vidScript.angles&&vidScript.angles.length){
+  // El FORMATO primero: es quién actúa, y manda sobre cómo se filma. Son los mismos cinco
+  // (A-E) que el calendario semanal ya usa, así que el borrador del lunes y el prompt que se
+  // pega en Flow hablan el mismo idioma en vez de proponer dos videos distintos.
+  if(vidScript.formatos&&vidScript.formatos.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Qué formato? //</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
+      +vidScript.formatos.map(function(f){
+        var sel=(vidScript.formato&&vidScript.formato.key)===f.key;
+        return'<div onclick="pickVideoFormato(\''+f.key+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(f.letra+' · '+f.label)+'</div>';
+      }).join('')
+      +'</div>';
+  }
+  // El plano solo tiene sentido si el formato muestra el producto — EL SECRETO no lo muestra.
+  if(vidScript.angles&&vidScript.angles.length&&vidScript.formato&&vidScript.formato.key!=='secreto'){
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Qué plano? //</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
       +vidScript.angles.map(function(a){
@@ -314,14 +329,14 @@ function sAdminVideo(){
   var g=vidScript.guion||{};
   h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:10px">'+esc(vidScript.name||'')+'</div>'
-    +[['Duración',g.duracion],['Formato',g.formato],['Plano',g.plano],['Acción',g.accion],['Pan',g.pan],['Ingredientes',g.ingredientes]]
+    +[['Formato',g.formato],['Personajes',g.personajes],['Duración',g.duracion],['Encuadre',g.encuadre],['Plano',g.plano],['Acción',g.accion],['Pan',g.pan],['Ingredientes',g.ingredientes],['Ojo',g.nota]]
       .filter(function(r){return r[1];})
       .map(function(r){return'<div style="display:flex;gap:10px;margin-bottom:6px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;min-width:88px;flex-shrink:0;padding-top:2px">'+r[0].toUpperCase()+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(String(r[1]))+'</div></div>';}).join('')
     +'</div>';
   // Los tres bloques que se COPIAN. Cada uno con su botón: el prompt va a Flow, el pie y
   // los hashtags van a Instagram — son destinos distintos, así que copiarlos juntos
   // obligaría a recortar a mano justo cuando el dueño está apurado publicando.
-  h+=copyBlockHTML('Prompt para Flow / Veo','vid-prompt',vidScript.veoPrompt||'');
+  h+=copyBlockHTML('Prompt para Flow','vid-prompt',vidScript.flowPrompt||'');
   h+=copyBlockHTML('Pie de publicación','vid-caption',vidScript.caption||'');
   h+=copyBlockHTML('Hashtags','vid-tags',vidScript.hashtags||'');
   if(vidScript._nota){
