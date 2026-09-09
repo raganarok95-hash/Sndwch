@@ -302,8 +302,8 @@ var STEPS = ['RECIBIDO', 'PREPARANDO', 'EN CAMINO', 'ENTREGADO'];
 // futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
 // cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
 var BASES = [
-    { id: 'B01', l: 'Classic', s: 'White', d: 'Masa suave básica' },
-    { id: 'B03', l: 'Focaccia', s: 'Artesanal', d: 'Masa de focaccia artesanal' }
+    { id: 'B01', l: 'Classic', s: 'White', d: 'Miga suave y corteza fina. No pelea con el relleno, lo sostiene.' },
+    { id: 'B03', l: 'Focaccia', s: 'Artesanal', d: 'Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.' }
 ];
 // `sigOnly` se declara en el tipo aunque HOY ningún ítem lo use (se fue con THE CHICAGO,
 // ver abajo). Sin la declaración TypeScript infiere el tipo desde los literales y los
@@ -331,12 +331,12 @@ var PROTS = [
     // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
     // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
     // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
-    { id: 'P01', l: 'Res', s: 'Asado', d: 'Res asada mechada, cocción lenta', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14, sigOnly: true },
-    { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Tiras marinadas en teriyaki', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
+    { id: 'P01', l: 'Res', s: 'Asado', d: 'Punta de pecho a fuego lento hasta que se deshace sola con el tenedor.', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14, sigOnly: true },
+    { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Muslo marinado toda la noche en sillao, jengibre y ajo. Se glasea al armar.', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
     // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
     // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-    { id: 'P03', l: 'Pollo', s: 'Cajun', d: 'Pechuga deshilachada, condimento cajún', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11, vaultOnly: true },
+    { id: 'P03', l: 'Pollo', s: 'Cajun', d: 'Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11, vaultOnly: true },
     // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
     // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
     // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -350,7 +350,7 @@ var PROTS = [
     // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
     // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
     // en supabase/functions/api/catalog.ts.
-    { id: 'P04', l: 'Atún', s: 'House', d: 'Atún premium con mayonesa clásica', p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9, noDouble: true },
+    { id: 'P04', l: 'Atún', s: 'House', d: 'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.', p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9, noDouble: true },
     // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
     // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -358,7 +358,7 @@ var PROTS = [
     // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
     // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
     // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
-    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Paté peperoncino, jamón ahumado, cabanossi', p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9, sigOnly: true },
+    { id: 'P05', l: 'Embutido', s: 'Italiano', d: 'Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.', p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9, sigOnly: true },
     // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
     // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
     // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -372,7 +372,7 @@ var PROTS = [
     // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
     // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
     // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas caseras en salsa marinara', p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 },
+    { id: 'P06', l: 'Albóndiga', s: 'Marinara', d: 'Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.', p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 },
     // P08 entra el 2026-09-06 (decisión del dueño). Devuelve el armador a CUATRO proteínas
     // después de que res y embutido salieran por rentabilidad.
     //
@@ -383,7 +383,7 @@ var PROTS = [
     // sándwich. 85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51 → 44.7% de costo en los dos
     // tamaños, justo debajo del techo de 45%.
     // DEBE coincidir con PROT_PRICE.P08 en supabase/functions/api/catalog.ts.
-    { id: 'P08', l: 'Pavo', s: 'Horneado', d: 'Pechuga de pavo horneada, en lonjas finas', p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 }
+    { id: 'P08', l: 'Pavo', s: 'Horneado', d: 'Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.', p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 }
     // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
     // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
     // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -405,14 +405,14 @@ var PROTS = [
 // "Giardiniera" / "Encurtido picante", spicy, sigOnly — más T07 en VALID_TOPS/TOP_LABEL/
 // SIG_ONLY_TOPS en catalog.ts.
 var TOPS = [
-    { id: 'T01', l: 'Tomate', s: 'Fresco' },
+    { id: 'T01', l: 'Tomate', s: 'Fresco', d: 'En rodajas gruesas, cortado el mismo día.' },
     // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
     // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
-    { id: 'T02', l: 'Pepinillo', s: 'Encurtido', sigOnly: true },
-    { id: 'T03', l: 'Cebolla', s: 'Morada juliana' },
-    { id: 'T04', l: 'Jalapeño', s: 'Encurtido', vaultOnly: true },
-    { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas' },
-    { id: 'T06', l: 'Pimiento', s: 'Curado' },
+    { id: 'T02', l: 'Pepinillo', s: 'Encurtido', d: 'Ácido y crujiente. Le corta la grasa a cada bocado.', sigOnly: true },
+    { id: 'T03', l: 'Cebolla', s: 'Morada juliana', d: 'En pluma fina y cruda. Dulce al entrar, con filo al final.' },
+    { id: 'T04', l: 'Jalapeño', s: 'Encurtido', d: 'Picor limpio y corto, del que no tapa lo demás.', vaultOnly: true },
+    { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas', d: 'Salada, con un fondo amargo que despierta el resto.' },
+    { id: 'T06', l: 'Pimiento', s: 'Curado', d: 'Curado en aceite: dulce, ahumado y sin nada de agua.' },
     // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
     // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
     // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
@@ -421,20 +421,20 @@ var TOPS = [
     // con VALID_TOPS en supabase/functions/api/catalog.ts.
     // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
     // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
-    { id: 'T08', l: 'Apio', s: 'Picado', sigOnly: true },
+    { id: 'T08', l: 'Apio', s: 'Picado', d: 'Se pica al armar, no antes, para que llegue crujiendo.', sigOnly: true },
     // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
     // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
     // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
-    { id: 'T09', l: 'Lechuga', s: 'Fresca' }
+    { id: 'T09', l: 'Lechuga', s: 'Fresca', d: 'En tiras y fría. Es lo que hace crujir los bordes.' }
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso ya usado en el análisis financiero, y con mejor derretido que el Americano
 // procesado que reemplaza — id NO cambia, DEBE coincidir con VALID_CHEESE en catalog.ts.
 var CHEESE = [
-    { id: 'C01', l: 'Mozzarella', s: '', d: 'Derrite fácil, sabor suave' },
-    { id: 'C02', l: 'Cheddar', s: '', d: 'Sabor intenso y textura firme' },
-    { id: 'C03', l: 'Edam', s: '' }
+    { id: 'C01', l: 'Mozzarella', s: '', d: 'Se derrite hasta el borde y estira al morder.' },
+    { id: 'C02', l: 'Cheddar', s: '', d: 'Curado y salado. No se pierde debajo de la carne.' },
+    { id: 'C03', l: 'Edam', s: '', d: 'Cremoso y discreto. El que no tapa nada.' }
 ];
 // `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
 // progresivo"/"golpe de picor") — no es una clasificación nueva inventada, solo expone
@@ -442,21 +442,21 @@ var CHEESE = [
 // darle jerarquía visual a la única lista plana de 13 ítems sin agrupar/iconos del flujo
 // (hallazgo de auditoría UX).
 var SAUCES = [
-    { id: 'S01', l: 'Aioli', s: 'Signature', d: 'Ajo, limón, suave' },
+    { id: 'S01', l: 'Aioli', s: 'Signature', d: 'Ajo y limón sobre base cremosa. Suave: va con todo.' },
     // vaultOnly: exclusiva del menú secreto (SIG05, junto con S12) — mismo criterio que sigOnly
     // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
     // por el dueño para tratarla igual que Au Jus.
-    { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremoso, calor progresivo', spicy: true, vaultOnly: true },
-    { id: 'S03', l: 'Smoke', s: 'BBQ', d: 'Ahumado, miel, pimentón' },
-    { id: 'S04', l: 'Honey', s: 'Mustard', d: 'Dulce, mostaza suave' },
+    { id: 'S02', l: 'Spicy', s: 'Mayo', d: 'Cremosa al entrar. El calor llega después, y se queda.', spicy: true, vaultOnly: true },
+    { id: 'S03', l: 'Smoke', s: 'BBQ', d: 'Ahumada y espesa, con miel y pimentón. La más contundente.' },
+    { id: 'S04', l: 'Honey', s: 'Mustard', d: 'Miel y mostaza suave. Dulce que corta, no que empalaga.' },
     // Perfil documentado 2026-08-08 (confirmado por el dueño, LLM Council de menú) — hasta
     // ahora era la única de las 12 salsas sin descripción de sabor, lo que bloqueaba evaluar
     // si era redundante con otras o cómo combinaba en SIG06. Es salada/umami, NO dulce —
     // dato relevante: SIG06 (Teriyaki+Satay+SNDWCH) tiene 2 fuentes dulces, no 3, porque
     // esta salsa aporta un contrapunto salado, no otro dulzor apilado.
-    { id: 'S05', l: 'SNDWCH', s: 'Special', d: 'Salada, con carácter umami. Receta exclusiva de la casa.' },
-    { id: 'S06', l: 'Oil & Vinegar', s: 'Classic', d: 'Aceite de oliva y vinagre, estilo italiano' },
-    { id: 'S08', l: 'Teriyaki', s: 'Glaze', d: 'Dulce, soja, jengibre' },
+    { id: 'S05', l: 'SNDWCH', s: 'Special', d: 'Salada y umami, imposible de ubicar. No decimos qué lleva.' },
+    { id: 'S06', l: 'Oil & Vinegar', s: 'Classic', d: 'Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich.' },
+    { id: 'S08', l: 'Teriyaki', s: 'Glaze', d: 'Soja, jengibre y azúcar reducidos hasta que brillan.' },
     // S09 vuelve (decisión del dueño 2026-08-21) tras haberse retirado el mismo día junto
     // con The Ember (SIG08), su único consumidor. Vuelve CAMBIADA: ahora lleva ají y es
     // picante. Eso tapa el hueco más grave que encontró el council de salsas — S02 y S12,
@@ -464,12 +464,12 @@ var SAUCES = [
     // ninguna opción picante para el público general. En un negocio de comida en Perú, eso
     // se lee como carta incompleta, no como menú secreto. DEBE coincidir con SAUCE_LABEL.S09
     // y VALID_SAUCES en supabase/functions/api/catalog.ts.
-    { id: 'S09', l: 'Chimichurri', s: 'Piña y Ají', d: 'Piña asada y ají, dulce-ahumado con picor', spicy: true },
+    { id: 'S09', l: 'Chimichurri', s: 'Piña y Ají', d: 'Piña asada y ají. Dulce y ahumada de entrada, con picor al final.', spicy: true },
     // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
     // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
     // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
     // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
-    { id: 'S10', l: 'Peanut', s: 'Satay', d: 'Maní, soya, jengibre' },
+    { id: 'S10', l: 'Peanut', s: 'Satay', d: 'Maní tostado con soya y jengibre. Espesa y tostada.' },
     // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
     // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
     // eje difieren las dos mostazas. Dijon es ácida y filosa, SIN dulzor — S04 es lo
@@ -478,8 +478,8 @@ var SAUCES = [
     // no calor) y además rompe tests/menu-exclusivity-toppings-sauces.spec.ts, que usa esa
     // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
     // aparezca en BUILD YOUR OWN.
-    { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Ácida y filosa, sin dulzor' },
-    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Dulce con golpe de picor', spicy: true, vaultOnly: true }
+    { id: 'S11', l: 'Mostaza', s: 'Dijon', d: 'Ácida y filosa. Sin una gota de dulce.' },
+    { id: 'S12', l: 'Picante', s: 'Miel', d: 'Primero la miel. Después el golpe.', spicy: true, vaultOnly: true }
     // S13 (Au Jus) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su salsa exclusiva
     // y salía de la cocción de P07, que también se fue. Sin ese Signature no hay de dónde
     // sacarla ni dónde servirla. Si SIG07 vuelve, restaurar la entrada S13 — "Au Jus" /
@@ -1545,7 +1545,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '876da44a1f';
+var APP_BUILD = 'a707f06d8f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3587,7 +3587,7 @@ function sOBuild() {
             if (!av)
                 return TOPOFF(t);
             var sel = tops.indexOf(t.id) >= 0;
-            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + '</div>';
+            return '<div onclick="var i=tops.indexOf(\'' + t.id + '\');if(i>=0)tops.splice(i,1);else tops.push(\'' + t.id + '\');render()" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:' + (sel ? SHADOW_GOLD : SHADOW_SM) + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + t.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + t.s + '</span>' + (t.spicy ? icon('chili', 12, '#ff8a5c') : '') + '</div>' + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">' + t.d + '</div>' : '') + (t.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10.5px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">' + esc(t.d) + '</div>' : '') + '</div>';
         }).join('');
         h += '</div>';
     }
