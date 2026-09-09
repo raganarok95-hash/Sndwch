@@ -785,6 +785,13 @@ function sOHome(){
       var tabBar='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
         +'<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='sig'?GOLD:'transparent')+';color:'+(homeTab==='sig'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
         +'<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='byo'?GOLD:'transparent')+';color:'+(homeTab==='byo'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
+        // Tercera pestaña (2026-09-09). Hasta hoy el ÚNICO acceso a las bebidas era un
+        // botón dentro del carrito, o sea que para comprar una bebida había que armar un
+        // sándwich primero. El checkout nunca exigió sándwich —solo `cart.length`— así
+        // que el pedido de pura bebida ya funcionaba: lo que faltaba era cómo llegar.
+        // Son el ítem de mejor margen del catálogo (19-32% de costo contra ~45% de un
+        // sándwich) y esconderlas detrás de otra compra era regalar la venta más rentable.
+        +'<button onclick="homeTab=\'drink\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='drink'?GOLD:'transparent')+';color:'+(homeTab==='drink'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Bebidas</button>'
         +'</div>';
       var sigPanel='<div style="margin-bottom:8px">'+visibleSigs.map(function(s,i){
         var av=sigInStock(s);
@@ -872,7 +879,14 @@ function sOHome(){
         // que la persona ya decidió organizarlo. La decisión se toma acá, en la puerta.
         +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:5px">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, uno va gratis.</div></div>'
         +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';flex-shrink:0">Armar →</span></div>';
-      return tabBar+(homeTab==='byo'?byoPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
+      // El panel de bebidas reutiliza `drinkRowHTML`, la MISMA fila que pinta la pantalla
+      // BEBIDAS Y SIDES: si fueran dos plantillas, el día que cambie el precio o la foto
+      // una de las dos se queda atrás y nadie se entera.
+      var drinkPanel='<div style="margin-bottom:8px">'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin:2px 0 12px">'
+        +'Infusiones hechas acá, medio litro. Puedes pedirlas solas — no hace falta armar un sándwich.</div>'
+        +SIDES.map(drinkRowHTML).join('')+'</div>';
+      return tabBar+(homeTab==='byo'?byoPanel:homeTab==='drink'?drinkPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
     })()
     // Acá había una SEGUNDA tarjeta de pedido grupal ("Pedido // grupal · Organizar →"),
     // con el mismo onclick y el mismo destino que officeCard de arriba. Era la versión

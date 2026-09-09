@@ -208,14 +208,20 @@ function sideThumbHTML(d){
   return'<div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">'+icon(d.icon,17,GOLD)+'</div>';
 }
 
-// SIDES/BEBIDAS
-function sOSides(){
-  var h=H('BEBIDAS Y SIDES',"sndScreen='o_cart';render()",true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+ST('01','Elige','Se agregan a tu carrito.');
-  h+=SIDES.map(function(d){
+// Una bebida se pinta igual en la pestaña BEBIDAS del menú y en la pantalla BEBIDAS Y
+// SIDES. Estaba escrita solo dentro de sOSides; al abrir el segundo punto de compra
+// (2026-09-09) se extrajo en vez de copiarse — dos plantillas para el mismo ítem
+// terminan en que una se queda con el precio o la foto viejos y nadie se entera.
+function drinkRowHTML(d){
     var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
     var qty=inCart?inCart.qty:0;
     return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1">'+sideThumbHTML(d)+'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+pz(d.p)+'</div></div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>')+'</div>';
-  }).join('');
+}
+
+// SIDES/BEBIDAS
+function sOSides(){
+  var h=H('BEBIDAS Y SIDES',"sndScreen='o_cart';render()",true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+ST('01','Elige','Se agregan a tu carrito.');
+  h+=SIDES.map(drinkRowHTML).join('');
   h+='</div>'+AB(null,true,null,"sndScreen='o_cart';render()",'Ver carrito //');
   return h;
 }
