@@ -10,6 +10,13 @@ declare var google: any;
 
 interface Window {
   webkitAudioContext?: typeof AudioContext;
+  // Resultados vivos del buscador de direcciones del mapa (Nominatim). Cuelgan de
+  // window porque el onclick de cada fila se arma como texto dentro del HTML.
+  _addrHits?: any[];
+  // Distrito que el reverse geocoding del pin reconoció, ya mapeado a un id de
+  // DELIVERY_DISTRICTS. El pin es una señal más fuerte que el selector, así que
+  // confirmMap lo prefiere por encima de adivinar el distrito del texto escrito.
+  _mDistrict?: string;
   culqi?: any;
   _lastGuestName?: string;
   _lastGuestPhone?: string;

@@ -76,7 +76,7 @@ function rewardsPickerHTML(){
     // Antes se veía literalmente "<span style=...>S/</span>4" en pantalla al aplicar
     // cualquier recompensa con ahorro (hallazgo de auditoría UX, ALTO, confirmado por
     // 2 agentes independientes).
-    var sub=r.d+(!eligible?reqText:'')+(selected&&savings>0?' · ahorras '+SOLES_TXT+savings+' en '+targetLabel:(selected?' · se incluye con tu pedido':''));
+    var sub=r.d+(!eligible?reqText:'')+(selected&&savings>0?' · ahorras '+SOLES_TXT+pz(savings)+' en '+targetLabel:(selected?' · se incluye con tu pedido':''));
     return'<div onclick="'+(eligible?'toggleReward(\''+r.id+'\')':'')+'" style="background:'+(selected?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(selected?GOLD:'#3A6B58')+';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:'+(eligible?'pointer':'not-allowed')+';opacity:'+(eligible?1:.4)+';box-shadow:'+(selected?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;padding-right:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+r.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+r.s+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(sub)+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(selected?GOLD:'#A8C8B0')+';flex-shrink:0">'+(selected?'✓':'○')+'</span></div></div>';
   }).join('');
   return'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Usa tus puntos //</div>'+rows+'</div>';
@@ -217,8 +217,8 @@ function comboDrinkNudgeHTML(){
   // se MIDE (pantalla "Las tres palancas"), así que este cambio se puede evaluar en vez de
   // suponer que funcionó.
   var titulo=offPeak
-    ?'Es hora valle — tu bebida va GRATIS (hasta '+SOLES_TXT+OFFPEAK_DRINK_PROMO_CAP+')'
-    :'Infusiones de la casa, hechas acá — y el combo te descuenta '+SOLES_TXT+COMBO_DISCOUNT_PER_PAIR;
+    ?'Es hora valle — tu bebida va GRATIS (hasta '+SOLES_TXT+pz(OFFPEAK_DRINK_PROMO_CAP)+')'
+    :'Infusiones de la casa, hechas acá — y el combo te descuenta '+SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR);
   // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
   //
   // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
@@ -231,11 +231,16 @@ function comboDrinkNudgeHTML(){
   // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
   // contribución del pedido más de lo que sube el ticket.
   var chips=SIDES.map(function(d){
-    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+    // La foto va acá y no solo en la pantalla de BEBIDAS: este chip es el único empujón que
+    // ve quien nunca entra a esa pantalla, y una bebida descrita solo con texto compite de
+    // memoria contra un sándwich que sí tiene foto.
+    return'<div onclick="addSideToCart(\''+d.id+'\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer;display:flex;gap:9px;align-items:flex-start">'
+      +(DRINK_IMG[d.id]?'<img src="'+DRINK_IMG[d.id]+'" alt="" style="flex-shrink:0;width:40px;height:40px;object-fit:cover;border-radius:7px" loading="lazy">':'')
+      +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">'+esc(d.l)+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+esc(d.s)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';white-space:nowrap">+'+SOLES_TXT+d.p+'</div></div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';white-space:nowrap">+'+SOLES_TXT+pz(d.p)+'</div></div>'
       +(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">'+esc(d.d)+'</div>':'')
-      +'</div>';
+      +'</div></div>';
   }).join('');
   return'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-bottom:9px">'+titulo+'</div>'
@@ -264,11 +269,16 @@ function districtPickerHTML(){
     return'<option value="'+d.id+'"'+(sel?' selected':'')+(d.out?' disabled':'')+'>'+esc(d.l)+(d.out?' — todavía no llegamos aquí':'')+'</option>';
   }).join('');
   var out=DELIVERY_DISTRICTS.filter(function(d){return d.out;}).map(function(d){return d.l;}).join(' y ');
+  // Cuando el pin ya resolvió el distrito, esto deja de ser una PREGUNTA y pasa a ser una
+  // confirmación. El selector se queda en el DOM (es la única defensa de cobertura cuando
+  // no hay pin, y el servidor no ve el mapa), pero preguntar dos veces el mismo dato —
+  // una al mapa y otra al cliente — era exactamente lo que el dueño reportó como fricción.
+  var delPin=deliveryDistrictFromPin&&deliveryDistrict;
   return'<div>'
-    +'<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Distrito //</label>'
+    +'<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">'+(delPin?'Distrito // lo tomamos de tu mapa':'Distrito //')+'</label>'
     +'<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-shadow:'+SHADOW_SM+';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
     +'<option value=""'+(deliveryDistrict?'':' selected')+'>Elige tu distrito</option>'+opts+'</select>'
-    +'<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+esc('Por ahora no llegamos a '+out+'.')+'</div>'
+    +'<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+esc(delPin?'Si no es el correcto, cámbialo aquí.':'Por ahora no llegamos a '+out+'.')+'</div>'
     +'</div>';
 }
 // No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
@@ -276,6 +286,8 @@ function districtPickerHTML(){
 // vuelcan a las variables en syncConfirmFields).
 function pickDistrict(id){
   deliveryDistrict=id||'';
+  // Si el cliente lo toca, deja de ser lo que dijo el mapa.
+  deliveryDistrictFromPin=false;
   var hint=document.getElementById('o-district-hint');
   if(hint)hint.textContent=deliveryDistrict&&deliveryDistrict!=='otro'
     ?'Entregamos en '+((districtById(deliveryDistrict)||{}).l||'')+'.'
@@ -296,7 +308,7 @@ function deliveryZonePickerHTML(){
         :'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
           +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+km.toFixed(1)+' km hasta tu punto</div>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:'+GOLD+'">'+SOLES_TXT+pz(base)+'</div></div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
       +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
       +'</div></div>';
   }
@@ -305,7 +317,7 @@ function deliveryZonePickerHTML(){
   return'<div style="margin-top:14px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
     +'<div style="background:rgba(203,162,88,.08);border:1px solid '+GOLD+';border-radius:10px;padding:12px 14px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, '+SOLES_TXT+DELIVERY_KM_RATE+' por kilómetro.</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por kilómetro.</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
     +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:'+GOLD+';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
     +'</div></div>';
@@ -359,7 +371,7 @@ function checkoutExtrasHTML(){
     +(scheduleMode==='now'&&!storeStatus().open?'<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">'+icon('horario',13,'#ff8888')+'<span>'+esc(storeStatus().label)+' — elige "Programar" para pedir dentro de nuestro horario.</span></div>':'')
     +(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
     +'</div></details>'
-    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'toggleCredit()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
+    +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'toggleCredit()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(checked?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: '+SOLES+pz(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(checked?GOLD:'#A8C8B0')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
     // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
     // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
     // antes) para un pedido que no cuesta nada.
@@ -822,10 +834,10 @@ function manualPayInstructionsHTML(t){
       // exacto en que alguien se detiene a preguntarse si se equivocó de destinatario — y en
       // una transferencia manual esa duda es un pedido perdido. Decirlo antes la borra.
       +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:8px;background:var(--sw-card,#2D5246);border-radius:8px;padding:9px 11px">En Yape te va a aparecer a nombre de <b style="color:var(--sw-text-body,#F2F0EB)">'+esc(YAPE_PLIN_HOLDER)+'</b>. Es la cuenta del negocio — estás en el sitio correcto.</div>'
-      // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
-      // paso copia el número); en desktop no hay app que abrir, así que el único botón
-      // útil es copiar.
-      +'<button onclick="'+(mobile?'copyYapePlinPhone();openYapeApp()':'copyYapePlinPhone()')+'" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+(mobile?iconTxt('phone','Copiar número y abrir Yape','#0d0d0d'):'Copiar número')+'</button>'
+      // UN solo botón, igual en celular y en escritorio: copiar el número. La versión que
+      // decía "Copiar número y abrir Yape" no abría Yape nunca — abría el Play Store. Ver
+      // el comentario largo en `src/app/01-*` sobre por qué eso no tiene arreglo.
+      +'<button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">'+iconTxt('phone','Copiar número','#0d0d0d')+'</button>'
       // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
       //
       // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
@@ -855,7 +867,7 @@ function copyYapePlinPhone(){
   // toque mostraría "✓ Número copiado" pintado como si fuera un aviso de error.
   if(m)m.style.color='#25D366';
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Número copiado';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
+    navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function(){if(m)m.textContent='✓ Copiado — ahora abre Yape y pégalo';}).catch(function(){if(m)m.textContent=YAPE_PLIN_PHONE;});
   }else if(m){m.textContent=YAPE_PLIN_PHONE;}
 }
 // Subir captura del comprobante (item 12, opcional) — se comprime en el propio celular

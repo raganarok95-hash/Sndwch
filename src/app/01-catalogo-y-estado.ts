@@ -56,51 +56,26 @@ var YAPE_PLIN_HOLDER=BIZ_NAME;
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
 var STALE_MANUAL_PAYMENT_HOURS_CLIENT=3;
-// Deep link a la app de Yape — nunca autocompleta destinatario/monto (Yape no expone
-// esa API a terceros sin ser comercio afiliado con QR emitido por el banco); solo
-// intenta ABRIR la app para ahorrar el cambio manual de apps. Si Yape no está
-// instalado, Android cae solo al Play Store (via S.browser_fallback_url del intent)
-// e iOS simplemente no navega — ningún caso rompe nada, las instrucciones manuales
-// de abajo siguen siendo la vía real independientemente de si esto abre algo o no.
-// Package/App Store id verificados contra las fichas oficiales de Yape (no inventados).
-var YAPE_ANDROID_PKG='com.bcp.innovacxion.yapeapp';
+// ⚠ NO SE PUEDE ABRIR YAPE DESDE EL NAVEGADOR. NO LO VUELVAS A INTENTAR (2026-09-09).
+//
+// Hasta hoy el botón decía "Copiar número y abrir Yape" y en Android disparaba un
+// `intent://` con `S.browser_fallback_url` al Play Store. Lo que el dueño vio al probarlo
+// fue lo único que ese código podía hacer: **abrir la ficha de Play Store para DESCARGAR
+// Yape**, a alguien que ya la tiene instalada. Nunca abrió la app, ni una vez.
+//
+// La causa no es el enlace, es Android: un `intent://` solo puede lanzar una actividad que
+// declare `android.intent.category.BROWSABLE`, o sea que la app tiene que publicar un deep
+// link. Yape NO publica ninguno para terceros — no hay `yape://` documentado ni App Link
+// abierto (verificado por búsqueda el 2026-09-09, igual que en la investigación previa de
+// 2026-09-05 sobre el QR). Sin eso, el intent no resuelve y el navegador cae al fallback:
+// el Play Store. Quitar solo el fallback deja un botón que no hace nada, que es el mismo
+// defecto de silencio que ya se había "arreglado" con un aviso en ámbar.
+//
+// Así que el botón hace UNA cosa y la hace siempre: copiar el número. El cambio de app lo
+// hace la persona, que es lo que venía haciendo igual. Es la misma clase de decisión que
+// retirar el QR de contacto disfrazado de QR de cobro: mejor no prometer que prometer y
+// fallar. **Si alguien vuelve a proponer "abrir Yape", la respuesta está acá.**
 function isMobileUA(){return/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');}
-function yapeAppOpenUrl(){
-  var ua=navigator.userAgent||'';
-  if(/Android/i.test(ua))return'intent://#Intent;package='+YAPE_ANDROID_PKG+';scheme=yape;S.browser_fallback_url='+encodeURIComponent('https://play.google.com/store/apps/details?id='+YAPE_ANDROID_PKG)+';end';
-  if(/iPhone|iPad|iPod/i.test(ua))return'yape://';
-  return null;
-}
-// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
-//
-// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
-// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
-// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
-// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
-//
-// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
-// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
-// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
-// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
-function yapeOpenFailed(){
-  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
-  if(!m)return;
-  m.style.color='#ffcc66';
-  m.textContent='No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
-}
-function openYapeApp(){
-  var u=yapeAppOpenUrl();
-  if(!u){yapeOpenFailed();return;}
-  var abrio=false;
-  function marcar(){abrio=true;}
-  document.addEventListener('visibilitychange',marcar,{once:true});
-  window.addEventListener('pagehide',marcar,{once:true});
-  setTimeout(function(){
-    document.removeEventListener('visibilitychange',marcar);
-    if(!abrio&&!document.hidden)yapeOpenFailed();
-  },1200);
-  try{window.location.href=u;}catch(e){yapeOpenFailed();}
-}
 var showYapeQR=false;
 function toggleYapeQR(){showYapeQR=!showYapeQR;confirmRerender();}
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -549,7 +524,13 @@ var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',S
 // P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
 // P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
 // como el resto del set.
-var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg'};
+var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg',P08:'img/prot_p08.jpg'};
+// Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
+// dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
+// qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
+// sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
+// que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
+var DRINK_IMG={D06:'img/drink_d06.jpg',D07:'img/drink_d07.jpg',D08:'img/drink_d08.jpg'};
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -841,6 +822,9 @@ var DELIVERY_DISTRICTS=[
 // Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
 // zona de precio, que sí tiene default porque solo mueve el monto del motorizado.
 var deliveryDistrict='';
+// true cuando el distrito lo puso el pin del mapa y no el cliente: cambia el texto del
+// selector de pregunta a confirmación (ver districtPickerHTML).
+var deliveryDistrictFromPin=false;
 function districtById(id){return DELIVERY_DISTRICTS.find(function(d){return d.id===id;});}
 // El distrito elegido se ADJUNTA al texto de la dirección que se manda al servidor (no
 // viaja como campo propio: no hay columna para él y el motorizado necesita el distrito

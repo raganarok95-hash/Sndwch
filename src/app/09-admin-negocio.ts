@@ -62,11 +62,11 @@ function sAdminDashboard(){
     var color=pct>0?'#25D366':pct<0?'#ff8888':'#A8C8B0';
     return' · <span style="color:'+color+'">'+arrow+' '+(pct>0?'+':'')+pct+'% vs. antes</span>';
   }
-  h+='<div style="margin-bottom:10px">'+DHERO('Hoy',SOLES+d.revenue.today.revenue,d.revenue.today.count+' pedidos · tkt '+SOLES+d.revenue.today.avgTicket)+'</div>';
+  h+='<div style="margin-bottom:10px">'+DHERO('Hoy',SOLES+pz(d.revenue.today.revenue),d.revenue.today.count+' pedidos · tkt '+SOLES+pz(d.revenue.today.avgTicket))+'</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">'
-    +DTILE('Semana',SOLES+d.revenue.week.revenue,d.revenue.week.count+' pedidos · tkt '+SOLES+d.revenue.week.avgTicket+deltaTxt(d.deltas&&d.deltas.weekRevenuePct),true)
-    +DTILE('Mes',SOLES+d.revenue.month.revenue,d.revenue.month.count+' pedidos · tkt '+SOLES+d.revenue.month.avgTicket+deltaTxt(d.deltas&&d.deltas.monthRevenuePct),true)
-    +DTILE('Total',SOLES+d.revenue.allTime.revenue,d.revenue.allTime.count+' pedidos · tkt '+SOLES+d.revenue.allTime.avgTicket,true)
+    +DTILE('Semana',SOLES+pz(d.revenue.week.revenue),d.revenue.week.count+' pedidos · tkt '+SOLES+pz(d.revenue.week.avgTicket)+deltaTxt(d.deltas&&d.deltas.weekRevenuePct),true)
+    +DTILE('Mes',SOLES+pz(d.revenue.month.revenue),d.revenue.month.count+' pedidos · tkt '+SOLES+pz(d.revenue.month.avgTicket)+deltaTxt(d.deltas&&d.deltas.monthRevenuePct),true)
+    +DTILE('Total',SOLES+pz(d.revenue.allTime.revenue),d.revenue.allTime.count+' pedidos · tkt '+SOLES+pz(d.revenue.allTime.avgTicket),true)
     +'</div>';
   // Ganancia estimada = ingresos × (1 - costo de insumos ~40-50%, ver COGS_LOW/HIGH en
   // admin.ts) — siempre como rango, nunca como cifra exacta, porque no hay costo real
@@ -76,12 +76,12 @@ function sAdminDashboard(){
       +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.15em;margin-bottom:8px">Ganancia estimada (rango, no exacta) //</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       +[['Hoy',d.estimatedProfit.today],['Semana',d.estimatedProfit.week],['Mes',d.estimatedProfit.month],['Total',d.estimatedProfit.allTime]].map(function(x){
-        return'<div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">'+x[0]+'</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:#25D366">'+SOLES+x[1].low+'–'+SOLES+x[1].high+'</div></div>';
+        return'<div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">'+x[0]+'</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:#25D366">'+SOLES+pz(x[1].low)+'–'+SOLES+pz(x[1].high)+'</div></div>';
       }).join('')
       +'</div></div>';
   }
   if(d.codPending&&d.codPending.count>0){
-    h+='<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#ffa500;letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+d.codPending.count+' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#ffa500">'+SOLES+d.codPending.total+'</div></div>';
+    h+='<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#ffa500;letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+d.codPending.count+' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#ffa500">'+SOLES+pz(d.codPending.total)+'</div></div>';
   }
   // Tendencia 14 días
   if(d.trend&&d.trend.length){
@@ -125,7 +125,7 @@ function sAdminDashboard(){
     var pMax=Math.max.apply(null,d.topProducts.map(function(p){return p.count;}).concat([1]));
     h+=d.topProducts.map(function(p){
       var pct=Math.round((p.count/pMax)*100);
-      return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' vendidos · '+SOLES+p.revenue+'</span></div><div style="background:var(--sw-bg,#1E3932);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+      return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' vendidos · '+SOLES+pz(p.revenue)+'</span></div><div style="background:var(--sw-bg,#1E3932);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
     }).join('');
   }else{
     h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px">Aún no hay ventas pagadas para rankear productos.</div>';
@@ -140,7 +140,7 @@ function sAdminDashboard(){
     +DTILE('Nuevos · mes',d.customers.newThisMonth)
     // ROI del programa de referidos — antes no había ninguna forma de ver si el bono
     // de 50 puntos por referido realmente atrae clientes/ingresos.
-    +(d.referrals?DTILE('Clientes referidos',d.referrals.referredCustomers,SOLES+d.referrals.revenue+' en ventas'):'')
+    +(d.referrals?DTILE('Clientes referidos',d.referrals.referredCustomers,SOLES+pz(d.referrals.revenue)+' en ventas'):'')
     +'</div>';
   if(d.peakHours&&d.peakHours.length){
     var peakTop=d.peakHours.slice().sort(function(a,b){return b.count-a.count;})[0];
@@ -253,7 +253,7 @@ async function doManualCredit(){
   var ph=gv('ac-ph').trim(),delta=parseFloat(gv('ac-delta')||'0');
   acPhone=ph;acDelta=String(delta);if(!ph||!delta){acMsg='Ingresa teléfono y un monto distinto de cero.';render();return;}
   busy=true;busyMsg='Ajustando crédito...';render();
-  try{var r=await api('admin-manual-credit',{token:token,phone:ph,delta:delta});acMsg='✓ Nuevo saldo de '+esc(r.name)+': '+SOLES_TXT+r.newBalance.toFixed(2);if(cust&&cust.phone===ph)cust.credit_balance=r.newBalance;}
+  try{var r=await api('admin-manual-credit',{token:token,phone:ph,delta:delta});acMsg='✓ Nuevo saldo de '+esc(r.name)+': '+SOLES_TXT+pz(r.newBalance.toFixed(2));if(cust&&cust.phone===ph)cust.credit_balance=r.newBalance;}
   catch(e){acMsg='Error: '+e.message;}
   busy=false;render();
 }
@@ -339,6 +339,10 @@ function revGeo(lat,lon){
       var parts=[];
       var road=a.road||a.pedestrian||a.residential||a.suburb||'';
       var nb=a.neighbourhood||a.quarter||a.city_district||'';
+      // El pin ya sabe en qué distrito cayó: no tiene sentido que el checkout se lo
+      // pregunte al cliente aparte. `city_district`/`town`/`village` son los campos donde
+      // Nominatim pone el distrito en Perú; se prueban todos porque cambia según la zona.
+      window._mDistrict=districtFromAddress([a.city_district,a.town,a.village,a.suburb,a.county,a.city].filter(Boolean).join(', '))||'';
       if(road)parts.push(road);
       if(nb&&nb!==road)parts.push(nb);
       var hint=parts.length?parts.join(', '):'';
@@ -349,6 +353,77 @@ function revGeo(lat,lon){
       if(inp&&!inp.value&&hint)inp.value=hint;
     })
     .catch(function(){});
+}
+
+// ── BUSCADOR DE DIRECCIÓN ─────────────────────────────────────────────────────────────
+//
+// El campo "escribe tu dirección" existía desde siempre y NO BUSCABA NADA: solo capturaba
+// el texto que después se le manda al motorizado. La única forma real de poner el pin era
+// el GPS o arrastrar el mapa a mano desde un punto fijo de Trujillo. El dueño lo reportó
+// como "la geolocalización es una porquería, no ubica mi dirección" — y era literal: no
+// ubicaba nada porque no lo intentaba.
+//
+// Nominatim (OpenStreetMap) es lo que hay hoy y es gratis, pero su cobertura de
+// numeración en Trujillo es pobre: encuentra la avenida, muchas veces no el número. Por
+// eso el resultado se presenta como PUNTO DE PARTIDA y el pin sigue siendo arrastrable —
+// prometer precisión que el geocodificador no tiene sería peor que no buscar.
+//
+// ⚠ Nominatim exige un máximo de 1 petición por segundo. De ahí el debounce de 900 ms, el
+// mínimo de 4 caracteres y el guardia de petición en vuelo: sin eso, escribir rápido
+// dispara una petición por tecla y OSM bloquea a TODOS los clientes de la app a la vez.
+var _addrTimer=null,_addrBusy=false,_addrLast='';
+function addrResultsEl(){return(document.getElementById('maddr-results') as HTMLElement | null);}
+function addrSearchTyped(){
+  if(_addrTimer)clearTimeout(_addrTimer);
+  _addrTimer=setTimeout(addrSearchNow,900);
+}
+function addrSearchNow(){
+  if(_addrTimer){clearTimeout(_addrTimer);_addrTimer=null;}
+  var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
+  var q=inp?inp.value.trim():'';
+  var box=addrResultsEl();
+  if(!box)return;
+  if(q.length<4){box.style.display='none';box.innerHTML='';return;}
+  if(_addrBusy||q===_addrLast)return;
+  _addrBusy=true;_addrLast=q;
+  box.style.display='block';
+  box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">Buscando...</div>';
+  // `bounded=1` + `viewbox` alrededor de Trujillo: sin eso, "Av. España" devuelve España.
+  var vb='-79.20,-8.28,-78.88,-7.98';
+  var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&accept-language=es'
+    +'&bounded=1&viewbox='+vb+'&q='+encodeURIComponent(q);
+  fetch(url).then(function(r){return r.json();}).then(function(list){
+    _addrBusy=false;
+    if(!Array.isArray(list)||!list.length){
+      box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
+        +'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
+      return;
+    }
+    box.innerHTML=list.map(function(r,i){
+      var nom=String(r.display_name||'').split(',').slice(0,4).join(',');
+      return'<div onclick="addrPick('+i+')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
+        +'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">'+esc(nom)+'</div>';
+    }).join('');
+    window._addrHits=list;
+  }).catch(function(){
+    _addrBusy=false;
+    box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500">'
+      +'No pudimos buscar ahora. Arrastra el mapa hasta tu punto.</div>';
+  });
+}
+// Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: el número exacto
+// casi nunca lo tiene OSM, así que lo que sigue es que la persona ajuste el pin. Cerrar
+// acá daría por buena una precisión que no tenemos.
+function addrPick(i){
+  var list=window._addrHits||[];
+  var r=list[i];
+  if(!r)return;
+  var box=addrResultsEl();
+  if(box){box.style.display='none';box.innerHTML='';}
+  var banner=(document.getElementById('mmap-accuracy-banner') as HTMLElement | null);
+  if(banner)banner.style.display='block';
+  if(_lmap){_lmap.setView([parseFloat(r.lat),parseFloat(r.lon)],18);}
+  else{openMap(parseFloat(r.lat),parseFloat(r.lon),true);}
 }
 
 function closeMap(){(document.getElementById('mmap') as HTMLInputElement | null).style.display='none';}
@@ -374,8 +449,11 @@ function confirmMap(){
   // Si el pin cae claramente en otro distrito del que estaba elegido, no tiene sentido
   // dejar el anterior: el mapa es un dato más fuerte que un selector que el cliente
   // quizá ni tocó.
-  var inferred=districtFromAddress(a);
-  if(inferred)deliveryDistrict=inferred;
+  // El pin manda sobre el texto: alguien puede escribir "casa de mi mamá" y el mapa igual
+  // sabe dónde está. Solo si el reverse geocoding no reconoció el distrito se cae a
+  // adivinarlo de lo escrito, que es lo único que había antes.
+  var inferred=window._mDistrict||districtFromAddress(a);
+  if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=!!window._mDistrict;}
   render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
   if(el){el.style.borderColor='#3A86FF';el.focus();}
@@ -1294,7 +1372,7 @@ function sAdminCatalogItems(){
       +BTN('Publicar cambios //','saveCatalogItem()')
       :'<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">No hay Signatures publicados todavía.</p>')
     +(ciHistory.length?'<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-      +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+h.price_15+'/'+SOLES_TXT+h.price_30+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
+      +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+pz(h.price_15)+'/'+SOLES_TXT+pz(h.price_30)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
     +'</div>';
 }
 async function saveCatalogItem(){
@@ -1372,7 +1450,7 @@ function sAdminCustomer(){
       +'<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">'
       +'<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Puntos</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(c.points||0)+'</div></div>'
       +'<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Pedidos</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(c.total_orders||0)+'</div></div>'
-      +'<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Crédito</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+(c.credit_balance||0)+'</div></div>'
+      +'<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Crédito</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(c.credit_balance||0)+'</div></div>'
       +'</div></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Pedidos recientes // '+custDetail.orders.length+'</div>';
     h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(o.ref)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(o.date)+' · '+SOLES+pz(o.total)+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin pedidos //</div>';
@@ -1586,16 +1664,16 @@ function sAdminReport(){
     var d=reportData;
     h+='<div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
     h+='<div style="display:flex;gap:10px;margin-bottom:16px">'
-      +DTILE('Ingresos',SOLES+d.revenue,d.count+' pedidos')
-      +DTILE('Ticket prom.',SOLES+d.avgTicket)
+      +DTILE('Ingresos',SOLES+pz(d.revenue),d.count+' pedidos')
+      +DTILE('Ticket prom.',SOLES+pz(d.avgTicket))
       +'</div>';
     if(d.truncated)h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:12px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ffa500')+'<span>Hay más pedidos en este rango de los que se muestran aquí.</span></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Por método de pago //</div>';
     h+=Object.keys(d.byMethod).length?Object.keys(d.byMethod).map(function(m){var v=d.byMethod[m];return DBAR(m.toUpperCase(),v.count,d.count);}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Productos top //</div>';
-    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+p.revenue+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
+    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+pz(p.revenue)+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Por día //</div>';
-    h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+esc(day.date)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+day.count+' · '+SOLES+day.revenue+'</span></div>';}).join(''):'';
+    h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+esc(day.date)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+day.count+' · '+SOLES+pz(day.revenue)+'</span></div>';}).join(''):'';
   }
   h+='</div>';
   return h;
@@ -1803,7 +1881,7 @@ function sAdminPromo(){
     h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Sin códigos creados todavía.</div>';
   }else{
     h+=promoCodesData.map(function(p){
-      var valueLabel=p.discount_type==='percent'?p.value+'%':SOLES_TXT+p.value;
+      var valueLabel=p.discount_type==='percent'?p.value+'%':SOLES_TXT+pz(p.value);
       var usesLabel=(p.uses_count||0)+(p.max_uses!=null?'/'+p.max_uses:'')+' usos';
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.code)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(valueLabel+' · '+usesLabel+(p.campaign_tag?' · '+p.campaign_tag:''))+'</div></div><div onclick="togglePromoCode(\''+p.id+'\','+(!p.active)+')" style="flex-shrink:0;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:'+(p.active?'#25D366':'#ff8888')+'">'+(p.active?'Activo':'Inactivo')+'</div></div></div>';
     }).join('');
@@ -1827,7 +1905,7 @@ function sAdminCampaignPerf(){
     h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Sin envíos registrados en este período.</div>';
   }else{
     h+=d.campaigns.map(function(c){
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+esc(c.campaignType)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+c.touches+' envíos · '+c.customersReached+' clientes · <span style="color:'+GOLD+'">'+c.conversionRate+'% convirtió</span> · '+SOLES_TXT+c.revenue+' en ingresos</div></div>';
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+esc(c.campaignType)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+c.touches+' envíos · '+c.customersReached+' clientes · <span style="color:'+GOLD+'">'+c.conversionRate+'% convirtió</span> · '+SOLES_TXT+pz(c.revenue)+' en ingresos</div></div>';
     }).join('');
   }
   h+='</div>';

@@ -142,6 +142,19 @@ export const META_GRAPH_VERSION = "v21.0";
 // píxel se ve en el HTML de cualquier sitio que lo use). META_CAPI_TOKEN NUNCA sale del
 // servidor.
 export const META_PIXEL_ID = Deno.env.get("META_PIXEL_ID");
+
+// Clave de Google Maps (Places + Geocoding + mapa) para el buscador de dirección del
+// checkout. Viaja al cliente por get-store-hours igual que META_PIXEL_ID, y por la misma
+// razón: es una clave de NAVEGADOR, pública por diseño — quien abra la app la ve en el
+// código. Lo que la protege no es el secreto sino la RESTRICCIÓN POR REFERRER que hay que
+// configurar en Google Cloud Console (solo https://sndwch.app/*): sin eso, cualquiera
+// puede usarla y el consumo lo paga el dueño.
+//
+// Mandarla desde el servidor y no escribirla en el cliente permite además prenderla y
+// apagarla sin redesplegar el cliente. **Si no está, el mapa cae solo a OpenStreetMap** —
+// que es gratis, menos preciso y sigue funcionando. Un checkout roto por una clave vencida
+// sería mucho peor que un geocodificador mediocre.
+export const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_KEY");
 export const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN");
 
 // Identidad legal del negocio — persona natural con negocio (RUC 10). Usada en el

@@ -241,63 +241,26 @@ var YAPE_PLIN_HOLDER = BIZ_NAME;
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
 var STALE_MANUAL_PAYMENT_HOURS_CLIENT = 3;
-// Deep link a la app de Yape — nunca autocompleta destinatario/monto (Yape no expone
-// esa API a terceros sin ser comercio afiliado con QR emitido por el banco); solo
-// intenta ABRIR la app para ahorrar el cambio manual de apps. Si Yape no está
-// instalado, Android cae solo al Play Store (via S.browser_fallback_url del intent)
-// e iOS simplemente no navega — ningún caso rompe nada, las instrucciones manuales
-// de abajo siguen siendo la vía real independientemente de si esto abre algo o no.
-// Package/App Store id verificados contra las fichas oficiales de Yape (no inventados).
-var YAPE_ANDROID_PKG = 'com.bcp.innovacxion.yapeapp';
+// ⚠ NO SE PUEDE ABRIR YAPE DESDE EL NAVEGADOR. NO LO VUELVAS A INTENTAR (2026-09-09).
+//
+// Hasta hoy el botón decía "Copiar número y abrir Yape" y en Android disparaba un
+// `intent://` con `S.browser_fallback_url` al Play Store. Lo que el dueño vio al probarlo
+// fue lo único que ese código podía hacer: **abrir la ficha de Play Store para DESCARGAR
+// Yape**, a alguien que ya la tiene instalada. Nunca abrió la app, ni una vez.
+//
+// La causa no es el enlace, es Android: un `intent://` solo puede lanzar una actividad que
+// declare `android.intent.category.BROWSABLE`, o sea que la app tiene que publicar un deep
+// link. Yape NO publica ninguno para terceros — no hay `yape://` documentado ni App Link
+// abierto (verificado por búsqueda el 2026-09-09, igual que en la investigación previa de
+// 2026-09-05 sobre el QR). Sin eso, el intent no resuelve y el navegador cae al fallback:
+// el Play Store. Quitar solo el fallback deja un botón que no hace nada, que es el mismo
+// defecto de silencio que ya se había "arreglado" con un aviso en ámbar.
+//
+// Así que el botón hace UNA cosa y la hace siempre: copiar el número. El cambio de app lo
+// hace la persona, que es lo que venía haciendo igual. Es la misma clase de decisión que
+// retirar el QR de contacto disfrazado de QR de cobro: mejor no prometer que prometer y
+// fallar. **Si alguien vuelve a proponer "abrir Yape", la respuesta está acá.**
 function isMobileUA() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ''); }
-function yapeAppOpenUrl() {
-    var ua = navigator.userAgent || '';
-    if (/Android/i.test(ua))
-        return 'intent://#Intent;package=' + YAPE_ANDROID_PKG + ';scheme=yape;S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=' + YAPE_ANDROID_PKG) + ';end';
-    if (/iPhone|iPad|iPod/i.test(ua))
-        return 'yape://';
-    return null;
-}
-// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
-//
-// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
-// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
-// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
-// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
-//
-// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
-// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
-// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
-// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
-function yapeOpenFailed() {
-    var m = document.getElementById('ypc-msg');
-    if (!m)
-        return;
-    m.style.color = '#ffcc66';
-    m.textContent = 'No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
-}
-function openYapeApp() {
-    var u = yapeAppOpenUrl();
-    if (!u) {
-        yapeOpenFailed();
-        return;
-    }
-    var abrio = false;
-    function marcar() { abrio = true; }
-    document.addEventListener('visibilitychange', marcar, { once: true });
-    window.addEventListener('pagehide', marcar, { once: true });
-    setTimeout(function () {
-        document.removeEventListener('visibilitychange', marcar);
-        if (!abrio && !document.hidden)
-            yapeOpenFailed();
-    }, 1200);
-    try {
-        window.location.href = u;
-    }
-    catch (e) {
-        yapeOpenFailed();
-    }
-}
 var showYapeQR = false;
 function toggleYapeQR() { showYapeQR = !showYapeQR; confirmRerender(); }
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -745,7 +708,13 @@ var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig0
 // P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
 // P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
 // como el resto del set.
-var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/prot_p04.jpg', P05: 'img/prot_p05.jpg', P06: 'img/prot_p06.jpg' };
+var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/prot_p04.jpg', P05: 'img/prot_p05.jpg', P06: 'img/prot_p06.jpg', P08: 'img/prot_p08.jpg' };
+// Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
+// dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
+// qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
+// sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
+// que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
+var DRINK_IMG = { D06: 'img/drink_d06.jpg', D07: 'img/drink_d07.jpg', D08: 'img/drink_d08.jpg' };
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -1060,6 +1029,9 @@ var DELIVERY_DISTRICTS = [
 // Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
 // zona de precio, que sí tiene default porque solo mueve el monto del motorizado.
 var deliveryDistrict = '';
+// true cuando el distrito lo puso el pin del mapa y no el cliente: cambia el texto del
+// selector de pregunta a confirmación (ver districtPickerHTML).
+var deliveryDistrictFromPin = false;
 function districtById(id) { return DELIVERY_DISTRICTS.find(function (d) { return d.id === id; }); }
 // El distrito elegido se ADJUNTA al texto de la dirección que se manda al servidor (no
 // viaja como campo propio: no hay columna para él y el motorizado necesita el distrito
@@ -1573,7 +1545,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '784038507b';
+var APP_BUILD = '876da44a1f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3012,7 +2984,7 @@ function sOHome() {
         // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
         // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
         // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde ' + SOLES_TXT + DELIVERY_PRICE_ZONES[0].fee + ' según tu zona — lo cobra el motorizado, ~' + SOLES_TXT + '2 por km.</div>';
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde ' + SOLES_TXT + pz(DELIVERY_PRICE_ZONES[0].fee) + ' según tu zona — lo cobra el motorizado, ~' + SOLES_TXT + '2 por km.</div>';
     var lastOrd = cust ? lastPaidOrder() : null;
     var recoItems = lastOrd ? (lastOrd.items && lastOrd.items.length ? lastOrd.items : (lastOrd.build ? [buildToCartItem(lastOrd.build)] : null)) : null;
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(lastOrd.summary || '') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
@@ -3112,7 +3084,7 @@ function sOHome() {
                     if (!rec)
                         return '';
                     return '<div onclick="startOrderWithSig(\'' + rec.id + '\')" style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
-                        + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:' + GOLD + '">' + esc(rec.n) + '</b> es una receta armada y probada — ' + SOLES + rec.p15 + ' en 15CM.</div></div>';
+                        + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:' + GOLD + '">' + esc(rec.n) + '</b> es una receta armada y probada — ' + SOLES + pz(rec.p15) + ' en 15CM.</div></div>';
                 })()
                 + '</div>';
             var vaultCard = secretSig ? (function () {
@@ -3129,7 +3101,7 @@ function sOHome() {
                     + '<span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:1px solid ' + GOLD + ';font-family:\'EB Garamond\',serif;font-style:italic;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.04em;margin:0 auto 14px">Secreto</span>'
                     + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">' + secretSig.n + '</div>'
                     + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea en ' + esc(rankName(secretSig.minOrders)) + '<br>(' + secretSig.minOrders + ' pedidos).</div>'
-                    + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + secretSig.p15 : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + pz(secretSig.p15) : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
                     + '</div></div>';
             })() : '';
             // Pedido de oficina — el canal con mejor economía del negocio: una sola entrega para
@@ -3331,9 +3303,9 @@ function sGroupOrder() {
         h += BTN('Compartir link //', 'shareGroupOrder()');
     }
     h += (g.items.length ? g.items.map(function (it) {
-        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(it.label) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">' + esc(it.contributorName) + '</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + it.unitPrice + '</div></div>';
+        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(it.label) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">' + esc(it.contributorName) + '</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + pz(it.unitPrice) + '</div></div>';
     }).join('') : '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:14px">Nadie agregó su pedido todavía.</div>');
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:' + GOLD + '">' + SOLES + g.total + '</span></div>';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(g.total) + '</span></div>';
     // Avance del sándwich gratis del organizador. Es el motor del canal de oficinas: le
     // da a quien está juntando al grupo una razón concreta para insistirle a un compañero
     // más, y esa insistencia es la venta que el dueño no puede hacer él mismo.
@@ -3364,13 +3336,13 @@ function sGroupOrder() {
         h += '<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '15' ? GOLD : '#1A3028') + ';color:' + (groupSize === '15' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:' + (groupSize === '30' ? GOLD : '#1A3028') + ';color:' + (groupSize === '30' ? '#0d0d0d' : '#A8C8B0') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
         h += SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).map(function (s) {
             var price = groupSize === '15' ? s.p15 : s.p30;
-            return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">' + SOLES + price + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+            return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(s.s) + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">' + SOLES + pz(price) + '</div></div><button onclick="doAddGroupItem(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
         }).join('');
         // Antes solo se podían agregar Signatures — quien solo quería sumar una bebida sin
         // sándwich (o completar la suya) no tenía forma de hacerlo (hallazgo de auditoría UX).
         h += '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin:14px 0 12px">Bebidas y sides //</div>';
         h += SIDES.map(function (s) {
-            return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">' + SOLES + s.p + '</div></div><button onclick="doAddGroupSide(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+            return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + s.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + s.s + '</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:' + GOLD + '">' + SOLES + pz(s.p) + '</div></div><button onclick="doAddGroupSide(\'' + s.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
         }).join('');
         h += '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px;min-height:14px">' + esc(groupMsg) + '</div>';
         if (g.isOrganizer) {
@@ -3404,7 +3376,7 @@ function sOSig() {
         }
         var sel = sigId === s.id, pr = PROTS.find(function (x) { return x.id === s.prot; }), bs = BASES.find(function (x) { return x.id === s.base; });
         var av = sigInStock(s);
-        var priceTag = size ? SOLES + sigPrice(s) : '—';
+        var priceTag = size ? SOLES + pz(sigPrice(s)) : '—';
         if (!av) {
             var notifyRequested = restockNotified.indexOf(s.id) >= 0;
             return '<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + s.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + sigTypeTag(s.s) + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">' + (bs ? bs.l + ' // ' + bs.s : '') + ' · ' + (pr ? pr.l + ' // ' + pr.s : '') + '</div>'
@@ -3581,7 +3553,7 @@ function sOBuild() {
     }
     else if (byoStep === 1) {
         h += ST('', 'Proteína', '');
-        h += PROTS.filter(function (p) { return !p.vaultOnly && !p.sigOnly; }).map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + protPrice(p) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="' + esc(p.l + ' ' + p.s) + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (prot === p.id ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
+        h += PROTS.filter(function (p) { return !p.vaultOnly && !p.sigOnly; }).map(function (p) { var av = isAvail(p.id); var priceTag = size ? SOLES + pz(protPrice(p)) : '—'; var thumb = PROT_IMG[p.id] ? '<img src="' + PROT_IMG[p.id] + '" alt="' + esc(p.l + ' ' + p.s) + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">' : ''; return av ? CARD(p, prot === p.id, 'prot=\'' + p.id + '\';render()', '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:' + (prot === p.id ? GOLD : 'var(--sw-text-muted,#A8C8B0)') + '">' + priceTag + '</span>' + lowStockNote(p.id), thumb) : CARDOFF(p); }).join('');
         // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
         // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
         // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
@@ -3700,17 +3672,20 @@ function sOItemConfirm() {
     // se elegía una vez, más arriba en el flujo (SZTOG), sin ninguna segunda oportunidad de
     // upsell aquí. 0 cuando el 30CM no cuesta más que el 15CM (hoy ningún ítem) —
     // no tiene sentido "sugerir" un upgrade que no mueve el ticket.
-    var sizeUpsellDelta = size === '15' ? (mode === 'sig' ? (sig ? sig.p30 - sig.p15 : 0) : (pr ? pr.p30 - pr.p15 : 0)) : 0;
+    // money() no es cosmético acá: 23.90-13.90 en punto flotante da 9.999999999999998, y esa
+    // era la cifra que el cliente veía en el empujón a 30CM. Se redondea en el CÁLCULO y no
+    // solo al pintarlo, porque el mismo valor decide si la tarjeta aparece (>0).
+    var sizeUpsellDelta = money(size === '15' ? (mode === 'sig' ? (sig ? sig.p30 - sig.p15 : 0) : (pr ? pr.p30 - pr.p15 : 0)) : 0);
     function uSel(k) { return k === 'doubleProt' ? doubleProt : k === 'sauce' ? extraSauce : k === 'cheese' ? !!cheese : false; }
     function uBtn(k, e, l, d, p, sel) {
         var act = (k === 'doubleProt' ? 'doubleProt=!doubleProt' : k === 'sauce' ? 'extraSauce=!extraSauce' : 'cheese=(cheese?null:\'C02\')') + (quickPayEligible ? ';cart[0]=currentBuiltItem()' : '');
-        var priceLabel = p ? SOLES + p : 'GRATIS';
+        var priceLabel = p ? SOLES + pz(p) : 'GRATIS';
         return '<div onclick="' + act + ';' + (quickPayEligible ? 'confirmRerender()' : 'render()') + '" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">' + e + '</span><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + l + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + d + '</div></div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + (sel ? GOLD : '#A8C8B0') + ';flex-shrink:0;margin-left:8px">' + (sel ? '✓ ' : '+') + priceLabel + '</span></div>';
     }
     var sigNameHTML = (mode === 'sig' && sig) ? '<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">' + sig.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(sig.s) + '</div></div>' : '';
     return H('CONFIRMAR SÁNDWICH', (quickPayEligible ? 'backFromConfirm()' : 'go(\'' + bk + '\')'), true) + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-        + '<div style="background:' + 'var(--sw-card,#2D5246)' + ';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:14px">' + (mode === 'sig' ? 'Tu signature //' : 'Tu build //') + '</div>' + rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:' + GOLD + ';min-width:72px">' + r.k + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">' + r.v + '</span>' + (r.p ? '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + SOLES + r.p + '</span>' : '') + '</div>'; }).join('') + sigNameHTML + '<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span></div></div>'
-        + (sizeUpsellDelta > 0 ? '<div onclick="size=\'30\';' + (quickPayEligible ? 'cart[0]=currentBuiltItem();confirmRerender()' : 'render()') + '" style="background:' + 'var(--sw-card2,#1A3028)' + ';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:' + GOLD + '">+' + SOLES + sizeUpsellDelta + '</span></div></div>' : '')
+        + '<div style="background:' + 'var(--sw-card,#2D5246)' + ';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:14px">' + (mode === 'sig' ? 'Tu signature //' : 'Tu build //') + '</div>' + rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:' + GOLD + ';min-width:72px">' + r.k + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">' + r.v + '</span>' + (r.p ? '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + SOLES + pz(r.p) + '</span>' : '') + '</div>'; }).join('') + sigNameHTML + '<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span></div></div>'
+        + (sizeUpsellDelta > 0 ? '<div onclick="size=\'30\';' + (quickPayEligible ? 'cart[0]=currentBuiltItem();confirmRerender()' : 'render()') + '" style="background:' + 'var(--sw-card2,#1A3028)' + ';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:' + GOLD + '">+' + SOLES + pz(sizeUpsellDelta) + '</span></div></div>' : '')
         + (recU ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>' + uBtn(recU.k, recU.e, recU.l, recU.d, recU.p, uSel(recU.k)) + '</div>' : '')
         + '<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'Doble proteína', 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), dblFee(dbl, size), doubleProt) : '') + (sauceExtraAllowed ? uBtn('sauce', icon('chili', 18, GOLD), 'Salsa extra', 'Salsa adicional a tu elección', 2, extraSauce) : '') + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'Queso', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
         + (cust ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('estrella', 11, GOLD) + '<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:6px">' + favMsg + '</div></div>' : '')
@@ -3740,13 +3715,21 @@ async function doSaveFavorite() {
         render();
     }
 }
+// Miniatura de una bebida. Con foto es una foto; sin foto vuelve al ícono de línea que
+// había antes. El respaldo no es decorativo: una bebida nueva publicada desde el panel no
+// tiene archivo en `img/`, y devolver un hueco dejaría la fila descuadrada.
+function sideThumbHTML(d) {
+    if (DRINK_IMG[d.id])
+        return '<img src="' + DRINK_IMG[d.id] + '" alt="' + esc(d.l + ' ' + d.s) + '" style="flex-shrink:0;width:48px;height:48px;object-fit:cover;border-radius:8px" loading="lazy">';
+    return '<div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">' + icon(d.icon, 17, GOLD) + '</div>';
+}
 // SIDES/BEBIDAS
 function sOSides() {
     var h = H('BEBIDAS Y SIDES', "sndScreen='o_cart';render()", true) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">' + ST('01', 'Elige', 'Se agregan a tu carrito.');
     h += SIDES.map(function (d) {
         var inCart = cart.find(function (it) { return it.type === 'side' && it.code === d.id; });
         var qty = inCart ? inCart.qty : 0;
-        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1"><div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(203,162,88,.12);display:flex;align-items:center;justify-content:center">' + icon(d.icon, 17, GOLD) + '</div><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + d.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + d.s + '</div>' + (d.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">' + esc(d.d) + '</div>' : '') + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-top:4px">' + SOLES + d.p + '</div></div></div>' + (qty > 0 ? '<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\'' + d.id + '\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">' + qty + '</span><button onclick="sideQtyChange(\'' + d.id + '\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div>' : '<button onclick="addSideToCart(\'' + d.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>') + '</div>';
+        return '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1">' + sideThumbHTML(d) + '<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + d.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + d.s + '</div>' + (d.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">' + esc(d.d) + '</div>' : '') + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-top:4px">' + SOLES + pz(d.p) + '</div></div></div>' + (qty > 0 ? '<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\'' + d.id + '\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">' + qty + '</span><button onclick="sideQtyChange(\'' + d.id + '\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:6px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600">+</button></div>' : '<button onclick="addSideToCart(\'' + d.id + '\')" style="all:unset;cursor:pointer;background:' + GOLD + ';color:#241a08;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>') + '</div>';
     }).join('');
     h += '</div>' + AB(null, true, null, "sndScreen='o_cart';render()", 'Ver carrito //');
     return h;
@@ -3836,7 +3819,7 @@ function rewardsPickerHTML() {
         // Antes se veía literalmente "<span style=...>S/</span>4" en pantalla al aplicar
         // cualquier recompensa con ahorro (hallazgo de auditoría UX, ALTO, confirmado por
         // 2 agentes independientes).
-        var sub = r.d + (!eligible ? reqText : '') + (selected && savings > 0 ? ' · ahorras ' + SOLES_TXT + savings + ' en ' + targetLabel : (selected ? ' · se incluye con tu pedido' : ''));
+        var sub = r.d + (!eligible ? reqText : '') + (selected && savings > 0 ? ' · ahorras ' + SOLES_TXT + pz(savings) + ' en ' + targetLabel : (selected ? ' · se incluye con tu pedido' : ''));
         return '<div onclick="' + (eligible ? 'toggleReward(\'' + r.id + '\')' : '') + '" style="background:' + (selected ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (selected ? GOLD : '#3A6B58') + ';border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:' + (eligible ? 'pointer' : 'not-allowed') + ';opacity:' + (eligible ? 1 : .4) + ';box-shadow:' + (selected ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div style="flex:1;padding-right:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + r.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + r.s + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + esc(sub) + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (selected ? GOLD : '#A8C8B0') + ';flex-shrink:0">' + (selected ? '✓' : '○') + '</span></div></div>';
     }).join('');
     return '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Usa tus puntos //</div>' + rows + '</div>';
@@ -3996,8 +3979,8 @@ function comboDrinkNudgeHTML() {
     // se MIDE (pantalla "Las tres palancas"), así que este cambio se puede evaluar en vez de
     // suponer que funcionó.
     var titulo = offPeak
-        ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + OFFPEAK_DRINK_PROMO_CAP + ')'
-        : 'Infusiones de la casa, hechas acá — y el combo te descuenta ' + SOLES_TXT + COMBO_DISCOUNT_PER_PAIR;
+        ? 'Es hora valle — tu bebida va GRATIS (hasta ' + SOLES_TXT + pz(OFFPEAK_DRINK_PROMO_CAP) + ')'
+        : 'Infusiones de la casa, hechas acá — y el combo te descuenta ' + SOLES_TXT + pz(COMBO_DISCOUNT_PER_PAIR);
     // ── LA BEBIDA SE VENDE CON SU DESCRIPCIÓN, NO CON SU NOMBRE (2026-09-05) ──────────────
     //
     // Antes estas tarjetas mostraban nombre + precio y nada más, en cuatro columnas de 72px.
@@ -4010,11 +3993,16 @@ function comboDrinkNudgeHTML() {
     // de bebida del flujo, y la bebida es el ítem de mejor margen del catálogo: sube la
     // contribución del pedido más de lo que sube el ticket.
     var chips = SIDES.map(function (d) {
-        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer">'
+        // La foto va acá y no solo en la pantalla de BEBIDAS: este chip es el único empujón que
+        // ve quien nunca entra a esa pantalla, y una bebida descrita solo con texto compite de
+        // memoria contra un sándwich que sí tiene foto.
+        return '<div onclick="addSideToCart(\'' + d.id + '\')" style="flex:1 1 calc(50% - 4px);min-width:130px;background:var(--sw-card,#2D5246);border:1px solid #3A6B58;border-radius:10px;padding:10px 11px;cursor:pointer;display:flex;gap:9px;align-items:flex-start">'
+            + (DRINK_IMG[d.id] ? '<img src="' + DRINK_IMG[d.id] + '" alt="" style="flex-shrink:0;width:40px;height:40px;object-fit:cover;border-radius:7px" loading="lazy">' : '')
+            + '<div style="flex:1;min-width:0">'
             + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.25">' + esc(d.l) + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + esc(d.s) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';white-space:nowrap">+' + SOLES_TXT + d.p + '</div></div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';white-space:nowrap">+' + SOLES_TXT + pz(d.p) + '</div></div>'
             + (d.d ? '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">' + esc(d.d) + '</div>' : '')
-            + '</div>';
+            + '</div></div>';
     }).join('');
     return '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-bottom:9px">' + titulo + '</div>'
@@ -4043,11 +4031,16 @@ function districtPickerHTML() {
         return '<option value="' + d.id + '"' + (sel ? ' selected' : '') + (d.out ? ' disabled' : '') + '>' + esc(d.l) + (d.out ? ' — todavía no llegamos aquí' : '') + '</option>';
     }).join('');
     var out = DELIVERY_DISTRICTS.filter(function (d) { return d.out; }).map(function (d) { return d.l; }).join(' y ');
+    // Cuando el pin ya resolvió el distrito, esto deja de ser una PREGUNTA y pasa a ser una
+    // confirmación. El selector se queda en el DOM (es la única defensa de cobertura cuando
+    // no hay pin, y el servidor no ve el mapa), pero preguntar dos veces el mismo dato —
+    // una al mapa y otra al cliente — era exactamente lo que el dueño reportó como fricción.
+    var delPin = deliveryDistrictFromPin && deliveryDistrict;
     return '<div>'
-        + '<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Distrito //</label>'
+        + '<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">' + (delPin ? 'Distrito // lo tomamos de tu mapa' : 'Distrito //') + '</label>'
         + '<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:16px;box-shadow:' + SHADOW_SM + ';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
         + '<option value=""' + (deliveryDistrict ? '' : ' selected') + '>Elige tu distrito</option>' + opts + '</select>'
-        + '<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">' + esc('Por ahora no llegamos a ' + out + '.') + '</div>'
+        + '<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">' + esc(delPin ? 'Si no es el correcto, cámbialo aquí.' : 'Por ahora no llegamos a ' + out + '.') + '</div>'
         + '</div>';
 }
 // No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
@@ -4055,6 +4048,8 @@ function districtPickerHTML() {
 // vuelcan a las variables en syncConfirmFields).
 function pickDistrict(id) {
     deliveryDistrict = id || '';
+    // Si el cliente lo toca, deja de ser lo que dijo el mapa.
+    deliveryDistrictFromPin = false;
     var hint = document.getElementById('o-district-hint');
     if (hint)
         hint.textContent = deliveryDistrict && deliveryDistrict !== 'otro'
@@ -4076,7 +4071,7 @@ function deliveryZonePickerHTML() {
                 : '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
                     + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + km.toFixed(1) + ' km hasta tu punto</div>'
                     + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:' + GOLD + '">' + SOLES_TXT + pz(base) + '</div></div>'
-                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, ' + SOLES_TXT + DELIVERY_KM_RATE + ' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:4px">Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
             + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
             + '</div></div>';
     }
@@ -4085,7 +4080,7 @@ function deliveryZonePickerHTML() {
     return '<div style="margin-top:14px">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
         + '<div style="background:rgba(203,162,88,.08);border:1px solid ' + GOLD + ';border-radius:10px;padding:12px 14px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + DELIVERY_KM_RATE + ' por kilómetro.</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro.</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
         + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
         + '</div></div>';
@@ -4139,7 +4134,7 @@ function checkoutExtrasHTML() {
         + (scheduleMode === 'now' && !storeStatus().open ? '<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:#ff8888;display:flex;align-items:center;gap:7px">' + icon('horario', 13, '#ff8888') + '<span>' + esc(storeStatus().label) + ' — elige "Programar" para pedir dentro de nuestro horario.</span></div>' : '')
         + (scheduleMode === 'later' ? scheduleTimePickerHTML() : '') + '</div>'
         + '</div></details>'
-        + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= payT; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'toggleCredit()' : '') + '" style="margin-top:16px;background:' + (checked ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + (cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
+        + (!cust || (cust.credit_balance || 0) <= 0 ? '' : (function () { var canCover = (cust.credit_balance || 0) >= payT; var checked = useCredit && canCover; return '<div onclick="' + (canCover ? 'toggleCredit()' : '') + '" style="margin-top:16px;background:' + (checked ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (checked ? GOLD : '#3A6B58') + ';border-radius:10px;padding:14px 16px;cursor:' + (canCover ? 'pointer' : 'not-allowed') + ';opacity:' + (canCover ? 1 : .5) + ';box-shadow:' + (checked ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Disponible: ' + SOLES + pz(cust.credit_balance || 0) + (canCover ? '' : ' · no alcanza para este pedido') + '</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (checked ? GOLD : '#A8C8B0') + '">' + (checked ? '✓' : '○') + '</span></div></div>'; })())
         // Con recompensa el total puede llegar a S/0 — antes igual se mostraba el selector
         // TARJETA/YAPE/PLIN (y "YA REALICÉ EL PAGO //" si había un método manual elegido
         // antes) para un pedido que no cuesta nada.
@@ -4715,10 +4710,10 @@ function manualPayInstructionsHTML(t) {
             // exacto en que alguien se detiene a preguntarse si se equivocó de destinatario — y en
             // una transferencia manual esa duda es un pedido perdido. Decirlo antes la borra.
             + '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin-top:8px;background:var(--sw-card,#2D5246);border-radius:8px;padding:9px 11px">En Yape te va a aparecer a nombre de <b style="color:var(--sw-text-body,#F2F0EB)">' + esc(YAPE_PLIN_HOLDER) + '</b>. Es la cuenta del negocio — estás en el sitio correcto.</div>'
-            // Un solo botón principal por plataforma: en el celular abre Yape directo (y de
-            // paso copia el número); en desktop no hay app que abrir, así que el único botón
-            // útil es copiar.
-            + '<button onclick="' + (mobile ? 'copyYapePlinPhone();openYapeApp()' : 'copyYapePlinPhone()') + '" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + (mobile ? iconTxt('phone', 'Copiar número y abrir Yape', '#0d0d0d') : 'Copiar número') + '</button>'
+            // UN solo botón, igual en celular y en escritorio: copiar el número. La versión que
+            // decía "Copiar número y abrir Yape" no abría Yape nunca — abría el Play Store. Ver
+            // el comentario largo en `src/app/01-*` sobre por qué eso no tiene arreglo.
+            + '<button onclick="copyYapePlinPhone()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;margin-top:8px;background:' + GOLD + ';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:11px;border-radius:8px">' + iconTxt('phone', 'Copiar número', '#0d0d0d') + '</button>'
             // ── EL QR ES EL DE COBRO REAL DE YAPE, NO UNA TARJETA DE CONTACTO (2026-09-05) ──
             //
             // Hasta hoy acá se dibujaba un QR generado con el encoder propio que codificaba un
@@ -4750,7 +4745,7 @@ function copyYapePlinPhone() {
         m.style.color = '#25D366';
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(function () { if (m)
-            m.textContent = '✓ Número copiado'; }).catch(function () { if (m)
+            m.textContent = '✓ Copiado — ahora abre Yape y pégalo'; }).catch(function () { if (m)
             m.textContent = YAPE_PLIN_PHONE; });
     }
     else if (m) {
@@ -5651,9 +5646,9 @@ function sWelcome() {
         // programas de fidelidad dice que el problema del esquema 1:1 no es la tasa sino que
         // el premio se SIENTE lejos — mostrar el equivalente en dinero (mismo criterio que la
         // tarjeta de regalo, 40 pts = S/1) lo vuelve concreto de inmediato.
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados · equivalen a ' + SOLES_TXT + (pts / GIFT_CARD_POINTS_PER_SOL).toFixed(2) + '</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados · equivalen a ' + SOLES_TXT + pz(pts / GIFT_CARD_POINTS_PER_SOL) + '</div>'
         + (rwd ? '<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:' + GOLD + '">✓ Puedes canjear: ' + (rwd.n + ' ' + rwd.s).toUpperCase() + '</div></div>' : '')
-        + (next ? '<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">' + (next.pts - pts) + ' pts</span> (' + SOLES_TXT + ((next.pts - pts) / GIFT_CARD_POINTS_PER_SOL).toFixed(2) + ' de consumo) para ' + next.n + ' // ' + next.s + '</div></div>' : '')
+        + (next ? '<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">' + (next.pts - pts) + ' pts</span> (' + SOLES_TXT + pz((next.pts - pts) / GIFT_CARD_POINTS_PER_SOL) + ' de consumo) para ' + next.n + ' // ' + next.s + '</div></div>' : '')
         + '</div>'
         + '<div style="display:flex;gap:10px;justify-content:center">'
         + '<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
@@ -6067,13 +6062,13 @@ function sPProfile() {
     // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo
     // para MÍ pagando con tarjeta real) — hallazgo de auditoría UX, MEDIO.
     var balanceCompareHTML = '<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted2,#8BAF9A);margin:4px 0 12px;line-height:1.5">Con tu saldo actual → <b style="color:var(--sw-text-muted,#A8C8B0)">crédito</b>. Con tus puntos → <b style="color:var(--sw-text-muted,#A8C8B0)">tarjeta de regalo</b>. Con tarjeta hoy → <b style="color:var(--sw-text-muted,#A8C8B0)">Plan Semanal</b>.</div>';
-    var creditHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Crédito<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + SOLES + (cust.credit_balance || 0) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'Teléfono del amigo // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'Monto a regalar // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('Regalar crédito //', 'doCreditGift()', true) + '</div></div>';
+    var creditHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Crédito<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + SOLES + pz(cust.credit_balance || 0) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'Teléfono del amigo // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'Monto a regalar // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('Regalar crédito //', 'doCreditGift()', true) + '</div></div>';
     // "con tu tarjeta" contradecía el mecanismo real desde que se rediseñó a puntos (sin
     // ningún cobro) — quedó con la copy vieja de antes de ese rediseño (hallazgo de
     // auditoría UX, ALTO — confirmado en vivo, la pantalla de compra en sí ya decía bien
     // "REGALAR CON PUNTOS", solo este teaser quedó desactualizado).
     var giftCardHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Tarjeta<span class="cut-sep" style="color:' + GOLD + '"> // </span>de regalo</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('Comprar y regalar //', "sndScreen='gift_card';render()", true) + '</div>';
-    var weeklyPlanHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + (WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('Activar plan semanal //', "sndScreen='weekly_plan';render()") + '</div>';
+    var weeklyPlanHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga ' + SOLES + pz(WEEKLY_PLAN_PRICE) + ' hoy y recibe ' + SOLES + pz(WEEKLY_PLAN_CREDIT) + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + pz(WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('Activar plan semanal //', "sndScreen='weekly_plan';render()") + '</div>';
     var challengeHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>mensual</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimChallenge()', true) + '</div>';
     var discoveryHTML = '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>descubrimiento</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimDiscoveryChallenge()', true) + '</div>';
     var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (pushSubscribed ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (pushSubscribed ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Notificaciones<span class="cut-sep" style="color:' + GOLD + '"> // </span>push</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (pushSubscribed ? GOLD : '#A8C8B0') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
@@ -6131,7 +6126,7 @@ async function doCreditGift() {
         render();
         return;
     }
-    if (!(await showConfirm('¿Enviar ' + SOLES_TXT + amt + ' de crédito a ' + name + ' (' + phone + ')?')))
+    if (!(await showConfirm('¿Enviar ' + SOLES_TXT + pz(amt) + ' de crédito a ' + name + ' (' + phone + ')?')))
         return;
     // Guard de doble-tap — tarjeta de regalo y Plan Semanal ya lo tenían, esta transferencia
     // de saldo YA propio se había quedado sin él (hallazgo de auditoría de funcionamiento,
@@ -6206,7 +6201,7 @@ async function doGiftCardBuy() {
         render();
         return;
     }
-    if (!(await showConfirm('¿Regalar ' + SOLES_TXT + amt + ' de crédito a ' + name + ' (' + phone + ') por ' + ptsCost + ' puntos?')))
+    if (!(await showConfirm('¿Regalar ' + SOLES_TXT + pz(amt) + ' de crédito a ' + name + ' (' + phone + ') por ' + ptsCost + ' puntos?')))
         return;
     _giftBuyInProgress = true;
     busy = true;
@@ -6244,9 +6239,9 @@ var _pendingWeeklyPlan = null;
 function sWeeklyPlan() {
     return H('PLAN SEMANAL', 'sndScreen=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga ' + SOLES + WEEKLY_PLAN_PRICE + ' hoy con tu tarjeta y recibe ' + SOLES + WEEKLY_PLAN_CREDIT + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
-        + '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + WEEKLY_PLAN_PRICE + '</span></div>'
-        + '<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Recibes en saldo</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#25D366">' + SOLES + WEEKLY_PLAN_CREDIT + '</span></div>'
+        + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga ' + SOLES + pz(WEEKLY_PLAN_PRICE) + ' hoy con tu tarjeta y recibe ' + SOLES + pz(WEEKLY_PLAN_CREDIT) + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
+        + '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + pz(WEEKLY_PLAN_PRICE) + '</span></div>'
+        + '<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Recibes en saldo</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#25D366">' + SOLES + pz(WEEKLY_PLAN_CREDIT) + '</span></div>'
         + INP('wp-email', 'Tu correo (para el comprobante)', 'email', wpEmail || (cust && cust.email) || '', 'mail')
         + '<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px' + (wpCritical ? ';color:#ff5555;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px' : ';color:' + GOLD) + '">' + esc(wpMsg) + '</div>'
         + BTN('Activar plan semanal //', 'doWeeklyPlanBuy()')
@@ -6264,7 +6259,7 @@ async function doWeeklyPlanBuy() {
         render();
         return;
     }
-    if (!(await showConfirm('¿Pagar ' + SOLES_TXT + WEEKLY_PLAN_PRICE + ' y recibir ' + SOLES_TXT + WEEKLY_PLAN_CREDIT + ' en saldo?')))
+    if (!(await showConfirm('¿Pagar ' + SOLES_TXT + pz(WEEKLY_PLAN_PRICE) + ' y recibir ' + SOLES_TXT + pz(WEEKLY_PLAN_CREDIT) + ' en saldo?')))
         return;
     _weeklyPlanBuyInProgress = true;
     busy = true;
@@ -6358,7 +6353,7 @@ async function chargeAndFinalizeWeeklyPlan(culqiToken) {
         _weeklyPlanBuyInProgress = false;
         wpEmail = '';
         _pendingWeeklyPlan = null;
-        showToast('¡Listo! Recibiste ' + SOLES + pw.creditAmount + ' en saldo.');
+        showToast('¡Listo! Recibiste ' + SOLES + pz(pw.creditAmount) + ' en saldo.');
         sndScreen = 'p_profile';
         render();
     }
@@ -8143,11 +8138,11 @@ function sAdminDashboard() {
         var color = pct > 0 ? '#25D366' : pct < 0 ? '#ff8888' : '#A8C8B0';
         return ' · <span style="color:' + color + '">' + arrow + ' ' + (pct > 0 ? '+' : '') + pct + '% vs. antes</span>';
     }
-    h += '<div style="margin-bottom:10px">' + DHERO('Hoy', SOLES + d.revenue.today.revenue, d.revenue.today.count + ' pedidos · tkt ' + SOLES + d.revenue.today.avgTicket) + '</div>';
+    h += '<div style="margin-bottom:10px">' + DHERO('Hoy', SOLES + pz(d.revenue.today.revenue), d.revenue.today.count + ' pedidos · tkt ' + SOLES + pz(d.revenue.today.avgTicket)) + '</div>';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">'
-        + DTILE('Semana', SOLES + d.revenue.week.revenue, d.revenue.week.count + ' pedidos · tkt ' + SOLES + d.revenue.week.avgTicket + deltaTxt(d.deltas && d.deltas.weekRevenuePct), true)
-        + DTILE('Mes', SOLES + d.revenue.month.revenue, d.revenue.month.count + ' pedidos · tkt ' + SOLES + d.revenue.month.avgTicket + deltaTxt(d.deltas && d.deltas.monthRevenuePct), true)
-        + DTILE('Total', SOLES + d.revenue.allTime.revenue, d.revenue.allTime.count + ' pedidos · tkt ' + SOLES + d.revenue.allTime.avgTicket, true)
+        + DTILE('Semana', SOLES + pz(d.revenue.week.revenue), d.revenue.week.count + ' pedidos · tkt ' + SOLES + pz(d.revenue.week.avgTicket) + deltaTxt(d.deltas && d.deltas.weekRevenuePct), true)
+        + DTILE('Mes', SOLES + pz(d.revenue.month.revenue), d.revenue.month.count + ' pedidos · tkt ' + SOLES + pz(d.revenue.month.avgTicket) + deltaTxt(d.deltas && d.deltas.monthRevenuePct), true)
+        + DTILE('Total', SOLES + pz(d.revenue.allTime.revenue), d.revenue.allTime.count + ' pedidos · tkt ' + SOLES + pz(d.revenue.allTime.avgTicket), true)
         + '</div>';
     // Ganancia estimada = ingresos × (1 - costo de insumos ~40-50%, ver COGS_LOW/HIGH en
     // admin.ts) — siempre como rango, nunca como cifra exacta, porque no hay costo real
@@ -8157,12 +8152,12 @@ function sAdminDashboard() {
             + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#25D366;letter-spacing:.15em;margin-bottom:8px">Ganancia estimada (rango, no exacta) //</div>'
             + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
             + [['Hoy', d.estimatedProfit.today], ['Semana', d.estimatedProfit.week], ['Mes', d.estimatedProfit.month], ['Total', d.estimatedProfit.allTime]].map(function (x) {
-                return '<div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">' + x[0] + '</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:#25D366">' + SOLES + x[1].low + '–' + SOLES + x[1].high + '</div></div>';
+                return '<div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">' + x[0] + '</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:#25D366">' + SOLES + pz(x[1].low) + '–' + SOLES + pz(x[1].high) + '</div></div>';
             }).join('')
             + '</div></div>';
     }
     if (d.codPending && d.codPending.count > 0) {
-        h += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#ffa500;letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + d.codPending.count + ' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#ffa500">' + SOLES + d.codPending.total + '</div></div>';
+        h += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#ffa500;letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + d.codPending.count + ' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#ffa500">' + SOLES + pz(d.codPending.total) + '</div></div>';
     }
     // Tendencia 14 días
     if (d.trend && d.trend.length) {
@@ -8207,7 +8202,7 @@ function sAdminDashboard() {
         var pMax = Math.max.apply(null, d.topProducts.map(function (p) { return p.count; }).concat([1]));
         h += d.topProducts.map(function (p) {
             var pct = Math.round((p.count / pMax) * 100);
-            return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(p.name) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + p.count + ' vendidos · ' + SOLES + p.revenue + '</span></div><div style="background:var(--sw-bg,#1E3932);border-radius:4px;height:8px;overflow:hidden"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div></div>';
+            return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(p.name) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + p.count + ' vendidos · ' + SOLES + pz(p.revenue) + '</span></div><div style="background:var(--sw-bg,#1E3932);border-radius:4px;height:8px;overflow:hidden"><div style="background:' + GOLD + ';height:100%;width:' + pct + '%;border-radius:4px"></div></div></div>';
         }).join('');
     }
     else {
@@ -8223,7 +8218,7 @@ function sAdminDashboard() {
         + DTILE('Nuevos · mes', d.customers.newThisMonth)
         // ROI del programa de referidos — antes no había ninguna forma de ver si el bono
         // de 50 puntos por referido realmente atrae clientes/ingresos.
-        + (d.referrals ? DTILE('Clientes referidos', d.referrals.referredCustomers, SOLES + d.referrals.revenue + ' en ventas') : '')
+        + (d.referrals ? DTILE('Clientes referidos', d.referrals.referredCustomers, SOLES + pz(d.referrals.revenue) + ' en ventas') : '')
         + '</div>';
     if (d.peakHours && d.peakHours.length) {
         var peakTop = d.peakHours.slice().sort(function (a, b) { return b.count - a.count; })[0];
@@ -8381,7 +8376,7 @@ async function doManualCredit() {
     render();
     try {
         var r = await api('admin-manual-credit', { token: token, phone: ph, delta: delta });
-        acMsg = '✓ Nuevo saldo de ' + esc(r.name) + ': ' + SOLES_TXT + r.newBalance.toFixed(2);
+        acMsg = '✓ Nuevo saldo de ' + esc(r.name) + ': ' + SOLES_TXT + pz(r.newBalance.toFixed(2));
         if (cust && cust.phone === ph)
             cust.credit_balance = r.newBalance;
     }
@@ -8486,6 +8481,10 @@ function revGeo(lat, lon) {
         var parts = [];
         var road = a.road || a.pedestrian || a.residential || a.suburb || '';
         var nb = a.neighbourhood || a.quarter || a.city_district || '';
+        // El pin ya sabe en qué distrito cayó: no tiene sentido que el checkout se lo
+        // pregunte al cliente aparte. `city_district`/`town`/`village` son los campos donde
+        // Nominatim pone el distrito en Perú; se prueban todos porque cambia según la zona.
+        window._mDistrict = districtFromAddress([a.city_district, a.town, a.village, a.suburb, a.county, a.city].filter(Boolean).join(', ')) || '';
         if (road)
             parts.push(road);
         if (nb && nb !== road)
@@ -8500,6 +8499,96 @@ function revGeo(lat, lon) {
             inp.value = hint;
     })
         .catch(function () { });
+}
+// ── BUSCADOR DE DIRECCIÓN ─────────────────────────────────────────────────────────────
+//
+// El campo "escribe tu dirección" existía desde siempre y NO BUSCABA NADA: solo capturaba
+// el texto que después se le manda al motorizado. La única forma real de poner el pin era
+// el GPS o arrastrar el mapa a mano desde un punto fijo de Trujillo. El dueño lo reportó
+// como "la geolocalización es una porquería, no ubica mi dirección" — y era literal: no
+// ubicaba nada porque no lo intentaba.
+//
+// Nominatim (OpenStreetMap) es lo que hay hoy y es gratis, pero su cobertura de
+// numeración en Trujillo es pobre: encuentra la avenida, muchas veces no el número. Por
+// eso el resultado se presenta como PUNTO DE PARTIDA y el pin sigue siendo arrastrable —
+// prometer precisión que el geocodificador no tiene sería peor que no buscar.
+//
+// ⚠ Nominatim exige un máximo de 1 petición por segundo. De ahí el debounce de 900 ms, el
+// mínimo de 4 caracteres y el guardia de petición en vuelo: sin eso, escribir rápido
+// dispara una petición por tecla y OSM bloquea a TODOS los clientes de la app a la vez.
+var _addrTimer = null, _addrBusy = false, _addrLast = '';
+function addrResultsEl() { return document.getElementById('maddr-results'); }
+function addrSearchTyped() {
+    if (_addrTimer)
+        clearTimeout(_addrTimer);
+    _addrTimer = setTimeout(addrSearchNow, 900);
+}
+function addrSearchNow() {
+    if (_addrTimer) {
+        clearTimeout(_addrTimer);
+        _addrTimer = null;
+    }
+    var inp = document.getElementById('maddr-input');
+    var q = inp ? inp.value.trim() : '';
+    var box = addrResultsEl();
+    if (!box)
+        return;
+    if (q.length < 4) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+    if (_addrBusy || q === _addrLast)
+        return;
+    _addrBusy = true;
+    _addrLast = q;
+    box.style.display = 'block';
+    box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">Buscando...</div>';
+    // `bounded=1` + `viewbox` alrededor de Trujillo: sin eso, "Av. España" devuelve España.
+    var vb = '-79.20,-8.28,-78.88,-7.98';
+    var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&accept-language=es'
+        + '&bounded=1&viewbox=' + vb + '&q=' + encodeURIComponent(q);
+    fetch(url).then(function (r) { return r.json(); }).then(function (list) {
+        _addrBusy = false;
+        if (!Array.isArray(list) || !list.length) {
+            box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
+                + 'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
+            return;
+        }
+        box.innerHTML = list.map(function (r, i) {
+            var nom = String(r.display_name || '').split(',').slice(0, 4).join(',');
+            return '<div onclick="addrPick(' + i + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
+                + 'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">' + esc(nom) + '</div>';
+        }).join('');
+        window._addrHits = list;
+    }).catch(function () {
+        _addrBusy = false;
+        box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#ffa500">'
+            + 'No pudimos buscar ahora. Arrastra el mapa hasta tu punto.</div>';
+    });
+}
+// Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: el número exacto
+// casi nunca lo tiene OSM, así que lo que sigue es que la persona ajuste el pin. Cerrar
+// acá daría por buena una precisión que no tenemos.
+function addrPick(i) {
+    var list = window._addrHits || [];
+    var r = list[i];
+    if (!r)
+        return;
+    var box = addrResultsEl();
+    if (box) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+    }
+    var banner = document.getElementById('mmap-accuracy-banner');
+    if (banner)
+        banner.style.display = 'block';
+    if (_lmap) {
+        _lmap.setView([parseFloat(r.lat), parseFloat(r.lon)], 18);
+    }
+    else {
+        openMap(parseFloat(r.lat), parseFloat(r.lon), true);
+    }
 }
 function closeMap() { document.getElementById('mmap').style.display = 'none'; }
 function confirmMap() {
@@ -8530,9 +8619,14 @@ function confirmMap() {
     // Si el pin cae claramente en otro distrito del que estaba elegido, no tiene sentido
     // dejar el anterior: el mapa es un dato más fuerte que un selector que el cliente
     // quizá ni tocó.
-    var inferred = districtFromAddress(a);
-    if (inferred)
+    // El pin manda sobre el texto: alguien puede escribir "casa de mi mamá" y el mapa igual
+    // sabe dónde está. Solo si el reverse geocoding no reconoció el distrito se cae a
+    // adivinarlo de lo escrito, que es lo único que había antes.
+    var inferred = window._mDistrict || districtFromAddress(a);
+    if (inferred) {
         deliveryDistrict = inferred;
+        deliveryDistrictFromPin = !!window._mDistrict;
+    }
     render();
     var el = document.getElementById('o-addr');
     if (el) {
@@ -9791,7 +9885,7 @@ function sAdminCatalogItems() {
             + BTN('Publicar cambios //', 'saveCatalogItem()')
             : '<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">No hay Signatures publicados todavía.</p>')
         + (ciHistory.length ? '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-            + ciHistory.map(function (h) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + esc(h.item_id) + ' · ' + esc(h.name) + ' · ' + SOLES_TXT + h.price_15 + '/' + SOLES_TXT + h.price_30 + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
+            + ciHistory.map(function (h) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">' + esc(h.item_id) + ' · ' + esc(h.name) + ' · ' + SOLES_TXT + pz(h.price_15) + '/' + SOLES_TXT + pz(h.price_30) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
         + '</div>';
 }
 async function saveCatalogItem() {
@@ -9917,7 +10011,7 @@ function sAdminCustomer() {
             + '<div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">'
             + '<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:' + GOLD + '">Puntos</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + (c.points || 0) + '</div></div>'
             + '<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:' + GOLD + '">Pedidos</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + (c.total_orders || 0) + '</div></div>'
-            + '<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:' + GOLD + '">Crédito</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + (c.credit_balance || 0) + '</div></div>'
+            + '<div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:' + GOLD + '">Crédito</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + pz(c.credit_balance || 0) + '</div></div>'
             + '</div></div>';
         h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Pedidos recientes // ' + custDetail.orders.length + '</div>';
         h += custDetail.orders.length ? custDetail.orders.map(function (o) { return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(o.ref) + '</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">' + esc(o.date) + ' · ' + SOLES + pz(o.total) + '</div></div>' + stBadge(o.status) + '</div>'; }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin pedidos //</div>';
@@ -10193,17 +10287,17 @@ function sAdminReport() {
         var d = reportData;
         h += '<div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
         h += '<div style="display:flex;gap:10px;margin-bottom:16px">'
-            + DTILE('Ingresos', SOLES + d.revenue, d.count + ' pedidos')
-            + DTILE('Ticket prom.', SOLES + d.avgTicket)
+            + DTILE('Ingresos', SOLES + pz(d.revenue), d.count + ' pedidos')
+            + DTILE('Ticket prom.', SOLES + pz(d.avgTicket))
             + '</div>';
         if (d.truncated)
             h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:12px;display:flex;align-items:center;gap:5px">' + icon('warning', 12, '#ffa500') + '<span>Hay más pedidos en este rango de los que se muestran aquí.</span></div>';
         h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Por método de pago //</div>';
         h += Object.keys(d.byMethod).length ? Object.keys(d.byMethod).map(function (m) { var v = d.byMethod[m]; return DBAR(m.toUpperCase(), v.count, d.count); }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
         h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 10px">Productos top //</div>';
-        h += d.topProducts.length ? d.topProducts.map(function (p) { return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(p.name) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + p.count + ' · ' + SOLES + p.revenue + '</span></div>'; }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
+        h += d.topProducts.length ? d.topProducts.map(function (p) { return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">' + esc(p.name) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + p.count + ' · ' + SOLES + pz(p.revenue) + '</span></div>'; }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0)">Sin datos //</div>';
         h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 10px">Por día //</div>';
-        h += d.byDay.length ? d.byDay.map(function (day) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + esc(day.date) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + day.count + ' · ' + SOLES + day.revenue + '</span></div>'; }).join('') : '';
+        h += d.byDay.length ? d.byDay.map(function (day) { return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1E3932"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + esc(day.date) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:' + GOLD + '">' + day.count + ' · ' + SOLES + pz(day.revenue) + '</span></div>'; }).join('') : '';
     }
     h += '</div>';
     return h;
@@ -10463,7 +10557,7 @@ function sAdminPromo() {
     }
     else {
         h += promoCodesData.map(function (p) {
-            var valueLabel = p.discount_type === 'percent' ? p.value + '%' : SOLES_TXT + p.value;
+            var valueLabel = p.discount_type === 'percent' ? p.value + '%' : SOLES_TXT + pz(p.value);
             var usesLabel = (p.uses_count || 0) + (p.max_uses != null ? '/' + p.max_uses : '') + ' usos';
             return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(p.code) + '</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + esc(valueLabel + ' · ' + usesLabel + (p.campaign_tag ? ' · ' + p.campaign_tag : '')) + '</div></div><div onclick="togglePromoCode(\'' + p.id + '\',' + (!p.active) + ')" style="flex-shrink:0;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:' + (p.active ? '#25D366' : '#ff8888') + '">' + (p.active ? 'Activo' : 'Inactivo') + '</div></div></div>';
         }).join('');
@@ -10496,7 +10590,7 @@ function sAdminCampaignPerf() {
     }
     else {
         h += d.campaigns.map(function (c) {
-            return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + esc(c.campaignType) + '</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + c.touches + ' envíos · ' + c.customersReached + ' clientes · <span style="color:' + GOLD + '">' + c.conversionRate + '% convirtió</span> · ' + SOLES_TXT + c.revenue + ' en ingresos</div></div>';
+            return '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;margin-bottom:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + esc(c.campaignType) + '</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + c.touches + ' envíos · ' + c.customersReached + ' clientes · <span style="color:' + GOLD + '">' + c.conversionRate + '% convirtió</span> · ' + SOLES_TXT + pz(c.revenue) + ' en ingresos</div></div>';
         }).join('');
     }
     h += '</div>';
@@ -12164,6 +12258,6 @@ function exportComplianceCsv() {
 }
 
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Escribe tu dirección //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Escribe tu dirección abajo y elígela de la lista — o arrastra el mapa hasta el punto exacto</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Busca tu dirección //</div><div id="maddr-results" style="display:none;max-height:170px;overflow-y:auto;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;margin-bottom:8px"></div><input id="maddr-input" type="text" autocomplete="off" placeholder="Ej: Av. España 123, Trujillo" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:16px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
 </body>
 </html>
