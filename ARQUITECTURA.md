@@ -51,9 +51,26 @@ segundo archivo que se carga bajo demanda cuando `isAdmin` es cierto — el mism
 `loadTesseract()` ya usa para los 3 MB del lector de comprobantes, que ningún cliente
 descarga.
 
-⚠ **Ojo con un detalle que se va a morder solo:** `render()` vive en `09-*`. Sacarlo del
-bundle base sin moverlo primero deja la app sin función de render. Hay que separar el
-router del contenido admin **antes** de partir el archivo.
+### Estado: el router ya está separado (2026-09-10)
+
+`render()` y `renderScreen()` salieron del archivo del panel a su propia parte,
+`08-router.ts` (11 KB), y las dos partes del panel se renumeraron a 09 y 10. Los **34 `case`
+de pantallas admin** que el router tenía escritos pasaron a un registro: el panel se anuncia
+en `ADMIN_SCREENS` al cargarse y el router solo pregunta.
+
+Eso desata las dos mitades, que era el bloqueo real. Lo que falta para cobrar el beneficio:
+
+1. Que `build.mjs` emita las partes 09-10 como un **segundo archivo**, cargado bajo demanda
+   cuando `isAdmin` — el mismo patrón que `loadTesseract()` ya usa para los 3 MB del lector
+   de comprobantes, que ningún cliente descarga.
+2. Que `sw.js` y `check:shell` sepan de ese segundo archivo: hoy el sello `APP_BUILD` es el
+   hash de UN bundle.
+
+Dos defensas quedan puestas para que el acoplamiento no vuelva, porque volvería con una
+línea distraída y sin romper nada: `check:bundle` falla si el router vuelve a nombrar una
+pantalla de admin, y `tests/registro-del-panel.spec.ts` comprueba que el mecanismo funciona
+—incluido el caso del panel sin cargar, que es el estado en que va a estar el 100% de los
+clientes en cuanto se parta el archivo.
 
 ---
 
