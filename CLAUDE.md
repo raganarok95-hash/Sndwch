@@ -1262,8 +1262,33 @@ que las ocho de verdad comparten. Encuadre cerrado al ratio de la tarjeta + viñ
 paleta + grano fino, **el mismo tratamiento en las ocho**.
 
 **Y el tamaño de archivo importa aparte**: los Signatures son de 640×440 y la tarjeta a sangre
-ocupa ~1050 px reales en un celular moderno, así que se estiran ~60%. Cualquier reemplazo se pide
-de al menos 1600 px de ancho.
+ocupa **1050 px reales** (medido con el navegador: 350×236 CSS px a DPR 3), así que se estiran
+**1.64x**. Cualquier reemplazo se pide de al menos 1600 px de ancho.
+
+### `scripts/tratar_fotos.py` — el tratamiento, versionado y repetible
+
+Lee de **`img/fuente/`** y escribe en `img/`. Esa dirección no es un detalle: es lo que lo hace
+**idempotente**. Aplicar viñeta y grano sobre una foto que ya los tiene la degrada un poco más
+cada corrida, y ese defecto **no lanza ningún error** — solo va ensuciando el archivo cada vez
+que alguien corre el script "por si acaso". Partiendo siempre del original no puede pasar, y
+además deja re-ajustar los parámetros sin volver a conseguir las fotos.
+
+**⚠ EL ZOOM CEDE ANTE LOS PÍXELES**, y ese guardarraíl es lo que evita que el script empeore lo
+que vino a arreglar. Cerrar el encuadre **tira** píxeles: las fotos de hoy (640 px) cerradas a
+1.34 quedan en 477, contra los 1050 que pide la tarjeta — o sea unificación a cambio de MÁS
+estiramiento del que ya tenían. `zoom_util()` recorta el cierre hasta donde la fuente aguante y
+se queda en 1.0 si no aguanta nada; con fotos grandes cierra entero y no cuesta nada. Cada
+corrida imprime cuánto le falta a cada foto y hasta dónde pudo cerrar.
+
+El **grano lleva semilla fija** para que las ocho compartan el mismo patrón (si cada una trae el
+suyo, vuelve el problema que el script resuelve) y para que correr el script dos veces dé bytes
+idénticos — así un diff dice si una foto cambió de verdad.
+
+`npm run check:fotos` (dentro de `verify`) protege las dos cosas, más que cada foto servida
+tenga su original guardado. **Su chequeo del ratio lleva el número medido escrito aparte, no
+leído de `tratar_fotos.py`**: la primera versión comparaba el recorte contra la misma constante
+que lo produce, así que cambiar `RATIO` a 16/9 pasaba sin protestar. Un chequeo que se mide
+contra sí mismo no protege nada — verificado inyectando los tres defectos.
 
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
