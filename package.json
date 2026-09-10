@@ -10,6 +10,7 @@
     "check:colores": "node scripts/check-colores.mjs",
     "test": "playwright test",
     "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
+    "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run build && npm run check:shell",
     "typecheck:api": "node scripts/check-backend.mjs",
     "test:api": "node scripts/check-money.mjs",
     "check:backup": "node scripts/check-backup.mjs",

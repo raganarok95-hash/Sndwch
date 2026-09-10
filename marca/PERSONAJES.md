@@ -18,11 +18,20 @@ pose que no tiene ni prometa una animación que no se puede dibujar.
 | ojo | párpado caído | **espiral morada** `#C4A6D2` |
 | qué ES | los **Signatures** — la receta cerrada | **ARMA EL TUYO** — tú eliges |
 | ritmo | mide antes de moverse | se lanza |
-| dónde manda | todo el resto de la app | armador y bebidas |
+| dónde manda | Signatures, tus pedidos, el panel | armador, bebidas, recompensas, favoritos, pedido fijo, tarjeta de regalo, pedido grupal |
 
 La división no es decorativa: **verde = lo que ya está decidido, celeste = donde eliges tú.**
 Si una pantalla nueva no cae claramente de un lado, es señal de que no sabemos qué le
 estamos pidiendo al cliente en ella.
+
+**Quién manda en cada pantalla se decide en UN solo sitio**: `LADO_WICHO` en `src/app/02-*`.
+Hasta el 2026-09-10 WICHO tenía DOS pantallas de unas cuarenta —la app era verde con dos
+excepciones— y el dueño pidió explícitamente "que estén mitad a mitad los colores en toda la
+web". Las que se sumaron no se eligieron para llegar a una cuota: cada una es literalmente
+una pantalla donde el cliente decide algo.
+
+⚠ **El panel de administración es de SANDO siempre**, aunque el dueño esté eligiendo cosas
+todo el rato: no es una pantalla de cliente y el celeste ahí no significaría nada.
 
 ---
 
@@ -38,6 +47,17 @@ estamos pidiendo al cliente en ella.
 | `wicho_grita.png` | WICHO | cara, gritando | — |
 | `wicho_rie.png` | WICHO | cara, riendo | — |
 
+Además, los dos cuerpos aparecen en la **banda del hermano** (`CAB()`, encabezando la lista
+de Signatures y el armador) y en los **estados vacíos** (`VACIO()` — sin favoritos, sin
+pedidos, sin direcciones, sin pedido fijo), que es donde el dueño pidió que estuvieran
+presentes en toda la web. El estado vacío es además el sitio más honesto para ponerlos: es
+una pantalla que no tiene ningún dato que mostrar, así que el hermano no le quita espacio a
+nada.
+
+⚠ Las dos imágenes de cuerpo entero miden 640 px de alto pero **distinto ancho** (WICHO 448,
+SANDO 302). Se escalan siempre por ALTURA: con un ancho fijo, SANDO sale casi 50% más alto
+que su hermano y la banda cambia de tamaño según de quién sea la pantalla.
+
 `sando.png` y `wicho.png` **no son dibujos nuevos**: son el logo del dueño partido por su
 costura central. Los otros cinco los generó el dueño aparte.
 
@@ -46,7 +66,14 @@ costura central. Los otros cinco los generó el dueño aparte.
 ## ⚠ Lo que NO existe, y por qué importa
 
 **De SANDO solo hay UNA pose.** WICHO tiene cuatro. Eso desbalancea la interfaz: WICHO puede
-reaccionar (saluda al tocarlo) y SANDO no tiene con qué. Faltan, en orden de utilidad:
+reaccionar (saluda al tocarlo) y SANDO no tiene con qué.
+
+El dueño pidió (2026-09-10) que **SANDO sonría cuando presionan**, igual que giran los ojos de
+WICHO. Una sonrisa nueva ES un dibujo nuevo, así que mientras tanto SANDO **asiente**
+(`.sw-nudge`, un movimiento sobre la pose que ya existe). Es movimiento sobre el dibujo real,
+no un dibujo inventado — pero **no reemplaza la pose que falta**, solo la sustituye.
+
+Faltan, en orden de utilidad:
 
 1. **SANDO aprobando** — para cuando el pedido se confirma. Hoy ese momento no tiene cara.
 2. **SANDO de cara**, como los dos de WICHO, para bocadillos y avisos.

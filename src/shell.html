@@ -303,6 +303,30 @@ body.kb-open #app{padding-bottom:0}
 /* El ojo espiral de WICHO, encima del que ya trae la ilustración. Las medidas salen de
    muestrear el archivo: centro al 27% / 43.6% y radio 11.4% del ancho. Si algún día
    cambia el logo, esto se descuadra — por eso está anotado de dónde salen. */
+/* ── LA REACCIÓN DEL HERMANO ────────────────────────────────────────────────────────
+   Pedido del dueño: "cuando le des click a la opción sus ojos giren, algo más visual, e
+   igual con la parte de SANDO que sonría cuando presionan".
+
+   Lo que se puede hacer honestamente con el dibujo que existe:
+     · WICHO — su ojo espiral es GEOMETRÍA y se redibuja en SVG (SPIRAL()), así que gira
+       de verdad. Ésa es su reacción y no depende de que nadie dibuje otro cuadro.
+     · SANDO — una sonrisa nueva ES un dibujo nuevo, y eso lo encarga el dueño (está
+       anotado en marca/PERSONAJES.md junto a las otras dos poses que faltan). Lo que sí
+       es honesto mientras tanto es que REACCIONE: un asentimiento sobre la pose que ya
+       existe. Es movimiento sobre el dibujo real, no un dibujo inventado.
+
+   No hace falta ningún estado en JS para dispararlo: la app rehace el DOM entero en cada
+   render(), y dentro del armador y de la lista de Signatures un render() ocurre
+   exactamente cuando el cliente toca una opción. Un elemento recién creado reproduce su
+   animación desde el principio, así que el hermano reacciona a cada toque y a nada más. */
+@keyframes sw-nudge{
+  0%{transform:translateY(0) rotate(0)}
+  38%{transform:translateY(-7px) rotate(-2.5deg)}
+  70%{transform:translateY(1px) rotate(1deg)}
+  100%{transform:translateY(0) rotate(0)}
+}
+.sw-nudge{animation:sw-nudge .5s cubic-bezier(.34,1.56,.64,1);transform-origin:bottom center}
+@media (prefers-reduced-motion:reduce){.sw-nudge{animation:none}}
 .sw-eye{position:absolute;left:27%;top:43.6%;width:22.8%;aspect-ratio:1;
   transform:translate(-50%,-50%);border-radius:50%;background:#C4A6D2;
   display:flex;align-items:center;justify-content:center;overflow:hidden}

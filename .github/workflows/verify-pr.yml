@@ -1,5 +1,15 @@
 name: Verificar PR (typecheck + build + tests)
 
+# ⚠ ESTE WORKFLOW ES LA ÚNICA RED REAL, y el 2026-09-10 se comprobó por qué.
+# El hook de pre-commit corría `npm run verify` ENTERO con un tope de 900 s. La suite de
+# navegador creció hasta pasar los 20 minutos en el entorno de desarrollo, así que el hook
+# EXPIRABA — y un hook que expira no bloquea nada. Dos commits seguidos entraron con dos
+# pruebas rojas y el hook no dijo una palabra: su modo de fallo era silencio, igual que el
+# de los defectos que se escribió para atrapar.
+# Desde entonces el hook corre `verify:rapido` (typecheck + parity + build + los chequeos
+# de texto, ~9 s: termina siempre y por lo tanto nunca miente) y la suite de navegador vive
+# ACÁ, donde el runner la corre entera en ~3 minutos y bloquea el PR.
+#
 # Antes NADA corría los tests en un pull request — deploy-api.yml solo despliega en push a
 # main, y la única red de seguridad era el hook de pre-commit local (.claude/settings.json),
 # que no protege un commit hecho con --no-verify ni uno hecho desde un entorno sin ese hook

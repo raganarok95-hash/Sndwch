@@ -276,9 +276,35 @@ function CUT(alto?,ancho?,gap?){
 //               queremos en un checkout, y hay una prueba que lo fija.
 //   · `ACC()` = el acento del lado. Pasos, selección, énfasis. Cambia con el hermano.
 // Si un elemento no sabe cuál de los dos le toca, la pregunta es si muestra plata o no.
+// ── DE QUIÉN ES ESTA PANTALLA ─────────────────────────────────────────────────────────
+// La regla es una sola y no admite excepciones cómodas:
+//
+//     verde de SANDO  = lo que YA está decidido    (la receta cerrada, tus pedidos, el panel)
+//     celeste de WICHO = donde ELIGES tú           (armas, canjeas, guardas, invitas)
+//
+// Si una pantalla nueva no cae claramente de un lado, es señal de que no sabemos qué le
+// estamos pidiendo al cliente en ella. Eso es lo que la regla vale: no es un tema, es una
+// pregunta que hay que poder responder de cada pantalla.
+//
+// Pedido explícito del dueño (2026-09-10): "que estén mitad a mitad los colores en toda la
+// web". Con el armador y las bebidas solamente, WICHO tenía DOS pantallas de unas cuarenta
+// — la app era verde con dos excepciones. Las que se suman ahora no se eligieron para
+// llegar a una cuota: cada una es literalmente una pantalla donde el cliente decide.
+//
+// ⚠ El admin es de SANDO SIEMPRE, aunque el dueño esté eligiendo cosas todo el rato. No es
+// una pantalla de cliente y el celeste ahí no significaría nada.
+var LADO_WICHO=[
+  'o_build',      // armas el sándwich
+  'o_sides',      // eliges la bebida
+  'p_rewards',    // eliges qué canjear
+  'p_favorites',  // tus armados guardados
+  'p_recurring',  // eliges qué se repite y cuándo
+  'gift_card',    // eliges a quién le regalas
+  'group_order'   // cada quien arma el suyo
+];
 function ladoActual(){
   if(/^admin/.test(String(sndScreen||'')))return'sando';
-  if(sndScreen==='o_build'||sndScreen==='o_sides')return'wicho';
+  if(LADO_WICHO.indexOf(String(sndScreen||''))>=0)return'wicho';
   if(sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink'))return'wicho';
   return'sando';
 }
@@ -353,6 +379,57 @@ function total(){
   return money(itemUnitPrice(currentBuiltItem()));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
+// ── LA BANDA DEL HERMANO ──────────────────────────────────────────────────────────────
+// El hermano que manda en la pantalla, presentándola. Nació como un bloque suelto dentro
+// del armador ("Con WICHO"); lo usan ahora las DOS listas donde el cliente elige algo, que
+// es justo donde el dueño pidió que estuvieran presentes.
+//
+// Reacciona a cada toque sin una sola línea de estado: `render()` rehace el DOM, y en
+// estas dos pantallas un render ocurre exactamente cuando se toca una opción, así que la
+// animación se reproduce desde cero cada vez (ver `.sw-nudge` en shell.html).
+//
+// El ojo espiral acompaña SOLO a WICHO y gira de verdad — es geometría redibujada en SVG,
+// no un cuadro de animación. SANDO no lo lleva porque no lo tiene: inventárselo sería
+// dibujarle algo que su ilustración no dice.
+function CAB(quien,texto){
+  var esW=quien==='wicho';
+  return'<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
+    // ⚠ Se fija la ALTURA y no el ancho: los dos cuerpos son de 640 px de alto pero de
+    // ancho distinto (WICHO 448, SANDO 302), así que con un ancho fijo SANDO salía casi
+    // 50% más alto que su hermano y la banda cambiaba de tamaño según de quién fuera.
+    +'<img class="sw-nudge" src="img/'+quien+'_cuerpo.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
+    +'<div style="flex:1;padding-bottom:4px">'
+    +'<div style="display:flex;align-items:center;gap:5px">'
+    +(esW?'<span style="display:inline-flex">'+SPIRAL(11,'var(--sw-spiral,#C3A6D2)',true)+'</span>':'')
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
+    +'text-transform:uppercase;color:'+ACC()+'">Con '+(esW?'WICHO':'SANDO')+'</span></div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
+    +'color:var(--sw-text-muted,#A8C8B0);line-height:1.35;margin-top:2px">'+esc(texto)+'</div></div></div>';
+}
+// ── EL ESTADO VACÍO ES DONDE VIVEN LOS HERMANOS ───────────────────────────────────────
+// Pedido del dueño (2026-09-10): que los personajes estén presentes en toda la web, no
+// solo en el menú. El estado vacío es el mejor sitio para eso y el más honesto: es una
+// pantalla que hoy no tiene NADA que mostrar —un ícono gris de 32 px y dos líneas de
+// texto sobre medio metro de fondo— así que poner al hermano ahí no le quita espacio a
+// ningún dato. Es la diferencia entre "no hay nada" y "todavía no hay nada".
+//
+// Quién aparece lo decide `ladoActual()`, no un parámetro: si la pantalla es de WICHO,
+// aparece WICHO. Dejarlo elegir a mano sería la forma de que un día no coincidan el color
+// de la pantalla y el hermano que la habita.
+//
+// ⚠ SANDO tiene UNA sola pose (`sando_cuerpo.png`) y WICHO cuatro. Eso es dibujo del
+// dueño, no algo que se pueda fabricar acá — está anotado en `marca/PERSONAJES.md`. Por
+// eso esta función no promete poses distintas por situación: usa el cuerpo entero, que es
+// lo único que los dos tienen.
+function VACIO(titulo,texto,cta?){
+  var quien=ladoActual();
+  return'<div style="text-align:center;padding:34px 10px 10px">'
+    +'<img src="img/'+quien+'_cuerpo.png" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+ACC()+';letter-spacing:.2em">'+esc(titulo)+' //</div>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin:10px auto 0;max-width:280px;line-height:1.55">'+texto+'</p>'
+    +(cta||'')
+    +'</div>';
+}
 // ── ETIQUETA · EL PAPEL ───────────────────────────────────────────────────────────────
 // La cuarta dirección visual que eligió el dueño, y la única con un límite explícito de su
 // parte: "etiqueta, pero solo para los recibos de pago". O sea que no es un estilo para
@@ -392,9 +469,11 @@ function reciboLinea(k,v,tono?){
   return'<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:'+col+';padding:3px 0">'
     +'<span>'+esc(k)+'</span><span style="font-weight:700">'+v+'</span></div>';
 }
-// Toggle de tamaño reutilizado en Signature y Build Your Own.
+// Toggle de tamaño reutilizado en Signature y Build Your Own. El borde de lo elegido es
+// ACC() y no GOLD: la selección es ESTADO, y el dorado es del dinero. Estaba haciendo los
+// dos trabajos a la vez, y en el mundo celeste un control dorado se lee como plata.
 function SZTOG(){
-  function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(sel?'#FFFFFF':'#A8C8B0')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+d+'</div></div>';}
+  function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(sel?'#FFFFFF':'#A8C8B0')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+d+'</div></div>';}
   // "Individual"/"Clásico" no comunicaban porción real (hallazgo de auditoría UX, MEDIO)
   // — un cliente sin contexto de la marca no sabía si "Clásico" alcanzaba para compartir.
   return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','Para uno')+opt('30','30CM','Para compartir')+'</div><div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';

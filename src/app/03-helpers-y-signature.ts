@@ -136,7 +136,7 @@ function PILL(txt,dorado?){
 }
 // Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
 // selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
-function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+GOLD+';border-radius:10px 0 0 10px"></div>':'';}
+function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+ACC()+';border-radius:10px 0 0 10px"></div>':'';}
 // Badge visible de un Signature: 'Nuevo' (u otro badge temporal futuro) solo mientras
 // newUntil no haya pasado, si no el badge permanente en s.badge — evita que un badge de
 // novedad se quede pegado para siempre (hallazgo de auditoría de copy, BAJO).
@@ -150,7 +150,7 @@ function sigAvailable(s){return!s.availableUntil||Date.now()<new Date(s.availabl
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
 function CARD(item,sel,fn,right?,thumb?){
   var inner='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+item.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+item.d+'</p>':'');
-  return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
+  return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
 }
 function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:21px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:16px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
@@ -1149,7 +1149,7 @@ function sOSig(){
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
   var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
-  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+SZTOG()+recoCardSig+ST('01','Elige tu build','Tres salsas incluidas.')+SIGS.map(function(s){
+  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.')+SZTOG()+recoCardSig+ST('01','Elige tu build','Tres salsas incluidas.')+SIGS.map(function(s){
     // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
     // cliente logueado que todavía no llega al rango exigido se muestra como una
     // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.

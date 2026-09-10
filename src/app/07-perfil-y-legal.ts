@@ -14,7 +14,7 @@ function sPRecurring(){
   var h=H('MI PEDIDO FIJO',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#F2F0EB)">nunca te cobramos sin que confirmes</b>.</div>';
   if(!myRecurring.length){
-    h+='<div style="text-align:center;padding-top:40px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em">Sin pedidos fijos //</div><p style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px">Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.</p></div>';
+    h+=VACIO('Sin pedidos fijos','Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.');
   }else{
     h+=myRecurring.map(function(r){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:10px">'
@@ -81,7 +81,7 @@ async function loadFavorites(){
 function sPFavorites(){
   var h=H('MIS FAVORITOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(!myFavorites.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('heart',32,'#A8C8B0')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em">Sin favoritos //</div><p style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px">Guarda un build desde la pantalla de confirmación de tu pedido.</p></div>';
+    h+=VACIO('Sin favoritos','Guarda un build desde la pantalla de confirmación de tu pedido.');
   }else{
     h+=myFavorites.map(function(f){
       // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
@@ -129,7 +129,7 @@ function sPAddresses(){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:10px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:10px">Eliminar</button></div></div>';
     }).join('');
   }else{
-    h+='<div style="text-align:center;padding-top:40px;margin-bottom:20px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('direccion',32,'#A8C8B0')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em">Sin direcciones guardadas //</div></div>';
+    h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.');
   }
   h+='<div style="margin-top:20px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
   h+='</div>'+NAV();

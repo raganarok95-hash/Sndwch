@@ -116,7 +116,12 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
   // 4 × SIG01 (20.90) + 1 × SIG06 (19.90) = S/103.50 de comida.
   // El 15CM más barato del carrito es SIG06 (19.90) y va gratis → S/83.60.
-  await expect(page.locator('text=sándwich del organizador: ahorras S/19.90')).toBeVisible();
+  // ⚠ SE COMPRUEBA LA CUENTA, NO LA FRASE — ver la nota equivalente en
+  // rewards-redemption.spec.ts. La línea verde "sándwich del organizador: ahorras S/19.90"
+  // dejó de existir al pasar el carrito a recibo (2026-09-10); el descuento sigue igual.
+  const perdonado = await page.evaluate(() => (window as any).organizerFreeAmount());
+  expect(perdonado, 'el 15CM más barato del grupo (SIG06, S/19.90) tiene que ir gratis').toBeCloseTo(19.9, 2);
+  await expect(page.locator('text=/Sándwich del organizador/')).toBeVisible();
 
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');
