@@ -17,5 +17,9 @@ skills-lock.json
 .impeccable/live/
 deno.lock
 
-# Cache de Python de los modelos de modelo/ — se regenera solo.
-modelo/__pycache__/
+# Cache de Python — se regenera en cada ejecución y cambia de nombre con cada versión del
+# intérprete, así que ensucia todos los diffs. La regla era `modelo/__pycache__/` a secas
+# porque hasta el 2026-09-10 los únicos .py del repo vivían ahí; desde que existen
+# `scripts/tratar_fotos.py` y su chequeo, tiene que valer para todo el árbol.
+__pycache__/
+*.pyc

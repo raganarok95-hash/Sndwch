@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
@@ -1287,11 +1287,24 @@ export async function actAdminProblemAddresses(b: any) {
 //
 // Las cifras se interpolan igual que en los otros tres campos, por la misma razón: un número
 // escrito a mano en un texto que el dueño copia y pega es una promesa que se rompe sola.
-export function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string }[] {
+// ── LA OCASIÓN: CUÁNDO LA PERSONA TIENE HAMBRE, NO QUÉ VENDE EL NEGOCIO ──────────────
+// Los 8 temas hablaban todos del negocio: referidos, plan semanal, menú secreto, combo.
+// Ninguno hablaba del MOMENTO en que a alguien se le antoja un sándwich — y nadie compra
+// "The Original", compra *almuerzo de oficina* o *antojo de noche*. La marca que se
+// recuerda en esa situación es la que gana el pedido.
+//
+// `dow` es el día de la semana (0 = domingo) y `hora` la de Lima. No son decoración: el
+// generador de borradores MUEVE la fecha a ese día. Antes sumaba 7 días desde el día en que
+// el dueño tocara el botón, así que generar un domingo dejaba el calendario entero en
+// domingo — y un post de "almuerzo de oficina" un domingo no le habla a nadie.
+export type Ocasion = { momento: string; disparador: string; dow: number; hora: number };
+
+export function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string; ocasion: Ocasion }[] {
   const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
   return [
   {
     theme: "LANZAMIENTO",
+    ocasion: { momento: "El día que abrimos", disparador: "Nadie sabe todavía que existimos", dow: 4, hora: 11 },
     whatsapp: `🥪 SND//WCH ya está abierto — pide por la app, arma tu Signature o el tuyo desde cero. Crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos.`,
     caption: `Ya abrimos // SND//WCH llega a tu zona. Sándwiches armados al momento, Signature builds curados o arma el tuyo desde cero. Pide directo desde la app — crear tu cuenta te regala ${WELCOME_BONUS_POINTS} puntos para canjear después.`,
     photoIdea: "Tu Signature más vendido, foto cercana con buena luz natural, o el equipo preparando el primer pedido real.",
@@ -1312,6 +1325,7 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   // reordenar no rompe nada que compile.
   {
     theme: "REFERIDOS",
+    ocasion: { momento: "Cuando un amigo pregunta dónde pediste eso", disparador: "Alguien ve tu sándwich y quiere el mismo", dow: 0, hora: 13 },
     whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
     caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
     photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
@@ -1319,6 +1333,7 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   },
   {
     theme: "PRUEBA SOCIAL",
+    ocasion: { momento: "El almuerzo en la oficina", disparador: "Media mañana y todavía nadie decidió qué se pide", dow: 2, hora: 11 },
     whatsapp: "¿Ya probaste SND//WCH? Calificar tu pedido te toma 10 segundos y nos ayuda un montón 🙏",
     caption: "La mejor publicidad la hacen ustedes // Si ya pediste con nosotros, califica tu experiencia desde la app (PUNTOS → MIS PEDIDOS). Cada reseña le muestra a más gente por qué vale la pena.",
     photoIdea: "Captura de una calificación de 5 estrellas (con permiso del cliente), o foto de alguien recibiendo su pedido.",
@@ -1326,20 +1341,32 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   },
   {
     theme: "MENÚ SECRETO",
+    ocasion: { momento: "Cuando ya probaste todo lo de siempre", disparador: "Aburrimiento con la carta conocida", dow: 4, hora: 20 },
     whatsapp: `Hay un Signature que no está en el menú público. Se desbloquea a partir de tu pedido número ${secretoMin} 👀`,
     caption: `Lo que no ves en el menú // A partir de tu pedido número ${secretoMin} se desbloquea un Signature que no aparece para nadie más, y cambia cada mes. No decimos cuál — te lo tienes que ganar.`,
     photoIdea: "Nada del producto en sí (es secreto) — una imagen oscura/misteriosa o solo texto sobre el fondo de marca.",
     videoIdea: `D · EL SECRETO — 9:16, 12 s. Oscuro, el más corto de los cinco. 0-2s el alocado se acerca a cámara: "Hay uno que no está en el—". 2-5s el calmado le tapa la boca. 5-9s silencio, solo el "//" iluminado. 9-12s texto en pantalla: se desbloquea en tu pedido número ${secretoMin}. NO se muestra el producto: no se puede. ⚠ Usa este formato POCO — lo "interesante" da un pico de conversación y no lo sostiene.`,
   },
   {
-    theme: "COMBO / HORA VALLE",
-    whatsapp: "En hora valle tu bebida sale gratis con cualquier sándwich. Se aplica solo, sin código.",
-    caption: "Combo inteligente // Agrega una bebida a tu sándwich y ahorra automático — en hora valle, hasta gratis. Válido solo desde la app.",
+    // ⚠ ESTE TEXTO PROMETÍA UNA PROMO QUE YA NO EXISTE. Decía cuatro veces "en hora valle
+    // tu bebida sale gratis" — y la hora valle se retiró (era la única operación del
+    // catálogo con contribución negativa), así que `OFFPEAK_DRINK_PROMO_HOURS_LIMA` quedó
+    // VACÍO y la promo no se aplica nunca. El dueño copia esto a Instagram y WhatsApp: era
+    // una promesa pública falsa, la peor clase de las que este repo persigue.
+    //
+    // Ahora la frase de la hora valle se AGREGA SOLA si la promo vuelve, y desaparece sola
+    // si se retira otra vez. El descuento del combo se interpola de la constante, nunca se
+    // escribe: bajó de S/2 a S/1 el 2026-08-22 y nadie revisó los textos.
+    theme: "COMBO",
+    ocasion: { momento: "Media tarde, entre el almuerzo y la cena", disparador: "Hambre que no es comida completa", dow: 3, hora: 16 },
+    whatsapp: `Agrega una bebida a tu sándwich y se descuentan S/${COMBO_DISCOUNT_PER_PAIR} solos, sin código.${offpeakActiva() ? " Y en hora valle la bebida va gratis." : ""}`,
+    caption: `Combo // Agrega una bebida a tu sándwich y el descuento de S/${COMBO_DISCOUNT_PER_PAIR} se aplica solo — sin código, sin letra chica.${offpeakActiva() ? " En hora valle, la bebida va gratis." : ""} Solo desde la app.`,
     photoIdea: "Sándwich + bebida juntos, estilo flat lay.",
-    videoIdea: "A · EL PLEITO — 9:16, 14 s. 0-2s el alocado pone la bebida al lado del sándwich de un golpe. 2-6s CALMADO: \"No la pediste.\" ALOCADO: \"No la pagué.\" 6-11s sándwich + bebida + el \"//\" en cuadro con las dos caras. 11-14s cierre: en hora valle la bebida va gratis, se aplica sola y sin código.",
+    videoIdea: `A · EL PLEITO — 9:16, 14 s. 0-2s el alocado pone la bebida al lado del sándwich de un golpe. 2-6s CALMADO: "No la pediste." ALOCADO: "Salió más barata." 6-11s sándwich + bebida + el "//" en cuadro con las dos caras. 11-14s cierre: el combo descuenta S/${COMBO_DISCOUNT_PER_PAIR} solo, sin código.${offpeakActiva() ? " Y en hora valle la bebida va gratis." : ""}`,
   },
   {
     theme: "PEDIDOS GRUPALES",
+    ocasion: { momento: "Cuando son varios y nadie se pone de acuerdo", disparador: "Un grupo decidiendo qué pedir", dow: 5, hora: 18 },
     whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
     caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
@@ -1347,6 +1374,7 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   },
   {
     theme: "PLAN SEMANAL",
+    ocasion: { momento: "La semana que ya sabes que no vas a cocinar", disparador: "Domingo por la noche, mirando la semana", dow: 0, hora: 19 },
     whatsapp: `Paga S/${WEEKLY_PLAN_PRICE} hoy y recibe S/${WEEKLY_PLAN_CREDIT} en saldo para pedir cuando quieras. El saldo no vence.`,
     caption: "Plan Semanal // Paga por adelantado y recibe más de lo que pusiste. Pide cuando quieras durante la semana, sin compromiso de horario fijo.",
     photoIdea: `Gráfico 'S/${WEEKLY_PLAN_PRICE} → S/${WEEKLY_PLAN_CREDIT}', o varios pedidos de la semana juntos.`,
@@ -1354,6 +1382,7 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   },
   {
     theme: "RECORDATORIO",
+    ocasion: { momento: "Viernes por la noche, en casa", disparador: "Se acabó la semana y nadie quiere cocinar", dow: 5, hora: 20 },
     whatsapp: "SND//WCH — pedidos todos los días. Arma el tuyo o elige un Signature curado por nosotros.",
     caption: "Por si se te olvidó que existimos // Seguimos aquí, armando sandwiches todos los días. Pide por la app cuando se te antoje.",
     photoIdea: "Cualquier foto de producto que no hayas usado en semanas anteriores.",
@@ -1402,10 +1431,12 @@ const CALENDAR_GENERATE_MAX_WEEKS = 12;
 // este generador corre cada semana sobre la misma tabla, así que sin el filtro de fechas ya
 // ocupadas la cuarta corrida dejaría cuatro borradores encima del mismo día y el calendario
 // —cuyo único valor es decir qué toca publicar hoy— se volvería ilegible.
+const DIAS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
 export function planContentCalendar(
   desdeFecha: string,
   semanas: number,
-  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string }[],
+  temas: { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string; ocasion?: Ocasion }[],
   indiceInicial: number,
   yaOcupadas: Set<string>,
 ): { scheduled_date: string; title: string; caption_text: string; whatsapp_text: string; photo_idea: string; video_idea: string }[] {
@@ -1416,12 +1447,25 @@ export function planContentCalendar(
   for (let k = 0; k < n; k++) {
     // Aritmética en UTC y no con `new Date(str)`: sumar días sobre una fecha local hace que
     // un cambio de mes o de año corra la fecha un día según la zona horaria del runtime.
-    const fecha = new Date(Date.UTC(y, m - 1, d + k * 7)).toISOString().slice(0, 10);
-    if (yaOcupadas.has(fecha)) continue;
+    const base = new Date(Date.UTC(y, m - 1, d + k * 7));
     const tema = temas[(((indiceInicial + k) % temas.length) + temas.length) % temas.length];
+    // La semana se ADELANTA hasta el día que pide la ocasión. Nunca hacia atrás: correr una
+    // fecha al pasado podría dejarla antes de hoy, y un borrador para ayer no sirve.
+    // Sin ocasión, se queda donde caía — el comportamiento de siempre.
+    if (tema.ocasion) {
+      const salto = (tema.ocasion.dow - base.getUTCDay() + 7) % 7;
+      base.setUTCDate(base.getUTCDate() + salto);
+    }
+    const fecha = base.toISOString().slice(0, 10);
+    if (yaOcupadas.has(fecha)) continue;
     salida.push({
       scheduled_date: fecha,
-      title: tema.theme,
+      // La ocasión va en el TÍTULO y no en un campo nuevo: es lo primero que el dueño lee
+      // al abrir el borrador, y sin ella "COMBO" no dice a quién le está hablando ni
+      // cuándo publicarlo. Un campo aparte obliga a mirar dos sitios para escribir un post.
+      title: tema.ocasion
+        ? `${tema.theme} · ${tema.ocasion.momento} (${DIAS_ES[tema.ocasion.dow]} ${tema.ocasion.hora}:00)`
+        : tema.theme,
       caption_text: tema.caption,
       whatsapp_text: tema.whatsapp,
       photo_idea: tema.photoIdea,

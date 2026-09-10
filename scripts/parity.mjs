@@ -197,6 +197,17 @@ cmp('COMBO_DISCOUNT_PER_PAIR',
 cmp('GIFT_CARD_POINTS_PER_SOL',
   scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
+
+// Los límites del monto de la tarjeta de regalo. El cliente los tenía escritos a mano en el
+// texto que se muestra Y en su validación, así que un cambio de tope en el servidor habría
+// dejado a la app prometiendo un rango que ya no existe — y rechazando en el checkout un
+// monto que ella misma acababa de ofrecer.
+cmp('GIFT_CARD_AMOUNT_MIN',
+  scalar(app, 'GIFT_CARD_AMOUNT_MIN', /var GIFT_CARD_AMOUNT_MIN=([\d.]+)/, 'src/app/'),
+  scalar(customer, 'GIFT_CARD_AMOUNT_MIN', /const GIFT_CARD_AMOUNT_MIN = ([\d.]+)/, 'customer.ts'));
+cmp('GIFT_CARD_AMOUNT_MAX',
+  scalar(app, 'GIFT_CARD_AMOUNT_MAX', /var GIFT_CARD_AMOUNT_MAX=([\d.]+)/, 'src/app/'),
+  scalar(customer, 'GIFT_CARD_AMOUNT_MAX', /const GIFT_CARD_AMOUNT_MAX = ([\d.]+)/, 'customer.ts'));
 // Recargo por pan de focaccia (2026-09-03). Es el segundo precio del catálogo que NO vive
 // en `catalog_prices` (el otro es EXTRA_SAUCE_PRICE), así que esta comparación es su única
 // defensa contra que el cliente muestre un monto y el servidor cobre otro.
