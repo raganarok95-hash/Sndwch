@@ -1290,6 +1290,73 @@ leído de `tratar_fotos.py`**: la primera versión comparaba el recorte contra l
 que lo produce, así que cambiar `RATIO` a 16/9 pasaba sin protestar. Un chequeo que se mide
 contra sí mismo no protege nada — verificado inyectando los tres defectos.
 
+## El brief semanal prometía una promo retirada (2026-09-10)
+
+El tema del calendario decía cuatro veces *"en hora valle tu bebida sale gratis"* — y la hora
+valle **se retiró** por ser la única operación del catálogo con contribución negativa, así que
+`OFFPEAK_DRINK_PROMO_HOURS_LIMA` quedó **vacío** y no se aplica nunca. El dueño copia esos
+textos a Instagram y WhatsApp: era una promesa pública falsa, y la peor clase — no un número
+desactualizado sino un mecanismo entero que ya no existe.
+
+Ahora la frase **se agrega sola si la promo vuelve y desaparece sola si se retira**
+(`offpeakActiva()` en `catalog.ts`), y el descuento del combo se interpola de
+`COMBO_DISCOUNT_PER_PAIR` — bajó de S/2 a S/1 el 2026-08-22 y nadie revisó los textos.
+
+**`tests-api/ocasiones-del-brief.test.ts` falla si CUALQUIER texto de marketing menciona la
+hora valle mientras la promo esté apagada.** Su primera versión ya encontró un segundo caso
+que un reemplazo manual no había alcanzado. Es la regla del archivo llevada un paso más allá:
+no basta con interpolar las cifras, tampoco se puede nombrar un mecanismo apagado.
+
+## El brief se ancla a OCASIONES, y el borrador cae en el día que le toca (2026-09-10)
+
+Los 8 temas hablaban todos del **negocio** — referidos, plan semanal, menú secreto, combo — y
+ninguno del momento en que a alguien se le antoja un sándwich. Nadie compra "The Original":
+compra *almuerzo de oficina* o *antojo de noche*, y la marca que se recuerda en esa situación
+es la que gana el pedido.
+
+Cada tema tiene ahora una `ocasion` con momento, disparador, **día de la semana y hora**. Y
+eso no es decoración: `planContentCalendar` **mueve la fecha al día que la ocasión pide**.
+Antes sumaba 7 días desde el día en que el dueño tocara el botón, así que generar un domingo
+dejaba las 8 semanas en domingo — y un post de "almuerzo de oficina" un domingo no le habla a
+nadie. **La fecha solo se adelanta, nunca se atrasa**: un borrador para ayer no sirve.
+
+**La ocasión va en el TÍTULO del borrador**, no en un campo aparte: es lo primero que el dueño
+lee, y sin ella "COMBO" no dice a quién le habla ni cuándo publicarlo.
+
+## La tarjeta de regalo es una elección dominada (2026-09-10)
+
+Regalar el mínimo (S/10) cuesta **400 puntos** — exactamente lo mismo que **R06**, el sándwich
+de S/20.90 gratis para uno mismo. Por el mismo esfuerzo el cliente se lleva el doble de valor
+sin regalar nada, y llegar a esos 400 puntos toma **19 pedidos** al ticket del 15CM.
+
+La pantalla ya lo dice con honestidad —avisa cuánto falta y **en cuántos pedidos**— y ganó
+montos sugeridos **derivados del catálogo**: si un Signature sube de precio, un monto fijo
+escrito dejaría de alcanzar para lo que promete, y un regalo que se queda corto en la caja es
+peor que no haberlo sugerido. Se redondea **hacia arriba** por lo mismo.
+
+Los límites `GIFT_CARD_AMOUNT_MIN/MAX` estaban **escritos a mano en el cliente** (en el texto y
+en la validación) mientras el servidor los tenía como constantes; ahora los compara
+`npm run parity`.
+
+**Cambiar la tasa de 40 pts/sol es decisión del dueño** — hoy la función existe y casi nadie
+va a poder usarla.
+
+## `check:sistema` — el sistema visual no puede crecer por acumulación (2026-09-10)
+
+Una medición del código encontró **34 tamaños de letra distintos y 13 radios de borde**, con
+**once valores usados una sola vez**. Eso no es una escala: es sedimento. Tener 20, 21 y 22 px
+a la vez no comunica jerarquía, la enturbia.
+
+**El chequeo NO exige consolidar, exige no empeorar.** Prohibir de golpe todo lo que está
+fuera de escala obligaría a un refactor de 30 pantallas en una sentada, que es exactamente
+cómo un chequeo así termina desactivado. Congela la lista de lo que HAY: un valor que no
+estaba falla, señalado por su nombre y su archivo, **con el vecino que ya existe sugerido**
+(«¿puede ser 20px, que ya se usa 17 veces?»). La lista solo **encoge**: al consolidar se
+borran los que dejaron de usarse, nunca se agregan para que pase.
+
+Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
+lo que **no** es un problema aunque lo parezca.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
