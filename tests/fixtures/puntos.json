@@ -1,0 +1,15 @@
+{
+  "_": "Tabla compartida cliente <-> servidor para pointsFor(). La lee tests/puntos-prometidos.spec.ts (contra el JavaScript real del navegador) y tests-api/dinero.test.ts (contra el Deno real del servidor). Si una fórmula cambia y la otra no, una de las dos falla.",
+  "casos": [
+    { "total": 25.9,  "envio": 0,    "pts": 26, "nota": "el caso que se veia: el carrito prometia 25.9 y el servidor otorgaba 26" },
+    { "total": 20.9,  "envio": 0,    "pts": 21, "nota": "The Original 15CM sin envio" },
+    { "total": 27.25, "envio": 6.35, "pts": 21, "nota": "el mismo pedido con envio engordado por comision de tarjeta" },
+    { "total": 33.9,  "envio": 8,    "pts": 26, "nota": "sandwich + bebida con combo, envio por zona" },
+    { "total": 62.7,  "envio": 12.7, "pts": 50, "nota": "tres sandwiches, zona lejana" },
+    { "total": 19.9,  "envio": 5,    "pts": 15, "nota": "minimo de envio: por debajo de 2.5 km manda el piso" },
+    { "total": 8,     "envio": 8,    "pts": 0,  "nota": "solo envio: el delivery NUNCA da puntos, es pass-through" },
+    { "total": 0,     "envio": 0,    "pts": 0,  "nota": "pedido cubierto al 100% por una recompensa" },
+    { "total": 34.9,  "envio": 15.87,"pts": 19, "nota": "zona mas lejana, con el engorde de Culqi" },
+    { "total": 26.4,  "envio": 0,    "pts": 26, "nota": "redondea hacia ABAJO cuando corresponde: .4 no llega a 27" }
+  ]
+}

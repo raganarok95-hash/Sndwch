@@ -323,7 +323,7 @@ function deliveryZonePickerHTML(){
     +'</div></div>';
 }
 function checkoutExtrasHTML(){
-  var t=cartFinalTotal();
+  var t=pointsFor(payableTotal(),deliveryFeeAmount());
   var payT=payableTotal();
   var pBox=cust
     ?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:4px">Puntos que ganarás //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">+'+t+' pts <span style="font-size:11px;color:var(--sw-text-muted,#A8C8B0);font-weight:600">pendientes hasta confirmar pago</span></div></div>'

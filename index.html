@@ -1726,7 +1726,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8c823f5b2f';
+var APP_BUILD = 'a02832ed62';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2328,6 +2328,23 @@ function total() {
         return 0;
     return money(itemUnitPrice(currentBuiltItem()));
 }
+// ── LOS PUNTOS QUE PROMETE EL CARRITO SON LOS QUE OTORGA EL SERVIDOR ──────────────────
+// DEBE coincidir con `pointsFor()` en supabase/functions/api/actions/orders.ts.
+//
+// El carrito mostraba `cartFinalTotal()` crudo, o sea el total con decimales: un pedido de
+// S/25.90 prometía "+25.9 pts". Dos defectos en un solo número:
+//
+//   1. Un punto y medio no existe. Las columnas de puntos son `integer` — ese detalle ya
+//      costó un defecto en produccción, con `pointsFor` reventando DESPUÉS de que Culqi
+//      había cobrado (ver tests-api/dinero.test.ts).
+//   2. El servidor redondea, así que otorga 26. El cliente prometía 25.9 y entregaba otra
+//      cosa. Poco, pero es el programa de fidelidad: es literalmente la cuenta que el
+//      cliente lleva para saber cuándo le toca su sándwich gratis.
+//
+// El delivery NO da puntos, y eso no es un detalle: es pass-through al motorizado, plata
+// que nunca fue del negocio. Premiarla sería regalar puntos por la distancia a la que vive
+// el cliente.
+function pointsFor(total, deliveryFee) { return Math.round(total - (deliveryFee || 0)); }
 function szLabel(sz) { return sz === '15' ? '15CM' : sz === '30' ? '30CM' : ''; }
 // ── LA BANDA DEL HERMANO ──────────────────────────────────────────────────────────────
 // El hermano que manda en la pantalla, presentándola. Nació como un bloque suelto dentro
@@ -4659,7 +4676,7 @@ function deliveryZonePickerHTML() {
         + '</div></div>';
 }
 function checkoutExtrasHTML() {
-    var t = cartFinalTotal();
+    var t = pointsFor(payableTotal(), deliveryFeeAmount());
     var payT = payableTotal();
     var pBox = cust
         ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:8px;padding:12px;margin-top:14px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:4px">Puntos que ganarás //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">+' + t + ' pts <span style="font-size:11px;color:var(--sw-text-muted,#A8C8B0);font-weight:600">pendientes hasta confirmar pago</span></div></div>'

@@ -24,6 +24,24 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { pointsFor } from "../supabase/functions/api/actions/orders.ts";
 
+// LA MISMA TABLA QUE CORRE EL CLIENTE (tests/puntos-prometidos.spec.ts). Vive en un solo
+// archivo a propósito: si una de las dos fórmulas cambia y la otra no, una de las dos
+// pruebas falla. `npm run parity` no cubre esto — compara constantes duplicadas, nunca
+// fórmulas.
+const TABLA = JSON.parse(
+  Deno.readTextFileSync(new URL("../tests/fixtures/puntos.json", import.meta.url)),
+) as { casos: Array<{ total: number; envio: number; pts: number; nota: string }> };
+
+Deno.test("pointsFor del servidor coincide con la tabla que promete el cliente", () => {
+  for (const c of TABLA.casos) {
+    assertEquals(
+      pointsFor(c.total, c.envio),
+      c.pts,
+      `S/${c.total} con envío S/${c.envio} — ${c.nota}`,
+    );
+  }
+});
+
 Deno.test("pointsFor devuelve SIEMPRE un entero — las columnas de puntos son integer", () => {
   // El caso real que rompía: The Original 15CM (20.90) + delivery zona media engordado.
   assertEquals(Number.isInteger(pointsFor(27.25, 6.35)), true);

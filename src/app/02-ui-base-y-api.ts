@@ -378,6 +378,23 @@ function total(){
   if(!size)return 0;
   return money(itemUnitPrice(currentBuiltItem()));
 }
+// ── LOS PUNTOS QUE PROMETE EL CARRITO SON LOS QUE OTORGA EL SERVIDOR ──────────────────
+// DEBE coincidir con `pointsFor()` en supabase/functions/api/actions/orders.ts.
+//
+// El carrito mostraba `cartFinalTotal()` crudo, o sea el total con decimales: un pedido de
+// S/25.90 prometía "+25.9 pts". Dos defectos en un solo número:
+//
+//   1. Un punto y medio no existe. Las columnas de puntos son `integer` — ese detalle ya
+//      costó un defecto en produccción, con `pointsFor` reventando DESPUÉS de que Culqi
+//      había cobrado (ver tests-api/dinero.test.ts).
+//   2. El servidor redondea, así que otorga 26. El cliente prometía 25.9 y entregaba otra
+//      cosa. Poco, pero es el programa de fidelidad: es literalmente la cuenta que el
+//      cliente lleva para saber cuándo le toca su sándwich gratis.
+//
+// El delivery NO da puntos, y eso no es un detalle: es pass-through al motorizado, plata
+// que nunca fue del negocio. Premiarla sería regalar puntos por la distancia a la que vive
+// el cliente.
+function pointsFor(total,deliveryFee){return Math.round(total-(deliveryFee||0));}
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // ── LA BANDA DEL HERMANO ──────────────────────────────────────────────────────────────
 // El hermano que manda en la pantalla, presentándola. Nació como un bloque suelto dentro
