@@ -442,7 +442,15 @@ export async function rewardReferrer(referrerPhone: string, referredName: string
 // importante; los dos llevan el mismo event_id (la referencia del pedido) y Meta deduplica.
 // El valor excluye el delivery a propósito: es pass-through al motorizado, no ingreso del
 // negocio, e incluirlo inflaría el ROAS de las campañas con plata que nunca fue tuya.
-function reportPurchaseToMeta(p: FinalizeOrderParams): void {
+// ⚠ RESPETA EL DERECHO DE OPOSICIÓN (Ley 29733). Si el cliente apagó la medición desde su
+// perfil, su compra no se reporta — ni por acá ni por el píxel del navegador, que también se
+// calla al iniciar sesión. La Política de Privacidad promete exactamente esto, y una promesa
+// legal sin un interruptor que la cumpla se rompe el primer día que alguien la use.
+//
+// Un pedido de INVITADO llega sin `cliente` y sí se reporta: sin cuenta no hay dónde guardar
+// una oposición, y ese pedido es justamente el que el anuncio trajo.
+function reportPurchaseToMeta(p: FinalizeOrderParams, cliente?: { ad_tracking_opt_out?: boolean } | null): void {
+  if (cliente?.ad_tracking_opt_out) return;
   // Un pedido Yape/Plin nace en "pending" y solo se vuelve una venta real cuando el admin
   // confirma el pago — ese caso se reporta desde confirmManualPayment, no acá. Sin este
   // guard, Meta optimizaría hacia pedidos que todavía nadie pagó.
@@ -628,7 +636,7 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
     await Promise.all(auditInserts);
     if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
     await alertLowMarginOrder(p);
-    reportPurchaseToMeta(p);
+    reportPurchaseToMeta(p, c);
     await sendConfirmationEmailSafely(p);
     return { order: orderRows[0], customer };
   }
@@ -1897,7 +1905,11 @@ async function confirmManualPayment(order: any) {
   // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el
   // dinero llegó), así que este es el momento de reportarlo a Meta — no cuando el cliente
   // dijo "ya pagué". Mismo event_id que usaría el píxel: la referencia del pedido.
-  sendPurchaseEvent({
+  //
+  // Y acá también se respeta la oposición del cliente (Ley 29733): este camino es el de la
+  // MAYORÍA de los pedidos —Yape es el método por defecto— así que olvidarlo dejaría el
+  // interruptor del perfil apagando casi nada, sin que nada avisara.
+  if (!c.ad_tracking_opt_out) sendPurchaseEvent({
     eventId: order.ref,
     value: (Number(order.total) || 0) - (Number(order.delivery_fee) || 0),
     phone: order.contact_phone || order.customer_phone,

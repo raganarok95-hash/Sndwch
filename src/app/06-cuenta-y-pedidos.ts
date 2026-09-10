@@ -424,6 +424,7 @@ function sPProfile(){
   // (crecimiento vs. manejo de saldo vs. gamificación) — se agrupan bajo 2 eyebrows y se
   // marca la única tarjeta con cobro real (Plan Semanal) para que no se confunda con las
   // demás, que solo mueven saldo/puntos propios — hallazgo de auditoría visual, MEDIO.
+  var adOptOut=!!(cust&&(cust as any).ad_tracking_opt_out);
   var sectionLabel=function(t){return'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:20px 0 10px">'+t+'</div>';};
   weeklyPlanHTML=weeklyPlanHTML.replace('Plan<span class="cut-sep"','<span style="float:right;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em">Pago con tarjeta</span>Plan<span class="cut-sep"');
   return H('MI PERFIL','sndScreen=\'p_home\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'+heroHTML
@@ -431,6 +432,12 @@ function sPProfile(){
     +pushHTML
     +sectionLabel('Retos y referidos //')+referralHTML+challengeHTML+discoveryHTML
     +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+giftCardHTML+weeklyPlanHTML
+    +sectionLabel('Privacidad //')
+    // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
+    // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se
+    // muestra apagado (medición activa) porque es el estado real de quien aceptó la política
+    // al registrarse — no se pinta un consentimiento que nadie dio.
+    +'<div onclick="toggleAdTracking()" style="background:'+(adOptOut?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(adOptOut?GOLD:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:'+(adOptOut?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">No medir<span class="cut-sep" style="color:'+GOLD+'"> // </span>mis compras</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.45">Deja de reportar tus pedidos a Meta para medir anuncios. No cambia precios, puntos ni nada de tu pedido.</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(adOptOut?GOLD:'#A8C8B0')+'">'+(adOptOut?'✓':'○')+'</span></div>'+(adOptOutMsg?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px">'+esc(adOptOutMsg)+'</div>':'')+'</div>'
     +'<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:var(--sw-danger-strong,#ff5555);font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
@@ -710,8 +717,8 @@ function sPLegal(){
     +sec('QUÉ VENDEMOS //','Sándwiches preparados al momento, para delivery en '+BIZ_CITY+' — como Signature (combinaciones curadas por la casa) o armados a tu gusto (ARMA EL TUYO), además de bebidas y snacks. El menú, con descripción y precio de cada producto, está disponible dentro de la app desde el home.')
     +sec('QUÉ DATOS PEDIMOS //','Nombre, teléfono, PIN, DNI y fecha de nacimiento al crear tu cuenta; correo y dirección son opcionales. El DNI y la fecha de nacimiento solo se usan para verificar tu identidad si necesitas recuperar tu cuenta — no se muestran a nadie más.')
     +sec('PARA QUÉ LOS USAMOS //','Para procesar tus pedidos, acreditar tus puntos y recompensas, prevenir fraude y contactarte sobre el estado de tu pedido.')
-    +sec('CON QUIÉN LOS COMPARTIMOS //','No vendemos ni compartimos tus datos con terceros para publicidad. Solo se comparten con los proveedores estrictamente necesarios para operar (pasarela de pago, envío de correos).')
-    +sec('TUS DATOS, TU DECISIÓN //','Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio.')
+    +sec('CON QUIÉN LOS COMPARTIMOS //','Nunca vendemos tus datos. Se comparten solo con los proveedores necesarios para que el negocio funcione: la pasarela de pago para cobrarte, el servicio de correo para escribirte, y Meta (Facebook e Instagram) para medir qué anuncios traen pedidos de verdad. A Meta le llegan tu correo, tu teléfono y tu nombre de pila SIEMPRE cifrados con un código irreversible (SHA-256, nunca legibles), junto con el monto del pedido y qué productos llevaste; como en cualquier web con publicidad, tu navegador también le deja ver tu dirección IP. NO le llegan tu DNI, tu fecha de nacimiento, tu PIN ni tu dirección de entrega. Esa medición sirve para saber cuánto cuesta traer un cliente nuevo — nunca para decidir qué te cobramos a ti.')
+    +sec('TUS DATOS, TU DECISIÓN //','Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio. Y si no quieres que midamos tus compras para publicidad, apágalo en tu perfil, en Privacidad: tus pedidos dejan de reportarse a Meta desde ese momento, sin que cambie nada de tu cuenta, tus puntos ni tus precios. Es tu derecho de oposición según la Ley 29733 de Protección de Datos Personales.')
     +sec('CONTACTO //','¿Preguntas sobre tus datos o tu pedido? Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
     +'</div>';
 }
@@ -818,4 +825,26 @@ async function doSubmitComplaint(){
     var res=await api('submit-complaint',{kind:cmplKind,consumerName:name,consumerDni:dni,consumerAddress:addr,consumerPhone:phone,consumerEmail:email,isMinor:cmplMinor,guardianName:guardian,orderRef:ref,claimedAmount:amount?Number(amount):null,detail:detail,consumerRequest:request});
     cmplCode=res.claimCode;cmplBusy=false;cmplStep='success';render();
   }catch(e){cmplErr=e.message;cmplBusy=false;render();}
+}
+
+// ── EJERCER EL DERECHO DE OPOSICIÓN (Ley 29733) ──────────────────────────────────────
+// La Política de Privacidad promete que esto se puede apagar desde el perfil. Esta función
+// es lo que hace que esa frase sea verdad.
+//
+// El estado nuevo se toma de lo que devuelve el SERVIDOR (`r.customer`), nunca de lo que el
+// navegador supone que acaba de guardar: si la escritura falla, el interruptor vuelve solo a
+// su sitio en vez de quedarse mostrando lo contrario de lo que la base dice. Un interruptor
+// de privacidad que MIENTE sobre su propio estado es peor que no tenerlo.
+async function toggleAdTracking(){
+  if(!cust){adOptOutMsg='Inicia sesión para cambiar esto.';render();return;}
+  var nuevo=!(cust as any).ad_tracking_opt_out;
+  adOptOutMsg='';
+  try{
+    var r=await api('set-ad-tracking',{token:token,optOut:nuevo});
+    if(r&&r.customer){cust=r.customer;cacheCust(cust,isAdmin);}
+    adOptOutMsg=nuevo?'Listo — tus pedidos ya no se reportan para medir anuncios.':'Medición activada de nuevo. Gracias, nos ayuda a saber qué anuncio funciona.';
+  }catch(e:any){
+    adOptOutMsg=(e&&e.message)||'No se pudo guardar. Intenta de nuevo.';
+  }
+  render();
 }

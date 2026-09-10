@@ -405,6 +405,26 @@ export async function actRemindMonthlyRecap(b: any) {
 }
 
 const MAX_ADDRESSES = 6;
+// ── DERECHO DE OPOSICIÓN A LA MEDICIÓN PUBLICITARIA (Ley 29733) ──────────────────────
+// La Política de Privacidad dice que el cliente puede apagar el reporte de sus compras a
+// Meta desde su perfil. Esto es lo que hace que esa frase sea verdad y no decoración: sin
+// un interruptor real, la promesa se rompe el primer día que alguien intenta usarla.
+//
+// Devuelve el cliente entero (`safeCustomer`) y no solo `{success:true}` para que la
+// pantalla pinte el estado nuevo desde lo que dice el SERVIDOR, y no desde lo que el
+// navegador cree haber guardado. Si la escritura fallara, el interruptor volvería solo a
+// su sitio en vez de quedarse mintiendo en la posición contraria.
+export async function actSetAdTracking(b: any) {
+  const s = await requireSession(b.token);
+  const optOut = b.optOut === true;
+  const rows = await sbUpdate(
+    "customers",
+    `phone=eq.${encodeURIComponent(s.phone)}`,
+    { ad_tracking_opt_out: optOut },
+  );
+  return { success: true, customer: safeCustomer(rows[0]) };
+}
+
 export async function actAddressesList(b: any) {
   const s = await requireSession(b.token);
   return { addresses: await sbGet("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`) };
