@@ -138,19 +138,37 @@ function sOrdDetail(){
   var o=myOrders.find(function(x){return x.id==_sndOd||x.id===_sndOd;});
   if(!o)return sPOrders();
   var ci=STEPS.indexOf(o.status);
+  // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
+  // De todas las pantallas de la app, ÉSTA es la que el dueño describió cuando dijo
+  // "etiqueta, pero solo para los recibos de pago": un pedido que ya se pagó, mirado
+  // después. No es una tarjeta de producto ni un formulario — es el comprobante.
+  //
+  // ⚠ LA CUENTA TIENE QUE PODER SEGUIRSE, y acá casi no se podía: se mostraba un número
+  // grande y nada más. `total` INCLUYE el envío, así que sin separarlo el cliente ve un
+  // monto que no coincide con lo que recuerda haber pedido y no tiene forma de saber por
+  // qué. Es el mismo defecto que descuadraba el recibo del carrito, con la diferencia de
+  // que acá ya no puede preguntar: el pedido está cerrado.
+  var envioPedido=Number(o.delivery_fee);
+  var hayEnvio=Number.isFinite(envioPedido)&&envioPedido>0;
+  var kmPedido=Number(o.delivery_km);
+  var consumo=hayEnvio?money(Number(o.total)-envioPedido):Number(o.total);
   return H('DETALLE',"sndScreen='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
-    +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px;margin-bottom:12px">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
-    +'<div style="min-width:0"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.customer_name)+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-top:2px">'+esc(o.ref)+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.date)+'</div></div>'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(o.total)+'</div></div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Pedido //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+esc(o.summary)+'</div>'
+    +PAPEL_ABRE(String(o.ref||'TU PEDIDO')+' · NO ES BOLETA')
+    +reciboLinea('Fecha',esc(String(o.date||'')),'mudo')
+    +reciboLinea('A nombre de',esc(String(o.customer_name||'')))
+    +'<div style="font-size:11px;line-height:1.5;padding:6px 0 2px">'+esc(String(o.summary||''))+'</div>'
+    +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:7px 0"></div>'
+    // El envío solo aparece cuando de verdad se sabe cuánto fue. Un pedido consultado por
+    // referencia (sin sesión) no trae esa columna, y partir el total con un número
+    // inventado sería peor que no partirlo.
+    +(hayEnvio
+      ?reciboLinea('Consumo',SOLES+pz(consumo))
+        +reciboLinea(Number.isFinite(kmPedido)&&kmPedido>0?'Envío · '+kmPedido+' km':'Envío',SOLES+pz(envioPedido))
+      :'')
+    +(o.redeemed_reward?reciboLinea('Recompensa canjeada',esc(String(o.redeemed_reward)),'ahorro'):'')
+    +PAPEL_TOTAL('TOTAL',Number(o.total))
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Dirección //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:#aaa">'+esc(o.customer_address)+'</div>'
-    +(o.redeemed_reward?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--sw-border,#3A6B58)"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366);display:flex;align-items:center;gap:6px">'+icon('gift',12,'var(--sw-ok,#25D366)')+esc(o.redeemed_reward)+'</div></div>':'')
-    +'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted4,#C8D6CE);margin-bottom:12px">'+esc(String(o.customer_address||''))+'</div>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px">Estado //</div>'
     +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?GOLD:'#3A6B58')+';border-radius:4px"></div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:7px;color:'+(dn?GOLD:'#4A7A68')+';text-align:center;line-height:1.3">'+((STATUSES[st]||{}).label||st).replace(' ','<br>')+'</div></div>';}).join('')+'</div>'

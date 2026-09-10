@@ -1360,8 +1360,13 @@ export async function actPlaceOrder(b: any) {
 // acceso en este modo (ver oref() en index.html, que ahora incluye un componente
 // aleatorio para que no sea adivinable); igual no se expone más de lo necesario por si
 // alguna vez se comparte o queda en un historial de navegador.
+// ⚠ `delivery_fee` y `delivery_km` entran acá para que el recibo del detalle CUADRE también
+// para un invitado. `total` incluye el envío, así que sin esas dos columnas la pantalla solo
+// puede mostrar un número grande sin explicación — y quien consulta su pedido por referencia
+// es justo quien no tiene dónde más mirar. Ninguna de las dos es un dato sensible: son el
+// monto que ya pagó y la distancia que ya recorrió su propio pedido.
 const GUEST_ORDER_FIELDS =
-  "id,ref,customer_name,customer_address,summary,total,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at,date";
+  "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at,date";
 export async function actMyOrders(b: any) {
   if (b.token) {
     const s = await requireSession(b.token);
