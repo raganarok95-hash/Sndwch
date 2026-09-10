@@ -782,17 +782,62 @@ function sOHome(){
         return (ia<0?99:ia)-(ib<0?99:ib);
       });
       var secretSig=SIGS.find(function(s){return s.secret;});
-      var tabBar='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:4px">'
-        +'<button onclick="homeTab=\'sig\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='sig'?GOLD:'transparent')+';color:'+(homeTab==='sig'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Signatures</button>'
-        +'<button onclick="homeTab=\'byo\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='byo'?GOLD:'transparent')+';color:'+(homeTab==='byo'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Arma el tuyo</button>'
-        // Tercera pestaña (2026-09-09). Hasta hoy el ÚNICO acceso a las bebidas era un
-        // botón dentro del carrito, o sea que para comprar una bebida había que armar un
-        // sándwich primero. El checkout nunca exigió sándwich —solo `cart.length`— así
-        // que el pedido de pura bebida ya funcionaba: lo que faltaba era cómo llegar.
-        // Son el ítem de mejor margen del catálogo (19-32% de costo contra ~45% de un
-        // sándwich) y esconderlas detrás de otra compra era regalar la venta más rentable.
-        +'<button onclick="homeTab=\'drink\';render()" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:10px 0;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:'+(homeTab==='drink'?GOLD:'transparent')+';color:'+(homeTab==='drink'?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.03em;transition:all .15s">Bebidas</button>'
-        +'</div>';
+      // ── EL CORTE, no una barra de pestañas (2026-09-09) ──
+      //
+      // Las tres opciones eran tres pestañas iguales dentro de una píldora. El logo nuevo
+      // dice otra cosa: el mono está PARTIDO, y esa división es la estructura del menú —
+      // verde es lo que ya está decidido (los Signatures), celeste es donde eliges tú
+      // (ARMA EL TUYO). Pintarlas iguales borraba justamente lo que la marca ya explica.
+      //
+      // Siguen siendo <button> con los mismos nombres accesibles a propósito: las pruebas
+      // los localizan por rol y texto, y sobre todo un panel que cambia la pantalla TIENE
+      // que ser un botón para el teclado y el lector de pantalla. Lo que cambia es cómo se
+      // ven, no qué son.
+      var lado=function(id,titulo,bajada,activo){
+        var esByo=id==='byo';
+        var fg=esByo?'var(--sw-sky-ink,#0E1A17)':'#fff';
+        var sub=esByo?'rgba(14,26,23,.72)':'var(--sw-text-muted,#A8C8B0)';
+        var fondo=esByo
+          ?'linear-gradient(200deg,var(--sw-sky,#8CC8EC),var(--sw-sky-deep,#3F86B4))'
+          :'linear-gradient(155deg,var(--sw-card,#2D5246),var(--sw-card2,#1A3028))';
+        return'<button onclick="homeTab=\''+id+'\';render()" aria-pressed="'+(activo?'true':'false')
+          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.55':'1')
+          // El lado celeste lleva más aire a la izquierda: el corte va a caballo de la costura
+          // y sin ese margen le mordía la W del rótulo.
+          +';min-height:104px;padding:13px 12px 13px '+(esByo?'21px':'12px')+';background:'+fondo+';display:flex;flex-direction:column;'
+          +'justify-content:space-between;transition:flex .28s ease;opacity:'+(activo?'1':'.82')+'">'
+          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.22em;'
+          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.8)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
+          +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
+          +(activo?'19':'16')+'px;font-weight:640;color:'+fg+';line-height:1.05">'+esc(titulo)+'</div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+sub
+          +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
+      };
+      // El corte se superpone entre los dos lados: sale del encuadre arriba y abajo para
+      // que las barras no terminen en punta dentro de la tarjeta.
+      var tabBar='<div style="position:relative;display:flex;border-radius:12px;overflow:hidden;'
+        +'margin-bottom:10px;box-shadow:'+SHADOW_SM+'">'
+        +lado('sig','Signatures','Ya está resuelto.',homeTab==='sig')
+        // z-index:2 — sin esto el panel celeste, que va después en el DOM, pinta ENCIMA del
+        // corte y el divisor desaparece. Se vio al renderizar la pantalla de verdad, no en
+        // el mockup: ahí los dos lados eran divs hermanos sin superposición.
+        +'<div style="position:absolute;z-index:2;left:'+(homeTab==='byo'?'39.2%':'60.8%')+';top:-14px;bottom:-14px;'
+        // translateX(-50%) para que el corte quede A CABALLO de la costura y no encima del
+        // panel de la derecha: sin esto tapaba el rótulo WICHO y el título del lado celeste.
+        +'transform:translateX(-50%);transition:left .28s ease">'+CUT('100%','10px','6px')+'</div>'
+        +lado('byo','Arma el tuyo','Tú decides.',homeTab==='byo')
+        +'</div>'
+        // Las bebidas no son un tercer lado: no son una forma de pedir un sándwich, son
+        // otra cosa que se compra. Por eso van debajo del corte y no dentro de él.
+        +'<button onclick="homeTab=\'drink\';render()" aria-pressed="'+(homeTab==='drink'?'true':'false')
+        +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
+        +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'
+        +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#2D5246)')
+        +';border:1px solid '+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-border,#3A6B58)')+'">'
+        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;'
+        +'color:'+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-text,#FFFFFF)')+'">Bebidas</span>'
+        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;'
+        +'color:var(--sw-text-muted,#A8C8B0)">Medio litro, hechas acá — se piden solas</span></button>';
       var sigPanel='<div style="margin-bottom:8px">'+visibleSigs.map(function(s,i){
         var av=sigInStock(s);
         var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:'+'var(--sw-card2,#1A3028)'+'"></div>';

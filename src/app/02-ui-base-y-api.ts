@@ -247,6 +247,27 @@ function parseBdayDDMMYYYY(raw){
 // tenía su propia copia idéntica de este helper).
 function sec(t,b){return'<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px">'+t+'</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">'+b+'</p></div>';}
 function isAvail(code){return invStock[code]!==false;}
+// El corte de marca, como componente. `alto` acepta cualquier medida CSS; los llamantes
+// que lo usan de divisor a pantalla completa le pasan '100%' y lo posicionan absoluto con
+// un desborde arriba y abajo, para que las barras salgan del encuadre en vez de terminar
+// en punta dentro de la pantalla.
+function CUT(alto?,ancho?,gap?){
+  var st='height:'+(alto||'100%')+(ancho?';width:'+ancho:'');
+  return'<div class="sw-cut" aria-hidden="true"'+(gap?' style="gap:'+gap+'"':'')+'>'
+    +'<i style="'+st+'"></i><i style="'+st+'"></i></div>';
+}
+// La espiral del ojo de WICHO. `gira` la convierte en el indicador de carga.
+function SPIRAL(size,color,gira?){
+  var n=148,vueltas=3.2,r=(size/2)-2.4,pts=[];
+  for(var i=0;i<=n;i++){
+    var t=(i/n)*vueltas*2*Math.PI;
+    var rr=(t/(vueltas*2*Math.PI))*r;
+    pts.push((size/2+rr*Math.cos(t)).toFixed(1)+','+(size/2+rr*Math.sin(t)).toFixed(1));
+  }
+  return'<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" fill="none"'
+    +(gira?' class="sw-spiral"':'')+' style="flex-shrink:0" aria-hidden="true">'
+    +'<path d="M'+pts.join(' L')+'" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/></svg>';
+}
 function protPrice(p){return !p||!size?0:(size==='15'?p.p15:p.p30);}
 function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
 // Proteína "de referencia" para el precio de doble proteína: la del signature
