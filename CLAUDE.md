@@ -1442,7 +1442,20 @@ no de medición propia, y todo el modelo cuelga de él. Se mide poniendo los sec
   - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
     y la fricción de configurar el número en Meta Business Platform — no antes.
 - **Producción de video para marketing: el dueño ya tiene su propio proceso con Google
-  Flow (generación de video con IA), confirmado 2026-08-10** — no es una integración de
+  Flow (generación de video con IA), confirmado 2026-08-10** — y **el 2026-09-10 se retiró
+  `admin-video-generate`**, la acción que generaba el video llamando a Veo por API.
+  Cualquiera de sus tres motivos bastaba: costaba **US$0.10-0.15 por segundo** en un negocio
+  que todavía no abre; **nunca se configuró su `GEMINI_API_KEY`**, así que jamás generó un
+  solo video y llevaba desde que se escribió respondiendo 503; y **duplicaba un proceso que
+  ya existe**. Un segundo camino que hace lo mismo peor y cobrando no es una opción, es
+  código que se mantiene para no usarse.
+  Lo que queda y sí se usa es `admin-video-script`, que arma el guion y el **prompt listo
+  para pegar en Flow**. Desde la misma fecha ese prompt viaja DENTRO del borrador semanal
+  del calendario (`flowPromptSemanal`), así que el dueño no tiene ni que abrir la pantalla:
+  el formato se LEE de la letra con la que ya empieza el guion de esa semana —elegirlo
+  aparte sería que el prompt diga un formato y el guion de al lado diga otro— y el Signature
+  rota con la semana, salvo en EL SECRETO, que por no mostrar producto siempre le toca al
+  menú secreto. — no es una integración de
   este repo ni de este entorno, el dueño genera y carga los videos por su cuenta fuera de
   esta sesión. No asumir que hace falta resolver generación de video como capacidad
   pendiente de este proyecto; si se pide ayuda con guiones/prompts para esos videos, es

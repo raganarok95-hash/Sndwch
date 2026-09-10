@@ -12,6 +12,8 @@ import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_B
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { sendRetentionEmail } from "../email.ts";
 import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
+// El prompt de Flow para el borrador semanal — el dueno genera sus videos ahi.
+import { flowPromptSemanal } from "./video.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
