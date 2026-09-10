@@ -1149,7 +1149,7 @@ function sOSig(){
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
   var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
-  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.')+SZTOG()+recoCardSig+ST('01','Elige tu build','Tres salsas incluidas.')+SIGS.map(function(s){
+  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.',!!sigId)+SZTOG()+recoCardSig+ST('01','Elige tu build','Tres salsas incluidas.')+SIGS.map(function(s){
     // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
     // cliente logueado que todavía no llega al rango exigido se muestra como una
     // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.

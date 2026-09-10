@@ -46,6 +46,12 @@ todo el rato: no es una pantalla de cliente y el celeste ahí no significaría n
 | `wicho_saluda.png` | WICHO | cuerpo entero saludando | menú, lado ARMA EL TUYO (activo) |
 | `wicho_grita.png` | WICHO | cara, gritando | — |
 | `wicho_rie.png` | WICHO | cara, riendo | — |
+| `sando_saluda.png` | SANDO | cuerpo entero saludando | banda del hermano, cuando ya elegiste |
+| `sando_sonrie.png` | SANDO | cara, sonriendo | **pedido confirmado** |
+| `sando_serio.png` | SANDO | busto de frente, sándwich en la boca | — |
+| `sando_piensa.png` | SANDO | cara, mano en el mentón | — |
+| `sando_mira.png` | SANDO | cara, mirando hacia arriba | — |
+| `sando_grita.png` | SANDO | cara, gritando | — |
 
 Además, los dos cuerpos aparecen en la **banda del hermano** (`CAB()`, encabezando la lista
 de Signatures y el armador) y en los **estados vacíos** (`VACIO()` — sin favoritos, sin
@@ -63,32 +69,33 @@ costura central. Los otros cinco los generó el dueño aparte.
 
 ---
 
-## ⚠ Lo que NO existe, y por qué importa
+## El desbalance se cerró el 2026-09-10
 
-**De SANDO solo hay UNA pose.** WICHO tiene cuatro. Eso desbalancea la interfaz: WICHO puede
-reaccionar (saluda al tocarlo) y SANDO no tiene con qué.
+Hasta esa fecha **de SANDO había UNA sola pose** contra cuatro de WICHO, y eso desbalanceaba
+la interfaz entera: WICHO podía reaccionar y SANDO no tenía con qué. Estaba anotado acá como
+algo que **solo el dueño podía destrabar**, porque una pose nueva es dibujo nuevo —igual que
+el RUC o una foto real de producto— y recortar, escalar o espejar las que había no cuenta.
 
-El dueño pidió (2026-09-10) que **SANDO sonría cuando presionan**, igual que giran los ojos de
-WICHO. Una sonrisa nueva ES un dibujo nuevo, así que mientras tanto SANDO **asiente**
-(`.sw-nudge`, un movimiento sobre la pose que ya existe). Es movimiento sobre el dibujo real,
-no un dibujo inventado — pero **no reemplaza la pose que falta**, solo la sustituye.
+Lo destrabó: mandó **seis poses de SANDO**. Con eso:
 
-Faltan, en orden de utilidad:
+- La **banda del hermano** (`CAB()`) ya funciona igual para los dos: en reposo va el cuerpo,
+  y cuando el cliente elige algo el hermano **saluda**. Antes eso solo podía hacerlo WICHO.
+- El **pedido confirmado** —que este archivo tenía como el hueco número uno, "el momento de
+  mayor satisfacción del flujo y no tiene cara"— ahora lo recibe **SANDO sonriendo**. Va él
+  y no WICHO aunque el sándwich se haya armado del lado celeste: ahí ya no se elige nada,
+  está decidido y en marcha, que es exactamente su territorio.
+  ⚠ Con un pago manual **pendiente** no aparece. Todavía falta que el dueño confirme contra
+  su cuenta, así que el gesto sería una mentira pequeña; ahí se queda el wordmark.
 
-1. **SANDO aprobando** — para cuando el pedido se confirma. Hoy ese momento no tiene cara.
-2. **SANDO de cara**, como los dos de WICHO, para bocadillos y avisos.
-3. **SANDO señalando** — el equivalente del saludo de WICHO.
+**Lo que sigue faltando:** una pose de WICHO de cuerpo entero *señalando*, y poses de SANDO
+en las situaciones que hoy usan cara suelta (`serio`, `piensa`, `mira`, `grita` están
+guardadas pero todavía sin sitio en la interfaz — están inventariadas arriba para que la
+próxima sesión sepa que existen en vez de pedirlas de nuevo).
 
-**Ninguna de esas se puede fabricar desde acá.** Son dibujo nuevo, igual que el RUC, la razón
-social o las fotos reales de producto: **las encarga el dueño**. Recortar, escalar o espejar
-las que hay no cuenta — un personaje espejado deja de mirar hacia donde debe.
-
-**Lo único que sí se puede animar sin inventar nada es lo que es GEOMETRÍA**: el ojo espiral
-de WICHO se redibuja en SVG (`SPIRAL()` en `src/app/02-*`) y gira de verdad. Por eso el
-indicador de carga de la app es su ojo: es la única animación de personaje que no depende de
-que alguien dibuje otro cuadro.
-
----
+**Lo único animable sin dibujo nuevo sigue siendo lo que es GEOMETRÍA**: el ojo espiral de
+WICHO se redibuja en SVG (`SPIRAL()` en `src/app/02-*`) y gira de verdad. Por eso el
+indicador de carga de la app es su ojo. El asentimiento (`.sw-nudge`) es lo mismo en
+espíritu: movimiento sobre el dibujo real, nunca un dibujo inventado.
 
 ## Cómo se agrega una pose nueva
 

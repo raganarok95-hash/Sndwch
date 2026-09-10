@@ -1383,8 +1383,22 @@ function sOSent(){
   // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
   // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
   var rankPerk=window._lSecretUnlock?'Ya puedes ver el menú secreto.':null;
+  // ── EL MOMENTO QUE NO TENÍA CARA ──────────────────────────────────────────────────
+  // `marca/PERSONAJES.md` tenía esto como el hueco número UNO: "SANDO aprobando — para
+  // cuando el pedido se confirma. Hoy ese momento no tiene cara." Era el instante de mayor
+  // satisfacción de todo el flujo y lo recibía un wordmark, igual que cualquier pantalla
+  // informativa. El dueño mandó la pose el 2026-09-10.
+  //
+  // Va SANDO y no WICHO aunque el sándwich se haya armado en el lado celeste: acá ya no se
+  // elige nada: está decidido, pagado y en marcha. Ése es exactamente su territorio.
+  //
+  // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
+  // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
+  var caraSando=!pending
+    ?'<img src="img/sando_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
+    :'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>';
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
-    +'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>'
+    +caraSando
     // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
     // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
     +(pending?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>':(window._lTot===0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))

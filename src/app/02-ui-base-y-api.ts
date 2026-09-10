@@ -391,13 +391,19 @@ function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 // El ojo espiral acompaña SOLO a WICHO y gira de verdad — es geometría redibujada en SVG,
 // no un cuadro de animación. SANDO no lo lleva porque no lo tiene: inventárselo sería
 // dibujarle algo que su ilustración no dice.
-function CAB(quien,texto){
+// `activo` = el cliente ya eligió algo en esta pantalla. Entonces el hermano cambia de
+// POSE, no solo de posición: saluda. Hasta el 2026-09-10 esto solo se podía hacer con
+// WICHO —de SANDO existía UNA sola pose— y ese desbalance estaba anotado en
+// marca/PERSONAJES.md como algo que solo el dueño podía destrabar. Lo destrabó: mandó seis
+// poses nuevas, incluida la sonrisa que había pedido para el momento de confirmar.
+function CAB(quien,texto,activo?){
   var esW=quien==='wicho';
+  var pose=activo?'saluda':'cuerpo';
   return'<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
     // ⚠ Se fija la ALTURA y no el ancho: los dos cuerpos son de 640 px de alto pero de
     // ancho distinto (WICHO 448, SANDO 302), así que con un ancho fijo SANDO salía casi
     // 50% más alto que su hermano y la banda cambiaba de tamaño según de quién fuera.
-    +'<img class="sw-nudge" src="img/'+quien+'_cuerpo.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
+    +'<img class="sw-nudge" src="img/'+quien+'_'+pose+'.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
     +'<div style="flex:1;padding-bottom:4px">'
     +'<div style="display:flex;align-items:center;gap:5px">'
     +(esW?'<span style="display:inline-flex">'+SPIRAL(11,'var(--sw-spiral,#C3A6D2)',true)+'</span>':'')

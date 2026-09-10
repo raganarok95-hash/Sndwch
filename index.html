@@ -1726,7 +1726,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '264efbd991';
+var APP_BUILD = '8c823f5b2f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2341,13 +2341,19 @@ function szLabel(sz) { return sz === '15' ? '15CM' : sz === '30' ? '30CM' : ''; 
 // El ojo espiral acompaña SOLO a WICHO y gira de verdad — es geometría redibujada en SVG,
 // no un cuadro de animación. SANDO no lo lleva porque no lo tiene: inventárselo sería
 // dibujarle algo que su ilustración no dice.
-function CAB(quien, texto) {
+// `activo` = el cliente ya eligió algo en esta pantalla. Entonces el hermano cambia de
+// POSE, no solo de posición: saluda. Hasta el 2026-09-10 esto solo se podía hacer con
+// WICHO —de SANDO existía UNA sola pose— y ese desbalance estaba anotado en
+// marca/PERSONAJES.md como algo que solo el dueño podía destrabar. Lo destrabó: mandó seis
+// poses nuevas, incluida la sonrisa que había pedido para el momento de confirmar.
+function CAB(quien, texto, activo) {
     var esW = quien === 'wicho';
+    var pose = activo ? 'saluda' : 'cuerpo';
     return '<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
         // ⚠ Se fija la ALTURA y no el ancho: los dos cuerpos son de 640 px de alto pero de
         // ancho distinto (WICHO 448, SANDO 302), así que con un ancho fijo SANDO salía casi
         // 50% más alto que su hermano y la banda cambiaba de tamaño según de quién fuera.
-        + '<img class="sw-nudge" src="img/' + quien + '_cuerpo.png" alt="' + (esW ? 'WICHO' : 'SANDO') + '" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
+        + '<img class="sw-nudge" src="img/' + quien + '_' + pose + '.png" alt="' + (esW ? 'WICHO' : 'SANDO') + '" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
         + '<div style="flex:1;padding-bottom:4px">'
         + '<div style="display:flex;align-items:center;gap:5px">'
         + (esW ? '<span style="display:inline-flex">' + SPIRAL(11, 'var(--sw-spiral,#C3A6D2)', true) + '</span>' : '')
@@ -3831,7 +3837,7 @@ function sOSig() {
     var lastOrdSig = cust ? lastPaidOrder() : null;
     var recoItemsSig = lastOrdSig ? (lastOrdSig.items && lastOrdSig.items.length ? lastOrdSig.items : (lastOrdSig.build ? [buildToCartItem(lastOrdSig.build)] : null)) : null;
     var recoCardSig = recoItemsSig ? '<div onclick="loadCart(' + JSON.stringify(recoItemsSig).replace(/"/g, '&quot;') + ')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(lastOrdSig.summary || '') + '</div></div>' : '';
-    var h = H('SIGNATURE BUILDS', 'go(\'o_home\')', true) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">' + CAB('sando', sigId ? 'Buena elección. Tres salsas van incluidas.' : 'Estas ya están decididas. Yo respondo por cada una.') + SZTOG() + recoCardSig + ST('01', 'Elige tu build', 'Tres salsas incluidas.') + SIGS.map(function (s) {
+    var h = H('SIGNATURE BUILDS', 'go(\'o_home\')', true) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">' + CAB('sando', sigId ? 'Buena elección. Tres salsas van incluidas.' : 'Estas ya están decididas. Yo respondo por cada una.', !!sigId) + SZTOG() + recoCardSig + ST('01', 'Elige tu build', 'Tres salsas incluidas.') + SIGS.map(function (s) {
         // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
         // cliente logueado que todavía no llega al rango exigido se muestra como una
         // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.
@@ -4051,7 +4057,7 @@ function sOBuild() {
     // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
     // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
     // lea como "pasaste con el otro hermano" y no como "cambió el color".
-    var wichoCab = CAB('wicho', byoStep === 0 ? 'Empieza por el pan. Nada está mal.' : byoStepHint());
+    var wichoCab = CAB('wicho', byoStep === 0 ? 'Empieza por el pan. Nada está mal.' : byoStepHint(), byoStep > 0);
     var h = H('ARMA EL TUYO', 'byoStepBack()', true) + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
         + wichoCab + progressBar + stepLabel;
     if (byoStep === 0) {
@@ -5986,8 +5992,22 @@ function sOSent() {
     // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
     // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
     var rankPerk = window._lSecretUnlock ? 'Ya puedes ver el menú secreto.' : null;
+    // ── EL MOMENTO QUE NO TENÍA CARA ──────────────────────────────────────────────────
+    // `marca/PERSONAJES.md` tenía esto como el hueco número UNO: "SANDO aprobando — para
+    // cuando el pedido se confirma. Hoy ese momento no tiene cara." Era el instante de mayor
+    // satisfacción de todo el flujo y lo recibía un wordmark, igual que cualquier pantalla
+    // informativa. El dueño mandó la pose el 2026-09-10.
+    //
+    // Va SANDO y no WICHO aunque el sándwich se haya armado en el lado celeste: acá ya no se
+    // elige nada: está decidido, pagado y en marcha. Ése es exactamente su territorio.
+    //
+    // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
+    // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
+    var caraSando = !pending
+        ? '<img src="img/sando_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
+        : '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>';
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#1E3932)" class="fi">'
-        + '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>'
+        + caraSando
         // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
         // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
         + (pending ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>' : (window._lTot === 0 ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))

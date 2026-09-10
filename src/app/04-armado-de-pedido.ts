@@ -41,7 +41,7 @@ function sOBuild(){
   // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
   // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
   // lea como "pasaste con el otro hermano" y no como "cambió el color".
-  var wichoCab=CAB('wicho',byoStep===0?'Empieza por el pan. Nada está mal.':byoStepHint());
+  var wichoCab=CAB('wicho',byoStep===0?'Empieza por el pan. Nada está mal.':byoStepHint(),byoStep>0);
   var h=H('ARMA EL TUYO','byoStepBack()',true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +wichoCab+progressBar+stepLabel;
   if(byoStep===0){
