@@ -8,10 +8,17 @@
 
 ## Antes de generar nada: las tres reglas
 
-**1 · SANDO es el patrón, no WICHO.** El estilo correcto es el de `sando_sonrie.png`: línea
-negra uniforme, sombreado plano de dos tonos, sin textura interna, paleta sobria. El WICHO
-actual está dibujado por otra mano (trazo sucio, ojos en espiral, pastel saturado) y por eso los
-dos juntos se ven mal. **Todo se regenera al estilo de SANDO.**
+**1 · LOS DOS HERMANOS NO SE PARECEN, Y ESO ES A PROPÓSITO.** (Decisión del dueño, 2026-09-10,
+corrigiendo una propuesta de esta misma sesión que quería unificarlos.) SANDO tiene línea negra
+uniforme y sombreado plano; WICHO tiene trazo suelto, texturado y color saturado. **No es un
+descuido: es el concepto.** SANDO cura los Signatures, donde la receta está cerrada y no la
+tocas — su dibujo también está cerrado. WICHO es ARMA EL TUYO, donde eliges tú — su dibujo
+también es suelto. El estilo ES el mensaje.
+
+**Nunca "arregles" a WICHO acercándolo a SANDO.** Cada hermano se regenera contra SU PROPIA
+referencia (`sando_sonrie.png` para uno, `wicho_rie.png` para el otro), nunca contra la del
+otro. Lo único que comparten es que los dos son el mismo chimpancé antropomorfo y que los dos
+tienen que verse nítidos.
 
 **2 · Sube la imagen de referencia, no confíes solo en el texto.** Cualquier generador serio
 acepta una imagen de referencia. Sube `img/sando_sonrie.png` y pide "same character, same art
@@ -43,24 +50,24 @@ Transparent background. PNG. 2048x2048.
 
 ### WICHO — el hermano que arma (ARMA EL TUYO)
 
-**Mismo personaje, mismo dibujo, hermano menor.** La diferencia son tres cosas y ninguna es el
-estilo de línea:
+**Su referencia es `wicho_rie.png`, no la de SANDO.** Se conserva su estilo tal cual: trazo
+suelto y variable, textura interna, color saturado, energía de sticker. Lo que se pide es el
+MISMO WICHO en poses nuevas y en grande — no un WICHO distinto.
 
 ```
-Same anthropomorphic chimpanzee character and EXACTLY the same art style as the
-reference image, but the younger brother:
-Fur: light sky blue (#8CC8EC) instead of olive green, with a messier, floppier
-tuft on top. Face mask and inner ears in the same warm tan beige (#C9A87C).
-Rounder, slightly younger face. Eyes wide open, eyebrows raised, open easy grin
-showing teeth — outgoing where his brother is reserved.
-Wearing a plain sky-blue tee or an open casual overshirt. No jacket.
-ART STYLE (critical): identical to reference — clean vector-style cartoon, uniform
-black outline of even weight, FLAT two-tone shading, no internal texture, no
-crosshatch, no grain, no spiral eyes, no psychedelic elements.
+Same anthropomorphic chimpanzee character as the reference image, in the exact
+same illustration style — loose, energetic ink linework of VARYING weight, visible
+internal texture and hatching, saturated playful palette, sticker-art energy.
+Light sky-blue fur, messy floppy tuft on top, pale peach face mask and inner ears.
+Big open expressive grin, wide eyes, eyebrows up — loud where his brother is quiet.
+Keep his existing quirks: this character is deliberately NOT clean-lined.
+Do NOT smooth him out, do NOT flatten the shading, do NOT make him match a
+cleaner-lined character — the looseness is the point.
 Transparent background. PNG. 2048x2048.
 ```
 
----
+> ⚠ Si el generador "mejora" a WICHO dejándolo prolijo, se descarta la imagen. Ese es
+> exactamente el error que hay que evitar acá.
 
 ## LA IMAGEN QUE FALTA — pídela primero
 
@@ -82,8 +89,11 @@ RIGHT brother: sky-blue fur (#8CC8EC), messy tuft, plain blue tee, wide open gri
 A clear vertical gap of empty space between the two sandwich halves — the two
 halves must NOT touch. That gap is the whole point of the composition.
 The bread is a long sub / hoagie roll — NEVER sliced sandwich bread.
-ART STYLE (critical): clean vector-style cartoon, uniform black outline, flat
-two-tone shading, no texture, no gradients. Both characters in the SAME style.
+ART STYLE (critical): each brother keeps HIS OWN style, side by side on purpose.
+LEFT: clean vector linework, uniform outline, flat two-tone shading, sober palette.
+RIGHT: loose textured ink linework of varying weight, saturated playful palette.
+Do NOT harmonize them into one style — the contrast between the two halves is the
+entire idea of the image.
 Transparent background. PNG. 2560x1600.
 ```
 
@@ -120,8 +130,9 @@ half-smile. Upper body only.
 
 ## Cómo verificar una imagen antes de darla por buena
 
-1. **Ponla al lado de `sando_sonrie.png` a la misma altura.** Si se nota que son dos
-   ilustradores distintos, se descarta. Este es el filtro que hoy no existía.
+1. **Ponla al lado de la OTRA imagen del MISMO hermano**, a la misma altura. Lo que tiene que
+   coincidir es el personaje consigo mismo — que sea el mismo SANDO, o el mismo WICHO. Comparar
+   un hermano contra el otro no dice nada: son distintos a propósito.
 2. **Ábrela al 100%.** Si el archivo tiene menos de 1500 px de alto, se pide de nuevo — se va a
    ver borrosa en el celular por más bonita que sea.
 3. **Fondo transparente de verdad**, no blanco. Un fondo blanco deja un recuadro visible sobre

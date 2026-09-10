@@ -1226,6 +1226,45 @@ roto. También con prueba: sin ese respaldo el cliente se queda sin buscador y n
 `AutocompleteSuggestion` no existe en la vieja. Una sola key sirve para todas las APIs
 habilitadas del proyecto — no hace falta una por API.
 
+## Los dos hermanos NO comparten estilo de dibujo, y no se unifican (2026-09-10)
+
+**Decisión del dueño, corrigiendo una propuesta de esta sesión que quería unificarlos.** SANDO
+tiene línea negra uniforme, sombreado plano de dos tonos y paleta sobria; WICHO tiene trazo
+suelto y texturado, ojos en espiral y color saturado. Parecen dibujados por dos manos distintas
+porque **lo están, a propósito**: SANDO cura los Signatures, donde la receta está cerrada y no la
+tocas, y su dibujo también está cerrado; WICHO es ARMA EL TUYO, donde eliges tú, y su dibujo
+también es suelto. **La gracia es que sean distintos.**
+
+**Nunca "arregles" a WICHO acercándolo a SANDO** — es exactamente el error que se cometió acá.
+Cada hermano se regenera contra SU PROPIA referencia (`img/sando_sonrie.png`, `img/wicho_rie.png`),
+nunca contra la del otro. Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que la app
+todavía no tiene.
+
+## Lo que sí hace que la app parezca "un agregado a la web antigua" (2026-09-10)
+
+El dueño lo reportó así y tenía razón, pero la causa **no** era el estilo de los personajes. Son
+dos cosas concretas, encontradas renderizando las pantallas reales en vez de suponiendo:
+
+1. **Los personajes están mal encuadrados en la home.** A SANDO se le corta la cabeza (queda solo
+   la chaqueta y las piernas), WICHO se sale por la derecha, y el rótulo cae **encima** del
+   cuerpo. Un personaje decapitado por su propio contenedor se lee como una imagen pegada donde
+   no cabía.
+2. **Las 8 fotos de Signature vienen de 8 sesiones fotográficas ajenas distintas** — una sobre
+   tabla oscura con luz cálida dura, otra sobre plato gris con luz fría, otra sobre fondo blanco
+   de estudio con una botella, otra sobre mantel estampado. No comparten luz, fondo, ángulo ni
+   temperatura de color. Puestas en fila sobre el mismo verde se leen como resultados de una
+   búsqueda de imágenes.
+
+**Lo que las unifica no es el color, es el ENCUADRE.** Un viraje de color solo no arregla que una
+foto tenga una botella de estudio y otra un mantel: probado en esta sesión, casi no se nota.
+Cerrar el encuadre sí — la escenografía sale del cuadro y queda pan y relleno, que es lo único
+que las ocho de verdad comparten. Encuadre cerrado al ratio de la tarjeta + viñeta + viraje a la
+paleta + grano fino, **el mismo tratamiento en las ocho**.
+
+**Y el tamaño de archivo importa aparte**: los Signatures son de 640×440 y la tarjeta a sangre
+ocupa ~1050 px reales en un celular moderno, así que se estiran ~60%. Cualquier reemplazo se pide
+de al menos 1600 px de ancho.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
