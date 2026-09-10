@@ -559,3 +559,17 @@ function sDeliveryConfirm(){
     +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">'+esc(d.error||'')+'</div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
 }
+
+
+// #19 — Confirmar la entrega desde el link. Se dispara SOLO, sin botón: quien abre este
+// link está en la puerta con una mano ocupada, y pedirle un toque más es fricción que no
+// aporta nada — el link ya es la confirmación de que llegó.
+async function doConfirmDelivery(){
+  try{
+    var r=await api('confirm-delivery',{deliveryToken:deliveryTokenFromUrl});
+    deliveryConfirmState={ok:true,ref:r.ref,already:!!r.alreadyDelivered};
+  }catch(e){
+    deliveryConfirmState={ok:false,error:e.message};
+  }
+  render();
+}

@@ -538,8 +538,21 @@ function sWeeklyPlan(){
   return H('PLAN SEMANAL','sndScreen=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga '+SOLES+pz(WEEKLY_PLAN_PRICE)+' hoy con tu tarjeta y recibe '+SOLES+pz(WEEKLY_PLAN_CREDIT)+' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
-    +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(WEEKLY_PLAN_PRICE)+'</span></div>'
-    +'<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Recibes en saldo</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-ok,#25D366)">'+SOLES+pz(WEEKLY_PLAN_CREDIT)+'</span></div>'
+    // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
+    // El Plan Semanal es una PROPUESTA DE PAGO: pones S/95 y recibes S/100. Eran dos
+    // tarjetas separadas, así que la cuenta —los S/5 que ganas— había que hacerla de
+    // cabeza. En el papel las tres líneas se leen juntas y el trato se entiende de un
+    // vistazo, que es lo único que esta pantalla tiene que lograr.
+    //
+    // ⚠ La ganancia se interpola de las constantes, nunca se escribe. Son las mismas que
+    // cobra el servidor, y un número a mano acá sería una promesa que se rompe el día que
+    // el dueño mueva el precio — el defecto que ya obligó a reescribir el contenido de
+    // marketing entero.
+    +PAPEL_ABRE('PLAN SEMANAL · NO ES BOLETA')
+    +reciboLinea('Pagas hoy con tarjeta',SOLES+pz(WEEKLY_PLAN_PRICE))
+    +reciboLinea('Recibes en saldo, al instante',SOLES+pz(WEEKLY_PLAN_CREDIT))
+    +reciboLinea('Ganas','+'+SOLES+pz(money(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)),'ahorro')
+    +PAPEL_TOTAL('A PAGAR',WEEKLY_PLAN_PRICE)
     +INP('wp-email','Tu correo (para el comprobante)','email',wpEmail||(cust&&cust.email)||'','mail')
     +'<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px'+(wpCritical?';color:var(--sw-danger-strong,#ff5555);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px':';color:'+GOLD)+'">'+esc(wpMsg)+'</div>'
     +BTN('Activar plan semanal //','doWeeklyPlanBuy()')

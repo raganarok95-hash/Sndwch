@@ -1726,7 +1726,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'e7f2c1eb12';
+var APP_BUILD = 'fdbf6dca35';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2181,6 +2181,227 @@ async function sbG(t, q) { var r = await fetch(SB_URL + '/rest/v1/' + t + '?' + 
 // rompía nada; solo se veía como un texto cortado a la mitad.
 // Se arregla acá y no poniéndoles un subtítulo inventado a los quesos: rellenar un dato
 // de producto que el dueño no escribió es exactamente lo que este repo no hace.
+// Red de seguridad global. Casi toda la interacción de la app son handlers `onclick`
+// en línea que llaman funciones globales; si una de ellas lanza, el navegador se traga
+// el error en la consola y para el usuario simplemente "no pasa nada al tocar" — sin
+// mensaje, sin pista, idéntico a un botón muerto. Eso hizo indiagnosticable a distancia
+// el reporte del 2026-08-21 sobre ARMA EL TUYO. Ahora cualquier error suelto levanta una
+// barra visible con la pantalla, el build y el mensaje: el dueño puede mandarnos una foto
+// y sabemos exactamente qué pasó, en vez de adivinar.
+var lastRuntimeError = '';
+// El inventario llega dentro de get-catalog (ver actGetCatalog), NO por PostgREST directo.
+// Antes esta función hacía sbG('inventory',...) con la anon key, pero esa tabla tiene RLS
+// activada sin políticas: PostgREST responde 200 [] — no un error — así que el catch nunca
+// veía nada y invStock quedaba vacío para todos. Con el objeto vacío, isAvail() daba true
+// siempre, y lo que el dueño marcaba SIN STOCK se seguía mostrando disponible.
+function applyInventory(inv) {
+    invStock = {};
+    invQty = {};
+    if (!inv)
+        return;
+    Object.keys(inv).forEach(function (code) {
+        invStock[code] = inv[code].inStock;
+        invQty[code] = inv[code].qty;
+    });
+}
+// ── LO QUE LA APP CARGA AL ARRANCAR, Y CÓMO AVISA CUANDO ALGO SE ROMPE ────────────────
+// Las tres cargas de fondo traen el catálogo, el horario y el inventario reales por encima
+// de las semillas del código, y `showRuntimeError` es la barra que aparece cuando el
+// JavaScript revienta. Las cuatro vivían en el archivo del panel, así que al partir el
+// bundle el cliente arrancaba sin catálogo, sin horario y sin forma de avisar de nada —
+// todo eso sin un solo error en consola.
+function showRuntimeError(msg) {
+    if (!msg || lastRuntimeError === msg)
+        return;
+    lastRuntimeError = msg;
+    try {
+        var bar = document.getElementById('rt-err');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'rt-err';
+            bar.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#5A1414;color:#FFE8E8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;box-shadow:0 -6px 20px rgba(0,0,0,.35)');
+            document.body.appendChild(bar);
+        }
+        bar.innerHTML = '<div style="font-weight:600;margin-bottom:4px">Algo falló en esta pantalla — mándanos esta foto</div>'
+            + '<div style="opacity:.9;word-break:break-word">Pantalla: ' + esc(String(sndScreen)) + ' · Versión: ' + esc(APP_BUILD) + '</div>'
+            + '<div style="opacity:.9;word-break:break-word">' + esc(String(msg)) + '</div>'
+            + '<button onclick="document.getElementById(\'rt-err\').remove();lastRuntimeError=\'\'" style="all:unset;cursor:pointer;margin-top:8px;color:#FFB3B3;text-decoration:underline;font-size:12px">cerrar</button>';
+    }
+    catch (_) { }
+}
+async function loadInvBackground() {
+    try {
+        var r = await api('get-catalog', {});
+        applyInventory(r.inventory);
+    }
+    catch (e) { }
+}
+// Precios vigentes desde el panel admin (tabla catalog_prices vía get-catalog) — antes
+// cambiar un precio requería editar el número hardcodeado aquí Y redesplegar el sitio.
+// Muta PROTS/SIGS/SIDES/RWDS en el sitio en vez de cambiar cómo se leen en el resto del
+// archivo, así el resto del pricing/checkout sigue funcionando igual.
+async function loadCatalogBackground() {
+    try {
+        var r = await api('get-catalog', {});
+        // El inventario viaja en la misma respuesta, así que el arranque no necesita una
+        // segunda llamada para saber qué está agotado.
+        applyInventory(r.inventory);
+        PROTS.forEach(function (p) { var v = r.proteins && r.proteins[p.id]; if (v) {
+            p.p15 = v.p15;
+            p.p30 = v.p30;
+            p.pDbl = v.pDbl;
+            if (typeof v.pDbl30 === 'number')
+                p.pDbl30 = v.pDbl30;
+        } });
+        SIGS.forEach(function (s) { var v = r.sigs && r.sigs[s.id]; if (v) {
+            s.p15 = v.p15;
+            s.p30 = v.p30;
+        } });
+        // Signatures públicos editables desde el panel (2026-08-27). Antes de esto, `r.sigs`
+        // solo traía precios: el nombre, el badge, el pitch, la foto y la composición vivían
+        // como literales en el array SIGS de arriba, así que cambiar cualquiera de esos exigía
+        // recompilar y desplegar. Ahora `r.sigItems` trae el ítem COMPLETO desde la tabla
+        // `catalog_items` y este bloque lo vuelca sobre la entrada que ya existe en SIGS —
+        // exactamente el mismo mecanismo que ya usaba el menú secreto abajo.
+        //
+        // El literal de SIGS pasa a ser SEMILLA: lo que se ve en el primer render, antes de que
+        // este fetch resuelva, y el respaldo si el servidor no responde. Nunca lo edites para
+        // cambiar el menú.
+        if (r.sigItems) {
+            Object.keys(r.sigItems).forEach(function (id) {
+                var v = r.sigItems[id];
+                if (!v)
+                    return;
+                var sig = SIGS.find(function (x) { return x.id === id; });
+                // Un item_id que no está en la semilla de SIGS se AGREGA en vez de descartarse.
+                // Antes se hacía `if(!sig)return;`, así que publicar un Signature nuevo desde el
+                // panel lo dejaba pedible por API pero invisible en la carta: existía para el
+                // servidor y no para el cliente. Que el panel pueda publicar un ítem nuevo es
+                // justamente lo que hace que cambiar el menú no requiera desplegar.
+                if (!sig) {
+                    sig = { id: id, n: '', s: '', badge: '', pitch: '', img: '', base: 'B01', prot: '', tops: [], sauces: [], p15: 0, p30: 0 };
+                    SIGS.push(sig);
+                }
+                if (v.n)
+                    sig.n = v.n;
+                if (v.s)
+                    sig.s = v.s;
+                // badge y pitch pueden quedar vacíos a propósito (un Signature sin badge), así que
+                // se copian aunque vengan en blanco — usar `if(v.badge)` haría imposible QUITAR un
+                // badge desde el panel, que es justo una de las cosas que se quiere poder hacer.
+                if (typeof v.badge === 'string')
+                    sig.badge = v.badge;
+                if (typeof v.pitch === 'string' && v.pitch)
+                    sig.pitch = v.pitch;
+                if (v.base)
+                    sig.base = v.base;
+                if (v.prot)
+                    sig.prot = v.prot;
+                if (Array.isArray(v.tops))
+                    sig.tops = v.tops;
+                if (Array.isArray(v.sauces))
+                    sig.sauces = v.sauces;
+                if (typeof v.p15 === 'number')
+                    sig.p15 = v.p15;
+                if (typeof v.p30 === 'number')
+                    sig.p30 = v.p30;
+                // El queso fijo VIAJA en sigItems desde que el panel edita el menú, pero este
+                // bloque no lo volcaba: cambiar el queso de un Signature desde el panel no llegaba
+                // nunca al cliente, que seguía mostrando (y contando como ingrediente) el de la
+                // semilla. Se copia aunque venga en null, porque QUITAR el queso fijo es una de las
+                // ediciones válidas — con `if(v.fixedCheese)` sería imposible.
+                if ('fixedCheese' in v)
+                    sig.fixedCheese = v.fixedCheese || null;
+                if (typeof v.cheeseOptional === 'boolean')
+                    sig.cheeseOptional = v.cheeseOptional;
+                if (v.img)
+                    SIG_IMG[id] = v.img;
+                // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
+                // ahora es publicar active=false desde el panel. La receta queda guardada en la
+                // tabla para cuando vuelva.
+                sig.retired = (v.active === false);
+            });
+            // Los retirados salen de la carta. Se filtra acá y no en cada pantalla para que
+            // ninguna vista tenga que acordarse de hacerlo.
+            for (var i = SIGS.length - 1; i >= 0; i--)
+                if (SIGS[i].retired)
+                    SIGS.splice(i, 1);
+            // Y hay que volver a limpiar el carrito guardado: restoreCart() corre en INIT, antes
+            // de que este fetch resuelva, así que ahí SIGS todavía era la semilla del código y un
+            // Signature retirado pasaba el filtro. Sin esto, quien tuviera uno en el carrito veía
+            // una línea en blanco a S/0 y el servidor le rechazaba el pago.
+            if (cart.length) {
+                var quedan = cart.filter(cartItemStillExists);
+                if (quedan.length !== cart.length) {
+                    cart = quedan;
+                    saveCart();
+                    if (!cart.length)
+                        appliedReward = null;
+                }
+            }
+        }
+        SIDES.forEach(function (d) { var v = r.sides && r.sides[d.id]; if (typeof v === 'number')
+            d.p = v; });
+        RWDS.forEach(function (rw) { var v = r.rewardPts && r.rewardPts[rw.id]; if (typeof v === 'number')
+            rw.pts = v; });
+        // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05
+        // era un literal fijo ('The Vault', Pollo Cajún) en el array de arriba. Ahora
+        // r.secretSignature trae la composición vigente (nombre/pan/proteína/tops/salsas/
+        // precio/minOrders) publicada desde Admin // Menú secreto, y este bloque la vuelca
+        // sobre la misma entrada SIG05 ya presente en SIGS — el resto del código (vaultCard,
+        // sigPreviewOverlayHTML, checkout) sigue leyendo esos mismos campos sin cambios.
+        var secret = r.secretSignature;
+        if (secret) {
+            var secretSig = SIGS.find(function (s) { return s.id === 'SIG05'; });
+            if (secretSig) {
+                secretSig.n = secret.name;
+                secretSig.base = secret.base;
+                secretSig.prot = secret.prot;
+                secretSig.tops = secret.tops;
+                secretSig.sauces = secret.sauces;
+                secretSig.p15 = secret.p15;
+                secretSig.p30 = secret.p30;
+                secretSig.minOrders = secret.minOrders;
+            }
+            // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
+            // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
+            // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que
+            // el sándwich secreto de este mes reserva para sí, ni más ni menos.
+            PROTS.forEach(function (p) { p.vaultOnly = (secret.vaultOnlyProts || []).indexOf(p.id) >= 0; });
+            TOPS.forEach(function (t) { t.vaultOnly = (secret.vaultOnlyTops || []).indexOf(t.id) >= 0; });
+            SAUCES.forEach(function (sauce) { sauce.vaultOnly = (secret.vaultOnlySauces || []).indexOf(sauce.id) >= 0; });
+        }
+    }
+    catch (e) { }
+}
+// Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
+// STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
+// guardaba en "Admin: editable store hours", así que el badge ABIERTO/CERRADO y la
+// validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
+// el horario real ya hubiera cambiado en la base de datos.
+async function loadStoreHoursBackground() {
+    try {
+        var r = await api('get-store-hours', {});
+        if (Array.isArray(r.hours) && r.hours.length === 7) {
+            STORE_HOURS = r.hours.map(function (d) { return d.closed ? null : [d.open, d.close]; });
+        }
+        businessLaunched = r.businessLaunched === true;
+        if (r.metaPixelId) {
+            metaPixelId = r.metaPixelId;
+            initMetaPixel(r.metaPixelId);
+        }
+        storePausedUntil = r.pausedUntil || null;
+        // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
+        // cocina por delante ahora mismo.
+        fullHours = Array.isArray(r.fullHours) ? r.fullHours : [];
+        queueAhead = typeof r.queueAhead === 'number' ? r.queueAhead : 0;
+        if (typeof r.queueMinutesPerOrder === 'number')
+            queueMinutesPerOrder = r.queueMinutesPerOrder;
+        if (typeof r.maxPerHour === 'number')
+            maxPerHour = r.maxPerHour;
+    }
+    catch (e) { }
+}
 // ── ICONOS, DISTANCIA E INVENTARIO: COMPARTIDOS, NO DEL PANEL (2026-09-10) ────────────
 // Estas cinco cosas vivían dentro de los archivos del panel, y el 2026-09-10 —al partir el
 // bundle para que el panel dejara de viajar en el celular de cada cliente— resultó que el
@@ -7275,8 +7496,21 @@ function sWeeklyPlan() {
     return H('PLAN SEMANAL', 'sndScreen=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div>'
         + '<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga ' + SOLES + pz(WEEKLY_PLAN_PRICE) + ' hoy con tu tarjeta y recibe ' + SOLES + pz(WEEKLY_PLAN_CREDIT) + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
-        + '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + pz(WEEKLY_PLAN_PRICE) + '</span></div>'
-        + '<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Recibes en saldo</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-ok,#25D366)">' + SOLES + pz(WEEKLY_PLAN_CREDIT) + '</span></div>'
+        // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
+        // El Plan Semanal es una PROPUESTA DE PAGO: pones S/95 y recibes S/100. Eran dos
+        // tarjetas separadas, así que la cuenta —los S/5 que ganas— había que hacerla de
+        // cabeza. En el papel las tres líneas se leen juntas y el trato se entiende de un
+        // vistazo, que es lo único que esta pantalla tiene que lograr.
+        //
+        // ⚠ La ganancia se interpola de las constantes, nunca se escribe. Son las mismas que
+        // cobra el servidor, y un número a mano acá sería una promesa que se rompe el día que
+        // el dueño mueva el precio — el defecto que ya obligó a reescribir el contenido de
+        // marketing entero.
+        + PAPEL_ABRE('PLAN SEMANAL · NO ES BOLETA')
+        + reciboLinea('Pagas hoy con tarjeta', SOLES + pz(WEEKLY_PLAN_PRICE))
+        + reciboLinea('Recibes en saldo, al instante', SOLES + pz(WEEKLY_PLAN_CREDIT))
+        + reciboLinea('Ganas', '+' + SOLES + pz(money(WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE)), 'ahorro')
+        + PAPEL_TOTAL('A PAGAR', WEEKLY_PLAN_PRICE)
         + INP('wp-email', 'Tu correo (para el comprobante)', 'email', wpEmail || (cust && cust.email) || '', 'mail')
         + '<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px' + (wpCritical ? ';color:var(--sw-danger-strong,#ff5555);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px' : ';color:' + GOLD) + '">' + esc(wpMsg) + '</div>'
         + BTN('Activar plan semanal //', 'doWeeklyPlanBuy()')
@@ -8384,6 +8618,19 @@ function sDeliveryConfirm() {
         + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">' + esc(d.error || '') + '</div>'
         + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
 }
+// #19 — Confirmar la entrega desde el link. Se dispara SOLO, sin botón: quien abre este
+// link está en la puerta con una mano ocupada, y pedirle un toque más es fricción que no
+// aporta nada — el link ya es la confirmación de que llegó.
+async function doConfirmDelivery() {
+    try {
+        var r = await api('confirm-delivery', { deliveryToken: deliveryTokenFromUrl });
+        deliveryConfirmState = { ok: true, ref: r.ref, already: !!r.alreadyDelivered };
+    }
+    catch (e) {
+        deliveryConfirmState = { ok: false, error: e.message };
+    }
+    render();
+}
 // SND//WCH — EL ROUTER
 //
 // Esta parte existe desde el 2026-09-10 y su razón es de negocio, no de orden. `render()` y
@@ -8524,6 +8771,297 @@ async function applyAppUpdate() {
     catch (e) { }
     location.reload();
 }
+// ── EL ARRANQUE DE LA APP Y SUS OYENTES GLOBALES ──────────────────────────────────────
+// Todo esto vivía en el archivo del panel, y el 2026-09-10 —al partir el bundle— resultó
+// que ahí estaba el IIFE que ARRANCA LA APP. Con el panel sin cargar, el cliente no llamaba
+// a `render()` ni una vez: la pantalla quedaba en blanco, sin un solo error en la consola,
+// para el 100% de los clientes. Y la app funcionaba perfecto en cuanto se llamaba a
+// `render()` a mano, que es lo que hace este defecto tan difícil de ver: no está roto, es
+// que nadie lo enciende.
+//
+// `check:cliente` no lo atrapó porque mira REFERENCIAS, y acá no faltaba ninguna: el
+// problema no era que el cliente llamara al panel, sino que el interruptor estaba del otro
+// lado. Por eso la defensa nueva es una prueba de comportamiento
+// (`tests/registro-del-panel.spec.ts`) que carga la app y exige que se pinte SOLA.
+//
+// Con el arranque vienen sus oyentes: el manejador de errores de JavaScript, el registro
+// del service worker, el aviso de sin conexión, el prompt de instalación y el atajo de
+// teclado. Ninguno es de admin y todos tienen que existir desde el primer instante.
+// Enter/Espacio sobre uno de esos controles hace lo mismo que un tap. Un <button> real ya
+// lo hace solo; esto es solo para los que no lo son.
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ')
+        return;
+    var el = document.activeElement;
+    if (!el || typeof el.getAttribute !== 'function')
+        return;
+    if (el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
+        return;
+    if (el.getAttribute('role') !== 'button')
+        return;
+    e.preventDefault();
+    el.click();
+});
+// Solo errores REALES de JavaScript. Un `<img>` o una fuente que no carga también dispara
+// un evento 'error', y mostrarle al cliente una barra roja porque no bajó una foto sería
+// una falsa alarma peor que el problema: se filtra exigiendo que haya un mensaje de error
+// de verdad (los fallos de recurso llegan sin `message`).
+window.addEventListener('error', function (ev) { if (ev && ev.message)
+    showRuntimeError(ev.message); });
+window.addEventListener('unhandledrejection', function (ev) {
+    var r = ev && ev.reason;
+    showRuntimeError((r && r.message) || String(r || 'Promesa rechazada'));
+});
+// PWA — registro del service worker (habilita instalación + apertura offline del
+// shell) y captura del prompt nativo de instalación para ofrecerlo desde un botón
+// propio en vez de esperar a que el navegador lo muestre por su cuenta.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+    // El shell se sirve desde caché para que la app abra al instante; el service worker
+    // revalida en paralelo y avisa por aquí si el servidor tiene una versión distinta.
+    navigator.serviceWorker.addEventListener('message', function (ev) {
+        if (ev.data && ev.data.type === 'sw-shell-updated' && !updateReady) {
+            updateReady = true;
+            render();
+        }
+    });
+    // El mensaje solo alcanza a las pestañas ya abiertas: cuando la revalidación termina, la
+    // pestaña que acaba de navegar todavía no tiene listener. Por eso el service worker deja
+    // además una marca en la caché y aquí se consulta al arrancar.
+    checkShellUpdateFlag();
+}
+async function checkShellUpdateFlag() {
+    if (!window.caches)
+        return;
+    for (var i = 0; i < 3; i++) {
+        try {
+            var hit = await caches.match(SW_UPDATE_FLAG);
+            if (hit) {
+                updateReady = true;
+                render();
+                return;
+            }
+        }
+        catch (e) {
+            return;
+        }
+        await new Promise(function (r) { setTimeout(r, 2500); });
+    }
+}
+window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    render();
+});
+window.addEventListener('appinstalled', function () {
+    deferredInstallPrompt = null;
+    render();
+});
+// Antes no había ninguna detección de modo sin conexión — cada acción fallaba por
+// separado con su propio mensaje genérico en vez de un aviso único y proactivo.
+// Teclado virtual abierto → esconder la barra fija de navegación. Medido con Playwright a
+// 320x330 (alto típico de viewport con el teclado de Android abierto): la barra quedaba
+// justo encima del campo de teléfono del checkout y tapaba el de nombre. visualViewport
+// es la única API que reporta el alto REAL disponible cuando el teclado está arriba;
+// window.innerHeight no cambia en Android. El umbral de 75% distingue "teclado abierto"
+// de la barra de URL que se contrae al hacer scroll (esa se lleva ~10-15%, no ~40%).
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+        var vv = window.visualViewport;
+        if (!vv)
+            return;
+        document.body.classList.toggle('kb-open', vv.height < window.innerHeight * 0.75);
+    });
+}
+window.addEventListener('offline', function () { isOffline = true; render(); });
+window.addEventListener('online', function () { isOffline = false; render(); });
+async function installPwa() {
+    if (!deferredInstallPrompt)
+        return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    render();
+}
+function dismissPwaBanner() {
+    pwaDismissed = true;
+    localStorage.setItem('sw_pwa_dismissed', '1');
+    render();
+}
+// Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
+// cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
+// muestra nada — nunca insiste ni vuelve a pedir permiso en la misma sesión.
+function checkNearbyStore() {
+    if (_nearCheckDone)
+        return;
+    _nearCheckDone = true;
+    var today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('sw_near_dismissed') === today)
+        return;
+    if (!('geolocation' in navigator))
+        return;
+    navigator.geolocation.getCurrentPosition(function (pos) {
+        var d = haversineKm(pos.coords.latitude, pos.coords.longitude, STORE_LAT, STORE_LON);
+        if (d <= NEARBY_RADIUS_KM) {
+            nearStore = true;
+            render();
+        }
+    }, function () { }, { maximumAge: 600000, timeout: 8000 });
+}
+function dismissNearbyBanner() {
+    nearStore = false;
+    localStorage.setItem('sw_near_dismissed', new Date().toISOString().slice(0, 10));
+    render();
+}
+// NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
+// incluso con la app cerrada. Solo disponibles para clientes con cuenta (la suscripción
+// se guarda ligada a tu teléfono) y requieren HTTPS (o localhost) + un navegador
+// compatible con Push API.
+function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var out = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; i++)
+        out[i] = rawData.charCodeAt(i);
+    return out;
+}
+async function checkPushSubscription() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window))
+        return;
+    try {
+        var reg = await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        pushSubscribed = !!sub;
+        render();
+    }
+    catch (e) { }
+}
+async function togglePushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        pushMsg = 'Tu navegador no soporta notificaciones push.';
+        render();
+        return;
+    }
+    if (!cust) {
+        pushMsg = 'Inicia sesión para activar notificaciones.';
+        render();
+        return;
+    }
+    try {
+        var reg = await navigator.serviceWorker.ready;
+        var existing = await reg.pushManager.getSubscription();
+        if (existing) {
+            await api('push-unsubscribe', { token: token, endpoint: existing.endpoint });
+            await existing.unsubscribe();
+            pushSubscribed = false;
+            pushMsg = 'Notificaciones desactivadas.';
+            render();
+            return;
+        }
+        var perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+            pushMsg = 'Necesitas permitir notificaciones desde tu navegador.';
+            render();
+            return;
+        }
+        var sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+        var subJson = sub.toJSON();
+        await api('push-subscribe', { token: token, endpoint: subJson.endpoint, p256dh: subJson.keys.p256dh, auth: subJson.keys.auth });
+        pushSubscribed = true;
+        pushMsg = '¡Notificaciones activadas!';
+        render();
+    }
+    catch (e) {
+        pushMsg = 'No se pudo activar: ' + (e.message || 'intenta de nuevo.');
+        render();
+    }
+}
+// Los dos momentos en que un tercero puede haber pisado algo: cuando termina de cargar
+// la página (ahí ya corrieron los scripts con defer/async) y en cada render (Culqi
+// también inyecta código al abrir su formulario de pago, después del load).
+window.addEventListener('load', function () { sndRestoreOwnedFns(); });
+(async function () {
+    var haveCachedCust = false;
+    if (token) {
+        try {
+            var cachedRaw = localStorage.getItem('sw_cust_cache');
+            if (cachedRaw) {
+                cust = JSON.parse(cachedRaw);
+                isAdmin = localStorage.getItem('sw_is_admin_cache') === '1';
+                haveCachedCust = true;
+            }
+        }
+        catch (e) { }
+    }
+    restoreCart();
+    render();
+    if (token) {
+        if (!haveCachedCust) {
+            busy = true;
+            busyMsg = 'Verificando tu sesión...';
+            render();
+        }
+        try {
+            var r = await api('session-check', { token: token });
+            if (r.valid) {
+                cust = r.customer;
+                isAdmin = r.isAdmin;
+                cacheCust(cust, isAdmin);
+            }
+            else {
+                token = '';
+                localStorage.removeItem('sw_tok');
+                cust = null;
+                isAdmin = false;
+                cacheCust(null);
+            }
+        }
+        catch (e) { } // sin conexión — sigue con lo ya pintado (cache o invitado), no se pierde la sesión guardada
+        if (!haveCachedCust)
+            busy = false;
+        render();
+    }
+    loadInvBackground().then(function () { render(); }); // load stock status in background, re-render when ready
+    loadCatalogBackground().then(function () { render(); }); // load current prices in background, re-render when ready
+    loadStoreHoursBackground().then(function () { render(); }); // load real store hours in background, re-render when ready
+    if (cust)
+        loadUserExtras();
+    checkPushSubscription();
+    checkNearbyStore();
+    // ?group=CODE (link compartido de un pedido grupal) — no exige cuenta para entrar y
+    // contribuir, solo para organizar/cerrar, así que se abre para cualquiera.
+    if (groupCodeFromUrl) {
+        groupCode = groupCodeFromUrl;
+        sndScreen = 'group_order';
+        render();
+        loadGroupOrder();
+        startGroupPoll();
+    }
+    // ?grupo=1 (QR de la tarjeta de la bolsa). A diferencia de ?group=CODE, organizar SÍ
+    // exige cuenta — el servidor necesita saber a quién cobrarle al cerrar. Si ya hay
+    // sesión se crea el grupo de una; si no, se deja el intento anotado y se lleva a la
+    // pantalla de cuenta: doCreateGroupOrder() se dispara solo apenas entre (ver
+    // resumeWantedGroup, llamado desde el login/registro).
+    if (wantsNewGroup) {
+        if (cust)
+            doCreateGroupOrder();
+        else {
+            sndScreen = 'p_home';
+            sndTab = 'points';
+            showToast('Inicia sesión para organizar el pedido de tu oficina.');
+            render();
+        }
+    }
+    // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
+    // único que importa de esta visita y se lleva la pantalla entera.
+    if (deliveryTokenFromUrl) {
+        sndScreen = 'delivery_confirm';
+        deliveryConfirmState = { loading: true };
+        render();
+        doConfirmDelivery();
+    }
+})();
 // ── EL PANEL SE DESCARGA SOLO CUANDO SE ABRE ──────────────────────────────────────────
 // Mismo patrón que `loadTesseract()` usa para los 3 MB del lector de comprobantes: se pide
 // una vez, cuando de verdad hace falta, y nunca antes. Acá son ~230 KB de panel que dejan
@@ -8534,13 +9072,19 @@ async function applyAppUpdate() {
 // URL, y el dueño vería su panel viejo sin un solo error de por medio.
 var _adminBundle = null;
 var adminBundleError = '';
+// ⚠ `adminBundleReady` no es un detalle: sin él, una pantalla de admin que NO EXISTE deja
+// la app en un bucle infinito de render. `needsAdminBundle()` diría "falta el panel" para
+// siempre —porque esa pantalla no va a aparecer en el registro nunca— y cada render pediría
+// el bundle y volvería a pintar. Un cuelgue, que es peor que una pantalla en blanco.
+// Lo encontró la prueba de la pantalla inventada, que existía justamente para el caso raro.
+var adminBundleReady = false;
 function loadAdminBundle() {
     if (_adminBundle)
         return _adminBundle;
     _adminBundle = new Promise(function (resolve, reject) {
         var sc = document.createElement('script');
         sc.src = 'admin.js?v=' + APP_BUILD;
-        sc.onload = function () { adminBundleError = ''; resolve(); };
+        sc.onload = function () { adminBundleError = ''; adminBundleReady = true; resolve(); };
         // ⚠ Un fallo acá NO puede quedarse callado. Si el lector de comprobantes no carga, el
         // comprobante se abre igual y el OCR era un extra. Si el panel no carga, el dueño se
         // queda sin panel — y con el registro vacío el router lo mandaría al home del cliente
@@ -8556,7 +9100,9 @@ function loadAdminBundle() {
 }
 // ¿Esta pantalla necesita el panel y todavía no está? Lo pide y vuelve a pintar al llegar.
 function needsAdminBundle() {
-    return String(sndScreen || '').indexOf('admin') === 0 && !ADMIN_SCREENS[sndScreen] && !adminBundleError;
+    if (adminBundleReady || adminBundleError)
+        return false;
+    return String(sndScreen || '').indexOf('admin') === 0 && !ADMIN_SCREENS[sndScreen];
 }
 function render() {
     try {

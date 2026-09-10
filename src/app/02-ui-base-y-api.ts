@@ -236,6 +236,183 @@ async function sbG(t,q){var r=await fetch(SB_URL+'/rest/v1/'+t+'?'+q,{headers:sb
 // rompía nada; solo se veía como un texto cortado a la mitad.
 // Se arregla acá y no poniéndoles un subtítulo inventado a los quesos: rellenar un dato
 // de producto que el dueño no escribió es exactamente lo que este repo no hace.
+// Red de seguridad global. Casi toda la interacción de la app son handlers `onclick`
+// en línea que llaman funciones globales; si una de ellas lanza, el navegador se traga
+// el error en la consola y para el usuario simplemente "no pasa nada al tocar" — sin
+// mensaje, sin pista, idéntico a un botón muerto. Eso hizo indiagnosticable a distancia
+// el reporte del 2026-08-21 sobre ARMA EL TUYO. Ahora cualquier error suelto levanta una
+// barra visible con la pantalla, el build y el mensaje: el dueño puede mandarnos una foto
+// y sabemos exactamente qué pasó, en vez de adivinar.
+var lastRuntimeError='';
+// El inventario llega dentro de get-catalog (ver actGetCatalog), NO por PostgREST directo.
+// Antes esta función hacía sbG('inventory',...) con la anon key, pero esa tabla tiene RLS
+// activada sin políticas: PostgREST responde 200 [] — no un error — así que el catch nunca
+// veía nada y invStock quedaba vacío para todos. Con el objeto vacío, isAvail() daba true
+// siempre, y lo que el dueño marcaba SIN STOCK se seguía mostrando disponible.
+function applyInventory(inv){
+  invStock={};invQty={};
+  if(!inv)return;
+  Object.keys(inv).forEach(function(code){
+    invStock[code]=inv[code].inStock;invQty[code]=inv[code].qty;
+  });
+}
+
+
+// ── LO QUE LA APP CARGA AL ARRANCAR, Y CÓMO AVISA CUANDO ALGO SE ROMPE ────────────────
+// Las tres cargas de fondo traen el catálogo, el horario y el inventario reales por encima
+// de las semillas del código, y `showRuntimeError` es la barra que aparece cuando el
+// JavaScript revienta. Las cuatro vivían en el archivo del panel, así que al partir el
+// bundle el cliente arrancaba sin catálogo, sin horario y sin forma de avisar de nada —
+// todo eso sin un solo error en consola.
+function showRuntimeError(msg){
+  if(!msg||lastRuntimeError===msg)return;
+  lastRuntimeError=msg;
+  try{
+    var bar=document.getElementById('rt-err');
+    if(!bar){
+      bar=document.createElement('div');
+      bar.id='rt-err';
+      bar.setAttribute('style','position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#5A1414;color:#FFE8E8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;box-shadow:0 -6px 20px rgba(0,0,0,.35)');
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML='<div style="font-weight:600;margin-bottom:4px">Algo falló en esta pantalla — mándanos esta foto</div>'
+      +'<div style="opacity:.9;word-break:break-word">Pantalla: '+esc(String(sndScreen))+' · Versión: '+esc(APP_BUILD)+'</div>'
+      +'<div style="opacity:.9;word-break:break-word">'+esc(String(msg))+'</div>'
+      +'<button onclick="document.getElementById(\'rt-err\').remove();lastRuntimeError=\'\'" style="all:unset;cursor:pointer;margin-top:8px;color:#FFB3B3;text-decoration:underline;font-size:12px">cerrar</button>';
+  }catch(_){}
+}
+async function loadInvBackground(){
+  try{
+    var r=await api('get-catalog',{});
+    applyInventory(r.inventory);
+  }catch(e){}
+}
+// Precios vigentes desde el panel admin (tabla catalog_prices vía get-catalog) — antes
+// cambiar un precio requería editar el número hardcodeado aquí Y redesplegar el sitio.
+// Muta PROTS/SIGS/SIDES/RWDS en el sitio en vez de cambiar cómo se leen en el resto del
+// archivo, así el resto del pricing/checkout sigue funcionando igual.
+async function loadCatalogBackground(){
+  try{
+    var r=await api('get-catalog',{});
+    // El inventario viaja en la misma respuesta, así que el arranque no necesita una
+    // segunda llamada para saber qué está agotado.
+    applyInventory(r.inventory);
+    PROTS.forEach(function(p){var v=r.proteins&&r.proteins[p.id];if(v){p.p15=v.p15;p.p30=v.p30;p.pDbl=v.pDbl;if(typeof v.pDbl30==='number')p.pDbl30=v.pDbl30;}});
+    SIGS.forEach(function(s){var v=r.sigs&&r.sigs[s.id];if(v){s.p15=v.p15;s.p30=v.p30;}});
+    // Signatures públicos editables desde el panel (2026-08-27). Antes de esto, `r.sigs`
+    // solo traía precios: el nombre, el badge, el pitch, la foto y la composición vivían
+    // como literales en el array SIGS de arriba, así que cambiar cualquiera de esos exigía
+    // recompilar y desplegar. Ahora `r.sigItems` trae el ítem COMPLETO desde la tabla
+    // `catalog_items` y este bloque lo vuelca sobre la entrada que ya existe en SIGS —
+    // exactamente el mismo mecanismo que ya usaba el menú secreto abajo.
+    //
+    // El literal de SIGS pasa a ser SEMILLA: lo que se ve en el primer render, antes de que
+    // este fetch resuelva, y el respaldo si el servidor no responde. Nunca lo edites para
+    // cambiar el menú.
+    if(r.sigItems){
+      Object.keys(r.sigItems).forEach(function(id){
+        var v=r.sigItems[id];if(!v)return;
+        var sig=SIGS.find(function(x){return x.id===id;});
+        // Un item_id que no está en la semilla de SIGS se AGREGA en vez de descartarse.
+        // Antes se hacía `if(!sig)return;`, así que publicar un Signature nuevo desde el
+        // panel lo dejaba pedible por API pero invisible en la carta: existía para el
+        // servidor y no para el cliente. Que el panel pueda publicar un ítem nuevo es
+        // justamente lo que hace que cambiar el menú no requiera desplegar.
+        if(!sig){
+          sig={id:id,n:'',s:'',badge:'',pitch:'',img:'',base:'B01',prot:'',tops:[],sauces:[],p15:0,p30:0};
+          SIGS.push(sig);
+        }
+        if(v.n)sig.n=v.n;
+        if(v.s)sig.s=v.s;
+        // badge y pitch pueden quedar vacíos a propósito (un Signature sin badge), así que
+        // se copian aunque vengan en blanco — usar `if(v.badge)` haría imposible QUITAR un
+        // badge desde el panel, que es justo una de las cosas que se quiere poder hacer.
+        if(typeof v.badge==='string')sig.badge=v.badge;
+        if(typeof v.pitch==='string'&&v.pitch)sig.pitch=v.pitch;
+        if(v.base)sig.base=v.base;
+        if(v.prot)sig.prot=v.prot;
+        if(Array.isArray(v.tops))sig.tops=v.tops;
+        if(Array.isArray(v.sauces))sig.sauces=v.sauces;
+        if(typeof v.p15==='number')sig.p15=v.p15;
+        if(typeof v.p30==='number')sig.p30=v.p30;
+        // El queso fijo VIAJA en sigItems desde que el panel edita el menú, pero este
+        // bloque no lo volcaba: cambiar el queso de un Signature desde el panel no llegaba
+        // nunca al cliente, que seguía mostrando (y contando como ingrediente) el de la
+        // semilla. Se copia aunque venga en null, porque QUITAR el queso fijo es una de las
+        // ediciones válidas — con `if(v.fixedCheese)` sería imposible.
+        if('fixedCheese' in v)sig.fixedCheese=v.fixedCheese||null;
+        if(typeof v.cheeseOptional==='boolean')sig.cheeseOptional=v.cheeseOptional;
+        if(v.img)SIG_IMG[id]=v.img;
+        // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
+        // ahora es publicar active=false desde el panel. La receta queda guardada en la
+        // tabla para cuando vuelva.
+        sig.retired=(v.active===false);
+      });
+      // Los retirados salen de la carta. Se filtra acá y no en cada pantalla para que
+      // ninguna vista tenga que acordarse de hacerlo.
+      for(var i=SIGS.length-1;i>=0;i--)if(SIGS[i].retired)SIGS.splice(i,1);
+      // Y hay que volver a limpiar el carrito guardado: restoreCart() corre en INIT, antes
+      // de que este fetch resuelva, así que ahí SIGS todavía era la semilla del código y un
+      // Signature retirado pasaba el filtro. Sin esto, quien tuviera uno en el carrito veía
+      // una línea en blanco a S/0 y el servidor le rechazaba el pago.
+      if(cart.length){
+        var quedan=cart.filter(cartItemStillExists);
+        if(quedan.length!==cart.length){
+          cart=quedan;saveCart();
+          if(!cart.length)appliedReward=null;
+        }
+      }
+    }
+    SIDES.forEach(function(d){var v=r.sides&&r.sides[d.id];if(typeof v==='number')d.p=v;});
+    RWDS.forEach(function(rw){var v=r.rewardPts&&r.rewardPts[rw.id];if(typeof v==='number')rw.pts=v;});
+    // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10) — antes SIG05
+    // era un literal fijo ('The Vault', Pollo Cajún) en el array de arriba. Ahora
+    // r.secretSignature trae la composición vigente (nombre/pan/proteína/tops/salsas/
+    // precio/minOrders) publicada desde Admin // Menú secreto, y este bloque la vuelca
+    // sobre la misma entrada SIG05 ya presente en SIGS — el resto del código (vaultCard,
+    // sigPreviewOverlayHTML, checkout) sigue leyendo esos mismos campos sin cambios.
+    var secret=r.secretSignature;
+    if(secret){
+      var secretSig=SIGS.find(function(s){return s.id==='SIG05';});
+      if(secretSig){
+        secretSig.n=secret.name;secretSig.base=secret.base;secretSig.prot=secret.prot;
+        secretSig.tops=secret.tops;secretSig.sauces=secret.sauces;
+        secretSig.p15=secret.p15;secretSig.p30=secret.p30;secretSig.minOrders=secret.minOrders;
+      }
+      // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
+      // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
+      // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que
+      // el sándwich secreto de este mes reserva para sí, ni más ni menos.
+      PROTS.forEach(function(p){p.vaultOnly=(secret.vaultOnlyProts||[]).indexOf(p.id)>=0;});
+      TOPS.forEach(function(t){t.vaultOnly=(secret.vaultOnlyTops||[]).indexOf(t.id)>=0;});
+      SAUCES.forEach(function(sauce){sauce.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sauce.id)>=0;});
+    }
+  }catch(e){}
+}
+// Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
+// STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
+// guardaba en "Admin: editable store hours", así que el badge ABIERTO/CERRADO y la
+// validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
+// el horario real ya hubiera cambiado en la base de datos.
+async function loadStoreHoursBackground(){
+  try{
+    var r=await api('get-store-hours',{});
+    if(Array.isArray(r.hours)&&r.hours.length===7){
+      STORE_HOURS=r.hours.map(function(d){return d.closed?null:[d.open,d.close];});
+    }
+    businessLaunched=r.businessLaunched===true;
+    if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
+    storePausedUntil=r.pausedUntil||null;
+    // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
+    // cocina por delante ahora mismo.
+    fullHours=Array.isArray(r.fullHours)?r.fullHours:[];
+    queueAhead=typeof r.queueAhead==='number'?r.queueAhead:0;
+    if(typeof r.queueMinutesPerOrder==='number')queueMinutesPerOrder=r.queueMinutesPerOrder;
+    if(typeof r.maxPerHour==='number')maxPerHour=r.maxPerHour;
+  }catch(e){}
+}
+
+
 // ── ICONOS, DISTANCIA E INVENTARIO: COMPARTIDOS, NO DEL PANEL (2026-09-10) ────────────
 // Estas cinco cosas vivían dentro de los archivos del panel, y el 2026-09-10 —al partir el
 // bundle para que el panel dejara de viajar en el celular de cada cliente— resultó que el

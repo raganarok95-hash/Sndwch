@@ -130,6 +130,225 @@ async function applyAppUpdate(){
 }
 
 
+// ── EL ARRANQUE DE LA APP Y SUS OYENTES GLOBALES ──────────────────────────────────────
+// Todo esto vivía en el archivo del panel, y el 2026-09-10 —al partir el bundle— resultó
+// que ahí estaba el IIFE que ARRANCA LA APP. Con el panel sin cargar, el cliente no llamaba
+// a `render()` ni una vez: la pantalla quedaba en blanco, sin un solo error en la consola,
+// para el 100% de los clientes. Y la app funcionaba perfecto en cuanto se llamaba a
+// `render()` a mano, que es lo que hace este defecto tan difícil de ver: no está roto, es
+// que nadie lo enciende.
+//
+// `check:cliente` no lo atrapó porque mira REFERENCIAS, y acá no faltaba ninguna: el
+// problema no era que el cliente llamara al panel, sino que el interruptor estaba del otro
+// lado. Por eso la defensa nueva es una prueba de comportamiento
+// (`tests/registro-del-panel.spec.ts`) que carga la app y exige que se pinte SOLA.
+//
+// Con el arranque vienen sus oyentes: el manejador de errores de JavaScript, el registro
+// del service worker, el aviso de sin conexión, el prompt de instalación y el atajo de
+// teclado. Ninguno es de admin y todos tienen que existir desde el primer instante.
+// Enter/Espacio sobre uno de esos controles hace lo mismo que un tap. Un <button> real ya
+// lo hace solo; esto es solo para los que no lo son.
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  var el=document.activeElement as HTMLElement;
+  if(!el||typeof el.getAttribute!=='function')return;
+  if(el.tagName==='BUTTON'||el.tagName==='A'||el.tagName==='INPUT'||el.tagName==='TEXTAREA')return;
+  if(el.getAttribute('role')!=='button')return;
+  e.preventDefault();
+  el.click();
+});
+
+// Solo errores REALES de JavaScript. Un `<img>` o una fuente que no carga también dispara
+// un evento 'error', y mostrarle al cliente una barra roja porque no bajó una foto sería
+// una falsa alarma peor que el problema: se filtra exigiendo que haya un mensaje de error
+// de verdad (los fallos de recurso llegan sin `message`).
+window.addEventListener('error',function(ev){if(ev&&ev.message)showRuntimeError(ev.message);});
+window.addEventListener('unhandledrejection',function(ev: any){
+  var r=ev&&ev.reason;showRuntimeError((r&&r.message)||String(r||'Promesa rechazada'));
+});
+
+// PWA — registro del service worker (habilita instalación + apertura offline del
+// shell) y captura del prompt nativo de instalación para ofrecerlo desde un botón
+// propio en vez de esperar a que el navegador lo muestre por su cuenta.
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+  // El shell se sirve desde caché para que la app abra al instante; el service worker
+  // revalida en paralelo y avisa por aquí si el servidor tiene una versión distinta.
+  navigator.serviceWorker.addEventListener('message',function(ev){
+    if(ev.data&&ev.data.type==='sw-shell-updated'&&!updateReady){updateReady=true;render();}
+  });
+  // El mensaje solo alcanza a las pestañas ya abiertas: cuando la revalidación termina, la
+  // pestaña que acaba de navegar todavía no tiene listener. Por eso el service worker deja
+  // además una marca en la caché y aquí se consulta al arrancar.
+  checkShellUpdateFlag();
+}
+async function checkShellUpdateFlag(){
+  if(!window.caches)return;
+  for(var i=0;i<3;i++){
+    try{
+      var hit=await caches.match(SW_UPDATE_FLAG);
+      if(hit){updateReady=true;render();return;}
+    }catch(e){return;}
+    await new Promise(function(r){setTimeout(r,2500);});
+  }
+}
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  render();
+});
+window.addEventListener('appinstalled',function(){
+  deferredInstallPrompt=null;
+  render();
+});
+// Antes no había ninguna detección de modo sin conexión — cada acción fallaba por
+// separado con su propio mensaje genérico en vez de un aviso único y proactivo.
+// Teclado virtual abierto → esconder la barra fija de navegación. Medido con Playwright a
+// 320x330 (alto típico de viewport con el teclado de Android abierto): la barra quedaba
+// justo encima del campo de teléfono del checkout y tapaba el de nombre. visualViewport
+// es la única API que reporta el alto REAL disponible cuando el teclado está arriba;
+// window.innerHeight no cambia en Android. El umbral de 75% distingue "teclado abierto"
+// de la barra de URL que se contrae al hacer scroll (esa se lleva ~10-15%, no ~40%).
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',function(){
+    var vv=window.visualViewport;
+    if(!vv)return;
+    document.body.classList.toggle('kb-open',vv.height<window.innerHeight*0.75);
+  });
+}
+window.addEventListener('offline',function(){isOffline=true;render();});
+window.addEventListener('online',function(){isOffline=false;render();});
+async function installPwa(){
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  render();
+}
+function dismissPwaBanner(){
+  pwaDismissed=true;
+  localStorage.setItem('sw_pwa_dismissed','1');
+  render();
+}
+
+// Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
+// cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
+// muestra nada — nunca insiste ni vuelve a pedir permiso en la misma sesión.
+function checkNearbyStore(){
+  if(_nearCheckDone)return;
+  _nearCheckDone=true;
+  var today=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('sw_near_dismissed')===today)return;
+  if(!('geolocation' in navigator))return;
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var d=haversineKm(pos.coords.latitude,pos.coords.longitude,STORE_LAT,STORE_LON);
+    if(d<=NEARBY_RADIUS_KM){nearStore=true;render();}
+  },function(){/* permiso denegado o ubicación no disponible — sin banner, sin insistir */},{maximumAge:600000,timeout:8000});
+}
+function dismissNearbyBanner(){
+  nearStore=false;
+  localStorage.setItem('sw_near_dismissed',new Date().toISOString().slice(0,10));
+  render();
+}
+
+// NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
+// incluso con la app cerrada. Solo disponibles para clientes con cuenta (la suscripción
+// se guarda ligada a tu teléfono) y requieren HTTPS (o localhost) + un navegador
+// compatible con Push API.
+function urlBase64ToUint8Array(base64String){
+  var padding='='.repeat((4-base64String.length%4)%4);
+  var base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  var rawData=atob(base64);
+  var out=new Uint8Array(rawData.length);
+  for(var i=0;i<rawData.length;i++)out[i]=rawData.charCodeAt(i);
+  return out;
+}
+async function checkPushSubscription(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window))return;
+  try{
+    var reg=await navigator.serviceWorker.ready;
+    var sub=await reg.pushManager.getSubscription();
+    pushSubscribed=!!sub;
+    render();
+  }catch(e){}
+}
+async function togglePushNotifications(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no soporta notificaciones push.';render();return;}
+  if(!cust){pushMsg='Inicia sesión para activar notificaciones.';render();return;}
+  try{
+    var reg=await navigator.serviceWorker.ready;
+    var existing=await reg.pushManager.getSubscription();
+    if(existing){
+      await api('push-unsubscribe',{token:token,endpoint:existing.endpoint});
+      await existing.unsubscribe();
+      pushSubscribed=false;pushMsg='Notificaciones desactivadas.';render();
+      return;
+    }
+    var perm=await Notification.requestPermission();
+    if(perm!=='granted'){pushMsg='Necesitas permitir notificaciones desde tu navegador.';render();return;}
+    var sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    var subJson=sub.toJSON();
+    await api('push-subscribe',{token:token,endpoint:subJson.endpoint,p256dh:subJson.keys.p256dh,auth:subJson.keys.auth});
+    pushSubscribed=true;pushMsg='¡Notificaciones activadas!';render();
+  }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo.');render();}
+}
+
+// Los dos momentos en que un tercero puede haber pisado algo: cuando termina de cargar
+// la página (ahí ya corrieron los scripts con defer/async) y en cada render (Culqi
+// también inyecta código al abrir su formulario de pago, después del load).
+window.addEventListener('load',function(){sndRestoreOwnedFns();});
+
+(async function(){
+  var haveCachedCust=false;
+  if(token){
+    try{
+      var cachedRaw=localStorage.getItem('sw_cust_cache');
+      if(cachedRaw){cust=JSON.parse(cachedRaw);isAdmin=localStorage.getItem('sw_is_admin_cache')==='1';haveCachedCust=true;}
+    }catch(e){}
+  }
+  restoreCart();
+  render();
+  if(token){
+    if(!haveCachedCust){busy=true;busyMsg='Verificando tu sesión...';render();}
+    try{
+      var r=await api('session-check',{token:token});
+      if(r.valid){cust=r.customer;isAdmin=r.isAdmin;cacheCust(cust,isAdmin);}
+      else{token='';localStorage.removeItem('sw_tok');cust=null;isAdmin=false;cacheCust(null);}
+    }catch(e){} // sin conexión — sigue con lo ya pintado (cache o invitado), no se pierde la sesión guardada
+    if(!haveCachedCust)busy=false;
+    render();
+  }
+  loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
+  loadCatalogBackground().then(function(){render();}); // load current prices in background, re-render when ready
+  loadStoreHoursBackground().then(function(){render();}); // load real store hours in background, re-render when ready
+  if(cust)loadUserExtras();
+  checkPushSubscription();
+  checkNearbyStore();
+  // ?group=CODE (link compartido de un pedido grupal) — no exige cuenta para entrar y
+  // contribuir, solo para organizar/cerrar, así que se abre para cualquiera.
+  if(groupCodeFromUrl){
+    groupCode=groupCodeFromUrl;sndScreen='group_order';render();
+    loadGroupOrder();
+    startGroupPoll();
+  }
+  // ?grupo=1 (QR de la tarjeta de la bolsa). A diferencia de ?group=CODE, organizar SÍ
+  // exige cuenta — el servidor necesita saber a quién cobrarle al cerrar. Si ya hay
+  // sesión se crea el grupo de una; si no, se deja el intento anotado y se lleva a la
+  // pantalla de cuenta: doCreateGroupOrder() se dispara solo apenas entre (ver
+  // resumeWantedGroup, llamado desde el login/registro).
+  if(wantsNewGroup){
+    if(cust)doCreateGroupOrder();
+    else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para organizar el pedido de tu oficina.');render();}
+  }
+  // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
+  // único que importa de esta visita y se lleva la pantalla entera.
+  if(deliveryTokenFromUrl){
+    sndScreen='delivery_confirm';deliveryConfirmState={loading:true};render();
+    doConfirmDelivery();
+  }
+})();
+
+
 // ── EL PANEL SE DESCARGA SOLO CUANDO SE ABRE ──────────────────────────────────────────
 // Mismo patrón que `loadTesseract()` usa para los 3 MB del lector de comprobantes: se pide
 // una vez, cuando de verdad hace falta, y nunca antes. Acá son ~230 KB de panel que dejan
@@ -140,12 +359,18 @@ async function applyAppUpdate(){
 // URL, y el dueño vería su panel viejo sin un solo error de por medio.
 var _adminBundle: Promise<void> | null = null;
 var adminBundleError = '';
+// ⚠ `adminBundleReady` no es un detalle: sin él, una pantalla de admin que NO EXISTE deja
+// la app en un bucle infinito de render. `needsAdminBundle()` diría "falta el panel" para
+// siempre —porque esa pantalla no va a aparecer en el registro nunca— y cada render pediría
+// el bundle y volvería a pintar. Un cuelgue, que es peor que una pantalla en blanco.
+// Lo encontró la prueba de la pantalla inventada, que existía justamente para el caso raro.
+var adminBundleReady = false;
 function loadAdminBundle(){
   if(_adminBundle)return _adminBundle;
   _adminBundle=new Promise<void>(function(resolve,reject){
     var sc=document.createElement('script');
     sc.src='admin.js?v='+APP_BUILD;
-    sc.onload=function(){adminBundleError='';resolve();};
+    sc.onload=function(){adminBundleError='';adminBundleReady=true;resolve();};
     // ⚠ Un fallo acá NO puede quedarse callado. Si el lector de comprobantes no carga, el
     // comprobante se abre igual y el OCR era un extra. Si el panel no carga, el dueño se
     // queda sin panel — y con el registro vacío el router lo mandaría al home del cliente
@@ -161,7 +386,8 @@ function loadAdminBundle(){
 }
 // ¿Esta pantalla necesita el panel y todavía no está? Lo pide y vuelve a pintar al llegar.
 function needsAdminBundle(){
-  return String(sndScreen||'').indexOf('admin')===0 && !ADMIN_SCREENS[sndScreen] && !adminBundleError;
+  if(adminBundleReady||adminBundleError)return false;
+  return String(sndScreen||'').indexOf('admin')===0 && !ADMIN_SCREENS[sndScreen];
 }
 function render(){
   try{
