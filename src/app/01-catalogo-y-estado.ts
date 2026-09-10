@@ -1068,6 +1068,14 @@ var WEEKLY_PLAN_CREDIT=100;
 // supabase/functions/api/actions/customer.ts, el servidor es quien de verdad debita los
 // puntos y acredita el saldo.
 var GIFT_CARD_POINTS_PER_SOL=40;
+// Los límites del monto estaban ESCRITOS A MANO en dos sitios del cliente: en el texto que
+// lee el cliente ("Monto entre S/10 y S/500") y en la validación de doGiftCardBuy(). El
+// servidor los tiene como constantes desde siempre, así que eran dos números sueltos que
+// nadie iba a sincronizar el día que el dueño moviera el tope — la misma clase de promesa
+// rota que ya costó tres textos de marketing desactualizados. `npm run parity` compara
+// estos dos contra GIFT_CARD_AMOUNT_MIN/MAX del servidor.
+var GIFT_CARD_AMOUNT_MIN=10;
+var GIFT_CARD_AMOUNT_MAX=500;
 // Lo que recibe EL INVITADO al pagar su primer pedido — 120 pts = una bebida gratis (R05).
 // Subido de 50 el 2026-08-20: el invitado es quien tiene que decidir comprar y 50 puntos
 // (S/1.25) no le dicen nada a alguien que nunca pidió. Solo se usa para el copy — quien

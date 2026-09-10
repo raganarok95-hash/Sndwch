@@ -488,20 +488,107 @@ async function doCreditGift(){
 // widget + confirm) porque Culqi no soporta "cobrar con puntos" — el dueño pidió
 // corregirlo a la intención original. Ahora es una sola llamada atómica al servidor
 // (redeem_points_for_gift_credit), sin cobro, reserva, ni ventana de expiración.
+// ── MONTOS SUGERIDOS, TRADUCIDOS A PRODUCTO ──────────────────────────────────────────
+// Regalar exige decidir un número, y decidir un número en abstracto es justo donde la gente
+// abandona: "¿cuánto es suficiente para un regalo?" no tiene respuesta hasta que alguien
+// dice qué compra ese monto.
+//
+// ⚠ LOS MONTOS SE DERIVAN DEL CATÁLOGO, NO SE ESCRIBEN. Si un Signature sube de precio, un
+// monto fijo escrito acá pasaría a NO alcanzar para lo que promete — un regalo que se queda
+// corto en la caja es peor que no haberlo sugerido. Se redondea hacia ARRIBA al múltiplo de
+// cinco por lo mismo: el error nunca puede caer del lado de que no alcance.
+function giftSugerencias(){
+  // El menú secreto se excluye: su precio no es representativo de la carta pública y el
+  // destinatario puede ni siquiera tenerlo desbloqueado.
+  var publicos=SIGS.filter(function(x){return !x.secret;});
+  if(!publicos.length)publicos=SIGS;
+  var arriba5=function(v){return Math.max(GIFT_CARD_AMOUNT_MIN,Math.ceil(v/5)*5);};
+  var p15=Math.min.apply(null,publicos.map(function(x){return x.p15||0;}).filter(Boolean));
+  var p30=Math.min.apply(null,publicos.map(function(x){return x.p30||0;}).filter(Boolean));
+  if(!isFinite(p15)||!p15)return [];
+  var lista=[
+    {v:arriba5(p15),        t:'Un 15CM'},
+    {v:arriba5(p30||p15*1.4),t:'Un 30CM'},
+    {v:arriba5(p15*2),      t:'Dos 15CM'}
+  ];
+  // Sin duplicados y dentro del rango que el servidor acepta — ofrecer un monto que el
+  // checkout va a rechazar es peor que no ofrecerlo.
+  var vistos={},out=[];
+  lista.forEach(function(x){
+    if(vistos[x.v]||x.v>GIFT_CARD_AMOUNT_MAX)return;
+    vistos[x.v]=1;out.push(x);
+  });
+  return out;
+}
+function giftElegirMonto(v){
+  gcAmt=String(v);
+  var e=(document.getElementById('gc-amt') as HTMLInputElement|null);
+  if(e)e.value=gcAmt;
+  gcMsg='';render();
+}
 function sGiftCard(){
   var amt=parseFloat(gcAmt)||0;
   var ptsCost=amt>0?Math.round(amt*GIFT_CARD_POINTS_PER_SOL):0;
+  var saldo=cust.points||0;
+  var alcanza=ptsCost<=saldo;
+  var sug=giftSugerencias();
+
+  // Las tarjetas de monto: el número grande, y debajo QUÉ COMPRA. La que ya está elegida se
+  // marca, para que después de tocarla siga claro cuál se eligió.
+  // ⚠ SI NO ALCANZA PARA NADA, DECIRLO ARRIBA Y CON EL CAMINO. Tres montos apagados sin
+  // explicación son una pantalla que dice "no puedes" tres veces sin decir cuánto falta.
+  // Los pedidos se derivan del 15CM más barato de la carta, no de un ticket escrito a mano.
+  var minPts=Math.round(GIFT_CARD_AMOUNT_MIN*GIFT_CARD_POINTS_PER_SOL);
+  var ticket=sug.length?sug[0].v:0;
+  var faltanPedidos=ticket>0?Math.ceil((minPts-saldo)/ticket):0;
+  var lejos=saldo<minPts?'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Todavía no te alcanza para el regalo más chico: te faltan <b style="color:'+GOLD+'">'+(minPts-saldo)+' pts</b>'
+    +(faltanPedidos>0?', más o menos <b style="color:'+GOLD+'">'+faltanPedidos+' pedido'+(faltanPedidos===1?'':'s')+'</b>':'')+'.</div>'
+    +'</div>':'';
+
+  var chips=sug.length?lejos+'<div style="display:flex;gap:8px;margin-bottom:14px">'+sug.map(function(x){
+    var sel=amt===x.v;
+    var pts=Math.round(x.v*GIFT_CARD_POINTS_PER_SOL);
+    var puede=pts<=saldo;
+    return'<div onclick="giftElegirMonto('+x.v+')" style="flex:1;cursor:pointer;text-align:center;padding:12px 6px;border-radius:10px;'
+      +'background:'+(sel?'rgba(203,162,88,.14)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';'
+      +'opacity:'+(puede?'1':'.45')+'">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:'+(sel?GOLD:'var(--sw-text,#FFFFFF)')+';line-height:1">'+SOLES_TXT+pz(x.v)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+x.t+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;color:'+(puede?GOLD:'var(--sw-text-muted,#A8C8B0)')+';letter-spacing:.08em;margin-top:3px">'+pts+' PTS</div>'
+      +'</div>';
+  }).join('')+'</div>':'';
+
+  // Qué queda después. Un saldo de puntos que solo se ve ANTES de gastar deja al cliente
+  // haciendo la resta de cabeza justo cuando está por decidir.
+  var resto=ptsCost>0?'<div style="background:var(--sw-card2,#1A3028);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">'
+    +'<div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cuesta</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:'+(alcanza?GOLD:'var(--sw-danger-strong,#ff5555)')+';line-height:1.15">'+ptsCost+' pts</div></div>'
+    +'<div style="text-align:right"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+(alcanza?'Te quedan':'Te faltan')+'</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.15">'+Math.abs(saldo-ptsCost)+' pts</div></div>'
+    +'</div>':'';
+
+  // Qué recibe el otro. Sin esto "crédito SND//WCH" es una palabra sin forma, y quien regala
+  // no puede explicarle a su amigo qué le acaba de llegar.
+  var explica='<div style="border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-top:18px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Qué recibe //</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">Le llega el saldo <b>al instante</b>, listo para usar en cualquier pedido. No vence, no hay que canjear ningún código, y si no le alcanza para todo el pedido paga la diferencia normal.</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px;line-height:1.45">Si todavía no tiene cuenta, el saldo lo espera: se le acredita con su número apenas se registre.</div>'
+    +'</div>';
+
   return H('TARJETA DE REGALO','sndScreen=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Tarjeta<span class="cut-sep" style="color:'+GOLD+'"> // </span>de regalo</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px;line-height:1.5">Usa tus puntos para regalarle crédito SND//WCH a otro cliente al instante. Monto entre S/10 y S/500.</p>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.05em;margin-bottom:18px">Tienes '+(cust.points||0)+' pts // '+GIFT_CARD_POINTS_PER_SOL+' pts = S/1</p>'
-    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:6px">'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px;line-height:1.5">Convierte tus puntos en un sándwich para alguien más. Entre '+SOLES_TXT+pz(GIFT_CARD_AMOUNT_MIN)+' y '+SOLES_TXT+pz(GIFT_CARD_AMOUNT_MAX)+'.</p>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.05em;margin-bottom:16px">Tienes '+saldo+' pts // '+GIFT_CARD_POINTS_PER_SOL+' pts = '+SOLES_TXT+pz(1)+'</p>'
+    +chips
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">'
     +INP('gc-phone','Teléfono del destinatario // 9XXXXXXXX','tel',gcPhone,'phone')
-    +INP('gc-amt','Monto // S/','number',gcAmt,'coin')
+    +INP('gc-amt','Monto // '+SOLES_TXT,'number',gcAmt,'coin')
     +'</div>'
-    +(ptsCost>0?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:6px">Costará <b style="color:'+GOLD+'">'+ptsCost+' puntos</b>.</div>':'')
-    +'<div id="gc-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';min-height:14px;margin:8px 0 12px">'+esc(gcMsg)+'</div>'
+    +resto
+    +'<div id="gc-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';min-height:14px;margin-bottom:10px">'+esc(gcMsg)+'</div>'
     +BTN('Regalar con puntos //','doGiftCardBuy()')
+    +explica
     +'</div>'+NAV();
 }
 async function doGiftCardBuy(){
@@ -511,7 +598,7 @@ async function doGiftCardBuy(){
   var phone=phoneEl?phoneEl.value.trim():'';
   var amt=amtEl?parseFloat(amtEl.value):NaN;
   gcPhone=phone;gcAmt=amtEl?amtEl.value:'';
-  if(!phone||!amt||amt<10||amt>500){gcMsg='Ingresa un teléfono y un monto entre S/10 y S/500.';render();return;}
+  if(!phone||!amt||amt<GIFT_CARD_AMOUNT_MIN||amt>GIFT_CARD_AMOUNT_MAX){gcMsg='Ingresa un teléfono y un monto entre '+SOLES_TXT+pz(GIFT_CARD_AMOUNT_MIN)+' y '+SOLES_TXT+pz(GIFT_CARD_AMOUNT_MAX)+'.';render();return;}
   var ptsCost=Math.round(amt*GIFT_CARD_POINTS_PER_SOL);
   if(ptsCost>(cust.points||0)){gcMsg='No tienes puntos suficientes para este monto.';render();return;}
   var name;

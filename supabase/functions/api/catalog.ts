@@ -975,6 +975,7 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
 // sí puede crear un pedido que no existía), este descuento se le aplica a alguien que YA
 // decidió comprar la bebida: es margen regalado, no adquisición.
 const COMBO_DISCOUNT_PER_PAIR = 1;
+export { COMBO_DISCOUNT_PER_PAIR };
 
 // Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
 // EXACTA de la proteína elegida (S/8 en P01/P02/P04, pero S/10 en P05/P06), lo que
@@ -1047,6 +1048,11 @@ const R05_FLAT_WAIVER = 6;
 // horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
 // verdad crea pedidos nuevos, que es la única forma en que se paga sola.
 const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [];
+// Se exporta para que el CONTENIDO DE MARKETING pueda preguntar si la promo existe, en vez
+// de tenerlo escrito. Ver `offpeakActiva()` abajo y su uso en marketingContent().
+export function offpeakActiva(): boolean {
+  return OFFPEAK_DRINK_PROMO_HOURS_LIMA.length > 0;
+}
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
 const OFFPEAK_DRINK_PROMO_CAP = 6;
