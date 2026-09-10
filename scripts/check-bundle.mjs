@@ -54,6 +54,30 @@ for (const f of files) {
   }
 }
 
+// 4. EL ROUTER NO PUEDE NOMBRAR PANTALLAS DE ADMIN (2026-09-10).
+//    Es la única regla de esta lista que protege una decisión de negocio y no de orden.
+//    `render()`/`renderScreen()` vivían dentro del archivo del panel, con los 34 `case` de
+//    sus pantallas escritos ahí. Mientras el router nombre una sola pantalla de admin, las
+//    dos mitades quedan atadas y el panel —313 KB de 819, el 39% del código, por pantallas
+//    que solo abre el dueño— no se puede sacar del bundle que descarga cada cliente.
+//    Y eso no es peso por peso: la conversión es la única de las tres variables del CAC que
+//    el negocio controla.
+//    El acoplamiento vuelve con UNA línea distraída, y no rompe nada al volver: simplemente
+//    deja de poder separarse. Por eso se comprueba acá y no en una prueba de navegador.
+const router = files.find((f) => /^\d{2}-router\.ts$/.test(f));
+if (!router) {
+  problems.push('Falta la parte NN-router.ts — el router tiene que ser su propia parte del cliente, no vivir dentro del panel.');
+} else {
+  const src = readFileSync(join(APP_DIR, router), 'utf8');
+  const casosAdmin = [...src.matchAll(/case\s*'(admin_[a-z_]+)'/g)].map((m) => m[1]);
+  if (casosAdmin.length) {
+    problems.push(
+      `${router}: nombra ${casosAdmin.length} pantalla(s) de admin (${casosAdmin.slice(0, 3).join(', ')}${casosAdmin.length > 3 ? '…' : ''}).\n` +
+        '      Van al registro ADMIN_SCREENS, en la parte del panel — no al switch del router.',
+    );
+  }
+}
+
 if (problems.length) {
   console.error(`\n✗ Estructura del bundle del cliente: ${problems.length} problema(s)\n`);
   for (const p of problems) console.error('  • ' + p + '\n');

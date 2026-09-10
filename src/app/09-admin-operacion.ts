@@ -12,11 +12,11 @@ function bulkBar(){
   // ~44px de alto y el botón de cerrar es un cuadrado de 40x40 en vez de un ícono suelto.
   return'<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:110">'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';flex-shrink:0">'+n+' sel.</div>'
-    +'<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:#ffa500;color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+iconTxt('check','Pago','#0d0d0d')+'</button>'
+    +'<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:var(--sw-warn,#ffa500);color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+iconTxt('check','Pago','var(--sw-on-gold,#241a08)')+'</button>'
     +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.PREPARANDO.label+'</button>'
     +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES['EN CAMINO'].label+'</button>'
     +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.ENTREGADO.label+'</button>'
-    +'<button onclick="bulkSelected={};render()" aria-label="Cancelar selección" style="all:unset;box-sizing:border-box;cursor:pointer;color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('close',16,'#ff8888')+'</button>'
+    +'<button onclick="bulkSelected={};render()" aria-label="Cancelar selección" style="all:unset;box-sizing:border-box;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('close',16,'var(--sw-danger,#ff8888)')+'</button>'
     +'</div>';
 }
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
@@ -24,65 +24,6 @@ function bulkBar(){
 // dispares que no calzan con la estética tipográfica del resto de la app. Nació para el
 // grid de herramientas del panel admin; el set se reutiliza también en pantallas de
 // cliente (estados vacíos, carrito, insignias) para no mezclar dos lenguajes visuales.
-var ICONS={
-  clientes:'<circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3.5-6.5 7-6.5S19 16 19 20"/>',
-  buscar:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3 21 21"/>',
-  reportes:'<path d="M5 20V13M12 20V8M19 20v-6"/>',
-  estrella:'<path d="M12 3.5l2.47 5.18 5.53.63-4.1 3.86 1.1 5.58L12 15.9l-4.99 2.85 1.1-5.58-4.1-3.86 5.53-.63L12 3.5z"/>',
-  reclamo:'<rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 11h6M9 15h6"/>',
-  inventario:'<path d="M12 3 20 7.5v9L12 21 4 16.5v-9L12 3z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/>',
-  precios:'<path d="M20 12.5 12.5 20 4 11.5V4h7.5L20 12.5z"/><circle cx="8" cy="8" r="1.2"/>',
-  horario:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
-  puntos:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
-  admins:'<path d="M12 3 19 6v5.5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"/>',
-  auditoria:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
-  sonido:'<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/>',
-  notif:'<path d="M12 3a5 5 0 0 0-5 5v3.5L5 15h14l-2-3.5V8a5 5 0 0 0-5-5z"/><path d="M9.5 18a2.5 2.5 0 0 0 5 0"/>',
-  prep:'<rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/><path d="M9 12h6M9 16h4"/>',
-  // Olla con vapor — la receta acá es producción por tandas, no un libro de cocina.
-  recipe:'<path d="M5 10h14v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-6z"/><path d="M3 10h18"/><path d="M9 6c0-1 1-1 1-2M13 7c0-1 1-1 1-2"/>',
-  caja:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/>',
-  franjas:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16v-7M16 16v-2"/>',
-  direccion:'<path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/>',
-  cart:'<path d="M4 5h2l2.3 11.4A2 2 0 0 0 10.3 18h7.4a2 2 0 0 0 2-1.6L21 9H7.2"/><circle cx="10.5" cy="20.5" r="1.3"/><circle cx="17.5" cy="20.5" r="1.3"/>',
-  device:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 19h2"/>',
-  heart:'<path d="M12 20s-6.8-4.3-9-8.4C1.2 8.4 2.8 5 6.2 5c2 0 3.4 1.2 5.8 4 2.4-2.8 3.8-4 5.8-4 3.4 0 5 3.4 3.2 6.6C18.8 15.7 12 20 12 20z"/>',
-  gift:'<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M4 13h16M12 9v11"/><path d="M12 9C10 5 6 5.3 6 7.5S9 9 12 9zM12 9c2-4 6-3.7 6-1.5S15 9 12 9z"/>',
-  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/>',
-  chat:'<path d="M4 18.5 5.2 15A8 8 0 1 1 8.6 18l-4.6.5z"/><path d="M8.5 10h7M8.5 13h4.5"/>',
-  sandwich:'<path d="M4 11a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"/><path d="M3 11h18v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2z"/><path d="M4 15.5h16"/><path d="M8 7c.7-1.3 1.9-2 4-2s3.3.7 4 2"/>',
-  flame:'<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-2.3 1.5-3.7 1.9-5.8.2 1 1 1.6 1 1.6C8 7.3 9.7 4.7 12 3c-.6 3 .9 4 2.4 6 1 1.3 2.1 2.8 2.1 4.7 0 3.6-2.1 7.3-6.5 7.3z"/><path d="M12 21c1.8 0 3.2-1.2 3.2-3 0-1.4-.9-2.2-.9-3.4"/>',
-  crown:'<path d="M4.5 17h15l-1.4-7.5-3.6 3.2L12 6.5 9.5 12.7l-3.6-3.2L4.5 17z"/><path d="M5 20h14"/>',
-  compass:'<circle cx="12" cy="12" r="8.5"/><path d="M15.2 8.8 13 13l-4.2 2.2L11 11z"/>',
-  trophy:'<path d="M8 4h8v3.5a4 4 0 0 1-8 0V4z"/><path d="M8 5H5.2a3 3 0 0 0 3 5.2M16 5h2.8a3 3 0 0 1-3 5.2"/><path d="M12 11.5V15M9 19.5h6l-.6-2.7H9.6L9 19.5z"/>',
-  dumbbell:'<rect x="2" y="9.5" width="3" height="5" rx="1"/><rect x="19" y="9.5" width="3" height="5" rx="1"/><path d="M7 12h10"/><rect x="5" y="7.5" width="2" height="9" rx="1"/><rect x="17" y="7.5" width="2" height="9" rx="1"/>',
-  chili:'<path d="M8 5.2c3-1.4 5.3.8 5.3 3 0 2-1.3 3-1.3 5 0 4-2.8 6.8-5.5 6.8-2.8 0-4-3-2-6 1-1.4 1.8-2 1.8-4 0-2-1-3.4 1.7-4.8z"/><path d="M8 5.2c-.9-1-1-2.4 0-3.4"/>',
-  flor:'<circle cx="12" cy="12" r="1.6"/><path d="M12 3.5c1.8 1.8 1.8 4.7 0 6.5-1.8-1.8-1.8-4.7 0-6.5z"/><path d="M12 20.5c1.8-1.8 1.8-4.7 0-6.5-1.8 1.8-1.8 4.7 0 6.5z"/><path d="M3.5 12c1.8-1.8 4.7-1.8 6.5 0-1.8 1.8-4.7 1.8-6.5 0z"/><path d="M20.5 12c-1.8-1.8-4.7-1.8-6.5 0 1.8 1.8 4.7 1.8 6.5 0z"/>',
-  hoja:'<path d="M5 19c-1-6 1.5-13 13-14 1 8-4 13-13 14z"/><path d="M6.5 17.5c3-4 6-7 10.5-11.5"/>',
-  vapor:'<path d="M5 10h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-5z"/><path d="M16 11.5h1.3a2 2 0 0 1 0 4H16"/><path d="M8 7c-.5-.9.5-1.4 0-2.3M11.3 7c-.5-.9.5-1.4 0-2.3M14.6 7c-.5-.9.5-1.4 0-2.3"/>',
-  queso:'<path d="M3 17 12 4l9 13z"/><circle cx="10" cy="13.5" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="12.5" cy="15.5" r="1"/>',
-  camera:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.5-2.5h5L16 7"/><circle cx="12" cy="13.5" r="3.5"/>',
-  lock:'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-  moto:'<circle cx="6.5" cy="18" r="2.3"/><circle cx="17" cy="18" r="2.3"/><path d="M8.5 18h6l2-5.5h3M14 12.5l-2-4H8l-1 3"/><path d="M6.5 15.5h3"/>',
-  check:'<path d="M4 12.5l5 5L20 6"/>',
-  megaphone:'<path d="M3 10v4h3l7 4V6l-7 4H3z"/><path d="M13 8.5a4 4 0 0 1 0 7"/><path d="M16 6a7 7 0 0 1 0 12"/>',
-  phone:'<path d="M6 4h3l1.5 4-2 1.6a11.5 11.5 0 0 0 5.4 5.4l1.6-2 4 1.5v3a2 2 0 0 1-2.2 2C10.4 18.9 5.1 13.6 4 8.2A2 2 0 0 1 6 4z"/>',
-  gps:'<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
-  clip:'<path d="M8 12.5V6.5a4 4 0 0 1 8 0v9a2.5 2.5 0 0 1-5 0V8"/>',
-  card:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
-  cash:'<rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9v.01M18 15v.01"/>',
-  coin:'<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.3c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.6c0 2.4-5 1.4-5 3.8 0 .9 1.1 1.6 2.5 1.6s2.5-.7 2.5-1.7"/><path d="M12 6v1.2M12 16.8V18"/>',
-  refresh:'<path d="M4 12a8 8 0 0 1 13.6-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.6 5.7L4 16"/><path d="M4 20v-4h4"/>',
-  moon:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
-  sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M3 12h2.2M18.8 12H21M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>',
-  printer:'<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="7" y="14" width="10" height="6"/>',
-  close:'<path d="M6 6l12 12M18 6 6 18"/>',
-  warning:'<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17v.01"/>',
-  calendar:'<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
-  grid:'<circle cx="6" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="18" cy="6" r="1.7"/><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/><circle cx="6" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="18" cy="18" r="1.7"/>',
-};
-function icon(name,size?,color?){return'<svg width="'+(size||18)+'" height="'+(size||18)+'" viewBox="0 0 24 24" fill="none" stroke="'+(color||GOLD)+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'+(ICONS[name]||'')+'</svg>';}
-function iconTxt(name,label,color?){return'<span style="display:inline-flex;align-items:center;gap:5px;vertical-align:middle">'+icon(name,13,color)+'<span>'+label+'</span></span>';}
 // Etiqueta compacta del método de pago una vez confirmado — antes una vez pagado el
 // pedido no mostraba de ninguna forma CÓMO se pagó (solo se veía mientras estaba
 // pendiente de confirmar), así que el operador no podía distinguir de un vistazo un
@@ -158,14 +99,14 @@ async function loadHealth(){
   busy=false;render();
 }
 var HEALTH_LEVELS={
-  ok:{c:'#25D366',l:'OK'},
+  ok:{c:'var(--sw-ok,#25D366)',l:'OK'},
   atencion:{c:'#ffb84d',l:'ATENCIÓN'},
-  problema:{c:'#ff8888',l:'PROBLEMA'}
+  problema:{c:'var(--sw-danger,#ff8888)',l:'PROBLEMA'}
 };
 function sAdminHealth(){
   var h=H('SALUD DEL NEGOCIO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   if(healthErr){
-    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(healthErr)+'</div>'
+    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-danger,#ff8888);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(healthErr)+'</div>'
       +'<div style="margin-top:14px">'+BTN('Reintentar //','loadHealth()',true)+'</div></div>';
   }
   if(!healthData)return h+'</div>';
@@ -224,7 +165,7 @@ function setBatchCoverDays(d){batchCoverDays=d;loadBatchPlan();}
 function sAdminBatchPlan(){
   var h=H('PLAN DE TANDA',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   if(batchErr){
-    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(batchErr)+'</div>'
+    return h+'<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-danger,#ff8888);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(batchErr)+'</div>'
       +'<div style="margin-top:14px">'+BTN('Reintentar //','loadBatchPlan()',true)+'</div></div>';
   }
   if(!batchPlan)return h+'</div>';
@@ -274,19 +215,21 @@ function sAdminBatchPlan(){
 // esa se deja como está: sin la key el servidor responde con instrucciones en vez de
 // fallar, y el prompt igual sirve para pegarlo a mano en Flow, que es lo que el dueño ya
 // hace.
-var vidScript=null,vidSigId='',vidAngle='',vidErr='';
+var vidScript=null,vidSigId='',vidAngle='',vidFormato='',vidErr='';
 async function loadVideoScript(){
   sndScreen='admin_video';vidErr='';
   if(!vidSigId){var first=SIGS.find(function(x){return !x.secret;});vidSigId=first?first.id:'SIG01';}
   busy=true;busyMsg='Armando el guion...';render();
   try{
-    vidScript=await api('admin-video-script',{token:token,sigId:vidSigId,angle:vidAngle||undefined});
+    vidScript=await api('admin-video-script',{token:token,sigId:vidSigId,angle:vidAngle||undefined,formato:vidFormato||undefined});
     if(!vidAngle&&vidScript&&vidScript.angle)vidAngle=vidScript.angle.key;
+    if(!vidFormato&&vidScript&&vidScript.formato)vidFormato=vidScript.formato.key;
   }catch(e){vidScript=null;vidErr=e.message;}
   busy=false;render();
 }
 function pickVideoSig(id){vidSigId=id;loadVideoScript();}
 function pickVideoAngle(k){vidAngle=k;loadVideoScript();}
+function pickVideoFormato(k){vidFormato=k;loadVideoScript();}
 function sAdminVideo(){
   var h=H('GUION DE VIDEO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:16px">El guion y el prompt salen de la receta real del Signature, así que si cambias la composición desde el panel, el video que generes ya refleja el cambio.</div>';
@@ -298,11 +241,24 @@ function sAdminVideo(){
     }).join('')
     +'</div>';
   if(vidErr){
-    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:#ff8888;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(vidErr)+'</div>';
+    h+='<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-danger,#ff8888);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px">'+esc(vidErr)+'</div>';
     return h+'</div>';
   }
   if(!vidScript)return h+'</div>';
-  if(vidScript.angles&&vidScript.angles.length){
+  // El FORMATO primero: es quién actúa, y manda sobre cómo se filma. Son los mismos cinco
+  // (A-E) que el calendario semanal ya usa, así que el borrador del lunes y el prompt que se
+  // pega en Flow hablan el mismo idioma en vez de proponer dos videos distintos.
+  if(vidScript.formatos&&vidScript.formatos.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Qué formato? //</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
+      +vidScript.formatos.map(function(f){
+        var sel=(vidScript.formato&&vidScript.formato.key)===f.key;
+        return'<div onclick="pickVideoFormato(\''+f.key+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(f.letra+' · '+f.label)+'</div>';
+      }).join('')
+      +'</div>';
+  }
+  // El plano solo tiene sentido si el formato muestra el producto — EL SECRETO no lo muestra.
+  if(vidScript.angles&&vidScript.angles.length&&vidScript.formato&&vidScript.formato.key!=='secreto'){
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Qué plano? //</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">'
       +vidScript.angles.map(function(a){
@@ -314,14 +270,14 @@ function sAdminVideo(){
   var g=vidScript.guion||{};
   h+='<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:10px">'+esc(vidScript.name||'')+'</div>'
-    +[['Duración',g.duracion],['Formato',g.formato],['Plano',g.plano],['Acción',g.accion],['Pan',g.pan],['Ingredientes',g.ingredientes]]
+    +[['Formato',g.formato],['Personajes',g.personajes],['Duración',g.duracion],['Encuadre',g.encuadre],['Plano',g.plano],['Acción',g.accion],['Pan',g.pan],['Ingredientes',g.ingredientes],['Ojo',g.nota]]
       .filter(function(r){return r[1];})
       .map(function(r){return'<div style="display:flex;gap:10px;margin-bottom:6px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;min-width:88px;flex-shrink:0;padding-top:2px">'+r[0].toUpperCase()+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(String(r[1]))+'</div></div>';}).join('')
     +'</div>';
   // Los tres bloques que se COPIAN. Cada uno con su botón: el prompt va a Flow, el pie y
   // los hashtags van a Instagram — son destinos distintos, así que copiarlos juntos
   // obligaría a recortar a mano justo cuando el dueño está apurado publicando.
-  h+=copyBlockHTML('Prompt para Flow / Veo','vid-prompt',vidScript.veoPrompt||'');
+  h+=copyBlockHTML('Prompt para Flow','vid-prompt',vidScript.flowPrompt||'');
   h+=copyBlockHTML('Pie de publicación','vid-caption',vidScript.caption||'');
   h+=copyBlockHTML('Hashtags','vid-tags',vidScript.hashtags||'');
   if(vidScript._nota){
@@ -370,6 +326,10 @@ function adminToolsSections(){
       ['megaphone','Contenido semanal','loadMarketingContent()'],
       ['precios','Códigos promo','loadPromoCodes()'],
       ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
+      // Las tres palancas del modelo financiero, medidas contra lo que el modelo asume.
+      // Va en Marketing y no en "Salud del sistema" porque las tres se mueven con
+      // decisiones de marketing y producto, no con infraestructura.
+      ['reportes','Las tres palancas','loadPalancas()'],
       ['clientes','Lista de espera','loadWaitlist()'],
     ]],
     ['Catálogo //',[
@@ -474,7 +434,7 @@ function addressFlagsBanner(){
     // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
     // un estado desactualizado sin ninguna señal de que la actualización automática dejó
     // de funcionar.
-    +(pollFailing?'<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ff8888;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ff8888')+'<span>No se pudo actualizar la cola de pedidos — reintentando…</span></div>':'')
+    +(pollFailing?'<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);display:flex;align-items:center;gap:5px">'+icon('warning',12,'var(--sw-danger,#ff8888)')+'<span>No se pudo actualizar la cola de pedidos — reintentando…</span></div>':'')
     // #22 / #21 / #17 — Tres cosas que la cola ya sabía y no decía. Van ARRIBA de la lista
     // porque las tres son decisiones que se toman ANTES de despachar: juntar dos pedidos,
     // llamar para pedir la referencia que falta, o mandar dos en un viaje. Descubrirlas
@@ -545,9 +505,9 @@ function addressFlagsBanner(){
         // Receta expandida: sin esto un BUILD YOUR OWN solo mostraba el nombre de la
         // proteína y era imposible prepararlo (ver itemRecipeLines).
         +orderRecipeHTML(o.items)
-        +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#25D366;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
-        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
-        +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#ffa500;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
+        +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
+        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
+        +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
         +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#8BAF9A);margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
         // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
         // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
@@ -572,14 +532,14 @@ function addressFlagsBanner(){
         +(manualPending
           ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
             +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:10px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
-          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,15,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:#25D366;text-align:center;padding:8px">'+iconTxt('check','Completado','#25D366')+'</div>'))
+          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,15,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-ok,#25D366);text-align:center;padding:8px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
         // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
         // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
         // (hallazgo de la auditoría de flujo de pedidos: sin esto, si se acaba un
         // ingrediente a media preparación, el operador queda sin opciones).
-        +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'#ff8888')+'</button>'
+        +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'var(--sw-danger,#ff8888)')+'</button>'
         +'</div>';
-    }).join(''):'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-card,#2D5246);border-radius:10px;padding:24px 20px;text-align:center;margin-bottom:8px">'+icon('check',28,'#25D366')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Sin pedidos activos //</div></div>')
+    }).join(''):'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-card,#2D5246);border-radius:10px;padding:24px 20px;text-align:center;margin-bottom:8px">'+icon('check',28,'var(--sw-ok,#25D366)')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Sin pedidos activos //</div></div>')
 
     +(!cust||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<div onclick="togglePushNotifications()" style="margin-top:18px;background:var(--sw-card,#2D5246);border:1px solid '+(pushSubscribed?GOLD:'#1c1c1c')+';border-radius:10px;padding:12px 16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+icon('notif')+'Alertas de pedidos y stock</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:'+(pushSubscribed?GOLD:'#A8C8B0')+'">'+(pushSubscribed?'✓ Activo':'○ Activar')+'</span></div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>')
     +'<div style="margin-top:18px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+icon('sonido')+'Sonido de nuevo pedido</span>'
@@ -618,7 +578,7 @@ function sAdminFocus(){
     +'</div>';
   if(!ao.length){
     return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar
-      +'<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px" class="fi">'+icon('check',32,'#25D366')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">Sin pedidos activos — todo en orden //</div></div></div>';
+      +'<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px" class="fi">'+icon('check',32,'var(--sw-ok,#25D366)')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">Sin pedidos activos — todo en orden //</div></div></div>';
   }
   if(focusIdx>=ao.length)focusIdx=0;
   var o=ao[focusIdx];
@@ -651,8 +611,8 @@ function sAdminFocus(){
     // La receta, en escala de cocina, arriba de todo lo demás.
     +orderRecipeHTML(o.items,true)
     +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
-    +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#ffa500;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('warning',16,'#ffa500')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
-    +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:#25D366;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'#25D366')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
+    +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('warning',16,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
+    +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-ok,#25D366);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.18em;margin-bottom:10px">Para entregar //</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(o.customer_address)+'</div>'
@@ -670,10 +630,10 @@ function sAdminFocus(){
     // El bloque rojo no es decoración: esta tarjeta se lee de reojo con las manos ocupadas,
     // y ahí lo único que funciona es que el aviso no se parezca a lo de al lado.
     +(o.notes?(noteNeedsAttention(o.notes)
-      ?'<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.5);border-radius:8px;padding:12px 14px;margin-top:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#ff8888;letter-spacing:.08em">⚠ ALERGIA O RESTRICCIÓN</div><div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text,#FFFFFF);margin-top:4px;line-height:1.4">'+esc(o.notes)+'</div></div>'
+      ?'<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.5);border-radius:8px;padding:12px 14px;margin-top:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-danger,#ff8888);letter-spacing:.08em">⚠ ALERGIA O RESTRICCIÓN</div><div style="font-family:\'EB Garamond\',serif;font-size:17px;color:var(--sw-text,#FFFFFF);margin-top:4px;line-height:1.4">'+esc(o.notes)+'</div></div>'
       :'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:'+GOLD+';margin-top:8px">Referencia: '+esc(o.notes)+'</div>'):'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div onclick="event.stopPropagation();editEta(\''+o.id+'\','+o.eta_minutes+')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">'+icon('moto',16,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min · editar</span></div>':'')
-    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:#ffa500;margin-top:12px;display:flex;align-items:center;gap:8px">'+icon('cash',16,'#ffa500')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
+    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-size:16px;color:var(--sw-warn,#ffa500);margin-top:12px;display:flex;align-items:center;gap:8px">'+icon('cash',16,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
     +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:14px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">'+esc(o.date)+' · '+esc(o.summary)+'</div>'
     +'<div style="display:flex;gap:10px;margin-top:22px">'
@@ -681,9 +641,9 @@ function sAdminFocus(){
     +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
     // #19 — Solo cuando el pedido ya salió: antes de eso no hay token y no habría a quién
     // mandarle el link.
-    +(o.status==='EN CAMINO'&&o.delivery_token?'<button onclick="waDeliveryLink(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.45);color:#25D366;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('chat','Link entrega','#25D366')+'</button>':'')
+    +(o.status==='EN CAMINO'&&o.delivery_token?'<button onclick="waDeliveryLink(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.45);color:var(--sw-whatsapp,#25D366);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('chat','Link entrega','var(--sw-whatsapp,#25D366)')+'</button>':'')
     +'</div>'
-    +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.06em;padding:15px 0;border-radius:8px;text-align:center;margin-top:12px">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'#ff8888')+'</button>'
+    +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.06em;padding:15px 0;border-radius:8px;text-align:center;margin-top:12px">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'var(--sw-danger,#ff8888)')+'</button>'
     +'</div>';
   // El botón real anclado a la zona del pulgar: position:fixed sobre todo el viewport,
   // no relativo a la tarjeta. Con env(safe-area-inset-bottom) para no quedar tapado por
@@ -692,7 +652,7 @@ function sAdminFocus(){
     +(manualPending
       ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
         +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
-      :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:#25D366;text-align:center;padding:10px">'+iconTxt('check','Completado','#25D366')+'</div>'))
+      :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:17px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:10px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
     +'</div>';
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar+nav+body+fixedBar+'</div>';
 }

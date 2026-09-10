@@ -21,23 +21,38 @@ const MOCK_ORDER = {
   created_at: new Date().toISOString(),
 };
 
-function guion(sigId: string, angleKey = 'macro') {
+const FORMATOS = [
+  { key: 'pleito', letra: 'A', label: 'EL PLEITO (principal)' },
+  { key: 'reto', letra: 'B', label: 'EL RETO DEL ALOCADO' },
+  { key: 'receta', letra: 'C', label: 'LA RECETA DEL CALMADO' },
+  { key: 'secreto', letra: 'D', label: 'EL SECRETO' },
+  { key: 'mesa', letra: 'E', label: 'LA MESA LARGA' },
+];
+
+// El mock refleja el contrato REAL de `admin-video-script` (actions/video.ts): desde que el
+// guion se arma alrededor de los dos hermanos, la respuesta trae `formato`/`formatos` y el
+// prompt se llama `flowPrompt` (antes `veoPrompt`, cuando el generador era Veo directo).
+// Un mock desactualizado deja el test verde sobre una pantalla que en producción no pinta nada.
+function guion(sigId: string, angleKey = 'macro', fmtKey = 'pleito') {
+  const fmt = FORMATOS.find((f) => f.key === fmtKey)!;
   return {
     success: true,
     sigId,
     name: 'The Original',
     angle: { key: angleKey, label: angleKey === 'macro' ? 'Macro del corte' : 'Vapor y calor' },
+    formato: fmt,
     guion: {
       duracion: '8 segundos',
-      formato: 'Vertical 9:16 (Reels / TikTok / Stories)',
+      formato: fmt.letra + ' · ' + fmt.label,
       plano: 'extreme macro lens',
       accion: 'el cuchillo termina el corte',
       ingredientes: 'Res asada · Tomate · Aioli',
       pan: 'CLASSIC // WHITE',
     },
-    veoPrompt: 'PROMPT DE PRUEBA para ' + sigId,
+    flowPrompt: 'PROMPT DE PRUEBA para ' + sigId,
     caption: 'The Original //\n\nRes asada en pan classic.',
     hashtags: '#sndwch #trujillo',
+    formatos: FORMATOS,
     angles: [
       { key: 'macro', label: 'Macro del corte' },
       { key: 'steam', label: 'Vapor y calor' },
@@ -50,7 +65,7 @@ async function abrirGuion(page: any) {
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000000', name: 'Admin' }, isAdmin: true, token: 'tok-admin' },
     'admin-orders': () => ({ orders: [MOCK_ORDER], truncated: false }),
-    'admin-video-script': (body: any) => guion(body.sigId, body.angle || 'macro'),
+    'admin-video-script': (body: any) => guion(body.sigId, body.angle || 'macro', body.formato || 'pleito'),
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();
@@ -99,4 +114,27 @@ test('cambiar de plano pide el mismo sándwich con otro ángulo', async ({ page 
     const c = calls.filter((x) => x.action === 'admin-video-script').pop();
     return c?.body.angle;
   }).toBe('steam');
+});
+
+// Los cinco formatos son la mitad del sistema: el prompt que se pega en Flow cambia entero
+// según cuál se elija. Sin esta prueba, el selector podía dejar de mandar `formato` y el
+// panel seguiría pintando un guion — el de siempre — sin que nada reventara.
+test('elegir formato pide el guion de ESE formato', async ({ page }) => {
+  const calls = await abrirGuion(page);
+  await page.getByText('C · LA RECETA DEL CALMADO', { exact: true }).click();
+
+  await expect.poll(() => {
+    const c = calls.filter((x) => x.action === 'admin-video-script').pop();
+    return c?.body.formato;
+  }).toBe('receta');
+});
+
+// EL SECRETO no muestra el producto — no se puede. Por eso ahí los tratamientos de cámara
+// (que son todos sobre CÓMO se ve el sándwich) no tienen nada que modificar y no se pintan.
+test('EL SECRETO no ofrece planos de producto', async ({ page }) => {
+  await abrirGuion(page);
+  await expect(page.getByText('Vapor y calor', { exact: true })).toBeVisible();
+
+  await page.getByText('D · EL SECRETO', { exact: true }).click();
+  await expect(page.getByText('Vapor y calor', { exact: true })).toHaveCount(0);
 });

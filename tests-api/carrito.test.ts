@@ -26,14 +26,21 @@ function assertSoles(actual: number, expected: number, msg?: string) {
     msg ?? `esperaba S/${expected.toFixed(2)}, recibí S/${actual.toFixed(2)}`,
   );
 }
-import { deriveCart } from "../supabase/functions/api/catalog.ts";
+function assert(cond: boolean, msg: string) {
+  if (!cond) throw new Error(msg);
+}
+import { deriveCart, SIDE_PRICE } from "../supabase/functions/api/catalog.ts";
 
 // Precios de la semilla del catálogo (los mismos literales que carga loadCatalogPrices
-// por encima en producción): THE ORIGINAL 15CM S/20.90, THE MIDNIGHT S/5, THE SPICE
-// CHAI S/9.
+// por encima en producción): THE ORIGINAL 15CM S/20.90, THE MIDNIGHT S/5, THE BLOOM S/6.
+//
+// D09 (THE SPICE // CHAI, S/9) salió del menú el 2026-09-06 y era la bebida que estas
+// pruebas usaban para ejercer el TOPE de R05: a S/9 con tope de S/6 el cliente pagaba la
+// diferencia. Con el chai fuera, D06 a S/6 es la más cara del catálogo y el tope queda
+// EXACTAMENTE en el techo — ver la prueba del tope más abajo, que ahora fija esa frontera.
 const SIG15 = 20.9;
 const D07 = 5;
-const D09 = 9;
+const D06 = 6;
 
 const sig15 = () => ({ type: "sig", sigId: "SIG01", size: "15", qty: 1 });
 const bebida = (code: string) => ({ type: "side", code, qty: 1 });
@@ -67,10 +74,10 @@ Deno.test("en la que era la ventana de hora valle ya no se regala la bebida", ()
 
 Deno.test("la hora valle da el mismo total que cualquier otra hora", () => {
   // La prueba más fuerte de que la promo está apagada: la hora dejó de mover el precio.
-  const valle = deriveCart([sig15(), bebida("D09")], null, HORA_VALLE);
-  const normal = deriveCart([sig15(), bebida("D09")], null, HORA_NORMAL);
+  const valle = deriveCart([sig15(), bebida("D06")], null, HORA_VALLE);
+  const normal = deriveCart([sig15(), bebida("D06")], null, HORA_NORMAL);
   assertSoles(valle.expectedTotal, normal.expectedTotal);
-  assertSoles(valle.expectedTotal, SIG15 + D09 - 1);
+  assertSoles(valle.expectedTotal, SIG15 + D06 - 1);
 });
 
 Deno.test("R06 (sándwich gratis) no regala además la bebida del combo", () => {
@@ -81,9 +88,32 @@ Deno.test("R06 (sándwich gratis) no regala además la bebida del combo", () => 
   assertSoles(r.expectedTotal, D07);
 });
 
-Deno.test("R05 (bebida gratis) está topada igual que la promo de hora valle", () => {
-  const r = deriveCart([sig15(), bebida("D09")], "R05", HORA_NORMAL);
-  assertSoles(r.expectedTotal, SIG15 + D09 - 6);
+Deno.test("R05 (bebida gratis) cubre entera la bebida más cara que hoy existe", () => {
+  // R05_FLAT_WAIVER es S/6 y D06 cuesta S/6: la recompensa la cubre completa, sin resto.
+  // Ese "sin resto" es la promesa — "BEBIDA // GRATIS" que no alcanza para ninguna bebida
+  // del catálogo es la misma clase de promesa falsa que obligó a retirar dos badges.
+  const r = deriveCart([sig15(), bebida("D06")], "R05", HORA_NORMAL);
+  assertSoles(r.expectedTotal, SIG15);
+});
+
+Deno.test("el tope de R05 sigue vivo aunque hoy ninguna bebida lo pase", () => {
+  // ⚠ MODO DE FALLO: SILENCIO. Con el chai (S/9) fuera, la bebida más cara vale exactamente
+  // lo que el tope, así que el tope NO recorta nada hoy — y alguien podría concluir que
+  // sobra y borrarlo. Sigue siendo la única defensa para el día que vuelva una bebida por
+  // encima de S/6: sin él, R05 regalaría el precio completo de lo que sea que se agregue.
+  //
+  // Lo que se fija es que la recompensa nunca devuelva MÁS que el tope, comprobado sobre
+  // todo el catálogo vigente en vez de sobre una bebida escrita a mano — así una bebida
+  // nueva y cara entra sola a esta prueba en lugar de quedar fuera en silencio.
+  for (const code of Object.keys(SIDE_PRICE)) {
+    const conRecompensa = deriveCart([sig15(), bebida(code)], "R05", HORA_NORMAL);
+    const sinRecompensa = deriveCart([sig15(), bebida(code)], null, HORA_NORMAL);
+    const perdonado = sinRecompensa.expectedTotal - conRecompensa.expectedTotal;
+    assert(
+      Math.round(perdonado * 100) <= Math.round(6 * 100),
+      `R05 perdonó S/${perdonado.toFixed(2)} en ${code}: más que el tope de S/6`,
+    );
+  }
 });
 
 Deno.test("R05 tampoco deja que la bebida regalada arrastre un combo", () => {

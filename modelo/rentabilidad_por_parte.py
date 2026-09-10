@@ -38,9 +38,19 @@ PROT = {
     "P04": (3.25, 6.50, "[COTIZADO 2026-09-04] atún S/4 la lata de 140 g neto = S/43.96/kg"),
     "P05": (4.29, 8.59, "[ESTIMADO] embutido S/48/kg confirmado por el dueño, porción sin cotizar"),
     "P06": (1.34, 2.68, "[ESTIMADO] albóndiga, carne molida ~S/10/kg — SIN COTIZAR"),
+    # P08 es la ÚNICA con rendimiento 1.00: es fiambre, no se cocina. Por eso su costo por
+    # porción es literalmente el precio del kilo por el gramaje, sin el ~1.85x de merma que
+    # llevan las que sí pasan por la olla.
+    "P08": (3.76, 7.51, "[WEB] pavo S/44.20/kg (retail Braedt S/43.75) — sin merma, rendimiento 1.00"),
 }
 PROT_NOM = {"P01": "Res asada", "P02": "Pollo teriyaki", "P03": "Pollo cajún",
-            "P04": "Atún", "P05": "Embutido", "P06": "Albóndiga"}
+            "P04": "Atún", "P05": "Embutido", "P06": "Albóndiga", "P08": "Pavo"}
+# Quién se puede armar DE VERDAD en ARMA EL TUYO. P01 y P05 salieron el 2026-09-05 por
+# rentabilidad (siguen en sus Signatures) y P03 es exclusiva del menú secreto. Se siguen
+# imprimiendo sus filas —el número es real y sirve para decidir si vuelven— pero NO cuentan
+# contra el techo: reportar como problema abierto algo que ya se cerró hace que la lista
+# final deje de leerse, que es la forma en que un tablero de control se muere.
+FUERA_DEL_ARMADOR = {"P01", "P05", "P03"}
 
 # Gramaje de toppings — estándar Subway desde 2026-09-04
 TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21}
@@ -49,7 +59,8 @@ TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7
 BYO = {  # catalog_prices, category='protein'
     "P01": (14.90, 24.90, 7.00, 14.00), "P02": (13.90, 23.90, 6.00, 11.00),
     "P03": (13.90, 23.90, 6.00, 11.00), "P04": (16.90, 32.90, 10.90, 21.90),
-    "P05": (16.90, 32.90, 9.90, 19.90), "P06": (14.90, 26.90, 6.00, 6.00),
+    "P05": (16.90, 32.90, 9.90, 19.90), "P06": (14.90, 26.90, 6.00, 12.00),
+    "P08": (15.90, 28.90, 9.00, 17.00),
 }
 SIG = {  # catalog_items, fila vigente por item_id
     "SIG01": ("The Original", "B01", "P01", ["T01", "T02", "T03"], 2, None, 20.90, 26.90),
@@ -61,27 +72,31 @@ SIG = {  # catalog_items, fila vigente por item_id
 }
 BEBIDA = {  # catalog_prices, category='side'
     "D06": ("The Bloom // Hibiscus", 6.0), "D07": ("The Midnight // Brew", 5.0),
-    "D08": ("The Cool // Mint", 6.0),      "D09": ("The Spice // Chai", 9.0),
+    "D08": ("The Cool // Mint", 6.0),
+    # D09 (The Spice // Chai) retirado el 2026-09-06: a medio litro quedaba en 42.5% de costo
+    # contra 19-32% de las tres infusiones, porque media botella de chai es media botella de
+    # LECHE (un insumo que se compra) mientras que en las otras el volumen es agua.
 }
 # ── COSTO DE LAS BEBIDAS ──────────────────────────────────────────────────────────────
 #
 # ENVASE: [COTIZADO por el dueño 2026-09-05] S/138 por 200 unidades = **S/0.69 la botella**.
 # Era el número que faltaba, y estaba estimado en ~S/1 — o sea 31% más caro de lo real.
 #
-# INSUMO por vaso: [ESTIMADO, sigue sin cotizar] ~S/0.31-0.62 las tres infusiones (se toma el
-# punto medio) y ~S/1.55 el chai, que es el único con costo alto de verdad (leche, cardamomo,
-# jengibre). Salen de las tandas del RECETARIO.md, no de facturas de proveedor.
+# INSUMO: ya NO es un número por vaso escrito a mano. El tamaño quedó decidido en MEDIO LITRO
+# (el envase real, no el vaso de 350 ml que suponía el recetario) y el insumo se deriva de las
+# tandas del RECETARIO.md en `modelo/costo_bebidas.py`, que es donde vive el detalle con el
+# origen de cada precio por kilo. Acá se traen los resultados.
 #
-# Se costea POR BEBIDA y no con un porcentaje plano: el chai cuesta 3x lo que una infusión y
-# se vende a 1.5x, así que un promedio esconde justo la que peor rinde.
+# Se costea POR BEBIDA y no con un porcentaje plano: The Bloom cuesta 2.5x lo que The Cool y se
+# vende al mismo precio, así que un promedio esconde justo la que peor rinde.
 ENVASE_BEBIDA = 0.69     # [COTIZADO] S/138 / 200 unidades
-BEBIDA_INSUMO = {        # [ESTIMADO] por vaso, sin el envase
-    "D06": 0.465, "D07": 0.465, "D08": 0.465, "D09": 1.55,
+BEBIDA_INSUMO = {        # por botella de 500 ml, sin el envase — ver modelo/costo_bebidas.py
+    "D06": 1.20, "D07": 0.72, "D08": 0.48,
 }
 def costo_bebida(code):
     return BEBIDA_INSUMO[code] + ENVASE_BEBIDA
 BEBIDA_COSTO_PCT = (sum(costo_bebida(c) for c in BEBIDA_INSUMO)
-                    / sum(p for _n, p in [("", 6.0), ("", 5.0), ("", 6.0), ("", 9.0)]))
+                    / sum(BEBIDA[c][1] for c in BEBIDA_INSUMO))
 
 RECOMPENSA = {  # catalog_prices, category='reward' — recalibradas el 2026-09-05
     "R02": (20,  "4ta salsa gratis"),
@@ -170,36 +185,46 @@ if __name__ == "__main__":
             malos.append((f"{sid} {n} 30CM", pct))
 
     # ── 2. ARMA EL TUYO ───────────────────────────────────────────────────────────────
-    sep('2 · ARMA EL TUYO — las 6 proteinas')
+    armables = [p for p in BYO if p not in FUERA_DEL_ARMADOR]
+    sep(f'2 · ARMA EL TUYO — {len(armables)} proteinas armables')
+    def nom(p):
+        # Las que no se pueden armar se imprimen igual, marcadas: el numero sirve para
+        # decidir si vuelven, pero no puede leerse como si estuviera a la venta.
+        return PROT_NOM[p] + (" (fuera del armador)" if p in FUERA_DEL_ARMADOR else "")
     cab("15CM")
     for p in BYO:
-        ln, pct = fila(PROT_NOM[p], BYO[p][0], costo_byo(p, 0))
+        ln, pct = fila(nom(p), BYO[p][0], costo_byo(p, 0))
         print(ln)
-        if pct > TECHO:
+        if pct > TECHO and p not in FUERA_DEL_ARMADOR:
             malos.append((f"BYO {PROT_NOM[p]} 15CM", pct))
     cab("30CM")
     for p in BYO:
-        ln, pct = fila(PROT_NOM[p], BYO[p][1], costo_byo(p, 1))
+        ln, pct = fila(nom(p), BYO[p][1], costo_byo(p, 1))
         print(ln)
-        if pct > TECHO:
+        if pct > TECHO and p not in FUERA_DEL_ARMADOR:
             malos.append((f"BYO {PROT_NOM[p]} 30CM", pct))
 
     cab("DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)")
     for p in BYO:
         for i, et in ((0, "15CM"), (1, "30CM")):
             precio = BYO[p][2 + i]
-            ln, pct = fila(f"{PROT_NOM[p]} {et}", precio, PROT[p][i])
+            ln, pct = fila(f"{nom(p)} {et}", precio, PROT[p][i])
             print(ln)
-            if pct > TECHO:
+            if pct > TECHO and p not in FUERA_DEL_ARMADOR:
                 malos.append((f"doble {PROT_NOM[p]} {et}", pct))
 
     # ── 3. BEBIDAS ────────────────────────────────────────────────────────────────────
-    sep('3 · LAS 4 BEBIDAS')
+    sep(f'3 · LAS {len(BEBIDA)} BEBIDAS')
     print(f"""
-  ⚠ EL COSTO DE LAS BEBIDAS NO ESTA COTIZADO. No existe el dato. CLAUDE.md dice que el
-  margen real es 56-66% "con botella con tapa a rosca a ~S/1 (estimado, falta cotizar)".
-  Aca se toma el punto medio ({(1-BEBIDA_COSTO_PCT)*100:.0f}% de margen) y se dice que es una suposicion, no una
-  medicion. Cotizar el envase es lo unico que convierte esta tabla en un dato.
+  EL ENVASE YA ESTA COTIZADO Y COMPRADO (dueno 2026-09-05): S/138 por 200 unidades = S/0.69
+  la botella, y el tamano ya esta decidido: MEDIO LITRO. Con los dos datos, el insumo se
+  deriva de las tandas del RECETARIO.md en modelo/costo_bebidas.py, que trae el origen de
+  cada precio por kilo. Lo que sigue [ESTIMADO] es el precio de las hierbas, que pesa mucho
+  menos que el envase. Promedio ponderado: {BEBIDA_COSTO_PCT*100:.1f}% de costo.
+
+  El envase es la MITAD del costo de una infusion y NO escala con el volumen: por eso pasar
+  de 350 ml a 500 ml sube el costo mucho menos de lo que parece (The Cool: +2.4 puntos por
+  43% mas de bebida). Es la palanca mas barata de valor percibido que tiene el negocio.
 """)
     cab("a precio de carta")
     for d, (n, pr) in BEBIDA.items():

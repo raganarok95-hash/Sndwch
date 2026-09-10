@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
@@ -3191,6 +3191,11 @@ export async function actAdminRetentionReport(b: any) {
   const rolling = report?.rolling30 || {};
   return {
     ...report,
+    // Los supuestos del modelo viajan CON las cifras medidas, para que la pantalla pueda
+    // decir "vas mejor" o "vas peor" en vez de enseñar un porcentaje suelto. Van desde el
+    // servidor y no escritos en el cliente a propósito: un número a mano en la pantalla se
+    // desincroniza del modelo el día que el modelo cambie, sin que nada falle.
+    modelo: MODELO_SUPUESTOS,
     alarm: {
       thresholdPct: RETENTION_ALARM_PCT,
       // Solo tiene sentido dar la alarma cuando hay clientes activos que medir; con 0

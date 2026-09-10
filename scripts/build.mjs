@@ -36,7 +36,28 @@ function main() {
   // archivo de nuevo, ese script es la red: cualquier cambio real de salida lo delata.
   const partFiles = readdirSync(path.join(distDir, 'app')).filter((f) => f.endsWith('.js')).sort();
   if (!partFiles.length) throw new Error('dist/app no tiene ninguna parte compilada — revisa el include de tsconfig.build.json.');
-  let appJs = partFiles
+  // ── DOS BUNDLES: EL CLIENTE Y EL PANEL (2026-09-10) ────────────────────────────────
+  // Las partes hasta el ROUTER son el cliente; las de después, el panel. El corte se
+  // deriva del nombre del router y no de un número escrito acá a mano: renumerar las
+  // partes (algo que ya pasó una vez) no puede cambiar en silencio qué viaja a cada
+  // celular.
+  //
+  // Por qué se parte: el panel son ~300 KB de ~800 por 34 pantallas que solo abre el dueño,
+  // y las descargaba TODO cliente que abre la carta. El CAC es
+  // `CPM / (1000 × CTR × CVR) × 1.18` y la conversión es la única de las tres variables que
+  // el negocio controla, así que un bundle que pesa el doble es fricción en el punto exacto
+  // donde se pierde al cliente.
+  const iRouter = partFiles.findIndex((f) => /^\d{2}-router\.js$/.test(f));
+  if (iRouter === -1) {
+    throw new Error('No hay ninguna parte NN-router.js — sin el router no se sabe dónde termina el cliente y empieza el panel.');
+  }
+  const clientFiles = partFiles.slice(0, iRouter + 1);
+  const adminFiles = partFiles.slice(iRouter + 1);
+  if (!adminFiles.length) {
+    throw new Error('No hay ninguna parte después del router — el panel tiene que ser su propio archivo.');
+  }
+
+  let appJs = clientFiles
     .map((f, i) => {
       const js = readFileSync(path.join(distDir, 'app', f), 'utf8');
       // tsc antepone su propio `"use strict";` a CADA archivo emitido. En un bundle
@@ -50,6 +71,13 @@ function main() {
       return i === 0 ? js : js.replace(/^"use strict";\r?\n/, '');
     })
     .join('');
+  // El panel se concatena igual, pero SIEMPRE sin el `"use strict"` de tsc: este archivo
+  // se carga como script aparte, así que su primera línea ya no es el prólogo de nada — y
+  // el bundle del cliente, que corre antes, ya puso todo en modo estricto.
+  const adminJs = adminFiles
+    .map((f) => readFileSync(path.join(distDir, 'app', f), 'utf8').replace(/^"use strict";\r?\n/, ''))
+    .join('');
+
   const shell = readFileSync(path.join(root, 'src/shell.html'), 'utf8');
 
   // Sello de build. Se inyecta acá y no se escribe a mano en src/app.ts para que no haya
@@ -72,7 +100,13 @@ function main() {
   if (!appJs.includes('__APP_BUILD__')) {
     throw new Error('El cliente ya no tiene el marcador __APP_BUILD__ (debería estar en src/app/01-*.ts) — el sello de versión dejaría de actualizarse en silencio.');
   }
-  const stamp = createHash('sha256').update(appJs).digest('hex').slice(0, 10);
+  // ⚠ EL SELLO HASHEA LOS DOS BUNDLES, no solo el del cliente. El panel se pide como
+  // `admin.js?v=<sello>`, así que si el sello ignorara el panel, un cambio SOLO en el panel
+  // dejaría a los navegadores sirviendo el archivo viejo desde su caché bajo la misma URL —
+  // y el dueño vería su panel sin actualizar sin ningún error de por medio. Es exactamente
+  // el defecto del 2026-08-21 (shell viejo pegado a la vez en la app, el celular y la PC),
+  // que ya obligó a escribir `check:shell`.
+  const stamp = createHash('sha256').update(appJs).update(adminJs).digest('hex').slice(0, 10);
   appJs = appJs.split('__APP_BUILD__').join(stamp);
 
   if (!shell.includes('__APP_JS__')) {
@@ -81,8 +115,24 @@ function main() {
 
   const html = shell.replace('__APP_JS__', () => appJs);
   writeFileSync(path.join(root, 'index.html'), html);
+
+  // El panel, como archivo aparte servido desde la raíz. Lo pide `loadAdminBundle()` en el
+  // router, y SOLO cuando alguien abre una pantalla de admin: ningún cliente lo descarga.
+  writeFileSync(
+    path.join(root, 'admin.js'),
+    '// SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.\n' +
+      '// Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla\n' +
+      '// de admin. Ningún cliente lo descarga: son ~' + Math.round(adminJs.length / 1024) + ' KB que antes\n' +
+      '// viajaban en index.html a cada celular que abría la carta.\n' +
+      adminJs,
+  );
+
   rmSync(distDir, { recursive: true, force: true });
-  console.log(`✓ index.html regenerado desde src/app/ (${partFiles.length} partes) + src/shell.html`);
+  const kbCliente = Math.round(html.length / 1024);
+  const kbPanel = Math.round(adminJs.length / 1024);
+  console.log(
+    `✓ index.html (${clientFiles.length} partes, ${kbCliente} KB) + admin.js (${adminFiles.length} partes, ${kbPanel} KB, bajo demanda)`,
+  );
 }
 
 main();

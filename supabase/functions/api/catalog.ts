@@ -172,6 +172,28 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // pDbl30 corregido de 6 a 12 el 2026-09-05: era la única proteína cuyo doble costaba lo
   // mismo en los dos tamaños. Ver el comentario largo en PROTS.P06 (src/app/01-*).
   P06: { p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 },
+  // P08 (PAVO // HORNEADO) entra el 2026-09-06 (decisión del dueño). Es la 4ta proteína del
+  // armador, que había quedado con TRES al salir res y embutido por rentabilidad.
+  //
+  // ⚠ LO QUE LA HACE VIABLE ES QUE NO TIENE MERMA DE COCCIÓN. Es fiambre: 1 kg comprado es
+  // 1 kg servido. Todas las demás pierden en la olla —res 0.54, pollo 0.64-0.69— así que su
+  // costo real por porción es ~1.85x el del insumo crudo. Acá el precio del insumo ES el
+  // costo de la porción, y por eso una proteína a S/44.20/kg (más cara por kilo que la res a
+  // S/20) sale más barata por sándwich que la res.
+  //   85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51
+  // Con el piso fijo del armador (S/3.35 en 15CM, S/5.41 en 30CM) el precio que deja el costo
+  // exactamente en el techo de 45% es 2.222 × (piso + proteína): S/15.79 y S/28.72. Se cobra
+  // S/15.90 y S/28.90 por la convención de .90 — 44.7% de costo en LOS DOS tamaños.
+  //
+  // [WEB] S/43.75/kg es el precio RETAIL de jamón de pavo Braedt en Metro/Vivanda; se costea
+  // a S/44.20 por conservador. Al por mayor (Makro Trujillo) debería estar por debajo, así
+  // que el error cae del lado seguro. Falta cotización propia del dueño.
+  //
+  // pDbl 9 / pDbl30 17: la porción que agrega cuesta S/3.76 y S/7.51, o sea 41.8% y 44.2%.
+  // Se calcularon contra el costo REAL de la porción extra, no copiando el de otra proteína —
+  // que es el defecto que ya obligó a partir `pDbl` en dos y a corregir P06.
+  // DEBE coincidir con PROTS.P08 en src/app/01-*.
+  P08: { p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 },
   // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
   // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
@@ -397,14 +419,23 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
 // envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen real
 // era 56-66%. El chai lleva +S/3 porque es el único con costo de insumo alto de verdad.
 // DEBEN coincidir con SIDES en src/app.ts.
-export const SIDE_PRICE: Record<string, number> = { D06: 6, D07: 5, D08: 6, D09: 9 };
+//
+// D09 (THE SPICE // CHAI) sale del menú el 2026-09-06, decisión del dueño. El número lo
+// respalda: costeado por BOTELLA DE MEDIO LITRO —que es el envase real, no el vaso de 300 ml
+// que suponía el recetario— el chai queda en 42.5% de costo contra 19-32% de las tres
+// infusiones. Es la única bebida cerca del techo de 45%, y la única cuyo insumo caro no es
+// la infusión sino la LECHE: media botella de chai es media botella de un insumo que se
+// compra, mientras que en las otras tres el 99% del volumen es agua.
+// Además era la única con un insumo que no se puede stockear (ver RECETARIO.md PARTE 4).
+// Para restaurarlo: D09 acá y en SIDE_LABEL, la entrada en SIDES (src/app/01-*), y una fila
+// `('D09','side','{"price":9}')` en catalog_prices.
+export const SIDE_PRICE: Record<string, number> = { D06: 6, D07: 5, D08: 6 };
 export const SIDE_LABEL: Record<string, string> = {
   // Catálogo de bebidas de la casa — sin jugos a propósito (decisión de negocio: los
   // jugos ya los vende cualquier juguería del barrio, esto busca diferenciarse).
   D06: "THE BLOOM // HIBISCUS",
   D07: "THE MIDNIGHT // BREW",
   D08: "THE COOL // MINT",
-  D09: "THE SPICE // CHAI",
 };
 // "BUILD" se renombró a "SIGNATURE" (hallazgo de auditoría UX, CRÍTICO) — chocaba con el
 // modo "BUILD YOUR OWN" del cliente. DEBE coincidir con el tag `s` de SIGS en src/app.ts.
@@ -602,6 +633,10 @@ export const PROT_LABEL: Record<string, string> = {
   // inglés entre las 6 proteínas, ni coincidía con su propia descripción en español —
   // DEBE coincidir con PROTS.P06 en src/app.ts.
   P06: "ALBÓNDIGA // MARINARA",
+  // "Horneado" y no "Oven Roasted": el resto del catálogo interno ya está 100% en español
+  // (Res/Pollo/Atún/Embutido/Albóndiga) y mezclar idiomas en la misma lista es el defecto que
+  // obligó a renombrar MEATBALL. DEBE coincidir con PROTS.P08 en src/app/01-*.
+  P08: "PAVO // HORNEADO",
 };
 
 // priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo

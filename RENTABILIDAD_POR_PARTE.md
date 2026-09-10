@@ -74,10 +74,20 @@ Las dos salieron a `sigOnly`: no se pueden armar, **pero siguen vivas en THE ORI
 SMOKE**, donde la receta está costeada y rinden bien. Ese es exactamente el hallazgo
 estructural: *una receta fija es una receta costeada; un armador de elección libre no lo es.*
 
-⚠ **Consecuencia a no olvidar: ARMA EL TUYO queda con TRES proteínas** (pollo teriyaki, atún,
-albóndiga), porque el pollo cajún es exclusivo del menú secreto. Tres es poco para una sección
-cuyo argumento entero es que el cliente elige. Si vuelve a haber margen —proveedor más barato,
-o una subida de precio— lo primero que hay que revisar es devolver la res.
+⚠ **Esto dejó el armador con TRES proteínas** (pollo teriyaki, atún, albóndiga), porque el pollo
+cajún es exclusivo del menú secreto. Tres es poco para una sección cuyo argumento entero es que
+el cliente elige.
+
+**Resuelto el 2026-09-06 con una cuarta: el PAVO (P08), S/15.90 / S/28.90.** Y lo que la hace
+viable no es una cotización afortunada sino algo estructural: **es fiambre, así que no tiene
+merma de cocción**. Un kilo comprado es un kilo servido, mientras que la res rinde 0.54 y el
+pollo 0.64-0.69 y su costo real por porción termina siendo ~1.85x el del insumo crudo. Por eso
+el pavo, que cuesta **más del doble por kilo que la res** (S/44.20 contra S/20), sale **más
+barato por sándwich**: 44.7% de costo en los dos tamaños, justo debajo del techo.
+
+Es la lección general para cualquier proteína futura del armador: **el precio por kilo no dice
+nada hasta dividirlo por el rendimiento.** Si vuelve a haber margen, devolver la res sigue siendo
+lo primero a revisar.
 
 También salieron dos vegetales: **el apio** (ya no lo usa nadie) y **el pepinillo**, que el
 dueño cambió por lechuga. El pepinillo sigue en el catálogo como `sigOnly` porque SIG01 y
@@ -92,24 +102,43 @@ sándwich unos céntimos.
 S/0.69 la botella**, un 31% menos que el ~S/1 que se venía estimando. Era el único número que
 faltaba para que esta sección dejara de ser aritmética sobre una suposición.
 
-| bebida | precio | costo | deja | costo % |
-|---|---|---|---|---|
-| The Bloom // Hibiscus | S/6 | S/1.16 | **S/4.84** | 19.2% |
-| The Cool // Mint | S/6 | S/1.16 | **S/4.84** | 19.2% |
-| The Midnight // Brew | S/5 | S/1.16 | **S/3.84** | 23.1% |
-| The Spice // Chai | S/9 | S/2.24 | **S/6.76** | 24.9% |
+**Y el tamaño ya está decidido: MEDIO LITRO** — era la otra mitad del dato que faltaba. Hasta el
+2026-09-06 las bebidas se costeaban contra un vaso de 350 ml que nunca se eligió; el envase
+comprado es de medio litro, o sea **43% más bebida** que ese vaso. El insumo escala con el
+volumen, el envase no.
 
-**Promedio ponderado: 21.9% de costo, contra el 39% que se asumía.** Las bebidas están a menos
-de la mitad del techo de 45% — son, por lejos, lo mejor del catálogo. Eso refuerza la decisión
-de empujar el attach: cada bebida sube la contribución del pedido bastante más de lo que sube
-el ticket.
+| bebida | precio | insumo (500 ml) | envase | costo | deja | costo % |
+|---|---|---|---|---|---|---|
+| The Cool // Mint | S/6 | S/0.48 | S/0.69 | S/1.17 | **S/4.83** | 19.4% |
+| The Midnight // Brew | S/5 | S/0.72 | S/0.69 | S/1.41 | **S/3.59** | 28.2% |
+| The Bloom // Hibiscus | S/6 | S/1.20 | S/0.69 | S/1.89 | **S/4.11** | 31.5% |
 
-Se costean **por bebida y no con un porcentaje plano** a propósito: el chai cuesta 3x lo que
-una infusión y se vende a 1.5x, así que un promedio esconde justo la que peor rinde.
+**Promedio ponderado: 26.3% de costo.** Siguen a bastante menos del techo de 45% — son, por
+lejos, lo mejor del catálogo, y eso refuerza la decisión de empujar el attach: cada bebida sube
+la contribución del pedido bastante más de lo que sube el ticket.
 
-> **Lo que sigue estimado es el insumo por vaso** (~S/0.465 las tres infusiones, ~S/1.55 el
-> chai): sale de las tandas del `RECETARIO.md`, no de facturas de proveedor. Pesa mucho menos
-> que el envase, así que el número ya es utilizable.
+**El envase es la MITAD del costo de una infusión y no escala con el volumen.** Por eso pasar de
+350 ml a medio litro sube el costo mucho menos de lo que parece: The Cool sube 2.4 puntos, de
+17.1% a 19.4%, y a cambio el cliente recibe 43% más bebida. Es la palanca más barata de valor
+percibido que tiene el negocio.
+
+Se costean **por bebida y no con un porcentaje plano** a propósito: The Bloom cuesta 2.5x lo que
+The Cool y las dos se venden a S/6, así que un promedio esconde justo la que peor rinde.
+
+### El chai salió del menú (decisión del dueño, 2026-09-06)
+
+A medio litro, **The Spice // Chai quedaba en 42.5% de costo** contra 19-32% de las otras tres:
+la única bebida cerca del techo. Y el motivo es estructural, no de proveedor — **media botella de
+chai es media botella de LECHE**, un insumo que se compra, mientras que en las tres infusiones el
+volumen es agua. Ninguna cotización arregla eso.
+
+Era además la única con un insumo que no se puede stockear, lo que obligaba a un concentrado
+aparte y a mezclar al momento. La receta queda guardada completa en `RECETARIO.md` PARTE 4.
+
+> **Lo que sigue estimado es el precio por kilo de las hierbas**: jamaica y té negro se costean a
+> S/97/kg (precio publicado de Campo Grande Perú) y el resto son supuestos de trabajo. Pesan mucho
+> menos que el envase, que sí está cotizado, así que el número ya es utilizable. El cálculo
+> completo, con el origen de cada precio, está en `modelo/costo_bebidas.py`.
 
 ### Y el modelo tenía tres defectos en bebidas, ahora corregidos
 
@@ -179,8 +208,11 @@ precio en el código no cambia el precio real. Lo que sigue pendiente:
 2. **Cotizar embutido, albóndiga y queso.** El queso usa un proxy de S/35/kg cuando hay un
    dato de S/22.50/kg para mozzarella — si ese fuera el real, todos los Signatures con queso
    fijo mejoran.
-3. **ARMA EL TUYO con tres proteínas** es poco. Devolver la res exige o un proveedor más
-   barato o subir el 30CM ~S/4.90, decisión que el dueño ya declinó una vez.
+3. **Cotizar el pavo al por mayor.** Entró costeado a S/44.20/kg derivado del precio *retail*
+   de Braedt (S/43.75/kg); Makro tiene local en Trujillo y ahí debería bajar. Ojo con el
+   proveedor: **Sigma Alimentos es dueño de Braedt, Otto Kunz y La Segoviana a la vez**, así que
+   entre esas tres no hay competencia real de precio — hay que cotizar contra San Fernando o
+   Laive, que son los independientes.
 4. **Medir la mezcla real Signature/ARMA EL TUYO.** Todo el modelo asume mitad y mitad sin
    ningún dato. `retention_report` ya devuelve `attach.size30Pct`, así que se puede medir
    desde el primer mes.

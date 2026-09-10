@@ -16,6 +16,10 @@ const tmp = mkdtempSync(join(tmpdir(), 'sndwch-money-'));
 try {
   cpSync(join(ROOT, 'supabase'), join(tmp, 'supabase'), { recursive: true });
   cpSync(join(ROOT, 'tests-api'), join(tmp, 'tests-api'), { recursive: true });
+  // Las tablas compartidas entre lenguajes. `tarifa-envio.json` la leen DOS pruebas: la
+  // de Deno de acá y la de Playwright del navegador, para que la fórmula del cliente y la
+  // del servidor no puedan divergir. Sin copiarla, la prueba de Deno no la encuentra.
+  cpSync(join(ROOT, 'tests/fixtures'), join(tmp, 'tests/fixtures'), { recursive: true });
   const deno = join(ROOT, 'node_modules', '.bin', 'deno');
   execFileSync(deno, ['test', '--allow-read', '--allow-env', '--no-check', 'tests-api/'], {
     cwd: tmp,

@@ -495,10 +495,11 @@ parity` compara los dos contra los valores por defecto del cliente.
 
 Catálogo (`catalog.ts`, `PROT_PRICE`/`SIG_DATA`/`SIDE_PRICE`/`REWARDS`): 6 Signatures
 (5 públicos + `SIG05`, menú secreto de **rotación mensual** — ya no se llama "The Vault",
-decisión del dueño 2026-08-10, ver detalle abajo), 6 proteínas build-your-own (una puede
-quedar exclusiva del menú secreto según el ciclo vigente, no se puede armar por BYO), 4
-bebidas de la casa (sin gaseosas de reventa, decisión de marca), tamaños 15CM/30CM, doble
-proteína, salsa extra.
+decisión del dueño 2026-08-10, ver detalle abajo), 7 proteínas en el catálogo de las que
+**4 se pueden armar en ARMA EL TUYO** (pollo teriyaki, atún, albóndiga y pavo — res y embutido
+salieron por rentabilidad el 2026-09-05 y siguen vivas en sus Signatures; el pollo cajún es
+exclusivo del menú secreto), **3 bebidas de la casa** (sin gaseosas de reventa, decisión de
+marca — el chai salió el 2026-09-06 por costo), tamaños 15CM/30CM, doble proteína, salsa extra.
 
 **THE CHICAGO (SIG07) está retirado del menú de apertura desde el 2026-08-22** (decisión
 del dueño), junto con sus tres ingredientes exclusivos: `P07` (corte laminado), `T07`
@@ -1031,11 +1032,9 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   3. **Bebidas +S/2 (y +S/3 el chai)**: 6/5/6/9. El margen de 61-84% que se venía usando
      costeaba SOLO el insumo, nunca el envase. **El envase ya está COTIZADO Y COMPRADO
      (dueño 2026-09-05): S/138 por 200 unidades = S/0.69 la botella**, bastante menos que el
-     ~S/1 que se venía estimando. Con eso el costo real de las bebidas es **19-25% del
-     precio** (promedio ponderado 21.9%), no el 39% que se asumía — son la parte MÁS rentable
-     del catálogo, muy por debajo del techo de 45%. Lo que sigue estimado es el insumo por
-     vaso (~S/0.465 las tres infusiones, ~S/1.55 el chai), derivado de las tandas del
-     RECETARIO.md y no de facturas.
+     ~S/1 que se venía estimando. **Y el tamaño ya está decidido: MEDIO LITRO** (dueño
+     2026-09-06) — antes se costeaba contra un vaso de 350 ml que nunca se eligió, o sea 43%
+     menos bebida. Ver "Las bebidas se costean por medio litro" más abajo.
   4. **Combo bajado de S/2 a S/1** y **topes de bebida gratis (R05_FLAT_WAIVER y
      OFFPEAK_DRINK_PROMO_CAP) subidos de 4 a 6**. Lo primero porque a S/2 el combo se comía
      del 58% al 118% de lo que deja una bebida (THE MIDNIGHT en combo dejaba −S/0.31); lo
@@ -1053,6 +1052,118 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   ese % cambia de nuevo (ej. con datos reales de proveedor), estos puntos deberían
   revisarse también. La tarjeta de regalo (`GIFT_CARD_POINTS_PER_SOL` en
   `customer.ts`/`app.ts`) usa el mismo criterio (40 pts/sol) y debe recalibrarse junto.
+
+## Las bebidas se costean POR MEDIO LITRO, y el envase es la mitad del costo (2026-09-06)
+
+El tamaño del vaso era la decisión pendiente que bloqueaba el costeo, y la resolvió el envase
+comprado: **medio litro**. Con eso y los S/0.69 de la botella, `modelo/costo_bebidas.py` deriva
+el insumo de las tandas del `RECETARIO.md` con el origen de cada precio por kilo etiquetado
+(`[WEB]`, `[ESTIMADO]`), en vez del número por vaso escrito a mano que se venía usando.
+
+| bebida | precio | insumo | envase | costo | costo % |
+|---|---|---|---|---|---|
+| The Cool // Mint | S/6 | S/0.48 | S/0.69 | S/1.17 | 19.4% |
+| The Midnight // Brew | S/5 | S/0.72 | S/0.69 | S/1.41 | 28.2% |
+| The Bloom // Hibiscus | S/6 | S/1.20 | S/0.69 | S/1.89 | 31.5% |
+
+**El envase no escala con el volumen y el insumo sí**, así que pasar de 350 ml a medio litro
+sube el costo mucho menos de lo que parece (The Cool: +2.4 puntos por 43% más de bebida). Es la
+palanca más barata de valor percibido que tiene el negocio. Y por lo mismo, cualquier bebida
+futura hay que costearla **por botella**, nunca con un porcentaje plano: The Bloom cuesta 2.5x lo
+que The Cool y las dos se venden a S/6.
+
+**EL CHAI (D09) SALIÓ DEL MENÚ** (decisión del dueño 2026-09-06). A medio litro quedaba en
+**42.5%** de costo, la única bebida cerca del techo — y por un motivo que ninguna cotización
+arregla: **media botella de chai es media botella de LECHE**, un insumo que se compra, mientras
+que en las tres infusiones el volumen es agua. La receta queda completa en `RECETARIO.md` PARTE 4.
+Consecuencia a no perder de vista: con el chai fuera, la bebida más cara vale S/6, que es
+exactamente `R05_FLAT_WAIVER`. **El tope de R05 no recorta nada hoy y sigue haciendo falta** —
+`tests-api/carrito.test.ts` lo fija sobre todo `SIDE_PRICE`, así que una bebida cara futura entra
+sola a la prueba en vez de quedar fuera en silencio.
+
+## El precio por kilo de una proteína no dice nada hasta dividirlo por el rendimiento (2026-09-06)
+
+**PAVO (P08) entra a ARMA EL TUYO a S/15.90 / S/28.90** (decisión del dueño), devolviéndolo a
+cuatro proteínas después de que res y embutido salieran por rentabilidad el 2026-09-05.
+
+Lo que lo hace viable es estructural: **es fiambre, así que NO tiene merma de cocción**. Un kilo
+comprado es un kilo servido, mientras que res rinde 0.54 y pollo 0.64-0.69 y su costo real por
+porción termina siendo ~1.85x el del insumo crudo. Por eso el pavo, que cuesta **más del doble
+por kilo que la res** (S/44.20 contra S/20), sale **más barato por sándwich**. 85 g = S/3.76 y
+170 g = S/7.51 → **44.7% de costo en los dos tamaños**, justo debajo del techo.
+
+La fórmula que usa el armador: `precio = 2.222 × (piso fijo + costo de la proteína)`, con el piso
+en S/3.35 (15CM) y S/5.41 (30CM). `pDbl 9 / pDbl30 17` se calcularon contra el costo REAL de la
+porción extra (41.8% y 44.2%), **no copiando el de otra proteína** — que es el defecto que ya
+obligó a partir `pDbl` en dos y a corregir P06.
+
+**Está cotizado a medias**: S/44.20/kg se deriva del precio *retail* de Braedt en Metro/Vivanda
+(S/43.75/kg). Falta cotización propia al por mayor, y ahí importa saber que **Sigma Alimentos es
+dueño de Braedt, Otto Kunz y La Segoviana a la vez** — entre esas tres no hay competencia real de
+precio. Los independientes son San Fernando y Laive; Makro tiene local en Trujillo.
+
+**Ningún Signature lleva pavo.** Meterlo en una receta cerrada es una decisión de producto que el
+dueño no ha tomado. Tampoco pasa por el ciclo de tandas: no hay nada que cocinar, enfriar ni
+conservar, así que queda fuera de la alerta de caducidad de tanda.
+
+Con esto, `modelo/rentabilidad_por_parte.py` reporta por primera vez **"Nada pasa el techo"** en
+todo el catálogo.
+
+## Las tres palancas del modelo: medidas, no supuestas (2026-09-06)
+
+`PREDICCION_V12.md` concluye que la meta de **S/5,000 netos sostenidos NO se alcanza con más
+publicidad** —a S/20,000/mes el resultado empeora— sino con tres números. Ninguno estaba
+medido: el modelo los ASUME y mover cualquiera unos puntos cambia la conclusión entera.
+
+| palanca | el modelo asume | por qué importa |
+|---|---|---|
+| mezcla ARMA EL TUYO | 50% | un Signature deja ~S/5.50 más que un armado |
+| attach de bebida | 25% | +15 puntos valen ~S/0.48 por pedido, sin adquirir a nadie |
+| referidos por 100 pedidos | 6 | la ÚNICA que convierte "no llega nunca" en "sostiene desde feb-27" |
+
+**Ahora se miden.** `retention_report` devuelve un bloque `palancas` con las tres, y la
+pantalla **Admin // Marketing // Las tres palancas** las enseña contra lo que el modelo asume.
+Dos detalles que no hay que romper: la salvaguarda de fiabilidad (mínimo 20 pedidos) va
+**ARRIBA** de las cifras y no al pie, y donde no hay dato va un **guion, nunca un 0** — un 0 se
+lee como "medimos y dio cero". La mezcla se cuenta en **UNIDADES y no en pedidos**: un pedido
+puede llevar un Signature y un armado a la vez.
+
+**Los supuestos del modelo viven en `MODELO_SUPUESTOS` (`env.ts`) y viajan al cliente desde el
+servidor**, nunca escritos en la pantalla. `npm run parity` los compara contra el Python
+(`FRAC_BYO`/`DRINK_ATTACH` en `modelo/comparativa_menu.py`, `VIRAL` en
+`modelo/modelo_v11_metas.py`) — es el único chequeo del script que cruza lenguajes, y la única
+defensa contra que la pantalla mida contra una meta que el modelo ya movió.
+
+### ⚠ `actAdminRetentionReport` estaba importada y NUNCA registrada
+
+El reporte de cohortes —que este archivo llama "el mejor dato del panel"— no era alcanzable
+desde la app: solo lo veía el correo mensual, que llama al RPC por su cuenta. Modo de fallo
+puro silencio: la importación compila y `deno check` no marca un import sin usar dentro de un
+objeto. Ya está en `ACTIONS`. **Al agregar una acción nueva, registrarla es un paso aparte de
+importarla y nada avisa si falta.**
+
+### Lo que se empujó, y lo que deliberadamente no
+
+- **Referido**: la invitación estaba DOBLEMENTE condicionada — solo si el cliente calificaba, y
+  solo en el render inmediato tras hacerlo. Calificar es opcional, así que el momento de mayor
+  intención quedaba sin usar. Ahora aparece en los tres estados de un pedido entregado, y
+  **debajo** del formulario de calificación, que sigue primero y sin tocar: la calificación
+  tiene valor propio (testimonios, y enterarse de un problema) y cambiarla de sitio sería
+  canjear una cosa por otra en vez de sumar. Los dos bonos se interpolan de las constantes.
+- **Bebida**: el mecanismo ya estaba bien construido (empujón en los dos flujos, con
+  descripción y de un toque). Lo único débil era el título, que encabezaba con el ahorro de
+  S/1 —el combo bajó de S/2 y nadie revisó el texto— sobre un producto de S/5-6. Ahora
+  encabeza con el producto y nombra el descuento de segundo.
+- **Mezcla**: el menú YA abre en Signatures (`homeTab='sig'`), así que el empujón estructural
+  existía. Se agregó un puente desde ARMA EL TUYO hacia el Signature recomendado, **debajo** de
+  la lista de panes: quien tocó esa pestaña ya eligió armar el suyo, y cortarle el paso al
+  entrar sería un obstáculo. **NO se degradó ARMA EL TUYO para mover la mezcla** — es la mitad
+  de la identidad de la marca (los dos hermanos), y esconderlo o encarecerlo rompería el
+  producto para ganar céntimos. `tests/palancas-del-modelo.spec.ts` fija las dos cosas a la vez.
+
+**Lo que sigue sin medirse y decide igual de fuerte: el CAC real.** Sale de blogs de agencia,
+no de medición propia, y todo el modelo cuelga de él. Se mide poniendo los secrets de Meta
+(`docs/CONFIGURAR_META.md`) — es el bloqueo número uno del negocio.
 
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 

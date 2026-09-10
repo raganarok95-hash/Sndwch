@@ -56,51 +56,26 @@ var YAPE_PLIN_HOLDER=BIZ_NAME;
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
 var STALE_MANUAL_PAYMENT_HOURS_CLIENT=3;
-// Deep link a la app de Yape — nunca autocompleta destinatario/monto (Yape no expone
-// esa API a terceros sin ser comercio afiliado con QR emitido por el banco); solo
-// intenta ABRIR la app para ahorrar el cambio manual de apps. Si Yape no está
-// instalado, Android cae solo al Play Store (via S.browser_fallback_url del intent)
-// e iOS simplemente no navega — ningún caso rompe nada, las instrucciones manuales
-// de abajo siguen siendo la vía real independientemente de si esto abre algo o no.
-// Package/App Store id verificados contra las fichas oficiales de Yape (no inventados).
-var YAPE_ANDROID_PKG='com.bcp.innovacxion.yapeapp';
+// ⚠ NO SE PUEDE ABRIR YAPE DESDE EL NAVEGADOR. NO LO VUELVAS A INTENTAR (2026-09-09).
+//
+// Hasta hoy el botón decía "Copiar número y abrir Yape" y en Android disparaba un
+// `intent://` con `S.browser_fallback_url` al Play Store. Lo que el dueño vio al probarlo
+// fue lo único que ese código podía hacer: **abrir la ficha de Play Store para DESCARGAR
+// Yape**, a alguien que ya la tiene instalada. Nunca abrió la app, ni una vez.
+//
+// La causa no es el enlace, es Android: un `intent://` solo puede lanzar una actividad que
+// declare `android.intent.category.BROWSABLE`, o sea que la app tiene que publicar un deep
+// link. Yape NO publica ninguno para terceros — no hay `yape://` documentado ni App Link
+// abierto (verificado por búsqueda el 2026-09-09, igual que en la investigación previa de
+// 2026-09-05 sobre el QR). Sin eso, el intent no resuelve y el navegador cae al fallback:
+// el Play Store. Quitar solo el fallback deja un botón que no hace nada, que es el mismo
+// defecto de silencio que ya se había "arreglado" con un aviso en ámbar.
+//
+// Así que el botón hace UNA cosa y la hace siempre: copiar el número. El cambio de app lo
+// hace la persona, que es lo que venía haciendo igual. Es la misma clase de decisión que
+// retirar el QR de contacto disfrazado de QR de cobro: mejor no prometer que prometer y
+// fallar. **Si alguien vuelve a proponer "abrir Yape", la respuesta está acá.**
 function isMobileUA(){return/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');}
-function yapeAppOpenUrl(){
-  var ua=navigator.userAgent||'';
-  if(/Android/i.test(ua))return'intent://#Intent;package='+YAPE_ANDROID_PKG+';scheme=yape;S.browser_fallback_url='+encodeURIComponent('https://play.google.com/store/apps/details?id='+YAPE_ANDROID_PKG)+';end';
-  if(/iPhone|iPad|iPod/i.test(ua))return'yape://';
-  return null;
-}
-// ⚠ ABRIR YAPE PUEDE FALLAR, Y FALLABA EN SILENCIO (2026-09-05).
-//
-// Yape NO publica un esquema de URL para terceros, así que `yape://` funciona solo si la app
-// lo tiene registrado en ese dispositivo. Cuando no, el navegador simplemente no navega y el
-// botón no hacía NADA visible — ni abría la app, ni avisaba. El dueño lo reportó como "abrir
-// yape tampoco funciona", que es exactamente lo que se ve desde afuera.
-//
-// No se puede detectar directamente si la app abrió, pero sí por descarte: si abrió, el
-// navegador pasa a segundo plano y dispara `visibilitychange`/`pagehide`. Si a los 1.2 s la
-// pestaña sigue visible, no abrió. El aviso importa porque el número YA quedó copiado, así
-// que el cliente tiene cómo seguir — lo que no puede es quedarse mirando un botón muerto.
-function yapeOpenFailed(){
-  var m=(document.getElementById('ypc-msg') as HTMLElement | null);
-  if(!m)return;
-  m.style.color='#ffcc66';
-  m.textContent='No pudimos abrir Yape desde aquí. El número ya quedó copiado: pégalo en la app.';
-}
-function openYapeApp(){
-  var u=yapeAppOpenUrl();
-  if(!u){yapeOpenFailed();return;}
-  var abrio=false;
-  function marcar(){abrio=true;}
-  document.addEventListener('visibilitychange',marcar,{once:true});
-  window.addEventListener('pagehide',marcar,{once:true});
-  setTimeout(function(){
-    document.removeEventListener('visibilitychange',marcar);
-    if(!abrio&&!document.hidden)yapeOpenFailed();
-  },1200);
-  try{window.location.href=u;}catch(e){yapeOpenFailed();}
-}
 var showYapeQR=false;
 function toggleYapeQR(){showYapeQR=!showYapeQR;confirmRerender();}
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
@@ -129,10 +104,10 @@ var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
 // podido tocar sin arriesgar romper esas comparaciones). Ahora `label` es puramente
 // texto para mostrar — cambiarlo no afecta nada guardado ni comparado.
 var STATUSES={
-  'RECIBIDO':  {c:'#ffa500',next:'PREPARANDO', icon:'reclamo',label:'Recibido'},
+  'RECIBIDO':  {c:'var(--sw-warn,#ffa500)',next:'PREPARANDO', icon:'reclamo',label:'Recibido'},
   'PREPARANDO':{c:'#3A86FF',next:'EN CAMINO',  icon:'',       label:'Preparando'},
   'EN CAMINO': {c:'#9b6fff',next:'ENTREGADO',  icon:'moto',   label:'En camino'},
-  'ENTREGADO': {c:'#25D366',next:null,          icon:'check', label:'Entregado'},
+  'ENTREGADO': {c:'var(--sw-ok,#25D366)',next:null,          icon:'check', label:'Entregado'},
   'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close', label:'Cancelado'}
 };
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
@@ -144,8 +119,8 @@ var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
 // futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
 // cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
 var BASES=[
-  {id:'B01',l:'Classic',s:'White',   d:'Masa suave básica'},
-  {id:'B03',l:'Focaccia',s:'Artesanal',d:'Masa de focaccia artesanal'}
+  {id:'B01',l:'Classic',s:'White',   d:'Miga suave y corteza fina. No pelea con el relleno, lo sostiene.'},
+  {id:'B03',l:'Focaccia',s:'Artesanal',d:'Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.'}
 ];
 // `sigOnly` se declara en el tipo aunque HOY ningún ítem lo use (se fue con THE CHICAGO,
 // ver abajo). Sin la declaración TypeScript infiere el tipo desde los literales y los
@@ -173,12 +148,12 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
   // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
   // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Res asada mechada, cocción lenta',p15:14.9,p30:24.9,pDbl:7,pDbl30:14,sigOnly:true},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Tiras marinadas en teriyaki',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
+  {id:'P01',l:'Res',  s:'Asado',        d:'Punta de pecho a fuego lento hasta que se deshace sola con el tenedor.',p15:14.9,p30:24.9,pDbl:7,pDbl30:14,sigOnly:true},
+  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Muslo marinado toda la noche en sillao, jengibre y ajo. Se glasea al armar.',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
   // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
   // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
   // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada, condimento cajún',p15:13.9,p30:23.9,pDbl:6,pDbl30:11,vaultOnly:true},
+  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.',p15:13.9,p30:23.9,pDbl:6,pDbl30:11,vaultOnly:true},
   // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
   // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
   // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
@@ -192,7 +167,7 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
   // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
   // en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'Atún premium con mayonesa clásica',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
+  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -200,7 +175,7 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
   // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
   // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Paté peperoncino, jamón ahumado, cabanossi',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9,sigOnly:true},
+  {id:'P05',l:'Embutido',s:'Italiano',   d:'Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9,sigOnly:true},
   // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
   // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
   // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
@@ -214,7 +189,18 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
   // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
   // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas caseras en salsa marinara',p15:14.9,p30:26.9,pDbl:6,pDbl30:12}
+  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.',p15:14.9,p30:26.9,pDbl:6,pDbl30:12},
+  // P08 entra el 2026-09-06 (decisión del dueño). Devuelve el armador a CUATRO proteínas
+  // después de que res y embutido salieran por rentabilidad.
+  //
+  // ⚠ LO QUE LA HACE VIABLE ES QUE NO TIENE MERMA DE COCCIÓN: es fiambre, 1 kg comprado es
+  // 1 kg servido. Todas las demás pierden en la olla (res 0.54, pollo 0.64-0.69), así que su
+  // costo por porción es ~1.85x el del insumo crudo. Acá el precio del insumo ES el costo de
+  // la porción — por eso una proteína más cara por kilo que la res sale más barata por
+  // sándwich. 85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51 → 44.7% de costo en los dos
+  // tamaños, justo debajo del techo de 45%.
+  // DEBE coincidir con PROT_PRICE.P08 en supabase/functions/api/catalog.ts.
+  {id:'P08',l:'Pavo',   s:'Horneado',   d:'Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.',p15:15.9,p30:28.9,pDbl:9,pDbl30:17}
   // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
   // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
   // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -235,15 +221,15 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
 // (salmuera de 24-48 h + 3 días de reposo). Si SIG07 vuelve, restaurar la entrada T07 —
 // "Giardiniera" / "Encurtido picante", spicy, sigOnly — más T07 en VALID_TOPS/TOP_LABEL/
 // SIG_ONLY_TOPS en catalog.ts.
-var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=[
-  {id:'T01',l:'Tomate',   s:'Fresco'},
+var TOPS:{id:string;l:string;s:string;d?:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=[
+  {id:'T01',l:'Tomate',   s:'Fresco',d:'En rodajas gruesas, cortado el mismo día.'},
   // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
   // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
-  {id:'T02',l:'Pepinillo',s:'Encurtido',sigOnly:true},
-  {id:'T03',l:'Cebolla',  s:'Morada juliana'},
-  {id:'T04',l:'Jalapeño', s:'Encurtido',vaultOnly:true},
-  {id:'T05',l:'Aceituna', s:'Negra en rodajas'},
-  {id:'T06',l:'Pimiento', s:'Curado'},
+  {id:'T02',l:'Pepinillo',s:'Encurtido',d:'Ácido y crujiente. Le corta la grasa a cada bocado.',sigOnly:true},
+  {id:'T03',l:'Cebolla',  s:'Morada juliana',d:'En pluma fina y cruda. Dulce al entrar, con filo al final.'},
+  {id:'T04',l:'Jalapeño', s:'Encurtido',d:'Picor limpio y corto, del que no tapa lo demás.',vaultOnly:true},
+  {id:'T05',l:'Aceituna', s:'Negra en rodajas',d:'Salada, con un fondo amargo que despierta el resto.'},
+  {id:'T06',l:'Pimiento', s:'Curado',d:'Curado en aceite: dulce, ahumado y sin nada de agua.'},
   // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
   // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
   // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
@@ -252,20 +238,20 @@ var TOPS:{id:string;l:string;s:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?
   // con VALID_TOPS en supabase/functions/api/catalog.ts.
   // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
   // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado',sigOnly:true},
+  {id:'T08',l:'Apio',     s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.',sigOnly:true},
   // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
   // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
   // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
-  {id:'T09',l:'Lechuga',  s:'Fresca'}
+  {id:'T09',l:'Lechuga',  s:'Fresca',d:'En tiras y fría. Es lo que hace crujir los bordes.'}
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso ya usado en el análisis financiero, y con mejor derretido que el Americano
 // procesado que reemplaza — id NO cambia, DEBE coincidir con VALID_CHEESE en catalog.ts.
 var CHEESE=[
-  {id:'C01',l:'Mozzarella',s:'',d:'Derrite fácil, sabor suave'},
-  {id:'C02',l:'Cheddar',  s:'',d:'Sabor intenso y textura firme'},
-  {id:'C03',l:'Edam',     s:''}
+  {id:'C01',l:'Mozzarella',s:'',d:'Se derrite hasta el borde y estira al morder.'},
+  {id:'C02',l:'Cheddar',  s:'',d:'Curado y salado. No se pierde debajo de la carne.'},
+  {id:'C03',l:'Edam',     s:'',d:'Cremoso y discreto. El que no tapa nada.'}
 ];
 // `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
 // progresivo"/"golpe de picor") — no es una clasificación nueva inventada, solo expone
@@ -273,21 +259,21 @@ var CHEESE=[
 // darle jerarquía visual a la única lista plana de 13 ítems sin agrupar/iconos del flujo
 // (hallazgo de auditoría UX).
 var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boolean;sigOnly?:boolean}[]=[
-  {id:'S01',l:'Aioli',   s:'Signature',d:'Ajo, limón, suave'},
+  {id:'S01',l:'Aioli',   s:'Signature',d:'Ajo y limón sobre base cremosa. Suave: va con todo.'},
   // vaultOnly: exclusiva del menú secreto (SIG05, junto con S12) — mismo criterio que sigOnly
   // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
   // por el dueño para tratarla igual que Au Jus.
-  {id:'S02',l:'Spicy',   s:'Mayo',     d:'Cremoso, calor progresivo',spicy:true,vaultOnly:true},
-  {id:'S03',l:'Smoke',   s:'BBQ',      d:'Ahumado, miel, pimentón'},
-  {id:'S04',l:'Honey',   s:'Mustard',  d:'Dulce, mostaza suave'},
+  {id:'S02',l:'Spicy',   s:'Mayo',     d:'Cremosa al entrar. El calor llega después, y se queda.',spicy:true,vaultOnly:true},
+  {id:'S03',l:'Smoke',   s:'BBQ',      d:'Ahumada y espesa, con miel y pimentón. La más contundente.'},
+  {id:'S04',l:'Honey',   s:'Mustard',  d:'Miel y mostaza suave. Dulce que corta, no que empalaga.'},
   // Perfil documentado 2026-08-08 (confirmado por el dueño, LLM Council de menú) — hasta
   // ahora era la única de las 12 salsas sin descripción de sabor, lo que bloqueaba evaluar
   // si era redundante con otras o cómo combinaba en SIG06. Es salada/umami, NO dulce —
   // dato relevante: SIG06 (Teriyaki+Satay+SNDWCH) tiene 2 fuentes dulces, no 3, porque
   // esta salsa aporta un contrapunto salado, no otro dulzor apilado.
-  {id:'S05',l:'SNDWCH',  s:'Special',  d:'Salada, con carácter umami. Receta exclusiva de la casa.'},
-  {id:'S06',l:'Oil & Vinegar',s:'Classic', d:'Aceite de oliva y vinagre, estilo italiano'},
-  {id:'S08',l:'Teriyaki',s:'Glaze',    d:'Dulce, soja, jengibre'},
+  {id:'S05',l:'SNDWCH',  s:'Special',  d:'Salada y umami, imposible de ubicar. No decimos qué lleva.'},
+  {id:'S06',l:'Oil & Vinegar',s:'Classic', d:'Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich.'},
+  {id:'S08',l:'Teriyaki',s:'Glaze',    d:'Soja, jengibre y azúcar reducidos hasta que brillan.'},
   // S09 vuelve (decisión del dueño 2026-08-21) tras haberse retirado el mismo día junto
   // con The Ember (SIG08), su único consumidor. Vuelve CAMBIADA: ahora lleva ají y es
   // picante. Eso tapa el hueco más grave que encontró el council de salsas — S02 y S12,
@@ -295,12 +281,12 @@ var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boole
   // ninguna opción picante para el público general. En un negocio de comida en Perú, eso
   // se lee como carta incompleta, no como menú secreto. DEBE coincidir con SAUCE_LABEL.S09
   // y VALID_SAUCES en supabase/functions/api/catalog.ts.
-  {id:'S09',l:'Chimichurri',s:'Piña y Ají',d:'Piña asada y ají, dulce-ahumado con picor',spicy:true},
+  {id:'S09',l:'Chimichurri',s:'Piña y Ají',d:'Piña asada y ají. Dulce y ahumada de entrada, con picor al final.',spicy:true},
   // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
   // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
   // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
   // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
-  {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní, soya, jengibre'},
+  {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní tostado con soya y jengibre. Espesa y tostada.'},
   // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
   // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
   // eje difieren las dos mostazas. Dijon es ácida y filosa, SIN dulzor — S04 es lo
@@ -309,8 +295,8 @@ var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boole
   // no calor) y además rompe tests/menu-exclusivity-toppings-sauces.spec.ts, que usa esa
   // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
   // aparezca en BUILD YOUR OWN.
-  {id:'S11',l:'Mostaza', s:'Dijon',    d:'Ácida y filosa, sin dulzor'},
-  {id:'S12',l:'Picante', s:'Miel',     d:'Dulce con golpe de picor',spicy:true,vaultOnly:true}
+  {id:'S11',l:'Mostaza', s:'Dijon',    d:'Ácida y filosa. Sin una gota de dulce.'},
+  {id:'S12',l:'Picante', s:'Miel',     d:'Primero la miel. Después el golpe.',spicy:true,vaultOnly:true}
   // S13 (Au Jus) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su salsa exclusiva
   // y salía de la cocción de P07, que también se fue. Sin ese Signature no hay de dónde
   // sacarla ni dónde servirla. Si SIG07 vuelve, restaurar la entrada S13 — "Au Jus" /
@@ -538,7 +524,13 @@ var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',S
 // P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
 // P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
 // como el resto del set.
-var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg'};
+var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg',P08:'img/prot_p08.jpg'};
+// Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
+// dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
+// qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
+// sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
+// que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
+var DRINK_IMG={D06:'img/drink_d06.jpg',D07:'img/drink_d07.jpg',D08:'img/drink_d08.jpg'};
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -588,25 +580,34 @@ var RWDS=[
   {id:'R03',pts:320,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
   {id:'R06',pts:400,n:'Sándwich', s:'Gratis', d:'Sándwich 15CM gratis — no aplica a Signatures Reserve',sizeOnly:'15'}
 ];
-// BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D09). D01-D05
+// BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D08). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
 // otro local — el catálogo ahora se queda solo con las bebidas propias sin jugos.
-// `icon` distingue visualmente las 4 infusiones en BEBIDAS Y SIDES — antes eran
+// `icon` distingue visualmente las 3 infusiones en BEBIDAS Y SIDES — antes eran
 // idénticas salvo el texto (hallazgo de auditoría UX), sin nada que distinguirlas de un
 // vistazo en una lista donde se comparan una junto a otra.
-// PRECIOS +S/2 (y +S/3 en el chai) el 2026-08-22, decisión del dueño. El margen de
-// 61-84% que el negocio venía usando para las bebidas costeaba SOLO el insumo, nunca el
-// envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen
-// real era 56-66%, no 84%. El chai lleva +S/3 y no +S/2 porque es el único con costo de
-// insumo alto de verdad (leche, cardamomo, jengibre: ~S/1.55 por vaso contra S/0.31-0.62
-// de las infusiones). DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
+// PRECIOS +S/2 el 2026-08-22, decisión del dueño. El margen de 61-84% que el negocio venía
+// usando para las bebidas costeaba SOLO el insumo, nunca el envase.
+// El envase YA ESTÁ COTIZADO Y COMPRADO (dueño 2026-09-05): S/138 por 200 unidades = S/0.69
+// la botella. Con eso, y costeando por MEDIO LITRO —que es el envase real, no el vaso de
+// 350 ml que suponía el recetario— las tres quedan en 19-32% de costo, menos de la mitad del
+// techo de 45%: son la parte más rentable del catálogo (ver modelo/costo_bebidas.py).
+// DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
+// D09 (The Spice // Chai) sale del menú el 2026-09-06, decisión del dueño. Costeado por
+// BOTELLA DE MEDIO LITRO —el envase real que ya se compró, no el vaso de 300 ml que suponía
+// el recetario— quedaba en 42.5% de costo contra 19-32% de las otras tres. Era la única
+// bebida cerca del techo de 45%, y por un motivo estructural: media botella de chai es media
+// botella de LECHE, un insumo que se compra; en las otras tres el volumen es agua.
+// Para restaurarlo: esta entrada más D09 en SIDE_PRICE/SIDE_LABEL (catalog.ts) y una fila en
+// catalog_prices. (Se describe en prosa a propósito: scripts/parity.mjs parsea este array con
+// regex y tomaría un literal comentado como una bebida viva, reportando una falsa diferencia
+// con el servidor.)
 var SIDES=[
   // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
   {id:'D06',l:'The Bloom',    s:'Hibiscus',p:6,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
   {id:'D07',l:'The Midnight', s:'Brew',    p:5,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
-  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'},
-  {id:'D09',l:'The Spice',    s:'Chai',    p:9,d:'Té negro especiado con leche, canela, cardamomo, clavo y jengibre. Nuestra versión casera del chai clásico.',icon:'vapor'}
+  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'}
 ];
 
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
@@ -821,6 +822,9 @@ var DELIVERY_DISTRICTS=[
 // Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
 // zona de precio, que sí tiene default porque solo mueve el monto del motorizado.
 var deliveryDistrict='';
+// true cuando el distrito lo puso el pin del mapa y no el cliente: cambia el texto del
+// selector de pregunta a confirmación (ver districtPickerHTML).
+var deliveryDistrictFromPin=false;
 function districtById(id){return DELIVERY_DISTRICTS.find(function(d){return d.id===id;});}
 // El distrito elegido se ADJUNTA al texto de la dirección que se manda al servidor (no
 // viaja como campo propio: no hay columna para él y el motorizado necesita el distrito
@@ -930,6 +934,14 @@ function deliveryKmNow(){
 // motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
 // cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
 // delivery es pass-through y no tiene margen del que salga la diferencia.
+// La fórmula, separada del "de dónde salen los km", para que se pueda comparar contra la
+// del servidor con una tabla compartida (tests/fixtures/tarifa-envio.json). Lleva el MISMO
+// nombre que su gemela en supabase/functions/api/actions/orders.ts a propósito: si algún
+// día una de las dos cambia y la otra no, hay dos pruebas que fallan en vez de un cliente
+// que muestra un monto y un servidor que cobra otro.
+function deliveryFeeForKm(km){
+  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+}
 function deliveryFeeBase(){
   var km=deliveryKmNow();
   if(km===null){
@@ -938,7 +950,7 @@ function deliveryFeeBase(){
     var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
     return z?z.fee:0;
   }
-  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+  return deliveryFeeForKm(km);
 }
 function deliveryFeeAmount(){
   var fee=deliveryFeeBase();
@@ -1062,6 +1074,14 @@ var GIFT_CARD_POINTS_PER_SOL=40;
 // otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
 // supabase/functions/api/env.ts.
 var REFERRAL_BONUS_POINTS=120;
+// Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido — 400 pts = un
+// sándwich 15CM gratis. Solo se usa para el copy; quien otorga los puntos es el servidor.
+// DEBE coincidir con REFERRER_REWARD_POINTS en supabase/functions/api/env.ts, que a su vez
+// DEBE valer exactamente lo mismo que R06 — las dos cosas las verifica `npm run parity`.
+// Es lo que hace CIERTA la frase "un sándwich 15CM gratis" que ve el cliente: si alguien
+// mueve uno de los dos números y no el otro, la app promete un sándwich que la recompensa
+// ya no alcanza a pagar.
+var REFERRER_REWARD_POINTS=400;
 // #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
 // (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
 // REFERRAL_MILESTONES en supabase/functions/api/env.ts — lo verifica `npm run parity`.
@@ -1206,6 +1226,18 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
 var homeTab='sig';
+// De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
+// las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
+// tema claro/oscuro — es una decisión del cliente que el color acompaña.
+// Se aplica en un solo sitio para que ninguna pantalla pueda quedarse en el lado
+// equivocado: el defecto sería mudo, se vería "bien", solo que del color de otro.
+function setLado(l){
+  try{
+    var h=document.documentElement;
+    if(l==='wicho')h.setAttribute('data-lado','wicho');
+    else h.removeAttribute('data-lado');
+  }catch(e){}
+}
 // A dónde vuelve el botón "←" en pantallas legales que se abren desde más de un lugar
 // (registro, perfil, o el pie de contacto del home) — sin esto, sPLegal() solo podía
 // adivinar el origen mirando si `cust` existe, y desde el pie del home eso mandaba a un

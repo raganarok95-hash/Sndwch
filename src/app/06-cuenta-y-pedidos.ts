@@ -22,9 +22,9 @@ function sWelcome(){
     // programas de fidelidad dice que el problema del esquema 1:1 no es la tasa sino que
     // el premio se SIENTE lejos — mostrar el equivalente en dinero (mismo criterio que la
     // tarjeta de regalo, 40 pts = S/1) lo vuelve concreto de inmediato.
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados · equivalen a '+SOLES_TXT+(pts/GIFT_CARD_POINTS_PER_SOL).toFixed(2)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Puntos acumulados · equivalen a '+SOLES_TXT+pz(pts/GIFT_CARD_POINTS_PER_SOL)+'</div>'
     +(rwd?'<div style="margin-top:12px;background:rgba(203,162,88,.15);border-radius:8px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:'+GOLD+'">✓ Puedes canjear: '+(rwd.n+' '+rwd.s).toUpperCase()+'</div></div>':'')
-    +(next?'<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">'+(next.pts-pts)+' pts</span> ('+SOLES_TXT+((next.pts-pts)/GIFT_CARD_POINTS_PER_SOL).toFixed(2)+' de consumo) para '+next.n+' // '+next.s+'</div></div>':'')
+    +(next?'<div style="margin-top:8px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Te faltan <span style="color:var(--sw-text-body,#F2F0EB);font-weight:700">'+(next.pts-pts)+' pts</span> ('+SOLES_TXT+pz((next.pts-pts)/GIFT_CARD_POINTS_PER_SOL)+' de consumo) para '+next.n+' // '+next.s+'</div></div>':'')
     +'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
     +'<div style="background:rgba(242,240,235,.08);border:1px solid rgba(242,240,235,.12);border-radius:12px;padding:12px 16px;text-align:center">'
@@ -119,7 +119,7 @@ function sPOrders(){
     h+=skeletonCards(3,132);
   }else{
     if(act.length){
-      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:#ffa500;letter-spacing:.2em;margin-bottom:10px" class="blink">● Activos // '+act.length+'</div>';
+      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.2em;margin-bottom:10px" class="blink">● Activos // '+act.length+'</div>';
       h+=act.map(card).join('');
     }
     if(done.length){
@@ -127,7 +127,7 @@ function sPOrders(){
       h+=done.map(card).join('');
     }
     if(!myOrders.length){
-      h+='<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('reclamo',32,'#A8C8B0')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Sin pedidos //</div>'+BTN('Hacer un pedido //','swTab(\'order\')')+'</div>';
+      h+=VACIO('Sin pedidos','Cuando hagas el primero, va a aparecer acá con su estado en vivo.',BTN('Hacer un pedido //','swTab(\'order\')'));
     }
   }
   h+='<div style="margin-top:14px">'+BTN('Actualizar //','loadMyOrders()',true)+'</div></div>'+NAV();
@@ -138,19 +138,37 @@ function sOrdDetail(){
   var o=myOrders.find(function(x){return x.id==_sndOd||x.id===_sndOd;});
   if(!o)return sPOrders();
   var ci=STEPS.indexOf(o.status);
+  // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
+  // De todas las pantallas de la app, ÉSTA es la que el dueño describió cuando dijo
+  // "etiqueta, pero solo para los recibos de pago": un pedido que ya se pagó, mirado
+  // después. No es una tarjeta de producto ni un formulario — es el comprobante.
+  //
+  // ⚠ LA CUENTA TIENE QUE PODER SEGUIRSE, y acá casi no se podía: se mostraba un número
+  // grande y nada más. `total` INCLUYE el envío, así que sin separarlo el cliente ve un
+  // monto que no coincide con lo que recuerda haber pedido y no tiene forma de saber por
+  // qué. Es el mismo defecto que descuadraba el recibo del carrito, con la diferencia de
+  // que acá ya no puede preguntar: el pedido está cerrado.
+  var envioPedido=Number(o.delivery_fee);
+  var hayEnvio=Number.isFinite(envioPedido)&&envioPedido>0;
+  var kmPedido=Number(o.delivery_km);
+  var consumo=hayEnvio?money(Number(o.total)-envioPedido):Number(o.total);
   return H('DETALLE',"sndScreen='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
-    +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px;margin-bottom:12px">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
-    +'<div style="min-width:0"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.customer_name)+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:'+GOLD+';margin-top:2px">'+esc(o.ref)+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(o.date)+'</div></div>'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(o.total)+'</div></div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Pedido //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:#ddd;line-height:1.6;margin-bottom:10px">'+esc(o.summary)+'</div>'
+    +PAPEL_ABRE(String(o.ref||'TU PEDIDO')+' · NO ES BOLETA')
+    +reciboLinea('Fecha',esc(String(o.date||'')),'mudo')
+    +reciboLinea('A nombre de',esc(String(o.customer_name||'')))
+    +'<div style="font-size:11px;line-height:1.5;padding:6px 0 2px">'+esc(String(o.summary||''))+'</div>'
+    +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:7px 0"></div>'
+    // El envío solo aparece cuando de verdad se sabe cuánto fue. Un pedido consultado por
+    // referencia (sin sesión) no trae esa columna, y partir el total con un número
+    // inventado sería peor que no partirlo.
+    +(hayEnvio
+      ?reciboLinea('Consumo',SOLES+pz(consumo))
+        +reciboLinea(Number.isFinite(kmPedido)&&kmPedido>0?'Envío · '+kmPedido+' km':'Envío',SOLES+pz(envioPedido))
+      :'')
+    +(o.redeemed_reward?reciboLinea('Recompensa canjeada',esc(String(o.redeemed_reward)),'ahorro'):'')
+    +PAPEL_TOTAL('TOTAL',Number(o.total))
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:4px">Dirección //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:#aaa">'+esc(o.customer_address)+'</div>'
-    +(o.redeemed_reward?'<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--sw-border,#3A6B58)"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:#25D366;display:flex;align-items:center;gap:6px">'+icon('gift',12,'#25D366')+esc(o.redeemed_reward)+'</div></div>':'')
-    +'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted4,#C8D6CE);margin-bottom:12px">'+esc(String(o.customer_address||''))+'</div>'
     +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:12px">'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px">Estado //</div>'
     +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?GOLD:'#3A6B58')+';border-radius:4px"></div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:7px;color:'+(dn?GOLD:'#4A7A68')+';text-align:center;line-height:1.3">'+((STATUSES[st]||{}).label||st).replace(' ','<br>')+'</div></div>';}).join('')+'</div>'
@@ -163,7 +181,7 @@ function sOrdDetail(){
     // una promesa que la app no cumplía por sí sola). Este botón cumple esa promesa
     // directamente mientras el pedido sigue en RECIBIDO.
     +(o.status==='RECIBIDO'?BTN('Cancelar pedido //','doCancelMyOrder(\''+o.id+'\',\''+o.ref+'\')',true):'')
-    +(o.status!=='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-align:center;margin-top:10px" class="blink">&#8635; Toca Actualizar en Mis Pedidos</div>':'<div style="font-family:EB Garamond,serif;font-size:13px;color:#25D366;text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>')
+    +(o.status!=='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-align:center;margin-top:10px" class="blink">&#8635; Toca Actualizar en Mis Pedidos</div>':'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>')
     +ratingHTML(o)
     +'</div>'+NAV();
 }
@@ -204,11 +222,43 @@ function ratingWindowOpen(o){
   if(!t||isNaN(t))return true; // sin fecha utilizable, mejor seguir preguntando que callar
   return (Date.now()-t)<=RATING_WINDOW_DAYS*86400000;
 }
+// ── LA INVITACIÓN A REFERIR YA NO CUELGA DE QUE EL CLIENTE CALIFIQUE (2026-09-06) ─────
+//
+// POR QUÉ. `PREDICCION_V12.md` mide que la viralidad es la ÚNICA palanca que convierte
+// "la meta no se alcanza nunca" en "se sostiene desde feb-27": un referido cuesta S/7.65
+// contra ~S/17.87 de comprar el mismo cliente en Meta. El modelo asume 6 referidos por cada
+// 100 pedidos y hace falta llegar a 25.
+//
+// Y la invitación estaba DOBLEMENTE condicionada: aparecía solo si el cliente calificaba, y
+// solo en el render inmediato después de hacerlo (`justRatedRef`). Calificar es opcional, así
+// que el momento de mayor intención —acaba de recibir su comida— quedaba sin usar para todo
+// el que no calificara. Y las dos pantallas donde no aparecía no mostraban nada en su lugar:
+// eran espacio muerto.
+//
+// Esto NO le quita sitio al pedido de calificación, que sigue intacto y primero: la tarjeta
+// solo ocupa los dos estados que hoy están vacíos —ya calificó, o la ventana se cerró sin
+// calificar—. El modo de fallo es SILENCIO: si alguien la vuelve a condicionar, nada revienta
+// y el negocio simplemente deja de pedir el referido en el único momento en que conviene.
+function refInviteHTML(compacta: boolean){
+  // El código de referido ES el teléfono del cliente, así que un invitado no tiene ninguno.
+  if(!cust)return'';
+  return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:'+(compacta?'14px':'18px')+';text-align:center">'
+    +(compacta?'':'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-ok,#25D366);margin-bottom:10px">&#10003; ¡Gracias por calificar!</div>')
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div>'
+    // Los DOS bonos se interpolan de las constantes, nunca escritos a mano: es la regla que
+    // ya costó tres promesas rotas a la vez en los textos de marketing. `npm run parity`
+    // verifica además que REFERRER_REWARD_POINTS valga exactamente lo mismo que R06, que es
+    // lo que hace cierta la frase "un sándwich 15CM gratis".
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts) cuando tu invitado haga su primer pedido, y él arranca con '+REFERRAL_BONUS_POINTS+' pts — una bebida de la casa.</div>'
+    +BTN('Compartir //','shareReferral()')+'</div>';
+}
 function ratingHTML(o){
   if(o.status!=='ENTREGADO')return'';
   // La ventana se comprueba DESPUÉS de "ya calificó": quien sí calificó tiene que seguir
   // viendo su agradecimiento y su código de referido aunque hayan pasado dos semanas.
-  if(ratedRefs().indexOf(o.ref)<0&&!ratingWindowOpen(o))return'';
+  // Ventana de calificación cerrada sin calificar. Antes esto devolvía '' y la pantalla
+  // quedaba vacía; ahora al menos pide el referido, que es lo que el modelo necesita.
+  if(ratedRefs().indexOf(o.ref)<0&&!ratingWindowOpen(o))return refInviteHTML(true);
   if(ratedRefs().indexOf(o.ref)>=0){
     // Justo tras calificar (el momento de mayor satisfacción real) se resurfacea el
     // código de referido en vez del simple "gracias" — antes vivía escondido en el
@@ -223,15 +273,28 @@ function ratingHTML(o){
       // Instagram, TikTok, WhatsApp, etc.), no solo WhatsApp. El copy ahora refleja lo que
       // el botón de verdad hace, y lo pide explícitamente — mismo momento de mayor
       // satisfacción de siempre, sin lógica nueva.
-      return'<div style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366;margin-bottom:10px">&#10003; ¡Gracias por calificar!</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">¿Compartes SND//WCH en tu Instagram, TikTok o WhatsApp?</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un sándwich 15CM GRATIS cuando tu invitado haga su primer pedido — compártelo en una historia o mándaselo directo a alguien.</div>'+BTN('Compartir //','shareReferral()')+'</div>';
+      return refInviteHTML(false);
     }
-    return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:#25D366">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>';
+    // Ya calificó, en una visita posterior. Antes esto era solo el "gracias" y nada más:
+    // espacio muerto en la pantalla que el cliente más contento vuelve a abrir.
+    return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-ok,#25D366)">&#10003; Ya calificaste este pedido &mdash; ¡gracias!</div></div>'+refInviteHTML(true);
   }
   // El consentimiento de testimonio NUNCA viene marcado por defecto — el cliente tiene
   // que elegirlo activamente cada vez (hallazgo del checklist de pre-lanzamiento: la
   // web/redes van a necesitar reseñas reales para publicar, pero nunca sin permiso
   // explícito de a quién pertenecen).
-  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><label style="display:flex;align-items:flex-start;gap:8px;font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rt-consent" onchange="rtConsent=this.checked" '+(rtConsent?'checked':'')+' style="accent-color:'+GOLD+';margin-top:2px;flex-shrink:0">Autorizo que SND//WCH use esta reseña como testimonio público (redes sociales, web) — opcional.</label><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:#ff5555;min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>';
+  // ⚠ LA INVITACIÓN VA TAMBIÉN ACÁ, DEBAJO DEL FORMULARIO DE CALIFICACIÓN (2026-09-06).
+  //
+  // Sin esto el cambio no servía de nada donde importa: la ventana de calificación está
+  // ABIERTA justo en el momento de mayor intención —el pedido acaba de llegar— así que un
+  // cliente que no califica pasaba por esa pantalla sin que se le pidiera el referido, que es
+  // exactamente el caso que este cambio venía a resolver. Llenar solo los estados tardíos
+  // (ya calificó, o la ventana se cerró) es llenar los momentos en que ya no está contento.
+  //
+  // Va DEBAJO y no arriba: el pedido de calificación sigue siendo lo primero y no se toca.
+  // La calificación tiene valor propio —testimonios, y enterarse de un problema— y cambiarla
+  // de sitio por el referido sería canjear una cosa por la otra en vez de sumar.
+  return'<div style="margin-top:12px;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:18px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">¿Cómo estuvo tu pedido? //</div><div style="display:flex;gap:8px;margin-bottom:12px;justify-content:center">'+[1,2,3,4,5].map(function(n){var on=n<=rtStars;return'<span onclick="rtStars='+n+';render()" style="cursor:pointer;font-size:28px;color:'+(on?'#F5C518':'#3A6B58')+'">&#9733;</span>';}).join('')+'</div><textarea id="rt-comment" placeholder="Comentario opcional" style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:12px;font-family:EB Garamond,serif;min-height:60px;margin-bottom:10px;box-sizing:border-box"></textarea><label style="display:flex;align-items:flex-start;gap:8px;font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px;cursor:pointer"><input type="checkbox" id="rt-consent" onchange="rtConsent=this.checked" '+(rtConsent?'checked':'')+' style="accent-color:'+GOLD+';margin-top:2px;flex-shrink:0">Autorizo que SND//WCH use esta reseña como testimonio público (redes sociales, web) — opcional.</label><div id="rt-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px;margin-bottom:8px">'+rtMsg+'</div>'+BTN('Enviar calificación //','doSubmitRating(\''+o.ref+'\')')+'</div>'+refInviteHTML(true);
 }
 async function doSubmitRating(ref){
   if(!rtStars){rtMsg='Elige de 1 a 5 estrellas.';render();return;}
@@ -271,7 +334,7 @@ function sPHistory(){
   }else{
     h+=txns.map(function(t){
       var pos=(t.points||0)>=0;
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(t.description||t.type)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(t.date||'')+'</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(pos?'#25D366':'#ff8888')+'">'+(pos?'+':'')+t.points+'</div></div>';
+      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(t.description||t.type)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(t.date||'')+'</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(pos?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)')+'">'+(pos?'+':'')+t.points+'</div></div>';
     }).join('');
   }
   h+='</div>'+NAV();
@@ -286,7 +349,7 @@ function sPRewards(){
 // opacity:.35 de esas dos porque esta tarjeta sigue siendo accionable (barra de
 // progreso + "faltan X puntos"), no un ítem agotado — hallazgo de auditoría visual,
 // MEDIO.
-+RWDS.map(function(r){var ok=pts>=r.pts,pct=Math.min((pts/r.pts)*100,100);return'<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(ok?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:'+(ok?10:6)+'px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:'+(ok?'#fff':'var(--sw-text-muted,#A8C8B0)')+';letter-spacing:.04em">'+r.n+'<span style="color:'+(ok?GOLD:'var(--sw-text-muted,#A8C8B0)')+'"> // </span>'+r.s+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:'+(ok?'#888':'var(--sw-text-muted,#A8C8B0)')+';margin-top:2px">'+r.d+'</p>'+(r.sizeOnly?'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#ffa500;margin-top:4px;display:flex;align-items:center;gap:4px">'+icon('warning',10,'#ffa500')+'<span>Válido solo en tamaño '+r.sizeOnly+'CM</span></p>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(ok?GOLD:'var(--sw-text-muted,#A8C8B0)')+';line-height:1">'+r.pts+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+'">Pts</div></div></div>'+(!ok?'<div style="background:var(--sw-card,#2D5246);border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+'">Faltan '+(r.pts-pts)+' puntos</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#25D366">✓ Disponible en tu próximo pedido</div>')+'</div>';}).join('')+'</div>'+BTN('Hacer un pedido //','swTab(\'order\')')+'</div>'+NAV();
++RWDS.map(function(r){var ok=pts>=r.pts,pct=Math.min((pts/r.pts)*100,100);return'<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(ok?ACC():'var(--sw-border,#3A6B58)')+';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:'+(ok?10:6)+'px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:'+(ok?'#fff':'var(--sw-text-muted,#A8C8B0)')+';letter-spacing:.04em">'+r.n+'<span style="color:'+(ok?GOLD:'var(--sw-text-muted,#A8C8B0)')+'"> // </span>'+r.s+'</div><p style="font-family:\'EB Garamond\',serif;font-size:12px;color:'+(ok?'#888':'var(--sw-text-muted,#A8C8B0)')+';margin-top:2px">'+r.d+'</p>'+(r.sizeOnly?'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);margin-top:4px;display:flex;align-items:center;gap:4px">'+icon('warning',10,'var(--sw-warn,#ffa500)')+'<span>Válido solo en tamaño '+r.sizeOnly+'CM</span></p>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(ok?GOLD:'var(--sw-text-muted,#A8C8B0)')+';line-height:1">'+r.pts+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+'">Pts</div></div></div>'+(!ok?'<div style="background:var(--sw-card,#2D5246);border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+'">Faltan '+(r.pts-pts)+' puntos</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366)">✓ Disponible en tu próximo pedido</div>')+'</div>';}).join('')+BTN('Hacer un pedido //','swTab(\'order\')')+'</div>'+NAV();
 }
 
 
@@ -340,19 +403,19 @@ function referralLadderHTML(refs){
 function sPProfile(){
   var initial=esc((cust.name||'?').trim().charAt(0).toUpperCase());
   var heroHTML='<div style="background:linear-gradient(135deg,#2D5246,#1E3932);border:1px solid var(--sw-border,#3A6B58);border-radius:16px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:#12241D">'+initial+'</div><div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(cust.name)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+esc(cust.phone)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-top:6px">'+rankName(cust.total_orders)+' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+GOLD+';line-height:1">'+(cust.points||0)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">Pts</div></div></div>';
-  var referralHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:'+GOLD+'"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div>'+referralLadderHTML(cust.total_referrals)+'<button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#0d0d0d;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
+  var referralHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:'+GOLD+'"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+cust.phone+'</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Tu código de referido · '+(cust.total_referrals||0)+' amigos referidos</div>'+referralLadderHTML(cust.total_referrals)+'<button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
   // Antes las 3 tarjetas de abajo (crédito/tarjeta de regalo/Plan Semanal) no tenían
   // ningún elemento que las diferencie, pese a tener lógicas de negocio muy distintas
   // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo
   // para MÍ pagando con tarjeta real) — hallazgo de auditoría UX, MEDIO.
   var balanceCompareHTML='<div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted2,#8BAF9A);margin:4px 0 12px;line-height:1.5">Con tu saldo actual → <b style="color:var(--sw-text-muted,#A8C8B0)">crédito</b>. Con tus puntos → <b style="color:var(--sw-text-muted,#A8C8B0)">tarjeta de regalo</b>. Con tarjeta hoy → <b style="color:var(--sw-text-muted,#A8C8B0)">Plan Semanal</b>.</div>';
-  var creditHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Crédito<span class="cut-sep" style="color:'+GOLD+'"> // </span>SND//WCH</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+SOLES+(cust.credit_balance||0)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','Teléfono del amigo // 9XXXXXXXX','tel',wPhone,'phone')+INP('cg-amt','Monto a regalar // S/','number',wAmt,'coin')+'<div id="cg-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';min-height:14px">'+wMsg+'</div>'+BTN('Regalar crédito //','doCreditGift()',true)+'</div></div>';
+  var creditHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Crédito<span class="cut-sep" style="color:'+GOLD+'"> // </span>SND//WCH</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:34px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">'+SOLES+pz(cust.credit_balance||0)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('cg-phone','Teléfono del amigo // 9XXXXXXXX','tel',wPhone,'phone')+INP('cg-amt','Monto a regalar // S/','number',wAmt,'coin')+'<div id="cg-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';min-height:14px">'+wMsg+'</div>'+BTN('Regalar crédito //','doCreditGift()',true)+'</div></div>';
   // "con tu tarjeta" contradecía el mecanismo real desde que se rediseñó a puntos (sin
   // ningún cobro) — quedó con la copy vieja de antes de ese rediseño (hallazgo de
   // auditoría UX, ALTO — confirmado en vivo, la pantalla de compra en sí ya decía bien
   // "REGALAR CON PUNTOS", solo este teaser quedó desactualizado).
   var giftCardHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Tarjeta<span class="cut-sep" style="color:'+GOLD+'"> // </span>de regalo</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>'+BTN('Comprar y regalar //',"sndScreen='gift_card';render()",true)+'</div>';
-  var weeklyPlanHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga '+SOLES+WEEKLY_PLAN_PRICE+' hoy y recibe '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo para pedir cuando quieras esta semana. Bono de '+SOLES+(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)+' de regalo.</div>'+BTN('Activar plan semanal //',"sndScreen='weekly_plan';render()")+'</div>';
+  var weeklyPlanHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Paga '+SOLES+pz(WEEKLY_PLAN_PRICE)+' hoy y recibe '+SOLES+pz(WEEKLY_PLAN_CREDIT)+' en saldo para pedir cuando quieras esta semana. Bono de '+SOLES+pz(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)+' de regalo.</div>'+BTN('Activar plan semanal //',"sndScreen='weekly_plan';render()")+'</div>';
   var challengeHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:'+GOLD+'"> // </span>mensual</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Haz 3 pedidos pagados este mes y gana 50 puntos extra.</div><div id="chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+chalMsg+'</div>'+BTN('Reclamar recompensa //','doClaimChallenge()',true)+'</div>';
   var discoveryHTML='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:'+GOLD+'"> // </span>descubrimiento</div><div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Prueba 3 Signatures distintos este mes (no repitas siempre el mismo) y gana 50 puntos extra.</div><div id="disc-chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-bottom:10px;min-height:14px">'+discChalMsg+'</div>'+BTN('Reclamar recompensa //','doClaimDiscoveryChallenge()',true)+'</div>';
   var pushHTML='<div onclick="togglePushNotifications()" style="background:'+(pushSubscribed?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(pushSubscribed?GOLD:'#3A6B58')+';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:'+(pushSubscribed?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Notificaciones<span class="cut-sep" style="color:'+GOLD+'"> // </span>push</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:'+(pushSubscribed?GOLD:'#A8C8B0')+'">'+(pushSubscribed?'✓':'○')+'</span></div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px">'+esc(pushMsg)+'</div>':'')+'</div>';
@@ -368,7 +431,7 @@ function sPProfile(){
     +pushHTML
     +sectionLabel('Retos y referidos //')+referralHTML+challengeHTML+discoveryHTML
     +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+giftCardHTML+weeklyPlanHTML
-    +'<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:#ff8888;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:#ff5555;font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
+    +'<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>'+'<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:var(--sw-danger-strong,#ff5555);font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>'+NAV();
 }
 function shareReferral(){
   // Antes solo mandaba el número como "código" — el amigo tenía que escribirlo a mano
@@ -398,7 +461,7 @@ async function doCreditGift(){
     var lookup=await api('credit-lookup',{token:token,toPhone:phone});
     name=lookup.name;
   }catch(e){wMsg=e.message;render();return;}
-  if(!(await showConfirm('¿Enviar '+SOLES_TXT+amt+' de crédito a '+name+' ('+phone+')?')))return;
+  if(!(await showConfirm('¿Enviar '+SOLES_TXT+pz(amt)+' de crédito a '+name+' ('+phone+')?')))return;
   // Guard de doble-tap — tarjeta de regalo y Plan Semanal ya lo tenían, esta transferencia
   // de saldo YA propio se había quedado sin él (hallazgo de auditoría de funcionamiento,
   // MEDIO): un doble-tap tras confirmar el modal regalaba el crédito dos veces.
@@ -449,7 +512,7 @@ async function doGiftCardBuy(){
     var lookup=await api('credit-lookup',{token:token,toPhone:phone});
     name=lookup.name;
   }catch(e){gcMsg=e.message;render();return;}
-  if(!(await showConfirm('¿Regalar '+SOLES_TXT+amt+' de crédito a '+name+' ('+phone+') por '+ptsCost+' puntos?')))return;
+  if(!(await showConfirm('¿Regalar '+SOLES_TXT+pz(amt)+' de crédito a '+name+' ('+phone+') por '+ptsCost+' puntos?')))return;
   _giftBuyInProgress=true;
   busy=true;busyMsg='Procesando...';render();
   try{
@@ -474,11 +537,24 @@ var _pendingWeeklyPlan=null;
 function sWeeklyPlan(){
   return H('PLAN SEMANAL','sndScreen=\'p_profile\';render()')+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:19px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:'+GOLD+'"> // </span>semanal</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga '+SOLES+WEEKLY_PLAN_PRICE+' hoy con tu tarjeta y recibe '+SOLES+WEEKLY_PLAN_CREDIT+' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
-    +'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Pagas hoy</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+WEEKLY_PLAN_PRICE+'</span></div>'
-    +'<div style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Recibes en saldo</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#25D366">'+SOLES+WEEKLY_PLAN_CREDIT+'</span></div>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:20px;line-height:1.5">Paga '+SOLES+pz(WEEKLY_PLAN_PRICE)+' hoy con tu tarjeta y recibe '+SOLES+pz(WEEKLY_PLAN_CREDIT)+' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
+    // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
+    // El Plan Semanal es una PROPUESTA DE PAGO: pones S/95 y recibes S/100. Eran dos
+    // tarjetas separadas, así que la cuenta —los S/5 que ganas— había que hacerla de
+    // cabeza. En el papel las tres líneas se leen juntas y el trato se entiende de un
+    // vistazo, que es lo único que esta pantalla tiene que lograr.
+    //
+    // ⚠ La ganancia se interpola de las constantes, nunca se escribe. Son las mismas que
+    // cobra el servidor, y un número a mano acá sería una promesa que se rompe el día que
+    // el dueño mueva el precio — el defecto que ya obligó a reescribir el contenido de
+    // marketing entero.
+    +PAPEL_ABRE('PLAN SEMANAL · NO ES BOLETA')
+    +reciboLinea('Pagas hoy con tarjeta',SOLES+pz(WEEKLY_PLAN_PRICE))
+    +reciboLinea('Recibes en saldo, al instante',SOLES+pz(WEEKLY_PLAN_CREDIT))
+    +reciboLinea('Ganas','+'+SOLES+pz(money(WEEKLY_PLAN_CREDIT-WEEKLY_PLAN_PRICE)),'ahorro')
+    +PAPEL_TOTAL('A PAGAR',WEEKLY_PLAN_PRICE)
     +INP('wp-email','Tu correo (para el comprobante)','email',wpEmail||(cust&&cust.email)||'','mail')
-    +'<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px'+(wpCritical?';color:#ff5555;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px':';color:'+GOLD)+'">'+esc(wpMsg)+'</div>'
+    +'<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px'+(wpCritical?';color:var(--sw-danger-strong,#ff5555);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px':';color:'+GOLD)+'">'+esc(wpMsg)+'</div>'
     +BTN('Activar plan semanal //','doWeeklyPlanBuy()')
     +'</div>'+NAV();
 }
@@ -489,7 +565,7 @@ async function doWeeklyPlanBuy(){
   wpEmail=email;
   wpCritical=false;
   if(!email){wpMsg='Ingresa tu correo para el comprobante de pago.';render();return;}
-  if(!(await showConfirm('¿Pagar '+SOLES_TXT+WEEKLY_PLAN_PRICE+' y recibir '+SOLES_TXT+WEEKLY_PLAN_CREDIT+' en saldo?')))return;
+  if(!(await showConfirm('¿Pagar '+SOLES_TXT+pz(WEEKLY_PLAN_PRICE)+' y recibir '+SOLES_TXT+pz(WEEKLY_PLAN_CREDIT)+' en saldo?')))return;
   _weeklyPlanBuyInProgress=true;
   busy=true;busyMsg='Verificando...';render();
   var prep;
@@ -548,7 +624,7 @@ async function chargeAndFinalizeWeeklyPlan(culqiToken){
     busy=false;_weeklyPlanBuyInProgress=false;
     wpEmail='';
     _pendingWeeklyPlan=null;
-    showToast('¡Listo! Recibiste '+SOLES+pw.creditAmount+' en saldo.');
+    showToast('¡Listo! Recibiste '+SOLES+pz(pw.creditAmount)+' en saldo.');
     sndScreen='p_profile';render();
   }catch(e){
     // Mismo riesgo que el catch de arriba (confirm-weekly-plan falló): no sabemos si el
@@ -675,7 +751,7 @@ function sPReturns(){
 function sPComplaints(){
   var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
   if(cmplStep==='success')return sComplaintsSuccess(bk);
-  var kindToggle='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:20px">'+[['reclamo','Reclamo'],['queja','Queja']].map(function(x){return'<button onclick="cmplKind=\''+x[0]+'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(cmplKind===x[0]?GOLD:'transparent')+';color:'+(cmplKind===x[0]?'#241a08':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>';
+  var kindToggle='<div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:20px">'+[['reclamo','Reclamo'],['queja','Queja']].map(function(x){return'<button onclick="cmplKind=\''+x[0]+'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(cmplKind===x[0]?GOLD:'transparent')+';color:'+(cmplKind===x[0]?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#A8C8B0)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>';
   var kindHint='<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:20px">'+(cmplKind==='queja'?'Queja: malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).':'Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.')+'</p>';
   // Checkbox nativo del navegador — único control de toda la app que rompía con el
   // lenguaje 100% custom del resto (accent-color solo tiñe el estado marcado, el
@@ -683,7 +759,7 @@ function sPComplaints(){
   // <button role="checkbox"> en vez de <div onclick>: el Libro de Reclamaciones es
   // obligatorio por ley para TODO consumidor, y con un div clickeable no era completable
   // ni con teclado ni con lector de pantalla — justo el usuario que la norma más protege.
-  var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#3A6B58')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'#0d0d0d'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
+  var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:5px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#3A6B58')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'var(--sw-on-gold,#241a08)'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
     +(cmplMinor?INP('cq-guardian','Nombre del padre, madre o apoderado','text',undefined,'clientes'):'');
   var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:14px;font-family:EB Garamond,serif;min-height:90px;box-sizing:border-box"></textarea>';};
   return H('LIBRO DE RECLAMACIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
@@ -712,7 +788,7 @@ function sPComplaints(){
     +ta('cq-detail','Describe lo que pasó, con el mayor detalle posible')
     +ta('cq-request','¿Qué solicitas? (ej: reposición, reembolso, respuesta)')
     +'</div>'
-    +'<div id="cq-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:#ff5555;min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
+    +'<div id="cq-err" style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
     +BTN(cmplBusy?'Enviando...':'Enviar '+(cmplKind==='queja'?'queja':'reclamo')+' //',cmplBusy?'':'doSubmitComplaint()')
     +'<p style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:14px">Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
     +'</div>';
@@ -722,7 +798,7 @@ function sComplaintsSuccess(bk){
     // Antes un carácter Unicode "✓" suelto a font-size:44px — sin relación con el
     // tratamiento de éxito ya establecido en la app (círculo con ícono propio, ver
     // pantalla de confirmación de pedido) — hallazgo de auditoría visual, MEDIO.
-    +'<div style="margin-bottom:16px;width:64px;height:64px;border-radius:50%;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);display:flex;align-items:center;justify-content:center">'+icon('check',28,'#25D366')+'</div>'
+    +'<div style="margin-bottom:16px;width:64px;height:64px;border-radius:50%;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);display:flex;align-items:center;justify-content:center">'+icon('check',28,'var(--sw-ok,#25D366)')+'</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:#fff;margin-bottom:8px">'+(cmplKind==='queja'?'Queja':'Reclamo')+' registrad'+(cmplKind==='queja'?'a':'o')+'</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Tu código //</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:32px;font-weight:640;color:'+GOLD+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'

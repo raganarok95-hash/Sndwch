@@ -15,6 +15,9 @@
 //   1. El sello `APP_BUILD` de index.html — hash del JS compilado (ver scripts/build.mjs).
 //      Si producción sirve otro, el deploy del cliente no llegó (o llegó a medias).
 //   2. La `VERSION` de sw.js — la palanca que invalida la caché en todos los dispositivos.
+//   3. Que `admin.js` esté servido — el bundle del panel, que desde el 2026-09-10 viaja en
+//      su propio archivo y se pide bajo demanda. Si falta, el CLIENTE FUNCIONA PERFECTO y
+//      el dueño se queda sin panel: el fallo más silencioso de los tres.
 //      Un index.html nuevo servido por un service worker viejo es exactamente el caso del
 //      2026-08-21: el navegador tiene el archivo nuevo disponible y sigue sirviendo el de
 //      la caché.
@@ -101,6 +104,23 @@ async function revisarUnaVez(quiero) {
       notas.push(`sw.js: versión ${vivo}`);
     }
   }
+  // ── EL PANEL VIAJA EN SU PROPIO ARCHIVO DESDE EL 2026-09-10 ──────────────────────────
+  // `admin.js` se pide bajo demanda, así que si no está desplegado NADIE se entera hasta
+  // que el dueño abre su panel y se encuentra con "El panel no cargó". El cliente sigue
+  // funcionando perfecto — que es justo lo que hace este fallo invisible.
+  //
+  // Se pide con el mismo `?v=` que usa la app, para medir la URL real y no otra.
+  const adm = await pedir(`${BASE}/admin.js?v=${quiero.build}`);
+  if (adm.status !== 200) {
+    problemas.push(`admin.js devolvió ${adm.status}: el dueño se quedaría sin panel, y el cliente no notaría nada.`);
+  } else if (!/ADMIN_SCREENS/.test(adm.texto)) {
+    // Comprobar CONTENIDO y no solo el 200: una página de error de Vercel también responde
+    // 200. Si el archivo no registra ninguna pantalla, no es el panel.
+    problemas.push('admin.js responde 200 pero no registra ninguna pantalla: no es el bundle del panel.');
+  } else {
+    notas.push(`admin.js: servido (${Math.round(adm.texto.length / 1024)} KB, bajo demanda)`);
+  }
+
   return { problemas, notas };
 }
 

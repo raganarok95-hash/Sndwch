@@ -50,12 +50,22 @@ MIX15 = 0.80                     # [HIPÓTESIS del dueño] 80% de los pedidos en
 #   · El combo se descuenta del SÁNDWICH (decisión del dueño 2026-09-05), que tiene margen
 #     de sobra, así que ya no toca la contribución de la bebida.
 #   · La hora valle se RETIRÓ, así que el caso negativo desapareció del catálogo.
-DRINK_PRICES = [6.0, 5.0, 6.0, 9.0]      # [MEDIDO] catalog_prices, categoría 'side'
-# [COTIZADO 2026-09-05] envase S/138/200 = S/0.69 la botella (estaba estimado en ~S/1, o sea
-# 31% más caro). El insumo por vaso sigue ESTIMADO: ~S/0.465 las infusiones, S/1.55 el chai.
-DRINK_COST_PCT = (0.465*3 + 1.55 + 0.69*4) / sum(DRINK_PRICES)
+# ── ACTUALIZADO 2026-09-06: TRES bebidas, costeadas POR BOTELLA DE MEDIO LITRO ─────────
+#
+# Dos cosas cambiaron y las dos bajan la contribución de la bebida, así que este número NO
+# se movió a favor:
+#   · El tamaño quedó decidido en MEDIO LITRO (el envase que el dueño compró), no el vaso de
+#     350 ml que suponía el recetario. Son 43% más bebida, o sea más insumo por botella.
+#   · El CHAI salió del menú, y era la de precio más alto (S/9). Sacar la más cara de un
+#     promedio lo baja, aunque fuera la de peor margen.
+#
+# Ya no se usa un porcentaje de costo mezclado: cada bebida trae su costo real, porque The
+# Bloom cuesta 2.5x lo que The Cool y las dos se venden a S/6 — un promedio esconde eso.
+# El detalle, con el origen de cada precio por kilo, está en `modelo/costo_bebidas.py`.
+DRINK_PRICES = [6.0, 5.0, 6.0]            # [MEDIDO] catalog_prices, categoría 'side'
+DRINK_COSTS  = [1.89, 1.41, 1.17]         # [DERIVADO] insumo 500 ml + envase S/0.69 [COTIZADO]
 DRINK_ATTACH = 0.25                       # [MÉTODO] 1 de cada 4 pedidos lleva bebida — sin medir
-DRINK_CONTRIB = sum(p * (1 - DRINK_COST_PCT) for p in DRINK_PRICES) / len(DRINK_PRICES)
+DRINK_CONTRIB = sum(p - c for p, c in zip(DRINK_PRICES, DRINK_COSTS)) / len(DRINK_PRICES)
 COMBO_DISCOUNT = 1.0                      # [MEDIDO] COMBO_DISCOUNT_PER_PAIR en catalog.ts
 CULQI, TICKET = 0.055, 22.0
 NS_BYO, FQ_BYO = 2, 0.60         # [MÉTODO] el cliente medio pone 2 salsas y 60% pone queso
@@ -64,14 +74,20 @@ FRAC_BYO = 0.50                  # [MÉTODO] mitad de los pedidos por ARMA EL TU
 def veg(g, s): return (g if s == "15" else g * 2) / 1000 * TOPS_KG
 
 PROT_V = {"P01":(3.15,6.30),"P02":(2.47,4.95),"P04":(4.82,9.64),"P05":(4.29,8.59),"P06":(1.34,2.68)}
-PROT_N = {**PROT_V, "P04": (3.25, 6.50)}          # atún cotizado
+# P08 (pavo) entra el 2026-09-06. Es la ÚNICA proteína con rendimiento 1.00 —es fiambre, no
+# se cocina— así que su costo por porción es el precio del kilo por el gramaje, sin el ~1.85x
+# de merma que llevan las que sí pasan por la olla.
+PROT_N = {**PROT_V, "P04": (3.25, 6.50), "P08": (3.76, 7.51)}   # atún cotizado + pavo
 BYO_V = {"P01":(14.90,22.90),"P02":(13.90,21.90),"P04":(16.90,30.90),"P05":(16.90,30.90),"P06":(14.90,24.90)}
 # ⚠ EL ARMADOR YA NO OFRECE RES NI EMBUTIDO (2026-09-05, decisión del dueño). Las dos salieron
 # por rentabilidad: cada una cruzaba el techo de 45% de costo en un tamaño (Res 30CM al 47.6%,
 # Embutido 15CM al 45.7%) y eran las dos únicas que lo hacían. Siguen vivas en SIG01 y SIG03.
 # Promediar el ARMA EL TUYO incluyéndolas daría un número que ningún cliente puede pedir — y
 # además SUBESTIMA la contribución, porque justo eran las dos peores del armador.
-BYO_N = {"P02":(13.90,23.90),"P04":(16.90,32.90),"P06":(14.90,26.90)}
+# El pavo devuelve el armador a CUATRO proteínas. Entra con 44.7% de costo en los dos
+# tamaños —justo debajo del techo de 45%— así que baja levemente el promedio del armador:
+# es la proteína más ajustada de las cuatro, y aun así la que hace que la sección exista.
+BYO_N = {"P02":(13.90,23.90),"P04":(16.90,32.90),"P06":(14.90,26.90),"P08":(15.90,28.90)}
 # SIG04 pasa a 0 salsas el 2026-09-05: la receta volvió a la original de Estados Unidos
 # (atún escurrido, mayonesa y pimienta), sin toppings ni salsas. La mayonesa ya está dentro
 # de P04 y la pimienta es parte de su preparación.

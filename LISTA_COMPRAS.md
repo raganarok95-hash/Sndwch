@@ -44,8 +44,12 @@ guardar los cortes con pedido anticipado: los vas a necesitar cada semana.
 colágeno sale estopa.
 
 **Ya no compras:** asado pejerrey (era para THE CHICAGO, en pausa) ni los 2 kg extra de pollo para
-el cajún (P03, del menú secreto — no lo cocines hasta que un cliente llegue a 5 pedidos y el panel
-te avise).
+el cajún (P03, del menú secreto — no lo cocines hasta que un cliente llegue al umbral de pedidos y
+el panel te avise). Tampoco **cardamomo ni clavo de olor**: eran solo del chai (D09), retirado del
+menú el 2026-09-06.
+
+**El pavo (P08) no entra a la cocina.** Es fiambre: se lamina el día que se usa y no pasa por
+ninguna tanda. Es la única proteína del catálogo de la que no hay nada que cocinar.
 
 ---
 
@@ -58,7 +62,7 @@ te avise).
 | Tomate | 2 kg | T01 |
 | Zanahoria | 500 g | base aromática de P01 |
 | **Ajo** | 500 g | todo, y **3 cabezas van asadas enteras** (S01 y S05) |
-| Jengibre fresco | 400 g | P02, S10, chai |
+| Jengibre fresco | 300 g | P02, S10 |
 | Apio | 1 atado | T08 |
 | Perejil | 2 atados | S09 chimichurri + albóndigas |
 | **Limón** | 2 kg | S01, S09, S10, **y el chorrito de SIG04** |
@@ -77,11 +81,12 @@ te avise).
 | Jamón ahumado | 200 g | P05 (40%) | **cotiza los 3 por separado** — hoy se costean a S/48/kg promedio y no cuestan lo mismo |
 | Cabanossi | 175 g | P05 (35%) | |
 | Paté peperoncino | 125 g | P05 (25%) | el más intenso: si sale el más caro, bajarlo a 20% mejora margen sin que se note |
+| **Jamón/pechuga de pavo** | **1 kg** | **P08, la 4ta proteína de ARMA EL TUYO** | **cotiza Braedt contra San Fernando o Laive: Sigma Alimentos es dueño de Braedt, Otto Kunz y La Segoviana a la vez, así que entre esas tres no hay competencia real. Ref. retail S/43.75/kg — al por mayor (Makro Trujillo) debería bajar** |
 | **Atún** | ~1.1 kg **neto escurrido** | P04 | **compara lata de 170 g vs. lata institucional de 1 kg+.** Acá está el ahorro real del insumo con peor margen del catálogo |
 | Mozzarella en láminas | 500 g | C01 (fijo en SIG02) | |
 | Cheddar en láminas | 500 g | C02 (fijo en SIG03) | |
 | Queso parmesano o edam para rallar | 150 g | albóndigas | |
-| Leche fresca | 2 L | panade + chai | |
+| Leche fresca | 1 L | panade de las albóndigas | |
 
 ---
 
@@ -133,11 +138,9 @@ semillas de hinojo. Las cuatro vuelven con THE CHICAGO y con el menú secreto.
 | Hojuelas de ají | 50 g | S12 |
 | Comino | 50 g | P01, S09 |
 | Hojas de laurel | 1 paquete | P01 |
-| Canela en rama | 100 g | D06, D09 |
-| **Cardamomo en vaina** | 50 g | D09 chai |
-| Clavo de olor | 50 g | D09 chai |
+| Canela en rama | 100 g | D06 |
 | **Flor de jamaica seca** | 200 g | D06 |
-| **Té negro a granel** | 300 g | D07 cold brew + D09 chai |
+| **Té negro a granel** | 150 g | D07 cold brew |
 | Mirin *(si lo consigues)* | 250 ml | P02 — hay sustituto en la receta, pero el real es mejor |
 
 ---
@@ -225,7 +228,7 @@ frescas, lácteos). El resto es despensa que dura meses.
 - Salsas frías: **S01, S02, S04, S05, S06, S09**.
 - **P04 atún** (es la que menos dura: 3 días).
 - **P06 albóndigas + marinara.**
-- Bebidas: **D06, D08, concentrado de D09.**
+- Bebidas: **D06 y D08.**
 - **Corta los toppings del día. El tomate se corta el día que se usa, nunca antes.**
 
 **Martes — el día que de verdad importa**

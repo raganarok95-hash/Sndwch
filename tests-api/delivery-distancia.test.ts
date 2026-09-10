@@ -110,3 +110,27 @@ Deno.test("el mínimo es el que cobra el motorizado por un viaje corto", () => {
   // Y tiene que seguir cubriendo su propia distancia equivalente.
   assertEquals(deliveryFeeForKm(DELIVERY_MIN_FEE / DELIVERY_KM_RATE) >= DELIVERY_MIN_FEE, true);
 });
+
+// ── PARIDAD DE LA FÓRMULA, NO SOLO DE LAS CONSTANTES (2026-09-10) ───────────────────────
+//
+// La revisión de arquitectura encontró el hueco: `npm run parity` compara los VALORES
+// duplicados entre cliente y servidor —DELIVERY_KM_RATE, DELIVERY_MIN_FEE, el factor de
+// ruta— pero ninguna de sus 93 comprobaciones mira la FÓRMULA que los combina. Si un lado
+// empezara a redondear al medio sol más cercano en vez de hacia arriba, parity seguiría en
+// verde y el cliente mostraría un monto mientras el servidor cobra otro: exactamente el
+// defecto que parity existe para evitar.
+//
+// Esta prueba y `tests/paridad-envio.spec.ts` leen LA MISMA tabla. Ésta la corre contra el
+// Deno del servidor; la otra contra el JavaScript real del navegador. Si una fórmula cambia
+// y la otra no, una de las dos falla.
+const TABLA = JSON.parse(Deno.readTextFileSync(new URL("../tests/fixtures/tarifa-envio.json", import.meta.url)));
+
+Deno.test("el servidor cobra lo que dice la tabla compartida con el cliente", () => {
+  for (const c of TABLA.casos as Array<{ km: number; fee: number; nota: string }>) {
+    assertEquals(
+      deliveryFeeForKm(c.km),
+      c.fee,
+      `${c.km} km debía cobrar S/${c.fee} (${c.nota}), cobró S/${deliveryFeeForKm(c.km)}`,
+    );
+  }
+});

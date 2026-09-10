@@ -159,6 +159,12 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-purchase-add": actAdminPurchaseAdd,
   "admin-culqi-report": actAdminCulqiReport,
   "admin-tech-health": actAdminTechHealth,
+  // ⚠ ESTA ACCIÓN ESTABA IMPORTADA Y NUNCA REGISTRADA (encontrado 2026-09-06). O sea que
+  // `retention_report` —que CLAUDE.md llama "el mejor dato del panel"— no era alcanzable
+  // desde la app: solo lo veía el correo mensual de `send-retention-report`, que llama al
+  // RPC por su cuenta. Modo de fallo puro silencio: la importación compila, `deno check` no
+  // marca un import sin usar dentro de un objeto, y la pantalla simplemente no existía.
+  "admin-retention-report": actAdminRetentionReport,
   "alert-admin-access": actAlertAdminAccess,
   "send-retention-report": actSendRetentionReport,
   "admin-compliance": actAdminCompliance,

@@ -27,6 +27,98 @@
      googleConfigured() es true — nunca bloquea el primer render, igual que Culqi arriba. -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+/* ── PALETA DEL CLIENTE — LOS TOKENS DE VERDAD (2026-09-09) ────────────────────
+   Hasta hoy los colores del cliente NO eran variables: eran el FALLBACK de cada
+   `var(--sw-card,#2D5246)`, repetido en 997 sitios de src/app/. Nadie definía esas
+   properties en ningún lado, así que cambiar la paleta significaba 997 ediciones y la
+   garantía de que alguna se quedaba atrás — el mismo defecto de fondo que ya costó tres
+   semanas de precios fantasma, pero en color.
+   Definirlas acá hace que TODOS esos call sites resuelvan al token y el fallback deje de
+   usarse. No hay que tocar ni uno: el fallback se queda como está, inerte.
+   Los valores salen del logo nuevo, muestreados píxel a píxel del archivo del dueño, no
+   estimados a ojo. Son muy cercanos a los que ya había, así que el cambio no rompe
+   ninguna pantalla; lo que gana el proyecto es poder mover la paleta desde un solo sitio. */
+:root{
+  /* Verde bosque: el lado de SANDO. Es el contorno y la mitad izquierda del mono. */
+  --sw-bg:#1E3932;
+  --sw-card:#2D5246;
+  --sw-card2:#1A3028;
+  --sw-card-danger:#1A2420;
+  --sw-border:#3A6B58;
+  --sw-border-soft:#1c1c1c;
+  --sw-text:#FFFFFF;
+  --sw-text-body:#F2F0EB;
+  --sw-text-muted:#A8C8B0;
+  --sw-text-muted2:#8BAF9A;
+  --sw-text-muted3:#7FA08D;
+  --sw-text-muted4:#C8D6CE;
+
+  /* ── COLORES DE ESTADO (2026-09-10) ──
+     Antes eran ~230 literales sueltos repartidos por src/app/. El de error estaba escrito
+     79 veces; el de confirmación, 60. Subir el contraste de uno para cumplir WCAG
+     significaba acertarle a 79 sitios y que alguno se quedara atrás.
+     Dos cosas que la tokenización sacó a la luz y que no eran evidentes:
+       · El verde de confirmación era `#25D366`, que es EL VERDE DE WHATSAPP. En la misma
+         app hay botones reales de WhatsApp, así que un mismo color decía dos cosas
+         distintas. Se separan: `--sw-ok` para confirmar, `--sw-whatsapp` para WhatsApp.
+       · El texto sobre dorado estaba escrito de DOS formas — `#0d0d0d` (21 veces) y
+         `#241a08` (20) — para el mismo trabajo. Se unifican en el cálido, que es el que
+         se ve bien sobre el dorado; el casi-negro se veía duro. */
+  --sw-ok:#25D366;
+  --sw-warn:#ffa500;
+  --sw-warn-soft:#ffb366;
+  --sw-danger:#ff8888;
+  --sw-danger-strong:#ff5555;
+  --sw-on-gold:#241a08;
+  /* El verde de WhatsApp, SOLO para lo que es WhatsApp de verdad. Coincide con --sw-ok por
+     ahora; están separados para que mover uno no mueva el otro. */
+  --sw-whatsapp:#25D366;
+
+  /* ── LOS TRES COLORES DE MARCA, sacados del logo ──
+     El mono está partido: verde a la izquierda, celeste a la derecha, y su ojo en espiral
+     es morado. Esa división no es decorativa — es la estructura del menú. El verde marca
+     lo que YA está decidido (los Signatures, la receta cerrada); el celeste marca donde
+     ELIGES tú (ARMA EL TUYO, bebidas, recompensas, favoritos). Si algún día una pantalla
+     no cae claramente de un lado, es señal de que no sabemos qué le estamos pidiendo al
+     cliente en ella. */
+  --sw-sky:#8CC8EC;        /* WICHO — el lado de las decisiones */
+  --sw-sky-deep:#3F86B4;
+  --sw-sky-ink:#0E1A17;    /* texto sobre celeste: nunca blanco, no contrasta */
+  /* El morado del ojo espiral. Tiene UN trabajo: lo que sorprende — carga, menú secreto,
+     desbloqueos. En cuanto se use de adorno deja de significar algo. */
+  --sw-spiral:#C3A6D2;
+  --sw-spiral-deep:#4A3D62;
+}
+
+/* ── EL LADO ELEGIDO TIÑE TODA LA APP (2026-09-10) ────────────────────────────
+   Pedido del dueño: "la web podría estar totalmente dividida en los dos colores cuando
+   presionas una de las opciones". No es un tema claro/oscuro: es de QUIÉN es la pantalla.
+   Elegir Signatures te pone en el mundo de SANDO; elegir ARMA EL TUYO te pasa al de WICHO,
+   y la app entera se va con él.
+   Esto solo se puede hacer barato porque la paleta ya son tokens: se reasignan las
+   SUPERFICIES y basta — no hay que tocar ni uno de los 997 sitios que las usan. Antes de
+   los tokens, esto habría sido reescribir la app.
+   ⚠ El dorado NO se toca. Es el color del dinero (precios, totales, recompensas) y tiene
+   que verse igual en los dos lados: un precio que cambia de color según dónde estás es
+   exactamente la clase de duda que no queremos en un checkout. */
+:root[data-lado="wicho"]{
+  --sw-bg:#102430;
+  --sw-card:#1C3B4D;
+  --sw-card2:#142C3A;
+  --sw-card-danger:#1E1A22;
+  --sw-border:#2F6180;
+  --sw-border-soft:#12222C;
+  --sw-text:#FFFFFF;
+  --sw-text-body:#EAF2F6;
+  --sw-text-muted:#A6C9DD;
+  --sw-text-muted2:#89AFC6;
+  --sw-text-muted3:#7B9FB4;
+  --sw-text-muted4:#C6DCE8;
+}
+/* La transición es del FONDO, no de cada elemento: animar 997 nodos a la vez hace tironear
+   cualquier teléfono de gama baja. Así solo se interpolan los pocos que pintan superficie. */
+body,#app{transition:background-color .42s ease}
+
 /* Modo claro del panel admin — antes era filter:invert(1) hue-rotate(180deg) sobre todo
    el contenedor, lo que invertía matemáticamente el dorado de marca (#CBA258) a un olivo
    lavado (hallazgo de auditoría visual). Ahora es una paleta clara de verdad: cada
@@ -176,6 +268,72 @@ body.kb-open #app{padding-bottom:0}
 #mmap.open{display:flex}
 #lmap{flex:1;min-height:0}
 #mpin{position:absolute;top:50%;left:50%;transform:translate(-50%,-110%);font-size:36px;z-index:9998;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7))}
+/* ── EL CORTE — vacío, no franja (2026-09-09, corregido el 2026-09-10) ────────
+   La primera versión dibujaba dos barras DORADAS y gruesas entre los dos paneles. El
+   dueño la rechazó por dos razones, las dos correctas:
+     1. El wordmark ya tiene su "//" dorado arriba en la misma pantalla. Repetirlo grande
+        y del mismo color deja de ser marca y pasa a ser ruido.
+     2. En el logo el corte NO es una franja pintada: es un CORTE. Las dos mitades del
+        mono se separan y entre ellas se ve el fondo. Dibujar una barra encima era la
+        lectura contraria a la del propio logo.
+   Ahora son dos ranuras del color del fondo: el panel se ve partido, no decorado. El
+   único brillo es una línea de canto de un píxel, que es lo que hace que se lea como un
+   corte con filo y no como un hueco. */
+.sw-cut{display:flex;gap:5px;align-items:stretch;flex-shrink:0;pointer-events:none;height:100%}
+.sw-cut i{display:block;width:7px;background:var(--sw-bg,#1E3932);
+  transform:skewX(-16deg);box-shadow:1px 0 0 rgba(233,201,138,.5),-1px 0 0 rgba(0,0,0,.35)}
+/* ── LOS HERMANOS COMO ELEMENTO DE INTERFAZ (2026-09-10) ──────────────────────
+   `img/sando.png` e `img/wicho.png` son las DOS MITADES del logo del dueño, partido por
+   su costura central — no son dibujos nuevos. SANDO es la mitad verde (párpado caído, el
+   que ya decidió: los Signatures); WICHO la celeste (ojo en espiral, el que elige: ARMA
+   EL TUYO). Cada uno vive de su lado y REACCIONA cuando lo tocas, que es lo que los
+   convierte en interfaz en vez de decoración.
+   ⚠ No hay más estados que éstos: son recortes de una sola ilustración. Una sonrisa nueva
+   de SANDO o una pose de WICHO señalando exigen DIBUJO nuevo, que solo puede encargar el
+   dueño — igual que el RUC o las fotos de producto. Lo que sí se puede animar sin inventar
+   nada es lo que es geometría: su ojo espiral, que se redibuja en SVG. */
+.sw-bro{position:relative;flex-shrink:0;line-height:0}
+.sw-bro img{display:block;width:100%;height:auto}
+/* La reacción al tocar. SANDO se yergue —el que mide antes de moverse— y WICHO se lanza
+   hacia adelante. Son las dos personalidades, no dos animaciones distintas por gusto. */
+.sw-bro-sando{transform-origin:bottom center;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
+.sw-bro-wicho{transform-origin:bottom center;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
+.sw-on .sw-bro-sando{transform:translateY(-6px) scale(1.05) rotate(-2deg)}
+.sw-on .sw-bro-wicho{transform:translateY(-9px) scale(1.09) rotate(3deg)}
+/* El ojo espiral de WICHO, encima del que ya trae la ilustración. Las medidas salen de
+   muestrear el archivo: centro al 27% / 43.6% y radio 11.4% del ancho. Si algún día
+   cambia el logo, esto se descuadra — por eso está anotado de dónde salen. */
+/* ── LA REACCIÓN DEL HERMANO ────────────────────────────────────────────────────────
+   Pedido del dueño: "cuando le des click a la opción sus ojos giren, algo más visual, e
+   igual con la parte de SANDO que sonría cuando presionan".
+
+   Lo que se puede hacer honestamente con el dibujo que existe:
+     · WICHO — su ojo espiral es GEOMETRÍA y se redibuja en SVG (SPIRAL()), así que gira
+       de verdad. Ésa es su reacción y no depende de que nadie dibuje otro cuadro.
+     · SANDO — una sonrisa nueva ES un dibujo nuevo, y eso lo encarga el dueño (está
+       anotado en marca/PERSONAJES.md junto a las otras dos poses que faltan). Lo que sí
+       es honesto mientras tanto es que REACCIONE: un asentimiento sobre la pose que ya
+       existe. Es movimiento sobre el dibujo real, no un dibujo inventado.
+
+   No hace falta ningún estado en JS para dispararlo: la app rehace el DOM entero en cada
+   render(), y dentro del armador y de la lista de Signatures un render() ocurre
+   exactamente cuando el cliente toca una opción. Un elemento recién creado reproduce su
+   animación desde el principio, así que el hermano reacciona a cada toque y a nada más. */
+@keyframes sw-nudge{
+  0%{transform:translateY(0) rotate(0)}
+  38%{transform:translateY(-7px) rotate(-2.5deg)}
+  70%{transform:translateY(1px) rotate(1deg)}
+  100%{transform:translateY(0) rotate(0)}
+}
+.sw-nudge{animation:sw-nudge .5s cubic-bezier(.34,1.56,.64,1);transform-origin:bottom center}
+@media (prefers-reduced-motion:reduce){.sw-nudge{animation:none}}
+.sw-eye{position:absolute;left:27%;top:43.6%;width:22.8%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;background:#C4A6D2;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sw-eye svg{width:100%;height:100%}
+@keyframes sw-spin{to{transform:rotate(360deg)}}
+.sw-spiral{animation:sw-spin 1.4s linear infinite;transform-origin:50% 50%}
+@media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
 .leaflet-container{background:#1a1a2e}
 </style>
 </head>
@@ -185,6 +343,6 @@ body.kb-open #app{padding-bottom:0}
 <script>
 __APP_JS__
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Arrastra el mapa para posicionar el pin en tu dirección exacta</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Escribe tu dirección //</div><input id="maddr-input" type="text" placeholder="Ej: Av. El Golf 123, El Golf" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:14px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Escribe tu dirección abajo y elígela de la lista — o arrastra el mapa hasta el punto exacto</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Busca tu dirección //</div><div id="maddr-results" style="display:none;max-height:170px;overflow-y:auto;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;margin-bottom:8px"></div><input id="maddr-input" type="text" autocomplete="off" placeholder="Ej: Av. España 123, Trujillo" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:16px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
 </body>
 </html>

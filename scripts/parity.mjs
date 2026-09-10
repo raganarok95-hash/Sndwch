@@ -43,11 +43,16 @@ const customer = readFileSync(join(ROOT, 'supabase/functions/api/actions/custome
 const problems = [];
 let checks = 0;
 
-function cmp(what, clientVal, serverVal) {
+// `etiquetas` existe porque no todas las comprobaciones de este script son cliente↔servidor:
+// las de los supuestos del modelo comparan env.ts contra el Python de `modelo/`. Un error que
+// nombra mal las dos partes manda a abrir el archivo equivocado, que es peor que un error
+// escueto.
+function cmp(what, clientVal, serverVal, etiquetas) {
   checks++;
+  const [ea, eb] = etiquetas || ['cliente', 'servidor'];
   const a = JSON.stringify(clientVal);
   const b = JSON.stringify(serverVal);
-  if (a !== b) problems.push(`${what}\n    cliente: ${a}\n    servidor: ${b}`);
+  if (a !== b) problems.push(`${what}\n    ${ea}: ${a}\n    ${eb}: ${b}`);
 }
 
 // Falla ruidosamente si un patrón deja de encontrar nada: un regex que dejó de matchear
@@ -252,6 +257,12 @@ cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
   scalar(app, 'queueMinutesPerOrder', /queueMinutesPerOrder=(\d+)/, 'src/app/'),
   scalar(env, 'QUEUE_MINUTES_PER_ORDER', /const QUEUE_MINUTES_PER_ORDER = (\d+)/, 'env.ts'));
 
+// El cliente ENSEÑA este número en la invitación a referir ("te ganas un sándwich 15CM
+// gratis (400 pts)"), así que si se separa del servidor la app promete un premio que la
+// recompensa ya no paga. El chequeo de abajo ata además ese valor a R06.
+cmp('REFERRER_REWARD_POINTS (lo que recibe quien invita)',
+  scalar(app, 'REFERRER_REWARD_POINTS', /var REFERRER_REWARD_POINTS=(\d+)/, 'src/app/'),
+  scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'));
 cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
   scalar(app, 'REFERRAL_BONUS_POINTS', /var REFERRAL_BONUS_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'));
@@ -503,6 +514,56 @@ function serverNoDouble() {
   return (m[1].match(/"(P\d+)"/g) ?? []).map((x) => x.replace(/"/g, '')).sort();
 }
 cmp('NO_DOUBLE_PROTS (proteínas sin doble)', clientNoDouble(), serverNoDouble());
+
+// ---------- los supuestos del modelo financiero: env.ts ↔ Python ----------
+//
+// ESTE BLOQUE NO COMPARA CLIENTE CONTRA SERVIDOR, sino el SERVIDOR contra el MODELO EN
+// PYTHON, y es el único de este script que cruza lenguajes.
+//
+// Por qué hace falta: `MODELO_SUPUESTOS` (env.ts) es lo que la pantalla "Las tres palancas"
+// enseña como "el modelo asume X", y el modelo de verdad vive en `modelo/comparativa_menu.py`
+// y `modelo/modelo_v11_metas.py`. Son dos copias del mismo número en dos lenguajes que nada
+// más conecta. Si el modelo se re-corre con otro supuesto y nadie toca env.ts, la pantalla
+// sigue midiendo contra una meta que ya no existe — y no falla nada: solo miente en silencio.
+// Es exactamente el defecto que este repo documenta para los textos de marketing.
+//
+// Se leen del Python con regex, igual que el resto de este script lee TypeScript. Si el
+// formato del Python cambia, el chequeo lo DICE en vez de pasar en blanco.
+const compMenu = readFileSync(join(ROOT, 'modelo/comparativa_menu.py'), 'utf8');
+const metasPy = readFileSync(join(ROOT, 'modelo/modelo_v11_metas.py'), 'utf8');
+
+function pyNum(src, nombre, archivo) {
+  const m = src.match(new RegExp('^' + nombre + '\\s*=\\s*([0-9.]+)', 'm'));
+  if (!m) {
+    problems.push(`${nombre}: no se encontró en ${archivo} — el formato cambió y este chequeo quedó ciego`);
+    return null;
+  }
+  return Number(m[1]);
+}
+function cmpModelo(what, archivoPy, envVal, pyVal) {
+  cmp(what, envVal, pyVal, ['env.ts', archivoPy]);
+}
+function tsSupuesto(nombre) {
+  const bloque = env.match(/export const MODELO_SUPUESTOS = \{([\s\S]*?)\}/);
+  if (!bloque) {
+    problems.push('MODELO_SUPUESTOS: no se encontró en env.ts — el formato cambió y este chequeo quedó ciego');
+    return null;
+  }
+  const m = bloque[1].match(new RegExp(nombre + ':\\s*([0-9.]+)'));
+  if (!m) {
+    problems.push(`MODELO_SUPUESTOS.${nombre}: no está en env.ts`);
+    return null;
+  }
+  return Number(m[1]);
+}
+// El Python guarda fracciones (0.50) y env.ts porcentajes (50), porque es lo que la pantalla
+// enseña. La conversión se hace acá, en un solo sitio, y es parte de lo que se verifica.
+cmpModelo('Supuesto del modelo: mezcla ARMA EL TUYO (FRAC_BYO ↔ byoPct)', 'modelo/comparativa_menu.py',
+    tsSupuesto('byoPct'), (pyNum(compMenu, 'FRAC_BYO', 'comparativa_menu.py') ?? 0) * 100);
+cmpModelo('Supuesto del modelo: attach de bebida (DRINK_ATTACH ↔ drinkPct)', 'modelo/comparativa_menu.py',
+    tsSupuesto('drinkPct'), (pyNum(compMenu, 'DRINK_ATTACH', 'comparativa_menu.py') ?? 0) * 100);
+cmpModelo('Supuesto del modelo: viralidad (VIRAL ↔ referralsPer100)', 'modelo/modelo_v11_metas.py',
+    tsSupuesto('referralsPer100'), (pyNum(metasPy, 'VIRAL', 'modelo_v11_metas.py') ?? 0) * 100);
 
 // ---------- salida ----------
 if (problems.length) {

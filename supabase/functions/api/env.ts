@@ -142,6 +142,19 @@ export const META_GRAPH_VERSION = "v21.0";
 // píxel se ve en el HTML de cualquier sitio que lo use). META_CAPI_TOKEN NUNCA sale del
 // servidor.
 export const META_PIXEL_ID = Deno.env.get("META_PIXEL_ID");
+
+// Clave de Google Maps (Places + Geocoding + mapa) para el buscador de dirección del
+// checkout. Viaja al cliente por get-store-hours igual que META_PIXEL_ID, y por la misma
+// razón: es una clave de NAVEGADOR, pública por diseño — quien abra la app la ve en el
+// código. Lo que la protege no es el secreto sino la RESTRICCIÓN POR REFERRER que hay que
+// configurar en Google Cloud Console (solo https://sndwch.app/*): sin eso, cualquiera
+// puede usarla y el consumo lo paga el dueño.
+//
+// Mandarla desde el servidor y no escribirla en el cliente permite además prenderla y
+// apagarla sin redesplegar el cliente. **Si no está, el mapa cae solo a OpenStreetMap** —
+// que es gratis, menos preciso y sigue funcionando. Un checkout roto por una clave vencida
+// sería mucho peor que un geocodificador mediocre.
+export const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_KEY");
 export const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN");
 
 // Identidad legal del negocio — persona natural con negocio (RUC 10). Usada en el
@@ -391,3 +404,32 @@ export async function loadStoreHours(): Promise<void> {
     console.error("loadStoreHours failed:", e);
   }
 }
+
+// ── LOS SUPUESTOS DEL MODELO FINANCIERO, EN UN SOLO SITIO (2026-09-06) ─────────────────
+//
+// `PREDICCION_V12.md` concluye que la meta de S/5,000 netos sostenidos se decide por TRES
+// números, y que ninguno estaba medido. Ahora `retention_report` los mide (ver la migración
+// `retention_report_mide_las_tres_palancas_del_modelo`), y estos son los valores que el
+// modelo ASUME — lo que la pantalla necesita para poder decir "vas mejor" o "vas peor" en
+// vez de solo enseñar un porcentaje suelto.
+//
+// ⚠ VIVEN ACÁ Y NO EN EL CLIENTE A PROPÓSITO. Un número escrito a mano en la pantalla se
+// desincroniza del modelo el día que el modelo cambie, sin que nada falle — que es
+// exactamente el defecto que este repo ya documenta para los textos de marketing. La
+// pantalla los recibe del servidor y nunca los escribe.
+//
+// ⚠ DEBEN COINCIDIR CON EL PYTHON: `FRAC_BYO` y `DRINK_ATTACH` en
+// `modelo/comparativa_menu.py`, y `VIRAL` en `modelo/modelo_v11_metas.py`. Lo verifica
+// `npm run parity`, que es la única defensa contra que estas dos copias se separen.
+export const MODELO_SUPUESTOS = {
+  // Fracción de sándwiches armados en ARMA EL TUYO. Un armado deja ~S/5.50 menos que un
+  // Signature, así que mover esto 15 puntos mueve la contribución casi un sol.
+  byoPct: 50,
+  // Fracción de pedidos que llevan bebida. Es la palanca más barata de las tres: no exige
+  // adquirir a nadie y las bebidas están al 19-32% de costo.
+  drinkPct: 25,
+  // Clientes captados por referido, por cada 100 pedidos servidos. Es la palanca que
+  // convierte "no llega nunca" en "sostiene desde feb-27": el referido cuesta S/7.65
+  // contra S/17.87 del CAC pagado.
+  referralsPer100: 6,
+};

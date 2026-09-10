@@ -136,8 +136,28 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   // combo NO debe aparecer, porque ese sándwich ya no cuenta para el combo (fix de una
   // sesión anterior). Si el combo se colara de nuevo, la bebida quedaría gratis sin que
   // nadie lo decidiera.
-  await expect(page.locator('text=recompensa: ahorras S/20.9')).toBeVisible();
-  await expect(page.locator('text=combo aplicado')).not.toBeVisible();
+  //
+  // ⚠ SE COMPRUEBA LA CUENTA, NO LA FRASE. Antes esta prueba buscaba el texto literal
+  // "recompensa: ahorras S/20.9", que era una de las cuatro líneas verdes que el carrito
+  // tenía debajo del total. Al pasar el carrito a recibo (2026-09-10) esas líneas se
+  // reescribieron y la prueba se murió sin que nada del negocio hubiera cambiado —
+  // protegía una redacción, no un comportamiento. Ahora se leen los NÚMEROS: cuánto
+  // descuenta la recompensa y cuánto el combo, que es lo que de verdad no puede fallar.
+  const cuenta = await page.evaluate(() => {
+    const w = window as any;
+    const idx = w.findRewardTargetIndex(w.appliedReward);
+    return {
+      recompensa: w.rewardWaiverAmount(w.appliedReward, idx),
+      combo: w.cartComboDiscount(),
+      aplicada: w.appliedReward,
+    };
+  });
+  expect(cuenta.aplicada, 'la recompensa no quedó aplicada').toBe('R06');
+  expect(cuenta.recompensa, 'R06 tiene que perdonar el sándwich ENTERO').toBeCloseTo(20.9, 2);
+  expect(cuenta.combo, 'el sándwich regalado siguió contando para el combo').toBe(0);
+  // Y que el descuento se VEA en el recibo con su monto: una cuenta que no se puede
+  // seguir enseña a desconfiar justo antes de pagar.
+  await expect(page.locator('text=/Recompensa canjeada/')).toBeVisible();
 
   await page.locator('#o-nom').fill('Carla Cliente');
   await page.locator('#o-phone').fill('987654324');
