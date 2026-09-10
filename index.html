@@ -180,23 +180,40 @@ body,#app{transition:background-color .42s ease}
 .admin-dark,.admin-dark *,.admin-light,.admin-light *{
   font-family:'Public Sans','Segoe UI',system-ui,-apple-system,sans-serif!important;
 }
-/* El wordmark "//" (.wm-mark, ver más abajo) trae su degradado dorado fijo en la clase
-   compartida con el cliente — estas 2 reglas lo reemplazan por el acento ámbar del admin
-   sin tocar la regla original (mayor especificidad por combinador de clase, no hace falta
-   !important acá porque .wm-mark i no trae ningún estilo inline que competir). */
-.admin-dark .wm-mark i{background:linear-gradient(180deg,#FFC966,#FFB020)}
-.admin-light .wm-mark i{background:linear-gradient(180deg,#8A5000,#6B3E00)}
+/* El wordmark "//" (.wm-mark, ver más abajo) lleva UNA BARRA POR HERMANO. Acá se
+   reemplazan los dos colores por los del panel, que tiene sus propios fondos: en el claro
+   el celeste del cliente sería casi invisible, así que cada tema trae su par. Se conserva
+   el bicolor porque es la marca, no un adorno del cliente. */
+.admin-dark .wm-mark i:first-child{background:#FFC966}
+.admin-dark .wm-mark i:last-child{background:#7FC4EE}
+.admin-light .wm-mark i:first-child{background:#8A5000}
+.admin-light .wm-mark i:last-child{background:#1F5F86}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
 .cut-sep{}
-/* Marca "//" del wordmark — dos barras sesgadas con degradado dorado, en vez del simple
-   glifo "//" (que en fuentes display de alto contraste como Bodoni Moda casi no se ve a
-   tamaños chicos). Solo se usa en WORDMARK(); el "//" suelto dentro de copy en cualquier
-   otra parte sigue usando .cut-sep, mucho más liviano para 40+ apariciones en botones y
-   labels. */
-.wm-mark{display:inline-flex;align-items:center;gap:.13em;margin:0 .08em;vertical-align:-.04em}
-.wm-mark i{display:inline-block;width:.15em;height:.82em;background:linear-gradient(180deg,#E9C98A,#CBA258);transform:skewX(-16deg);border-radius:1px}
+/* Marca "//" del wordmark — dos barras sesgadas, en vez del simple glifo "//" (que en
+   fuentes display de alto contraste casi no se ve a tamaños chicos). Solo se usa en
+   WORDMARK(); el "//" suelto dentro de copy en cualquier otra parte sigue usando
+   .cut-sep, mucho más liviano para 40+ apariciones en botones y labels.
+
+   ── UNA BARRA POR HERMANO (variante C, decisión del dueño 2026-09-10) ──
+   Izquierda dorada = SANDO. Derecha celeste = WICHO. El "//" siempre fue el corte del
+   pan; ahora además dice QUIÉN lo hace, y el logo cuenta lo mismo que el producto.
+
+   Antes las dos barras eran doradas con degradado, a .15em de ancho: el dueño lo rechazó
+   como "dorado grueso" y tenía razón — a ese grosor no se lee como corte sino como dos
+   bloques que empujan las letras. Ahora .10em y color PLANO, sin degradado: dos trazos de
+   cuchillo.
+
+   ⚠ LAS DOS BARRAS SON IDÉNTICAS EN FORMA y eso no se negocia (ver punto 10 del
+   CLAUDE.md): `width`/`height`/`transform`/`border-radius` viven en UNA regla compartida
+   por las dos, y lo único que se separa es el `background`. Nunca las dibujes con
+   tamaños distintos. */
+.wm-mark{display:inline-flex;align-items:center;gap:.16em;margin:0 .08em;vertical-align:-.04em}
+.wm-mark i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.wm-mark i:first-child{background:#CBA258}
+.wm-mark i:last-child{background:#8CC8EC}
 /* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
    soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
    Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
@@ -1735,7 +1752,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '62288fb681';
+var APP_BUILD = '36123913f2';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2796,7 +2813,7 @@ function H(sub, bk, showCart) {
     var sz = sub ? 26 : 40;
     // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
     // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
-    var s2 = sub ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + ACC() + ';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
+    var s2 = sub ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + ACC() + ';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Sándwiches hechos acá</div>';
     // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
     // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
     var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
@@ -3729,7 +3746,7 @@ function sOHome() {
         // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
         // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
         // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde ' + SOLES_TXT + pz(DELIVERY_PRICE_ZONES[0].fee) + ' según tu zona — lo cobra el motorizado, ~' + SOLES_TXT + '2 por km.</div>';
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde ' + SOLES_TXT + pz(DELIVERY_MIN_FEE) + ' según la distancia — lo cobra el motorizado, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por km.</div>';
     var lastOrd = cust ? lastPaidOrder() : null;
     var recoItems = lastOrd ? (lastOrd.items && lastOrd.items.length ? lastOrd.items : (lastOrd.build ? [buildToCartItem(lastOrd.build)] : null)) : null;
     var recoCard = recoItems ? '<div onclick="loadCart(' + JSON.stringify(recoItems).replace(/"/g, '&quot;') + ')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">' + esc(lastOrd.summary || '') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:' + GOLD + ';margin-top:6px">Pedir lo mismo \u2192</div></div>' : '';
@@ -3802,15 +3819,31 @@ function sOHome() {
                     + ';display:flex;flex-direction:column;justify-content:flex-end;'
                     + 'padding:12px 12px 13px;transition:flex .3s ease">'
                     // El hermano ocupa su panel de pie, pegado al borde de afuera y al piso.
-                    + '<div class="sw-bro' + (activo ? ' sw-on' : '') + '" style="position:absolute;bottom:-6px;'
-                    + (esByo ? 'right:-6px' : 'left:-10px') + ';width:' + (activo ? '116px' : '96px')
-                    + ';opacity:' + (activo ? '1' : '.72') + ';transition:width .3s ease,opacity .3s ease">'
+                    //
+                    // ⚠ SE DIMENSIONA POR ALTURA, NUNCA POR ANCHO. Con `width` fijo, cada hermano
+                    // ocupa el alto que le dicte SU proporción — y `sando_cuerpo` es 302×640, así que
+                    // a 116px de ancho medía 246px en un contenedor de 212 con `overflow:hidden`.
+                    // Anclado al piso, los 34px que sobraban salían por arriba: **la cabeza**. El
+                    // dueño lo reportó como que la app "parece un agregado a la web antigua", y un
+                    // personaje decapitado por su propio marco es exactamente eso.
+                    //
+                    // Por altura los dos entran completos aunque sus proporciones no se parezcan —
+                    // y no se parecen a propósito, porque los hermanos no comparten ilustrador.
+                    + '<div class="sw-bro' + (activo ? ' sw-on' : '') + '" style="position:absolute;bottom:0;'
+                    + (esByo ? 'right:0' : 'left:0') + ';height:' + (activo ? '182px' : '150px')
+                    + ';opacity:' + (activo ? '1' : '.72') + ';transition:height .3s ease,opacity .3s ease">'
                     + '<img class="sw-bro-' + (esByo ? 'wicho' : 'sando') + '" src="img/' + pose + '.png" alt="'
-                    + (esByo ? 'WICHO' : 'SANDO') + '" loading="lazy" style="width:100%;height:auto;display:block">'
+                    + (esByo ? 'WICHO' : 'SANDO') + '" loading="lazy" style="height:100%;width:auto;display:block">'
                     + '</div>'
                     // Velo bajo el texto: sin esto el título cae encima del personaje y no se lee.
-                    + '<div style="position:absolute;left:0;right:0;bottom:0;height:44%;background:linear-gradient(180deg,'
-                    + (esByo ? 'rgba(63,134,180,0),rgba(45,102,140,.88)' : 'rgba(26,48,40,0),rgba(19,38,33,.92)') + ')"></div>'
+                    //
+                    // Va al 62% de la altura y con TRES paradas, no dos: el degradado de dos paradas
+                    // sube tan despacio que en la zona donde de verdad está el texto todavía es medio
+                    // transparente, y el rótulo caía sobre el torso del hermano. La parada del medio
+                    // hace que el velo ya esté casi opaco cuando llega la primera línea.
+                    + '<div style="position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(180deg,'
+                    + (esByo ? 'rgba(63,134,180,0) 0%,rgba(48,105,143,.72) 42%,rgba(38,88,120,.96) 100%'
+                        : 'rgba(26,48,40,0) 0%,rgba(22,42,36,.76) 42%,rgba(17,34,29,.97) 100%') + ')"></div>'
                     + '<div style="position:relative;text-align:' + (esByo ? 'left' : 'right') + '">'
                     + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
                     + 'text-transform:uppercase;color:' + (esByo ? 'rgba(14,26,23,.82)' : GOLD) + '">' + esc(esByo ? 'WICHO' : 'SANDO') + '</div>'

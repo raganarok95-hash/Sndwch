@@ -1226,6 +1226,70 @@ roto. También con prueba: sin ese respaldo el cliente se queda sin buscador y n
 `AutocompleteSuggestion` no existe en la vieja. Una sola key sirve para todas las APIs
 habilitadas del proyecto — no hace falta una por API.
 
+## Los dos hermanos NO comparten estilo de dibujo, y no se unifican (2026-09-10)
+
+**Decisión del dueño, corrigiendo una propuesta de esta sesión que quería unificarlos.** SANDO
+tiene línea negra uniforme, sombreado plano de dos tonos y paleta sobria; WICHO tiene trazo
+suelto y texturado, ojos en espiral y color saturado. Parecen dibujados por dos manos distintas
+porque **lo están, a propósito**: SANDO cura los Signatures, donde la receta está cerrada y no la
+tocas, y su dibujo también está cerrado; WICHO es ARMA EL TUYO, donde eliges tú, y su dibujo
+también es suelto. **La gracia es que sean distintos.**
+
+**Nunca "arregles" a WICHO acercándolo a SANDO** — es exactamente el error que se cometió acá.
+Cada hermano se regenera contra SU PROPIA referencia (`img/sando_sonrie.png`, `img/wicho_rie.png`),
+nunca contra la del otro. Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que la app
+todavía no tiene.
+
+## Lo que sí hace que la app parezca "un agregado a la web antigua" (2026-09-10)
+
+El dueño lo reportó así y tenía razón, pero la causa **no** era el estilo de los personajes. Son
+dos cosas concretas, encontradas renderizando las pantallas reales en vez de suponiendo:
+
+1. **Los personajes están mal encuadrados en la home.** A SANDO se le corta la cabeza (queda solo
+   la chaqueta y las piernas), WICHO se sale por la derecha, y el rótulo cae **encima** del
+   cuerpo. Un personaje decapitado por su propio contenedor se lee como una imagen pegada donde
+   no cabía.
+2. **Las 8 fotos de Signature vienen de 8 sesiones fotográficas ajenas distintas** — una sobre
+   tabla oscura con luz cálida dura, otra sobre plato gris con luz fría, otra sobre fondo blanco
+   de estudio con una botella, otra sobre mantel estampado. No comparten luz, fondo, ángulo ni
+   temperatura de color. Puestas en fila sobre el mismo verde se leen como resultados de una
+   búsqueda de imágenes.
+
+**Lo que las unifica no es el color, es el ENCUADRE.** Un viraje de color solo no arregla que una
+foto tenga una botella de estudio y otra un mantel: probado en esta sesión, casi no se nota.
+Cerrar el encuadre sí — la escenografía sale del cuadro y queda pan y relleno, que es lo único
+que las ocho de verdad comparten. Encuadre cerrado al ratio de la tarjeta + viñeta + viraje a la
+paleta + grano fino, **el mismo tratamiento en las ocho**.
+
+**Y el tamaño de archivo importa aparte**: los Signatures son de 640×440 y la tarjeta a sangre
+ocupa **1050 px reales** (medido con el navegador: 350×236 CSS px a DPR 3), así que se estiran
+**1.64x**. Cualquier reemplazo se pide de al menos 1600 px de ancho.
+
+### `scripts/tratar_fotos.py` — el tratamiento, versionado y repetible
+
+Lee de **`img/fuente/`** y escribe en `img/`. Esa dirección no es un detalle: es lo que lo hace
+**idempotente**. Aplicar viñeta y grano sobre una foto que ya los tiene la degrada un poco más
+cada corrida, y ese defecto **no lanza ningún error** — solo va ensuciando el archivo cada vez
+que alguien corre el script "por si acaso". Partiendo siempre del original no puede pasar, y
+además deja re-ajustar los parámetros sin volver a conseguir las fotos.
+
+**⚠ EL ZOOM CEDE ANTE LOS PÍXELES**, y ese guardarraíl es lo que evita que el script empeore lo
+que vino a arreglar. Cerrar el encuadre **tira** píxeles: las fotos de hoy (640 px) cerradas a
+1.34 quedan en 477, contra los 1050 que pide la tarjeta — o sea unificación a cambio de MÁS
+estiramiento del que ya tenían. `zoom_util()` recorta el cierre hasta donde la fuente aguante y
+se queda en 1.0 si no aguanta nada; con fotos grandes cierra entero y no cuesta nada. Cada
+corrida imprime cuánto le falta a cada foto y hasta dónde pudo cerrar.
+
+El **grano lleva semilla fija** para que las ocho compartan el mismo patrón (si cada una trae el
+suyo, vuelve el problema que el script resuelve) y para que correr el script dos veces dé bytes
+idénticos — así un diff dice si una foto cambió de verdad.
+
+`npm run check:fotos` (dentro de `verify`) protege las dos cosas, más que cada foto servida
+tenga su original guardado. **Su chequeo del ratio lleva el número medido escrito aparte, no
+leído de `tratar_fotos.py`**: la primera versión comparaba el recorte contra la misma constante
+que lo produce, así que cambiar `RATIO` a 16/9 pasaba sin protestar. Un chequeo que se mide
+contra sí mismo no protege nada — verificado inyectando los tres defectos.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
@@ -1318,13 +1382,22 @@ habilitadas del proyecto — no hace falta una por API.
     paralelas las dibujaron de ALTURA DISTINTA entre sí (una más larga, una más corta,
     "asimetría" que nunca fue parte del glifo real) — el dueño corrigió de nuevo: **"Son
     dos del mismo tamaño"**. Especificación exacta del "//" real, tomada literal de
-    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción): dos barras **idénticas**
-    (misma regla CSS compartida por ambas, no dos reglas distintas) — cada una
-    `width:.15em;height:.82em` (proporción ancho:alto ≈ 1:5.5), `transform:skewX(-16deg)`,
-    `border-radius:1px`, separadas por `gap:.13em`. Lo que sí puede/debe variar en una
-    ronda "creativa" es todo lo DEMÁS alrededor de este par fijo: color, fondo,
-    marco/contenedor, acabado (plano/degradado/sombra/metálico) — nunca el tamaño
-    relativo entre las dos barras, ni la identidad estructural del par. Antes de generar
+    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción, **actualizada 2026-09-10**):
+    dos barras **idénticas en forma** — `width`/`height`/`transform`/`border-radius` viven
+    en UNA sola regla compartida por las dos, nunca en dos reglas distintas — cada una
+    `width:.10em;height:.88em` (proporción ancho:alto ≈ 1:8.8), `transform:skewX(-16deg)`,
+    `border-radius:1px`, separadas por `gap:.16em`.
+    **UNA BARRA POR HERMANO (variante C, decisión del dueño 2026-09-10)**: la izquierda
+    dorada `#CBA258` (SANDO), la derecha celeste `#8CC8EC` (WICHO), las dos en **color
+    plano, sin degradado**. Antes eran dos barras doradas con degradado a `.15em` de ancho
+    y el dueño lo rechazó como "dorado grueso": a ese grosor no se lee como corte sino como
+    dos bloques que empujan las letras. El "//" siempre fue el corte del pan; ahora además
+    dice **quién** lo hace, y el logo cuenta lo mismo que el producto. El panel admin tiene
+    su propio par por tema (`.admin-dark`/`.admin-light`) porque sobre fondo claro el
+    celeste del cliente sería invisible — el bicolor se conserva, no se vuelve monocromo.
+    Lo que sí puede/debe variar en una ronda "creativa" es todo lo DEMÁS alrededor de este
+    par fijo: fondo, marco/contenedor, acabado — nunca el tamaño relativo entre las dos
+    barras, ni la identidad estructural del par. Antes de generar
     cualquier variante nueva del ícono, partir de esta especificación exacta (o de
     `wordmark-official-source.html` en el scratchpad, que ya la replica correctamente)
     en vez de reconstruir el mark de memoria/aproximado.

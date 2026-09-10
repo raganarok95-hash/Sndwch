@@ -16,10 +16,29 @@ import { gotoApp } from './helpers';
 //
 // Cómo correrla: npm install && npx playwright install chromium && npm test
 
-test('la app carga y muestra el home de pedido', async ({ page }) => {
+// ⚠ Esta prueba buscaba `text=BUILD`, y pasaba por el subtítulo "Build your own bite" —
+// el ÚNICO texto en inglés que quedaba en la app, justo debajo del nombre del negocio.
+// Al corregirlo al español la prueba se cayó, que es lo correcto: estaba anclada a un
+// defecto. Recuperar la palabra para que volviera a pasar habría sido devolver el defecto
+// para complacer a la prueba.
+//
+// Ahora se ancla a los DOS CAMINOS DE PEDIDO, que es lo que de verdad tiene que estar
+// pintado para decir que la app arrancó — y son la mitad de la identidad de la marca (los
+// dos hermanos), así que si alguno desaparece de la home es un problema de negocio, no de
+// texto.
+test('la app carga y muestra los dos caminos de pedido', async ({ page }) => {
   await gotoApp(page);
-  await expect(page.locator('text=SIGNATURE').first()).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=BUILD').first()).toBeVisible();
+  await expect(page.locator('text=Signatures').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Arma el tuyo').first()).toBeVisible();
+  // Un menú sin un solo precio es una app sin carta: se pinta igual y no vende nada. Es el
+  // mismo criterio con el que la prueba de humo de producción mira el CONTENIDO del
+  // catálogo y no solo que el endpoint responda 200.
+  //
+  // ⚠ EXIGE DECIMALES a propósito. La primera versión buscaba `S/` seguido de un dígito y
+  // pasaba igual con los precios rotos: matcheaba el "30" de **30CM**, que en el texto
+  // renderizado queda justo debajo del "S/". Un precio de carta siempre trae dos decimales
+  // (.90), y "30CM" no — se descubrió inyectando un `pz()` que devuelve cadena vacía.
+  await expect(page.locator('text=/S\\/\\s*\\d+[.,]\\d{2}/').first()).toBeVisible();
 });
 
 test('la pestaña de puntos muestra el formulario de login/registro para un invitado', async ({ page }) => {

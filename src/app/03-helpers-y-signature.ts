@@ -11,7 +11,7 @@ function H(sub?,bk?,showCart?){
   var sz=sub?26:40;
   // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
   // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
-  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
+  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Sándwiches hechos acá</div>';
   // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
   // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
   var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">'+icon('cart',18,'#F2F0EB')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
@@ -767,7 +767,7 @@ function sOHome(){
   // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
   // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
   // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_PRICE_ZONES[0].fee)+' según tu zona — lo cobra el motorizado, ~'+SOLES_TXT+'2 por km.</div>';
+  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia — lo cobra el motorizado, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por km.</div>';
   var lastOrd=cust?lastPaidOrder():null;
   var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
@@ -840,15 +840,31 @@ function sOHome(){
           +';display:flex;flex-direction:column;justify-content:flex-end;'
           +'padding:12px 12px 13px;transition:flex .3s ease">'
           // El hermano ocupa su panel de pie, pegado al borde de afuera y al piso.
-          +'<div class="sw-bro'+(activo?' sw-on':'')+'" style="position:absolute;bottom:-6px;'
-          +(esByo?'right:-6px':'left:-10px')+';width:'+(activo?'116px':'96px')
-          +';opacity:'+(activo?'1':'.72')+';transition:width .3s ease,opacity .3s ease">'
+          //
+          // ⚠ SE DIMENSIONA POR ALTURA, NUNCA POR ANCHO. Con `width` fijo, cada hermano
+          // ocupa el alto que le dicte SU proporción — y `sando_cuerpo` es 302×640, así que
+          // a 116px de ancho medía 246px en un contenedor de 212 con `overflow:hidden`.
+          // Anclado al piso, los 34px que sobraban salían por arriba: **la cabeza**. El
+          // dueño lo reportó como que la app "parece un agregado a la web antigua", y un
+          // personaje decapitado por su propio marco es exactamente eso.
+          //
+          // Por altura los dos entran completos aunque sus proporciones no se parezcan —
+          // y no se parecen a propósito, porque los hermanos no comparten ilustrador.
+          +'<div class="sw-bro'+(activo?' sw-on':'')+'" style="position:absolute;bottom:0;'
+          +(esByo?'right:0':'left:0')+';height:'+(activo?'182px':'150px')
+          +';opacity:'+(activo?'1':'.72')+';transition:height .3s ease,opacity .3s ease">'
           +'<img class="sw-bro-'+(esByo?'wicho':'sando')+'" src="img/'+pose+'.png" alt="'
-          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="width:100%;height:auto;display:block">'
+          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%;width:auto;display:block">'
           +'</div>'
           // Velo bajo el texto: sin esto el título cae encima del personaje y no se lee.
-          +'<div style="position:absolute;left:0;right:0;bottom:0;height:44%;background:linear-gradient(180deg,'
-          +(esByo?'rgba(63,134,180,0),rgba(45,102,140,.88)':'rgba(26,48,40,0),rgba(19,38,33,.92)')+')"></div>'
+          //
+          // Va al 62% de la altura y con TRES paradas, no dos: el degradado de dos paradas
+          // sube tan despacio que en la zona donde de verdad está el texto todavía es medio
+          // transparente, y el rótulo caía sobre el torso del hermano. La parada del medio
+          // hace que el velo ya esté casi opaco cuando llega la primera línea.
+          +'<div style="position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(180deg,'
+          +(esByo?'rgba(63,134,180,0) 0%,rgba(48,105,143,.72) 42%,rgba(38,88,120,.96) 100%'
+                 :'rgba(26,48,40,0) 0%,rgba(22,42,36,.76) 42%,rgba(17,34,29,.97) 100%')+')"></div>'
           +'<div style="position:relative;text-align:'+(esByo?'left':'right')+'">'
           +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
           +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
