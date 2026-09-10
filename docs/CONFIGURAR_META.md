@@ -20,6 +20,20 @@ saber si el CAC real es S/8 (la meta es alcanzable) o S/25 (no existe).
 
 ## A · Medición — el píxel y la Conversions API
 
+> **Estado al 2026-09-10 — dónde estás parado.**
+>
+> | | |
+> |---|---|
+> | `META_PIXEL_ID` | ✅ conseguido: `1571699187700546` |
+> | Secret en Supabase | ⬜ **falta ponerlo** (paso A3) |
+> | `META_CAPI_TOKEN` | ⬜ **falta generarlo** (paso A2) |
+> | Texto legal | ✅ corregido, ya no contradice al píxel |
+>
+> **Poner solo el `META_PIXEL_ID` ya sirve** — el píxel se prende solo, sin desplegar nada, y
+> empiezas a ver PageView y AddToCart el mismo día. Lo que te faltaría es la mitad que los
+> bloqueadores se comen, que es justo el `Purchase`. Por eso A2 y A3 van juntos.
+
+
 ### A1. Consigue el ID del píxel
 
 1. Entra a **[Administrador de Eventos](https://business.facebook.com/events_manager2)**
@@ -33,11 +47,31 @@ cualquier sitio que use un píxel, así que no es un secreto que proteger.
 
 ### A2. Genera el token de Conversions API
 
-1. En el mismo conjunto de datos: **Configuración** (Settings).
-2. Baja hasta **API de Conversiones** → **Generar token de acceso**.
-3. Cópialo apenas aparezca. **Meta no te lo vuelve a mostrar** — si lo pierdes, generas otro.
+**Tener el ID no activa nada todavía.** El ID solo enciende el píxel del navegador, que es
+justo la mitad que los bloqueadores de anuncios se comen. El token de abajo es el que hace que
+Meta vea TODAS tus ventas. Este es el paso que sigue, y sin él la medición queda a medias.
 
-**Ese texto largo es `META_CAPI_TOKEN`.** Este **sí** es secreto: nunca sale del servidor.
+Ruta exacta, con los nombres que usa Meta hoy:
+
+1. **[Administrador de Eventos](https://business.facebook.com/events_manager2)** → menú de la
+   izquierda → **Orígenes de datos** (Data Sources).
+2. Haz clic en **tu dataset** — el que tiene el ID que ya copiaste.
+   > ⚠ Desde 2026 Meta ya **no lo llama "píxel" sino "conjunto de datos"** (dataset). Es el
+   > mismo objeto, con otro nombre. Si buscas la palabra "píxel" no la vas a encontrar.
+3. Arriba de esa pantalla: **Configuración** (Settings).
+4. Baja hasta el bloque **API de Conversiones** (Conversions API).
+5. Busca **"Configurar manualmente"** (Set up manually / Configurar integración directa) y
+   dentro, **Generar token de acceso** (Generate access token).
+6. Acepta el diálogo de Meta y **cópialo apenas aparezca**. **Meta no te lo vuelve a mostrar**
+   — si lo pierdes, no pasa nada grave: generas otro y el viejo se reemplaza.
+
+**Ese texto largo es `META_CAPI_TOKEN`.** Este **sí** es secreto: trátalo como una contraseña,
+nunca sale del servidor y no debe ir a un chat, un correo ni una captura.
+
+> **Si no ves el bloque "API de Conversiones"**, casi siempre es que estás dentro de la cuenta
+> personal y no del negocio, o que el dataset todavía no recibió ni un evento. Manda una visita
+> a la app primero (con el `META_PIXEL_ID` ya puesto, paso A3) y vuelve: el bloque aparece
+> cuando el dataset deja de estar vacío.
 
 ### A3. Ponlos en Supabase
 
@@ -135,15 +169,23 @@ silencio y no rompe nada más.
 
 ---
 
-## Lo que hay que decidir ANTES de prender la medición
+## Lo legal ya está resuelto (2026-09-10)
 
-**La Política de Privacidad no menciona que se comparten datos con Meta.** Aunque todo va
-hasheado con SHA-256 y nunca en claro, igual se comparten identificadores de clientes con un
-tercero, y la **Ley 29733** de protección de datos personales exige transparencia sobre eso.
+**La Política de Privacidad decía lo contrario de lo que el píxel iba a hacer.** Textual:
+*"No vendemos ni compartimos tus datos con terceros para publicidad."* Ya está corregida, y
+ahora dice la verdad verificada contra el código:
 
-No toqué el texto legal porque **modificarlo requiere que tú lo pidas explícitamente**. Es una
-frase, pero es tu decisión y es previa a activar los secrets en producción. Si quieres, la
-redacto y me dices si va.
+- **Sí le llegan a Meta**: tu correo, tu teléfono y tu nombre de pila — siempre cifrados con
+  SHA-256, nunca legibles —, el monto del pedido sin el delivery, y qué productos llevó.
+- **No le llegan**: DNI, fecha de nacimiento, PIN ni dirección de entrega.
+- La **IP** sí la ve Meta, pero porque el navegador se conecta a Meta, no porque el servidor
+  se la mande. Pasa en cualquier web con publicidad, y el texto lo dice así.
+
+Y como la **Ley 29733** da derecho de **oposición**, avisar no alcanzaba: hay un interruptor
+real en **Mi Perfil → Privacidad** que apaga el reporte de esa persona en los dos caminos (el
+píxel del navegador y el del servidor). No cambia precios, puntos ni nada de su pedido.
+
+**Ya puedes prender la medición sin que tu app prometa una cosa y haga otra.**
 
 ---
 
