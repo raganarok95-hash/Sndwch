@@ -25,21 +25,75 @@ const APP_DIR = join(ROOT, 'src/app');
 
 // `SOLES` es el símbolo dentro de HTML, `SOLES_TXT` el de texto plano (push, correo). Los
 // dos terminan delante de los ojos de alguien, así que los dos exigen pz().
-const RE = /SOLES(_TXT)?\+(?!pz\()/g;
+//
+// La comprobación no es "hay un pz() cerca": es seguir la concatenación desde el símbolo
+// de soles hasta el PRIMER dato que se interpola, y exigir que ése pase por pz().
+//
+// ── POR QUÉ NO ALCANZA CON MIRAR SI pz() VA PEGADO A SOLES (2026-09-10) ──
+// La forma más común en este repo separa el símbolo del número con markup, para pintar el
+// número en dorado:
+//
+//     SOLES+'<span style="color:'+GOLD+'">'+t+'</span>'
+//                                          ↑ acá nadie miraba
+//
+// Y no era hipotético: así estaba escrita `AB()`, la barra de acción — o sea el total que
+// se ve JUSTO ENCIMA DEL BOTÓN DE PAGAR, en las cuatro pantallas que tienen uno
+// (Signature, armador, confirmación y carrito). Un Signature de S/20.90 se anunciaba como
+// "S/20.9", y el armador podía llegar a mostrar 24.369999999999997 — el mismo defecto que
+// el dueño ya había reportado en el empujón a 30CM, sobreviviendo en otra pantalla.
+const SOLES_RE = /SOLES(_TXT)?\+/g;
+// Constantes de ESTILO que aparecen entre el símbolo y el número. No son el importe, así
+// que la búsqueda las salta y sigue. GOLD y los dos acentos de lado son todo lo que hay
+// hoy; cualquier identificador en MAYÚSCULAS o una llamada a función de color cuenta.
+const ES_ESTILO = /^(?:[A-Z][A-Z0-9_]*|ACC|ACC_INK|SHADOW_[A-Z]+)(?:\(\))?$/;
+// Nombres que por convención ya traen texto formateado, no un número crudo.
+const YA_FORMATEADO = /(Txt|Lbl|Str|Html|Fmt)$/;
+
+// Devuelve el primer dato interpolado después de `SOLES+`, saltando literales y estilo.
+// `null` si no hay ninguno (el importe llega ya formateado dentro de un literal).
+function primerDato(resto) {
+  let i = 0;
+  for (let vuelta = 0; vuelta < 8; vuelta++) {
+    while (resto[i] === ' ') i++;
+    const c = resto[i];
+    if (c === "'" || c === '"' || c === '`') {
+      // Un literal: saltarlo entero, con sus escapes.
+      const cierre = c;
+      i++;
+      while (i < resto.length && resto[i] !== cierre) i += resto[i] === '\\' ? 2 : 1;
+      i++;
+      if (resto[i] !== '+') return null; // la concatenación terminó sin interpolar nada
+      i++;
+      continue;
+    }
+    const m = /^[A-Za-z_$][\w$]*(\(\))?/.exec(resto.slice(i));
+    if (!m) return null;
+    if (ES_ESTILO.test(m[0])) {
+      i += m[0].length;
+      if (resto[i] !== '+') return null;
+      i++;
+      continue;
+    }
+    return m[0] === 'pz' && resto[i + 2] === '(' ? 'pz' : m[0];
+  }
+  return null;
+}
 
 const problems = [];
 for (const f of readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()) {
   const src = readFileSync(join(APP_DIR, f), 'utf8');
-  const lines = src.split('\n');
-  lines.forEach((line, i) => {
-    RE.lastIndex = 0;
+  src.split('\n').forEach((line, i) => {
+    // Los comentarios no le llegan a nadie. Sin esto, escribir `SOLES+x` al EXPLICAR el
+    // defecto lo reporta como defecto.
+    const codigo = line.replace(/^(\s*)\/\/.*$/, '$1');
+    SOLES_RE.lastIndex = 0;
     let m;
-    while ((m = RE.exec(line))) {
-      // El único uso legítimo sin pz() es concatenar OTRA cadena ya formateada.
-      const resto = line.slice(m.index + m[0].length);
-      if (/^['"`]/.test(resto)) continue;
+    while ((m = SOLES_RE.exec(codigo))) {
+      const dato = primerDato(codigo.slice(m.index + m[0].length));
+      if (dato === null || dato === 'pz' || YA_FORMATEADO.test(dato)) continue;
       problems.push(
-        `${f}:${i + 1} — importe mostrado sin pz(): ...${line.slice(Math.max(0, m.index - 20), m.index + 60).trim()}...`,
+        `${f}:${i + 1} — importe mostrado sin pz() (llega como \`${dato}\`): ` +
+          `...${codigo.slice(Math.max(0, m.index - 22), m.index + 66).trim()}...`,
       );
     }
   });
