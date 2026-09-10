@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~291 KB que antes
+// de admin. Ningún cliente lo descarga: son ~300 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -3012,6 +3012,92 @@ async function doRecover() {
 // El recetario NO se reemplaza: sigue teniendo el porqué de cada decisión (por qué punta de
 // pecho y no lomo, qué pasa si sobrecargas la sartén). Acá está solo lo que hay que calcular.
 var recipesData = null, recipeTarget = '', recipeTimer = null, recipeTimerStep = null, recipeTimerEndsAt = 0;
+// ── PUBLICAR UNA RECETA DESDE EL PANEL (2026-09-10) ───────────────────────────────────
+// `admin-recipe-set` existía en el servidor desde que se creó esta pantalla, con su código,
+// sus validaciones y su historial append-only. Lo que NUNCA existió es una pantalla que lo
+// llamara: el panel de Recetas solo LEÍA. O sea que el CLAUDE.md decía "las demás las carga
+// el dueño desde el panel" y desde el panel no se podía cargar ninguna.
+//
+// Es el mismo modo de fallo que dejó `actAdminRetentionReport` importada y sin registrar: el
+// backend compila, la acción responde, y nada avisa de que nadie la llama.
+var recipeForm = { code: '', name: '', yield: '', grams: '', ing: '', steps: '' }, recipeFormMsg = '', recipeFormOpen = false;
+// Ingredientes y etapas se escriben como TEXTO, una por línea, y no como N filas que se
+// agregan con un botón. No es pereza: el dueño carga esto desde el celular, muchas veces
+// copiando del recetario, y escribir seis líneas seguidas es más rápido que tocar "agregar"
+// seis veces. El formato es el mismo que ya usa el recetario: nombre, cantidad, unidad.
+function parseRecipeLines(txt, campos) {
+    return String(txt || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) {
+        var p = l.split('|').map(function (x) { return x.trim(); });
+        var o = {};
+        campos.forEach(function (c, i) { o[c] = p[i] || ''; });
+        return o;
+    });
+}
+function recipeFormLoad(code) {
+    var r = (recipesData && recipesData.recipes || []).find(function (x) { return x.recipe_code === code; });
+    if (!r)
+        return;
+    // Publicar de nuevo NO edita la fila: inserta una versión nueva (append-only). Por eso
+    // cargar una receta existente y republicarla es la forma correcta de corregirla, y el
+    // historial de "qué hice la vez que salió bien" queda intacto.
+    recipeForm = {
+        code: r.recipe_code || '',
+        name: r.name || '',
+        yield: String(r.yield_portions || ''),
+        grams: String(r.portion_grams || ''),
+        ing: (r.ingredients || []).map(function (i) { return [i.item, i.qty, i.unit].join(' | '); }).join('\n'),
+        steps: (r.steps || []).map(function (x) { return [x.label, x.minutes].join(' | '); }).join('\n')
+    };
+    recipeFormOpen = true;
+    recipeFormMsg = '';
+    render();
+}
+function recipeFormClear() {
+    recipeForm = { code: '', name: '', yield: '', grams: '', ing: '', steps: '' };
+    recipeFormMsg = '';
+    render();
+}
+function recipeFormRead() {
+    var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+    recipeForm = { code: g('rf-code'), name: g('rf-name'), yield: g('rf-yield'), grams: g('rf-grams'), ing: g('rf-ing'), steps: g('rf-steps') };
+}
+async function doPublishRecipe() {
+    recipeFormRead();
+    var ings = parseRecipeLines(recipeForm.ing, ['item', 'qty', 'unit']).map(function (i) { return { item: i.item, qty: Number(i.qty), unit: i.unit }; });
+    var pasos = parseRecipeLines(recipeForm.steps, ['label', 'minutes']).map(function (x) { return { label: x.label, minutes: Number(x.minutes) }; });
+    // ⚠ Se valida ACÁ ADEMÁS del servidor, y no en su lugar. El servidor manda —es quien
+    // escribe— pero un error que el cliente puede ver antes de mandar le ahorra al dueño un
+    // viaje entero, y sobre todo le dice CUÁL de las seis líneas está mal.
+    var malas = ings.filter(function (i) { return !i.item || !isFinite(i.qty) || i.qty <= 0 || !i.unit; });
+    if (malas.length) {
+        recipeFormMsg = 'Revisa los ingredientes: cada línea va "nombre | cantidad | unidad". Falla: ' + malas[0].item;
+        render();
+        return;
+    }
+    if (!ings.length) {
+        recipeFormMsg = 'Una receta sin ingredientes no sirve para calcular nada.';
+        render();
+        return;
+    }
+    busy = true;
+    busyMsg = 'Publicando la receta...';
+    render();
+    try {
+        await api('admin-recipe-set', { token: token, recipeCode: recipeForm.code, name: recipeForm.name,
+            yieldPortions: Number(recipeForm.yield), portionGrams: recipeForm.grams ? Number(recipeForm.grams) : null,
+            ingredients: ings, steps: pasos });
+        recipeFormMsg = '';
+        recipeForm = { code: '', name: '', yield: '', grams: '', ing: '', steps: '' };
+        recipeFormOpen = false;
+        busy = false;
+        await loadRecipes(recipeTarget);
+    }
+    catch (e) {
+        busy = false;
+        recipeFormMsg = (e && e.message) || 'No se pudo publicar la receta.';
+        render();
+    }
+}
 async function loadRecipes(target) {
     sndScreen = 'admin_recipes';
     busy = true;
@@ -3115,6 +3201,37 @@ function sAdminRecipes() {
         return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:10px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadRecipes()') + '</div>';
     }
     h += '<div style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:14px;line-height:1.5">Las cantidades y los tiempos para cocinar. El porqué de cada decisión sigue en el recetario — acá está lo que hay que calcular.</div>';
+    // ── PUBLICAR / CORREGIR UNA RECETA ──────────────────────────────────────────────────
+    // Va ARRIBA de la lista y cerrado por defecto: lo que el dueño hace todos los días es
+    // CONSULTAR una receta, no cargarla. Un formulario abierto empujaría la lista fuera de
+    // pantalla en el 95% de las visitas.
+    var rfLbl = 'font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin:10px 0 4px';
+    var rfInp = 'width:100%;box-sizing:border-box;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:EB Garamond,serif';
+    h += '<details' + (recipeFormOpen ? ' open' : '') + ' style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:18px">'
+        + '<summary style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">+ Publicar o corregir una receta //</summary>'
+        // Append-only: se dice acá, donde se decide, y no en un comentario que el dueño no lee.
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:10px;line-height:1.5">Publicar guarda una <b style="color:var(--sw-text-body,#F2F0EB)">versión nueva</b>; la anterior no se borra. Para corregir una receta, ábrela con <i>Cargar</i> y publica de nuevo.</div>'
+        + '<div style="' + rfLbl + '">Código del insumo //</div>'
+        + '<input id="rf-code" value="' + esc(recipeForm.code) + '" placeholder="P01" style="' + rfInp + '">'
+        + '<div style="' + rfLbl + '">Nombre //</div>'
+        + '<input id="rf-name" value="' + esc(recipeForm.name) + '" placeholder="Res asada mechada" style="' + rfInp + '">'
+        + '<div style="display:flex;gap:10px">'
+        + '<div style="flex:1"><div style="' + rfLbl + '">Rinde (porciones) //</div><input id="rf-yield" type="number" min="1" inputmode="numeric" value="' + esc(recipeForm.yield) + '" placeholder="24" style="' + rfInp + '"></div>'
+        + '<div style="flex:1"><div style="' + rfLbl + '">Gramos por porción //</div><input id="rf-grams" type="number" min="1" inputmode="numeric" value="' + esc(recipeForm.grams) + '" placeholder="85" style="' + rfInp + '"></div>'
+        + '</div>'
+        // ⚠ La unidad tiene que coincidir con la de las COMPRAS. Comprar en kg y escribir la
+        // receta en g da un costo por porción mil veces menor, sin ningún error visible.
+        + '<div style="' + rfLbl + '">Ingredientes — uno por línea: nombre | cantidad | unidad //</div>'
+        + '<textarea id="rf-ing" rows="5" placeholder="Punta de pecho | 2.5 | kg&#10;Sal | 40 | g" style="' + rfInp + ';resize:vertical;line-height:1.5">' + esc(recipeForm.ing) + '</textarea>'
+        + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-warn,#ffa500);margin-top:4px">La unidad tiene que ser la misma con la que compras ese insumo, o el costo por porción sale mal sin avisar.</div>'
+        // Los minutos NO se escalan con las porciones (duplicar la tanda no duplica el braseado).
+        + '<div style="' + rfLbl + '">Etapas — una por línea: nombre | minutos //</div>'
+        + '<textarea id="rf-steps" rows="4" placeholder="Sellado | 15&#10;Braseado | 180" style="' + rfInp + ';resize:vertical;line-height:1.5">' + esc(recipeForm.steps) + '</textarea>'
+        + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Los minutos no se escalan: duplicar la tanda no duplica el braseado.</div>'
+        + (recipeFormMsg ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px;margin-top:10px">' + esc(recipeFormMsg) + '</div>' : '')
+        + '<div style="margin-top:12px">' + BTN('Publicar receta //', 'doPublishRecipe()') + '</div>'
+        + '<div onclick="recipeFormClear()" style="text-align:center;margin-top:10px;cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">Limpiar</div>'
+        + '</details>';
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid ' + GOLD + ';border-radius:10px;padding:14px;margin-bottom:18px">'
         + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Escalar a //</div>'
         + '<div style="display:flex;gap:8px;align-items:center">'
@@ -3135,7 +3252,8 @@ function sAdminRecipes() {
             + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:16px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc2(r.name) + '</div>'
             + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-top:2px">' + esc2(r.recipe_code) + ' · RINDE ' + esc2(r.yield_portions) + (r.portion_grams ? ' × ' + esc2(r.portion_grams) + 'g' : '') + '</div></div>'
             + '<div style="text-align:right;flex:0 0 auto"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:' + GOLD + '">' + Math.floor(tl.totalMinutes / 60) + 'h ' + (tl.totalMinutes % 60) + 'm</div>'
-            + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">DE TANDA</div></div></div>';
+            + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">DE TANDA</div></div></div>'
+            + '<div onclick="recipeFormLoad(\'' + esc2(r.recipe_code) + '\')" style="cursor:pointer;display:inline-block;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-bottom:10px">Cargar para corregir →</div>';
         // Ingredientes. Cuando hay escalado, la cantidad original queda AL LADO: sin ella no hay
         // forma de notar que el factor está mal.
         s += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.15em;margin:12px 0 6px">INGREDIENTES' + (r.scaled ? ' · PARA ' + esc2(recipesData.targetPortions) : '') + '</div>';
