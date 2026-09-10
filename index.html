@@ -1726,7 +1726,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'a02832ed62';
+var APP_BUILD = '16cca64cc1';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4665,12 +4665,35 @@ function deliveryZonePickerHTML() {
             + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
             + '</div></div>';
     }
-    // SIN PIN: no hay tarifa que mostrar todavía. No se ofrece el desplegable de zonas de
-    // vuelta a propósito — volvería a dejar que el cliente elija su propio precio de envío.
+    // SIN PIN: no hay distancia medida. No se ofrece el desplegable de zonas de vuelta a
+    // propósito — volvería a dejar que el cliente elija su propio precio de envío.
+    //
+    // ⚠ PERO SÍ SE ESTÁ COBRANDO ALGO, y decir lo contrario contradecía al recibo de arriba.
+    // El servidor cae a la tarifa por zona cuando no recibe coordenadas (a propósito, para
+    // que un shell viejo servido por un service worker desactualizado pueda pagar igual), así
+    // que `deliveryFeeAmount()` YA devuelve un monto y el recibo YA lo suma al total. Este
+    // bloque decía "calculamos el envío al instante" como si todavía no hubiera nada — dos
+    // párrafos de la misma pantalla contando cosas distintas sobre la misma plata. Es el
+    // mismo defecto que descuadraba el recibo, en su otra forma: no un número mal sumado,
+    // sino un número que se afirma y se niega a la vez.
+    //
+    // Ahora se dice lo que se cobra HOY y qué gana el cliente confirmando el pin. Y el pin
+    // deja de venderse como un trámite: en la mayoría de las direcciones de Trujillo la
+    // distancia real cobra MENOS que el estimado por zona, así que confirmarlo suele abaratar.
+    var estimado = deliveryFeeAmount();
     return '<div style="margin-top:14px">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
         + '<div style="background:rgba(203,162,88,.08);border:1px solid ' + GOLD + ';border-radius:10px;padding:12px 14px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro.</div>'
+        + (estimado > 0
+            ? '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px">'
+                + '<span style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB)">Estimado por tu zona</span>'
+                + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:16px;font-weight:640;color:' + GOLD + '">' + SOLES_TXT + pz(estimado) + '</span></div>'
+            : '')
+        + '<div style="font-family:\'EB Garamond\',serif;font-size:12px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'
+        + (estimado > 0
+            ? 'Confirma tu ubicación en el mapa y lo cobramos por la distancia real: ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro. Casi siempre sale menos que el estimado.'
+            : 'Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro.')
+        + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
         + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#1E3932;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
         + '</div></div>';
