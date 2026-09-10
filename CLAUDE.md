@@ -1165,6 +1165,67 @@ importarla y nada avisa si falta.**
 no de medición propia, y todo el modelo cuelga de él. Se mide poniendo los secrets de Meta
 (`docs/CONFIGURAR_META.md`) — es el bloqueo número uno del negocio.
 
+## La política de privacidad decía lo contrario de lo que hace el píxel (2026-09-10)
+
+El texto publicado decía, palabra por palabra: *"No vendemos ni compartimos tus datos con
+terceros para publicidad."* El píxel de Meta hace exactamente eso, así que el día que se
+configure el secret esa frase pasa a ser falsa. Ya está corregido, y **cada afirmación del
+texto nuevo se verificó contra el código, no se redactó de memoria**: a Meta le llegan correo,
+teléfono y **nombre de pila** hasheados con SHA-256, el monto sin delivery y los códigos de
+producto; **no** le llegan DNI, fecha de nacimiento, PIN ni dirección. La IP la ve el navegador
+de Meta, no el servidor (`clientIp` existe en `CapiPurchase` y **ningún llamador lo pasa**).
+
+**Y avisar no alcanzaba.** La Ley 29733 da derecho de **oposición**, y prometerlo sin un
+interruptor que lo cumpla es una promesa que se rompe el primer día que alguien la use. De ahí
+`customers.ad_tracking_opt_out` y la tarjeta en Mi Perfil → Privacidad. Cuatro cosas que no hay
+que romper:
+
+- **El corte del navegador va en `fbTrack`**, el envoltorio, y NO en los cinco sitios que
+  reportan un evento: ahí es donde el sexto se olvida.
+- **El servidor corta en las DOS rutas.** La de `confirmManualPayment` importa más: Yape es el
+  método por defecto, así que olvidarla dejaría el interruptor apagando casi nada. Un pedido de
+  **invitado sí se reporta** — sin cuenta no hay dónde guardar una oposición.
+- **El default es `false`.** La ley exige que oponerse SEA POSIBLE, no que haya que pedirlo.
+- **El interruptor lee su estado del SERVIDOR**, no de lo que el navegador supone que guardó.
+  Uno que miente sobre su propio estado es peor que no tenerlo.
+
+Modo de fallo de todo esto: **silencio**. Quitar un guard no rompe nada visible — el pedido se
+cobra, la pantalla se ve igual — solo hace que la app haga lo contrario de lo que promete su
+texto legal. Por eso `tests-api/oposicion-a-la-medicion.test.ts` (5) y
+`tests/oposicion-a-la-medicion.spec.ts` (4), las dos verificadas inyectando el defecto.
+
+## La dirección se busca con Google; el mapa sigue en OpenStreetMap (2026-09-10)
+
+*"La geolocalización es una porquería, no ubica mi dirección"* tenía una causa concreta:
+**Nominatim tiene la avenida pero casi nunca el NÚMERO en Trujillo**, y el número es lo que el
+motorizado necesita. Google Places sí lo tiene.
+
+**Solo cambió el BUSCADOR.** Los tiles siguen siendo los de OSM: arrastrar el pin ya funcionaba
+bien y pasar a "Dynamic Maps" de Google cobraría por cada apertura del mapa sin resolver ningún
+problema que exista. Hay una prueba que lo fija, porque es la clase de cosa que alguien
+"unifica" después.
+
+**El costo entero cuelga del token de sesión.** Autocomplete se cobra **por sesión y no por
+tecla**, y una sesión cerrada con un Place Details sale **gratis** en cualquier volumen. Por eso
+`_gSessionToken` se crea al empezar a escribir y **se descarta al elegir**: reusarlo invalida la
+sesión y Google pasa a cobrar tecla por tecla. Ese fallo **no da ningún error — llega como una
+factura**, y por eso tiene prueba propia. El Place Details además trae las coordenadas que el
+cobro por distancia necesita: no es una llamada extra, es la que vuelve gratis la sesión.
+
+El reverse geocoding también pasa a Google (acierta el distrito mucho más seguido, y de ese
+distrito depende si el pedido se puede entregar). Corre con **`google.maps.Geocoder` en el
+navegador a propósito**: la API REST de Geocoding **rechaza una key restringida por referrer**
+(probado, `REQUEST_DENIED`), y quitarle la restricción la dejaría usable por cualquiera que la
+copie del HTML.
+
+**Sin key, TODO cae a Nominatim** — secret sin configurar, o un shell viejo servido por un
+service worker desactualizado. El peor caso es el comportamiento anterior, nunca un checkout
+roto. También con prueba: sin ese respaldo el cliente se queda sin buscador y nada avisa.
+
+⚠ **Requiere `Places API (New)` habilitada en Google Cloud**, no la legacy:
+`AutocompleteSuggestion` no existe en la vieja. Una sola key sirve para todas las APIs
+habilitadas del proyecto — no hace falta una por API.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
