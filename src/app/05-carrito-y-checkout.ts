@@ -931,16 +931,8 @@ function payButtonLabel(t,fallback){
 // El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
 // eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
 // sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
-function reciboLinea(k,v,tono?){
-  var col=tono==='ahorro'?'#2E6B4F':tono==='mudo'?'#6A665C':'#1A1A18';
-  return'<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:'+col+';padding:3px 0">'
-    +'<span>'+esc(k)+'</span><span style="font-weight:700">'+v+'</span></div>';
-}
 function reciboHTML(base,total,combo,valle,organizador,recompensa){
-  var MONO='font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
-  var h='<div style="background:#F6F2E7;color:#1A1A18;border-radius:4px;padding:15px 15px;margin-bottom:12px;'+MONO+'">'
-    +'<div style="font-size:8.5px;letter-spacing:.2em;color:#6A665C">TU PEDIDO · NO ES BOLETA</div>'
-    +'<div style="border-top:1px dashed #1A1A18;margin:9px 0 7px"></div>'
+  var h=PAPEL_ABRE('TU PEDIDO · NO ES BOLETA')
     +reciboLinea('Subtotal',SOLES+pz(base));
   if(combo>0)h+=reciboLinea('Combo · sándwich + bebida','-'+SOLES+pz(combo),'ahorro');
   if(valle>0)h+=reciboLinea('Bebida gratis · hora valle','-'+SOLES+pz(valle),'ahorro');
@@ -961,11 +953,7 @@ function reciboHTML(base,total,combo,valle,organizador,recompensa){
   h+=(envio>0
       ? reciboLinea(deliveryKmNow()!==null?'Envío · '+deliveryKmNow()+' km':'Envío · estimado por zona',SOLES+pz(envio))
       : reciboLinea('Envío','se calcula con tu dirección','mudo'))
-    +'<div style="border-top:2px solid #1A1A18;margin:8px 0 7px"></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">TOTAL</span>'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">'+SOLES+pz(total)+'</span></div>'
-    +'</div>';
+    +PAPEL_TOTAL('TOTAL',total);
   return h;
 }
 function sOCart(){

@@ -1702,7 +1702,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'f684c611a7';
+var APP_BUILD = '7355209977';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2149,7 +2149,15 @@ async function sbG(t, q) { var r = await fetch(SB_URL + '/rest/v1/' + t + '?' + 
     throw new Error(e.message || 'Error');
 } return r.json(); }
 // UTILS
-function fn(arr, id) { var i = arr.find(function (x) { return x.id === id; }); return i ? i.l + ' // ' + i.s : ''; }
+// Nombre visible de un ítem del catálogo: "Pollo // Teriyaki".
+// ⚠ El separador solo va si hay algo del otro lado. Los TRES quesos tienen `s:''` (son
+// nombres que no necesitan apellido — Mozzarella, Cheddar, Edam), así que esta función
+// venía imprimiendo "Cheddar // " con la barra colgando en toda pantalla que muestre el
+// queso elegido: el resumen del armado, la confirmación y el detalle del pedido. No
+// rompía nada; solo se veía como un texto cortado a la mitad.
+// Se arregla acá y no poniéndoles un subtítulo inventado a los quesos: rellenar un dato
+// de producto que el dueño no escribió es exactamente lo que este repo no hace.
+function fn(arr, id) { var i = arr.find(function (x) { return x.id === id; }); return i ? (i.s ? i.l + ' // ' + i.s : i.l) : ''; }
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 // Valida DD/MM/AAAA y que la fecha exista de verdad en el calendario (antes solo se
 // validaba el formato con regex — "31/02/2026" pasaba igual aunque febrero no tenga 31
@@ -2250,14 +2258,66 @@ function dblProtRef() {
 // pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
 // DEBE coincidir con dblFee() en supabase/functions/api/catalog.ts.
 function dblFee(pr, sz) { return !pr ? 0 : (sz === '30' ? pr.pDbl30 : pr.pDbl); }
+// Precio del sándwich que se está armando ahora mismo.
+//
+// ⚠ NO REIMPLEMENTES LA FÓRMULA ACÁ. Esto delega en `itemUnitPrice()`, que es la que ya
+// usan el carrito, el checkout y el mensaje de WhatsApp — y la que el servidor replica.
+//
+// Estaba escrita dos veces y las dos copias YA habían divergido: `itemUnitPrice()` suma el
+// recargo del pan de focaccia (`baseSurcharge`) y `total()` no. O sea que en ARMA EL TUYO
+// con focaccia el armador anunciaba S/13.90 durante todo el flujo y el carrito cobraba
+// S/14.40 apenas se agregaba. El cliente no pierde plata —el cobro correcto es el del
+// carrito— pero ve cambiar el precio sin haber tocado nada, que es la peor forma de llegar
+// a un checkout. Es el mismo defecto que ya costó tres semanas de precios fantasma, en
+// chico: dos sitios fijando el mismo número y uno ganando en silencio.
+//
+// El recargo del pan existe SOLO en ARMA EL TUYO — en un Signature la receta fija el pan y
+// el cliente no lo elige, así que no hay nada que recargar. Eso ya lo sabe itemUnitPrice.
 function total() {
-    var sig = SIGS.find(function (x) { return x.id === sigId; });
-    var pr = PROTS.find(function (x) { return x.id === prot; });
-    var bp = mode === 'sig' ? sigPrice(sig) : protPrice(pr);
-    var dbl = dblProtRef();
-    return money(bp + (doubleProt ? dblFee(dbl, size) : 0) + (extraSauce ? EXTRA_SAUCE_PRICE : 0));
+    if (!size)
+        return 0;
+    return money(itemUnitPrice(currentBuiltItem()));
 }
 function szLabel(sz) { return sz === '15' ? '15CM' : sz === '30' ? '30CM' : ''; }
+// ── ETIQUETA · EL PAPEL ───────────────────────────────────────────────────────────────
+// La cuarta dirección visual que eligió el dueño, y la única con un límite explícito de su
+// parte: "etiqueta, pero solo para los recibos de pago". O sea que no es un estilo para
+// decorar la app — es lo que se pone cuando se está rindiendo cuentas de plata.
+//
+// Por eso rompe la paleta a propósito: papel claro y tinta negra en una app oscura, en
+// monoespaciada, con el corte punteado. Se ve como un ticket porque ES un ticket, y esa
+// diferencia de material es la que hace que se lea distinto del resto de la pantalla.
+//
+// Vive acá y no en la pantalla del carrito porque ahora la usan DOS: el carrito y la
+// confirmación del sándwich. Dos copias del mismo papel terminan en que una cambia y la
+// otra no, y entonces la app tiene dos formas de contar la misma cuenta.
+//
+// ⚠ Los colores son literales a propósito y NO son tokens de la paleta: no deben moverse
+// cuando la app cambia de lado (verde de SANDO / celeste de WICHO). Un recibo que cambia
+// de color según en qué parte del menú estabas parece otro documento.
+var PAPEL_TINTA = '#1A1A18', PAPEL_FONDO = '#F6F2E7', PAPEL_MUDO = '#6A665C', PAPEL_AHORRO = '#2E6B4F';
+var PAPEL_MONO = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
+function PAPEL_ABRE(titulo) {
+    return '<div style="background:' + PAPEL_FONDO + ';color:' + PAPEL_TINTA + ';border-radius:4px;padding:15px;margin-bottom:12px;' + PAPEL_MONO + '">'
+        + '<div style="font-size:8.5px;letter-spacing:.2em;color:' + PAPEL_MUDO + '">' + esc(titulo) + '</div>'
+        + '<div style="border-top:1px dashed ' + PAPEL_TINTA + ';margin:9px 0 7px"></div>';
+}
+// Corte grueso + el importe grande. Es el cierre de cualquier papel.
+function PAPEL_TOTAL(rotulo, monto) {
+    return '<div style="border-top:2px solid ' + PAPEL_TINTA + ';margin:8px 0 7px"></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline">'
+        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">' + esc(rotulo) + '</span>'
+        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">' + SOLES + pz(monto) + '</span></div>'
+        + '</div>';
+}
+// Una línea del papel. `tono` no es decoración: 'ahorro' es lo que el cliente NO paga y
+// 'mudo' es lo que todavía no se puede saber. Un descuento en la misma tinta que el resto
+// se lee como un cargo más.
+function reciboLinea(k, v, tono) {
+    var col = tono === 'ahorro' ? PAPEL_AHORRO : tono === 'mudo' ? PAPEL_MUDO : PAPEL_TINTA;
+    return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:' + col + ';padding:3px 0">'
+        + '<span>' + esc(k) + '</span><span style="font-weight:700">' + v + '</span></div>';
+}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
 function SZTOG() {
     function opt(sz, l, d) { var sel = size === sz; return '<div onclick="size=\'' + sz + '\';render()" style="flex:1;background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:' + SHADOW_SM + '">' + selBar(sel) + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:' + (sel ? '#FFFFFF' : '#A8C8B0') + '">' + l + '</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + d + '</div></div>'; }
@@ -4003,6 +4063,12 @@ function sOItemConfirm() {
     var dblSurcharge = doubleProt ? dblFee(dbl, size) : 0;
     var sauceSurcharge = extraSauce ? EXTRA_SAUCE_PRICE : 0;
     var t = quickPayEligible ? payableTotal() : total();
+    // ⚠ LA LÍNEA QUE SOSTIENE EL TOTAL. Un Signature no se desglosa (ver abajo), y sin esta
+    // línea el papel mostraba "Tamaño · 15CM" y debajo "TOTAL S/23.90" — un total sin una
+    // sola línea que lo explique. Es el mismo defecto que descuadraba el recibo del carrito,
+    // en su forma más pura: la cuenta no se puede seguir.
+    if (mode === 'sig' && sig)
+        rows.push({ k: 'Signature', v: sig.n, p: bp });
     rows.push({ k: 'Tamaño', v: szLabel(size) });
     // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
     // solo repite lo que ya dice el nombre del sándwich. Solo BUILD YOUR OWN (donde el
@@ -4044,12 +4110,50 @@ function sOItemConfirm() {
         var priceLabel = p ? SOLES + pz(p) : 'GRATIS';
         return '<div onclick="' + act + ';' + (quickPayEligible ? 'confirmRerender()' : 'render()') + '" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '">' + selBar(sel) + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">' + e + '</span><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + l + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + d + '</div></div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + (sel ? GOLD : '#A8C8B0') + ';flex-shrink:0;margin-left:8px">' + (sel ? '✓ ' : '+') + priceLabel + '</span></div>';
     }
-    var sigNameHTML = (mode === 'sig' && sig) ? '<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">' + sig.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(sig.s) + '</div></div>' : '';
+    // ── HERO A SANGRE ─────────────────────────────────────────────────────────────────
+    // El nombre del Signature estaba escrito DEBAJO del desglose: se leía "Tamaño · 15CM"
+    // y recién después de qué sándwich se estaba hablando. Ahora encabeza la pantalla sobre
+    // su propia foto, a sangre y sin márgenes laterales — el mismo tratamiento con el que se
+    // eligió en la lista, así que la pantalla confirma visualmente lo que se tocó.
+    //
+    // Un armado no tiene foto propia (es una combinación que no existe fotografiada), así
+    // que usa la de su PROTEÍNA, que es la decisión que de verdad lo define. No se inventa
+    // una imagen de un sándwich que nadie fotografió.
+    var heroImg = (mode === 'sig' && sig) ? SIG_IMG[sig.id] : PROT_IMG[prot];
+    var heroTitulo = (mode === 'sig' && sig)
+        ? sig.n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + sigTypeTag(sig.s)
+        : 'Tu SND' + '<span class="cut-sep" style="color:' + GOLD + '">//</span>' + 'WCH';
+    var heroSub = (mode === 'sig' && sig) ? esc(sigBadge(sig)) : esc(fn(PROTS, prot));
+    var heroHTML = heroImg
+        ? '<div style="position:relative;height:190px;margin:-20px -20px 16px;overflow:hidden">'
+            + '<img src="' + heroImg + '" alt="' + esc(mode === 'sig' && sig ? sig.n : '') + '" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
+            // El degradado cierra contra el fondo de la app (no contra negro) para que la foto
+            // no termine en un corte duro: se funde con la pantalla en vez de estar pegada.
+            + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#1E3932) 100%)"></div>'
+            + '<div style="position:absolute;left:20px;right:20px;bottom:12px">'
+            + PILL(heroSub, false) + '<span style="margin-left:6px">' + PILL(szLabel(size), true) + '</span>'
+            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.12;margin-top:7px;text-shadow:0 2px 8px rgba(0,0,0,.75)">' + heroTitulo + '</div>'
+            + '</div></div>'
+        // Sin foto no se inventa una: queda el nombre solo, que es lo que había antes.
+        : '<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">' + heroTitulo + '</div></div>';
     return H('CONFIRMAR SÁNDWICH', (quickPayEligible ? 'backFromConfirm()' : 'go(\'' + bk + '\')'), true) + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-        + '<div style="background:' + 'var(--sw-card,#2D5246)' + ';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:14px">' + (mode === 'sig' ? 'Tu signature //' : 'Tu build //') + '</div>' + rows.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:' + GOLD + ';min-width:72px">' + r.k + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">' + r.v + '</span>' + (r.p ? '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + SOLES + pz(r.p) + '</span>' : '') + '</div>'; }).join('') + sigNameHTML + '<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span></div></div>'
+        + heroHTML
+        // ── ETIQUETA ──────────────────────────────────────────────────────────────────
+        // El desglose deja de ser una tarjeta verde más entre tarjetas verdes y pasa al mismo
+        // papel del recibo del carrito. No es un cambio de color: acá se está mostrando una
+        // CUENTA, y el material tiene que decir eso antes de que se lea una sola cifra.
+        // Que las dos pantallas usen el mismo papel importa además porque el cliente ve las
+        // dos seguidas — si la cuenta cambia de forma entre una y otra, se revisa dos veces.
+        + PAPEL_ABRE(mode === 'sig' ? 'TU SIGNATURE · NO ES BOLETA' : 'TU BUILD · NO ES BOLETA')
+        + rows.map(function (r) {
+            // El importe de una línea solo aparece cuando esa línea CUESTA algo. Poner "S/0"
+            // en el pan y el queso llenaría el papel de ceros y escondería lo que sí se cobra.
+            return reciboLinea(r.k, (r.p ? SOLES + pz(r.p) + ' · ' : '') + '<span style="font-weight:400">' + r.v + '</span>');
+        }).join('')
+        + PAPEL_TOTAL('TOTAL', t)
         + (sizeUpsellDelta > 0 ? '<div onclick="size=\'30\';' + (quickPayEligible ? 'cart[0]=currentBuiltItem();confirmRerender()' : 'render()') + '" style="background:' + 'var(--sw-card2,#1A3028)' + ';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:' + GOLD + '">+' + SOLES + pz(sizeUpsellDelta) + '</span></div></div>' : '')
         + (recU ? '<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>' + uBtn(recU.k, recU.e, recU.l, recU.d, recU.p, uSel(recU.k)) + '</div>' : '')
-        + '<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'Doble proteína', 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), dblFee(dbl, size), doubleProt) : '') + (sauceExtraAllowed ? uBtn('sauce', icon('chili', 18, GOLD), 'Salsa extra', 'Salsa adicional a tu elección', 2, extraSauce) : '') + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'Queso', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
+        + '<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'Doble proteína', 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), dblFee(dbl, size), doubleProt) : '') + (sauceExtraAllowed ? uBtn('sauce', icon('chili', 18, GOLD), 'Salsa extra', 'Salsa adicional a tu elección', EXTRA_SAUCE_PRICE, extraSauce) : '') + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'Queso', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
         + (cust ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('estrella', 11, GOLD) + '<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:6px">' + favMsg + '</div></div>' : '')
         + (quickPayEligible
             ? checkoutExtrasHTML() + '<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
@@ -5196,16 +5300,8 @@ function payButtonLabel(t, fallback) {
 // El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
 // eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
 // sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
-function reciboLinea(k, v, tono) {
-    var col = tono === 'ahorro' ? '#2E6B4F' : tono === 'mudo' ? '#6A665C' : '#1A1A18';
-    return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:' + col + ';padding:3px 0">'
-        + '<span>' + esc(k) + '</span><span style="font-weight:700">' + v + '</span></div>';
-}
 function reciboHTML(base, total, combo, valle, organizador, recompensa) {
-    var MONO = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
-    var h = '<div style="background:#F6F2E7;color:#1A1A18;border-radius:4px;padding:15px 15px;margin-bottom:12px;' + MONO + '">'
-        + '<div style="font-size:8.5px;letter-spacing:.2em;color:#6A665C">TU PEDIDO · NO ES BOLETA</div>'
-        + '<div style="border-top:1px dashed #1A1A18;margin:9px 0 7px"></div>'
+    var h = PAPEL_ABRE('TU PEDIDO · NO ES BOLETA')
         + reciboLinea('Subtotal', SOLES + pz(base));
     if (combo > 0)
         h += reciboLinea('Combo · sándwich + bebida', '-' + SOLES + pz(combo), 'ahorro');
@@ -5230,11 +5326,7 @@ function reciboHTML(base, total, combo, valle, organizador, recompensa) {
     h += (envio > 0
         ? reciboLinea(deliveryKmNow() !== null ? 'Envío · ' + deliveryKmNow() + ' km' : 'Envío · estimado por zona', SOLES + pz(envio))
         : reciboLinea('Envío', 'se calcula con tu dirección', 'mudo'))
-        + '<div style="border-top:2px solid #1A1A18;margin:8px 0 7px"></div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:baseline">'
-        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">TOTAL</span>'
-        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">' + SOLES + pz(total) + '</span></div>'
-        + '</div>';
+        + PAPEL_TOTAL('TOTAL', total);
     return h;
 }
 function sOCart() {

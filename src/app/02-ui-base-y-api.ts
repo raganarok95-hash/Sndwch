@@ -228,7 +228,15 @@ function sbH(x?){var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Conten
 async function sbG(t,q){var r=await fetch(SB_URL+'/rest/v1/'+t+'?'+q,{headers:sbH(),signal:(function(){try{var ac=new AbortController();setTimeout(function(){ac.abort();},10000);return ac.signal;}catch(e){return undefined;}})()});if(!r.ok){var e=await r.json();throw new Error(e.message||'Error');}return r.json();}
 
 // UTILS
-function fn(arr,id){var i=arr.find(function(x){return x.id===id;});return i?i.l+' // '+i.s:'';}
+// Nombre visible de un ítem del catálogo: "Pollo // Teriyaki".
+// ⚠ El separador solo va si hay algo del otro lado. Los TRES quesos tienen `s:''` (son
+// nombres que no necesitan apellido — Mozzarella, Cheddar, Edam), así que esta función
+// venía imprimiendo "Cheddar // " con la barra colgando en toda pantalla que muestre el
+// queso elegido: el resumen del armado, la confirmación y el detalle del pedido. No
+// rompía nada; solo se veía como un texto cortado a la mitad.
+// Se arregla acá y no poniéndoles un subtítulo inventado a los quesos: rellenar un dato
+// de producto que el dueño no escribió es exactamente lo que este repo no hace.
+function fn(arr,id){var i=arr.find(function(x){return x.id===id;});return i?(i.s?i.l+' // '+i.s:i.l):'';}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 // Valida DD/MM/AAAA y que la fecha exista de verdad en el calendario (antes solo se
 // validaba el formato con regex — "31/02/2026" pasaba igual aunque febrero no tenga 31
@@ -325,14 +333,65 @@ function dblProtRef(){
 // pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
 // DEBE coincidir con dblFee() en supabase/functions/api/catalog.ts.
 function dblFee(pr,sz){return !pr?0:(sz==='30'?pr.pDbl30:pr.pDbl);}
+// Precio del sándwich que se está armando ahora mismo.
+//
+// ⚠ NO REIMPLEMENTES LA FÓRMULA ACÁ. Esto delega en `itemUnitPrice()`, que es la que ya
+// usan el carrito, el checkout y el mensaje de WhatsApp — y la que el servidor replica.
+//
+// Estaba escrita dos veces y las dos copias YA habían divergido: `itemUnitPrice()` suma el
+// recargo del pan de focaccia (`baseSurcharge`) y `total()` no. O sea que en ARMA EL TUYO
+// con focaccia el armador anunciaba S/13.90 durante todo el flujo y el carrito cobraba
+// S/14.40 apenas se agregaba. El cliente no pierde plata —el cobro correcto es el del
+// carrito— pero ve cambiar el precio sin haber tocado nada, que es la peor forma de llegar
+// a un checkout. Es el mismo defecto que ya costó tres semanas de precios fantasma, en
+// chico: dos sitios fijando el mismo número y uno ganando en silencio.
+//
+// El recargo del pan existe SOLO en ARMA EL TUYO — en un Signature la receta fija el pan y
+// el cliente no lo elige, así que no hay nada que recargar. Eso ya lo sabe itemUnitPrice.
 function total(){
-  var sig=SIGS.find(function(x){return x.id===sigId;});
-  var pr=PROTS.find(function(x){return x.id===prot;});
-  var bp=mode==='sig'?sigPrice(sig):protPrice(pr);
-  var dbl=dblProtRef();
-  return money(bp+(doubleProt?dblFee(dbl,size):0)+(extraSauce?EXTRA_SAUCE_PRICE:0));
+  if(!size)return 0;
+  return money(itemUnitPrice(currentBuiltItem()));
 }
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
+// ── ETIQUETA · EL PAPEL ───────────────────────────────────────────────────────────────
+// La cuarta dirección visual que eligió el dueño, y la única con un límite explícito de su
+// parte: "etiqueta, pero solo para los recibos de pago". O sea que no es un estilo para
+// decorar la app — es lo que se pone cuando se está rindiendo cuentas de plata.
+//
+// Por eso rompe la paleta a propósito: papel claro y tinta negra en una app oscura, en
+// monoespaciada, con el corte punteado. Se ve como un ticket porque ES un ticket, y esa
+// diferencia de material es la que hace que se lea distinto del resto de la pantalla.
+//
+// Vive acá y no en la pantalla del carrito porque ahora la usan DOS: el carrito y la
+// confirmación del sándwich. Dos copias del mismo papel terminan en que una cambia y la
+// otra no, y entonces la app tiene dos formas de contar la misma cuenta.
+//
+// ⚠ Los colores son literales a propósito y NO son tokens de la paleta: no deben moverse
+// cuando la app cambia de lado (verde de SANDO / celeste de WICHO). Un recibo que cambia
+// de color según en qué parte del menú estabas parece otro documento.
+var PAPEL_TINTA='#1A1A18',PAPEL_FONDO='#F6F2E7',PAPEL_MUDO='#6A665C',PAPEL_AHORRO='#2E6B4F';
+var PAPEL_MONO='font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
+function PAPEL_ABRE(titulo){
+  return'<div style="background:'+PAPEL_FONDO+';color:'+PAPEL_TINTA+';border-radius:4px;padding:15px;margin-bottom:12px;'+PAPEL_MONO+'">'
+    +'<div style="font-size:8.5px;letter-spacing:.2em;color:'+PAPEL_MUDO+'">'+esc(titulo)+'</div>'
+    +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:9px 0 7px"></div>';
+}
+// Corte grueso + el importe grande. Es el cierre de cualquier papel.
+function PAPEL_TOTAL(rotulo,monto){
+  return'<div style="border-top:2px solid '+PAPEL_TINTA+';margin:8px 0 7px"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">'+esc(rotulo)+'</span>'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">'+SOLES+pz(monto)+'</span></div>'
+    +'</div>';
+}
+// Una línea del papel. `tono` no es decoración: 'ahorro' es lo que el cliente NO paga y
+// 'mudo' es lo que todavía no se puede saber. Un descuento en la misma tinta que el resto
+// se lee como un cargo más.
+function reciboLinea(k,v,tono?){
+  var col=tono==='ahorro'?PAPEL_AHORRO:tono==='mudo'?PAPEL_MUDO:PAPEL_TINTA;
+  return'<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:'+col+';padding:3px 0">'
+    +'<span>'+esc(k)+'</span><span style="font-weight:700">'+v+'</span></div>';
+}
 // Toggle de tamaño reutilizado en Signature y Build Your Own.
 function SZTOG(){
   function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:20px;font-weight:640;color:'+(sel?'#FFFFFF':'#A8C8B0')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+d+'</div></div>';}

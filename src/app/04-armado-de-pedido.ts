@@ -150,6 +150,11 @@ function sOItemConfirm(){
   var dblSurcharge=doubleProt?dblFee(dbl,size):0;
   var sauceSurcharge=extraSauce?EXTRA_SAUCE_PRICE:0;
   var t=quickPayEligible?payableTotal():total();
+  // ⚠ LA LÍNEA QUE SOSTIENE EL TOTAL. Un Signature no se desglosa (ver abajo), y sin esta
+  // línea el papel mostraba "Tamaño · 15CM" y debajo "TOTAL S/23.90" — un total sin una
+  // sola línea que lo explique. Es el mismo defecto que descuadraba el recibo del carrito,
+  // en su forma más pura: la cuenta no se puede seguir.
+  if(mode==='sig'&&sig)rows.push({k:'Signature',v:sig.n,p:bp});
   rows.push({k:'Tamaño',v:szLabel(size)});
   // Un Signature es curado por la casa — desglosarlo en pan/proteína/toppings/salsas
   // solo repite lo que ya dice el nombre del sándwich. Solo BUILD YOUR OWN (donde el
@@ -182,12 +187,50 @@ function sOItemConfirm(){
     var priceLabel=p?SOLES+pz(p):'GRATIS';
     return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+d+'</div></div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?GOLD:'#A8C8B0')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+priceLabel+'</span></div>';
   }
-  var sigNameHTML=(mode==='sig'&&sig)?'<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">'+sig.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)+'</div></div>':'';
+  // ── HERO A SANGRE ─────────────────────────────────────────────────────────────────
+  // El nombre del Signature estaba escrito DEBAJO del desglose: se leía "Tamaño · 15CM"
+  // y recién después de qué sándwich se estaba hablando. Ahora encabeza la pantalla sobre
+  // su propia foto, a sangre y sin márgenes laterales — el mismo tratamiento con el que se
+  // eligió en la lista, así que la pantalla confirma visualmente lo que se tocó.
+  //
+  // Un armado no tiene foto propia (es una combinación que no existe fotografiada), así
+  // que usa la de su PROTEÍNA, que es la decisión que de verdad lo define. No se inventa
+  // una imagen de un sándwich que nadie fotografió.
+  var heroImg=(mode==='sig'&&sig)?SIG_IMG[sig.id]:PROT_IMG[prot];
+  var heroTitulo=(mode==='sig'&&sig)
+    ?sig.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(sig.s)
+    :'Tu SND'+'<span class="cut-sep" style="color:'+GOLD+'">//</span>'+'WCH';
+  var heroSub=(mode==='sig'&&sig)?esc(sigBadge(sig)):esc(fn(PROTS,prot));
+  var heroHTML=heroImg
+    ?'<div style="position:relative;height:190px;margin:-20px -20px 16px;overflow:hidden">'
+      +'<img src="'+heroImg+'" alt="'+esc(mode==='sig'&&sig?sig.n:'')+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
+      // El degradado cierra contra el fondo de la app (no contra negro) para que la foto
+      // no termine en un corte duro: se funde con la pantalla en vez de estar pegada.
+      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#1E3932) 100%)"></div>'
+      +'<div style="position:absolute;left:20px;right:20px;bottom:12px">'
+      +PILL(heroSub,false)+'<span style="margin-left:6px">'+PILL(szLabel(size),true)+'</span>'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.12;margin-top:7px;text-shadow:0 2px 8px rgba(0,0,0,.75)">'+heroTitulo+'</div>'
+      +'</div></div>'
+    // Sin foto no se inventa una: queda el nombre solo, que es lo que había antes.
+    :'<div style="margin:2px 0 14px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640;color:var(--sw-text,#FFFFFF);letter-spacing:.03em;line-height:1.15">'+heroTitulo+'</div></div>';
   return H('CONFIRMAR SÁNDWICH',(quickPayEligible?'backFromConfirm()':'go(\''+bk+'\')'),true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-    +'<div style="background:'+'var(--sw-card,#2D5246)'+';border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:14px">'+(mode==='sig'?'Tu signature //':'Tu build //')+'</div>'+rows.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:9px;gap:8px;align-items:flex-start"><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.1em;color:'+GOLD+';min-width:72px">'+r.k+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-body,#F2F0EB);flex:1;line-height:1.4">'+r.v+'</span>'+(r.p?'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';flex-shrink:0">'+SOLES+pz(r.p)+'</span>':'')+'</div>';}).join('')+sigNameHTML+'<div style="border-top:1px solid var(--sw-border,#3A6B58);margin-top:12px;padding-top:12px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span></div></div>'
+    +heroHTML
+    // ── ETIQUETA ──────────────────────────────────────────────────────────────────
+    // El desglose deja de ser una tarjeta verde más entre tarjetas verdes y pasa al mismo
+    // papel del recibo del carrito. No es un cambio de color: acá se está mostrando una
+    // CUENTA, y el material tiene que decir eso antes de que se lea una sola cifra.
+    // Que las dos pantallas usen el mismo papel importa además porque el cliente ve las
+    // dos seguidas — si la cuenta cambia de forma entre una y otra, se revisa dos veces.
+    +PAPEL_ABRE(mode==='sig'?'TU SIGNATURE · NO ES BOLETA':'TU BUILD · NO ES BOLETA')
+    +rows.map(function(r){
+      // El importe de una línea solo aparece cuando esa línea CUESTA algo. Poner "S/0"
+      // en el pan y el queso llenaría el papel de ceros y escondería lo que sí se cobra.
+      return reciboLinea(r.k,(r.p?SOLES+pz(r.p)+' · ':'')+'<span style="font-weight:400">'+r.v+'</span>');
+    }).join('')
+    +PAPEL_TOTAL('TOTAL',t)
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#1A3028)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:14px;color:'+GOLD+'">+'+SOLES+pz(sizeUpsellDelta)+'</span></div></div>':'')
     +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
-    +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dblFee(dbl,size),doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',2,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
+    +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dblFee(dbl,size),doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',EXTRA_SAUCE_PRICE,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
     +(cust?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('estrella',11,GOLD)+'<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:12px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
         ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:10px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
