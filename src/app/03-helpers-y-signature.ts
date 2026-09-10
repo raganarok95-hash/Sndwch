@@ -782,17 +782,17 @@ function sOHome(){
         return (ia<0?99:ia)-(ib<0?99:ib);
       });
       var secretSig=SIGS.find(function(s){return s.secret;});
-      // ── LOS DOS LADOS, CON SUS DUEÑOS (2026-09-10) ──
+      // ── LOS DOS LADOS: LOS HERMANOS SON LA DIVISIÓN (2026-09-10) ──
       //
-      // Primero fueron tres pestañas iguales; después dos paneles de color. El dueño pidió
-      // el paso que faltaba: que los hermanos ESTÉN ahí y reaccionen. Ahora cada lado lleva
-      // su mitad del logo, el lado activo crece y su hermano responde — WICHO adelanta la
-      // cara y su ojo empieza a girar, SANDO se yergue.
+      // Tercer intento, y el que corrige los dos anteriores con la crítica del dueño:
+      //   · Primero fueron tres pestañas iguales, que borraban lo que la marca ya explica.
+      //   · Después dos paneles con un "//" dorado grueso entre medio. El dueño lo rechazó:
+      //     el wordmark YA tiene su "//" arriba en la misma pantalla, así que repetirlo
+      //     grande era ruido, no marca. "Sinceramente está sobrando y solo es ruido allí."
       //
-      // El corte entre los dos es VACÍO, no una franja pintada: en el logo las dos mitades
-      // se separan y entre ellas se ve el fondo. La versión anterior dibujaba dos barras
-      // doradas gruesas y el dueño la rechazó con razón — el wordmark ya tiene su "//"
-      // arriba, y repetirlo grande en la misma pantalla lo convertía en ruido.
+      // Ahora NO hay divisor dibujado. Con los personajes de cuerpo entero, los hermanos
+      // SON la división: SANDO parado en su lado verde, WICHO en el celeste. La marca la
+      // pone quien la habita, no una franja.
       //
       // Siguen siendo <button> con los mismos nombres accesibles: un panel que cambia la
       // pantalla tiene que ser alcanzable con teclado y anunciable por un lector de
@@ -804,25 +804,26 @@ function sOHome(){
         var fondo=esByo
           ?'linear-gradient(200deg,var(--sw-sky,#8CC8EC),var(--sw-sky-deep,#3F86B4))'
           :'linear-gradient(155deg,var(--sw-card,#2D5246),var(--sw-card2,#1A3028))';
+        // WICHO tiene varias poses; SANDO por ahora solo una. Al tocarlo, WICHO saluda —
+        // es lo que hace el que se lanza. Cuando el dueño genere más poses de SANDO, acá
+        // se le agrega la suya y nada más cambia.
+        var pose=esByo?(activo?'wicho_saluda':'wicho_cuerpo'):'sando_cuerpo';
         return'<button onclick="homeTab=\''+id+'\';render()" aria-pressed="'+(activo?'true':'false')
-          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.45':'1')
-          +';min-height:188px;position:relative;overflow:hidden;background:'+fondo
+          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.35':'1')
+          +';min-height:212px;position:relative;overflow:hidden;background:'+fondo
           +';display:flex;flex-direction:column;justify-content:flex-end;'
-          +'padding:12px '+(esByo?'12px':'12px')+' 13px 12px;transition:flex .3s ease">'
-          // ⚠ CADA MITAD VA PEGADA A LA COSTURA, no al borde de afuera.
-          // SANDO es la mitad izquierda del logo: su canto de corte queda a la DERECHA, así
-          // que va pegado al borde derecho de su panel. WICHO al revés. Puestos así, los dos
-          // se vuelven a juntar sobre el corte y la interfaz REARMA el logo del dueño en vez
-          // de mostrar dos recortes sueltos — que es como se veía en el primer intento.
-          +'<div style="position:absolute;top:10px;'+(esByo?'left:0':'right:0')
-          +';opacity:'+(activo?'1':'.6')+';transition:opacity .3s ease">'
-          +BRO(esByo?'wicho':'sando',(activo?'92px':'78px'),activo)+'</div>'
-          // Velo bajo el texto: sin esto el título cae encima de la cara y no se lee. Va del
-          // color del propio panel, así que no ensucia, solo separa.
-          +'<div style="position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(180deg,'
-          +(esByo?'rgba(63,134,180,0),rgba(45,102,140,.94)':'rgba(26,48,40,0),rgba(19,38,33,.96)')+')"></div>'
-          // El texto se va al borde de AFUERA, que es el espacio que dejan libre las caras.
-          +'<div style="position:relative;text-align:'+(esByo?'right':'left')+'">'
+          +'padding:12px 12px 13px;transition:flex .3s ease">'
+          // El hermano ocupa su panel de pie, pegado al borde de afuera y al piso.
+          +'<div class="sw-bro'+(activo?' sw-on':'')+'" style="position:absolute;bottom:-6px;'
+          +(esByo?'right:-6px':'left:-10px')+';width:'+(activo?'116px':'96px')
+          +';opacity:'+(activo?'1':'.72')+';transition:width .3s ease,opacity .3s ease">'
+          +'<img class="sw-bro-'+(esByo?'wicho':'sando')+'" src="img/'+pose+'.png" alt="'
+          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="width:100%;height:auto;display:block">'
+          +'</div>'
+          // Velo bajo el texto: sin esto el título cae encima del personaje y no se lee.
+          +'<div style="position:absolute;left:0;right:0;bottom:0;height:44%;background:linear-gradient(180deg,'
+          +(esByo?'rgba(63,134,180,0),rgba(45,102,140,.88)':'rgba(26,48,40,0),rgba(19,38,33,.92)')+')"></div>'
+          +'<div style="position:relative;text-align:'+(esByo?'left':'right')+'">'
           +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
           +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
@@ -830,15 +831,13 @@ function sOHome(){
           +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+sub
           +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
       };
-      var tabBar='<div style="position:relative;display:flex;border-radius:14px;overflow:hidden;'
+      var tabBar='<div style="display:flex;border-radius:14px;overflow:hidden;'
         +'margin-bottom:10px;box-shadow:'+SHADOW_SM+'">'
         +lado('sig','Signatures','Ya está resuelto.',homeTab==='sig')
-        +'<div style="position:absolute;z-index:2;left:'+(homeTab==='byo'?'40.8%':'59.2%')+';top:-16px;bottom:-16px;'
-        +'transform:translateX(-50%);transition:left .3s ease">'+CUT('100%')+'</div>'
         +lado('byo','Arma el tuyo','Tú decides.',homeTab==='byo')
         +'</div>'
         // Las bebidas no son un tercer hermano: no son una forma de pedir un sándwich, son
-        // otra cosa que se compra. Por eso van debajo del corte y no dentro de él.
+        // otra cosa que se compra. Por eso van debajo y no dentro de la división.
         +'<button onclick="homeTab=\'drink\';render()" aria-pressed="'+(homeTab==='drink'?'true':'false')
         +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
         +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'

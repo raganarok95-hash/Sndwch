@@ -487,6 +487,14 @@ function render(){
       console.error('sndScreen fue sobrescrito por un script externo — reponiendo a o_home');
       sndScreen='o_home';
     }
+    // El lado se aplica en CADA render y en UN solo sitio. Hacerlo dentro de cada onclick
+    // que cambia de pantalla garantizaba lo contrario: la que se olvidara se quedaría del
+    // color del otro hermano, sin romper nada y sin que nadie lo notara.
+    // El armador y las bebidas son de WICHO —son las pantallas donde el cliente ELIGE—;
+    // todo lo demás vive del lado de SANDO. El admin nunca: tiene su propia piel.
+    setLado((!/^admin/.test(sndScreen) &&
+      (sndScreen==='o_build'||sndScreen==='o_sides'||
+       (sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink')))) ? 'wicho' : 'sando');
     // Repone cualquier función nuestra que un bundle de terceros haya pisado desde el
     // render anterior (ver el bloque "BLINDAJE DE FUNCIONES GLOBALES" más abajo). Va acá
     // porque render() corre antes de pintar cada pantalla: si Culqi acaba de pisar `go`,

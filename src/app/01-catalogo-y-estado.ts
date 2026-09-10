@@ -1218,6 +1218,18 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
 var homeTab='sig';
+// De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
+// las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
+// tema claro/oscuro — es una decisión del cliente que el color acompaña.
+// Se aplica en un solo sitio para que ninguna pantalla pueda quedarse en el lado
+// equivocado: el defecto sería mudo, se vería "bien", solo que del color de otro.
+function setLado(l){
+  try{
+    var h=document.documentElement;
+    if(l==='wicho')h.setAttribute('data-lado','wicho');
+    else h.removeAttribute('data-lado');
+  }catch(e){}
+}
 // A dónde vuelve el botón "←" en pantallas legales que se abren desde más de un lugar
 // (registro, perfil, o el pie de contacto del home) — sin esto, sPLegal() solo podía
 // adivinar el origen mirando si `cust` existe, y desde el pie del home eso mandaba a un
