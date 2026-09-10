@@ -1529,8 +1529,17 @@ function initMetaPixel(id) {
 }
 // Envoltorio único: si el píxel no está configurado no hace nada, y un error dentro de
 // fbq nunca puede tumbar el flujo de compra que lo llamó.
+//
+// ⚠ Y respeta el DERECHO DE OPOSICIÓN (Ley 29733). Va acá, en el envoltorio, y no en cada
+// uno de los cinco sitios que reportan un evento: ese es justo el lugar donde el sexto se
+// olvida, y un evento que se escapa no rompe nada visible — la promesa legal se incumple
+// en silencio. El servidor corta por su lado (`reportPurchaseToMeta`), porque un cliente
+// que se opone desde el celular no querría que su compra se reporte igual desde el otro
+// camino.
 function fbTrack(event, params, eventId) {
     try {
+        if (cust && cust.ad_tracking_opt_out)
+            return;
         var fbq = window.fbq;
         if (!fbq)
             return;
@@ -1726,7 +1735,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'fdbf6dca35';
+var APP_BUILD = '62288fb681';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -1742,7 +1751,12 @@ var wlPhone = '', wlName = '', wlMsg = '', wlDone = localStorage.getItem('sw_wl_
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
 var businessLaunched = false;
+// Key de Google Maps — llega en get-store-hours. Vacía = la app usa Nominatim/OSM, que es
+// como funcionó hasta el 2026-09-10 y sigue siendo el respaldo (ver buscarDireccion()).
+var googleMapsKey = '';
 var pushSubscribed = false, pushMsg = '';
+// Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
+var adOptOutMsg = '';
 var savedPh = localStorage.getItem('sw_ph') || '';
 var token = localStorage.getItem('sw_tok') || '';
 // Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato
@@ -2390,6 +2404,12 @@ async function loadStoreHoursBackground() {
             metaPixelId = r.metaPixelId;
             initMetaPixel(r.metaPixelId);
         }
+        // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
+        // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
+        // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.
+        // Llegando por acá se puede rotar sin desplegar el cliente.
+        if (r.googleMapsKey)
+            googleMapsKey = r.googleMapsKey;
         storePausedUntil = r.pausedUntil || null;
         // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
         // cocina por delante ahora mismo.
@@ -6688,6 +6708,46 @@ function openMap(lat, lon, approx) {
 function revGeo(lat, lon) {
     window._mLat = lat;
     window._mLon = lon;
+    // El pin ya sabe en qué distrito cayó, y de ese distrito depende si el pedido se puede
+    // entregar. Google acierta el distrito en Trujillo mucho más seguido que Nominatim, así
+    // que va primero; si no hay key o falla, cae al de siempre.
+    if (googleMapsKey) {
+        revGeoGoogle(lat, lon).catch(function () { revGeoNominatim(lat, lon); });
+        return;
+    }
+    revGeoNominatim(lat, lon);
+}
+// `google.maps.Geocoder` corre EN EL NAVEGADOR a propósito: la API REST de Geocoding rechaza
+// una key restringida por referrer (probado — devuelve REQUEST_DENIED), y quitarle esa
+// restricción a la key la dejaría usable por cualquiera que la copie del HTML.
+async function revGeoGoogle(lat, lon) {
+    await loadGoogleMaps();
+    var g = window.google;
+    if (!g || !g.maps || !g.maps.Geocoder)
+        throw new Error('geocoder no disponible');
+    var res = await new g.maps.Geocoder().geocode({ location: { lat: lat, lng: lon }, language: 'es' });
+    var r = (res && res.results && res.results[0]);
+    if (!r)
+        throw new Error('sin resultados');
+    var comp = r.address_components || [];
+    var buscar = function (tipo) {
+        var c = comp.find(function (x) { return (x.types || []).indexOf(tipo) >= 0; });
+        return c ? c.long_name : '';
+    };
+    // En Perú el distrito es `locality`; `administrative_area_level_2` es la provincia. Se
+    // prueban varios porque Google no es consistente en toda la ciudad — mismo criterio que
+    // ya se usaba con Nominatim.
+    window._mDistrict = districtFromAddress([buscar('locality'), buscar('sublocality'), buscar('administrative_area_level_2'), buscar('administrative_area_level_3')].filter(Boolean).join(', ')) || '';
+    var calle = buscar('route'), num = buscar('street_number');
+    var hint = [calle && num ? calle + ' ' + num : calle, buscar('sublocality')].filter(Boolean).join(', ');
+    var h = document.getElementById('maddr-hint');
+    if (h)
+        h.innerHTML = hint ? '<span style="color:' + GOLD + '">&#8599; Referencia: </span>' + esc(hint) : '';
+    var inp = document.getElementById('maddr-input');
+    if (inp && !inp.value && hint)
+        inp.value = hint;
+}
+function revGeoNominatim(lat, lon) {
     // Nominatim for approximate reference only
     var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon + '&accept-language=es&zoom=18';
     fetch(url)
@@ -6733,6 +6793,80 @@ function revGeo(lat, lon) {
 // mínimo de 4 caracteres y el guardia de petición en vuelo: sin eso, escribir rápido
 // dispara una petición por tecla y OSM bloquea a TODOS los clientes de la app a la vez.
 var _addrTimer = null, _addrBusy = false, _addrLast = '';
+// ── GOOGLE PLACES: EL BUSCADOR QUE SÍ CONOCE LOS NÚMEROS DE TRUJILLO (2026-09-10) ─────
+// El dueño lo reportó como "la geolocalización es una porquería, no ubica mi dirección" y
+// tenía razón por una causa concreta: Nominatim (OpenStreetMap) tiene la avenida pero casi
+// nunca el NÚMERO en Trujillo. Y el número es justo lo que el motorizado necesita.
+//
+// ⚠ SOLO SE CAMBIA EL BUSCADOR. Los tiles del mapa siguen siendo los de OpenStreetMap, que
+// son gratis: arrastrar el pin ya funcionaba bien y cambiar a "Dynamic Maps" de Google
+// costaría plata por cada apertura del mapa sin resolver ningún problema que exista.
+//
+// COSTO: Autocomplete con `sessionToken` se cobra POR SESIÓN y no por tecla, y una sesión
+// cerrada con un Place Details sale gratis en cualquier volumen. Por eso el token se crea al
+// empezar a escribir y se DESCARTA al elegir un resultado: reusarlo invalida la sesión y
+// Google pasa a cobrar tecla por tecla. Al volumen de este negocio (cientos de pedidos al
+// mes contra 5 000 llamadas gratis) esto no llega ni cerca del tramo pago.
+//
+// Y si la key no llegó —secret sin configurar, o un shell viejo servido por un service
+// worker desactualizado— TODO cae solo a Nominatim, que es exactamente como funcionaba
+// hasta hoy. El peor caso es el comportamiento anterior, nunca un checkout roto.
+var _gmapsPromise = null, _gSessionToken = null;
+function loadGoogleMaps() {
+    if (_gmapsPromise)
+        return _gmapsPromise;
+    if (!googleMapsKey)
+        return Promise.reject(new Error('sin key'));
+    _gmapsPromise = new Promise(function (resolve, reject) {
+        var sc = document.createElement('script');
+        // `language=es&region=PE` no es cosmético: sin region, "Av. España" prioriza resultados
+        // de España — el mismo defecto que el `viewbox` resolvía a mano en Nominatim.
+        sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(googleMapsKey)
+            + '&libraries=places&language=es&region=PE&loading=async';
+        sc.async = true;
+        sc.onload = function () { resolve(); };
+        sc.onerror = function () { _gmapsPromise = null; reject(new Error('no cargó')); };
+        document.head.appendChild(sc);
+    });
+    return _gmapsPromise;
+}
+function googleListo() {
+    var g = window.google;
+    return !!(g && g.maps && g.maps.places && g.maps.places.AutocompleteSuggestion);
+}
+// Un token por sesión de búsqueda. Se pide una sola vez y se suelta al elegir.
+function gSessionToken() {
+    var g = window.google;
+    if (!_gSessionToken && g && g.maps && g.maps.places)
+        _gSessionToken = new g.maps.places.AutocompleteSessionToken();
+    return _gSessionToken;
+}
+async function buscarConGoogle(q) {
+    await loadGoogleMaps();
+    if (!googleListo())
+        throw new Error('places no disponible');
+    var g = window.google;
+    var r = await g.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: q,
+        sessionToken: gSessionToken(),
+        // Acotado a Perú y sesgado a Trujillo: el círculo NO excluye (por si alguien escribe una
+        // referencia conocida de otro lado), solo ordena — excluir daría "no encontramos nada"
+        // en los bordes de la ciudad, que es donde más falta hace acertar.
+        includedRegionCodes: ['pe'],
+        locationBias: { center: { lat: STORE_LAT, lng: STORE_LON }, radius: 20000 },
+        language: 'es',
+    });
+    var sug = (r && r.suggestions) || [];
+    return sug.map(function (x) {
+        var pp = x.placePrediction;
+        if (!pp)
+            return null;
+        return {
+            texto: (pp.text && pp.text.toString && pp.text.toString()) || String(pp.text || ''),
+            place: pp,
+        };
+    }).filter(Boolean);
+}
 function addrResultsEl() { return document.getElementById('maddr-results'); }
 function addrSearchTyped() {
     if (_addrTimer)
@@ -6760,6 +6894,38 @@ function addrSearchNow() {
     _addrLast = q;
     box.style.display = 'block';
     box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">Buscando...</div>';
+    // Google primero, porque es el único que tiene la numeración de Trujillo. Si no hay key,
+    // si el script no carga, o si Google no devuelve nada, sigue Nominatim abajo — el cliente
+    // nunca se queda sin buscador por un problema de configuración que no es suyo.
+    if (googleMapsKey) {
+        buscarConGoogle(q).then(function (hits) {
+            _addrBusy = false;
+            if (!hits.length) {
+                pintarSinResultados(box);
+                return;
+            }
+            window._addrHits = hits;
+            box.innerHTML = hits.map(function (h, i) {
+                return '<div onclick="addrPick(' + i + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
+                    + 'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">' + esc(h.texto) + '</div>';
+            }).join('');
+        }).catch(function () {
+            // Cae a Nominatim sin decir nada: para el cliente esto es un detalle de plomería.
+            _addrBusy = false;
+            buscarConNominatim(q, box);
+        });
+        return;
+    }
+    buscarConNominatim(q, box);
+}
+function pintarSinResultados(box) {
+    box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
+        + 'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
+}
+// El buscador de siempre, ahora como RESPALDO. No se borra: es lo que sostiene la app si la
+// key falta o Google no responde, y su cobertura de calles (no de números) es real.
+function buscarConNominatim(q, box) {
+    _addrBusy = true;
     // `bounded=1` + `viewbox` alrededor de Trujillo: sin eso, "Av. España" devuelve España.
     var vb = '-79.20,-8.28,-78.88,-7.98';
     var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&accept-language=es'
@@ -6767,16 +6933,20 @@ function addrSearchNow() {
     fetch(url).then(function (r) { return r.json(); }).then(function (list) {
         _addrBusy = false;
         if (!Array.isArray(list) || !list.length) {
-            box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
-                + 'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
+            pintarSinResultados(box);
             return;
         }
-        box.innerHTML = list.map(function (r, i) {
-            var nom = String(r.display_name || '').split(',').slice(0, 4).join(',');
+        // Se normaliza a la MISMA forma que devuelve Google ({texto, lat, lon}) para que
+        // `addrPick` no tenga que saber de qué buscador vino el resultado. Dos formas distintas
+        // en la misma lista es como se cuela el bug de "el pin quedó en el resultado anterior".
+        var hits = list.map(function (r) {
+            return { texto: String(r.display_name || '').split(',').slice(0, 4).join(','), lat: parseFloat(r.lat), lon: parseFloat(r.lon) };
+        });
+        window._addrHits = hits;
+        box.innerHTML = hits.map(function (h, i) {
             return '<div onclick="addrPick(' + i + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
-                + 'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">' + esc(nom) + '</div>';
+                + 'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">' + esc(h.texto) + '</div>';
         }).join('');
-        window._addrHits = list;
     }).catch(function () {
         _addrBusy = false;
         box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">'
@@ -6786,7 +6956,7 @@ function addrSearchNow() {
 // Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: el número exacto
 // casi nunca lo tiene OSM, así que lo que sigue es que la persona ajuste el pin. Cerrar
 // acá daría por buena una precisión que no tenemos.
-function addrPick(i) {
+async function addrPick(i) {
     var list = window._addrHits || [];
     var r = list[i];
     if (!r)
@@ -6799,11 +6969,37 @@ function addrPick(i) {
     var banner = document.getElementById('mmap-accuracy-banner');
     if (banner)
         banner.style.display = 'block';
+    var lat = r.lat, lon = r.lon;
+    // Un resultado de Google todavía no trae coordenadas: hay que pedir el Place Details. Esa
+    // llamada es la que CIERRA la sesión de autocompletado y la vuelve gratis, así que no es
+    // un costo extra — es lo que evita que se cobre tecla por tecla.
+    if (r.place && r.place.toPlace) {
+        try {
+            var place = r.place.toPlace();
+            await place.fetchFields({ fields: ['location', 'formattedAddress'] });
+            if (place.location) {
+                lat = place.location.lat();
+                lon = place.location.lng();
+            }
+            // El texto que el motorizado va a leer sale de Google, que sí trae el número. Solo se
+            // escribe si el cliente no puso nada suyo: lo que él escribió (una referencia, un
+            // interior) vale más que la versión canónica de una API.
+            var inp = document.getElementById('maddr-input');
+            if (inp && place.formattedAddress && (!inp.value || inp.value === r.texto))
+                inp.value = place.formattedAddress;
+        }
+        catch (e) { }
+        // El token se suelta acá, pase lo que pase. Reusarlo invalida la sesión y Google cobra
+        // cada tecla como una llamada suelta.
+        _gSessionToken = null;
+    }
+    if (!isFinite(lat) || !isFinite(lon))
+        return;
     if (_lmap) {
-        _lmap.setView([parseFloat(r.lat), parseFloat(r.lon)], 18);
+        _lmap.setView([lat, lon], 18);
     }
     else {
-        openMap(parseFloat(r.lat), parseFloat(r.lon), true);
+        openMap(lat, lon, true);
     }
 }
 function closeMap() { document.getElementById('mmap').style.display = 'none'; }
@@ -7333,6 +7529,7 @@ function sPProfile() {
     // (crecimiento vs. manejo de saldo vs. gamificación) — se agrupan bajo 2 eyebrows y se
     // marca la única tarjeta con cobro real (Plan Semanal) para que no se confunda con las
     // demás, que solo mueven saldo/puntos propios — hallazgo de auditoría visual, MEDIO.
+    var adOptOut = !!(cust && cust.ad_tracking_opt_out);
     var sectionLabel = function (t) { return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:20px 0 10px">' + t + '</div>'; };
     weeklyPlanHTML = weeklyPlanHTML.replace('Plan<span class="cut-sep"', '<span style="float:right;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em">Pago con tarjeta</span>Plan<span class="cut-sep"');
     return H('MI PERFIL', 'sndScreen=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">' + heroHTML
@@ -7340,6 +7537,12 @@ function sPProfile() {
         + pushHTML
         + sectionLabel('Retos y referidos //') + referralHTML + challengeHTML + discoveryHTML
         + sectionLabel('Tu saldo //') + balanceCompareHTML + creditHTML + giftCardHTML + weeklyPlanHTML
+        + sectionLabel('Privacidad //')
+        // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
+        // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se
+        // muestra apagado (medición activa) porque es el estado real de quien aceptó la política
+        // al registrarse — no se pinta un consentimiento que nadie dio.
+        + '<div onclick="toggleAdTracking()" style="background:' + (adOptOut ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (adOptOut ? GOLD : '#3A6B58') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (adOptOut ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">No medir<span class="cut-sep" style="color:' + GOLD + '"> // </span>mis compras</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.45">Deja de reportar tus pedidos a Meta para medir anuncios. No cambia precios, puntos ni nada de tu pedido.</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:16px;color:' + (adOptOut ? GOLD : '#A8C8B0') + '">' + (adOptOut ? '✓' : '○') + '</span></div>' + (adOptOutMsg ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(adOptOutMsg) + '</div>' : '') + '</div>'
         + '<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:var(--sw-danger-strong,#ff5555);font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
 }
 function shareReferral() {
@@ -7774,8 +7977,8 @@ function sPLegal() {
         + sec('QUÉ VENDEMOS //', 'Sándwiches preparados al momento, para delivery en ' + BIZ_CITY + ' — como Signature (combinaciones curadas por la casa) o armados a tu gusto (ARMA EL TUYO), además de bebidas y snacks. El menú, con descripción y precio de cada producto, está disponible dentro de la app desde el home.')
         + sec('QUÉ DATOS PEDIMOS //', 'Nombre, teléfono, PIN, DNI y fecha de nacimiento al crear tu cuenta; correo y dirección son opcionales. El DNI y la fecha de nacimiento solo se usan para verificar tu identidad si necesitas recuperar tu cuenta — no se muestran a nadie más.')
         + sec('PARA QUÉ LOS USAMOS //', 'Para procesar tus pedidos, acreditar tus puntos y recompensas, prevenir fraude y contactarte sobre el estado de tu pedido.')
-        + sec('CON QUIÉN LOS COMPARTIMOS //', 'No vendemos ni compartimos tus datos con terceros para publicidad. Solo se comparten con los proveedores estrictamente necesarios para operar (pasarela de pago, envío de correos).')
-        + sec('TUS DATOS, TU DECISIÓN //', 'Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio.')
+        + sec('CON QUIÉN LOS COMPARTIMOS //', 'Nunca vendemos tus datos. Se comparten solo con los proveedores necesarios para que el negocio funcione: la pasarela de pago para cobrarte, el servicio de correo para escribirte, y Meta (Facebook e Instagram) para medir qué anuncios traen pedidos de verdad. A Meta le llegan tu correo, tu teléfono y tu nombre de pila SIEMPRE cifrados con un código irreversible (SHA-256, nunca legibles), junto con el monto del pedido y qué productos llevaste; como en cualquier web con publicidad, tu navegador también le deja ver tu dirección IP. NO le llegan tu DNI, tu fecha de nacimiento, tu PIN ni tu dirección de entrega. Esa medición sirve para saber cuánto cuesta traer un cliente nuevo — nunca para decidir qué te cobramos a ti.')
+        + sec('TUS DATOS, TU DECISIÓN //', 'Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio. Y si no quieres que midamos tus compras para publicidad, apágalo en tu perfil, en Privacidad: tus pedidos dejan de reportarse a Meta desde ese momento, sin que cambie nada de tu cuenta, tus puntos ni tus precios. Es tu derecho de oposición según la Ley 29733 de Protección de Datos Personales.')
         + sec('CONTACTO //', '¿Preguntas sobre tus datos o tu pedido? Escríbenos por WhatsApp desde el botón de soporte, o a ' + BIZ_EMAIL + '.')
         + '</div>';
 }
@@ -7905,6 +8108,35 @@ async function doSubmitComplaint() {
         cmplBusy = false;
         render();
     }
+}
+// ── EJERCER EL DERECHO DE OPOSICIÓN (Ley 29733) ──────────────────────────────────────
+// La Política de Privacidad promete que esto se puede apagar desde el perfil. Esta función
+// es lo que hace que esa frase sea verdad.
+//
+// El estado nuevo se toma de lo que devuelve el SERVIDOR (`r.customer`), nunca de lo que el
+// navegador supone que acaba de guardar: si la escritura falla, el interruptor vuelve solo a
+// su sitio en vez de quedarse mostrando lo contrario de lo que la base dice. Un interruptor
+// de privacidad que MIENTE sobre su propio estado es peor que no tenerlo.
+async function toggleAdTracking() {
+    if (!cust) {
+        adOptOutMsg = 'Inicia sesión para cambiar esto.';
+        render();
+        return;
+    }
+    var nuevo = !cust.ad_tracking_opt_out;
+    adOptOutMsg = '';
+    try {
+        var r = await api('set-ad-tracking', { token: token, optOut: nuevo });
+        if (r && r.customer) {
+            cust = r.customer;
+            cacheCust(cust, isAdmin);
+        }
+        adOptOutMsg = nuevo ? 'Listo — tus pedidos ya no se reportan para medir anuncios.' : 'Medición activada de nuevo. Gracias, nos ayuda a saber qué anuncio funciona.';
+    }
+    catch (e) {
+        adOptOutMsg = (e && e.message) || 'No se pudo guardar. Intenta de nuevo.';
+    }
+    render();
 }
 // ── #60: pedido fijo (recurrente) ───────────────────────────────────────────────────────
 //

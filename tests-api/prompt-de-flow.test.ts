@@ -71,3 +71,47 @@ Deno.test("los cinco formatos son los mismos que usa el calendario semanal", () 
   assert(letras === "ABCDE", `los formatos son ${letras}, no ABCDE`);
   assert(FORMATOS[0].key === "pleito", "EL PLEITO dejó de ser el formato por defecto");
 });
+
+// ── EL PROMPT DEL BORRADOR SEMANAL (2026-09-10) ───────────────────────────────────────
+// `flowPromptSemanal` es lo que hace que el dueño no tenga que abrir Admin // Video: el
+// borrador de la semana ya trae el prompt escrito, debajo de su guion.
+//
+// Lo que se prueba acá es lo único que puede salir mal en silencio: que el prompt hable de
+// un formato DISTINTO al del guion que tiene al lado. Serían dos fuentes para el mismo dato
+// —el defecto que este repo ya pagó tres semanas con los precios— y el resultado sería un
+// video que no es el que dice el calendario, descubierto después de gastar créditos de Flow.
+import { flowPromptSemanal } from "../supabase/functions/api/actions/video.ts";
+
+Deno.test("el prompt hereda el formato del guion, no elige uno propio", () => {
+  // El guion semanal empieza SIEMPRE con la letra del formato.
+  const pleito = flowPromptSemanal("A · EL PLEITO — 9:16, 15 s. 0-2s plano dividido...", 0);
+  assert(pleito.length > 200, "el prompt de EL PLEITO salió vacío");
+
+  const mesa = flowPromptSemanal("E · LA MESA LARGA — 9:16, 16 s...", 0);
+  assert(mesa.length > 200, "el prompt de LA MESA LARGA salió vacío");
+  assert(pleito !== mesa, "dos formatos distintos produjeron el MISMO prompt: el formato no se está leyendo");
+});
+
+Deno.test("EL SECRETO nunca muestra el producto, tampoco en el borrador", () => {
+  // Es el único formato con `muestraProducto:false`. Un prompt que enseñe los ingredientes
+  // del menú secreto contradice el producto entero: el punto es que nadie sabe qué lleva.
+  const secreto = flowPromptSemanal("D · EL SECRETO — 9:16, 12 s. Oscuro...", 3);
+  assert(secreto.length > 200, "el prompt de EL SECRETO salió vacío");
+  // El nombre de cualquier Signature público no tiene por qué aparecer en el del secreto.
+  assert(!/THE ORIGINAL/i.test(secreto), "EL SECRETO nombró un Signature público");
+});
+
+Deno.test("el Signature rota con la semana", () => {
+  const a = flowPromptSemanal("A · EL PLEITO — 9:16, 15 s...", 0);
+  const b = flowPromptSemanal("A · EL PLEITO — 9:16, 15 s...", 1);
+  // Mismo formato, semana distinta: si el prompt fuera idéntico, el dueño publicaría el
+  // mismo video una semana tras otra sin notarlo.
+  assert(a !== b, "dos semanas seguidas produjeron el mismo prompt: no está rotando");
+});
+
+Deno.test("un guion sin letra de formato no revienta: cae al principal", () => {
+  // El guion lo escribe una persona. Si algún día empieza distinto, el borrador tiene que
+  // salir igual — con el formato principal— y no quedarse sin prompt.
+  const raro = flowPromptSemanal("Video de la semana, algo con los hermanos", 0);
+  assert(raro.length > 200, "un guion sin letra dejó el borrador sin prompt");
+});

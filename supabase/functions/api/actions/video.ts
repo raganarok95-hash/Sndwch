@@ -1,36 +1,29 @@
-// SND//WCH — api / actions/video
-// Generación automática de video publicitario: guion → prompt → video → calendario.
+// SND//WCH — VIDEO PARA REDES
 //
-// POR QUÉ NO ES "MANDARLO A FLOW": Google Flow (la herramienta que el dueño usa a mano)
-// NO tiene API pública — es exclusivamente una interfaz web sobre créditos de suscripción.
-// Lo único que existe para "automatizar Flow" son extensiones de navegador de terceros que
-// scriptean el DOM, lo cual contradice sus términos y arriesga la cuenta de Google del
-// dueño. No es una vía aceptable.
+// Una sola acción: `admin-video-script`. Arma el guion y el PROMPT LISTO PARA GOOGLE FLOW,
+// que es la herramienta con la que el dueño genera sus videos desde antes de que esto
+// existiera. No genera el video: se lo entrega escrito para que lo pegue.
 //
-// Flow por dentro usa Veo, y VEO SÍ TIENE API. Así que la automatización real es: mismo
-// modelo, misma calidad, sin pasar por la interfaz. La diferencia es que Flow además trae
-// timeline y encadenado de escenas; la API devuelve un clip crudo por llamada. Para videos
-// publicitarios cortos (8s, formato vertical de redes) eso es exactamente lo que se
-// necesita.
+// ⚠ AQUÍ VIVIÓ `admin-video-generate`, que llamaba a Veo por API y devolvía el MP4. Se
+// retiró el 2026-09-10 por decisión del dueño, y las tres razones importan porque cualquiera
+// de ellas bastaba:
 //
-// Dos acciones separadas a propósito:
-//   1. `admin-video-script` — genera guion + prompt. NO cuesta nada, no depende de nada
-//      externo, funciona hoy mismo. Es la parte creativa, que era el trabajo manual real.
-//   2. `admin-video-generate` — llama a Veo y devuelve el MP4. Requiere GEMINI_API_KEY y
-//      cuesta dinero real (~$0.03-0.15 por segundo). Sin la key responde 503 con
-//      instrucciones, igual que hace la publicación a redes con los secrets de Meta.
+//   1. COSTABA PLATA REAL — US$0.10-0.15 por segundo. Un negocio que todavía no abre.
+//   2. NUNCA SE CONFIGURÓ su `GEMINI_API_KEY`, así que jamás generó un solo video: llevaba
+//      desde que se escribió respondiendo 503.
+//   3. DUPLICABA UN PROCESO QUE YA EXISTE. El dueño genera sus videos en Google Flow, con
+//      sus propios archivos de referencia de los hermanos. Un segundo camino que hace lo
+//      mismo peor y cobrando no es una opción, es código que se mantiene para no usarse.
+//
+// Lo que sí se automatiza es lo que él SÍ usa: el prompt de Flow ahora viaja dentro del
+// borrador semanal del calendario, para que no tenga ni que abrir esta pantalla.
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
-import { logAdminAction } from "../logging.ts";
-import { sbInsert } from "../db.ts";
-import { loadCatalogPrices, SIG_DATA, SIG_LABEL, PROT_LABEL, TOP_LABEL, SAUCE_LABEL, BASE_LABEL } from "../catalog.ts";
+import { loadCatalogPrices, SIG_DATA, SIG_GATES, SIG_LABEL, PROT_LABEL, TOP_LABEL, SAUCE_LABEL, BASE_LABEL } from "../catalog.ts";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
-// veo-3.1-fast: ~$0.10-0.15/segundo con audio nativo, contra ~$0.40 del modelo de calidad
-// completa. Para clips de producto de 8 segundos en redes la diferencia no se nota y el
-// costo mensual baja de ~$38 a ~$10-14 con 12 videos/mes.
-const VEO_MODEL = Deno.env.get("VEO_MODEL") || "veo-3.1-fast-generate-preview";
-const VEO_MAX_SECONDS = 8;   // tope duro del modelo, no una decisión nuestra
+// Los 8 segundos son el tope duro de Veo en Flow, no una decisión nuestra: el guion se
+// escribe para ese largo porque es el que el dueño va a poder generar.
+const VEO_MAX_SECONDS = 8;
 
 // Reglas de marca que TODO prompt debe respetar, vengan de donde vengan los ingredientes.
 // La primera no es estética sino factual: el producto real es un sub alargado, y los
@@ -190,6 +183,35 @@ export function buildFlowPrompt(sigId: string, fmt: VideoFormato, angle: VideoAn
 
 // Guion en español para el dueño (lo que verá y podrá ajustar) + el prompt en inglés para
 // el modelo (los modelos de video responden bastante mejor en inglés).
+// ── EL PROMPT DE FLOW, SIN QUE NADIE ABRA ESTA PANTALLA ───────────────────────────────
+// El borrador semanal del calendario ya traía un `videoIdea` que es un guion RODABLE — con
+// su formato, su duración y qué pasa en cada segundo. Lo que NO traía es lo único que hace
+// falta para grabarlo: el prompt técnico que se pega en Google Flow, con las reglas de marca
+// que impiden que el modelo dibuje una focaccia plana o unos hermanos que no son los suyos.
+//
+// Sin esto, el dueño tenía que abrir Admin // Video, elegir Signature y formato a mano, y
+// copiar. Con esto, el prompt ya está escrito en el borrador de esa semana.
+//
+// ⚠ EL FORMATO NO SE ELIGE DOS VECES. Se LEE de la letra con la que ya empieza el guion
+// ("A · EL PLEITO", "D · EL SECRETO"). Elegirlo aparte sería la forma de que el prompt diga
+// un formato y el guion de al lado diga otro — dos fuentes para el mismo dato, el defecto
+// que este repo ya pagó tres semanas con los precios.
+//
+// Y el Signature ROTA con la semana, salvo en EL SECRETO: ese formato no muestra el producto
+// a propósito, así que le corresponde el menú secreto y ningún otro.
+export function flowPromptSemanal(videoIdea: string, semana: number): string {
+  const letra = (String(videoIdea || "").trim()[0] || "").toUpperCase();
+  const fmt = FORMATOS.find((f) => f.letra === letra) || FORMATOS[0];
+  const publicos = Object.keys(SIG_DATA).filter((id) => id !== "SIG05" && !SIG_GATES[id]);
+  if (!publicos.length) return "";
+  const n = Math.floor(Number(semana) || 0);
+  const sigId = fmt.key === "secreto"
+    ? (SIG_DATA["SIG05"] ? "SIG05" : publicos[0])
+    : publicos[((n % publicos.length) + publicos.length) % publicos.length];
+  const angle = ANGLES[((n % ANGLES.length) + ANGLES.length) % ANGLES.length];
+  return buildFlowPrompt(sigId, fmt, angle);
+}
+
 export async function actAdminVideoScript(b: any) {
   const s = await requireAdmin(b.token);
   await loadCatalogPrices();
@@ -252,84 +274,3 @@ export async function actAdminVideoScript(b: any) {
   };
 }
 
-// Llama a Veo por la API de Gemini. Operación de larga duración: se dispara, se consulta
-// cada pocos segundos, y al terminar devuelve el enlace del MP4. Se guarda en
-// content_uploads para que quede registro de qué se generó y cuánto costó.
-export async function actAdminVideoGenerate(b: any) {
-  const s = await requireAdmin(b.token);
-  if (!GEMINI_API_KEY) {
-    throw new ApiError(
-      "Generación de video sin configurar — falta ejecutar: supabase secrets set GEMINI_API_KEY=... " +
-      "(se saca de Google AI Studio; cuesta ~$0.10-0.15 por segundo de video con veo-3.1-fast).",
-      503,
-    );
-  }
-  const prompt = String(b.prompt || "").trim();
-  if (!prompt) throw new ApiError("Falta el prompt del video (genéralo primero con admin-video-script).", 400);
-  const seconds = Math.min(VEO_MAX_SECONDS, Math.max(4, Number(b.seconds) || VEO_MAX_SECONDS));
-
-  const base = "https://generativelanguage.googleapis.com/v1beta";
-  const start = await fetch(`${base}/models/${VEO_MODEL}:predictLongRunning?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      instances: [{ prompt }],
-      parameters: { aspectRatio: "9:16", durationSeconds: seconds, personGeneration: "dont_allow" },
-    }),
-  });
-  if (!start.ok) {
-    const text = await start.text();
-    console.error("veo predictLongRunning failed:", text);
-    throw new ApiError("Google rechazó la generación del video. Revisa el prompt o la cuota de tu cuenta.", 502);
-  }
-  const op = await start.json();
-  const opName = String(op?.name || "");
-  if (!opName) throw new ApiError("Google no devolvió una operación válida.", 502);
-
-  // Poll acotado: la latencia real va de ~11s a varios minutos. Una edge function no puede
-  // esperar indefinidamente, así que si no termina dentro del presupuesto se devuelve el
-  // identificador de la operación para consultarla después, en vez de fallar.
-  const deadline = Date.now() + 110000;
-  let videoUri = "";
-  while (Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, 8000));
-    const poll = await fetch(`${base}/${opName}?key=${encodeURIComponent(GEMINI_API_KEY)}`);
-    if (!poll.ok) continue;
-    const st = await poll.json();
-    if (st?.done) {
-      if (st?.error) {
-        console.error("veo operation error:", JSON.stringify(st.error));
-        throw new ApiError("La generación falló del lado de Google: " + String(st.error?.message || ""), 502);
-      }
-      videoUri = String(
-        st?.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri ||
-        st?.response?.generatedVideos?.[0]?.video?.uri || "",
-      );
-      break;
-    }
-  }
-
-  await logAdminAction(s.phone, "video-generate", undefined, { model: VEO_MODEL, seconds, done: !!videoUri });
-  if (!videoUri) {
-    return {
-      success: true, pending: true, operation: opName,
-      mensaje: "El video sigue generándose. Vuelve a consultar en un momento con este identificador de operación.",
-    };
-  }
-  // El archivo vive solo ~2 días en los servidores de Google: hay que descargarlo o
-  // republicarlo antes de eso. Queda registrado para no perderle el rastro.
-  try {
-    await sbInsert("content_uploads", {
-      storage_path: videoUri,
-      mime: "video/mp4",
-      status: "generated",
-      notes: `veo:${VEO_MODEL} ${seconds}s — el enlace de Google expira en ~48h, descargar`,
-    });
-  } catch (e) {
-    console.error("content_uploads insert failed for generated video:", e);
-  }
-  return {
-    success: true, pending: false, videoUri, seconds, model: VEO_MODEL,
-    aviso: "Google guarda este archivo solo ~48 horas. Descárgalo o publícalo antes de que expire.",
-  };
-}

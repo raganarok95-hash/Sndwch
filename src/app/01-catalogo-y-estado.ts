@@ -1135,8 +1135,16 @@ function initMetaPixel(id){
 }
 // Envoltorio único: si el píxel no está configurado no hace nada, y un error dentro de
 // fbq nunca puede tumbar el flujo de compra que lo llamó.
+//
+// ⚠ Y respeta el DERECHO DE OPOSICIÓN (Ley 29733). Va acá, en el envoltorio, y no en cada
+// uno de los cinco sitios que reportan un evento: ese es justo el lugar donde el sexto se
+// olvida, y un evento que se escapa no rompe nada visible — la promesa legal se incumple
+// en silencio. El servidor corta por su lado (`reportPurchaseToMeta`), porque un cliente
+// que se opone desde el celular no querría que su compra se reporte igual desde el otro
+// camino.
 function fbTrack(event,params?,eventId?){
   try{
+    if(cust&&(cust as any).ad_tracking_opt_out)return;
     var fbq=(window as any).fbq;
     if(!fbq)return;
     if(eventId)fbq('track',event,params||{},{eventID:eventId});
@@ -1337,7 +1345,12 @@ var wlPhone='',wlName='',wlMsg='',wlDone=localStorage.getItem('sw_wl_done')==='1
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
 var businessLaunched=false;
+// Key de Google Maps — llega en get-store-hours. Vacía = la app usa Nominatim/OSM, que es
+// como funcionó hasta el 2026-09-10 y sigue siendo el respaldo (ver buscarDireccion()).
+var googleMapsKey='';
 var pushSubscribed=false,pushMsg='';
+// Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
+var adOptOutMsg='';
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 // Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato
