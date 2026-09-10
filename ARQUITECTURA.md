@@ -17,7 +17,7 @@ Lo que sigue son cambios **incrementales**, cada uno con su propio valor.
 
 | # | Qué | Medida | Qué desbloquea |
 |---|---|---|---|
-| 1 | El admin viaja en el bundle del cliente | **39% del código**, 251 KB comprimidos | Conversión — la palanca nº1 del negocio |
+| 1 | ~~El admin viaja en el bundle del cliente~~ **HECHO** | 914 KB → **629 KB** (−31%) | Conversión — la palanca nº1 del negocio |
 | 2 | Cálculo de dinero atrapado en funciones que tocan la base | orders.ts: **3,145 líneas, 21 accesos a BD** | Poder probar lo que cobra |
 | 3 | La interfaz es HTML dentro de strings | **1,859** `style=` en línea | Que un cambio de diseño no sea 997 ediciones |
 | 4 | ~230 colores semánticos sin token | `#ff8888` × 79 | Contraste, accesibilidad, temas |
@@ -58,13 +58,35 @@ descarga.
 de pantallas admin** que el router tenía escritos pasaron a un registro: el panel se anuncia
 en `ADMIN_SCREENS` al cargarse y el router solo pregunta.
 
-Eso desata las dos mitades, que era el bloqueo real. Lo que falta para cobrar el beneficio:
+**Y el bundle ya está partido.** `build.mjs` emite dos archivos:
 
-1. Que `build.mjs` emita las partes 09-10 como un **segundo archivo**, cargado bajo demanda
-   cuando `isAdmin` — el mismo patrón que `loadTesseract()` ya usa para los 3 MB del lector
-   de comprobantes, que ningún cliente descarga.
-2. Que `sw.js` y `check:shell` sepan de ese segundo archivo: hoy el sello `APP_BUILD` es el
-   hash de UN bundle.
+```
+index.html   629 KB   (8 partes)  ← lo que descarga cada cliente
+admin.js     314 KB   (2 partes)  ← bajo demanda, solo al abrir el panel
+```
+
+Antes eran 914 KB para todos. **El cliente descarga 285 KB menos**, un 31%.
+
+El panel se pide como `admin.js?v=<sello>`, y el sello hashea LOS DOS bundles: sin eso, un
+cambio solo en el panel se quedaría servido desde la caché del navegador bajo la misma URL.
+
+### ⚠ Lo que apareció al partir, y que nadie podía ver antes
+
+El cliente entero dependía de cosas que vivían del lado del panel: `icon()` (usada 45 veces
+en las partes 01-07), `haversineKm` (la distancia con la que se **cobra** el envío), `invQty`
+(el stock que decide si un Signature sale agotado), la infraestructura de `render()`, y dos
+pantallas que ni siquiera son de admin — recuperar el PIN y confirmar la entrega desde el
+link, que abren justamente las dos personas con menos cuenta de administrador del mundo.
+
+Con el panel sin cargar, la app no pintaba **una sola pantalla**. Y eso nunca rompió nada
+mientras todo viajara en un mismo archivo: un acoplamiento así no se manifiesta hasta el día
+que intentas separar, y entonces se manifiesta como la app en blanco para el 100% de los
+clientes.
+
+Arreglarlo a mano fue descubrir una pieza por render, una a una. Por eso quedó
+`npm run check:cliente`, que las encuentra todas de una pasada y evita que vuelvan: basta una
+función nueva escrita del lado equivocado para romperlo otra vez, sin ningún error visible
+mientras se desarrolla con los dos bundles cargados.
 
 Dos defensas quedan puestas para que el acoplamiento no vuelva, porque volvería con una
 línea distraída y sin romper nada: `check:bundle` falla si el router vuelve a nombrar una

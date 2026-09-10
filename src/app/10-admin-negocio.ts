@@ -258,7 +258,6 @@ async function doManualCredit(){
   busy=false;render();
 }
 
-var _lastRenderedSc=null;
 // render() envuelve a renderScreen() para que un error al pintar UNA pantalla no deje la
 // app muda. Antes, si cualquier función de pantalla lanzaba, `render()` moría antes de
 // tocar el DOM: la pantalla anterior se quedaba intacta y tocar el botón "no hacía nada",
@@ -267,24 +266,6 @@ var _lastRenderedSc=null;
 // a distancia: un fallo silencioso no deja rastro que el dueño pueda leerme.
 // Ahora el error se pinta en pantalla, con la versión del build y la pantalla que falló.
 
-// Toda la app se dibuja como HTML en strings, y buena parte de los controles son
-// <div onclick> (tarjetas de Signature, chips de bebida, filas de dirección...): el
-// navegador no los ve como controles, así que no se podían enfocar ni activar con teclado
-// y un lector de pantalla los leía como texto suelto. Marcarlos acá, después de cada
-// render, en vez de reescribir las ~60 etiquetas a mano: no toca ni una línea del HTML
-// generado (cero riesgo de romper una plantilla) y cubre también las que se agreguen
-// después. La regla de foco visible ya existe en shell.html para cursor:pointer.
-function makeClickablesAccessible(){
-  var nodes=document.querySelectorAll('[onclick]');
-  for(var i=0;i<nodes.length;i++){
-    var el=nodes[i] as HTMLElement;
-    var tag=el.tagName;
-    if(tag==='BUTTON'||tag==='A'||tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||tag==='LABEL')continue;
-    if(el.hasAttribute('tabindex'))continue;
-    el.setAttribute('tabindex','0');
-    if(!el.hasAttribute('role'))el.setAttribute('role','button');
-  }
-}
 // Enter/Espacio sobre uno de esos controles hace lo mismo que un tap. Un <button> real ya
 // lo hace solo; esto es solo para los que no lo son.
 document.addEventListener('keydown',function(e){
@@ -306,7 +287,6 @@ var INV_CATS=[
   {t:'Quesos',arr:CHEESE},
   {t:'Salsas',arr:SAUCES}
 ];
-var invQty={};
 // El inventario llega dentro de get-catalog (ver actGetCatalog), NO por PostgREST directo.
 // Antes esta función hacía sbG('inventory',...) con la anon key, pero esa tabla tiene RLS
 // activada sin políticas: PostgREST responde 200 [] — no un error — así que el catch nunca
@@ -1907,30 +1887,6 @@ async function doRespondComplaint(id){
   }catch(e){showToast(e.message,'error');}
 }
 
-function sPRecover(){
-  var pinBox=recNewPin?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:36px;font-weight:640;color:'+GOLD+(recPinRevealed?'':';filter:blur(9px);user-select:none')+'">'+recNewPin+'</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">'+icon(recPinRevealed?'lock':'camera',11,GOLD)+(recPinRevealed?'OCULTAR':'TOCA PARA VER')+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
-    :(recEmailMasked?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:'+GOLD+'">'+esc(recEmailMasked)+'</b></div></div>':'');
-  return H('RECUPERAR CUENTA',"sndScreen='p_auth';render()")
-    +'<div style="flex:1;padding:24px 20px 40px" class="fi">'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#F2F0EB);margin-bottom:6px">RECUPERAR PIN //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
-    +pinBox
-    // Antes el formulario (teléfono/DNI/fecha) y el botón "Recuperar mi PIN //" seguían
-    // visibles sin cambio tras generar el PIN — un segundo tap invalidaba en silencio el
-    // que ya se había mostrado, sin ningún CTA claro para seguir a Ingresar (hallazgo de
-    // auditoría UX, ALTO). Ahora, con un PIN/correo ya generado, el formulario se oculta y
-    // se reemplaza por un solo botón directo a Ingresar.
-    +((recNewPin||recEmailMasked)
-      ?BTN('Ir a ingresar //',"atab='login';sndScreen='p_auth';render()")
-      :'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
-        +INP('rec-phone','Teléfono // 9XXXXXXXX','tel',recPhone,'phone')
-        +INP('rec-dni','DNI // Tu número de 8 dígitos','text',recDni,'card')
-        +INP('rec-bday','Fecha de nacimiento // DD/MM/AAAA','text',recBday,'calendar')
-        +'</div>'
-        +'<div id="rec-msg" style="font-family:EB Garamond,serif;font-size:12px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-bottom:12px;text-align:center"></div>'
-        +BTN('Recuperar mi PIN //','doRecover()'))
-    +'</div>';
-}
 async function doRecover(){
   var phone=gv('rec-phone').trim();
   var dni=gv('rec-dni').trim();
@@ -2005,7 +1961,6 @@ if('serviceWorker' in navigator){
   // además una marca en la caché y aquí se consulta al arrancar.
   checkShellUpdateFlag();
 }
-var SW_UPDATE_FLAG='__shell-update-pending';
 async function checkShellUpdateFlag(){
   if(!window.caches)return;
   for(var i=0;i<3;i++){
@@ -2015,23 +1970,6 @@ async function checkShellUpdateFlag(){
     }catch(e){return;}
     await new Promise(function(r){setTimeout(r,2500);});
   }
-}
-async function applyAppUpdate(){
-  updateReady=false;render();
-  // Borrar la marca ANTES de recargar: si quedara, la pestaña nueva volvería a ver el
-  // aviso al arrancar (el service worker la limpia también, pero recién cuando termina su
-  // propia revalidación, varios segundos después).
-  try{
-    if(window.caches){
-      var ks=await caches.keys();
-      await Promise.all(ks.map(async function(k){var c=await caches.open(k);await c.delete(SW_UPDATE_FLAG);}));
-    }
-  }catch(e){}
-  try{
-    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
-      navigator.serviceWorker.controller.postMessage({type:'sw-skip-waiting'});
-  }catch(e){}
-  location.reload();
 }
 window.addEventListener('beforeinstallprompt',function(e){
   e.preventDefault();
@@ -2072,12 +2010,6 @@ function dismissPwaBanner(){
   render();
 }
 
-function haversineKm(lat1,lon1,lat2,lon2){
-  var R=6371;
-  var dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
 // Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
 // cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
 // muestra nada — nunca insiste ni vuelve a pedir permiso en la misma sesión.
@@ -2140,64 +2072,6 @@ async function togglePushNotifications(){
   }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo.');render();}
 }
 
-// INIT
-// Antes esperábamos la respuesta de session-check ANTES del primer pintado siempre que
-// hubiera un token guardado — un solo round-trip al backend (que puede tardar 1-3s por
-// cold start de la Edge Function + la vuelta Perú↔servidor) bloqueaba la pantalla de
-// carga en CADA recarga, incluso para alguien que ya estaba con sesión iniciada. Ahora,
-// si hay una copia cacheada del cliente (ver cacheCust), se pinta con ella de inmediato
-// — session-check sigue corriendo en segundo plano para confirmar/corregir en silencio.
-// Solo se bloquea con el spinner cuando no hay nada que mostrar todavía (primer login en
-// este dispositivo tras limpiar datos, por ejemplo).
-// ─── BLINDAJE DE FUNCIONES GLOBALES ────────────────────────────────────────────────
-//
-// Este archivo se sirve como <script> inline, así que cada función de nivel superior es
-// una propiedad de `window`. `src/shell.html` carga además dos bundles minificados de
-// terceros — `checkout.culqi.com/js/v4` (una app Vue) y `accounts.google.com/gsi/client`
-// — ambos con `defer`/`async`, o sea que corren DESPUÉS del nuestro. Si alguno declara
-// una función de nivel superior con un nombre que también usamos nosotros, gana el
-// último: nuestra función deja de existir y el `onclick` que la llama muere en silencio.
-//
-// No es hipotético. El 2026-08-21 pasó DOS veces el mismo día: primero Culqi pisó `sc`
-// (era el `createComponentInstance` de Vue) y reventó cada render con
-// "sc.indexOf is not a function"; renombrada esa, apareció "go is not a function" — otra
-// función nuestra pisada por el mismo bundle. Renombrar de a una es un juego perdido:
-// hay ~305 nombres nuestros expuestos y el que colisione mañana depende de qué elija
-// Culqi o Google en su próxima actualización, sin avisarnos.
-//
-// Esto lo resuelve de raíz, sin tocar los 147 `onclick` en línea. Se toma una foto de
-// TODAS las funciones que hay en `window` al terminar nuestro script — momento en que
-// solo están las nuestras y las del navegador, porque los scripts diferidos todavía no
-// corrieron— y se repone cualquiera que haya cambiado de identidad.
-//
-// Solo se protegen FUNCIONES, nunca variables de estado: nuestras funciones jamás se
-// reasignan en runtime, así que si una cambió de identidad es porque alguien la pisó.
-// El estado (sndScreen, cart, base...) sí cambia legítimamente y no se toca acá.
-// Una propiedad nueva de un tercero (`window.Culqi`, `window.google`) no está en la foto,
-// así que nunca se borra: solo se repone lo que ya era nuestro.
-var _sndOwnedFns=(function(){
-  var snap={};
-  try{
-    Object.getOwnPropertyNames(window).forEach(function(k){
-      try{
-        var d=Object.getOwnPropertyDescriptor(window,k);
-        if(!d||!d.writable||typeof d.value!=='function')return;
-        snap[k]=d.value;
-      }catch(_){}
-    });
-  }catch(_){}
-  return snap;
-})();
-function sndRestoreOwnedFns(){
-  var fixed=[];
-  for(var k in _sndOwnedFns){
-    try{
-      if((window as any)[k]!==_sndOwnedFns[k]){(window as any)[k]=_sndOwnedFns[k];fixed.push(k);}
-    }catch(_){}
-  }
-  if(fixed.length)console.warn('Un script externo pisó estas funciones y se repusieron:',fixed.join(', '));
-  return fixed;
-}
 // Los dos momentos en que un tercero puede haber pisado algo: cuando termina de cargar
 // la página (ahí ya corrieron los scripts con defer/async) y en cada render (Culqi
 // también inyecta código al abrir su formulario de pago, después del load).
@@ -2264,27 +2138,6 @@ async function doConfirmDelivery(){
     deliveryConfirmState={ok:false,error:e.message};
   }
   render();
-}
-function sDeliveryConfirm(){
-  var d=deliveryConfirmState||{};
-  var caja=function(inner){
-    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#1E3932)">'
-      +'<div style="max-width:360px;width:100%;text-align:center">'+inner+'</div></div>';
-  };
-  if(d.loading){
-    return caja('<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em">CONFIRMANDO ENTREGA //</div>');
-  }
-  if(d.ok){
-    return caja('<div style="font-size:54px;line-height:1;margin-bottom:14px">&#9989;</div>'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:24px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">'+(d.already?'Ya estaba confirmado':'Entrega confirmada')+'</div>'
-      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Pedido '+esc(d.ref||'')+'.'+(d.already?' Alguien ya lo cerró antes — no hace falta hacer nada más.':' Gracias, ya está cerrado.')+'</div>');
-  }
-  // El error dice qué pasó y qué hacer. Un "algo salió mal" deja al motorizado llamando por
-  // teléfono, que es exactamente el trabajo que este link tenía que ahorrar.
-  return caja('<div style="font-size:54px;line-height:1;margin-bottom:14px">&#9888;&#65039;</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">No se pudo confirmar</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">'+esc(d.error||'')+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
 }
 
 // ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────

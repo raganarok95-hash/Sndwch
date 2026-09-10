@@ -24,6 +24,8 @@ const QUIERO = esperado(ROOT);
 const SANO = {
   '/index.html': { status: 200, cuerpo: `<!doctype html><script>var APP_BUILD = '${QUIERO.build}';</script>` },
   '/sw.js': { status: 200, cuerpo: `const VERSION = '${QUIERO.version}';` },
+  // El bundle del panel, que desde el 2026-09-10 viaja aparte y se pide bajo demanda.
+  [`/admin.js?v=${QUIERO.build}`]: { status: 200, cuerpo: 'Object.assign(ADMIN_SCREENS, { admin_home: sAdminHome });' },
 };
 
 // Cada caso rompe UNA cosa y nombra el trozo del mensaje que el script tiene que emitir.
@@ -51,6 +53,24 @@ const CASOS = [
     'dejó de existir',
   ],
   ['sin service worker', (r) => ({ ...r, '/sw.js': { status: 404, cuerpo: 'not found' } }), 'sin caché de shell'],
+  // ── EL FALLO MÁS SILENCIOSO DE LOS TRES ────────────────────────────────────────────
+  // Si `admin.js` no se desplegó, el CLIENTE FUNCIONA PERFECTO: nadie lo pide hasta que el
+  // dueño abre su panel. Sin esta comprobación, la verificación del shell diría "todo al
+  // día" mientras el panel no existe.
+  [
+    'el panel no se desplegó',
+    (r) => {
+      const c = { ...r };
+      delete c[`/admin.js?v=${QUIERO.build}`];
+      return c;
+    },
+    'se quedaría sin panel',
+  ],
+  [
+    'admin.js responde 200 pero no es el panel',
+    (r) => ({ ...r, [`/admin.js?v=${QUIERO.build}`]: { status: 200, cuerpo: '<!doctype html><p>404 de Vercel</p>' } }),
+    'no registra ninguna pantalla',
+  ],
 ];
 
 function servidor(respuestas) {
