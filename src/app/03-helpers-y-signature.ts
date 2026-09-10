@@ -782,52 +782,62 @@ function sOHome(){
         return (ia<0?99:ia)-(ib<0?99:ib);
       });
       var secretSig=SIGS.find(function(s){return s.secret;});
-      // ── EL CORTE, no una barra de pestañas (2026-09-09) ──
+      // ── LOS DOS LADOS, CON SUS DUEÑOS (2026-09-10) ──
       //
-      // Las tres opciones eran tres pestañas iguales dentro de una píldora. El logo nuevo
-      // dice otra cosa: el mono está PARTIDO, y esa división es la estructura del menú —
-      // verde es lo que ya está decidido (los Signatures), celeste es donde eliges tú
-      // (ARMA EL TUYO). Pintarlas iguales borraba justamente lo que la marca ya explica.
+      // Primero fueron tres pestañas iguales; después dos paneles de color. El dueño pidió
+      // el paso que faltaba: que los hermanos ESTÉN ahí y reaccionen. Ahora cada lado lleva
+      // su mitad del logo, el lado activo crece y su hermano responde — WICHO adelanta la
+      // cara y su ojo empieza a girar, SANDO se yergue.
       //
-      // Siguen siendo <button> con los mismos nombres accesibles a propósito: las pruebas
-      // los localizan por rol y texto, y sobre todo un panel que cambia la pantalla TIENE
-      // que ser un botón para el teclado y el lector de pantalla. Lo que cambia es cómo se
-      // ven, no qué son.
+      // El corte entre los dos es VACÍO, no una franja pintada: en el logo las dos mitades
+      // se separan y entre ellas se ve el fondo. La versión anterior dibujaba dos barras
+      // doradas gruesas y el dueño la rechazó con razón — el wordmark ya tiene su "//"
+      // arriba, y repetirlo grande en la misma pantalla lo convertía en ruido.
+      //
+      // Siguen siendo <button> con los mismos nombres accesibles: un panel que cambia la
+      // pantalla tiene que ser alcanzable con teclado y anunciable por un lector de
+      // pantalla, y es lo que permite que el resto de la suite los localice por rol.
       var lado=function(id,titulo,bajada,activo){
         var esByo=id==='byo';
         var fg=esByo?'var(--sw-sky-ink,#0E1A17)':'#fff';
-        var sub=esByo?'rgba(14,26,23,.72)':'var(--sw-text-muted,#A8C8B0)';
+        var sub=esByo?'rgba(14,26,23,.74)':'var(--sw-text-muted,#A8C8B0)';
         var fondo=esByo
           ?'linear-gradient(200deg,var(--sw-sky,#8CC8EC),var(--sw-sky-deep,#3F86B4))'
           :'linear-gradient(155deg,var(--sw-card,#2D5246),var(--sw-card2,#1A3028))';
         return'<button onclick="homeTab=\''+id+'\';render()" aria-pressed="'+(activo?'true':'false')
-          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.55':'1')
-          // El lado celeste lleva más aire a la izquierda: el corte va a caballo de la costura
-          // y sin ese margen le mordía la W del rótulo.
-          +';min-height:104px;padding:13px 12px 13px '+(esByo?'21px':'12px')+';background:'+fondo+';display:flex;flex-direction:column;'
-          +'justify-content:space-between;transition:flex .28s ease;opacity:'+(activo?'1':'.82')+'">'
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.22em;'
-          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.8)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
-          +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(activo?'19':'16')+'px;font-weight:640;color:'+fg+';line-height:1.05">'+esc(titulo)+'</div>'
+          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.45':'1')
+          +';min-height:188px;position:relative;overflow:hidden;background:'+fondo
+          +';display:flex;flex-direction:column;justify-content:flex-end;'
+          +'padding:12px '+(esByo?'12px':'12px')+' 13px 12px;transition:flex .3s ease">'
+          // ⚠ CADA MITAD VA PEGADA A LA COSTURA, no al borde de afuera.
+          // SANDO es la mitad izquierda del logo: su canto de corte queda a la DERECHA, así
+          // que va pegado al borde derecho de su panel. WICHO al revés. Puestos así, los dos
+          // se vuelven a juntar sobre el corte y la interfaz REARMA el logo del dueño en vez
+          // de mostrar dos recortes sueltos — que es como se veía en el primer intento.
+          +'<div style="position:absolute;top:10px;'+(esByo?'left:0':'right:0')
+          +';opacity:'+(activo?'1':'.6')+';transition:opacity .3s ease">'
+          +BRO(esByo?'wicho':'sando',(activo?'92px':'78px'),activo)+'</div>'
+          // Velo bajo el texto: sin esto el título cae encima de la cara y no se lee. Va del
+          // color del propio panel, así que no ensucia, solo separa.
+          +'<div style="position:absolute;left:0;right:0;bottom:0;height:52%;background:linear-gradient(180deg,'
+          +(esByo?'rgba(63,134,180,0),rgba(45,102,140,.94)':'rgba(26,48,40,0),rgba(19,38,33,.96)')+')"></div>'
+          // El texto se va al borde de AFUERA, que es el espacio que dejan libre las caras.
+          +'<div style="position:relative;text-align:'+(esByo?'right':'left')+'">'
+          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
+          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
+          +(activo?'20':'16')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
           +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:10px;color:'+sub
           +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
       };
-      // El corte se superpone entre los dos lados: sale del encuadre arriba y abajo para
-      // que las barras no terminen en punta dentro de la tarjeta.
-      var tabBar='<div style="position:relative;display:flex;border-radius:12px;overflow:hidden;'
+      var tabBar='<div style="position:relative;display:flex;border-radius:14px;overflow:hidden;'
         +'margin-bottom:10px;box-shadow:'+SHADOW_SM+'">'
         +lado('sig','Signatures','Ya está resuelto.',homeTab==='sig')
-        // z-index:2 — sin esto el panel celeste, que va después en el DOM, pinta ENCIMA del
-        // corte y el divisor desaparece. Se vio al renderizar la pantalla de verdad, no en
-        // el mockup: ahí los dos lados eran divs hermanos sin superposición.
-        +'<div style="position:absolute;z-index:2;left:'+(homeTab==='byo'?'39.2%':'60.8%')+';top:-14px;bottom:-14px;'
-        // translateX(-50%) para que el corte quede A CABALLO de la costura y no encima del
-        // panel de la derecha: sin esto tapaba el rótulo WICHO y el título del lado celeste.
-        +'transform:translateX(-50%);transition:left .28s ease">'+CUT('100%','10px','6px')+'</div>'
+        +'<div style="position:absolute;z-index:2;left:'+(homeTab==='byo'?'40.8%':'59.2%')+';top:-16px;bottom:-16px;'
+        +'transform:translateX(-50%);transition:left .3s ease">'+CUT('100%')+'</div>'
         +lado('byo','Arma el tuyo','Tú decides.',homeTab==='byo')
         +'</div>'
-        // Las bebidas no son un tercer lado: no son una forma de pedir un sándwich, son
+        // Las bebidas no son un tercer hermano: no son una forma de pedir un sándwich, son
         // otra cosa que se compra. Por eso van debajo del corte y no dentro de él.
         +'<button onclick="homeTab=\'drink\';render()" aria-pressed="'+(homeTab==='drink'?'true':'false')
         +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'

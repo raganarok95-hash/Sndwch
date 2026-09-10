@@ -256,6 +256,17 @@ function CUT(alto?,ancho?,gap?){
   return'<div class="sw-cut" aria-hidden="true"'+(gap?' style="gap:'+gap+'"':'')+'>'
     +'<i style="'+st+'"></i><i style="'+st+'"></i></div>';
 }
+// Uno de los dos hermanos, como elemento de interfaz. `activo` dispara su reacción y,
+// en el caso de WICHO, pone a girar su ojo. El ojo se dibuja ENCIMA del de la ilustración
+// (mismo centro y radio, muestreados del archivo) porque una espiral es geometría y se
+// puede redibujar; una sonrisa nueva no, ésa exige dibujo del dueño.
+function BRO(quien,ancho,activo?){
+  var esW=quien==='wicho';
+  var ojo=esW?'<div class="sw-eye">'+SPIRAL(60,'#503C64',!!activo)+'</div>':'';
+  return'<div class="sw-bro'+(activo?' sw-on':'')+'" style="width:'+ancho+'">'
+    +'<img class="sw-bro-'+quien+'" src="img/'+quien+'.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy">'
+    +ojo+'</div>';
+}
 // La espiral del ojo de WICHO. `gira` la convierte en el indicador de carga.
 function SPIRAL(size,color,gira?){
   var n=148,vueltas=3.2,r=(size/2)-2.4,pts=[];
