@@ -35,10 +35,22 @@ function sOBuild(){
     // DESIGN.md — ninguna señal de estado en la app usa resplandor, siempre opacidad/borde
     // (auditoría UX, P3). El paso actual ya se distingue por opacidad plena vs. .55 de los
     // completados y el color dorado vs. verde de los pendientes, sin necesitar el glow.
-    return'<div style="flex:1;height:5px;border-radius:4px;background:'+(st==='todo'?'#2D5246':GOLD)+';opacity:'+(st==='todo'?1:st==='done'?.55:1)+'"></div>';
+    return'<div style="flex:1;height:5px;border-radius:4px;background:'+(st==='todo'?'var(--sw-card,#2D5246)':ACC())+';opacity:'+(st==='todo'?1:st==='done'?.55:1)+'"></div>';
   }).join('')+'</div>';
-  var stepLabel='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:18px">Paso '+(byoStep+1)+' // 5</div>';
-  var h=H('ARMA EL TUYO','byoStepBack()',true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'+progressBar+stepLabel;
+  var stepLabel='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+ACC()+';letter-spacing:.15em;margin-bottom:18px">Paso '+(byoStep+1)+' // 5</div>';
+  // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
+  // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
+  // lea como "pasaste con el otro hermano" y no como "cambió el color".
+  var wichoCab='<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
+    +'<img src="img/wicho_cuerpo.png" alt="WICHO" loading="lazy" style="width:52px;height:auto;flex-shrink:0">'
+    +'<div style="flex:1;padding-bottom:4px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
+    +'text-transform:uppercase;color:'+ACC()+'">Con WICHO</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
+    +'color:var(--sw-text-muted,#A8C8B0);line-height:1.35;margin-top:2px">'
+    +esc(byoStep===0?'Empieza por el pan. Nada está mal.':byoStepHint())+'</div></div></div>';
+  var h=H('ARMA EL TUYO','byoStepBack()',true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
+    +wichoCab+progressBar+stepLabel;
   if(byoStep===0){
     h+=SZTOG();
     h+=ST('','Pan','');

@@ -283,9 +283,10 @@ function render(){
     // color del otro hermano, sin romper nada y sin que nadie lo notara.
     // El armador y las bebidas son de WICHO —son las pantallas donde el cliente ELIGE—;
     // todo lo demás vive del lado de SANDO. El admin nunca: tiene su propia piel.
-    setLado((!/^admin/.test(sndScreen) &&
-      (sndScreen==='o_build'||sndScreen==='o_sides'||
-       (sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink')))) ? 'wicho' : 'sando');
+    // La decisión de lado vive en `ladoActual()` (02-*), UNA sola vez, porque también la
+    // consulta `ACC()` para elegir el color de acento. Dos copias de esta condición serían
+    // dos oportunidades de que el fondo diga un lado y el acento diga el otro.
+    setLado(ladoActual());
     // Repone cualquier función nuestra que un bundle de terceros haya pisado desde el
     // render anterior (ver el bloque "BLINDAJE DE FUNCIONES GLOBALES" más abajo). Va acá
     // porque render() corre antes de pintar cada pantalla: si Culqi acaba de pisar `go`,

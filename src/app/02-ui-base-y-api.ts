@@ -256,6 +256,28 @@ function CUT(alto?,ancho?,gap?){
   return'<div class="sw-cut" aria-hidden="true"'+(gap?' style="gap:'+gap+'"':'')+'>'
     +'<i style="'+st+'"></i><i style="'+st+'"></i></div>';
 }
+// ── EL ACENTO ES DEL LADO; EL DORADO ES DEL DINERO ────────────────────────────────────
+//
+// Regla que faltaba y que se notó al pintar el armador sobre el mundo de WICHO: el dorado
+// estaba haciendo DOS trabajos a la vez — marcar los precios y marcar lo interactivo. En el
+// lado celeste eso choca: un botón dorado sobre azul se lee como si fuera plata.
+//
+// A partir de acá:
+//   · `GOLD`  = dinero. Precios, totales, recompensas. NO cambia entre lados, a propósito:
+//               un precio que cambia de color según dónde estás es justo la duda que no
+//               queremos en un checkout, y hay una prueba que lo fija.
+//   · `ACC()` = el acento del lado. Pasos, selección, énfasis. Cambia con el hermano.
+// Si un elemento no sabe cuál de los dos le toca, la pregunta es si muestra plata o no.
+function ladoActual(){
+  if(/^admin/.test(String(sndScreen||'')))return'sando';
+  if(sndScreen==='o_build'||sndScreen==='o_sides')return'wicho';
+  if(sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink'))return'wicho';
+  return'sando';
+}
+function ACC(){return ladoActual()==='wicho'?'var(--sw-sky,#8CC8EC)':GOLD;}
+// El texto que va ENCIMA del acento. Sobre celeste nunca es blanco: no contrasta.
+function ACC_INK(){return ladoActual()==='wicho'?'var(--sw-sky-ink,#0E1A17)':'var(--sw-on-gold,#241a08)';}
+
 // Uno de los dos hermanos, como elemento de interfaz. `activo` dispara su reacción y,
 // en el caso de WICHO, pone a girar su ojo. El ojo se dibuja ENCIMA del de la ilustración
 // (mismo centro y radio, muestreados del archivo) porque una espiral es geometría y se

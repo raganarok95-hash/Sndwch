@@ -918,6 +918,56 @@ function payButtonLabel(t,fallback){
   if(manualPayMethod)return'Ya realicé el pago //';
   return fallback;
 }
+// ── EL CARRITO ES UN RECIBO (2026-09-10) ──────────────────────────────────────────────
+//
+// Dirección visual elegida por el dueño sobre los mockups: ETIQUETA para todo lo que sea
+// comprobante. Un carrito YA es un recibo; lo que faltaba era que se viera como uno.
+//
+// Y no es solo estética. Antes el total era un número grande y los descuentos eran líneas
+// diminutas en cursiva DEBAJO, en verde, apiladas. Quien mirara rápido veía el total y no
+// de dónde salía. Acá cada descuento es una LÍNEA con su propio renglón y su monto, como
+// en cualquier boleta: se puede seguir la cuenta de arriba abajo.
+//
+// El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
+// eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
+// sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
+function reciboLinea(k,v,tono?){
+  var col=tono==='ahorro'?'#2E6B4F':tono==='mudo'?'#6A665C':'#1A1A18';
+  return'<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:'+col+';padding:3px 0">'
+    +'<span>'+esc(k)+'</span><span style="font-weight:700">'+v+'</span></div>';
+}
+function reciboHTML(base,total,combo,valle,organizador,recompensa){
+  var MONO='font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
+  var h='<div style="background:#F6F2E7;color:#1A1A18;border-radius:4px;padding:15px 15px;margin-bottom:12px;'+MONO+'">'
+    +'<div style="font-size:8.5px;letter-spacing:.2em;color:#6A665C">TU PEDIDO · NO ES BOLETA</div>'
+    +'<div style="border-top:1px dashed #1A1A18;margin:9px 0 7px"></div>'
+    +reciboLinea('Subtotal',SOLES+pz(base));
+  if(combo>0)h+=reciboLinea('Combo · sándwich + bebida','-'+SOLES+pz(combo),'ahorro');
+  if(valle>0)h+=reciboLinea('Bebida gratis · hora valle','-'+SOLES+pz(valle),'ahorro');
+  if(organizador>0)h+=reciboLinea('Sándwich del organizador','-'+SOLES+pz(organizador),'ahorro');
+  if(recompensa>0)h+=reciboLinea('Recompensa canjeada','-'+SOLES+pz(recompensa),'ahorro');
+  // ⚠ EL ENVÍO SÍ ESTÁ EN EL TOTAL, y decir lo contrario rompía el recibo.
+  //
+  // La primera versión de esta línea decía "se calcula con tu dirección" dando por hecho
+  // que el envío venía después. No: `payableTotal()` es `cartFinalTotal() + deliveryFeeAmount()`,
+  // y sin pin `deliveryFeeAmount()` cae a la tarifa por zona. O sea que el total YA lo
+  // incluía y el recibo mostraba subtotal 40.90, combo -1 y total 47.90 — ocho soles que
+  // salían de la nada. Un recibo que no cuadra es peor que no tener recibo: enseña a
+  // desconfiar de la cuenta justo antes de pagar.
+  //
+  // Ahora se muestra el monto real, y solo se dice que falta calcularlo cuando de verdad
+  // no hay nada que cobrar todavía.
+  var envio=deliveryFeeAmount();
+  h+=(envio>0
+      ? reciboLinea(deliveryKmNow()!==null?'Envío · '+deliveryKmNow()+' km':'Envío · estimado por zona',SOLES+pz(envio))
+      : reciboLinea('Envío','se calcula con tu dirección','mudo'))
+    +'<div style="border-top:2px solid #1A1A18;margin:8px 0 7px"></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">TOTAL</span>'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">'+SOLES+pz(total)+'</span></div>'
+    +'</div>';
+  return h;
+}
 function sOCart(){
   var baseTotal=cartBaseTotal();
   var t=payableTotal();
@@ -933,7 +983,7 @@ function sOCart(){
   var orgDiscount=organizerFreeAmount();
   return H('TU CARRITO',"syncConfirmFields();sndScreen='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
     +cartItemsHTML()
-    +(cart.length?'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(t)+'</span>'+(showCombo?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">combo aplicado: ahorras '+SOLES+pz(comboDiscount)+'</div>':'')+(showOffPeak?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">bebida gratis (hora valle): ahorras '+SOLES+pz(offPeakDiscount)+'</div>':'')+(orgDiscount>0?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">sándwich del organizador: ahorras '+SOLES+pz(orgDiscount)+'</div>':'')+(rewardDiscount>0?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">recompensa: ahorras '+SOLES+pz(rewardDiscount)+'</div>':'')+'</div></div>':'')
+    +(cart.length?reciboHTML(baseTotal,t,showCombo?comboDiscount:0,showOffPeak?offPeakDiscount:0,orgDiscount,rewardDiscount):'')
     // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
     // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
     // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.

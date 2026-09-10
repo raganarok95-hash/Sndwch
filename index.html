@@ -1702,7 +1702,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'b0452cfd7e';
+var APP_BUILD = 'fa3db9f169';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2179,6 +2179,30 @@ function CUT(alto, ancho, gap) {
     return '<div class="sw-cut" aria-hidden="true"' + (gap ? ' style="gap:' + gap + '"' : '') + '>'
         + '<i style="' + st + '"></i><i style="' + st + '"></i></div>';
 }
+// ── EL ACENTO ES DEL LADO; EL DORADO ES DEL DINERO ────────────────────────────────────
+//
+// Regla que faltaba y que se notó al pintar el armador sobre el mundo de WICHO: el dorado
+// estaba haciendo DOS trabajos a la vez — marcar los precios y marcar lo interactivo. En el
+// lado celeste eso choca: un botón dorado sobre azul se lee como si fuera plata.
+//
+// A partir de acá:
+//   · `GOLD`  = dinero. Precios, totales, recompensas. NO cambia entre lados, a propósito:
+//               un precio que cambia de color según dónde estás es justo la duda que no
+//               queremos en un checkout, y hay una prueba que lo fija.
+//   · `ACC()` = el acento del lado. Pasos, selección, énfasis. Cambia con el hermano.
+// Si un elemento no sabe cuál de los dos le toca, la pregunta es si muestra plata o no.
+function ladoActual() {
+    if (/^admin/.test(String(sndScreen || '')))
+        return 'sando';
+    if (sndScreen === 'o_build' || sndScreen === 'o_sides')
+        return 'wicho';
+    if (sndScreen === 'o_home' && (homeTab === 'byo' || homeTab === 'drink'))
+        return 'wicho';
+    return 'sando';
+}
+function ACC() { return ladoActual() === 'wicho' ? 'var(--sw-sky,#8CC8EC)' : GOLD; }
+// El texto que va ENCIMA del acento. Sobre celeste nunca es blanco: no contrasta.
+function ACC_INK() { return ladoActual() === 'wicho' ? 'var(--sw-sky-ink,#0E1A17)' : 'var(--sw-on-gold,#241a08)'; }
 // Uno de los dos hermanos, como elemento de interfaz. `activo` dispara su reacción y,
 // en el caso de WICHO, pone a girar su ojo. El ojo se dibuja ENCIMA del de la ilustración
 // (mismo centro y radio, muestreados del archivo) porque una espiral es geometría y se
@@ -2264,7 +2288,9 @@ function WORDMARK(size, hero) {
 function H(sub, bk, showCart) {
     var b = bk ? '<button onclick="' + bk + '" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-family:\'EB Garamond\',serif;font-size:20px;padding:0 14px 0 0;flex-shrink:0">←</button>' : '';
     var sz = sub ? 26 : 40;
-    var s2 = sub ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
+    // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
+    // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
+    var s2 = sub ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + ACC() + ';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">' + sub + '</div>' : '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
     // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
     // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
     var cartIcon = (showCart && cart.length) ? '<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">' + icon('cart', 18, '#F2F0EB') + '<span style="position:absolute;top:-4px;right:2px;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">' + cart.reduce(function (s, it) { return s + it.qty; }, 0) + '</span></button>' : '';
@@ -3789,10 +3815,22 @@ function sOBuild() {
         // DESIGN.md — ninguna señal de estado en la app usa resplandor, siempre opacidad/borde
         // (auditoría UX, P3). El paso actual ya se distingue por opacidad plena vs. .55 de los
         // completados y el color dorado vs. verde de los pendientes, sin necesitar el glow.
-        return '<div style="flex:1;height:5px;border-radius:4px;background:' + (st === 'todo' ? '#2D5246' : GOLD) + ';opacity:' + (st === 'todo' ? 1 : st === 'done' ? .55 : 1) + '"></div>';
+        return '<div style="flex:1;height:5px;border-radius:4px;background:' + (st === 'todo' ? 'var(--sw-card,#2D5246)' : ACC()) + ';opacity:' + (st === 'todo' ? 1 : st === 'done' ? .55 : 1) + '"></div>';
     }).join('') + '</div>';
-    var stepLabel = '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:18px">Paso ' + (byoStep + 1) + ' // 5</div>';
-    var h = H('ARMA EL TUYO', 'byoStepBack()', true) + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">' + progressBar + stepLabel;
+    var stepLabel = '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + ACC() + ';letter-spacing:.15em;margin-bottom:18px">Paso ' + (byoStep + 1) + ' // 5</div>';
+    // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
+    // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
+    // lea como "pasaste con el otro hermano" y no como "cambió el color".
+    var wichoCab = '<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
+        + '<img src="img/wicho_cuerpo.png" alt="WICHO" loading="lazy" style="width:52px;height:auto;flex-shrink:0">'
+        + '<div style="flex:1;padding-bottom:4px">'
+        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8.5px;letter-spacing:.24em;'
+        + 'text-transform:uppercase;color:' + ACC() + '">Con WICHO</div>'
+        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
+        + 'color:var(--sw-text-muted,#A8C8B0);line-height:1.35;margin-top:2px">'
+        + esc(byoStep === 0 ? 'Empieza por el pan. Nada está mal.' : byoStepHint()) + '</div></div></div>';
+    var h = H('ARMA EL TUYO', 'byoStepBack()', true) + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
+        + wichoCab + progressBar + stepLabel;
     if (byoStep === 0) {
         h += SZTOG();
         h += ST('', 'Pan', '');
@@ -5078,6 +5116,60 @@ function payButtonLabel(t, fallback) {
         return 'Ya realicé el pago //';
     return fallback;
 }
+// ── EL CARRITO ES UN RECIBO (2026-09-10) ──────────────────────────────────────────────
+//
+// Dirección visual elegida por el dueño sobre los mockups: ETIQUETA para todo lo que sea
+// comprobante. Un carrito YA es un recibo; lo que faltaba era que se viera como uno.
+//
+// Y no es solo estética. Antes el total era un número grande y los descuentos eran líneas
+// diminutas en cursiva DEBAJO, en verde, apiladas. Quien mirara rápido veía el total y no
+// de dónde salía. Acá cada descuento es una LÍNEA con su propio renglón y su monto, como
+// en cualquier boleta: se puede seguir la cuenta de arriba abajo.
+//
+// El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
+// eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
+// sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
+function reciboLinea(k, v, tono) {
+    var col = tono === 'ahorro' ? '#2E6B4F' : tono === 'mudo' ? '#6A665C' : '#1A1A18';
+    return '<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:' + col + ';padding:3px 0">'
+        + '<span>' + esc(k) + '</span><span style="font-weight:700">' + v + '</span></div>';
+}
+function reciboHTML(base, total, combo, valle, organizador, recompensa) {
+    var MONO = 'font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
+    var h = '<div style="background:#F6F2E7;color:#1A1A18;border-radius:4px;padding:15px 15px;margin-bottom:12px;' + MONO + '">'
+        + '<div style="font-size:8.5px;letter-spacing:.2em;color:#6A665C">TU PEDIDO · NO ES BOLETA</div>'
+        + '<div style="border-top:1px dashed #1A1A18;margin:9px 0 7px"></div>'
+        + reciboLinea('Subtotal', SOLES + pz(base));
+    if (combo > 0)
+        h += reciboLinea('Combo · sándwich + bebida', '-' + SOLES + pz(combo), 'ahorro');
+    if (valle > 0)
+        h += reciboLinea('Bebida gratis · hora valle', '-' + SOLES + pz(valle), 'ahorro');
+    if (organizador > 0)
+        h += reciboLinea('Sándwich del organizador', '-' + SOLES + pz(organizador), 'ahorro');
+    if (recompensa > 0)
+        h += reciboLinea('Recompensa canjeada', '-' + SOLES + pz(recompensa), 'ahorro');
+    // ⚠ EL ENVÍO SÍ ESTÁ EN EL TOTAL, y decir lo contrario rompía el recibo.
+    //
+    // La primera versión de esta línea decía "se calcula con tu dirección" dando por hecho
+    // que el envío venía después. No: `payableTotal()` es `cartFinalTotal() + deliveryFeeAmount()`,
+    // y sin pin `deliveryFeeAmount()` cae a la tarifa por zona. O sea que el total YA lo
+    // incluía y el recibo mostraba subtotal 40.90, combo -1 y total 47.90 — ocho soles que
+    // salían de la nada. Un recibo que no cuadra es peor que no tener recibo: enseña a
+    // desconfiar de la cuenta justo antes de pagar.
+    //
+    // Ahora se muestra el monto real, y solo se dice que falta calcularlo cuando de verdad
+    // no hay nada que cobrar todavía.
+    var envio = deliveryFeeAmount();
+    h += (envio > 0
+        ? reciboLinea(deliveryKmNow() !== null ? 'Envío · ' + deliveryKmNow() + ' km' : 'Envío · estimado por zona', SOLES + pz(envio))
+        : reciboLinea('Envío', 'se calcula con tu dirección', 'mudo'))
+        + '<div style="border-top:2px solid #1A1A18;margin:8px 0 7px"></div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline">'
+        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600">TOTAL</span>'
+        + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:26px;font-weight:640">' + SOLES + pz(total) + '</span></div>'
+        + '</div>';
+    return h;
+}
 function sOCart() {
     var baseTotal = cartBaseTotal();
     var t = payableTotal();
@@ -5093,7 +5185,7 @@ function sOCart() {
     var orgDiscount = organizerFreeAmount();
     return H('TU CARRITO', "syncConfirmFields();sndScreen='o_home';render()") + '<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
         + cartItemsHTML()
-        + (cart.length ? '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:12px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:14px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><div style="text-align:right"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + GOLD + '">' + SOLES + pz(t) + '</span>' + (showCombo ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">combo aplicado: ahorras ' + SOLES + pz(comboDiscount) + '</div>' : '') + (showOffPeak ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">bebida gratis (hora valle): ahorras ' + SOLES + pz(offPeakDiscount) + '</div>' : '') + (orgDiscount > 0 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">sándwich del organizador: ahorras ' + SOLES + pz(orgDiscount) + '</div>' : '') + (rewardDiscount > 0 ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">recompensa: ahorras ' + SOLES + pz(rewardDiscount) + '</div>' : '') + '</div></div>' : '')
+        + (cart.length ? reciboHTML(baseTotal, t, showCombo ? comboDiscount : 0, showOffPeak ? offPeakDiscount : 0, orgDiscount, rewardDiscount) : '')
         // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
         // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
         // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
@@ -8942,9 +9034,10 @@ function render() {
         // color del otro hermano, sin romper nada y sin que nadie lo notara.
         // El armador y las bebidas son de WICHO —son las pantallas donde el cliente ELIGE—;
         // todo lo demás vive del lado de SANDO. El admin nunca: tiene su propia piel.
-        setLado((!/^admin/.test(sndScreen) &&
-            (sndScreen === 'o_build' || sndScreen === 'o_sides' ||
-                (sndScreen === 'o_home' && (homeTab === 'byo' || homeTab === 'drink')))) ? 'wicho' : 'sando');
+        // La decisión de lado vive en `ladoActual()` (02-*), UNA sola vez, porque también la
+        // consulta `ACC()` para elegir el color de acento. Dos copias de esta condición serían
+        // dos oportunidades de que el fondo diga un lado y el acento diga el otro.
+        setLado(ladoActual());
         // Repone cualquier función nuestra que un bundle de terceros haya pisado desde el
         // render anterior (ver el bloque "BLINDAJE DE FUNCIONES GLOBALES" más abajo). Va acá
         // porque render() corre antes de pintar cada pantalla: si Culqi acaba de pisar `go`,

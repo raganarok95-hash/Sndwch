@@ -9,7 +9,9 @@ function WORDMARK(size,hero?){
 function H(sub?,bk?,showCart?){
   var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-family:\'EB Garamond\',serif;font-size:20px;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
   var sz=sub?26:40;
-  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
+  // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
+  // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
+  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Build your own bite</div>';
   // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
   // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
   var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">'+icon('cart',18,'#F2F0EB')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
