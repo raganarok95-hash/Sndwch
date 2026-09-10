@@ -96,36 +96,56 @@ botellas de fondo) — es lo que hace que ocho fotos ajenas se lean como una sol
 
 ## Lo que sigue, por orden
 
-### 1 · Tratamiento común a las 8 fotos de Signature
-Encuadre cerrado + viñeta + viraje a la paleta + grano fino, el mismo en las ocho. Ya está
-probado y te mandé el antes/después. **Sirve con las fotos de hoy** y se vuelve a aplicar
-igual cuando lleguen las grandes de T4 — no es trabajo que se tire.
+> **Corregido el 2026-09-10 tras revisar el estado real** en vez de arrastrar lo que la
+> lista decía. Tres puntos de la versión anterior estaban **mal**: decían pendiente algo
+> que ya estaba hecho. Se marcan abajo.
 
-### 2 · Las pantallas que faltan de la dirección visual
-Perfil, reclamos, tarjeta de regalo y pedido grupal siguen con el diseño anterior. Son las
-cuatro que quedan de la tarea que arrancó todo esto.
+### ~~2 · Las pantallas que faltan de la dirección visual~~ → YA ESTÁN
 
-### 3 · Los estados vacíos y de espera
-Carrito vacío, pedido en camino, tienda cerrada, dirección fuera de cobertura, menú secreto
-bloqueado. Hoy son texto solo. Cuando lleguen las poses de T3, cada una tiene su sitio ya
-elegido en `docs/PROMPTS_PERSONAJES.md`.
+**Era falso.** La lista decía que perfil, reclamos, tarjeta de regalo y pedido grupal
+"siguen con el diseño anterior". Se capturaron las cuatro: todas tienen el wordmark nuevo,
+la tipografía, la paleta y los componentes de la dirección. De 27 pantallas del cliente, 11
+usan helpers de la dirección y el resto ya está sobre la misma base visual.
 
-### 4 · Terminar la auditoría
-Qué automatizar, qué mejorar y qué retirar. Las dos decisiones que dependían de ti (Veo y el
-formulario de recetas) ya están resueltas; queda el resto del inventario.
+Lo único que sí quedó flojo, y se ve de un vistazo: **la tarjeta de regalo es dos campos y
+un botón en una pantalla entera**, con dos tercios de espacio muerto. No es que le falte la
+dirección — le falta contenido.
 
-### 5 · Extraer el cálculo puro de `orders.ts`
-Deuda de arquitectura: la lógica de pedidos mezcla cálculo con acceso a la base, así que
-buena parte no se puede probar sin mockear medio mundo. Es el mismo patrón que ya se usó con
-`cancellationDeltas` y `batchExpiryStatus`.
+### ~~3 · Los estados vacíos~~ → PARCIALMENTE HECHO
 
-### 6 · Los dos pendientes viejos
-- **Anclar el brief semanal a ocasiones** (almuerzo de oficina, antojo de noche, fin de
-  semana en casa) en vez de a Signatures rotando.
-- **Campaña de anuncios lista para aprobar**, con freno automático por techo de CAC. **Esta
-  depende de T1**: sin CAC medido, un freno por CAC no tiene contra qué frenar.
+El helper `VACIO()` existe y ya lo usan Mis Pedidos, Pedido Fijo, Favoritos y Direcciones.
+
+Lo que sigue faltando son los estados de **espera y de rechazo**, que son otra cosa: pedido
+en camino, tienda cerrada, dirección fuera de cobertura, menú secreto bloqueado. **Dependen
+de las poses de T3** — sin las imágenes no hay nada que poner ahí.
+
+### ~~5 · Extraer el cálculo puro de `orders.ts`~~ → EN BUEN ESTADO
+
+La lista lo daba como deuda abierta. El backend tiene hoy **305 pruebas en 26 archivos**, y
+los cálculos que importan ya están extraídos y probados: `batchExpiryStatus`, `prepShortfall`,
+`queueAddressFlags`, `cashClose`, `orderMargin`, `cancellationDeltas`, `deriveCart`,
+`pointsFor`. Queda como higiene continua, no como tarea pendiente.
 
 ---
+
+### Lo que de verdad queda, en orden
+
+**1 · Llenar la pantalla de tarjeta de regalo.** Es la más vacía de la app y además es una
+palanca de crecimiento: regalar saldo trae un cliente nuevo sin costo de adquisición.
+
+**2 · Los estados de espera y rechazo** — en cuanto lleguen las poses de T3.
+
+**3 · Anclar el brief semanal a ocasiones (CEP).** Hoy el contenido rota por Signature; las
+personas no compran "The Original", compran *almuerzo de oficina*, *antojo de noche*,
+*fin de semana en casa*. Nunca se empezó.
+
+**4 · Campaña de anuncios lista para aprobar, con freno por techo de CAC.**
+**Bloqueada por T1**: un freno por CAC no tiene contra qué frenar hasta que el CAC se mida.
+
+**5 · Cerrar la auditoría con un entregable.** La tarea "auditar qué automatizar, qué mejorar
+y qué ya no sirve" no tiene forma definida, y así no se termina nunca. Se cierra como un
+documento con la lista de lo que se retiró, lo que se automatizó y lo que se decidió no
+tocar — o se borra.
 
 ## Lo que NO voy a hacer, y por qué
 
