@@ -53,6 +53,27 @@
   --sw-text-muted3:#7FA08D;
   --sw-text-muted4:#C8D6CE;
 
+  /* ── COLORES DE ESTADO (2026-09-10) ──
+     Antes eran ~230 literales sueltos repartidos por src/app/. El de error estaba escrito
+     79 veces; el de confirmación, 60. Subir el contraste de uno para cumplir WCAG
+     significaba acertarle a 79 sitios y que alguno se quedara atrás.
+     Dos cosas que la tokenización sacó a la luz y que no eran evidentes:
+       · El verde de confirmación era `#25D366`, que es EL VERDE DE WHATSAPP. En la misma
+         app hay botones reales de WhatsApp, así que un mismo color decía dos cosas
+         distintas. Se separan: `--sw-ok` para confirmar, `--sw-whatsapp` para WhatsApp.
+       · El texto sobre dorado estaba escrito de DOS formas — `#0d0d0d` (21 veces) y
+         `#241a08` (20) — para el mismo trabajo. Se unifican en el cálido, que es el que
+         se ve bien sobre el dorado; el casi-negro se veía duro. */
+  --sw-ok:#25D366;
+  --sw-warn:#ffa500;
+  --sw-warn-soft:#ffb366;
+  --sw-danger:#ff8888;
+  --sw-danger-strong:#ff5555;
+  --sw-on-gold:#241a08;
+  /* El verde de WhatsApp, SOLO para lo que es WhatsApp de verdad. Coincide con --sw-ok por
+     ahora; están separados para que mover uno no mueva el otro. */
+  --sw-whatsapp:#25D366;
+
   /* ── LOS TRES COLORES DE MARCA, sacados del logo ──
      El mono está partido: verde a la izquierda, celeste a la derecha, y su ojo en espiral
      es morado. Esa división no es decorativa — es la estructura del menú. El verde marca

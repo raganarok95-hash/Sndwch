@@ -1,0 +1,16 @@
+{
+  "_porque": "La MISMA tabla la verifican dos pruebas en dos lenguajes: tests-api/delivery-distancia.test.ts contra el Deno del servidor, y tests/paridad-envio.spec.ts contra el JavaScript real del navegador. Si una de las dos fórmulas cambia y la otra no, una de las dos pruebas falla. `npm run parity` no puede atrapar esto: compara CONSTANTES, no la fórmula que las combina.",
+  "_regla": "Se redondea hacia ARRIBA al medio sol, y nunca por debajo del mínimo. El delivery es pass-through: si el cobro se queda corto, la diferencia sale del bolsillo del dueño al pagarle al motorizado.",
+  "casos": [
+    { "km": 0,    "fee": 5,   "nota": "el propio local: manda el mínimo" },
+    { "km": 1.2,  "fee": 5,   "nota": "por debajo de 2.5 km la tarifa la fija el piso" },
+    { "km": 2.4,  "fee": 5,   "nota": "2.4 x 2 = 4.80, sigue por debajo del mínimo" },
+    { "km": 2.5,  "fee": 5,   "nota": "el punto exacto donde los km alcanzan al mínimo" },
+    { "km": 2.6,  "fee": 5.5, "nota": "5.20 sube al medio sol de arriba, no baja a 5" },
+    { "km": 3.0,  "fee": 6,   "nota": "6.00 exacto no se sube a 6.50" },
+    { "km": 3.1,  "fee": 6.5, "nota": "6.20 redondea hacia arriba" },
+    { "km": 3.76, "fee": 8,   "nota": "7.52 -> 8, nunca 7.50" },
+    { "km": 5.0,  "fee": 10,  "nota": "10.00 exacto" },
+    { "km": 7.3,  "fee": 15,  "nota": "14.60 -> 15" }
+  ]
+}

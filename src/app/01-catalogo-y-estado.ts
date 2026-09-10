@@ -104,10 +104,10 @@ var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
 // podido tocar sin arriesgar romper esas comparaciones). Ahora `label` es puramente
 // texto para mostrar — cambiarlo no afecta nada guardado ni comparado.
 var STATUSES={
-  'RECIBIDO':  {c:'#ffa500',next:'PREPARANDO', icon:'reclamo',label:'Recibido'},
+  'RECIBIDO':  {c:'var(--sw-warn,#ffa500)',next:'PREPARANDO', icon:'reclamo',label:'Recibido'},
   'PREPARANDO':{c:'#3A86FF',next:'EN CAMINO',  icon:'',       label:'Preparando'},
   'EN CAMINO': {c:'#9b6fff',next:'ENTREGADO',  icon:'moto',   label:'En camino'},
-  'ENTREGADO': {c:'#25D366',next:null,          icon:'check', label:'Entregado'},
+  'ENTREGADO': {c:'var(--sw-ok,#25D366)',next:null,          icon:'check', label:'Entregado'},
   'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close', label:'Cancelado'}
 };
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
@@ -934,6 +934,14 @@ function deliveryKmNow(){
 // motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
 // cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
 // delivery es pass-through y no tiene margen del que salga la diferencia.
+// La fórmula, separada del "de dónde salen los km", para que se pueda comparar contra la
+// del servidor con una tabla compartida (tests/fixtures/tarifa-envio.json). Lleva el MISMO
+// nombre que su gemela en supabase/functions/api/actions/orders.ts a propósito: si algún
+// día una de las dos cambia y la otra no, hay dos pruebas que fallan en vez de un cliente
+// que muestra un monto y un servidor que cobra otro.
+function deliveryFeeForKm(km){
+  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+}
 function deliveryFeeBase(){
   var km=deliveryKmNow();
   if(km===null){
@@ -942,7 +950,7 @@ function deliveryFeeBase(){
     var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
     return z?z.fee:0;
   }
-  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+  return deliveryFeeForKm(km);
 }
 function deliveryFeeAmount(){
   var fee=deliveryFeeBase();
