@@ -1675,6 +1675,42 @@ function openMap(lat,lon,approx){
 }
 function revGeo(lat,lon){
   window._mLat=lat;window._mLon=lon;
+  // El pin ya sabe en qué distrito cayó, y de ese distrito depende si el pedido se puede
+  // entregar. Google acierta el distrito en Trujillo mucho más seguido que Nominatim, así
+  // que va primero; si no hay key o falla, cae al de siempre.
+  if(googleMapsKey){
+    revGeoGoogle(lat,lon).catch(function(){revGeoNominatim(lat,lon);});
+    return;
+  }
+  revGeoNominatim(lat,lon);
+}
+// `google.maps.Geocoder` corre EN EL NAVEGADOR a propósito: la API REST de Geocoding rechaza
+// una key restringida por referrer (probado — devuelve REQUEST_DENIED), y quitarle esa
+// restricción a la key la dejaría usable por cualquiera que la copie del HTML.
+async function revGeoGoogle(lat,lon){
+  await loadGoogleMaps();
+  var g=(window as any).google;
+  if(!g||!g.maps||!g.maps.Geocoder)throw new Error('geocoder no disponible');
+  var res=await new g.maps.Geocoder().geocode({location:{lat:lat,lng:lon},language:'es'});
+  var r=(res&&res.results&&res.results[0]);
+  if(!r)throw new Error('sin resultados');
+  var comp=r.address_components||[];
+  var buscar=function(tipo){
+    var c=comp.find(function(x){return (x.types||[]).indexOf(tipo)>=0;});
+    return c?c.long_name:'';
+  };
+  // En Perú el distrito es `locality`; `administrative_area_level_2` es la provincia. Se
+  // prueban varios porque Google no es consistente en toda la ciudad — mismo criterio que
+  // ya se usaba con Nominatim.
+  window._mDistrict=districtFromAddress([buscar('locality'),buscar('sublocality'),buscar('administrative_area_level_2'),buscar('administrative_area_level_3')].filter(Boolean).join(', '))||'';
+  var calle=buscar('route'),num=buscar('street_number');
+  var hint=[calle&&num?calle+' '+num:calle,buscar('sublocality')].filter(Boolean).join(', ');
+  var h=(document.getElementById('maddr-hint') as HTMLInputElement | null);
+  if(h)h.innerHTML=hint?'<span style="color:'+GOLD+'">&#8599; Referencia: </span>'+esc(hint):'';
+  var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
+  if(inp&&!inp.value&&hint)inp.value=hint;
+}
+function revGeoNominatim(lat,lon){
   // Nominatim for approximate reference only
   var url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=18';
   fetch(url)
@@ -1717,6 +1753,77 @@ function revGeo(lat,lon){
 // mínimo de 4 caracteres y el guardia de petición en vuelo: sin eso, escribir rápido
 // dispara una petición por tecla y OSM bloquea a TODOS los clientes de la app a la vez.
 var _addrTimer=null,_addrBusy=false,_addrLast='';
+
+// ── GOOGLE PLACES: EL BUSCADOR QUE SÍ CONOCE LOS NÚMEROS DE TRUJILLO (2026-09-10) ─────
+// El dueño lo reportó como "la geolocalización es una porquería, no ubica mi dirección" y
+// tenía razón por una causa concreta: Nominatim (OpenStreetMap) tiene la avenida pero casi
+// nunca el NÚMERO en Trujillo. Y el número es justo lo que el motorizado necesita.
+//
+// ⚠ SOLO SE CAMBIA EL BUSCADOR. Los tiles del mapa siguen siendo los de OpenStreetMap, que
+// son gratis: arrastrar el pin ya funcionaba bien y cambiar a "Dynamic Maps" de Google
+// costaría plata por cada apertura del mapa sin resolver ningún problema que exista.
+//
+// COSTO: Autocomplete con `sessionToken` se cobra POR SESIÓN y no por tecla, y una sesión
+// cerrada con un Place Details sale gratis en cualquier volumen. Por eso el token se crea al
+// empezar a escribir y se DESCARTA al elegir un resultado: reusarlo invalida la sesión y
+// Google pasa a cobrar tecla por tecla. Al volumen de este negocio (cientos de pedidos al
+// mes contra 5 000 llamadas gratis) esto no llega ni cerca del tramo pago.
+//
+// Y si la key no llegó —secret sin configurar, o un shell viejo servido por un service
+// worker desactualizado— TODO cae solo a Nominatim, que es exactamente como funcionaba
+// hasta hoy. El peor caso es el comportamiento anterior, nunca un checkout roto.
+var _gmapsPromise=null,_gSessionToken=null;
+function loadGoogleMaps(){
+  if(_gmapsPromise)return _gmapsPromise;
+  if(!googleMapsKey)return Promise.reject(new Error('sin key'));
+  _gmapsPromise=new Promise<void>(function(resolve,reject){
+    var sc=document.createElement('script');
+    // `language=es&region=PE` no es cosmético: sin region, "Av. España" prioriza resultados
+    // de España — el mismo defecto que el `viewbox` resolvía a mano en Nominatim.
+    sc.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(googleMapsKey)
+      +'&libraries=places&language=es&region=PE&loading=async';
+    sc.async=true;
+    sc.onload=function(){resolve();};
+    sc.onerror=function(){_gmapsPromise=null;reject(new Error('no cargó'));};
+    document.head.appendChild(sc);
+  });
+  return _gmapsPromise;
+}
+function googleListo(){
+  var g=(window as any).google;
+  return !!(g&&g.maps&&g.maps.places&&g.maps.places.AutocompleteSuggestion);
+}
+// Un token por sesión de búsqueda. Se pide una sola vez y se suelta al elegir.
+function gSessionToken(){
+  var g=(window as any).google;
+  if(!_gSessionToken&&g&&g.maps&&g.maps.places)_gSessionToken=new g.maps.places.AutocompleteSessionToken();
+  return _gSessionToken;
+}
+async function buscarConGoogle(q){
+  await loadGoogleMaps();
+  if(!googleListo())throw new Error('places no disponible');
+  var g=(window as any).google;
+  var r=await g.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+    input:q,
+    sessionToken:gSessionToken(),
+    // Acotado a Perú y sesgado a Trujillo: el círculo NO excluye (por si alguien escribe una
+    // referencia conocida de otro lado), solo ordena — excluir daría "no encontramos nada"
+    // en los bordes de la ciudad, que es donde más falta hace acertar.
+    includedRegionCodes:['pe'],
+    locationBias:{center:{lat:STORE_LAT,lng:STORE_LON},radius:20000},
+    language:'es',
+  });
+  var sug=(r&&r.suggestions)||[];
+  return sug.map(function(x){
+    var pp=x.placePrediction;
+    if(!pp)return null;
+    return {
+      texto:(pp.text&&pp.text.toString&&pp.text.toString())||String(pp.text||''),
+      place:pp,
+    };
+  }).filter(Boolean);
+}
+
 function addrResultsEl(){return(document.getElementById('maddr-results') as HTMLElement | null);}
 function addrSearchTyped(){
   if(_addrTimer)clearTimeout(_addrTimer);
@@ -1733,23 +1840,54 @@ function addrSearchNow(){
   _addrBusy=true;_addrLast=q;
   box.style.display='block';
   box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">Buscando...</div>';
+
+  // Google primero, porque es el único que tiene la numeración de Trujillo. Si no hay key,
+  // si el script no carga, o si Google no devuelve nada, sigue Nominatim abajo — el cliente
+  // nunca se queda sin buscador por un problema de configuración que no es suyo.
+  if(googleMapsKey){
+    buscarConGoogle(q).then(function(hits){
+      _addrBusy=false;
+      if(!hits.length){pintarSinResultados(box);return;}
+      (window as any)._addrHits=hits;
+      box.innerHTML=hits.map(function(h,i){
+        return'<div onclick="addrPick('+i+')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
+          +'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">'+esc(h.texto)+'</div>';
+      }).join('');
+    }).catch(function(){
+      // Cae a Nominatim sin decir nada: para el cliente esto es un detalle de plomería.
+      _addrBusy=false;
+      buscarConNominatim(q,box);
+    });
+    return;
+  }
+  buscarConNominatim(q,box);
+}
+function pintarSinResultados(box){
+  box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
+    +'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
+}
+// El buscador de siempre, ahora como RESPALDO. No se borra: es lo que sostiene la app si la
+// key falta o Google no responde, y su cobertura de calles (no de números) es real.
+function buscarConNominatim(q,box){
+  _addrBusy=true;
   // `bounded=1` + `viewbox` alrededor de Trujillo: sin eso, "Av. España" devuelve España.
   var vb='-79.20,-8.28,-78.88,-7.98';
   var url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&accept-language=es'
     +'&bounded=1&viewbox='+vb+'&q='+encodeURIComponent(q);
   fetch(url).then(function(r){return r.json();}).then(function(list){
     _addrBusy=false;
-    if(!Array.isArray(list)||!list.length){
-      box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#A8C8B0">'
-        +'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
-      return;
-    }
-    box.innerHTML=list.map(function(r,i){
-      var nom=String(r.display_name||'').split(',').slice(0,4).join(',');
+    if(!Array.isArray(list)||!list.length){pintarSinResultados(box);return;}
+    // Se normaliza a la MISMA forma que devuelve Google ({texto, lat, lon}) para que
+    // `addrPick` no tenga que saber de qué buscador vino el resultado. Dos formas distintas
+    // en la misma lista es como se cuela el bug de "el pin quedó en el resultado anterior".
+    var hits=list.map(function(r){
+      return {texto:String(r.display_name||'').split(',').slice(0,4).join(','),lat:parseFloat(r.lat),lon:parseFloat(r.lon)};
+    });
+    (window as any)._addrHits=hits;
+    box.innerHTML=hits.map(function(h,i){
       return'<div onclick="addrPick('+i+')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #2D5246;'
-        +'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">'+esc(nom)+'</div>';
+        +'font-family:\'EB Garamond\',serif;font-size:12px;color:#F2F0EB;line-height:1.4">'+esc(h.texto)+'</div>';
     }).join('');
-    window._addrHits=list;
   }).catch(function(){
     _addrBusy=false;
     box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">'
@@ -1759,16 +1897,37 @@ function addrSearchNow(){
 // Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: el número exacto
 // casi nunca lo tiene OSM, así que lo que sigue es que la persona ajuste el pin. Cerrar
 // acá daría por buena una precisión que no tenemos.
-function addrPick(i){
-  var list=window._addrHits||[];
+async function addrPick(i){
+  var list=(window as any)._addrHits||[];
   var r=list[i];
   if(!r)return;
   var box=addrResultsEl();
   if(box){box.style.display='none';box.innerHTML='';}
   var banner=(document.getElementById('mmap-accuracy-banner') as HTMLElement | null);
   if(banner)banner.style.display='block';
-  if(_lmap){_lmap.setView([parseFloat(r.lat),parseFloat(r.lon)],18);}
-  else{openMap(parseFloat(r.lat),parseFloat(r.lon),true);}
+
+  var lat=r.lat,lon=r.lon;
+  // Un resultado de Google todavía no trae coordenadas: hay que pedir el Place Details. Esa
+  // llamada es la que CIERRA la sesión de autocompletado y la vuelve gratis, así que no es
+  // un costo extra — es lo que evita que se cobre tecla por tecla.
+  if(r.place&&r.place.toPlace){
+    try{
+      var place=r.place.toPlace();
+      await place.fetchFields({fields:['location','formattedAddress']});
+      if(place.location){lat=place.location.lat();lon=place.location.lng();}
+      // El texto que el motorizado va a leer sale de Google, que sí trae el número. Solo se
+      // escribe si el cliente no puso nada suyo: lo que él escribió (una referencia, un
+      // interior) vale más que la versión canónica de una API.
+      var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
+      if(inp&&place.formattedAddress&&(!inp.value||inp.value===r.texto))inp.value=place.formattedAddress;
+    }catch(e){}
+    // El token se suelta acá, pase lo que pase. Reusarlo invalida la sesión y Google cobra
+    // cada tecla como una llamada suelta.
+    _gSessionToken=null;
+  }
+  if(!isFinite(lat)||!isFinite(lon))return;
+  if(_lmap){_lmap.setView([lat,lon],18);}
+  else{openMap(lat,lon,true);}
 }
 
 function closeMap(){(document.getElementById('mmap') as HTMLInputElement | null).style.display='none';}

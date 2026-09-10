@@ -402,6 +402,11 @@ async function loadStoreHoursBackground(){
     }
     businessLaunched=r.businessLaunched===true;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
+    // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
+    // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
+    // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.
+    // Llegando por acá se puede rotar sin desplegar el cliente.
+    if(r.googleMapsKey)googleMapsKey=r.googleMapsKey;
     storePausedUntil=r.pausedUntil||null;
     // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
     // cocina por delante ahora mismo.

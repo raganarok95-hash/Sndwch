@@ -1345,6 +1345,9 @@ var wlPhone='',wlName='',wlMsg='',wlDone=localStorage.getItem('sw_wl_done')==='1
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
 var businessLaunched=false;
+// Key de Google Maps — llega en get-store-hours. Vacía = la app usa Nominatim/OSM, que es
+// como funcionó hasta el 2026-09-10 y sigue siendo el respaldo (ver buscarDireccion()).
+var googleMapsKey='';
 var pushSubscribed=false,pushMsg='';
 // Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
 var adOptOutMsg='';
