@@ -9,8 +9,8 @@
     "check:precios": "node scripts/check-precios-visibles.mjs",
     "check:colores": "node scripts/check-colores.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
-    "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run build && npm run check:shell",
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
+    "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run build && npm run check:shell",
     "typecheck:api": "node scripts/check-backend.mjs",
     "test:api": "node scripts/check-money.mjs",
     "check:backup": "node scripts/check-backup.mjs",
@@ -18,7 +18,8 @@
     "check:smoke": "node scripts/check-smoke.mjs",
     "smoke": "node scripts/smoke-prod.mjs",
     "check:shell": "node scripts/check-shell.mjs",
-    "shell": "node scripts/shell-live.mjs"
+    "shell": "node scripts/shell-live.mjs",
+    "check:crons": "node scripts/check-crons.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
