@@ -180,23 +180,40 @@ body,#app{transition:background-color .42s ease}
 .admin-dark,.admin-dark *,.admin-light,.admin-light *{
   font-family:'Public Sans','Segoe UI',system-ui,-apple-system,sans-serif!important;
 }
-/* El wordmark "//" (.wm-mark, ver más abajo) trae su degradado dorado fijo en la clase
-   compartida con el cliente — estas 2 reglas lo reemplazan por el acento ámbar del admin
-   sin tocar la regla original (mayor especificidad por combinador de clase, no hace falta
-   !important acá porque .wm-mark i no trae ningún estilo inline que competir). */
-.admin-dark .wm-mark i{background:linear-gradient(180deg,#FFC966,#FFB020)}
-.admin-light .wm-mark i{background:linear-gradient(180deg,#8A5000,#6B3E00)}
+/* El wordmark "//" (.wm-mark, ver más abajo) lleva UNA BARRA POR HERMANO. Acá se
+   reemplazan los dos colores por los del panel, que tiene sus propios fondos: en el claro
+   el celeste del cliente sería casi invisible, así que cada tema trae su par. Se conserva
+   el bicolor porque es la marca, no un adorno del cliente. */
+.admin-dark .wm-mark i:first-child{background:#FFC966}
+.admin-dark .wm-mark i:last-child{background:#7FC4EE}
+.admin-light .wm-mark i:first-child{background:#8A5000}
+.admin-light .wm-mark i:last-child{background:#1F5F86}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
 .cut-sep{}
-/* Marca "//" del wordmark — dos barras sesgadas con degradado dorado, en vez del simple
-   glifo "//" (que en fuentes display de alto contraste como Bodoni Moda casi no se ve a
-   tamaños chicos). Solo se usa en WORDMARK(); el "//" suelto dentro de copy en cualquier
-   otra parte sigue usando .cut-sep, mucho más liviano para 40+ apariciones en botones y
-   labels. */
-.wm-mark{display:inline-flex;align-items:center;gap:.13em;margin:0 .08em;vertical-align:-.04em}
-.wm-mark i{display:inline-block;width:.15em;height:.82em;background:linear-gradient(180deg,#E9C98A,#CBA258);transform:skewX(-16deg);border-radius:1px}
+/* Marca "//" del wordmark — dos barras sesgadas, en vez del simple glifo "//" (que en
+   fuentes display de alto contraste casi no se ve a tamaños chicos). Solo se usa en
+   WORDMARK(); el "//" suelto dentro de copy en cualquier otra parte sigue usando
+   .cut-sep, mucho más liviano para 40+ apariciones en botones y labels.
+
+   ── UNA BARRA POR HERMANO (variante C, decisión del dueño 2026-09-10) ──
+   Izquierda dorada = SANDO. Derecha celeste = WICHO. El "//" siempre fue el corte del
+   pan; ahora además dice QUIÉN lo hace, y el logo cuenta lo mismo que el producto.
+
+   Antes las dos barras eran doradas con degradado, a .15em de ancho: el dueño lo rechazó
+   como "dorado grueso" y tenía razón — a ese grosor no se lee como corte sino como dos
+   bloques que empujan las letras. Ahora .10em y color PLANO, sin degradado: dos trazos de
+   cuchillo.
+
+   ⚠ LAS DOS BARRAS SON IDÉNTICAS EN FORMA y eso no se negocia (ver punto 10 del
+   CLAUDE.md): `width`/`height`/`transform`/`border-radius` viven en UNA regla compartida
+   por las dos, y lo único que se separa es el `background`. Nunca las dibujes con
+   tamaños distintos. */
+.wm-mark{display:inline-flex;align-items:center;gap:.16em;margin:0 .08em;vertical-align:-.04em}
+.wm-mark i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.wm-mark i:first-child{background:#CBA258}
+.wm-mark i:last-child{background:#8CC8EC}
 /* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
    soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
    Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).

@@ -1357,13 +1357,22 @@ de al menos 1600 px de ancho.
     paralelas las dibujaron de ALTURA DISTINTA entre sí (una más larga, una más corta,
     "asimetría" que nunca fue parte del glifo real) — el dueño corrigió de nuevo: **"Son
     dos del mismo tamaño"**. Especificación exacta del "//" real, tomada literal de
-    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción): dos barras **idénticas**
-    (misma regla CSS compartida por ambas, no dos reglas distintas) — cada una
-    `width:.15em;height:.82em` (proporción ancho:alto ≈ 1:5.5), `transform:skewX(-16deg)`,
-    `border-radius:1px`, separadas por `gap:.13em`. Lo que sí puede/debe variar en una
-    ronda "creativa" es todo lo DEMÁS alrededor de este par fijo: color, fondo,
-    marco/contenedor, acabado (plano/degradado/sombra/metálico) — nunca el tamaño
-    relativo entre las dos barras, ni la identidad estructural del par. Antes de generar
+    `.wm-mark`/`.wm-mark i` en `src/shell.html` (producción, **actualizada 2026-09-10**):
+    dos barras **idénticas en forma** — `width`/`height`/`transform`/`border-radius` viven
+    en UNA sola regla compartida por las dos, nunca en dos reglas distintas — cada una
+    `width:.10em;height:.88em` (proporción ancho:alto ≈ 1:8.8), `transform:skewX(-16deg)`,
+    `border-radius:1px`, separadas por `gap:.16em`.
+    **UNA BARRA POR HERMANO (variante C, decisión del dueño 2026-09-10)**: la izquierda
+    dorada `#CBA258` (SANDO), la derecha celeste `#8CC8EC` (WICHO), las dos en **color
+    plano, sin degradado**. Antes eran dos barras doradas con degradado a `.15em` de ancho
+    y el dueño lo rechazó como "dorado grueso": a ese grosor no se lee como corte sino como
+    dos bloques que empujan las letras. El "//" siempre fue el corte del pan; ahora además
+    dice **quién** lo hace, y el logo cuenta lo mismo que el producto. El panel admin tiene
+    su propio par por tema (`.admin-dark`/`.admin-light`) porque sobre fondo claro el
+    celeste del cliente sería invisible — el bicolor se conserva, no se vuelve monocromo.
+    Lo que sí puede/debe variar en una ronda "creativa" es todo lo DEMÁS alrededor de este
+    par fijo: fondo, marco/contenedor, acabado — nunca el tamaño relativo entre las dos
+    barras, ni la identidad estructural del par. Antes de generar
     cualquier variante nueva del ícono, partir de esta especificación exacta (o de
     `wordmark-official-source.html` en el scratchpad, que ya la replica correctamente)
     en vez de reconstruir el mark de memoria/aproximado.
