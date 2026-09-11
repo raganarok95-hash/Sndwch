@@ -1347,12 +1347,26 @@ Una medición del código encontró **34 tamaños de letra distintos y 13 radios
 **once valores usados una sola vez**. Eso no es una escala: es sedimento. Tener 20, 21 y 22 px
 a la vez no comunica jerarquía, la enturbia.
 
-**El chequeo NO exige consolidar, exige no empeorar.** Prohibir de golpe todo lo que está
-fuera de escala obligaría a un refactor de 30 pantallas en una sentada, que es exactamente
-cómo un chequeo así termina desactivado. Congela la lista de lo que HAY: un valor que no
-estaba falla, señalado por su nombre y su archivo, **con el vecino que ya existe sugerido**
-(«¿puede ser 20px, que ya se usa 17 veces?»). La lista solo **encoge**: al consolidar se
-borran los que dejaron de usarse, nunca se agregan para que pase.
+**Consolidado el 2026-09-11 a 11 tamaños y 6 radios**, migrando 522 usos. La escala es
+`8 · 9 · 11 · 13 · 15 · 18 · 22 · 28` de texto, más `40 · 56 · 72` de display (el hero del
+wordmark, el número de puntos, el check de entrega), y `4 · 8 · 10 · 12 · 20 · 999` de radio.
+
+**⚠ SE CONSTRUYÓ SOBRE EL USO REAL, no sobre un ratio elegido a ojo**: los valores con
+cientos de usos son anclas y arrastran a sus vecinos, no al revés.
+
+**⚠ Y EN EMPATE, SUBE.** Un valor a la misma distancia de dos pasos va al MAYOR. La primera
+versión hacía lo contrario y el cuerpo de texto bajaba de 12 a 11px — consistencia ganada a
+cambio de legibilidad, en una app de comida que se usa en un celular. Con la regla correcta
+**415 usos suben de tamaño y solo 74 bajan**. *El texto que lee el cliente nunca puede
+achicarse por un refactor interno.*
+
+Se verificó **capturando las 20 pantallas antes y después** y comparándolas: ninguna creció
+más de 80px y ninguna se rompió. Un refactor de tipografía sin esa comparación es fe.
+
+`check:sistema` lo sostiene: un valor fuera de la escala falla, señalado por su nombre y su
+archivo, **con el vecino sugerido** («¿puede ser 13px, que ya se usa 242 veces?»). Sin eso la
+escala vuelve a 34 valores en unos meses — nadie agrega un tamaño nuevo a propósito, se
+agrega porque en ese momento "se veía mejor así".
 
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
