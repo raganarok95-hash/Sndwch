@@ -255,41 +255,95 @@ The bread is a long sub / hoagie roll — never sliced sandwich bread.
 + el bloque común con `<FONDO>` = `#1E3932`. **Esta va del lado verde**: es la imagen de marca,
 no la de un lado ni la del otro.
 
-### 4.2 · Escenarios (sin personajes)
+### 4.2 · Escenarios para Flow
 
-Se piden **vacíos**, para poder montar encima a quien haga falta.
+Se piden **VACÍOS, sin personajes y sin manos**. Así cada escena sirve para los tres hermanos y
+no hay que regenerarla al cambiar de personaje.
 
-```
-LA COCINA — Empty night kitchen. Deep green tiles (#1E3932) to mid-wall, worn steel
-prep table, a SINGLE warm bulb hanging low. Everything else falls to black. Mise en
-place containers in a row. No window, no daylight, no people.
-One warm light source from above, long shadows, never flat studio light.
-```
+**El bloque de la cocina va IDÉNTICO en las escenas 1 a 4.** Si se reescribe en cada una, no se
+ven como la misma cocina — mismo mecanismo que el párrafo fijo de la sección 5.
 
 ```
-LA TABLA DE SANDO — A worn wooden cutting board, everything at right angles, one
-knife, portioned ingredients in equal piles, nothing open or half-used. Warm
-overhead light. Overhead 90-degree view. No people.
+Night kitchen. Deep green tiled wall (#1E3932) up to mid-height, worn steel prep
+table, a SINGLE warm bulb hanging low over the table, everything beyond it
+falling to black. No window, no daylight, no clock — it is always night here.
+One warm light source from above, clear direction, long shadows. Never flat
+studio light.
+No people, no characters, no hands in frame.
+No text, no letters, no signage, no logotype, no watermark.
 ```
 
+**1 · LA COCINA** — bloque fijo +
 ```
-EL MOSTRADOR DE WICHO — Every topping container open at once, sauce bottles
-mid-squeeze, one spoon in the wrong container. The same warm light, but the subject
-is the disorder. Close three-quarter view. No people.
-```
-
-```
-LA BARRA DE MAFE — A row of tall glass jars of infusion at rest, half-litre bottles,
-ice, a strainer. BACKLIT: the light passes THROUGH the liquid instead of bouncing
-off it. Deep rose hibiscus bleeding into clear water. Dark green background. No people.
+Wide establishing shot of the empty kitchen. Mise en place containers lined up
+along the steel table, lids on, everything at rest before service.
 ```
 
+**2 · LA TABLA DE SANDO** — bloque fijo +
 ```
-LA BOLSA — A closed branded greaseproof paper bag on a dark surface at night, a
-small card tucked inside. No motorcycle, no courier, no face. Warm low light.
+Close three-quarter view of a worn wooden cutting board on the steel table.
+Everything sits at right angles. ONE knife. Ingredients already portioned into
+equal piles. Nothing open, nothing half-used. The order itself is the subject.
+The bread is a long sub / hoagie roll — never sliced sandwich bread.
 ```
 
----
+**3 · EL MOSTRADOR DE WICHO** — bloque fijo +
+```
+Close three-quarter view of a prep counter where EVERY topping container is open
+at once, sauce bottles caught mid-squeeze, one spoon in the wrong container.
+Same warm light, but here the disorder is the subject.
+The bread is a long sub / hoagie roll — never sliced sandwich bread.
+```
+
+**4 · LA BARRA DE MAFE** — bloque fijo, **cambiando la línea de luz por**
+`BACKLIT: the light passes THROUGH the liquid instead of bouncing off it.` +
+```
+A row of tall glass jars of infusion at rest along the bar, half-litre glass
+bottles, ice, a strainer. Deep rose hibiscus bleeding slowly into clear water
+inside one of the jars. The only place in this world where you can see THROUGH
+something.
+```
+
+**5 · LA BOLSA** — **sin** bloque fijo, es afuera
+```
+A closed branded greaseproof paper bag on a dark surface at night, a small card
+tucked just inside the fold. Warm low light from one side, deep shadow behind.
+No motorcycle, no courier, no face, no people, no hands.
+No text, no letters, no signage, no logotype, no watermark.
+```
+
+**6 · LA MESA DEL CLIENTE** — **sin** bloque fijo, y **la luz se invierte a propósito**
+```
+An ordinary table in an ordinary room. No kitchen, no green tiles, no brand
+colour anywhere. Cooler, flatter, more neutral daylight — deliberately different
+from the warm kitchen light. The sandwich has arrived and belongs to someone else.
+The bread is a long sub / hoagie roll — never sliced sandwich bread.
+No people, no characters, no faces.
+No text, no letters, no signage, no logotype, no watermark.
+```
+
+> **Por qué el 6 rompe las reglas.** Los cinco primeros comparten luz cálida y verde de marca;
+> la mesa del cliente no. Ahí el producto ya salió del mundo de SND//WCH. Ese corte de
+> temperatura es lo que hace que el cierre de un video se sienta como una entrega.
+
+### 4.3 · Las poses que le faltan a WICHO
+
+SANDO tiene `mira`, `piensa` y `serio`; WICHO **no tiene ninguna de las tres**. Son las que hacen
+falta para los estados de espera, de error y de vacío de la app.
+
+Se piden con la ficha de WICHO (3.2) cambiando solo el gesto:
+
+```
+WICHO MIRA    — head turned, looking off to one side, eyebrows slightly raised,
+                mouth closed for once. Waiting for something to happen.
+WICHO PIENSA  — one hand up near his chin, eyes narrowed, mouth pursed to one
+                side. Visibly struggling to decide, which for him is agony.
+WICHO SERIO   — mouth a flat line, eyebrows down, shoulders squared. The rarest
+                one: the spiral eyes stay, but everything else goes still.
+```
+
+> Los tres conservan **los ojos en espiral**. Es lo que la ficha ya dice que no se le quita
+> nunca, ni siquiera en una pose tranquila.
 
 ## 5 · Fotografía hiperrealista de producto
 
