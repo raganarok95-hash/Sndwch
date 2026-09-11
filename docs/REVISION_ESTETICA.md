@@ -24,11 +24,14 @@ Direcciones tienen personaje, texto y salida. No son pantallas mudas.
 
 ### El sistema no es un sistema: es una acumulación
 
-| qué | cuántos valores distintos | qué debería tener |
+> ✅ **RESUELTO el 2026-09-11.** Los dos primeros, consolidados. Se deja la medición
+> original porque explica de dónde venía el problema.
+
+| qué | antes | ahora |
 |---|---|---|
-| **Tamaños de letra** | **26** | 7-8 |
-| **Radios de borde** | **10** | 3-4 |
-| **Colores de texto** | **24** | 6-8 |
+| **Tamaños de letra** | **34** | **11** (8 de texto + 3 de display) |
+| **Radios de borde** | **13** | **6** |
+| **Colores de texto** | **24** | sin tocar — ver abajo |
 
 Los tamaños incluyen **20, 21 y 22 px a la vez**: nadie distingue 21 de 22, así que no
 comunican jerarquía — solo la enturbian. Y hay un `6.6px`, que casi seguro es un `em`
@@ -42,9 +45,20 @@ sesgo hacia la paleta**. Tienen justificación de contraste documentada (`#666` 
 bajo el mínimo AA), así que **no son descuido**: lo que les falta es sesgo. Un gris con una
 pizca de verde cumple el mismo contraste y se lee como elegido en vez de heredado.
 
-> **Esto NO se arregla de una sentada.** Consolidar 26 tamaños a 8 toca casi todas las
-> pantallas, y hacerlo sin un chequeo que lo congele después significa volver a 26 en un mes.
-> El orden correcto es: primero el chequeo, después la consolidación.
+**Cómo se hizo, porque el método importa más que el resultado:** la escala se construyó
+sobre el **uso real** (los valores con cientos de usos son anclas y arrastran a sus vecinos),
+y **en empate el valor sube, nunca baja** — la primera versión bajaba el cuerpo de 12 a 11px,
+o sea consistencia a cambio de legibilidad en una app que se usa en un celular. Con la regla
+correcta, 415 usos suben y solo 74 bajan.
+
+Se verificó **capturando las 20 pantallas antes y después** y comparándolas píxel a píxel:
+ninguna creció más de 80px, ninguna se rompió. Un refactor de tipografía sin esa comparación
+es fe, no verificación.
+
+**Los 24 colores de texto siguen sin tocar**, a propósito: los grises neutros tienen
+justificación de contraste documentada (`#666` daba 3.4:1, bajo el mínimo AA) y cambiarlos
+exige recalcular contraste caso por caso, no un mapeo mecánico. Es el siguiente paso, no
+este.
 
 ### El azul y el verde no explican por qué
 
@@ -79,13 +93,14 @@ Todo lo de esta lista comparte modo de fallo: **no rompe nada, solo se degrada**
 
 | # | qué | por qué no alcanza con mirar |
 |---|---|---|
-| 1 | **Congelar el sistema visual**: que falle si aparece un tamaño de letra, un radio o un color fuera del set aprobado | Sin esto, consolidar los 26 tamaños a 8 dura un mes. El chequeo va ANTES de la consolidación, no después |
+| 1 | **Congelar el sistema visual** | Hecho — `check:sistema`. Y la consolidación también: de 34 tamaños a 11 y de 13 radios a 6 |
 | 2 | **Que ningún texto al cliente prometa un mecanismo apagado** | Ya cazó un caso real: el brief prometía la hora valle, retirada hace semanas. Hecho — `tests-api/ocasiones-del-brief.test.ts` |
 | 3 | **Que las fotos servidas tengan los píxeles que su contenedor pide** | Hecho — `check:fotos` avisa foto por foto cuánto le falta |
 | 4 | **Que ningún personaje se corte dentro de su contenedor** | Fue un defecto real (SANDO sin cabeza) y no dio ningún error: la app se veía "rara" y nada más |
 | 5 | **Que dos pantallas contiguas no usen la misma pose** | El caso de Favoritos y Pedido Fijo |
 
-**El 1 es el que más vale**, y es el único que todavía no existe.
+**Los cinco existen ya.** El 1 era el que más valía y además destrabó la consolidación: con el
+chequeo puesto, migrar 522 usos deja de ser un riesgo que se revierte solo en unos meses.
 
 ---
 

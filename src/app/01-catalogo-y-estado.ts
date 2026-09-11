@@ -738,8 +738,8 @@ function scheduleTimePickerHTML(){
   var libres=slots.filter(function(s){return !s.full;});
   var slotsHTML=slots.length
     ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
-        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">'+s.t+'</div>';
-        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:12px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
+        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">'+s.t+'</div>';
+        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
       }).join('')+'</div>'
       +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
     :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No hay horarios disponibles ese día.</div>';

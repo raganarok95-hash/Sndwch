@@ -429,12 +429,12 @@ function render(){
       var appEl=(document.getElementById('app') as HTMLElement | null);
       if(appEl){
         appEl.innerHTML='<div style="min-height:100vh;background:#1E3932;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#F2F0EB">'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-size:20px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-size:22px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
           +'<p style="font-size:15px;line-height:1.55;color:#A8C8B0;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
           +'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
-          +'<div style="color:'+GOLD+';font-weight:600;letter-spacing:.14em;font-size:10px;margin-bottom:8px">DETALLE //</div>'
+          +'<div style="color:'+GOLD+';font-weight:600;letter-spacing:.14em;font-size:11px;margin-bottom:8px">DETALLE //</div>'
           +'<div>Pantalla: '+esc(String(sndScreen))+'</div><div>Versión: '+esc(APP_BUILD)+'</div><div>Error: '+esc(String((e&&(e as any).message)||e))+'</div></div>'
-          +'<button onclick="applyAppUpdate()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-size:16px;font-weight:700;padding:18px 0;border-radius:10px;text-align:center">Recargar la app</button></div>';
+          +'<button onclick="applyAppUpdate()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-size:15px;font-weight:700;padding:18px 0;border-radius:10px;text-align:center">Recargar la app</button></div>';
       }
     }catch(_){}
   }
@@ -529,7 +529,7 @@ function renderScreen(){
         ? pantallaAdmin()
         : (adminBundleError
             ? '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px">'
-              + '<div style="font-family:\'Bodoni Moda\',serif;font-size:19px;font-weight:640;color:var(--sw-text,#FFFFFF)">El panel no cargó</div>'
+              + '<div style="font-family:\'Bodoni Moda\',serif;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">El panel no cargó</div>'
               + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);max-width:280px;line-height:1.55">'+esc(adminBundleError)+'</p>'
               + BTN('Reintentar //','adminBundleError=\'\';render()')
               + '</div>'
@@ -541,7 +541,7 @@ function renderScreen(){
   document.body.classList.toggle('no-fi',sameScreen);
   // Banner único y proactivo en vez de dejar que cada acción falle por separado con su
   // propio mensaje genérico — antes no había ninguna detección de modo sin conexión.
-  var offlineBanner=isOffline?'<div style="background:var(--sw-warn,#ffa500);color:#1a1200;text-align:center;padding:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:10px;letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:5px">'+icon('warning',12,'#1a1200')+'<span>SIN CONEXIÓN — reconectando…</span></div>':'';
+  var offlineBanner=isOffline?'<div style="background:var(--sw-warn,#ffa500);color:#1a1200;text-align:center;padding:6px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.1em;display:flex;align-items:center;justify-content:center;gap:5px">'+icon('warning',12,'#1a1200')+'<span>SIN CONEXIÓN — reconectando…</span></div>':'';
   // Nunca mientras hay una operación en vuelo (un pago, por ejemplo): recargar en medio
   // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
   var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';

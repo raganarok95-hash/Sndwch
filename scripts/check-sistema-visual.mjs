@@ -7,13 +7,10 @@
 // tipográfica: es sedimento. Y tener 20, 21 y 22 px a la vez no comunica jerarquía — nadie
 // distingue 21 de 22, así que solo la enturbia.
 //
-// ⚠ ESTE CHEQUEO NO EXIGE CONSOLIDAR, EXIGE NO EMPEORAR. Prohibir de golpe todo lo que está
-// fuera de la escala rompería el build y obligaría a un refactor de 30 pantallas en una
-// sentada — que es exactamente cómo un chequeo así termina desactivado. Lo que hace es
-// congelar lo que HAY: un valor que no estaba, falla; los que ya estaban, pasan.
-//
-// La lista solo ENCOGE: cada vez que alguien consolida, se borran de acá los valores que
-// dejaron de usarse. Así la deuda se paga en el orden que convenga, pero nunca crece.
+// Ahora que la consolidación está hecha, este chequeo la SOSTIENE: un valor fuera de la
+// escala falla, señalado por su nombre y su archivo, con el vecino que ya existe sugerido.
+// Sin esto, la escala vuelve a 34 valores en unos meses — nadie agrega un tamaño nuevo a
+// propósito, se agrega porque en ese momento "se veía mejor así".
 //
 // Modo de fallo de lo que vigila: ninguno visible. Un `font-size:23px` nuevo no rompe nada,
 // no da error y no se ve mal en su pantalla. Solo hace que el conjunto se parezca un poco
@@ -25,18 +22,25 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'src/app');
 
-// ── LO QUE HAY HOY ────────────────────────────────────────────────────────────────────
-// Congelado el 2026-09-10 midiendo el código, no inventado. Un valor que NO esté acá es
-// nuevo, y el chequeo lo señala por su nombre en vez de decir solo "hay uno más" — buscar a
-// mano cuál de treinta y cinco es el nuevo es exactamente la fricción que hace que alguien
-// suba el techo y siga.
+// ── LA ESCALA ─────────────────────────────────────────────────────────────────────────
+// Consolidada el 2026-09-11: de 34 tamaños de letra a 11 y de 13 radios a 6, migrando 522
+// usos. Ya no es "lo que hay congelado": es una ESCALA, y lo que no esté en ella falla.
 //
-// Al consolidar, se BORRAN de esta lista los valores que dejaron de usarse. Nunca se agregan
-// para que pase.
-const CONOCIDOS = {
-  fontSize: ["6","7","8","8.5","9","10","10.5","11","12","13","14","15","16","17","18","19",
-             "20","21","22","23","24","25","26","28","30","32","34","36","38","42","44","48","54","72"],
-  borderRadius: ["2","3","4","5","6","7","8","10","12","14","16","20","999"],
+// ⚠ SE CONSTRUYÓ SOBRE EL USO REAL, no sobre un ratio elegido a ojo: los valores con
+// cientos de usos son anclas y arrastran a sus vecinos, no al revés.
+//
+// ⚠ Y EN EMPATE, SUBE. Un valor a la misma distancia de dos pasos va al MAYOR. La primera
+// versión hacía lo contrario y el cuerpo de texto bajaba de 12 a 11px: consistencia ganada
+// a cambio de legibilidad, en una app de comida que se usa en un celular. Con esta regla
+// 415 usos suben de tamaño y solo 74 bajan. **El texto que lee el cliente nunca puede
+// achicarse por un refactor interno.**
+//
+// Los tres pasos grandes (40/56/72) son display —el hero del wordmark, el número de puntos,
+// el check de entrega confirmada— y no pertenecen a la escala de texto: están acá para que
+// tampoco crezcan sin querer, no porque se usen seguido.
+const ESCALA = {
+  fontSize: [8, 9, 11, 13, 15, 18, 22, 28, 40, 56, 72],
+  borderRadius: [4, 8, 10, 12, 20, 999],
 };
 
 const PROPS = {
@@ -59,16 +63,16 @@ for (const f of readdirSync(APP).filter((x) => x.endsWith('.ts'))) {
 }
 
 const problemas = [];
-for (const [prop, conocidos] of Object.entries(CONOCIDOS)) {
+for (const [prop, conocidos] of Object.entries(ESCALA)) {
   const set = new Set(conocidos);
   const nuevos = [...vistos[prop].entries()]
-    .filter(([v]) => !set.has(v))
+    .filter(([v]) => !set.has(Number(v)))
     .map(([v, r]) => `${v}px — ${r.usos} uso${r.usos === 1 ? '' : 's'} en ${[...r.archivos].join(', ')}`);
   if (nuevos.length) {
     // Se ofrece el vecino más cercano: casi siempre el valor nuevo puede ser uno que ya
     // existe, y tenerlo delante ahorra la búsqueda.
     const cerca = [...vistos[prop].entries()]
-      .filter(([v]) => set.has(v))
+      .filter(([v]) => set.has(Number(v)))
       .map(([v, r]) => ({ v: Number(v), usos: r.usos }));
     const sugerir = (v) => {
       const n = Number(v);
@@ -83,18 +87,20 @@ for (const [prop, conocidos] of Object.entries(CONOCIDOS)) {
 }
 
 if (problemas.length) {
-  console.error('✗ check:sistema — el sistema visual creció:\n');
+  console.error('✗ check:sistema — hay valores fuera de la escala:\n');
   for (const p of problemas) console.error('  · ' + p + '\n');
   console.error(
-    'Antes de subir el techo: mira si el valor nuevo puede ser uno que ya existe. Casi\n' +
-      'siempre sí — 21px al lado de 20 y 22 no comunica nada que 20 no comunique ya.\n' +
-      'Si de verdad hace falta, sube el techo en scripts/check-sistema-visual.mjs Y deja\n' +
-      'escrito por qué, igual que con cualquier otra excepción de este repo.',
+    'Casi siempre el valor nuevo puede ser uno de la escala: 21px al lado de 20 y 22 no\n' +
+      'comunica nada que 22 no comunique ya, y un texto 1px más chico no es una decisión de\n' +
+      'diseño, es ruido.\n\n' +
+      'Si de verdad hace falta un paso nuevo, agrégalo a ESCALA en este archivo Y deja escrito\n' +
+      'por qué — pero antes mira si el paso que buscas ya existe con otro nombre. La escala se\n' +
+      'construyó sobre el uso real de 1070 declaraciones; que falte algo es poco probable.',
   );
   process.exit(1);
 }
 
-const resumen = Object.entries(CONOCIDOS)
-  .map(([p, c]) => `${vistos[p].size} ${p} (de ${c.length} conocidos)`)
+const resumen = Object.entries(ESCALA)
+  .map(([p, c]) => `${vistos[p].size}/${c.length} ${p}`)
   .join(' · ');
-console.log(`✓ check:sistema — ningún valor visual nuevo: ${resumen}`);
+console.log(`✓ check:sistema — todo dentro de la escala (${resumen})`);
