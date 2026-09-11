@@ -14,26 +14,46 @@
 
 Salieron de defectos reales que costaron tiempo. **Ninguna es opinión de estilo.**
 
-### 1 · Pide el personaje sobre VERDE PLANO `#1E3932`, no sobre blanco ni transparente
+### 1 · El fondo se pide del color del SITIO donde va la imagen — y hoy hay CUATRO sitios
 
-Es la regla que más dolor ahorra y la menos obvia.
+La app **ya no es verde entera**. Tiene cuatro suelos distintos, y es fácil comprobarlo:
 
-Los PNG que tenemos hoy se recortaron contra fondo claro. Los píxeles del borde quedaron
-semitransparentes **pero conservando el color blanco viejo**, así que sobre el verde de la app
-se ve un contorno lechoso alrededor de la línea. Eso se puede arreglar; toma trabajo.
+| dónde | fondo | selector |
+|---|---|---|
+| **lado de SANDO** — Signatures | verde `#1E3932` | `:root` |
+| **lado de WICHO** — ARMA EL TUYO | **azul `#102430`** | `:root[data-lado="wicho"]` |
+| panel admin claro | crema `#F3EEE1` | `.admin-light` |
+| panel admin oscuro | negro `#000000` | `.admin-dark` |
 
-Lo que **no se pudo arreglar** fue la sombra de piso. Se midió: la elipse bajo los pies de
-SANDO es `rgb(219,229,228)` y la suela de su zapatilla es `rgb(200,209,206)`. **Es el mismo
-color.** Se intentó separarlas por color, por relleno acotado y por textura local: las tres
-veces terminó con los zapatos mordidos. La única salida fue cortar el PNG arriba de la mancha
-y perder los pies.
+Eso no es un detalle de implementación: **cada hermano ya tiene su propio suelo en la app.** Así
+que SANDO se pide sobre verde y **WICHO se pide sobre azul**, no los dos sobre verde. Mafé, si
+las bebidas llegan a tener sección propia, sobre el suyo.
 
-**Pidiendo el fondo verde plano de la marca, nada de eso existe**: la app tiene ese mismo verde
-de fondo, así que la imagen se usa tal cual, sin recortar. Y si algún día hay que recortarla, el
-halo del borde es verde y **es invisible sobre verde**.
+#### Por qué pedir un fondo plano y no transparente
 
-Pide siempre **dos versiones**: una sobre `#1E3932` plano (la que se usa) y una con fondo
-transparente de verdad (por si hace falta ponerlo sobre una foto).
+Porque los generadores casi nunca entregan un alfa limpio, y cuando no lo entregan **el daño no
+se puede deshacer**. Los PNG de hoy se recortaron contra fondo claro: los píxeles del borde
+quedaron semitransparentes **pero con el color blanco viejo**, y sobre cualquier fondo oscuro se
+ve un contorno lechoso. Eso todavía se arregla.
+
+Lo que **no se pudo arreglar** fue la sombra de piso. Se midió: la elipse bajo los pies de SANDO
+es `rgb(219,229,228)` y la suela de su zapatilla es `rgb(200,209,206)`. **Es el mismo color.** Se
+intentó separarlas por color, por relleno acotado y por textura local; las tres veces quedó con
+los zapatos mordidos. La única salida fue cortar el PNG arriba de la mancha y perder los pies.
+
+Sobre fondo plano del color correcto nada de eso existe: **la imagen se usa tal cual, sin
+recortar.** Y si algún día hay que recortarla, el halo del borde es del color del fondo y es
+invisible sobre ese mismo fondo.
+
+#### Cuándo sí pedir transparente
+
+Cuando la misma imagen tiene que vivir en **más de un suelo** — por ejemplo un personaje que
+aparece tanto del lado de SANDO como del de WICHO. Ahí no queda otra, y entonces hay que
+**probar el alfa antes de aceptar la imagen**: componerla sobre los cuatro fondos reales
+(`#1E3932`, `#102430`, `#F3EEE1`, `#000000`) y mirar el borde en los cuatro. Si aparece un halo
+en alguno, se descarta y se vuelve a pedir. **Mirarla sobre blanco no sirve de nada** — el halo
+es blanco, así que sobre blanco es invisible: ese es justo el motivo por el que llegó a
+producción.
 
 ### 2 · Prohibido explícitamente: sombra, suelo, elipse, reflejo, viñeta, marco
 
@@ -52,11 +72,26 @@ que hoy todo se estira ~1.7x. Con 2048 px sobra en los dos casos.
 Nada tocando el borde del lienzo. Si el personaje llega justo al borde, no se puede reencuadrar
 después sin cortarlo — y reencuadrar es el 90% de lo que se hace con estas imágenes.
 
-### 5 · Cada hermano se regenera contra SU PROPIA referencia
+### 5 · SIN IMAGEN DE REFERENCIA NO HAY ESTILO. Está probado.
 
-`sando_sonrie.png` para SANDO, `wicho_rie.png` para WICHO. **Nunca le muestres al generador la
-referencia del otro**: los estilos distintos son el concepto, y un generador al que le enseñas
-las dos los promedia.
+**Esta es la regla que más caro sale ignorar, y se demostró el 2026-09-11.**
+
+Se pidió SANDO dibujado en el estilo de WICHO. El prompt describía el estilo de WICHO con todo
+el detalle posible —línea de grosor variable, trazos que se pasan, textura interna, rayado,
+color saturado, energía de sticker, y prohibiciones explícitas de limpiarlo— y **no se pudo
+adjuntar la referencia**, porque la herramienta solo acepta URLs y el archivo está en disco.
+
+**El resultado no era el estilo de WICHO.** La identidad sí salió (el pelaje, la casaca, los
+ojos tranquilos); el estilo, no.
+
+La conclusión es limpia y sirve para todo lo que venga:
+
+> **Las palabras transmiten QUÉ se dibuja. Solo una imagen transmite CÓMO se dibuja.**
+
+Consecuencia práctica: **genera desde la interfaz web del generador (Flow, Gamma, el que sea),
+donde puedes subir el archivo de referencia a mano**, y no desde una API que no lo acepta. Y
+sube `sando_sonrie.png` para SANDO y `wicho_rie.png` para WICHO — **nunca las dos juntas**: los
+estilos distintos son el concepto, y un generador al que le enseñas los dos los promedia.
 
 ### 6 · Nada de texto en la imagen
 
@@ -75,11 +110,14 @@ En toda imagen, de personaje o de producto. Los nombres de `BASES` (`CLASSIC // 
 
 ## 2 · Bloque común — pégalo al final de TODOS los prompts de personaje
 
+**Reemplaza `<FONDO>` por el color del sitio donde va la imagen** (tabla de la regla 1):
+`#1E3932` para SANDO, `#102430` para WICHO, `#2B1B2A` para Mafé si se aprueba su fondo.
+
 ```
-BACKGROUND: flat solid dark green #1E3932 filling the entire frame, edge to edge.
+BACKGROUND: flat solid <FONDO> filling the entire frame, edge to edge.
 No floor, no ground plane, no ellipse or oval under the character, no drop shadow,
 no cast shadow, no reflection, no vignette, no gradient, no border, no frame.
-Nothing behind the character but flat #1E3932.
+Nothing behind the character but flat <FONDO>.
 Full body, both feet fully visible, generous margin — nothing touching the canvas edge.
 No text, no letters, no numbers, no logotype, no watermark.
 PNG, 2048 px on the long side.
@@ -87,9 +125,12 @@ PNG, 2048 px on the long side.
 
 ---
 
-## 3 · Los tres personajes
+## 3 · Los tres hermanos
 
-### 3.1 · SANDO — el curador
+> **Sube siempre la referencia** (regla 5). El texto de abajo describe la identidad; el estilo
+> lo lleva la imagen.
+
+### 3.1 · SANDO — el curador · fondo verde `#1E3932`
 
 Referencia: `img/sando_sonrie.png`.
 
@@ -104,14 +145,14 @@ Mouth: a short CLOSED half-smile. Teeth are never visible.
 Wearing an olive-green bomber jacket with ribbed collar and cuffs over a plain
 white crew tee, dark trousers, dark low sneakers. Two short parallel diagonal
 slashes, both exactly the same size, embroidered in muted gold on the left chest.
-ART STYLE (critical): clean editorial cartoon illustration. Outline of EVEN,
-UNIFORM weight in very dark green — not pure black. FLAT two-tone shading. No
-internal texture, no hatching, no grain, no gradients, no brush marks.
-Mascot illustration, not sticker art.
+ART STYLE (match the reference image exactly): clean editorial cartoon
+illustration. Outline of EVEN, UNIFORM weight in very dark green — not pure black.
+FLAT two-tone shading. No internal texture, no hatching, no grain, no gradients,
+no brush marks. Mascot illustration, not sticker art.
 ```
-+ el bloque común.
++ el bloque común con `<FONDO>` = `#1E3932`.
 
-### 3.2 · WICHO — el que arma
+### 3.2 · WICHO — el que arma · fondo azul `#102430`
 
 Referencia: `img/wicho_rie.png`. **Se conserva su estilo tal cual.** Lo que se pide es el mismo
 WICHO en poses nuevas y en grande, no un WICHO distinto.
@@ -128,47 +169,60 @@ Mouth: wide open grin, teeth and tongue visible, eyebrows up.
 Wearing a grey-blue tee printed with fine tone-on-tone topographic contour lines,
 dark cargo shorts, cream high-top sneakers. Two short parallel diagonal slashes,
 both exactly the same size, printed on the chest.
-ART STYLE (critical): loose energetic ink linework of strongly VARYING weight in
-dark navy ink, lines that overshoot and do not always close, visible internal
-texture and cross-hatching, saturated punchy colour, sticker-art energy.
+ART STYLE (match the reference image exactly): loose energetic ink linework of
+strongly VARYING weight in dark navy ink, lines that overshoot and do not always
+close, visible internal texture and cross-hatching, saturated punchy colour,
+sticker-art energy.
 Do NOT clean him up. Do NOT flatten the shading. Do NOT give him an even outline.
 Do NOT make him match a cleaner-lined character — the looseness is the point.
 ```
-+ el bloque común.
++ el bloque común con `<FONDO>` = `#102430`.
 
 > ⚠ Si vuelve prolijo, con línea pareja o relleno plano, **se descarta y se vuelve a pedir**.
 > No se retoca.
 
-### 3.3 · MF ⟡ — la hermana de las bebidas
+### 3.3 · MAFÉ — la hermana del medio · fondo ciruela `#2B1B2A` ⟡
 
-**Propuesta, todavía sin aprobar.** No tiene referencia: esta sería su primera imagen, así que
-conviene generar 4 variantes y elegir una **antes** de pedirle poses.
+**Aprobada el 2026-09-11.** No tiene referencia todavía: esta sería su primera imagen, así que
+conviene generar 4 variantes, **elegir una y guardarla como `img/mafe_ref.png`** — a partir de
+ahí ella también se rige por la regla 5 y todas sus poses se piden contra esa referencia.
 
 ```
-Anthropomorphic chimpanzee character, full body, three-quarter view, smaller and
-slighter than her two brothers.
+Anthropomorphic chimpanzee character, full body, three-quarter view. A young adult
+— late teens, early twenties. Slimmer than her two brothers and a little taller
+than the younger one. Relaxed, unbothered, effortlessly cool.
 Fur: muted dusty rose-grey / dusty mauve (#C9A9B4, shadow #8E6C7A). Long hair tied
-back with one loose strand falling forward. Face mask and inner ears in warm cream.
-Eyes: large and round with a low lid, the iris SOFT and DIFFUSE rather than crisply
-defined — as if seen through glass. Neither hard-calm nor spiralled.
-Mouth: small, usually closed; if she smiles it is on one side only.
-Wearing a long raw-linen apron with sleeves rolled up, flat neutral shoes. Two
-short parallel diagonal slashes, both exactly the same size, embroidered
-tone-on-tone on the apron — barely visible, not announced.
-Holding a tall glass jar of cold hibiscus infusion, deep rose liquid.
-ART STYLE (critical): loose watercolour and ink wash on textured paper. NO closed
-outline anywhere — edges dissolve and bleed outward. Parts of her body are
-genuinely TRANSLUCENT: what is behind her shows through. Visible pigment granulation
-in the darker passages, visible paper tooth. Hibiscus rose (#E0708F) appears only in
-the apron ties and in the liquid — never as a fill across her body.
+up carelessly with two loose strands falling forward. Face mask and inner ears in
+warm cream.
+Eyes: large with a LOW lid, iris SOFT and DIFFUSE rather than crisply defined, as
+if seen through glass. The expression is UNIMPRESSED, not serene — one eyebrow
+sits higher than the other. Mouth small, closed; if she smiles it is one-sided.
+Wearing an oversized tee that hangs loose, wide baggy cargo trousers, worn flat
+sneakers. NO apron — she is not cooking, she already cooked. Two short parallel
+diagonal slashes, both exactly the same size, small and tone-on-tone on the chest.
+POSE: leaning, weight on one hip, ALWAYS holding a tall glass bottle of cold
+hibiscus infusion, deep rose liquid. The bottle is her object the way the sandwich
+is her brothers'.
+ART STYLE (critical): loose watercolour and ink wash on textured paper WITH
+DELIBERATE RISOGRAPH MISREGISTRATION — a second ink layer offset by two or three
+pixels. NO closed outline anywhere; edges dissolve and bleed outward. Parts of her
+body are genuinely TRANSLUCENT: what is behind her shows through. Visible pigment
+granulation in the darker passages, visible paper tooth. Zine and gig-poster
+energy, NOT delicate botanical watercolour.
+Hibiscus rose (#E0708F) appears only in one clothing detail and in the liquid —
+never as a fill across her body.
 Do NOT give her a black outline. Do NOT give her flat fills. Do NOT make her look
 like either of her brothers — she is painted, they are drawn.
 ```
-+ el bloque común.
++ el bloque común con `<FONDO>` = `#2B1B2A`.
 
-> ⚠ Sobre el fondo verde plano, la parte translúcida deja ver **verde**, que es justo lo que se
-> busca. Si además pides la versión transparente, la translucidez se va a ver rara sobre
-> cualquier otro fondo — es el precio de su estilo y hay que saberlo antes.
+> **El desfase de registro es lo que la hace joven.** Una acuarela limpia la volvería delicada y
+> mayor, que es lo contrario de lo pedido. La risografía mal registrada es lenguaje de fanzine y
+> de póster de concierto: se lee como alguien de veintipocos.
+>
+> ⚠ Sobre fondo plano, la parte translúcida deja ver ese fondo, que es justo lo que se busca. Su
+> versión transparente se va a ver rara sobre cualquier otro fondo — es el precio de su estilo y
+> conviene saberlo antes de pedirla.
 
 ---
 
@@ -196,7 +250,8 @@ EACH BROTHER KEEPS HIS OWN ART STYLE. They are deliberately drawn as if by two
 different hands. Do NOT unify the two styles.
 The bread is a long sub / hoagie roll — never sliced sandwich bread.
 ```
-+ el bloque común.
++ el bloque común con `<FONDO>` = `#1E3932`. **Esta va del lado verde**: es la imagen de marca,
+no la de un lado ni la del otro.
 
 ### 4.2 · Escenarios (sin personajes)
 
@@ -222,7 +277,7 @@ is the disorder. Close three-quarter view. No people.
 ```
 
 ```
-LA BARRA DE MF — A row of tall glass jars of infusion at rest, half-litre bottles,
+LA BARRA DE MAFÉ — A row of tall glass jars of infusion at rest, half-litre bottles,
 ice, a strainer. BACKLIT: the light passes THROUGH the liquid instead of bouncing
 off it. Deep rose hibiscus bleeding into clear water. Dark green background. No people.
 ```

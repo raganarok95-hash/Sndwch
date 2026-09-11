@@ -23,3 +23,6 @@ deno.lock
 # `scripts/tratar_fotos.py` y su chequeo, tiene que valer para todo el árbol.
 __pycache__/
 *.pyc
+
+# hojas de contacto de scripts/check_personaje.py — se regeneran, no se versionan
+*_check.jpg
