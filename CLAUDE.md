@@ -1673,6 +1673,21 @@ lo que **no** es un problema aunque lo parezca.
      (404 en la raíz, que es respuesta real). O sea que técnicamente Veo se podría llamar desde
      una sesión — lo que lo impide es la decisión de costo ya tomada, no la red.
   La vía real, si el dueño la quiere: instalar uno de esos MCP en **su** Claude Code local.
+  **El dueño lo pidió el 2026-09-11 y la guía quedó en `docs/FLOW_EN_TU_LAPTOP.md`**, escrita
+  leyendo los README reales por `raw.githubusercontent.com` (que NO está bloqueado), no de
+  memoria. Los tres NO son equivalentes y la comparación decide: **`hitjcl/google-flow-mcp`** se
+  instala con un comando (`claude mcp add --scope user google-flow -- npx -y
+  google-flow-browser-mcp`), está hecho para Claude Code, **usa un perfil de navegador propio en
+  `~/.google-flow-creator/` en vez del Chrome del dueño**, dice explícitamente que no lee ni
+  guarda contraseñas ni 2FA, y **pide confirmación antes de cada generación que gasta créditos**.
+  El de `Mitanshp5` usa o copia el perfil real de Chrome y no menciona ninguna de esas dos
+  salvaguardas; lo único que tiene de más son personajes y escenas, que conviene hacer a mano
+  desde la interfaz de Flow igual.
+  **Y lo primero que hay que hacer ahí no es un video: es crear a SANDO, WICHO y MAFE como
+  PERSONAJES de Flow**, subiendo `sando_sonrie.png` y `wicho_rie.png` — los BUSTOS, no los
+  `_cuerpo`, que traen pegada la elipse de sombra del piso. Eso es lo que resuelve que el estilo
+  no viaje en palabras, que es el defecto probado en la regla 5 de
+  `docs/PROMPTS_PERSONAJES.md`.
 - **`mcp__Gamma__generate_image` SÍ existe y funciona — corrige lo que decía este archivo**
   (probado 2026-09-11). La nota vieja de más abajo dice que no hay herramienta directa de
   texto-a-imagen; eso era sobre `mcp__Gamma__generate`, que arma un documento entero. La
