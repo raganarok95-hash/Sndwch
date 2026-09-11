@@ -1656,6 +1656,35 @@ lo que **no** es un problema aunque lo parezca.
     actual de correo/texto-plano, un solo flujo más seguro para el 100% de las cuentas.
   - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
     y la fricción de configurar el número en Meta Business Platform — no antes.
+- **Conectarse a Google Flow desde una sesión: NO se puede desde acá, y el motivo no es que no
+  exista la herramienta — es dónde vive (investigado 2026-09-11).** Tres datos:
+  1. **Flow no tiene API pública.** El acceso programático a sus mismos modelos va por la
+     **Gemini API / Vertex AI**, o sea **Veo** — exactamente lo que se retiró el 2026-09-10 por
+     costar US$0.10-0.15 por segundo y duplicar el proceso que el dueño ya tiene. "Conectarse a
+     Flow por API" y "volver a poner Veo" son la misma cosa con otro nombre.
+  2. **Sí existen MCP de Flow, pero son LOCALES y de terceros** (`hitjcl/google-flow-mcp`,
+     `Mitanshp5/Google-Flow_MCP`, `gabrielgargiulodev/google-flow-mcp`). Funcionan manejando un
+     Chrome **ya logueado en la cuenta del dueño** por CDP — o sea que necesitan su máquina y su
+     sesión de Google. En un contenedor remoto y efímero como este no hay ninguna de las dos. Y
+     conviene decirlo: son paquetes de la comunidad a los que se les entrega el control de un
+     navegador con la cuenta de Google abierta.
+  3. **El proxy lo confirma**: `labs.google` (donde vive Flow) no responde, mientras que
+     `generativelanguage.googleapis.com` y `aiplatform.googleapis.com` **sí son alcanzables**
+     (404 en la raíz, que es respuesta real). O sea que técnicamente Veo se podría llamar desde
+     una sesión — lo que lo impide es la decisión de costo ya tomada, no la red.
+  La vía real, si el dueño la quiere: instalar uno de esos MCP en **su** Claude Code local.
+- **`mcp__Gamma__generate_image` SÍ existe y funciona — corrige lo que decía este archivo**
+  (probado 2026-09-11). La nota vieja de más abajo dice que no hay herramienta directa de
+  texto-a-imagen; eso era sobre `mcp__Gamma__generate`, que arma un documento entero. La
+  herramienta nueva genera **una imagen suelta** y devolvió 1856x2304 px, por encima del mínimo
+  de 2048 en el lado largo que piden las fichas de personaje. Dos límites reales:
+  **cuesta ~70 créditos por imagen** (quedaban 115 tras la primera, o sea que el presupuesto se
+  agota en dos), y **`referenceImages` solo acepta URLs públicas**, así que no se le puede pasar
+  un archivo del repo. Eso último importa más de lo que parece: sin referencia **el estilo no
+  viaja** (ver `docs/PROMPTS_PERSONAJES.md`, regla 5 — probado pidiendo SANDO al estilo de WICHO:
+  salió la identidad y no salió el estilo). Y **`cdn.gamma.app` está bloqueado por el proxy**,
+  así que la imagen generada no se puede descargar acá ni pasar por `asset_inline_preview` de
+  Adobe, que rechaza ese host: solo queda entregarle la URL al dueño.
 - **Producción de video para marketing: el dueño ya tiene su propio proceso con Google
   Flow (generación de video con IA), confirmado 2026-08-10** — y **el 2026-09-10 se retiró
   `admin-video-generate`**, la acción que generaba el video llamando a Veo por API.

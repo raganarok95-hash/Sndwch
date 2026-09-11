@@ -26,7 +26,7 @@ La app **ya no es verde entera**. Tiene cuatro suelos distintos, y es fácil com
 | panel admin oscuro | negro `#000000` | `.admin-dark` |
 
 Eso no es un detalle de implementación: **cada hermano ya tiene su propio suelo en la app.** Así
-que SANDO se pide sobre verde y **WICHO se pide sobre azul**, no los dos sobre verde. Mafé, si
+que SANDO se pide sobre verde y **WICHO se pide sobre azul**, no los dos sobre verde. Mafe, si
 las bebidas llegan a tener sección propia, sobre el suyo.
 
 #### Por qué pedir un fondo plano y no transparente
@@ -111,7 +111,7 @@ En toda imagen, de personaje o de producto. Los nombres de `BASES` (`CLASSIC // 
 ## 2 · Bloque común — pégalo al final de TODOS los prompts de personaje
 
 **Reemplaza `<FONDO>` por el color del sitio donde va la imagen** (tabla de la regla 1):
-`#1E3932` para SANDO, `#102430` para WICHO, `#2B1B2A` para Mafé si se aprueba su fondo.
+`#1E3932` para SANDO, `#102430` para WICHO, `#2B1B2A` para Mafe si se aprueba su fondo.
 
 ```
 BACKGROUND: flat solid <FONDO> filling the entire frame, edge to edge.
@@ -181,7 +181,9 @@ Do NOT make him match a cleaner-lined character — the looseness is the point.
 > ⚠ Si vuelve prolijo, con línea pareja o relleno plano, **se descarta y se vuelve a pedir**.
 > No se retoca.
 
-### 3.3 · MAFÉ — la hermana del medio · fondo ciruela `#2B1B2A` ⟡
+### 3.3 · MAFE — la hermana del medio · fondo ciruela `#2B1B2A` ⟡
+
+> Se escribe **MAFE**, sin tilde. `MF` es su forma corta.
 
 **Aprobada el 2026-09-11.** No tiene referencia todavía: esta sería su primera imagen, así que
 conviene generar 4 variantes, **elegir una y guardarla como `img/mafe_ref.png`** — a partir de
@@ -277,7 +279,7 @@ is the disorder. Close three-quarter view. No people.
 ```
 
 ```
-LA BARRA DE MAFÉ — A row of tall glass jars of infusion at rest, half-litre bottles,
+LA BARRA DE MAFE — A row of tall glass jars of infusion at rest, half-litre bottles,
 ice, a strainer. BACKLIT: the light passes THROUGH the liquid instead of bouncing
 off it. Deep rose hibiscus bleeding into clear water. Dark green background. No people.
 ```
