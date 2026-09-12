@@ -397,14 +397,18 @@ Las porciones son las reales del negocio: **85 g de proteína en 15CM y 170 g en
 vegetales, 3 salsas incluidas. Pedir un relleno desbordado da una foto que el producto no cumple.
 
 ```
-THE ORIGINAL  — slow-cooked shredded beef, tomato, pickle, red onion,
-                aioli and honey mustard, on a plain white sub roll.
-THE MARINARA  — beef meatballs in marinara sauce, melted cheese, tomato,
-                red onion, Italian vinaigrette, on a plain white sub roll.
+THE ORIGINAL  — slow-cooked shredded beef, tomato, pickle, red onion, aioli
+                and honey mustard, on a plain white sub roll.
+THE MARINARA  — beef meatballs in marinara sauce, MELTED MOZZARELLA, tomato,
+                red onion, BLACK OLIVES, oil-and-vinegar Italian dressing,
+                on a plain white sub roll.
 THE SMOKE     — smoked Italian cold cuts, melted cheddar, red onion, pickle,
-                tomato, BBQ glaze, on a FOCACCIA-crumb sub roll (still sub-shaped).
-THE FRESH     — creamy tuna salad, on a plain white sub roll.
-THE TERIYAKI  — caramelised teriyaki chicken, tomato, sweet pepper, peanut
+                tomato, smoky BBQ glaze, on a FOCACCIA-crumb sub roll
+                (still sub-shaped).
+THE FRESH     — drained tuna mixed with mayonnaise and cracked black pepper,
+                and NOTHING ELSE. No lettuce, no tomato, no onion, no sauce
+                on top. The restraint is the recipe.
+THE TERIYAKI  — caramelised teriyaki chicken, tomato, sweet red pepper, peanut
                 satay sauce and house sauce, on a plain white sub roll.
 ```
 
