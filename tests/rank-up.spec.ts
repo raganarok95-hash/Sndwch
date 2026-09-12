@@ -32,7 +32,7 @@ test('cliente sube de rango a INICIADO al 5to pedido, sin repetir el aviso del m
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();

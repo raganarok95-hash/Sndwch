@@ -305,7 +305,7 @@ export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; 
   SIG01: { n: "The Original", s: "Signature", badge: "Clásico", pitch: "", img: "img/sig01.jpg", active: true },
   SIG02: { n: "The Marinara", s: "Signature", badge: "Italiano", pitch: "", img: "img/sig02.jpg", active: true },
   SIG03: { n: "The Smoke", s: "Signature", badge: "Ahumado", pitch: "", img: "img/sig03.jpg", active: true },
-  SIG04: { n: "The Fresh", s: "Signature", badge: "Cítrico", pitch: "", img: "img/sig04.jpg", active: true },
+  SIG04: { n: "The Fresh", s: "Signature", badge: "Sin vueltas", pitch: "", img: "img/sig04.jpg", active: true },
   SIG06: { n: "The Teriyaki", s: "Signature", badge: "Asiático", pitch: "", img: "img/sig06.jpg", active: true },
 };
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {

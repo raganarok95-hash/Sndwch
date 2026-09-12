@@ -65,13 +65,25 @@ test('el total por defecto NO lleva el recargo de la comisión de tarjeta', asyn
   });
 
   await alCheckoutSinElegirPago(page);
+  // El precio se lee ACÁ y no después de pagar: un pedido exitoso llama a clearCart(), así
+  // que al terminar el flujo `window.cart` está vacío.
+  const base = await page.evaluate(() => {
+    const c = (window as any).cart;
+    return c && c.length ? (window as any).itemUnitPrice(c[0]) * c[0].qty : null;
+  });
+  expect(base).toBeTruthy();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 
   const po = calls.find((c) => c.action === 'place-order');
-  // SIG01 15CM = S/20.90 + S/8 de envío sin engordar.
-  expect(Math.round(po!.body.total * 100)).toBe(Math.round((20.9 + PIN_TEST.fee) * 100));
+  // ⚠ ACÁ ESTABA ESCRITO `20.9` A MANO — el precio del Signature que resultaba quedar
+  // primero en la lista. El asunto de esta prueba es el RECARGO DE TARJETA, no cuánto
+  // cuesta un sándwich, así que el 2026-09-12 se rompió al reordenar la carta sin que
+  // nada del default de pago hubiera cambiado.
+  // El precio se lee ahora del catálogo, del mismo ítem que el helper eligió (arriba, antes
+  // de pagar): lo único que esta prueba fija es que al envío NO se le sumó el 5.5% de Culqi.
+  expect(Math.round(po!.body.total * 100)).toBe(Math.round((base + PIN_TEST.fee) * 100));
 });
 
 test('el botón de Yape dice cuánto se ahorra, con el monto real del pedido', async ({ page }) => {

@@ -216,7 +216,20 @@ function INP(id,ph,type?,val?,iconName?,ac?,chk?){
 //   vacía se ve vacía, mientras que un teléfono corto no.
 var FIELD_RULES: Record<string,{ok:(v:string)=>boolean,msg:string}> = {
   nombre:{ok:function(v){return v.trim().length>0;},msg:'Necesitamos tu nombre para el pedido.'},
-  tel:{ok:function(v){return v.replace(/\D/g,'').length>=6;},msg:'Ingresa un teléfono de contacto válido.'}
+  tel:{ok:function(v){return v.replace(/\D/g,'').length>=6;},msg:'Ingresa un teléfono de contacto válido.'},
+  // ⚠ LA DIRECCIÓN NO TENÍA REGLA, Y SU FALTA PINTABA DE ROJO EL NOMBRE (corregido
+  // 2026-09-12). `placeOrder` gatea con `if(!nom||!addr)` y llamaba a `fieldCheck` sobre
+  // `o-nom` en los dos casos, así que alguien que escribió su nombre y olvidó la dirección
+  // veía su nombre marcado como error junto a "Ingresa tu nombre y dirección". Mira el
+  // campo señalado, está bien, y el que de verdad falta queda sin marcar — peor que no
+  // marcar ninguno, porque lo manda a corregir lo que ya estaba correcto. Es justo lo
+  // contrario de lo que el comentario de esa función dice hacer ("un mensaje al pie de un
+  // formulario largo no dice CUÁL de los campos está mal").
+  //
+  // La regla es exactamente la del gate —no vacía— y no la del servidor (`addressIssues`
+  // pide número y referencia): una regla más estricta que la puerta pintaría en rojo algo
+  // que igual va a poder pagar, y un rojo que no bloquea deja de significar nada.
+  direccion:{ok:function(v){return v.trim().length>0;},msg:'Necesitamos tu dirección para llevarte el pedido.'}
 };
 // Qué campos ya se marcaron mal. Vive FUERA del DOM a propósito: render() reconstruye
 // todo el innerHTML del checkout en cada toque (recompensa, crédito, horario, dirección
@@ -426,6 +439,42 @@ function syncConfirmFields(){
   if(a)addrText=a.value;
 }
 function confirmRerender(){syncConfirmFields();render();}
+// ── EL ORDEN DE LA CARTA, UNO SOLO PARA LAS DOS PANTALLAS ────────────────────────────
+//
+// Fijo y decidido a mano — NO se ordena dinámicamente por margen: el cliente que vuelve
+// tiene que encontrar la carta donde la dejó. Cualquier Signature nuevo que no esté
+// listado acá se muestra al final, en su orden natural.
+//
+// ⚠ VIVÍA DENTRO DEL HOME Y LA PANTALLA DE ELECCIÓN NO LO USABA (corregido 2026-09-12).
+// `sOSig()` recorría `SIGS` directo, así que el home enseñaba un orden y la pantalla
+// siguiente —donde el cliente DE VERDAD elige— enseñaba otro. La estrella quedaba en la
+// primera fila de una lista y en la cuarta de la otra, dos toques después.
+//
+// ⚠ Y EL ORDEN ANTERIOR ESTABA ANCLADO A NÚMEROS MUERTOS: decía ordenar por margen con
+// cifras de antes del recosteo con merma y de la subida de precios del 2026-08-22 ("SIG03
+// 68% y SIG04 49% bruto", contra 32.5% y 26.6% reales hoy), así que ponía al CUARTO y al
+// QUINTO en contribución en las dos posiciones más miradas de la lista.
+//
+// El orden de hoy es por CONTRIBUCIÓN EN SOLES a 15CM, no por porcentaje de costo: el
+// negocio deposita soles, y un 20% de costo sobre S/19.90 puede dejar menos que un 32%
+// sobre S/23.90. A 15CM porque es el 80% del negocio según la hipótesis del dueño.
+// Números de `modelo/rentabilidad_por_parte.py`, que lee `catalog_prices` y
+// `catalog_items` (la base), nunca los literales del código:
+//   SIG02 Marinara S/17.43 · SIG03 Smoke S/16.14 · SIG04 Fresh S/15.35
+//   SIG01 Original S/14.70 · SIG06 Teriyaki S/14.43
+//
+// NO es menu engineering completo: la matriz de Kasavana & Smith cruza margen con
+// POPULARIDAD, y popularidad todavía no existe — el negocio no ha abierto. Esto ordena por
+// la única de las dos dimensiones que hoy se puede medir, y habrá que rehacerlo con ventas
+// reales. Un Signature que se venda el triple puede merecer la primera fila aunque deje
+// S/1 menos.
+var SIG_DISPLAY_ORDER=['SIG02','SIG03','SIG04','SIG01','SIG06'];
+function sigsEnOrden(lista){
+  return lista.slice().sort(function(a,b){
+    var ia=SIG_DISPLAY_ORDER.indexOf(a.id),ib=SIG_DISPLAY_ORDER.indexOf(b.id);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+}
 function lastPaidOrder(){
   return myOrders.find(function(o){return o.payment_status==='paid'&&((o.items&&o.items.length)||o.build);});
 }
@@ -728,11 +777,59 @@ function cartItemStillExists(it){
   if(it.type==='sig')return SIGS.some(function(x){return x.id===it.sigId;});
   return PROTS.some(function(x){return x.id===it.prot;});
 }
+// ⚠ EXISTIR EN EL CATÁLOGO NO ES LO MISMO QUE PODERSE PEDIR (2026-09-12).
+//
+// `cartItemStillExists` pregunta si el id sigue en el array. Eso alcanzaba mientras retirar
+// algo significara BORRARLO, y dejó de alcanzar el 2026-09-05: res (P01) y embutido (P05)
+// salieron de ARMA EL TUYO por rentabilidad y **siguen en `PROTS`**, marcadas `sigOnly`,
+// porque sus Signatures las usan. El id existe; la combinación ya no se puede pedir.
+//
+// El servidor SÍ lo rechaza — `priceByoBuild` lanza "Proteína inválida." para cualquier
+// prot en `SIG_ONLY_PROTS`/`VAULT_ONLY_PROTS` — así que sin este filtro el cliente carga el
+// carrito, ve un precio real (S/14.90 para res, medido) y camina hasta PAGAR para enterarse.
+// Es exactamente el defecto que ya obligó a poner el selector de distrito y a mostrar las
+// horas llenas tachadas: el servidor tenía razón y el cliente se enteraba al final.
+//
+// NO ES SOLO LA PROTEÍNA, y la primera versión de esto se quedó corta justamente ahí.
+// `priceByoBuild` rechaza con el MISMO criterio los tres: proteína, toppings y salsas
+// (`SIG_ONLY_*` / `VAULT_ONLY_*`). Y hay un caso vivo hoy en cada uno: **T02 pepinillo** pasó
+// a `sigOnly` el 2026-09-04 (lo reemplazó la lechuga en el armador, pero SIG01 y SIG03 lo
+// llevan), y el jalapeño T04 y las dos salsas picantes son exclusivas del menú secreto.
+// Filtrar solo la proteína dejaba pasar un armado con pepinillo hasta el checkout.
+//
+// Estas listas replican las del servidor a propósito y tienen que seguirlas: si alguna vez se
+// mueve un ingrediente a `sigOnly` allá y no acá, vuelve el mismo agujero.
+function cartItemOrderable(it){
+  if(!cartItemStillExists(it))return false;
+  if(it.type!=='byo')return true;
+  var p=PROTS.find(function(x){return x.id===it.prot;});
+  if(!p||p.sigOnly||p.vaultOnly)return false;
+  var libre=function(lista,ids){
+    return (ids||[]).every(function(id){
+      var x=lista.find(function(y){return y.id===id;});
+      return !!x&&!x.sigOnly&&!x.vaultOnly;
+    });
+  };
+  return libre(TOPS,it.tops)&&libre(SAUCES,it.sauces);
+}
+// Repetir pide algo MÁS que poderse pedir: que sea LO MISMO que pidió.
+//
+// El menú secreto rota cada mes bajo el mismo id (SIG05) — es su mecanismo, no un defecto.
+// Pero por eso "Pedir lo mismo" sobre un pedido viejo con SIG05 entregaría **otro sándwich,
+// con otra receta y otro precio**, bajo el mismo nombre. El botón promete lo contrario de lo
+// que haría, y el cliente se entera cuando lo muerde. Se excluye del repetir; pedirlo sigue
+// estando a un toque desde su propia tarjeta, que es donde se ve la composición del mes.
+function cartItemRepeatable(it){
+  if(!cartItemOrderable(it))return false;
+  if(it.type!=='sig')return true;
+  var s=SIGS.find(function(x){return x.id===it.sigId;});
+  return !!s&&!s.secret;
+}
 function restoreCart(){
   try{
     var raw=JSON.parse(localStorage.getItem('sw_cart')||'null');
     if(raw&&Array.isArray(raw.items)&&raw.items.length&&raw.items.every(isValidCartItem)&&Date.now()-(raw.ts||0)<24*3600*1000){
-      cart=raw.items.filter(cartItemStillExists);
+      cart=raw.items.filter(cartItemOrderable);
       if(!cart.length){cart=[];return;}
       initCheckoutFields();
       appliedReward=raw.reward||null;
@@ -799,12 +896,31 @@ function cartRemove(idx){
 function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
+//
+// ⚠ UN PEDIDO PASADO ES MUCHO MÁS VIEJO QUE LAS 24 H DEL CARRITO, así que es el caso donde
+// más probable es que algo haya salido de la carta — y hasta el 2026-09-12 era el ÚNICO de
+// los dos caminos que no filtraba nada (`restoreCart` sí lo hacía desde siempre). Ver
+// `cartItemOrderable`/`cartItemRepeatable` arriba para qué se cae y por qué.
+//
+// LO QUE SE CAE SE DICE. Descartar en silencio sería peor que el defecto que esto arregla:
+// el cliente toca "Pedir lo mismo", recibe algo distinto de lo que pidió y no se entera
+// hasta que llega. Y si no queda NADA, no se le manda a un carrito vacío sin explicación.
 function loadCart(items){
   if(!items||!items.length)return;
-  cart=items.map(function(it){return Object.assign({},it);});
+  var pedibles=items.filter(cartItemRepeatable);
+  var fuera=items.length-pedibles.length;
+  if(!pedibles.length){
+    showToast('Ese pedido ya no se puede repetir: lo que llevaba salió de la carta. Ármalo de nuevo y te ayudamos.','info');
+    go('o_home');
+    return;
+  }
+  cart=pedibles.map(function(it){return Object.assign({},it);});
   initCheckoutFields();
   saveCart();
   go('o_cart');
+  if(fuera)showToast(fuera===1
+    ?'Una cosa de ese pedido ya no está en la carta — el resto te lo dejamos listo.'
+    :fuera+' cosas de ese pedido ya no están en la carta — el resto te lo dejamos listo.','info');
 }
 function ratedRefs(){try{return JSON.parse(localStorage.getItem('sw_rated')||'[]');}catch(e){return[];}}
 function markRated(ref){var r=ratedRefs();if(r.indexOf(ref)<0){r.push(ref);localStorage.setItem('sw_rated',JSON.stringify(r));}}
@@ -911,18 +1027,10 @@ function sOHome(){
       // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
       // sección separada, no una fila más entre los Signatures normales). Evita el
       // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-      // Orden de exhibición del home, fijo y decidido a mano (NO ordenado dinámicamente
-      // por margen: el cliente que vuelve debe encontrar la carta donde la dejó). El
-      // orden del array SIGS es el orden en que se fueron creando, y dejaba a los dos
-      // Signatures de peor margen (SIG03 68% y SIG04 49% bruto en 15CM) justo en las
-      // posiciones 3 y 4, que son de las más miradas de una lista en móvil. Acá van al
-      // final y suben los de mejor margen, sin tocar ningún precio ni receta. Cualquier
-      // Signature nuevo que no esté listado acá se muestra al final, en su orden natural.
-      var SIG_HOME_ORDER=['SIG01','SIG02','SIG06','SIG03','SIG04'];
-      var visibleSigs=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).slice().sort(function(a,b){
-        var ia=SIG_HOME_ORDER.indexOf(a.id),ib=SIG_HOME_ORDER.indexOf(b.id);
-        return (ia<0?99:ia)-(ib<0?99:ib);
-      });
+      // Orden de exhibición: ver `SIG_DISPLAY_ORDER` / `sigsEnOrden()` más arriba en este
+      // archivo, que es el mismo que usa la pantalla de elección (sOSig).
+
+      var visibleSigs=sigsEnOrden(SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}));
       var secretSig=SIGS.find(function(s){return s.secret;});
       // ── LOS DOS LADOS: LOS HERMANOS SON LA DIVISIÓN (2026-09-10) ──
       //
@@ -1014,7 +1122,13 @@ function sOHome(){
         // nombre hasta cortarlo con puntos suspensivos a 320px ("The Original // Sig…").
         // Entre mostrar el nombre completo del producto y repetir su categoría, gana el
         // nombre.
-        return'<div onclick="startOrderWithSig(\''+s.id+'\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer">'+thumb+'<div style="flex:1;min-width:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.02em;color:'+GOLD+'">'+sigBadge(s)+(s.recommended?' · Recomendado':'')+'</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.n+'</div></div>'
+        // "Recomendado" era un sufijo de 11px en itálica DENTRO de la misma línea del badge
+        // ("Italiano · Recomendado"), del mismo color y del mismo tamaño que todo lo que
+        // tiene al lado: la recomendación existía en el código y no existía en la pantalla.
+        // Ahora es un sello propio antes del badge. El fallo de esto es SILENCIO — si el
+        // sello desaparece nada revienta, solo deja de empujarse el Signature que deja
+        // S/2.73 más por unidad, y no hay forma de notarlo mirando la app.
+        return'<div onclick="startOrderWithSig(\''+s.id+'\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer'+(s.recommended?';background:rgba(203,162,88,.07)':'')+'">'+thumb+'<div style="flex:1;min-width:0">'+(s.recommended?'<span style="display:inline-block;background:'+GOLD+';color:#0E1A17;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:2px 7px;margin-right:6px;vertical-align:1px">Recomendado</span>':'')+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.02em;color:'+GOLD+'">'+sigBadge(s)+'</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.n+'</div></div>'
           // Antes solo se veía el precio de 15CM y el de 30CM aparecía recién en la
           // pantalla siguiente. Mostrar los dos deja ver la escalera completa desde la
           // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
@@ -1281,7 +1395,13 @@ function sOSig(){
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
   var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
-  var h=H('SIGNATURE BUILDS','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.',!!sigId)+SZTOG()+recoCardSig+ST('01','Elige tu build','Tres salsas incluidas.')+SIGS.map(function(s){
+  // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
+  // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
+  // el repo está en comentarios, que nombran el modo por su nombre viejo y no los ve nadie).
+  // "Signature" se queda: es el nombre de la línea de producto, aparece en cada tarjeta como
+  // "// Signature" y en la marca. "Build" no era un nombre, era la palabra inglesa para
+  // "armado" — y la pestaña de al lado ya dice "Arma el tuyo" en español.
+  var h=H('SIGNATURES','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.',!!sigId)+SZTOG()+recoCardSig+ST('01','Elige el tuyo','Tres salsas incluidas.')+sigsEnOrden(SIGS).map(function(s){
     // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
     // cliente logueado que todavía no llega al rango exigido se muestra como una
     // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.
@@ -1295,7 +1415,21 @@ function sOSig(){
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
     var av=sigInStock(s);
-    var priceTag=size?SOLES+pz(sigPrice(s)):'—';
+    // ⚠ ACÁ EL PRECIO ERA UN GUION (corregido 2026-09-12).
+    //
+    // `size` arranca en null, así que al entrar desde el home TODAS las tarjetas mostraban
+    // `—` donde el home acababa de mostrar «S/21.90» en dorado a 22px. El cliente venía de
+    // ver cinco precios y se encontraba cinco guiones: para recuperarlos tenía que tocar un
+    // tamaño que a lo mejor todavía no había pensado, en un paso que además va ANTES de
+    // elegir el sándwich.
+    //
+    // Lo que se muestra sin tamaño es exactamente lo que ya mostraba el home: el precio del
+    // 15CM, con el de 30CM debajo. No es un default disfrazado —`size` sigue en null y el
+    // botón Continuar sigue exigiendo la elección— es dejar de esconder un precio que la
+    // pantalla anterior ya había dicho. Dos pantallas seguidas del mismo flujo no pueden
+    // contradecirse sobre cuánto cuesta lo mismo.
+    var priceTag=size?SOLES+pz(sigPrice(s)):SOLES+pz(s.p15);
+    var priceSub=size||s.p30<=s.p15?'':'30CM '+SOLES+pz(s.p30);
     if(!av){
       var notifyRequested=restockNotified.indexOf(s.id)>=0;
       return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
@@ -1344,8 +1478,16 @@ function sOSig(){
     // El precio va SIEMPRE en dorado: es el color del dinero en toda la app y no cambia
     // con el lado ni con la selección. Un precio que cambia de color según dónde estás es
     // la clase de duda que no queremos en un flujo de compra.
-    var pastPrecio=PILL(priceTag,true);
-    var pastBadge=PILL(sigBadge(s),false);
+    // El precio de 30CM va DEBAJO de la píldora, no a su lado: el contenedor de esta fila es
+    // un flex, así que un <div> suelto se vuelve otro ítem de la fila y el subprecio queda
+    // flotando sobre la foto, separado de su propio precio. Se envuelven los dos juntos.
+    var pastPrecio='<span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">'
+      +PILL(priceTag,true)
+      +(priceSub?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:rgba(255,255,255,.9);text-shadow:0 1px 4px rgba(0,0,0,.85)">'+priceSub+'</span>':'')
+      +'</span>';
+    // El sello de recomendado también faltaba acá, que es donde se decide: el home lo
+    // pintaba y la pantalla siguiente no, así que el empujón se apagaba justo al entrar.
+    var pastBadge=(s.recommended?PILL('Recomendado',true)+' ':'')+PILL(sigBadge(s),false);
     // "quedan N" también sube a píldora: sobre una foto, un texto suelto en dorado puede
     // caer encima de una zona dorada de la comida y volverse invisible. El fondo propio
     // de la píldora es lo que garantiza que se lea sea cual sea la foto.

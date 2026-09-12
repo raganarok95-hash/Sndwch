@@ -80,18 +80,43 @@ pedidos diarios son ~S/1 640 al mes, sin adquirir a un solo cliente más.
 techo de 45%, porque la albóndiga es la proteína más barata (S/1.34 la porción) y el plato se
 vende a S/21.90.
 
-**No lo reordeno por mi cuenta**, por dos motivos que hay que pesar:
+> ### ✅ HECHO el 2026-09-12 — y apareció algo peor de lo que este estudio había visto
+>
+> Se movió el ⭐ a **The Marinara** y se reordenó la lista. Pero al abrir el código para
+> hacerlo, el orden del home resultó estar **mal anclado**, no solo desordenado:
+> `SIG_HOME_ORDER` decía explícitamente ordenar por margen y se justificaba con números de
+> **antes del recosteo con merma y de la subida de precios del 2026-08-22** — su comentario
+> hablaba de *«SIG03 68% y SIG04 49% bruto»*, contra 32.5% y 26.6% reales. Con esos valores
+> muertos ponía al **cuarto y al quinto** en contribución en las dos posiciones más miradas
+> de la lista, y mandaba los dos mejores al final. Hacía lo contrario de lo que decía hacer.
+>
+> Orden nuevo, por **contribución en soles a 15CM** (el negocio deposita soles, no
+> porcentajes; y el 15CM es el 80% del negocio):
+> `SIG02 S/17.43 · SIG03 S/16.14 · SIG04 S/15.35 · SIG01 S/14.70 · SIG06 S/14.43`.
+>
+> Además, «Recomendado» era un sufijo de 11px en itálica del mismo color y tamaño que el
+> badge de al lado: la recomendación existía en el código y no en la pantalla. Ahora es un
+> sello con fondo propio.
+>
+> `tests/estrella-del-menu.spec.ts` (3) fija que los **tres** mecanismos que empujan un
+> Signature —la bandera `recommended`, el orden de la lista y el puente desde ARMA EL TUYO—
+> apunten al MISMO producto. Verificado inyectando los tres defectos por separado.
 
-1. **The Original es el ancla de la carta.** Su propio pitch dice *«el primero de la carta y
-   el que manda la receta… empieza por acá»*. Cambiarlo de sitio es una decisión de marca.
-2. **No hay ni un dato de ventas.** Ordenar por margen es lo único que se puede hacer hoy,
-   pero el orden correcto es por **margen × popularidad**, y la popularidad se mide después de
-   abrir. `retention_report` ya devuelve la mezcla real.
+**Los dos motivos que este estudio dio para no reordenar, revisados:**
 
-Lo que sí recomiendo **ahora**, porque no depende de datos: **mover el ⭐ recomendado a The
-Marinara.** Es el único producto que gana en las dos dimensiones que hoy se pueden medir —el
-margen más alto y el precio casi más bajo— así que recomendarlo no es empujar al cliente hacia
-lo caro, es empujarlo hacia lo que a él le sale barato y a ti te deja más.
+1. **«The Original es el ancla de la carta»** — su pitch decía *«el primero de la carta y el
+   que manda la receta… empieza por acá»*. Al reescribir los pitches (§2.1) ese cierre se
+   conservó (*«si es tu primera vez acá, empieza por este»*): **sigue siendo el punto de
+   entrada, sin ocupar la primera fila.** El argumento era real y la solución no era elegir
+   entre los dos.
+2. **«No hay ni un dato de ventas»** — sigue en pie y no se resolvió. Ordenar por margen es
+   lo único posible hoy; el orden correcto es **margen × popularidad** (Kasavana & Smith) y
+   la popularidad se mide después de abrir. Está anotado en el propio código: un Signature
+   que se venda el triple puede merecer la primera fila aunque deje S/1 menos.
+
+**Recomendar The Marinara no es empujar al cliente hacia lo caro**: es el único producto que
+gana en las dos dimensiones medibles hoy —el margen más alto y el precio casi más bajo— así
+que lo empuja hacia lo que a él le sale barato y al negocio le deja más.
 
 ### 2.1 Los pitches: dos problemas concretos
 
@@ -113,9 +138,34 @@ en tu menú — le falta almorzar. Ese cierre describe un hueco de tu catálogo,
 ocasiones para el calendario de marketing —*«nadie compra The Original: compra almuerzo de
 oficina o antojo de noche»*— y esa misma idea no llegó a la carta, que es donde se decide.
 
-**No los reescribo sin tu visto bueno**: el pitch es texto de marca, y además el menú se edita
-desde el panel (`catalog_items`), así que un cambio acá es solo la semilla. Si quieres, te
-propongo los cinco reescritos y los publicas tú desde el panel.
+> ### ✅ HECHO el 2026-09-12 — los cinco, publicados en la base
+>
+> Cada pitch nombra ahora **un momento**, no una receta:
+>
+> | Signature | la ocasión que nombra |
+> |---|---|
+> | The Original | *el almuerzo que tiene que aguantar hasta la noche* |
+> | The Marinara | *la noche en que ya decidiste que no vas a cocinar* |
+> | The Smoke | *el viernes, cuando el día se acabó y te lo estás cobrando* |
+> | The Fresh | *comer en el escritorio con una mano* |
+> | The Teriyaki | *cuando ya te aburriste de lo de siempre* |
+>
+> Se publicaron en `catalog_items` (append-only, migración `20260912204541`), **no solo en
+> el literal del código**, que es semilla: un cambio que se queda en el código no cambia la
+> carta. Las recetas, precios y quesos se copiaron de la fila vigente con un `SELECT` en vez
+> de reescribirse a mano, para que ningún campo se pierda en silencio al republicar.
+>
+> **Ninguno hace una afirmación comparativa ni de precio, a propósito.** *«El más caro de la
+> carta»* o *«el único sin toppings»* son ciertos hoy y falsos el día que el dueño mueva otra
+> fila desde el panel, sin que nada avise — la misma trampa que los números escritos a mano
+> en el contenido de marketing. Todo lo que afirman es sobre sí mismos.
+>
+> **Y apareció un badge falso**: THE FRESH decía **«Cítrico»** con una receta de atún,
+> mayonesa y pimienta — **cero cítrico**. Era honesto cuando la receta llevaba dijon y limón
+> (S11) y dejó de serlo el 2026-09-05, cuando el dueño la reescribió: el pitch se actualizó,
+> el badge no. Pasa a **«Sin vueltas»**. Es la regla de los números escritos a mano aplicada
+> a los rótulos de sabor: si la receta se mueve, el badge se revisa en la misma operación.
+> Reversible desde Admin // Catálogo en un toque.
 
 ### 2.2 Dónde está el margen que no se está cobrando
 

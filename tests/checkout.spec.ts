@@ -14,10 +14,10 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
   });
 
   // El home ahora muestra la lista de Signatures directamente (fase 2 de fidelidad al
-  // mockup) — tocar cualquier fila ya entra a SIGNATURE BUILDS con ese Signature
+  // mockup) — tocar cualquier fila ya entra a SIGNATURES con ese Signature
   // preseleccionado, en vez de una tarjeta genérica "arrancar flujo".
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
   // Primer Signature de la lista — cualquiera sirve para probar el flujo.
@@ -68,7 +68,7 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
   });
 
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
@@ -128,7 +128,7 @@ test('elegir tarjeta manda a prepare-order el total con el recargo que el servid
   });
 
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
