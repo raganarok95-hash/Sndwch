@@ -108,7 +108,27 @@ export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // cuestan S/11.39 — la única operación del catálogo con margen NEGATIVO (−26.6%). El
 // cliente ya no la ofrece (bandera `noDouble` en PROTS), pero el servidor tiene que
 // rechazarla igual: nunca confía en lo que manda el cliente.
-export const NO_DOUBLE_PROTS = new Set(["P04"]);
+// Dos conjuntos desde el 2026-09-12: NO_DOUBLE_PROTS apaga el doble en los DOS tamaños y
+// NO_DOUBLE_30_PROTS solo en el de 30CM. El atún pasó del primero al segundo — el motivo de
+// margen que lo apagó entero murió (pDbl dejó de ser plano el 2026-08-22 y el atún se cotizó
+// el 2026-09-04 a S/43.96/kg: hoy el doble deja ~70% en los dos tamaños), pero el motivo
+// FÍSICO era específico del 30CM, donde la porción extra son 170 g de ensalada de atún y el
+// sándwich se desarma. Ver el comentario largo de P04 en src/app/01-*.
+// DEBEN coincidir con noDouble / noDouble30 en PROTS del cliente.
+export const NO_DOUBLE_PROTS = new Set<string>([]);
+export const NO_DOUBLE_30_PROTS = new Set(["P04"]);
+// UN solo punto de corte para las dos rutas (Signature y ARMA EL TUYO), que antes repetían
+// la misma condición palabra por palabra — el patrón que ya obligó a extraer
+// cancellationDeltas. Con dos conjuntos, repetirla eran cuatro condiciones que mantener.
+// El mensaje nombra el TAMAÑO cuando el corte es por tamaño: "esa proteína no admite doble"
+// sobre un 30CM, cuando en 15CM sí lo admite, manda a buscar el problema al lugar equivocado.
+export function assertDoubleAllowed(doubleProt: boolean, prot: string, size: string): void {
+  if (!doubleProt) return;
+  if (NO_DOUBLE_PROTS.has(prot)) throw new ApiError("Esa proteína no admite doble porción.");
+  if (size === "30" && NO_DOUBLE_30_PROTS.has(prot)) {
+    throw new ApiError("Esa proteína no admite doble porción en 30CM. En 15CM sí.");
+  }
+}
 
 // S09 vuelve al catálogo (decisión del dueño 2026-08-21) después de haberse retirado el
 // mismo día junto con The Ember (SIG08), que era su único consumidor. Vuelve CAMBIADA:
@@ -693,7 +713,7 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   }
   const protInfo = PROT_PRICE[sig.prot];
   const basePrice = size === "15" ? sig.p15 : sig.p30;
-  if (doubleProt && NO_DOUBLE_PROTS.has(sig ? sig.prot : "")) throw new ApiError("Esa proteína no admite doble porción.");
+  assertDoubleAllowed(doubleProt, sig ? sig.prot : "", size);
   const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
   const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
@@ -755,7 +775,7 @@ function priceByoBuild(
   // quedara fuera, la recompensa dejaría al cliente pagando S/0.50 por un sándwich "gratis").
   const panExtra = baseSurcharge(base, size);
   const basePrice = (size === "15" ? protInfo.p15 : protInfo.p30) + panExtra;
-  if (doubleProt && NO_DOUBLE_PROTS.has(prot)) throw new ApiError("Esa proteína no admite doble porción.");
+  assertDoubleAllowed(doubleProt, prot, size);
   const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
   // R03 sube un 15CM a 30CM gratis, así que la diferencia que perdona tiene que incluir
   // TAMBIÉN el salto del pan (la focaccia de 30CM cuesta más que la de 15CM). Sin esto, un

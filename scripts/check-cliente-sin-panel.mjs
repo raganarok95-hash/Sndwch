@@ -59,6 +59,12 @@ const ADMIN_ONLY = {
   loadAdmin: 'el cajón de herramientas del panel — solo se abre desde una pantalla de admin',
   loadDashboard: 'ídem',
   adminToolsSections: 'ídem',
+  // Se llama DENTRO de loadAdmin(), que ya está en esta lista: para llegar ahí hay que
+  // tener sesión de admin, y eso implica que el bundle del panel se descargó. Además la
+  // llamada va detrás de `typeof enterFocusMode==='function'`, así que un cliente que de
+  // algún modo llegara sin el panel cargado sigue viendo el home en vez de una app en
+  // blanco — el peor caso es el comportamiento anterior.
+  enterFocusMode: 'abre el modo cocina al entrar al panel con la tienda abierta — se llama dentro de loadAdmin()',
 };
 
 const problems = [];

@@ -197,7 +197,14 @@ async function loadAdmin(){
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;}
   catch(e){adminOrders=[];}
-  busy=false;startPoll();render();
+  // Con la tienda ABIERTA y pedidos esperando, el panel abre directo en modo cocina: es lo
+  // único que se hace con pedidos entrando, y el home mide 4 600 px con 53 controles que hay
+  // que atravesar para llegar. Con la tienda cerrada, o sin pedidos, abre el home de siempre
+  // — que es cuando el panel se usa para administrar y no para cocinar.
+  // `← Salir` sigue estando a un toque, así que no atrapa a nadie.
+  busy=false;startPoll();
+  if(typeof enterFocusMode==='function'&&storeStatus().open&&adminOrders.length)enterFocusMode();
+  else render();
 }
 
 // Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para

@@ -471,24 +471,41 @@ function itemLabel(item){
 //
 // Para un Signature expande la receta desde SIGS por el mismo motivo: el operador no tiene
 // por qué recordar de memoria qué lleva cada uno de los 8, y menos en hora pico.
+// ⚠ UN INGREDIENTE QUE YA NO ESTÁ EN EL CATÁLOGO NO PUEDE DESAPARECER EN SILENCIO.
+// `fn()` devuelve cadena VACÍA cuando no encuentra el id, así que hasta el 2026-09-12 esta
+// función empujaba igual la línea y la pantalla de cocina mostraba «Pan:» seguido de nada.
+// Y si el Signature entero no estaba en SIGS, devolvía [] y `orderRecipeHTML` omitía el
+// bloque completo: un pedido que se ve SIN receta.
+//
+// No es hipotético — este repo ya retiró P07 (res laminada), T07 (giardiniera), T08 (apio),
+// D09 (chai) y SIG07/SIG08. Un pedido programado hecho antes de un retiro, o el historial,
+// cae justo ahí. En la pantalla que dice QUÉ COCINAR, un dato que falta se dice; no se borra.
+function nombreOId(arr,id,etiqueta){
+  if(!id)return '(sin '+etiqueta+')';
+  var n=fn(arr,id);
+  // El id crudo entre paréntesis es feo a propósito: se lee como "esto hay que mirarlo",
+  // que es exactamente lo que hay que hacer.
+  return n||('⚠ '+id+' — ya no está en la carta, confirma con el cliente');
+}
 function itemRecipeLines(item){
   if(item.type==='side')return[];
   var lines=[];
   var base,prot,tops,sauces,cheese;
   if(item.type==='sig'){
     var sig=SIGS.find(function(x){return x.id===item.sigId;});
-    if(!sig)return[];
+    // Antes: `return []`, y el sándwich desaparecía de la comanda sin decir nada.
+    if(!sig)return['⚠ '+(item.sigId||'este Signature')+' ya no está en la carta — llama al cliente antes de armarlo'];
     base=sig.base;prot=sig.prot;tops=sig.tops||[];sauces=sig.sauces||[];
     cheese=sig.fixedCheese||item.cheese||null;
   }else{
     base=item.base;prot=item.prot;tops=item.tops||[];sauces=item.sauces||[];
     cheese=item.cheese||null;
   }
-  lines.push('Pan: '+fn(BASES,base));
-  lines.push('Proteína: '+fn(PROTS,prot)+(item.doubleProt?' (DOBLE)':''));
-  if(cheese)lines.push('Queso: '+fn(CHEESE,cheese));
-  lines.push('Toppings: '+(tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'sin toppings'));
-  lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
+  lines.push('Pan: '+nombreOId(BASES,base,'pan'));
+  lines.push('Proteína: '+nombreOId(PROTS,prot,'proteína')+(item.doubleProt?' (DOBLE)':''));
+  if(cheese)lines.push('Queso: '+nombreOId(CHEESE,cheese,'queso'));
+  lines.push('Toppings: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'topping');}).join(' · '):'sin toppings'));
+  lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return nombreOId(SAUCES,id,'salsa');}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
   if(item.note)lines.push('Nota: '+item.note);
   return lines;
 }

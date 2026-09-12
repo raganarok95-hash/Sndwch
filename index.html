@@ -523,14 +523,24 @@ var PROTS = [
     // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
     // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
     // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
-    // noDouble: el atún es la ÚNICA proteína sin opción de doble (decisión del dueño
-    // 2026-08-21). El recargo pDbl es plano pero la porción que agrega escala con el tamaño:
-    // en 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — pérdida real de S/2.39
-    // por unidad, la única operación del catálogo con margen negativo. `pDbl` se deja en 9
-    // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
-    // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
-    // en supabase/functions/api/catalog.ts.
-    { id: 'P04', l: 'Atún', s: 'House', d: 'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.', p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9, noDouble: true },
+    // ⚠ EL DOBLE DE ATÚN VUELVE EN 15CM, Y SIGUE APAGADO EN 30CM (2026-09-12, decisión del
+    // dueño). Se había apagado entero el 2026-08-21 por DOS motivos, y solo uno sigue vivo:
+    //
+    //  1. MARGEN — ya no aplica. Decía «en 30CM se cobraban S/9 por 170 g de atún que cuestan
+    //     S/11.39, pérdida real de S/2.39». Las dos mitades de esa frase cambiaron: `pDbl`
+    //     dejó de ser plano AL DÍA SIGUIENTE (se partió en pDbl/pDbl30 el 2026-08-22) y el
+    //     atún se cotizó el 2026-09-04 a S/43.96/kg en vez de los S/67 investigados online.
+    //     Hoy: 15CM cobra 10.90 y cuesta 3.25 (29.8%); 30CM cobra 21.90 y cuesta 6.50 (29.7%).
+    //     Son de los mejores márgenes del catálogo — estaba apagado un upsell que ganaba plata.
+    //  2. FÍSICO — sigue vivo, y por eso el 30CM NO se prende. «170 g de ensalada de atún en
+    //     un pan de 30CM es un sándwich que se desarma». Eso no lo arregla ninguna cotización
+    //     y lo sabe quien lo arma, no el modelo. En 15CM la porción extra son 85 g y ese
+    //     motivo nunca lo describió.
+    //
+    // Para prender también el 30CM: quitar `noDouble30` de acá y "P04" de NO_DOUBLE_30_PROTS
+    // en supabase/functions/api/catalog.ts. Los DOS lados, o el cliente lo ofrece y el
+    // servidor lo rechaza al pagar.
+    { id: 'P04', l: 'Atún', s: 'House', d: 'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.', p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9, noDouble30: true },
     // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
     // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
     // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -1766,7 +1776,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '858a0e215c';
+var APP_BUILD = 'ecf31f089a';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2658,17 +2668,22 @@ function sigPrice(s) { return !s || !size ? 0 : (size === '15' ? s.p15 : s.p30);
 // sumar el recargo, la fila "Doble" no se pinta y el upsell de confirmación pasa de largo
 // a la salsa extra. Un solo punto de corte en vez de tres condiciones repetidas.
 //
-// P04 (atún) queda fuera por decisión del dueño (2026-08-21), y el número lo respalda: el
-// recargo `pDbl` es plano pero la porción que agrega SÍ escala con el tamaño, así que en
-// un 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — el negocio PERDÍA S/2.39
-// en cada doble de atún. Además 170g de ensalada de atún en un pan de 30CM es un sándwich
-// que se desarma. El servidor lo rechaza también (NO_DOUBLE_PROTS en catalog.ts): esto
-// solo evita ofrecerlo en la UI.
+// Dos banderas, no una, desde el 2026-09-12: `noDouble` apaga el doble en los dos tamaños y
+// `noDouble30` solo en el de 30CM. Hoy ninguna proteína usa la primera y el atún usa la
+// segunda — ver el comentario largo de P04 en 01-*: el motivo de margen que lo apagó entero
+// murió (hoy deja 70% en los dos tamaños), pero el motivo FÍSICO era específico del 30CM,
+// donde la porción extra son 170 g de ensalada de atún y el sándwich se desarma.
+// El servidor rechaza lo mismo (NO_DOUBLE_PROTS / NO_DOUBLE_30_PROTS en catalog.ts): esto
+// solo evita ofrecerlo en la UI, nunca es la única defensa.
 function dblProtRef() {
     var sig = SIGS.find(function (x) { return x.id === sigId; });
     var protId = mode === 'sig' ? (sig ? sig.prot : null) : prot;
     var p = PROTS.find(function (x) { return x.id === protId; });
-    return (p && p.noDouble) ? undefined : p;
+    if (!p || p.noDouble)
+        return undefined;
+    if (p.noDouble30 && size === '30')
+        return undefined;
+    return p;
 }
 // Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
 // pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
@@ -3372,6 +3387,23 @@ function itemLabel(item) {
 //
 // Para un Signature expande la receta desde SIGS por el mismo motivo: el operador no tiene
 // por qué recordar de memoria qué lleva cada uno de los 8, y menos en hora pico.
+// ⚠ UN INGREDIENTE QUE YA NO ESTÁ EN EL CATÁLOGO NO PUEDE DESAPARECER EN SILENCIO.
+// `fn()` devuelve cadena VACÍA cuando no encuentra el id, así que hasta el 2026-09-12 esta
+// función empujaba igual la línea y la pantalla de cocina mostraba «Pan:» seguido de nada.
+// Y si el Signature entero no estaba en SIGS, devolvía [] y `orderRecipeHTML` omitía el
+// bloque completo: un pedido que se ve SIN receta.
+//
+// No es hipotético — este repo ya retiró P07 (res laminada), T07 (giardiniera), T08 (apio),
+// D09 (chai) y SIG07/SIG08. Un pedido programado hecho antes de un retiro, o el historial,
+// cae justo ahí. En la pantalla que dice QUÉ COCINAR, un dato que falta se dice; no se borra.
+function nombreOId(arr, id, etiqueta) {
+    if (!id)
+        return '(sin ' + etiqueta + ')';
+    var n = fn(arr, id);
+    // El id crudo entre paréntesis es feo a propósito: se lee como "esto hay que mirarlo",
+    // que es exactamente lo que hay que hacer.
+    return n || ('⚠ ' + id + ' — ya no está en la carta, confirma con el cliente');
+}
 function itemRecipeLines(item) {
     if (item.type === 'side')
         return [];
@@ -3379,8 +3411,9 @@ function itemRecipeLines(item) {
     var base, prot, tops, sauces, cheese;
     if (item.type === 'sig') {
         var sig = SIGS.find(function (x) { return x.id === item.sigId; });
+        // Antes: `return []`, y el sándwich desaparecía de la comanda sin decir nada.
         if (!sig)
-            return [];
+            return ['⚠ ' + (item.sigId || 'este Signature') + ' ya no está en la carta — llama al cliente antes de armarlo'];
         base = sig.base;
         prot = sig.prot;
         tops = sig.tops || [];
@@ -3394,12 +3427,12 @@ function itemRecipeLines(item) {
         sauces = item.sauces || [];
         cheese = item.cheese || null;
     }
-    lines.push('Pan: ' + fn(BASES, base));
-    lines.push('Proteína: ' + fn(PROTS, prot) + (item.doubleProt ? ' (DOBLE)' : ''));
+    lines.push('Pan: ' + nombreOId(BASES, base, 'pan'));
+    lines.push('Proteína: ' + nombreOId(PROTS, prot, 'proteína') + (item.doubleProt ? ' (DOBLE)' : ''));
     if (cheese)
-        lines.push('Queso: ' + fn(CHEESE, cheese));
-    lines.push('Toppings: ' + (tops.length ? tops.map(function (id) { return fn(TOPS, id); }).join(' · ') : 'sin toppings'));
-    lines.push('Salsas: ' + (sauces.length ? sauces.map(function (id) { return fn(SAUCES, id); }).join(' + ') : 'sin salsa') + (item.extraSauce ? ' (+EXTRA)' : ''));
+        lines.push('Queso: ' + nombreOId(CHEESE, cheese, 'queso'));
+    lines.push('Toppings: ' + (tops.length ? tops.map(function (id) { return nombreOId(TOPS, id, 'topping'); }).join(' · ') : 'sin toppings'));
+    lines.push('Salsas: ' + (sauces.length ? sauces.map(function (id) { return nombreOId(SAUCES, id, 'salsa'); }).join(' + ') : 'sin salsa') + (item.extraSauce ? ' (+EXTRA)' : ''));
     if (item.note)
         lines.push('Nota: ' + item.note);
     return lines;
@@ -8817,9 +8850,17 @@ async function loadAdmin() {
     catch (e) {
         adminOrders = [];
     }
+    // Con la tienda ABIERTA y pedidos esperando, el panel abre directo en modo cocina: es lo
+    // único que se hace con pedidos entrando, y el home mide 4 600 px con 53 controles que hay
+    // que atravesar para llegar. Con la tienda cerrada, o sin pedidos, abre el home de siempre
+    // — que es cuando el panel se usa para administrar y no para cocinar.
+    // `← Salir` sigue estando a un toque, así que no atrapa a nadie.
     busy = false;
     startPoll();
-    render();
+    if (typeof enterFocusMode === 'function' && storeStatus().open && adminOrders.length)
+        enterFocusMode();
+    else
+        render();
 }
 // Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para
 // poder reusarse también desde resultados de búsqueda (sndScreen='admin_search', ver #95), que

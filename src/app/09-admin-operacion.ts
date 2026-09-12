@@ -363,6 +363,51 @@ function adminToolsSections(){
 }
 // Grid de 2 columnas agrupado por sección — mismo HTML que ya usaba admin_home, ahora
 // también reusado por el drawer de navegación lateral.
+// Los cuatro accesos de servicio. Solo se pintan con la tienda ABIERTA — con la tienda
+// cerrada el home completo es lo correcto y este bloque estorbaría.
+//
+// Por qué estos cuatro y no otros: son las únicas decisiones que se toman CON pedidos
+// entrando. Cocina (armar), Pagos (confirmar un Yape antes de preparar), Inventario (marcar
+// algo agotado en el momento en que se acaba) y Salud (qué hay que atender hoy). Recetas,
+// marketing, calendario, cohortes y modelo son trabajo de escritorio.
+//
+// El contador de pagos por confirmar va EN el botón y no en una pantalla aparte: es el
+// número que decide si vale la pena tocarlo, y ponerlo detrás de un toque hace que nadie
+// lo mire mientras cocina. Cuando es cero, el botón no grita — se pinta como los demás.
+function servicioRapidoHTML(){
+  if(!storeStatus().open)return '';
+  var ao=sortedActiveOrders();
+  var porConfirmar=ao.filter(function(o){
+    return (o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
+  }).length;
+  var tile=function(titulo,sub,accion,destacado,badge){
+    return'<button onclick="'+accion+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:88px;padding:14px;border-radius:12px;'
+      +'background:'+(destacado?GOLD:'var(--sw-card,#2D5246)')+';border:1px solid '+(destacado?GOLD:'var(--sw-border,#3A6B58)')+';'
+      +'color:'+(destacado?'var(--sw-on-gold,#241a08)':'var(--sw-text,#FFFFFF)')+'">'
+      +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;line-height:1.1">'+titulo
+      +(badge?'<span style="font-family:\'EB Garamond\',serif;font-size:15px;font-weight:600"> · '+badge+'</span>':'')+'</span>'
+      +'<span style="font-family:\'EB Garamond\',serif;font-size:11px;opacity:.75;line-height:1.3">'+sub+'</span>'
+      +'</button>';
+  };
+  return'<div style="margin-bottom:18px">'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">En servicio //</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    // Cocina va destacado y primero: es el único que se usa con las manos ocupadas.
+    +tile('Cocina','armar, uno a uno','enterFocusMode()',true,ao.length||'')
+    +tile('Pagos','confirmar Yape/Plin','sndScreen=\'admin_home\';render();scrollToPagos()',false,porConfirmar||'')
+    +tile('Inventario','marcar agotado','loadInventory()',false,'')
+    +tile('Salud','qué atender hoy','loadHealth()',false,'')
+    +'</div></div>';
+}
+// El botón de Pagos no abre otra pantalla: baja a la cola que ya está en este mismo home.
+// Abrir una pantalla nueva para ver los mismos pedidos sería una segunda lista del mismo
+// dato, que es como se terminan contradiciendo.
+function scrollToPagos(){
+  setTimeout(function(){
+    var el=document.querySelector('[data-pago-pendiente="1"]');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },60);
+}
 function adminToolsGridHTML(){
   return adminToolsSections().map(function(section: any){
     return'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">'+section[0]+'</div>'
@@ -442,6 +487,18 @@ function addressFlagsBanner(){
     +addressFlagsBanner()
     +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
 
+    // ── MIENTRAS LA TIENDA ESTÁ ABIERTA, LO PRIMERO SON CUATRO BOTONES ───────────────
+    // Medido a 360×640: este home mide 4 600 px (7,2 pantallas de scroll) y tiene 53
+    // controles tocables. Para administrar con la tienda cerrada está bien; para operar
+    // con las manos en la comida es todo ruido — en servicio hacen falta cuatro cosas y
+    // las otras treinta pantallas son trabajo de escritorio.
+    //
+    // No hay interruptor nuevo: `storeStatus()` ya sabe si está abierto, y el bloque
+    // desaparece solo al cerrar. Un modo que hay que acordarse de prender y de apagar se
+    // queda prendido — mismo criterio que la reapertura automática de capacidad, que no
+    // se construyó porque el reloj ya la resuelve.
+    +servicioRapidoHTML()
+
     +'<div onclick="loadDashboard()" style="background:var(--sw-card2,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:'+SHADOW_SM+'">'
     +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
     +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">Ver →</span></div>'
@@ -486,7 +543,10 @@ function addressFlagsBanner(){
       // se veía deshabilitado justo cuando más urge tocarlo (hallazgo de auditoría de
       // diseño admin, ALTO). Ahora el pulso vive solo en un punto de acento junto al
       // "hace X min" — la tarjeta y su botón quedan siempre legibles.
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(isStale?STATUSES.RECIBIDO.c:(o.status==='RECIBIDO'?STATUSES.RECIBIDO.c:'var(--sw-border-soft,#1c1c1c)'))+';border-radius:10px;padding:16px;margin-bottom:12px">'
+      // data-pago-pendiente: el botón "Pagos" del bloque de servicio baja hasta la PRIMERA
+      // tarjeta con este atributo, en vez de abrir otra pantalla con los mismos pedidos.
+      // Dos listas del mismo dato terminan contradiciéndose.
+      return'<div '+(manualPending?'data-pago-pendiente="1" ':'')+'style="background:var(--sw-card,#2D5246);border:1px solid '+(isStale?STATUSES.RECIBIDO.c:(o.status==='RECIBIDO'?STATUSES.RECIBIDO.c:'var(--sw-border-soft,#1c1c1c)'))+';border-radius:10px;padding:16px;margin-bottom:12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
         +'<div style="display:flex;gap:10px;flex:1">'
         +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+GOLD+'">'
@@ -561,13 +621,50 @@ function addressFlagsBanner(){
 // botón agrandado de la tarjeta normal de admin_home no podía lograr — ver comentario en
 // esa tarjeta: con varias tarjetas en la cola, un botón fijo de viewport no tiene un solo
 // pedido al que apuntar; acá sí, porque solo se muestra uno).
+// ── LA PANTALLA NO SE APAGA MIENTRAS SE COCINA ──────────────────────────────────────
+// El modo cocina se usa en un celular dedicado, apoyado en la mesada, con las manos en la
+// comida. Sin esto la pantalla se apaga sola en 30 s–1 min y cada aviso de pedido nuevo
+// obliga a desbloquear con las manos grasosas.
+//
+// Tres cosas que no hay que romper:
+//  · TODO va en try/catch y detrás de un `if`: la API no existe en todos los navegadores ni
+//    en http://, y un throw acá dejaría al dueño sin cola de pedidos por un extra.
+//  · SE VUELVE A PEDIR al volver de segundo plano. El sistema SUELTA el permiso al cambiar
+//    de app o apagar la pantalla a mano, y no lo devuelve solo — sin el listener de
+//    `visibilitychange` funciona la primera vez y deja de funcionar después, que es peor
+//    que no tenerlo porque nadie vuelve a desconfiar.
+//  · SE SUELTA AL SALIR. Dejar la pantalla encendida toda la noche quema la batería del
+//    celular dedicado, que es justo el que tiene que estar vivo mañana.
+var _wakeLock: any = null;
+async function keepScreenAwake(){
+  try{
+    if(!('wakeLock' in navigator))return;
+    if(_wakeLock)return;
+    _wakeLock=await (navigator as any).wakeLock.request('screen');
+    // El propio navegador avisa cuando lo soltó: sin limpiar la referencia, el `if(_wakeLock)`
+    // de arriba creería que sigue vivo y no lo volvería a pedir nunca.
+    _wakeLock.addEventListener('release',function(){_wakeLock=null;});
+  }catch(e){/* denegado, batería baja, o sin soporte — se cocina igual */}
+}
+function releaseScreenAwake(){
+  try{ if(_wakeLock){_wakeLock.release();_wakeLock=null;} }catch(e){}
+}
+// Un solo listener para toda la vida de la app, no uno por entrada al modo cocina: sin esto
+// se acumula uno por cada vez que se entra y sale.
+if(typeof document!=='undefined'&&!(window as any)._wakeLockBound){
+  (window as any)._wakeLockBound=true;
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'&&sndScreen==='admin_focus')keepScreenAwake();
+  });
+}
 function enterFocusMode(){
   var ao=sortedActiveOrders();
   focusRef=ao.length?ao[0].id:'';
   focusIdx=0;
   sndScreen='admin_focus';render();
+  keepScreenAwake();
 }
-function exitFocusMode(){sndScreen='admin_home';render();}
+function exitFocusMode(){releaseScreenAwake();sndScreen='admin_home';render();}
 // Devuelve la posición ACTUAL del pedido anclado. Si desapareció (se entregó, se canceló,
 // lo atendió otra pantalla), cae al que ocupa su lugar en vez de saltar al primero: quien
 // cocina venía avanzando en orden y mandarlo al principio le hace repetir la vista.
@@ -594,9 +691,23 @@ function focusStep(delta){
 function sAdminFocus(){
   var ao=sortedActiveOrders();
   var barBg='var(--sw-bg,#1E3932)';
-  var topBar='<div style="padding:10px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
-    +'<button onclick="exitFocusMode()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';min-height:44px;display:inline-flex;align-items:center;padding-right:12px">← Salir</button>'
+  // ⚠ UNA SOLA BARRA, NO DOS. Medido a 360×640 (gama baja): las dos barras de antes —el
+  // rótulo "Modo // cocina" arriba y "‹ Pedido 1 de 4 ›" debajo— se comían 100 px de 640,
+  // el 16% de la pantalla, para decir una cosa que el dueño ya sabe (en qué pantalla está)
+  // y otra que sí importa (en qué pedido va). Fundidas en una quedan 56 px y el rótulo se
+  // va: en un celular dedicado a operar, nadie necesita que le recuerden dónde está.
+  // Esos 44 px recuperados son casi una línea entera de receta.
+  var navBtn=function(delta,glyph,label){
+    // 56 px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar. Antes
+    // eran 20 px de glifo con 4 de padding — un blanco de ~28 px, muy por debajo del mínimo
+    // de 44, en la única pantalla que se usa con las manos sucias.
+    return'<button onclick="focusStep('+delta+')" aria-label="'+label+'" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:28px;line-height:1;color:'+(ao.length>1?GOLD:'var(--sw-text-muted3,#3A4A44)')+';width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;flex:none">'+glyph+'</button>';
+  };
+  var salirBtn='<button onclick="exitFocusMode()" aria-label="Salir del modo cocina" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';min-width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;flex:none">← Salir</button>';
+  var topBar='<div style="padding:0 8px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;justify-content:space-between;align-items:center">'
+    +salirBtn
     +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Modo<span class="cut-sep" style="color:'+GOLD+'"> // </span>cocina</span>'
+    +'<span style="width:56px"></span>'
     +'</div>';
   if(!ao.length){
     return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar
@@ -618,15 +729,13 @@ function sAdminFocus(){
   var minsDue=minutesAgo(orderDueTime(o));
   var isScheduledAhead=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
   var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
-  // Flechas de 56px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar.
-  // Antes eran 20px de glifo con 4px de padding — un blanco de ~28px, muy por debajo del
-  // mínimo de 44px, en la única pantalla que se usa con las manos sucias.
-  var navBtn=function(delta,glyph,label){
-    return'<button onclick="focusStep('+delta+')" aria-label="'+label+'" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:28px;line-height:1;color:'+(ao.length>1?GOLD:'var(--sw-text-muted3,#3A4A44)')+';width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px">'+glyph+'</button>';
-  };
-  var nav='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
+  // La barra ÚNICA: salir, flechas, contador y estado, todo en 56 px. El nombre del cliente
+  // sale de acá y baja con la dirección — para ARMAR el sándwich no sirve; sirve para
+  // entregarlo, que es un momento distinto.
+  var nav='<div style="display:flex;justify-content:space-between;align-items:center;padding:0 8px;border-bottom:1px solid var(--sw-border,#3A6B58);gap:4px">'
+    +salirBtn
     +navBtn(-1,'‹','Pedido anterior')
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">Pedido '+(pos+1)+' de '+ao.length+'</span>'
+    +'<span style="flex:1;text-align:center;min-width:0;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.08em">'+(pos+1)+' de '+ao.length+'</span>'
     +navBtn(1,'›','Pedido siguiente')
     +'</div>'
     // Aviso, no salto. Antes el pedido nuevo se ponía solo en pantalla; ahora se anuncia y
@@ -636,10 +745,14 @@ function sAdminFocus(){
   // Antes el cuerpo abría con nombre + dirección + pin + referencia + línea de ref, y la
   // receta —lo único que se necesita mientras se arma— quedaba debajo del pliegue, en
   // 11px. Dirección, pin y teléfono importan al DESPACHAR, no al armar; bajan.
-  var body='<div style="flex:1;padding:20px 18px 180px;overflow-y:auto" class="fi">'
+  var body='<div style="flex:1;padding:14px 18px 180px;overflow-y:auto" class="fi">'
+    // Estado y referencia en UNA línea, no en tres bloques. El nombre del cliente en 28 px
+    // bajó a "Para entregar": medido, el 40% de la altura se gastaba antes de la primera
+    // palabra útil, y el nombre y el monto no sirven para armar — sirven para despachar.
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
     +stBadge(o.status)
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-top:12px">'+esc(o.customer_name)+'</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';margin-top:6px;margin-bottom:16px;display:flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#A8C8B0)')+';display:inline-flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+(mins!==null?' · hace '+mins+' min':'')+'</span></span>'
+    +'</div>'
     // La receta, en escala de cocina, arriba de todo lo demás.
     +orderRecipeHTML(o.items,true)
     +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
@@ -647,6 +760,10 @@ function sAdminFocus(){
     +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-ok,#25D366);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#3A6B58);margin:18px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.18em;margin-bottom:10px">Para entregar //</div>'
+    // El nombre vive acá desde el 2026-09-12, no encima de la receta: es el dato del
+    // DESPACHO. En 22 px y no en 28 — los 28 los gana la receta, que es lo que se lee con
+    // las manos ocupadas.
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px">'+esc(o.customer_name)+' <span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:var(--sw-text-muted,#A8C8B0)">· '+SOLES+pz(o.total)+'</span></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:18px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(o.customer_address)+'</div>'
     // Pin exacto que el cliente confirmó en el mapa al pedir. En Trujillo la dirección en
     // texto no siempre ubica (numeración irregular, referencias en vez de número), así
@@ -680,11 +797,29 @@ function sAdminFocus(){
   // El botón real anclado a la zona del pulgar: position:fixed sobre todo el viewport,
   // no relativo a la tarjeta. Con env(safe-area-inset-bottom) para no quedar tapado por
   // la barra de gestos de iOS/Android en el celular real del dueño.
-  var fixedBar='<div style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:'+barBg+';border-top:1px solid var(--sw-border,#3A6B58);box-shadow:0 -6px 20px rgba(0,0,0,.25)">'
+  // Degradado por ENCIMA de la barra fija. Medido a 360×640: el contenido de un pedido mide
+  // ~1 240 px contra una ventana útil de 429, y la barra cortaba la receta a media palabra
+  // —en "Proteína:" del 30CM— con un corte tan limpio que parecía el borde de la tarjeta.
+  // No hay forma de saber que falta algo; veinte píxeles de degradado lo dicen sin ocupar
+  // sitio ni pedir un gesto. `pointer-events:none` para que no robe el toque del botón.
+  //
+  // Va DENTRO de la barra, anclado a su borde superior con translateY(-100%), y no a una
+  // distancia fija del fondo: la barra cambia de alto según el pedido (el pago sin confirmar
+  // le agrega una segunda línea), así que cualquier número escrito a mano queda desalineado
+  // en la mitad de los casos — y un degradado corrido hacia adentro del propio botón no
+  // avisa de nada.
+  var fade='<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#1E3932), rgba(0,0,0,0))"></div>';
+  var fixedBar='<div style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:'+barBg+';border-top:1px solid var(--sw-border,#3A6B58);box-shadow:0 -6px 20px rgba(0,0,0,.25)">'+fade
     +(manualPending
       ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
-        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
+        // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
+        // WCAG 2.5.5 (medía 20 px de alto), y está pegada al botón grande — errarle significa
+        // tocar "confirmar y preparar" sin querer, que avanza el pedido.
+        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
       :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:10px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
     +'</div>';
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar+nav+body+fixedBar+'</div>';
+  // Sin `topBar`: `nav` ya lleva el botón de salir. Las dos juntas eran justamente los
+  // 100 px de rótulo que había que recuperar — `topBar` sobrevive solo para el estado vacío,
+  // donde no hay contador de pedidos que mostrar.
+  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+nav+body+fixedBar+'</div>';
 }

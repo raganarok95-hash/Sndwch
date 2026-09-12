@@ -609,17 +609,20 @@ function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
 // sumar el recargo, la fila "Doble" no se pinta y el upsell de confirmación pasa de largo
 // a la salsa extra. Un solo punto de corte en vez de tres condiciones repetidas.
 //
-// P04 (atún) queda fuera por decisión del dueño (2026-08-21), y el número lo respalda: el
-// recargo `pDbl` es plano pero la porción que agrega SÍ escala con el tamaño, así que en
-// un 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — el negocio PERDÍA S/2.39
-// en cada doble de atún. Además 170g de ensalada de atún en un pan de 30CM es un sándwich
-// que se desarma. El servidor lo rechaza también (NO_DOUBLE_PROTS en catalog.ts): esto
-// solo evita ofrecerlo en la UI.
+// Dos banderas, no una, desde el 2026-09-12: `noDouble` apaga el doble en los dos tamaños y
+// `noDouble30` solo en el de 30CM. Hoy ninguna proteína usa la primera y el atún usa la
+// segunda — ver el comentario largo de P04 en 01-*: el motivo de margen que lo apagó entero
+// murió (hoy deja 70% en los dos tamaños), pero el motivo FÍSICO era específico del 30CM,
+// donde la porción extra son 170 g de ensalada de atún y el sándwich se desarma.
+// El servidor rechaza lo mismo (NO_DOUBLE_PROTS / NO_DOUBLE_30_PROTS en catalog.ts): esto
+// solo evita ofrecerlo en la UI, nunca es la única defensa.
 function dblProtRef(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
   var protId=mode==='sig'?(sig?sig.prot:null):prot;
   var p: any=PROTS.find(function(x){return x.id===protId;});
-  return (p&&p.noDouble)?undefined:p;
+  if(!p||p.noDouble)return undefined;
+  if(p.noDouble30&&size==='30')return undefined;
+  return p;
 }
 // Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
 // pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.

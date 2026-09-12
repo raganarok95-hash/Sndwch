@@ -857,6 +857,19 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
   **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
   S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
+- **El doble de atún vuelve en 15CM y sigue apagado en 30CM (2026-09-12).** Se había apagado
+  entero el 2026-08-21 por DOS motivos y solo uno sigue vivo. El de MARGEN murió: decía «en
+  30CM se cobraban S/9 por 170 g de atún que cuestan S/11.39», y las dos mitades cambiaron
+  —`pDbl` se partió en `pDbl`/`pDbl30` AL DÍA SIGUIENTE y el atún se cotizó el 2026-09-04 a
+  S/43.96/kg en vez de S/67. Hoy deja ~70% en los dos tamaños. El FÍSICO sigue: «170 g de
+  ensalada de atún en un pan de 30CM es un sándwich que se desarma», y eso lo sabe quien lo
+  arma, no el modelo. De ahí **dos conjuntos**: `NO_DOUBLE_PROTS` (ningún tamaño, hoy vacío)
+  y `NO_DOUBLE_30_PROTS` (solo 30CM). `npm run parity` compara los dos y `assertDoubleAllowed`
+  es el único punto de corte del servidor — antes la condición estaba repetida palabra por
+  palabra en las dos rutas de tasación. Probado en `tests-api/doble-proteina.test.ts` (7).
+  **Lección para el próximo apagón de producto: un motivo escrito en un comentario caduca.**
+  Este llevaba tres semanas muerto y nadie volvió a mirarlo porque apagar algo no produce
+  ningún error — solo deja de entrar plata.
 - **El apio (T08) está RETIRADO del catálogo desde el 2026-09-12** (decisión del dueño: "chau
   al apio"). Su historia es la advertencia: salió de ARMA EL TUYO el 2026-09-04 marcándolo
   `sigOnly` **porque THE FRESH lo llevaba**, y al día siguiente esa receta pasó a atún
@@ -1455,6 +1468,54 @@ Nada de esto se ve sin el secret: `googleConfigured()` es falso con el marcador
 (7) **inyecta un client id de prueba con un accessor definido antes de que corra el bundle**
 en vez de saltarse las pruebas: una prueba que se salta no protege nada, y alguien podía
 borrar `googleCtaHTML()` del checkout con la suite en verde.
+
+## El modo cocina se rehizo contra un celular de gama baja (2026-09-12)
+
+El dueño opera con un **celular aparte, de gama baja, dedicado a la tienda abierta**. Todo lo
+que sigue salió de **renderizar la pantalla real a 360×640** (viewport CSS típico de gama
+baja), no de suponer. `docs/AUDITORIA_PANEL_ADMIN.md` tiene la medición completa.
+
+- **Un pedido medía 1 239 px en una ventana útil de 429**, y la barra fija cortaba la receta
+  a media palabra —en "Proteína:" del 30CM— con un corte tan limpio que parecía el borde de
+  la tarjeta. Ahora la receta **entra entera sin scroll**: se fundieron las dos barras
+  superiores en una (el rótulo "Modo // cocina" se comía 44 px para decir algo que el dueño
+  ya sabe), el nombre del cliente bajó a "Para entregar" —sirve para despachar, no para
+  armar— y hay un degradado que avisa que hay más abajo.
+- **El degradado va DENTRO de la barra fija**, anclado con `translateY(-100%)`, no a una
+  distancia fija del fondo: la barra cambia de alto según el pedido (un pago sin confirmar
+  le agrega una línea), así que cualquier número escrito a mano se desalinea en la mitad de
+  los casos.
+- **Wake Lock mientras el modo cocina está abierto.** Sin él la pantalla se apaga sola en
+  30 s–1 min y cada aviso obliga a desbloquear con las manos grasosas. Tres cosas: todo en
+  `try/catch` (la API no existe en todos los navegadores), **se vuelve a pedir en
+  `visibilitychange`** —el sistema lo suelta al cambiar de app y no lo devuelve solo, así que
+  sin eso funciona una vez y después no, que es peor que no tenerlo— y **se suelta al salir**,
+  porque dejar la pantalla encendida toda la noche quema la batería del celular dedicado.
+- **Cuatro accesos de servicio en el home, solo con la tienda ABIERTA** (`storeStatus()`, sin
+  interruptor nuevo: un modo que hay que acordarse de apagar se queda prendido). Cocina,
+  Pagos, Inventario y Salud — las únicas decisiones que se toman con pedidos entrando. El
+  botón de Pagos **baja a la cola del mismo home** en vez de abrir otra pantalla: dos listas
+  del mismo dato terminan contradiciéndose.
+- **Con la tienda abierta y pedidos en cola, el panel abre DIRECTO en modo cocina.** El home
+  mide 4 600 px con 53 controles; atravesarlo para llegar a cocinar era el camino de todos
+  los días. `← Salir` sigue a un toque.
+
+### ⚠ La receta no puede callar un ingrediente retirado
+
+`fn()` devuelve **cadena vacía** cuando no encuentra un id, así que la comanda mostraba
+**«Pan:»** seguido de nada — y si el Signature entero faltaba en `SIGS`, `itemRecipeLines`
+devolvía `[]` y el bloque desaparecía: **un pedido que se ve SIN receta**. No es hipotético:
+este repo ya retiró P07, T07, T08, D09 y SIG07/SIG08, y un pedido programado o el historial
+cae justo ahí. Ahora dice el id y «ya no está en la carta». En la pantalla que dice qué
+cocinar, un dato que falta se dice; no se borra.
+
+### Medir un DOM con animación de entrada da tamaños encogidos
+
+`tests/modo-cocina-gama-baja.spec.ts` fija todo lo anterior, y su primera versión reportó un
+defecto falso: el enlace de Maps medía **43.34 px** con `min-height:44px` puesto. La causa era
+medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquier prueba que
+mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
+existen y, peor, deja de distinguir el día que sí existan.
 
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
