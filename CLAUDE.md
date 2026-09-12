@@ -1799,6 +1799,25 @@ lo que **no** es un problema aunque lo parezca.
   dueño el link directo al archivo (ej. URL de Figma `figma.com/design/<fileKey>`) para
   que lo abra/exporte con su propio navegador (sin la restricción de red de este
   sandbox), en vez de insistir en traerlo localmente.
+- **Creative Cloud SIRVE para ENCONTRAR archivos del dueño, pero NO para traerlos a este
+  sandbox — probado por tres vías distintas el 2026-09-12.** `asset_search` con
+  `entityScope:"CCAsset"` funciona perfecto y lista lo que el dueño subió (nombre, tamaño,
+  fecha, id). El problema es la descarga: **`renditionURL`, `downloadURL` y la URL que
+  devuelve `asset_get_presigned_urls` resuelven las TRES a `at.adobe.com` o a
+  `platform-cs-va6.adobe.io`**, y el proxy responde `http=000` a las dos. La descripción de
+  `asset_get_presigned_urls` promete "presigned S3 URLs" — para assets `acp` no lo son, así
+  que no hay que gastar la llamada esperando un host de S3.
+  **La vía que SÍ funciona para que el dueño le pase un archivo a la sesión es Google
+  Drive**: `mcp__Google_Drive__download_file_content` devuelve el contenido en **base64** y
+  soporta `image/png`, `image/jpeg` y `image/jpg` explícitamente, así que se decodifica y se
+  escribe en disco sin pasar por la red. **Requiere que el conector tenga alcance de lectura**
+  — si no, responde `Insufficient scope` aunque aparezca conectado, y eso se arregla
+  reconectándolo desde Ajustes de conectores de claude.ai (una sola vez).
+  **Y lo que NO funciona de ninguna forma: las imágenes que el usuario PEGA en el chat.**
+  Llegan como contenido de la conversación, no como archivo — se pueden ver pero no guardar.
+  Verificado: `/mnt/user-data/working` existe y queda vacío, y no aparece ningún archivo
+  nuevo en disco. Si el dueño pide "mete tú las imágenes", la respuesta es pedirle Drive (o
+  que las pushee), no buscar la ruta otra vez.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en
