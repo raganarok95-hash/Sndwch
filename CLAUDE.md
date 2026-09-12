@@ -614,9 +614,10 @@ Signature o build.
   no exista canal B2B. Pide sesión, porque el servidor necesita saber a quién cobrarle al
   cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
   login/registro. Distinto de `?group=CODE`, que es unirse a uno existente y NO pide cuenta.
-- **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
-  (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
-  cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
+- **Cuenta**: registro (DNI obligatorio por el formulario normal), login, Google Sign-In
+  (`actGoogleAuth` + `actRegister` con `googleIdToken` — **desde el 2026-09-12 SÍ crea
+  cuenta, en un solo campo**, ver la sección propia más abajo), recuperación de PIN
+  (DNI+fecha nacimiento),
   cerrar sesión en todos los dispositivos, borrar cuenta (anonimiza pedidos/ratings,
   borra datos estrictamente personales).
 - **Otros**: direcciones guardadas, favoritos, calificación post-entrega, "avísame cuando
@@ -856,12 +857,21 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
   **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
   S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
-- **El apio (T08) salió de ARMA EL TUYO el 2026-09-04** (decisión del dueño) pero **NO se borró
-  del catálogo**: pasó a `SIG_ONLY_TOPS`/`sigOnly:true` porque **THE FRESH (SIG04) lo lleva y es
-  su único elemento crocante** — entró ahí el 2026-08-08 justamente porque el pimiento curado
-  no aportaba crocancia. Borrarlo dejaría ese Signature sin la textura por la que se eligió.
-  Es el primer uso real del mecanismo `sigOnly` desde que se fue THE CHICAGO, y la razón por la
-  que este archivo insiste en no borrar esa anotación de tipo "porque nadie la usa".
+- **El apio (T08) está RETIRADO del catálogo desde el 2026-09-12** (decisión del dueño: "chau
+  al apio"). Su historia es la advertencia: salió de ARMA EL TUYO el 2026-09-04 marcándolo
+  `sigOnly` **porque THE FRESH lo llevaba**, y al día siguiente esa receta pasó a atún
+  escurrido + mayonesa + pimienta con `tops:[]`. Desde entonces era un insumo que había que
+  comprar, lavar y picar al momento **para cero pedidos posibles**, y nadie se enteró en una
+  semana — un ingrediente inalcanzable no produce ningún error.
+  **Regla que sale de esto: `sigOnly` sin consumidor no restringe, INHABILITA.** Al sacar un
+  ingrediente del armador hay que verificar que alguna receta lo use, y al cambiar una receta
+  hay que verificar que no deje huérfano a nada. `tests/menu-exclusivity-toppings-sauces.spec.ts`
+  lo comprueba solo ahora: lee `SIGS` y falla nombrando cualquier `sigOnly` que ningún
+  Signature use (verificado inyectando el defecto con la lechuga).
+  El mecanismo `sigOnly` sigue vivo y con consumidores reales — T02 (Pepinillo), P01 (Res) y
+  P05 (Embutido) — así que **la anotación de tipo explícita no se borra "porque nadie la usa"**.
+- **NO habrá opciones vegetarianas** (decisión del dueño, 2026-09-12), aunque la proteína siga
+  siendo obligatoria en ARMA EL TUYO. No proponerlas de nuevo como hueco de catálogo.
 - **+S/2 en el 30CM de las 6 proteínas de ARMA EL TUYO (2026-09-04, decisión del dueño).**
   Quedan: Res 24.90 · Pollo teriyaki 23.90 · Pollo cajún 23.90 · Atún 32.90 · Embutido 32.90 ·
   Albóndiga 26.90. El 30CM era donde el BYO se rompía: pan y proteína se duplican pero el
@@ -1371,12 +1381,93 @@ agrega porque en ese momento "se veía mejor así".
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
 
+
+## "Continuar con Google" crea la cuenta en un solo campo (2026-09-12)
+
+Hasta esta fecha el botón verificaba la identidad y **después mandaba al formulario
+completo**: nombre, teléfono, PIN, DNI, fecha de nacimiento y correo. Ahorraba dos campos de
+seis y seguía siendo un registro — o sea que no era lo que un cliente espera al ver ese
+botón en cualquier otra web.
+
+Ahora queda **un solo campo: el teléfono**, y la decisión de cuáles caen fue del dueño.
+
+**El teléfono no se puede quitar, y no es una decisión de producto.** Es la `PRIMARY KEY` de
+`customers`, con **seis tablas apuntándole por foreign key** (`orders`, `ratings`,
+`favorites`, `saved_addresses`, `transactions`, `credit_ledger`), y además es lo único con lo
+que el negocio ubica a alguien para entregarle el pedido. Google no devuelve teléfono en
+ningún scope de Sign-In. Antes de proponer "cuenta con cero campos", mirar esas seis FK.
+
+Cuatro cosas que no hay que romper:
+
+- **El nombre y el correo se toman del token firmado por Google, NUNCA del cuerpo de la
+  petición.** Si se aceptara lo que manda el cliente, cualquiera podría registrarse con el
+  token de otra persona poniéndole el nombre que quisiera. Por eso la pantalla los muestra
+  como texto y no como input: un campo editable mentiría sobre lo que se va a guardar.
+- **El PIN lo genera el servidor y nunca se muestra.** Quien entra con Google no lo escribe
+  jamás; obligarlo a inventar uno de 4 dígitos era un campo más y una cosa más que recordar.
+  Si algún día pierde su cuenta de Google, "recuperar PIN" le deja fijar uno.
+- **`dni` y `birthday` se guardan como `null`, no como `""`.** Una cadena vacía chocaría con
+  la `UNIQUE` del DNI en cuanto hubiera dos cuentas de Google, y haría que `actRecover`
+  encontrara coincidencia con cualquiera que deje el campo en blanco. Por lo mismo, el
+  término `dni.eq.` **solo entra en el filtro de duplicados si hay DNI**: PostgREST lee
+  `dni.eq.` sin valor como "igual a la cadena vacía" y el `or=()` empieza a traer filas que
+  no tienen nada que ver — incluido el de `deleted_account_identities`, que decide si alguien
+  cobra o no el bono de bienvenida.
+- **`fbTrack('CompleteRegistration')` también se dispara acá.** Sin eso, toda cuenta creada
+  por Google quedaría invisible para Meta y el CAC medido saldría más alto de lo real, justo
+  por el camino que lo baja.
+
+**Dónde aparece el botón** (elegido por el dueño): PUNTOS sin sesión —donde ya estaba—, el
+checkout de invitado **arriba de los campos** (existe para ahorrar escribir; ofrecerlo
+después de que ya escribieron no ahorra nada), y una pantalla de **primera apertura**.
+
+⚠ **La primera apertura es una puerta antes del menú**, y el dueño la aceptó sabiéndolo. Por
+eso "VER LA CARTA" es un botón del mismo ancho que el de Google y no un enlace al pie: quien
+llega de un anuncio quiere ver comida, y una puerta que no se salta de un toque se cierra
+saliendo de la app. La marca `sw_seen_hello` se escribe **al mostrarla, no al salir** — si se
+escribiera al salir, cerrar la pestaña ahí la haría reaparecer para siempre. Y no se
+interpone cuando la URL trae destino propio (`?group=`, `?ref=`, `?entrega=`): ahí romperia
+el link que la persona tocó.
+
+### ⚠ El client id VIAJA DESDE EL SERVIDOR — antes poner el secret no prendía nada
+
+`env.ts` decía que el id "viaja también al cliente, ver `GOOGLE_CLIENT_ID` en `shell.html`".
+**No viajaba, y en `shell.html` no estaba**: el cliente lo tenía escrito a mano en
+`src/app/01-*` como `REEMPLAZA_...` y nada lo sobreescribía. O sea que correr
+`supabase secrets set GOOGLE_CLIENT_ID=...` dejaba el botón igual de invisible, y no había
+manera de enterarse — el único síntoma era la ausencia de un botón.
+
+Desde el 2026-09-12 va en `get-store-hours` (campo `googleClientId`), **mismo patrón que
+`META_PIXEL_ID`**: el client id de Google es público por diseño (viaja en el HTML de cualquier
+sitio que use Sign-In), así que poner el secret **prende el botón sin redesplegar el cliente**.
+El literal de `01-*` es SEMILLA, nunca la fuente.
+
+**Lo que falta es del dueño y no se puede hacer desde una sesión**: crear el OAuth Client ID
+(tipo *Aplicación web*) en **su** Google Cloud Console, con `https://sndwch.app` en los
+orígenes autorizados de JavaScript, y correr `supabase secrets set`. Verificado el 2026-09-12:
+`api.supabase.com` está **bloqueada por el proxy** (`http=000`), no hay `SUPABASE_ACCESS_TOKEN`
+en el entorno de la sesión, y **el MCP de Supabase no tiene ninguna herramienta de secrets**
+(solo migraciones, SQL, edge functions y ramas). No insistir por esa vía.
+
+Nada de esto se ve sin el secret: `googleConfigured()` es falso con el marcador
+`REEMPLAZA_...` y `googleCtaHTML()` devuelve cadena vacía, así que la app sin
+`GOOGLE_CLIENT_ID` se ve exactamente como antes. Por eso `tests/google-en-segundos.spec.ts`
+(7) **inyecta un client id de prueba con un accessor definido antes de que corra el bundle**
+en vez de saltarse las pruebas: una prueba que se salta no protege nada, y alguien podía
+borrar `googleCtaHTML()` del checkout con la suite en verde.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
   Devoluciones (incluida la sección de CANCELACIONES) sin que el usuario lo pida
   explícitamente.
-- **El DNI es obligatorio en el registro** — nunca lo vuelvas opcional ni lo quites.
+- **El DNI es obligatorio en el registro por el formulario normal** — nunca lo vuelvas
+  opcional ni lo quites de ahí. **Única excepción, autorizada explícitamente por el dueño el
+  2026-09-12: el registro con Google no lo pide.** Ahí la recuperación de acceso es volver a
+  entrar con Google, así que el DNI no sostiene nada. La base lo sigue exigiendo por su
+  cuenta con el constraint `customers_dni_o_google` (`dni is not null or google_id is not
+  null`), o sea que la garantía no quedó viviendo solo en el código del servidor. Ampliar
+  esa excepción a otro camino requiere pedido explícito del dueño otra vez.
 - **Nunca inventes datos legales del negocio** (RUC, razón social, dirección) ni fotos
   de producto reales — si falta un dato real, pregunta antes de rellenarlo.
 - **Operaciones git destructivas** (force-push, reset --hard, eliminar ramas) requieren

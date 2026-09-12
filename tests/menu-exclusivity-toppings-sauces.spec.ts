@@ -104,13 +104,19 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
   expect(JSON.stringify(po.body.items)).toContain('T09');
 });
 
-// APIO (T08) — sacado de ARMA EL TUYO el 2026-09-04, pero NO borrado del catálogo.
+// EL APIO (T08) YA NO EXISTE EN EL CATÁLOGO — retirado el 2026-09-12 (decisión del dueño).
 //
-// POR QUÉ SIGUE TENIENDO PRUEBA DESPUÉS DE QUE EL APIO SALIÓ DE TODO (2026-09-05). El apio
-// también salió de THE FRESH cuando el dueño rehizo esa receta a la original de Estados
-// Unidos (atún escurrido, mayonesa y pimienta), así que hoy T08 no tiene ningún consumidor.
-// Lo que se fija acá es que **el mecanismo `sigOnly` siga funcionando**, porque de él dependen
-// ahora T02 (Pepinillo), P01 (Res) y P05 (Embutido) — y esos tres SÍ tienen consumidor.
+// Llevaba una semana en un estado imposible: `sigOnly` desde el 2026-09-04 porque THE FRESH
+// lo llevaba, y el 2026-09-05 esa receta pasó a atún escurrido + mayonesa + pimienta con
+// `tops:[]`. Desde ese día era un insumo que había que comprar, lavar y picar al momento
+// para CERO pedidos posibles, y nada avisaba: un ingrediente inalcanzable no produce ningún
+// error. Se retiró entero, como se retiró T07 (giardiniera) con THE CHICAGO.
+//
+// LA PRUEBA SIGUE, y ahora protege dos cosas distintas:
+//   a) que el mecanismo `sigOnly` siga funcionando — de él dependen T02 (Pepinillo),
+//      P01 (Res) y P05 (Embutido), y esos tres SÍ tienen consumidor;
+//   b) que nadie devuelva T08 al catálogo sin darle un consumidor. Volver a marcarlo
+//      `sigOnly` sin ponerlo en ninguna receta recrea exactamente el mismo agujero.
 //
 // Su modo de fallo es SILENCIO: si el filtro `!x.sigOnly` del armador se rompe, el cliente
 // vuelve a poder armar res y embutido por BYO —las dos que salieron por rentabilidad— sin que
@@ -129,6 +135,8 @@ test('lo marcado como sigOnly no aparece en ARMA EL TUYO, pero sigue en sus Sign
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
   // Un paso más: el queso va antes de los vegetales desde el reorden Subway (2026-09-05).
   await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  // T08 ya no está en ninguna parte del catálogo; T02 sí existe, pero solo dentro de sus
+  // Signatures. Los dos tienen que dar cero acá, por motivos distintos.
   await expect(page.locator('[onclick*="\'T08\'"]')).toHaveCount(0);
   await expect(page.locator('[onclick*="\'T02\'"]')).toHaveCount(0);
   // La lechuga sí, para confirmar que estamos mirando el paso correcto — y porque es
@@ -144,4 +152,37 @@ test('lo marcado como sigOnly no aparece en ARMA EL TUYO, pero sigue en sus Sign
   );
   expect(pepinilloEnRecetas).toContain('SIG01');
   expect(pepinilloEnRecetas).toContain('SIG03');
+});
+
+// Un ingrediente marcado `sigOnly` que ningún Signature usa no restringe nada: lo vuelve
+// IMPOSIBLE DE PEDIR. Eso fue lo que le pasó al apio durante una semana —se seguía
+// comprando, lavando y picando para cero pedidos— y el modo de fallo es SILENCIO: no hay
+// error, no hay tipo que se queje, no hay pantalla que lo diga.
+//
+// Esta prueba lee el catálogo real del cliente y falla si vuelve a pasar con cualquier
+// ingrediente, no solo con el apio.
+test('ningún ingrediente sigOnly queda huérfano: si nadie lo usa, nadie puede pedirlo', async ({ page }) => {
+  await gotoApp(page, {});
+
+  const huerfanos = await page.evaluate(() => {
+    const w = window as any;
+    const usados = new Set<string>();
+    (w.SIGS || []).forEach((sig: any) => {
+      (sig.tops || []).forEach((id: string) => usados.add(id));
+      (sig.sauces || []).forEach((id: string) => usados.add(id));
+      if (sig.prot) usados.add(sig.prot);
+    });
+    const fuera: string[] = [];
+    [['TOPS', w.TOPS], ['SAUCES', w.SAUCES], ['PROTS', w.PROTS]].forEach(([nombre, arr]: any) => {
+      (arr || []).forEach((x: any) => {
+        // vaultOnly queda fuera a propósito: el menú secreto NO vive en SIGS (lo resuelve el
+        // servidor desde `secret_signature`), así que mirar SIGS diría que está huérfano
+        // cuando sí tiene consumidor.
+        if (x.sigOnly && !usados.has(x.id)) fuera.push(nombre + ':' + x.id + ' (' + x.l + ')');
+      });
+    });
+    return fuera;
+  });
+
+  expect(huerfanos, 'marcados sigOnly pero sin ningún Signature que los use — nadie puede pedirlos').toEqual([]);
 });

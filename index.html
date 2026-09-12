@@ -451,6 +451,11 @@ var VAPID_PUBLIC_KEY = 'BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu
 // esto sigue el mismo criterio que CULQI_PUBLIC_KEY/REEMPLAZA: mientras no se reemplace,
 // el botón de Google queda deshabilitado y el registro/login por teléfono+PIN de siempre
 // sigue funcionando igual (ver googleConfigured() y sPAuth()).
+// SEMILLA, no la fuente. El valor real llega en `get-store-hours` (campo googleClientId,
+// ver hours.ts) y lo aplica loadStoreHoursBackground() — así, poner el secret con
+// `supabase secrets set GOOGLE_CLIENT_ID=...` prende el botón SIN redesplegar el cliente,
+// igual que el píxel de Meta. Mientras siga el marcador, googleConfigured() es falso y todo
+// lo de Google no se dibuja: la app se ve exactamente como si no existiera.
 var GOOGLE_CLIENT_ID = 'REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 function googleConfigured() { return GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.indexOf('REEMPLAZA') < 0; }
 var CHARGE_FN_URL = SB_URL + '/functions/v1/create-charge';
@@ -588,15 +593,16 @@ var TOPS = [
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', d: 'Picor limpio y corto, del que no tapa lo demás.', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas', d: 'Salada, con un fondo amargo que despierta el resto.' },
     { id: 'T06', l: 'Pimiento', s: 'Curado', d: 'Curado en aceite: dulce, ahumado y sin nada de agua.' },
-    // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
-    // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
-    // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
-    // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
-    // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
-    // con VALID_TOPS en supabase/functions/api/catalog.ts.
-    // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
-    // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
-    { id: 'T08', l: 'Apio', s: 'Picado', d: 'Se pica al armar, no antes, para que llegue crujiendo.', sigOnly: true },
+    // T08 (Apio) RETIRADO del catálogo el 2026-09-12 (decisión del dueño: "chau al apio").
+    // Había quedado en un estado que no podía durar: salió de ARMA EL TUYO el 2026-09-04
+    // marcándolo sigOnly porque THE FRESH lo llevaba, y el 2026-09-05 THE FRESH pasó a atún
+    // escurrido + mayonesa + pimienta con tops:[]. Desde ese día era un insumo que había que
+    // comprar, lavar y picar al momento para CERO pedidos posibles — y nada avisaba, porque
+    // un ingrediente inalcanzable no produce ningún error.
+    // Para restaurarlo: volver a poner acá
+    //   {id:'T08',l:'Apio',s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.'}
+    // y agregar T08 a VALID_TOPS y TOP_LABEL en supabase/functions/api/catalog.ts (NO a
+    // SIG_ONLY_TOPS, salvo que alguna receta vuelva a llevarlo).
     // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
     // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
     // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
@@ -1760,7 +1766,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '200602ce28';
+var APP_BUILD = '858a0e215c';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2439,6 +2445,11 @@ async function loadStoreHoursBackground() {
             metaPixelId = r.metaPixelId;
             initMetaPixel(r.metaPixelId);
         }
+        // Mismo mecanismo que el píxel: el literal de 01-* es solo la semilla, y el valor real
+        // llega del servidor. Sin esto, poner el secret no prendía "Continuar con Google" y el
+        // único modo de arreglarlo era editar el literal y redesplegar el cliente entero.
+        if (r.googleClientId)
+            GOOGLE_CLIENT_ID = r.googleClientId;
         // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
         // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
         // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.
@@ -2991,6 +3002,21 @@ function sigAvailable(s) { return !s.availableUntil || Date.now() < new Date(s.a
 function CARD(item, sel, fn, right, thumb) {
     var inner = '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + item.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + item.s + '</span>' + (right || '') + '</div>' + (item.d ? '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + item.d + '</p>' : '');
     return '<div onclick="' + fn + '" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? ACC() : 'var(--sw-border,#3A6B58)') + ';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '">' + selBar(sel) + (thumb ? '<div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + inner + '</div></div>' : inner) + '</div>';
+}
+// Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
+// de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
+// Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
+// —PUNTOS sin sesión, el checkout de invitado y la primera apertura— y tres copias del
+// mismo markup se desincronizan a la primera.
+// mountGoogleButton() lo busca por id después de cada render y no hace nada si no está,
+// así que una pantalla que no lo incluya sigue funcionando igual.
+function googleCtaHTML(texto) {
+    if (!googleConfigured())
+        return '';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
+        + '<div id="google-btn-mount"></div>'
+        + (texto ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);text-align:center;max-width:280px;line-height:1.5">' + texto + '</div>' : '')
+        + '</div>';
 }
 function ST(n, t, s) { return '<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">' + (n ? n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' : '') + t + '</h2>' + (s ? '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">' + s + '</p>' : '') + '</div>'; }
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
@@ -5220,6 +5246,10 @@ function checkoutExtrasHTML() {
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
+        // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
+        // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
+        // sesión no lo ve — sería ruido en el paso de pagar.
+        + (!cust ? googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.') : '')
         + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + estimatedRangeText() + '</b> desde que confirmamos tu pedido.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
@@ -6728,14 +6758,16 @@ async function onGoogleCredential(resp) {
             _googleLinkedEmail = (r.prefill && r.prefill.email) || (r.prefill && r.prefill.name) || 'tu cuenta de Google';
             window._lastGuestName = (r.prefill && r.prefill.name) || '';
             window._lastGuestEmail = (r.prefill && r.prefill.email) || '';
-            atab = 'reg';
+            // Antes esto mandaba al formulario COMPLETO (nombre, teléfono, PIN, DNI, fecha de
+            // nacimiento, correo) con un toast explicando lo que faltaba. O sea: "Continuar con
+            // Google" ahorraba dos campos de seis y seguía siendo un registro.
+            // Desde el 2026-09-12 va a una pantalla de UN SOLO CAMPO. El teléfono es lo único
+            // que Google no puede dar y que el negocio necesita de verdad: es la primary key de
+            // `customers` (seis tablas le apuntan por foreign key) y es con lo que se ubica a
+            // alguien para entregarle el pedido.
             aErr = '';
             busy = false;
-            render();
-            // Antes decía solo "DNI y teléfono" — el formulario también exige un PIN nuevo
-            // (mínimo 4 dígitos) para poder crear la cuenta, y quien viene de Google se
-            // enteraba de eso recién al tocar CREAR CUENTA (hallazgo de auditoría UX).
-            showToast('Ya verificamos tu cuenta de Google — completa DNI, teléfono y crea un PIN para terminar tu registro.');
+            go('p_gauth');
             return;
         }
         cust = r.customer;
@@ -6771,6 +6803,112 @@ function discardGoogleLink() {
 // todo el innerHTML en cada ciclo, así que el mount anterior siempre queda destruido y
 // hay que rehacerlo. Sin ruido si el script de Google todavía no cargó (red lenta,
 // bloqueador de contenido) o si GOOGLE_CLIENT_ID no está configurado.
+// ── PRIMERA APERTURA ────────────────────────────────────────────────────────────────
+// Se muestra UNA sola vez, y nunca a quien ya tiene sesión. La marca va en localStorage
+// (`sw_seen_hello`) y se escribe al MOSTRARLA, no al salir: si se escribiera al salir,
+// cerrar la pestaña en esta pantalla la haría reaparecer para siempre.
+//
+// ⚠ Es una puerta antes del menú, y eso tiene un costo real que el dueño aceptó
+// explícitamente al elegirlo. Por eso "Ver la carta" NO es un enlace chiquito al pie: es
+// un botón del mismo ancho que el de Google. Quien llega de un anuncio quiere ver comida,
+// y una puerta que no se puede saltar de un toque se cierra saliendo de la app.
+function saltarHola() { try {
+    localStorage.setItem('sw_seen_hello', '1');
+}
+catch (e) { } go('o_home'); }
+function sHello() {
+    try {
+        localStorage.setItem('sw_seen_hello', '1');
+    }
+    catch (e) { }
+    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:6px;background:var(--sw-bg,#1E3932)" class="fi">'
+        + '<div style="margin-bottom:10px">' + WORDMARK(34) + '</div>'
+        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);text-align:center;text-wrap:balance;line-height:1.2">Sándwiches de verdad,<br>a domicilio en Trujillo</div>'
+        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);text-align:center;line-height:1.55;max-width:300px;margin-top:6px">Crea tu cuenta en un toque y empieza a ganar puntos desde tu primer pedido.</p>'
+        + googleCtaHTML('')
+        + '<div style="width:100%;max-width:280px;margin-top:2px">' + BTN('VER LA CARTA //', 'saltarHola()', true) + '</div>'
+        + '</div>';
+}
+// ── REGISTRO CON GOOGLE: UN SOLO CAMPO ──────────────────────────────────────────────
+// Se llega acá solo después de que el servidor verificó el token de Google y respondió
+// needsRegistration. El nombre y el correo ya vinieron firmados por Google y se muestran
+// para que la persona VEA con qué cuenta está entrando — no son editables acá: el servidor
+// los toma del token y no del cuerpo de la petición, así que un campo editable sería una
+// mentira sobre lo que se va a guardar.
+function sGoogleAuth() {
+    var quien = window._lastGuestName || _googleLinkedEmail || 'tu cuenta de Google';
+    var correo = window._lastGuestEmail || '';
+    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
+        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px;text-wrap:balance">Último<span class="cut-sep" style="color:' + GOLD + '"> // </span>paso</div>'
+        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-bottom:20px">Ya te verificamos con Google. Solo falta tu teléfono — es con lo que te ubicamos para entregarte el pedido.</p>'
+        + '<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'
+        + icon('check', 18, 'var(--sw-ok,#25D366)')
+        + '<div style="min-width:0"><div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(quien) + '</div>'
+        + (correo ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(correo) + '</div>' : '') + '</div></div>'
+        // autocomplete="tel" no es decoración: en Android el navegador ofrece el número
+        // guardado, y entonces este único campo se llena de un toque.
+        + INP('g-phone', 'Teléfono // 9XXXXXXXX', 'tel', '', 'phone', 'tel', 'tel')
+        + '<div style="height:10px"></div>'
+        + INP('g-ref', 'Código de referido // opcional', 'text', refCode, 'gift')
+        + '<div id="gauth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:10px;min-height:16px"></div>'
+        + '<div style="height:14px"></div>'
+        + BTN('CREAR MI CUENTA //', 'doGoogleRegister()')
+        // "No soy yo" existe porque este dispositivo puede ser prestado: sin una salida, quien
+        // lo tomó después queda atrapado en la cuenta de Google de otra persona.
+        + '<div style="text-align:center;margin-top:16px"><button onclick="discardGoogleLink();go(\'p_auth\')" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);min-height:44px;display:inline-flex;align-items:center">No soy yo — registrarme a mano</button></div>'
+        + '</div>';
+}
+async function doGoogleRegister() {
+    var phone = gv('g-phone').trim(), ref = gv('g-ref').trim();
+    var err = document.getElementById('gauth-err');
+    // Mismo mínimo que doOrder() y que actReg en el servidor. Se valida acá además de allá
+    // para que el aviso llegue sin un viaje de red.
+    if (phone.replace(/\D/g, '').length < 6) {
+        fieldCheck(document.getElementById('g-phone'), 'tel', true);
+        if (err)
+            err.textContent = 'Ingresa un teléfono válido.';
+        return;
+    }
+    if (!_googleIdToken) {
+        if (err)
+            err.textContent = 'Tu sesión de Google expiró. Vuelve a tocar el botón de Google.';
+        return;
+    }
+    busy = true;
+    busyMsg = 'Creando tu cuenta...';
+    render();
+    try {
+        // Sin dni, sin bday y sin pin: el servidor los resuelve cuando hay googleIdToken (ver
+        // actRegister). Nombre y correo tampoco se mandan — los toma del token firmado.
+        // Mismas dos claves que usa doReg(): el pedido de invitado que se reclama al crear la
+        // cuenta y de dónde vino la persona. Sin esto, quien pide como invitado y recién
+        // después crea su cuenta con Google perdería los puntos de ese pedido.
+        var r = await api('register', { phone: phone, googleIdToken: _googleIdToken, referredBy: ref || null,
+            claimOrderRef: localStorage.getItem('sw_last_ref') || null,
+            acquisitionSource: localStorage.getItem('sw_src') || null });
+        clearGoogleLink();
+        // Mismo evento que doReg(): sin esto, toda cuenta creada por Google quedaría invisible
+        // para Meta y el CAC medido saldría más alto de lo real justo por el camino que lo baja.
+        fbTrack('CompleteRegistration', { content_name: ref ? 'referido' : 'google' });
+        cust = r.customer;
+        isAdmin = !!r.isAdmin;
+        token = r.token;
+        cacheCust(cust, isAdmin);
+        localStorage.setItem('sw_ph', cust.phone);
+        localStorage.setItem('sw_tok', token);
+        savedPh = cust.phone;
+        busy = false;
+        go('p_welcome');
+        loadUserExtras();
+    }
+    catch (e) {
+        busy = false;
+        render();
+        var e2 = document.getElementById('gauth-err');
+        if (e2)
+            e2.textContent = e.message;
+    }
+}
 function mountGoogleButton() {
     if (!googleConfigured())
         return;
@@ -9487,6 +9625,16 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
         catch (e) { }
     }
     restoreCart();
+    // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
+    // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
+    // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
+    try {
+        if (!token && !localStorage.getItem('sw_seen_hello') && googleConfigured()
+            && !groupCodeFromUrl && !location.search) {
+            sndScreen = 'p_hello';
+        }
+    }
+    catch (e) { }
     render();
     if (token) {
         if (!haveCachedCust) {
@@ -9744,6 +9892,14 @@ function renderScreen() {
         case 'p_auth':
             h = sPAuth();
             break;
+        // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
+        case 'p_gauth':
+            h = sGoogleAuth();
+            break;
+        // Primera apertura. Ver sHello() en 05-*.
+        case 'p_hello':
+            h = sHello();
+            break;
         case 'p_welcome':
             h = sWelcome();
             break;
@@ -9835,8 +9991,11 @@ function renderScreen() {
     document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">' + offlineBanner + updateBanner + h + '</div>';
     window.scrollTo(0, sameScreen ? scrollY : 0);
     _lastRenderedSc = sndScreen;
-    if (sndScreen === 'p_auth')
-        mountGoogleButton();
+    // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias
+    // pantallas (checkout, PUNTOS sin sesión, bienvenida), y mountGoogleButton() ya no hace
+    // nada si no encuentra su punto de anclaje — así que preguntarle a cada render es más
+    // barato que mantener una lista de pantallas que alguien va a olvidar actualizar.
+    mountGoogleButton();
     renderOverlays();
     makeClickablesAccessible();
     // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como

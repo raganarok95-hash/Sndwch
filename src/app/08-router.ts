@@ -307,6 +307,15 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     }catch(e){}
   }
   restoreCart();
+  // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
+  // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
+  // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
+  try{
+    if(!token && !localStorage.getItem('sw_seen_hello') && googleConfigured()
+       && !groupCodeFromUrl && !location.search){
+      sndScreen='p_hello';
+    }
+  }catch(e){}
   render();
   if(token){
     if(!haveCachedCust){busy=true;busyMsg='Verificando tu sesión...';render();}
@@ -510,6 +519,10 @@ function renderScreen(){
     case'o_sides':     h=sOSides();break;
     case'o_sent':      h=sOSent();break;
     case'p_auth':      h=sPAuth();break;
+    // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
+    case'p_gauth':     h=sGoogleAuth();break;
+    // Primera apertura. Ver sHello() en 05-*.
+    case'p_hello':     h=sHello();break;
     case'p_welcome':   h=sWelcome();break;
     case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;
@@ -564,7 +577,11 @@ function renderScreen(){
   (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+updateBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;
-  if(sndScreen==='p_auth')mountGoogleButton();
+  // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias
+  // pantallas (checkout, PUNTOS sin sesión, bienvenida), y mountGoogleButton() ya no hace
+  // nada si no encuentra su punto de anclaje — así que preguntarle a cada render es más
+  // barato que mantener una lista de pantallas que alguien va a olvidar actualizar.
+  mountGoogleButton();
   renderOverlays();
   makeClickablesAccessible();
   // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como

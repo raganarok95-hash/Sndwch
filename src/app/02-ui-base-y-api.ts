@@ -402,6 +402,10 @@ async function loadStoreHoursBackground(){
     }
     businessLaunched=r.businessLaunched===true;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
+    // Mismo mecanismo que el píxel: el literal de 01-* es solo la semilla, y el valor real
+    // llega del servidor. Sin esto, poner el secret no prendía "Continuar con Google" y el
+    // único modo de arreglarlo era editar el literal y redesplegar el cliente entero.
+    if(r.googleClientId)GOOGLE_CLIENT_ID=r.googleClientId;
     // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
     // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
     // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.

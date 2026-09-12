@@ -91,6 +91,11 @@ var VAPID_PUBLIC_KEY='BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3B
 // esto sigue el mismo criterio que CULQI_PUBLIC_KEY/REEMPLAZA: mientras no se reemplace,
 // el botón de Google queda deshabilitado y el registro/login por teléfono+PIN de siempre
 // sigue funcionando igual (ver googleConfigured() y sPAuth()).
+// SEMILLA, no la fuente. El valor real llega en `get-store-hours` (campo googleClientId,
+// ver hours.ts) y lo aplica loadStoreHoursBackground() — así, poner el secret con
+// `supabase secrets set GOOGLE_CLIENT_ID=...` prende el botón SIN redesplegar el cliente,
+// igual que el píxel de Meta. Mientras siga el marcador, googleConfigured() es falso y todo
+// lo de Google no se dibuja: la app se ve exactamente como si no existiera.
 var GOOGLE_CLIENT_ID='REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 function googleConfigured(){return GOOGLE_CLIENT_ID&&GOOGLE_CLIENT_ID.indexOf('REEMPLAZA')<0;}
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
@@ -230,15 +235,16 @@ var TOPS:{id:string;l:string;s:string;d?:string;vaultOnly?:boolean;sigOnly?:bool
   {id:'T04',l:'Jalapeño', s:'Encurtido',d:'Picor limpio y corto, del que no tapa lo demás.',vaultOnly:true},
   {id:'T05',l:'Aceituna', s:'Negra en rodajas',d:'Salada, con un fondo amargo que despierta el resto.'},
   {id:'T06',l:'Pimiento', s:'Curado',d:'Curado en aceite: dulce, ahumado y sin nada de agua.'},
-  // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
-  // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
-  // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
-  // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
-  // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
-  // con VALID_TOPS en supabase/functions/api/catalog.ts.
-  // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
-  // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.',sigOnly:true},
+  // T08 (Apio) RETIRADO del catálogo el 2026-09-12 (decisión del dueño: "chau al apio").
+  // Había quedado en un estado que no podía durar: salió de ARMA EL TUYO el 2026-09-04
+  // marcándolo sigOnly porque THE FRESH lo llevaba, y el 2026-09-05 THE FRESH pasó a atún
+  // escurrido + mayonesa + pimienta con tops:[]. Desde ese día era un insumo que había que
+  // comprar, lavar y picar al momento para CERO pedidos posibles — y nada avisaba, porque
+  // un ingrediente inalcanzable no produce ningún error.
+  // Para restaurarlo: volver a poner acá
+  //   {id:'T08',l:'Apio',s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.'}
+  // y agregar T08 a VALID_TOPS y TOP_LABEL en supabase/functions/api/catalog.ts (NO a
+  // SIG_ONLY_TOPS, salvo que alguna receta vuelva a llevarlo).
   // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
   // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
   // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.

@@ -31,11 +31,19 @@ async function verifyGoogleIdToken(idToken: string): Promise<{ sub: string; emai
   }
 }
 
-// Entrada de "Continuar con Google": si el sub de Google ya está vinculado a una cuenta,
-// inicia sesión directo; si no, NO crea cuenta acá — devuelve needsRegistration para que
-// el cliente complete nombre/teléfono/PIN/DNI en el formulario normal (ver actRegister),
-// que es donde de verdad se exige el DNI. Google nunca reemplaza ese registro, solo lo
-// pre-llena con nombre/correo.
+// Entrada de "Continuar con Google": si el sub ya está vinculado, inicia sesión directo; si
+// no, devuelve needsRegistration con el nombre y el correo que dio Google.
+//
+// Desde el 2026-09-12 lo que queda por completar es UN SOLO CAMPO: el teléfono. Google da
+// nombre, correo e identidad verificada; el DNI y la fecha de nacimiento dejaron de pedirse
+// por este camino (decisión del dueño) y el PIN lo genera el servidor, porque quien entra
+// con Google nunca lo escribe.
+//
+// El teléfono NO se puede evitar y no es una decisión de producto: es la PRIMARY KEY de
+// `customers`, con seis tablas apuntándole por foreign key (orders, ratings, favorites,
+// saved_addresses, transactions, credit_ledger), y además es lo único con lo que el negocio
+// puede ubicar a alguien para entregarle el pedido. Google no devuelve teléfono en ningún
+// scope de Sign-In.
 export async function actGoogleAuth(b: any) {
   const idToken = String(b.idToken || "").trim();
   if (!idToken) throw new ApiError("Falta el token de Google.");
@@ -68,10 +76,10 @@ export async function actRegister(b: any) {
   });
   if (!withinLimit) throw new ApiError("Demasiadas cuentas creadas desde tu conexión. Espera un momento e intenta de nuevo.", 429);
 
-  const name = String(b.name || "").trim();
+  let name = String(b.name || "").trim();
   const phone = String(b.phone || "").trim();
-  const pin = String(b.pin || "").trim();
-  const email = b.email ? String(b.email).trim() : null;
+  let pin = String(b.pin || "").trim();
+  let email = b.email ? String(b.email).trim() : null;
   const dni = String(b.dni || "").trim();
   const bday = String(b.bday || "").trim();
   const referredBy = b.referredBy ? String(b.referredBy).trim() : null;
@@ -81,10 +89,14 @@ export async function actRegister(b: any) {
   // ambas llamadas ocurran en la misma sesión de servidor. DNI/teléfono/PIN se validan
   // exactamente igual que cualquier otro registro; esto solo añade el vínculo de cuenta.
   let googleId: string | null = null;
+  let googleName: string | null = null;
+  let googleEmail: string | null = null;
   if (b.googleIdToken) {
     const info = await verifyGoogleIdToken(String(b.googleIdToken).trim());
     if (!info) throw new ApiError("Tu sesión de Google expiró. Vuelve a intentar con el botón de Google.", 401);
     googleId = info.sub;
+    googleName = info.name;
+    googleEmail = info.email;
   }
   // Origen de campaña paga (?src=... en el link del anuncio, ver captura en el cliente) —
   // distinto de referredBy (referido entre clientes). Se acota a 60 caracteres porque es
@@ -92,26 +104,55 @@ export async function actRegister(b: any) {
   // una lista fija de canales.
   const acquisitionSource = b.acquisitionSource ? String(b.acquisitionSource).trim().slice(0, 60) : null;
 
+  // ── Registro con Google: un solo campo ────────────────────────────────
+  // El nombre y el correo salen del token que Google ya firmó, y NO de lo que manda el
+  // cliente: aceptar el cuerpo de la petición dejaría registrarse con el token de otra
+  // persona y ponerle el nombre que uno quisiera.
+  // El PIN se genera acá y nunca se le muestra — quien entra con Google no lo escribe
+  // jamás, y obligarlo a inventar uno de 4 dígitos era un campo más y una cosa más que
+  // recordar. Si algún día pierde su cuenta de Google, "recuperar PIN" le deja fijar uno.
+  // DNI y fecha de nacimiento quedan en null por este camino, lo que la base permite SOLO
+  // cuando hay google_id (constraint customers_dni_o_google, migración 20260912132141).
+  if (googleId) {
+    if (!name) name = googleName || "";
+    if (!email && googleEmail) email = googleEmail;
+    if (!pin) pin = String(Math.floor(Math.random() * 900000) + 100000);
+  }
   if (!name || !phone || pin.length < 4) throw new ApiError("Completa nombre, teléfono y PIN (mínimo 4 dígitos).");
   // Mismo mínimo que ya exige el teléfono de CONTACTO en el checkout del lado cliente
   // (src/app.ts, doOrder) — el teléfono de CUENTA (login + código de referido) no
   // validaba ningún formato en ningún lado, ni cliente ni servidor (hallazgo de auditoría
   // UX, ALTO).
   if (phone.replace(/\D/g, "").length < 6) throw new ApiError("Ingresa un teléfono válido.");
-  if (!/^\d{8}$/.test(dni)) throw new ApiError("DNI es obligatorio y debe tener 8 dígitos.");
+  // El DNI sigue siendo obligatorio en el registro normal: es lo que sostiene la
+  // recuperación de PIN (actRecover cruza DNI + fecha de nacimiento) y la regla permanente
+  // del proyecto. Solo el camino de Google puede omitirlo, porque ahí recuperar el acceso
+  // es volver a entrar con Google. La base lo vuelve a exigir por su cuenta
+  // (customers_dni_o_google), así que esto no es la única defensa.
+  if (!googleId && !/^\d{8}$/.test(dni)) throw new ApiError("DNI es obligatorio y debe tener 8 dígitos.");
   // Obligatoria (antes opcional) — ver el mismo cambio en doReg/sPAuth (src/app.ts): sin
   // esto, actRecover (recuperar PIN) nunca podía coincidir contra una cuenta con
   // birthday=null, dejándola sin ninguna vía de recuperación (hallazgo de auditoría UX,
   // CRÍTICO).
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(bday)) throw new ApiError("Fecha de nacimiento es obligatoria y debe ser válida.");
+  if (!googleId && !/^\d{4}-\d{2}-\d{2}$/.test(bday)) throw new ApiError("Fecha de nacimiento es obligatoria y debe ser válida.");
+  // Si viene por Google y aun así escribió un DNI o una fecha, se respetan: el formato se
+  // valida cuando hay algo que validar, y nunca se guarda un dato a medio escribir.
+  if (googleId && dni && !/^\d{8}$/.test(dni)) throw new ApiError("El DNI debe tener 8 dígitos.");
+  if (googleId && bday && !/^\d{4}-\d{2}-\d{2}$/.test(bday)) throw new ApiError("La fecha de nacimiento no es válida.");
   if (email && !isValidEmail(email)) throw new ApiError("Correo inválido.");
 
   // Antes eran 2 consultas secuenciales a la misma tabla — un solo `or=()` cubre ambos
   // chequeos de duplicado en un round-trip. El lookup de referido no depende de este
   // resultado, así que corre en paralelo en vez de después.
+  // El término del DNI solo entra si HAY DNI. Por el camino de Google puede venir vacío, y
+  // `dni.eq.` sin valor no es un filtro que no hace nada: PostgREST lo lee como "dni igual a
+  // la cadena vacía" y el `or=()` pasa a traer filas que no tienen nada que ver. La misma
+  // trampa está abajo con deleted_account_identities, donde además decidiría si alguien
+  // cobra o no el bono de bienvenida.
+  const dniTerm = dni ? `,dni.eq.${encodeURIComponent(dni)}` : "";
   const dupeFilter = googleId
-    ? `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)},google_id.eq.${encodeURIComponent(googleId)})&select=phone,dni,google_id`
-    : `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone,dni,google_id`;
+    ? `or=(phone.eq.${encodeURIComponent(phone)}${dniTerm},google_id.eq.${encodeURIComponent(googleId)})&select=phone,dni,google_id`
+    : `or=(phone.eq.${encodeURIComponent(phone)}${dniTerm})&select=phone,dni,google_id`;
   const [dupes, referrerRows, tombstones] = await Promise.all([
     sbGet("customers", dupeFilter),
     referredBy && referredBy !== phone
@@ -120,10 +161,12 @@ export async function actRegister(b: any) {
     // deleted_account_identities: quien ya borró una cuenta con este teléfono o DNI antes
     // no vuelve a recibir el bono de bienvenida al re-registrarse (hallazgo de auditoría,
     // ALTO) — el registro en sí SÍ se permite, no es un bloqueo de cuenta.
-    sbGet("deleted_account_identities", `or=(phone.eq.${encodeURIComponent(phone)},dni.eq.${encodeURIComponent(dni)})&select=phone`),
+    sbGet("deleted_account_identities", `or=(phone.eq.${encodeURIComponent(phone)}${dniTerm})&select=phone`),
   ]);
   if (dupes.some((c: any) => c.phone === phone)) throw new ApiError("Ya existe una cuenta con ese teléfono.", 409);
-  if (dupes.some((c: any) => c.dni === dni)) throw new ApiError("Ya existe una cuenta con ese DNI.", 409);
+  // `dni &&` a propósito: sin eso, dos cuentas de Google (las dos con dni null) chocarían
+  // entre sí con un error que habla de un DNI que ninguna de las dos escribió.
+  if (dni && dupes.some((c: any) => c.dni === dni)) throw new ApiError("Ya existe una cuenta con ese DNI.", 409);
   if (googleId && dupes.some((c: any) => c.google_id === googleId)) throw new ApiError("Esa cuenta de Google ya está vinculada a otro cliente.", 409);
 
   let referredByValid: string | null = null;
@@ -137,8 +180,11 @@ export async function actRegister(b: any) {
     name,
     pin: hashed,
     email,
-    dni,
-    birthday: bday,
+    // null y no "": una cadena vacía chocaría con la UNIQUE del DNI en cuanto hubiera dos
+    // cuentas de Google, y además haría que actRecover encontrara coincidencia con quien no
+    // escriba nada en ese campo.
+    dni: dni || null,
+    birthday: bday || null,
     points: welcomeBonus,
     pending_points: 0,
     total_orders: 0,

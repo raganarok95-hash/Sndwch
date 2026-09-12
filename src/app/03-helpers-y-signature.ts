@@ -152,6 +152,20 @@ function CARD(item,sel,fn,right?,thumb?){
   var inner='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+item.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+item.d+'</p>':'');
   return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
 }
+// Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
+// de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
+// Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
+// —PUNTOS sin sesión, el checkout de invitado y la primera apertura— y tres copias del
+// mismo markup se desincronizan a la primera.
+// mountGoogleButton() lo busca por id después de cada render y no hace nada si no está,
+// así que una pantalla que no lo incluya sigue funcionando igual.
+function googleCtaHTML(texto?){
+  if(!googleConfigured())return'';
+  return'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
+    +'<div id="google-btn-mount"></div>'
+    +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
+    +'</div>';
+}
 function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en

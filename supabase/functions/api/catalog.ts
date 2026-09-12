@@ -93,7 +93,7 @@ export const VALID_BASES = new Set(["B01", "B03"]);
 // de Subway). Era el único ingrediente de su set estándar que no existía en el catálogo, y
 // además el de MAYOR volumen (21 g en el 6-inch) y el más barato por gramo — o sea lo que
 // más hace que un sándwich se vea lleno, por lo que menos cuesta. Ver CAMINO_MENU.md §1.
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T08", "T09"]);
+export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T09"]);
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
@@ -235,7 +235,10 @@ export const SIG_ONLY_SAUCES = new Set<string>([]);
 // armador, la receta lo sigue usando, y deriveCart lo sigue tasando.
 // T02 (Pepinillo) se suma el 2026-09-05: el dueño lo cambia por LECHUGA (T09) en ARMA EL
 // TUYO. No se borra — SIG01 (The Original) y SIG03 (The Smoke) lo llevan en su receta.
-export const SIG_ONLY_TOPS = new Set<string>(["T08", "T02"]);
+// T08 (Apio) salió del Set el 2026-09-12 junto con su retiro del catálogo: estaba acá
+// porque THE FRESH lo llevaba, y esa receta cambió el 2026-09-05. Un id en SIG_ONLY_TOPS
+// que ningún Signature usa no restringe nada — solo lo vuelve imposible de pedir.
+export const SIG_ONLY_TOPS = new Set<string>(["T02"]);
 // P01 (Res) y P05 (Embutido) salen de ARMA EL TUYO el 2026-09-05 (decisión del dueño), por
 // RENTABILIDAD y no por producto. Cada una se pasaba del techo de 45% de costo en un tamaño:
 //   · Res 30CM ....... 47.6%  (el 15CM estaba en 44.2%)
@@ -606,7 +609,6 @@ export const TOP_LABEL: Record<string, string> = {
   T04: "Jalapeño // Encurtido",
   T05: "Aceituna // Negra en rodajas",
   T06: "Pimiento // Curado",
-  T08: "Apio // Picado",
   T09: "Lechuga // Fresca",
 };
 export const SAUCE_LABEL: Record<string, string> = {

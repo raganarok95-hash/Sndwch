@@ -1,7 +1,7 @@
 // SND//WCH — api / actions/hours
 // Horario de atención editable desde el panel admin (antes era un array hardcodeado en
 // env.ts que exigía redesplegar la función para cambiar un horario feriado o de temporada).
-import { STORE_HOURS, loadStoreHours, META_PIXEL_ID, GOOGLE_MAPS_KEY, MAX_ORDERS_PER_HOUR, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
+import { STORE_HOURS, loadStoreHours, META_PIXEL_ID, GOOGLE_CLIENT_ID, GOOGLE_MAPS_KEY, MAX_ORDERS_PER_HOUR, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
 import { sbGet, sbUpdate, sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
@@ -33,6 +33,15 @@ export async function actGetStoreHours(_b: any) {
     // El píxel de Meta se activa solo si el secret existe — así se prende sin redesplegar
     // el cliente, y mientras no esté configurado la app no carga ningún script de terceros.
     metaPixelId: META_PIXEL_ID || null,
+    // El client id de Google es PÚBLICO por diseño (viaja en el HTML de cualquier sitio que
+    // use Sign-In), así que va por el mismo camino que el pixel id. Se manda desde acá y no
+    // se escribe en el cliente para que poner el secret PRENDA el botón sin redesplegar —
+    // exactamente como el píxel.
+    // ⚠ Hasta el 2026-09-12 el cliente lo tenía escrito a mano como 'REEMPLAZA_...' y nada
+    // lo sobreescribía, mientras `env.ts` decía que "viaja también al cliente". O sea que
+    // correr `supabase secrets set GOOGLE_CLIENT_ID=...` no prendía nada y no había forma de
+    // enterarse: el botón simplemente seguía sin aparecer.
+    googleClientId: GOOGLE_CLIENT_ID || null,
     googleMapsKey: GOOGLE_MAPS_KEY || null,
     // El cliente lo usa para mostrar "volvemos a las X" en vez de un genérico "cerrado".
     pausedUntil,
