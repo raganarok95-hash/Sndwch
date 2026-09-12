@@ -20,6 +20,13 @@ const root = path.resolve(__dirname, '..');
 const distDir = path.join(root, 'dist');
 
 function main() {
+  // La política de privacidad como HTML estático, derivada de la MISMA fuente que lee el
+  // cliente. Va acá dentro de `build` y no como paso suelto de `verify` para que sea
+  // imposible publicar un index.html nuevo con una privacidad.html vieja — que es el defecto
+  // que este repo lleva documentado desde los precios fantasma, y en un texto legal la copia
+  // vieja es la que termina delante de un revisor de Google o de un reclamo.
+  execFileSync(process.execPath, [path.join(root, 'scripts/gen-legal-estatico.mjs')], { stdio: 'inherit' });
+
   rmSync(distDir, { recursive: true, force: true });
   execFileSync('npx', ['tsc', '-p', 'tsconfig.build.json'], { cwd: root, stdio: 'inherit' });
 

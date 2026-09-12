@@ -355,6 +355,25 @@ body.kb-open #app{padding-bottom:0}
 </style>
 </head>
 <body>
+<!-- ⚠ LO QUE VE QUIEN NO EJECUTA JAVASCRIPT — y eso incluye al verificador de Google.
+     El 2026-09-12 Google rechazó la verificación de marca con «la página de tu política de
+     privacidad no tiene suficiente contenido»: el texto legal se pinta desde el bundle, así
+     que su rastreador veía una página en blanco. Sin esto, la pantalla de consentimiento de
+     OAuth no se publica nunca y "Continuar con Google" se queda en modo prueba.
+     Google pide además, textual, que la home «describa la funcionalidad de la app», «explique
+     con transparencia para qué pide los datos» e «incluya un enlace a la política de
+     privacidad que COINCIDA con el de la configuración». Esto cumple las tres.
+     Un navegador normal nunca ve este bloque. -->
+<noscript>
+  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#F2F0EB">
+    <h1 style="font-size:1.75rem;margin:0 0 .5rem">SND//WCH</h1>
+    <p style="color:#A8C8B0;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
+    <p>Desde esta aplicación puedes ver la carta, armar tu sándwich —eligiendo pan, proteína, vegetales, salsas y queso— o pedir uno de los Signature de la casa, agregar bebidas, elegir tu dirección, pagar con Yape, Plin o tarjeta, y seguir el estado de tu pedido hasta que llega.</p>
+    <p>Puedes crear una cuenta para acumular puntos y canjearlos por recompensas. Al crearla te pedimos tu teléfono, que es con lo que te ubicamos para entregarte el pedido; si entras con Google, ése es el único dato que te pedimos. Todo lo que recogemos, para qué lo usamos y con quién lo compartimos está detallado acá:</p>
+    <p><strong><a href="/privacidad.html" style="color:#CBA258">Política de Privacidad y Términos del Servicio</a></strong></p>
+    <p>Esta aplicación necesita JavaScript para funcionar. Actívalo para ver la carta y hacer tu pedido.</p>
+  </div>
+</noscript>
 <div id="app"></div>
 <div id="ui-overlays"></div>
 <script>

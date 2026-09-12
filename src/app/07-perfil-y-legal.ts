@@ -197,14 +197,20 @@ async function loadAdmin(){
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;}
   catch(e){adminOrders=[];}
-  // Con la tienda ABIERTA y pedidos esperando, el panel abre directo en modo cocina: es lo
-  // único que se hace con pedidos entrando, y el home mide 4 600 px con 53 controles que hay
-  // que atravesar para llegar. Con la tienda cerrada, o sin pedidos, abre el home de siempre
-  // — que es cuando el panel se usa para administrar y no para cocinar.
-  // `← Salir` sigue estando a un toque, así que no atrapa a nadie.
-  busy=false;startPoll();
-  if(typeof enterFocusMode==='function'&&storeStatus().open&&adminOrders.length)enterFocusMode();
-  else render();
+  // ⚠ ACÁ HUBO UN AUTO-SALTO A MODO COCINA Y SE RETIRÓ EL MISMO DÍA (2026-09-12).
+  // La idea era ahorrar el paso de atravesar el home (4 600 px, 53 controles) con pedidos
+  // entrando. No valía lo que costaba:
+  //  · Ahorraba UN toque. El acceso "Cocina" ya es la primera tarjeta del bloque de servicio
+  //    y la única destacada en dorado, así que el camino ya era corto.
+  //  · Cambiaba la pantalla bajo el dedo de quien abrió el panel para otra cosa — el MISMO
+  //    patrón que se acababa de arreglar dentro del modo cocina, donde un pedido nuevo movía
+  //    el botón de abajo.
+  //  · Y ataba el comportamiento del panel al RELOJ: `storeStatus()` mira la hora de Lima, así
+  //    que el panel abría distinto a las 13:00 que a las 23:00. Eso lo delataron los tests de
+  //    admin, que empezaron a fallar solo de día — con la tienda cerrada pasaban todos.
+  // Si alguna vez se reintenta, tiene que ser una preferencia guardada del dueño, no una
+  // condición de reloj, y los specs de admin necesitan poder apagarla.
+  busy=false;startPoll();render();
 }
 
 // Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para

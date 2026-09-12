@@ -355,6 +355,25 @@ body.kb-open #app{padding-bottom:0}
 </style>
 </head>
 <body>
+<!-- ⚠ LO QUE VE QUIEN NO EJECUTA JAVASCRIPT — y eso incluye al verificador de Google.
+     El 2026-09-12 Google rechazó la verificación de marca con «la página de tu política de
+     privacidad no tiene suficiente contenido»: el texto legal se pinta desde el bundle, así
+     que su rastreador veía una página en blanco. Sin esto, la pantalla de consentimiento de
+     OAuth no se publica nunca y "Continuar con Google" se queda en modo prueba.
+     Google pide además, textual, que la home «describa la funcionalidad de la app», «explique
+     con transparencia para qué pide los datos» e «incluya un enlace a la política de
+     privacidad que COINCIDA con el de la configuración». Esto cumple las tres.
+     Un navegador normal nunca ve este bloque. -->
+<noscript>
+  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#F2F0EB">
+    <h1 style="font-size:1.75rem;margin:0 0 .5rem">SND//WCH</h1>
+    <p style="color:#A8C8B0;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
+    <p>Desde esta aplicación puedes ver la carta, armar tu sándwich —eligiendo pan, proteína, vegetales, salsas y queso— o pedir uno de los Signature de la casa, agregar bebidas, elegir tu dirección, pagar con Yape, Plin o tarjeta, y seguir el estado de tu pedido hasta que llega.</p>
+    <p>Puedes crear una cuenta para acumular puntos y canjearlos por recompensas. Al crearla te pedimos tu teléfono, que es con lo que te ubicamos para entregarte el pedido; si entras con Google, ése es el único dato que te pedimos. Todo lo que recogemos, para qué lo usamos y con quién lo compartimos está detallado acá:</p>
+    <p><strong><a href="/privacidad.html" style="color:#CBA258">Política de Privacidad y Términos del Servicio</a></strong></p>
+    <p>Esta aplicación necesita JavaScript para funcionar. Actívalo para ver la carta y hacer tu pedido.</p>
+  </div>
+</noscript>
 <div id="app"></div>
 <div id="ui-overlays"></div>
 <script>
@@ -1776,7 +1795,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8d9cd0f70b';
+var APP_BUILD = 'dfad961b2b';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -8889,17 +8908,22 @@ async function loadAdmin() {
     catch (e) {
         adminOrders = [];
     }
-    // Con la tienda ABIERTA y pedidos esperando, el panel abre directo en modo cocina: es lo
-    // único que se hace con pedidos entrando, y el home mide 4 600 px con 53 controles que hay
-    // que atravesar para llegar. Con la tienda cerrada, o sin pedidos, abre el home de siempre
-    // — que es cuando el panel se usa para administrar y no para cocinar.
-    // `← Salir` sigue estando a un toque, así que no atrapa a nadie.
+    // ⚠ ACÁ HUBO UN AUTO-SALTO A MODO COCINA Y SE RETIRÓ EL MISMO DÍA (2026-09-12).
+    // La idea era ahorrar el paso de atravesar el home (4 600 px, 53 controles) con pedidos
+    // entrando. No valía lo que costaba:
+    //  · Ahorraba UN toque. El acceso "Cocina" ya es la primera tarjeta del bloque de servicio
+    //    y la única destacada en dorado, así que el camino ya era corto.
+    //  · Cambiaba la pantalla bajo el dedo de quien abrió el panel para otra cosa — el MISMO
+    //    patrón que se acababa de arreglar dentro del modo cocina, donde un pedido nuevo movía
+    //    el botón de abajo.
+    //  · Y ataba el comportamiento del panel al RELOJ: `storeStatus()` mira la hora de Lima, así
+    //    que el panel abría distinto a las 13:00 que a las 23:00. Eso lo delataron los tests de
+    //    admin, que empezaron a fallar solo de día — con la tienda cerrada pasaban todos.
+    // Si alguna vez se reintenta, tiene que ser una preferencia guardada del dueño, no una
+    // condición de reloj, y los specs de admin necesitan poder apagarla.
     busy = false;
     startPoll();
-    if (typeof enterFocusMode === 'function' && storeStatus().open && adminOrders.length)
-        enterFocusMode();
-    else
-        render();
+    render();
 }
 // Extraído a partir de un objeto de pedido directo (no solo por id en adminOrders) para
 // poder reusarse también desde resultados de búsqueda (sndScreen='admin_search', ver #95), que
