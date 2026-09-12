@@ -8,6 +8,16 @@
      tras el zoom automático al enfocar un input, sin forma de volver.
      viewport-fit=cover habilita env(safe-area-inset-*) para el notch/indicador. -->
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Verificación de propiedad del dominio ante Google (Search Console). NO es un secreto:
+     es un valor público que Google lee desde internet para confirmar que quien administra
+     sndwch.app es el dueño de la cuenta. Hace falta para publicar la pantalla de
+     consentimiento de OAuth — Google rechazó la verificación el 2026-09-12 con «el sitio web
+     de tu página principal no está registrado a tu nombre».
+     ⚠ NO SE BORRA NUNCA, ni después de verificar: Google revalida cada cierto tiempo y al no
+     encontrarla revoca la propiedad, lo que tumba la verificación de la marca sin avisar.
+     Va junto con /googlef33f4abec54a9cfb.html, el otro método, a propósito: si uno falla
+     —una caché, un deploy a medias— el otro verifica igual. -->
+<meta name="google-site-verification" content="9Yp0uz00aX46KBsQ6dT7fpVfBycaS6P8qo0dg-3liZc">
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
