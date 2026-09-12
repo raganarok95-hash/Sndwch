@@ -381,7 +381,7 @@ function checkoutExtrasHTML(){
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name','nombre')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+estimatedRangeText()+'</b> desde que confirmamos tu pedido.'+(queueAhead>0?' Ahora mismo hay '+queueAhead+' pedido'+(queueAhead===1?'':'s')+' por delante.':'')+'</span></div></div>':'')
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -1035,7 +1035,13 @@ async function doOrder(){
   var addr=gv('o-addr').trim();
   var notes=gv('o-notes').trim();
   var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-  if(!nom||!addr){if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;}
+  // Además del aviso general de abajo, se marca el campo mismo: un mensaje al pie de un
+  // formulario largo no dice CUÁL de los campos está mal. fieldCheck con force=true es el
+  // mismo camino que usa el blur, así que los dos pintan exactamente igual.
+  if(!nom||!addr){
+    fieldCheck(document.getElementById('o-nom'),'nombre',true);
+    if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;
+  }
   // El distrito es obligatorio: es lo que decide si el pedido se puede entregar (los que
   // están fuera de cobertura ni siquiera son seleccionables, ver districtPickerHTML). Se
   // adjunta al texto de la dirección antes de validar y de mandarlo, así el motorizado lo
@@ -1052,7 +1058,10 @@ async function doOrder(){
   // contactarlo era el mensaje de WhatsApp que él mismo debía enviar tras pagar, y si
   // ese paso fallaba (bloqueo de pop-up, cerró la pestaña) un pedido ya cobrado quedaba
   // sin ninguna manera de ubicar al cliente.
-  if(!phone||phone.replace(/\D/g,'').length<6){if(errEl)errEl.textContent='Ingresa un teléfono de contacto válido.';return;}
+  if(!phone||phone.replace(/\D/g,'').length<6){
+    fieldCheck(document.getElementById('o-phone'),'tel',true);
+    if(errEl)errEl.textContent='Ingresa un teléfono de contacto válido.';return;
+  }
   var schedIso=null;
   if(scheduleMode==='later'){
     var schedEl=(document.getElementById('o-sched') as HTMLInputElement | null);

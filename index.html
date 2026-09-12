@@ -1760,7 +1760,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '7c82a995d1';
+var APP_BUILD = '22f65130e6';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2990,7 +2990,9 @@ function ST(n, t, s) { return '<div style="margin-bottom:20px"><h2 style="font-f
 // puede autocompletar y se incumple WCAG 1.3.5 (identificar el propósito del campo); en un
 // checkout donde se escribe nombre, teléfono y dirección a mano en el celular, además es
 // fricción pura.
-function INP(id, ph, type, val, iconName, ac) {
+// `chk` = clave de FIELD_RULES (ver más abajo) para validar en vivo. Sin ella el input
+// se comporta exactamente como antes — ningún campo gana un aviso por accidente.
+function INP(id, ph, type, val, iconName, ac, chk) {
     var padLeft = iconName ? '44px' : '16px';
     // aria-label derivado del placeholder. Ningún input de la app tenía <label> ni
     // aria-label: el placeholder era la única etiqueta y desaparece apenas se escribe la
@@ -3004,10 +3006,90 @@ function INP(id, ph, type, val, iconName, ac) {
     // numérico (hallazgo de auditoría UX, MEDIO). inputmode="numeric" abre el teclado
     // correcto sin dejar de ocultar el valor tecleado.
     var numAttrs = type === 'password' ? ' inputmode="numeric" pattern="[0-9]*"' : '';
+    // El chequeo corre al salir del campo (blur, con force) y en cada tecla (input, sin
+    // force): así el aviso nunca aparece mientras se escribe por primera vez, pero
+    // desaparece apenas el campo queda bien. `data-chk` lo deja repintable tras un render().
+    var chkAttrs = chk ? ' data-chk="' + chk + '" onblur="fieldCheck(this,\'' + chk + '\',true)" oninput="fieldCheck(this,\'' + chk + '\')"' : '';
     return '<div style="position:relative">'
         + (iconName ? '<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">' + icon(iconName, 16, '#A8C8B0') + '</div>' : '')
-        + '<input id="' + id + '" type="' + (type || 'text') + '"' + numAttrs + acAttr + ' aria-label="' + esc(lbl) + '" placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px ' + padLeft + ';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:' + GOLD + ';box-shadow:' + SHADOW_SM + ';box-sizing:border-box">'
+        + '<input id="' + id + '" type="' + (type || 'text') + '"' + numAttrs + acAttr + chkAttrs + ' aria-label="' + esc(lbl) + '" placeholder="' + ph + '" value="' + esc(val || '') + '" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px ' + padLeft + ';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:' + GOLD + ';box-shadow:' + SHADOW_SM + ';box-sizing:border-box">'
+        + (chk ? '<div id="' + id + '-msg" role="alert" aria-live="polite" style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);margin-top:4px;min-height:13px"></div>' : '')
         + '</div>';
+}
+// Validación en vivo del checkout. DOS reglas y ni una más: son exactamente las que
+// doOrder() ya rechaza al tocar PAGAR (nombre vacío, teléfono con menos de 6 dígitos),
+// copiadas de ahí — y la del teléfono es además la misma que exige actReg en el servidor
+// (actions/auth.ts). Lo que cambia NO es qué se rechaza sino CUÁNDO se entera el cliente:
+// antes armaba el sándwich entero, escribía todo y recién al pagar le decían que el
+// teléfono estaba mal. Mismo defecto que ya obligó a poner el selector de distrito y a
+// pintar tachadas las horas llenas. El teléfono es el que más importa: es el único campo
+// que se ve lleno estando mal, y sin él un pedido ya cobrado no se puede entregar.
+// Dos campos quedan FUERA a propósito:
+// - El CORREO, porque ni doOrder ni place-order lo validan — pintarlo de rojo marcaría
+//   como error algo que el pedido igual acepta.
+// - La DIRECCIÓN, porque su input comparte contenedor con el botón de GPS, que se estira
+//   con `bottom:0`: meterle un mensaje debajo descentraría el botón. Y una dirección
+//   vacía se ve vacía, mientras que un teléfono corto no.
+var FIELD_RULES = {
+    nombre: { ok: function (v) { return v.trim().length > 0; }, msg: 'Necesitamos tu nombre para el pedido.' },
+    tel: { ok: function (v) { return v.replace(/\D/g, '').length >= 6; }, msg: 'Ingresa un teléfono de contacto válido.' }
+};
+// Qué campos ya se marcaron mal. Vive FUERA del DOM a propósito: render() reconstruye
+// todo el innerHTML del checkout en cada toque (recompensa, crédito, horario, dirección
+// guardada), así que un estado guardado en el propio input se perdería y el error se
+// borraría solo sin que el cliente arreglara nada.
+var _fieldBad = {};
+// Pinta el estado de un campo SIN pasar por render(): reconstruir el innerHTML del
+// checkout haría perder el foco y el cursor a mitad de una palabra.
+function paintField(id, msg) {
+    var el = document.getElementById(id);
+    var m = document.getElementById(id + '-msg');
+    if (el) {
+        el.style.borderColor = msg ? 'var(--sw-danger-strong,#ff5555)' : 'var(--sw-border-soft,#1c1c1c)';
+        // aria-invalid además del color: un lector de pantalla no ve el borde rojo, y el
+        // mensaje va en aria-live para que se anuncie al aparecer.
+        el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    }
+    if (m)
+        m.textContent = msg || '';
+}
+// `force` = el cliente ya salió del campo (blur). Mientras escribe por primera vez no se
+// marca nada: un error que aparece en la primera letra es un rechazo antes de que
+// terminara de escribir. Una vez marcado, sí se revisa en cada tecla, para que el aviso
+// desaparezca en el momento exacto en que el campo queda bien.
+function fieldCheck(el, kind, force) {
+    if (!el)
+        return true;
+    var rule = FIELD_RULES[kind];
+    if (!rule)
+        return true;
+    var ok = rule.ok(el.value);
+    if (ok)
+        _fieldBad[el.id] = false;
+    else if (force)
+        _fieldBad[el.id] = true;
+    paintField(el.id, _fieldBad[el.id] ? rule.msg : '');
+    return ok;
+}
+// Re-pinta lo ya marcado después de un render(). Se llama desde la pantalla de checkout,
+// no desde INP(), porque en el momento en que INP() devuelve su string el input todavía
+// no existe en el DOM.
+function repaintFields() {
+    Object.keys(_fieldBad).forEach(function (id) {
+        if (!_fieldBad[id])
+            return;
+        var el = document.getElementById(id);
+        if (!el)
+            return;
+        var kind = el.getAttribute('data-chk') || '';
+        var rule = FIELD_RULES[kind];
+        // Revalida en vez de confiar en la marca vieja: entre un render y otro el valor pudo
+        // cambiar por otra vía (elegir una dirección guardada rellena o-addr sin que nadie
+        // toque el teclado), y dejar el rojo puesto sobre un campo ya correcto sería un
+        // error inventado.
+        if (rule)
+            paintField(id, rule.ok(el.value) ? '' : rule.msg);
+    });
 }
 // box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
 // que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
@@ -3176,6 +3258,9 @@ function initCheckoutFields() {
     lockedMsg = '';
     _payingInProgress = false;
     appliedReward = null;
+    // Un pedido nuevo no arrastra los avisos del anterior: el carrito pasó de vacío a
+    // tener su primer producto, así que el checkout empieza limpio igual que los campos.
+    _fieldBad = {};
 }
 // Antes de cualquier re-render disparado DESDE la propia pantalla de carrito/checkout
 // (toggle de recompensa, horario, crédito, elegir una dirección guardada) hay que
@@ -5125,7 +5210,7 @@ function checkoutExtrasHTML() {
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#1A3028)' : 'var(--sw-card,#2D5246)') + ';border:1px solid ' + (sel ? GOLD : '#3A6B58') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#A8C8B0') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#A8C8B0') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + estimatedRangeText() + '</b> desde que confirmamos tu pedido.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -5920,7 +6005,11 @@ async function doOrder() {
     var addr = gv('o-addr').trim();
     var notes = gv('o-notes').trim();
     var errEl = document.getElementById('o-err');
+    // Además del aviso general de abajo, se marca el campo mismo: un mensaje al pie de un
+    // formulario largo no dice CUÁL de los campos está mal. fieldCheck con force=true es el
+    // mismo camino que usa el blur, así que los dos pintan exactamente igual.
     if (!nom || !addr) {
+        fieldCheck(document.getElementById('o-nom'), 'nombre', true);
         if (errEl)
             errEl.textContent = 'Ingresa tu nombre y dirección.';
         return;
@@ -5950,6 +6039,7 @@ async function doOrder() {
     // ese paso fallaba (bloqueo de pop-up, cerró la pestaña) un pedido ya cobrado quedaba
     // sin ninguna manera de ubicar al cliente.
     if (!phone || phone.replace(/\D/g, '').length < 6) {
+        fieldCheck(document.getElementById('o-phone'), 'tel', true);
         if (errEl)
             errEl.textContent = 'Ingresa un teléfono de contacto válido.';
         return;
@@ -9738,6 +9828,10 @@ function renderScreen() {
         mountGoogleButton();
     renderOverlays();
     makeClickablesAccessible();
+    // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como
+    // inválido perdió su borde rojo y su mensaje. repaintFields() los vuelve a pintar
+    // revalidando el valor actual — es no-op mientras no haya ningún campo marcado.
+    repaintFields();
 }
 
 </script>

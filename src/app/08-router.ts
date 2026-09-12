@@ -567,4 +567,8 @@ function renderScreen(){
   if(sndScreen==='p_auth')mountGoogleButton();
   renderOverlays();
   makeClickablesAccessible();
+  // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como
+  // inválido perdió su borde rojo y su mensaje. repaintFields() los vuelve a pintar
+  // revalidando el valor actual — es no-op mientras no haya ningún campo marcado.
+  repaintFields();
 }
