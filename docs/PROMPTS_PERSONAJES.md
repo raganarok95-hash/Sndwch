@@ -422,20 +422,42 @@ THE TERIYAKI  — caramelised teriyaki chicken, tomato, sweet red pepper, peanut
 ### Las otras dos fotos que hacen falta
 
 ```
-LAS TRES BEBIDAS — Three half-litre clear glass bottles in a row, backlit so the
-light passes through the liquid: pale green mint infusion, dark cold-brewed black
-tea, deep rose hibiscus. Condensation on the glass. Dark warm background falling to
-black. Same warm key light as the sandwich shots. No labels, no text, no garnish,
-no people. Photorealistic, 1600 px minimum, 3:2 landscape.
+LAS TRES BEBIDAS — Three 500 ml CLEAR PET PLASTIC BOTTLES in a row. The bottles
+have a SMOOTH, FLAT-SIDED RECTANGULAR BODY with softly rounded vertical edges —
+no ribs, no grooves, no fluting — a short neck and a MATTE BLACK SCREW CAP.
+Transparent plastic, not glass: no metal lid, no swing-top, no milk-bottle shape.
+BACKLIT so the light passes through the liquid: pale green mint and lemongrass
+infusion, dark cold-brewed black tea, deep rose hibiscus. Whole botanicals
+faintly visible suspended inside each — mint leaves left, tea leaves centre,
+hibiscus flowers right. Condensation on the plastic. NO printed labels, no shrink
+sleeve, no branding. Dark warm background falling to black, same warm key light
+as the sandwich shots. No garnish, no straws, no ice, no hands, no people.
+No text, no logo, no watermark.
+Photorealistic, 1600 px minimum, 3:2 landscape.
 ```
 
+> ⚠ **PLÁSTICO, no vidrio, y no es una decisión de estilo.** Las botellas reales ya están
+> compradas: PET, cuerpo liso rectangular y tapa negra (dato del dueño, 2026-09-12). La
+> primera versión de este prompt pedía vidrio con tapa metálica y salió preciosa — y habría
+> prometido un envase que el cliente nunca recibe, que es la misma clase de defecto que un
+> precio viejo escrito en un texto.
+
 ```
-EL CORTE — Extreme close-up of a long sub sandwich being cut straight down the
-middle with a chef's knife, the two halves just beginning to separate. Focus on
-the blade and the cut face. Same warm key light, same dark wooden surface, same
-deep shadow. No hands beyond the forearm, no props, no text.
+EL CORTE — Extreme close-up of a long sub sandwich on a PLAIN WHITE SUB ROLL — no
+seeds, no sesame, no multigrain — being cut straight down the middle with a chef's
+knife, the two halves just beginning to separate. The filling is slow-cooked
+shredded beef, tomato, pickle and red onion with aioli and honey mustard. NO
+lettuce, NO yellow peppers, NO mustard squeezed on top.
+Focus on the blade and the cut face. Same warm key light from the back left, same
+dark wooden surface, same deep shadow falling to black. A forearm may be visible
+holding the knife, nothing more — no face, no apron, no props, no text, no logo.
 Photorealistic, 1600 px minimum, vertical 9:16.
 ```
+
+> ⚠ **El relleno va especificado aunque ésta sea foto de marca y no de producto.** La primera
+> versión no lo decía, y las dos tandas salieron con pan de ajonjolí, lechuga, pepperoncini y
+> mostaza: un sándwich que no está en el menú. Si el prompt no nombra una receta, el generador
+> dibuja el sándwich genérico de internet.
 
 ### Después de conseguirlas
 
