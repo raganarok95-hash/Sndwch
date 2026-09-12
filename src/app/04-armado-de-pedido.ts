@@ -220,6 +220,26 @@ function sOItemConfirm(){
       // en el pan y el queso llenaría el papel de ceros y escondería lo que sí se cobra.
       return reciboLinea(r.k,(r.p?SOLES+pz(r.p)+' · ':'')+'<span style="font-weight:400">'+r.v+'</span>');
     }).join('')
+    // ⚠ EL ENVÍO FALTABA EN ESTE RECIBO, Y EL TOTAL SÍ LO INCLUÍA (corregido 2026-09-12).
+    // En pago rápido `t` es payableTotal(), o sea cartFinalTotal()+deliveryFeeAmount(): el
+    // papel mostraba «Signature S/20.90 · Tamaño 15CM · TOTAL S/28.90» y esos S/8 no salían
+    // de ninguna línea. Un 38% de más sin una sola palabra que lo explique, en la primera
+    // pantalla donde el cliente ve un precio.
+    //
+    // Es EXACTAMENTE el defecto que el comentario de `var t` de arriba dice haber arreglado
+    // —«un total sin una sola línea que lo explique... la cuenta no se puede seguir»— pero
+    // solo se arregló para el sándwich. Y el recibo del CARRITO sí trae su línea de Envío,
+    // así que los dos papeles que el cliente ve seguidos armaban el total de forma distinta:
+    // justo lo que el comentario de PAPEL_ABRE dice que no puede pasar.
+    //
+    // Se usa el MISMO texto y el mismo criterio que el recibo del carrito (ver reciboCarrito
+    // en 05-*), incluido el «se calcula con tu dirección» en mudo cuando todavía no hay
+    // dirección: sin esa línea, el cliente no sabe si el envío ya está contado o falta sumarlo.
+    +(quickPayEligible
+      ? (deliveryFeeAmount()>0
+          ? reciboLinea(deliveryKmNow()!==null?'Envío · '+deliveryKmNow()+' km':'Envío · estimado por zona',SOLES+pz(deliveryFeeAmount()))
+          : reciboLinea('Envío','se calcula con tu dirección','mudo'))
+      :'')
     +PAPEL_TOTAL('TOTAL',t)
     +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#1A3028)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:'+GOLD+'">+'+SOLES+pz(sizeUpsellDelta)+'</span></div></div>':'')
     +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
