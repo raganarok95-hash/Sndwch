@@ -1474,6 +1474,8 @@ var previewSigId=null;
 var newAddrMsg='',favMsg='';
 var cart=[];
 var groupCodeFromUrl=null;
+// Pantalla legal pedida por ?legal=... — la aplica el arranque en 08-*.
+var legalFromUrl=null;
 // ?grupo=1 — el QR de la tarjeta que va dentro de cada bolsa. Un pedido individual
 // entregado a las 12:30 en una oficina YA es una muestra gratis repartida adentro del
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
@@ -1484,6 +1486,24 @@ var wantsNewGroup=false;
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
   var sc2=qp.get('src');if(sc2)localStorage.setItem('sw_src',sc2.trim().slice(0,60));
+  // ?legal=... — enlace DIRECTO a cada texto legal. Hasta el 2026-09-12 los tres solo se
+  // alcanzaban tocando dentro de la app, así que el negocio no tenía ninguna URL pública que
+  // dar cuando alguien la pide por escrito. Y la piden: Google no publica la pantalla de
+  // consentimiento de OAuth sin un link a la Política de Privacidad y a las Condiciones del
+  // Servicio, y Meta pide lo mismo para verificar el negocio.
+  //
+  // No cambia NI UNA COMA del texto legal — solo agrega una forma de llegar a él. La pantalla
+  // es la misma que ya se ve desde Mi Perfil.
+  var lg=qp.get('legal');
+  if(lg){
+    lg=lg.trim().toLowerCase();
+    // Términos y Política de Privacidad viven en la MISMA pantalla (sPLegal), así que las
+    // dos claves llevan ahí. Google pide dos links distintos y los acepta aunque apunten a
+    // la misma página; lo que no acepta es que no exista ninguno.
+    if(lg==='privacidad'||lg==='terminos'||lg==='términos')legalFromUrl='p_legal';
+    else if(lg==='devoluciones'||lg==='cambios')legalFromUrl='p_returns';
+    else if(lg==='reclamaciones'||lg==='libro')legalFromUrl='p_complaints';
+  }
 }catch(e){}})();
 // Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
 // sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).

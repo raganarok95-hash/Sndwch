@@ -310,7 +310,11 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
   // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
   // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
   // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
-  try{
+  // ?legal=... gana sobre todo lo demás: quien llega con ese link viene a LEER el texto, sea
+  // Google revisando la app o un cliente que lo pidió. Mandarlo al menú primero sería
+  // exactamente lo contrario de lo que el link promete.
+  if(legalFromUrl)sndScreen=legalFromUrl;
+  else try{
     if(!token && !localStorage.getItem('sw_seen_hello') && googleConfigured()
        && !groupCodeFromUrl && !location.search){
       sndScreen='p_hello';
