@@ -127,7 +127,7 @@ function sPOrders(){
       h+=done.map(card).join('');
     }
     if(!myOrders.length){
-      h+=VACIO('Sin pedidos','Cuando hagas el primero, va a aparecer acá con su estado en vivo.',BTN('Hacer un pedido //','swTab(\'order\')'));
+      h+=VACIO('Sin pedidos','Cuando hagas el primero, va a aparecer acá con su estado en vivo.',BTN('Hacer un pedido //','swTab(\'order\')'),'mira');
     }
   }
   h+='<div style="margin-top:14px">'+BTN('Actualizar //','loadMyOrders()',true)+'</div></div>'+NAV();

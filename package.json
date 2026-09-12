@@ -9,7 +9,7 @@
     "check:precios": "node scripts/check-precios-visibles.mjs",
     "check:colores": "node scripts/check-colores.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:poses && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
     "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run build && npm run check:shell",
     "typecheck:api": "node scripts/check-backend.mjs",
     "test:api": "node scripts/check-money.mjs",
@@ -22,7 +22,8 @@
     "check:crons": "node scripts/check-crons.mjs",
     "check:cliente": "node scripts/check-cliente-sin-panel.mjs",
     "check:fotos": "python3 scripts/check_fotos.py",
-    "check:sistema": "node scripts/check-sistema-visual.mjs"
+    "check:sistema": "node scripts/check-sistema-visual.mjs",
+    "check:poses": "node scripts/check-poses.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",

@@ -184,7 +184,15 @@ function INP(id,ph,type?,val?,iconName?,ac?){
 // padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
 // angostos (ej. GUARDAR HORARIO en el panel admin). Hallazgo de la auditoría visual.
 function BTN(l,fn,out?){return'<button onclick="'+fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':GOLD)+';border:'+(out?'1px solid #A8C8B0':'none')+';color:'+(out?'#A8C8B0':'var(--sw-on-gold,#241a08)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
-function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#1E3932)"><div style="margin-bottom:16px">'+WORDMARK(38,true)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
+// El indicador de carga es EL OJO DE WICHO, no una rueda genérica (idea del dueño,
+// 2026-09-12). La espiral ya existía dibujada —SPIRAL() en 02-*, cuyo propio comentario
+// decía que `gira` la convierte en indicador de carga— pero nunca se había usado para
+// eso: la pieza estaba construida y sin enchufar. Una espiral que gira es literalmente
+// lo que ya significa en la marca, así que no hay nada que aprender.
+function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#1E3932)">'
+  +'<div style="margin-bottom:14px">'+SPIRAL(34,'var(--sw-spiral,#C3A6D2)',true)+'</div>'
+  +'<div style="margin-bottom:14px">'+WORDMARK(30,true)+'</div>'
+  +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
 // mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
 // botón atrás) con bloques pulsantes del mismo tamaño que las tarjetas reales, en vez de

@@ -439,6 +439,16 @@ function render(){
     }catch(_){}
   }
 }
+// Pantallas del CLIENTE cuyo contenido es una lista de tarjetas: mientras cargan se pinta
+// el armazón con bloques del tamaño real en vez del splash de pantalla completa. El número
+// es cuántos bloques dibujar — se elige parecido a lo que suele llegar, porque un esqueleto
+// que no se parece a lo que aparece después es peor que un spinner.
+var LIST_SCREENS: Record<string, number> = {
+  p_favorites: 3,
+  p_addresses: 3,
+  p_recurring: 2,
+};
+
 function renderScreen(){
   if(busy){
     var appElBusy=(document.getElementById('app') as HTMLInputElement | null);
@@ -447,6 +457,12 @@ function renderScreen(){
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
     if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
+    // Las pantallas de LISTA del cliente reciben el mismo trato que ya tenía el admin: el
+    // armazón con bloques del tamaño real en vez del splash de pantalla completa. El splash
+    // borra el contexto y deja al cerebro en una espera sin final a la vista; el esqueleto
+    // dice qué viene. Solo aplica donde lo que llega ES una lista de tarjetas — en un cobro
+    // o un login no hay armazón que anticipar y el splash sigue siendo lo correcto.
+    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
