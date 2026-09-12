@@ -381,7 +381,11 @@ function checkoutExtrasHTML(){
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#A8C8B0')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
+    // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
+    // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
+    // sesión no lo ve — sería ruido en el paso de pagar.
+    +(!cust?googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.'):'')
+    +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name','nombre')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#A8C8B0')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+estimatedRangeText()+'</b> desde que confirmamos tu pedido.'+(queueAhead>0?' Ahora mismo hay '+queueAhead+' pedido'+(queueAhead===1?'':'s')+' por delante.':'')+'</span></div></div>':'')
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -1035,7 +1039,13 @@ async function doOrder(){
   var addr=gv('o-addr').trim();
   var notes=gv('o-notes').trim();
   var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-  if(!nom||!addr){if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;}
+  // Además del aviso general de abajo, se marca el campo mismo: un mensaje al pie de un
+  // formulario largo no dice CUÁL de los campos está mal. fieldCheck con force=true es el
+  // mismo camino que usa el blur, así que los dos pintan exactamente igual.
+  if(!nom||!addr){
+    fieldCheck(document.getElementById('o-nom'),'nombre',true);
+    if(errEl)errEl.textContent='Ingresa tu nombre y dirección.';return;
+  }
   // El distrito es obligatorio: es lo que decide si el pedido se puede entregar (los que
   // están fuera de cobertura ni siquiera son seleccionables, ver districtPickerHTML). Se
   // adjunta al texto de la dirección antes de validar y de mandarlo, así el motorizado lo
@@ -1052,7 +1062,10 @@ async function doOrder(){
   // contactarlo era el mensaje de WhatsApp que él mismo debía enviar tras pagar, y si
   // ese paso fallaba (bloqueo de pop-up, cerró la pestaña) un pedido ya cobrado quedaba
   // sin ninguna manera de ubicar al cliente.
-  if(!phone||phone.replace(/\D/g,'').length<6){if(errEl)errEl.textContent='Ingresa un teléfono de contacto válido.';return;}
+  if(!phone||phone.replace(/\D/g,'').length<6){
+    fieldCheck(document.getElementById('o-phone'),'tel',true);
+    if(errEl)errEl.textContent='Ingresa un teléfono de contacto válido.';return;
+  }
   var schedIso=null;
   if(scheduleMode==='later'){
     var schedEl=(document.getElementById('o-sched') as HTMLInputElement | null);
@@ -1554,11 +1567,14 @@ async function onGoogleCredential(resp){
       _googleLinkedEmail=(r.prefill&&r.prefill.email)||(r.prefill&&r.prefill.name)||'tu cuenta de Google';
       window._lastGuestName=(r.prefill&&r.prefill.name)||'';
       window._lastGuestEmail=(r.prefill&&r.prefill.email)||'';
-      atab='reg';aErr='';busy=false;render();
-      // Antes decía solo "DNI y teléfono" — el formulario también exige un PIN nuevo
-      // (mínimo 4 dígitos) para poder crear la cuenta, y quien viene de Google se
-      // enteraba de eso recién al tocar CREAR CUENTA (hallazgo de auditoría UX).
-      showToast('Ya verificamos tu cuenta de Google — completa DNI, teléfono y crea un PIN para terminar tu registro.');
+      // Antes esto mandaba al formulario COMPLETO (nombre, teléfono, PIN, DNI, fecha de
+      // nacimiento, correo) con un toast explicando lo que faltaba. O sea: "Continuar con
+      // Google" ahorraba dos campos de seis y seguía siendo un registro.
+      // Desde el 2026-09-12 va a una pantalla de UN SOLO CAMPO. El teléfono es lo único
+      // que Google no puede dar y que el negocio necesita de verdad: es la primary key de
+      // `customers` (seis tablas le apuntan por foreign key) y es con lo que se ubica a
+      // alguien para entregarle el pedido.
+      aErr='';busy=false;go('p_gauth');
       return;
     }
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
@@ -1582,6 +1598,88 @@ function discardGoogleLink(){
 // todo el innerHTML en cada ciclo, así que el mount anterior siempre queda destruido y
 // hay que rehacerlo. Sin ruido si el script de Google todavía no cargó (red lenta,
 // bloqueador de contenido) o si GOOGLE_CLIENT_ID no está configurado.
+// ── PRIMERA APERTURA ────────────────────────────────────────────────────────────────
+// Se muestra UNA sola vez, y nunca a quien ya tiene sesión. La marca va en localStorage
+// (`sw_seen_hello`) y se escribe al MOSTRARLA, no al salir: si se escribiera al salir,
+// cerrar la pestaña en esta pantalla la haría reaparecer para siempre.
+//
+// ⚠ Es una puerta antes del menú, y eso tiene un costo real que el dueño aceptó
+// explícitamente al elegirlo. Por eso "Ver la carta" NO es un enlace chiquito al pie: es
+// un botón del mismo ancho que el de Google. Quien llega de un anuncio quiere ver comida,
+// y una puerta que no se puede saltar de un toque se cierra saliendo de la app.
+function saltarHola(){try{localStorage.setItem('sw_seen_hello','1');}catch(e){}go('o_home');}
+function sHello(){
+  try{localStorage.setItem('sw_seen_hello','1');}catch(e){}
+  return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:6px;background:var(--sw-bg,#1E3932)" class="fi">'
+    +'<div style="margin-bottom:10px">'+WORDMARK(34)+'</div>'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);text-align:center;text-wrap:balance;line-height:1.2">Sándwiches de verdad,<br>a domicilio en Trujillo</div>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);text-align:center;line-height:1.55;max-width:300px;margin-top:6px">Crea tu cuenta en un toque y empieza a ganar puntos desde tu primer pedido.</p>'
+    +googleCtaHTML('')
+    +'<div style="width:100%;max-width:280px;margin-top:2px">'+BTN('VER LA CARTA //','saltarHola()',true)+'</div>'
+    +'</div>';
+}
+// ── REGISTRO CON GOOGLE: UN SOLO CAMPO ──────────────────────────────────────────────
+// Se llega acá solo después de que el servidor verificó el token de Google y respondió
+// needsRegistration. El nombre y el correo ya vinieron firmados por Google y se muestran
+// para que la persona VEA con qué cuenta está entrando — no son editables acá: el servidor
+// los toma del token y no del cuerpo de la petición, así que un campo editable sería una
+// mentira sobre lo que se va a guardar.
+function sGoogleAuth(){
+  var quien=window._lastGuestName||_googleLinkedEmail||'tu cuenta de Google';
+  var correo=window._lastGuestEmail||'';
+  return H()+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px;text-wrap:balance">Último<span class="cut-sep" style="color:'+GOLD+'"> // </span>paso</div>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-bottom:20px">Ya te verificamos con Google. Solo falta tu teléfono — es con lo que te ubicamos para entregarte el pedido.</p>'
+    +'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'
+      +icon('check',18,'var(--sw-ok,#25D366)')
+      +'<div style="min-width:0"><div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(quien)+'</div>'
+      +(correo?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(correo)+'</div>':'')+'</div></div>'
+    // autocomplete="tel" no es decoración: en Android el navegador ofrece el número
+    // guardado, y entonces este único campo se llena de un toque.
+    +INP('g-phone','Teléfono // 9XXXXXXXX','tel','','phone','tel','tel')
+    +'<div style="height:10px"></div>'
+    +INP('g-ref','Código de referido // opcional','text',refCode,'gift')
+    +'<div id="gauth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:10px;min-height:16px"></div>'
+    +'<div style="height:14px"></div>'
+    +BTN('CREAR MI CUENTA //','doGoogleRegister()')
+    // "No soy yo" existe porque este dispositivo puede ser prestado: sin una salida, quien
+    // lo tomó después queda atrapado en la cuenta de Google de otra persona.
+    +'<div style="text-align:center;margin-top:16px"><button onclick="discardGoogleLink();go(\'p_auth\')" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);min-height:44px;display:inline-flex;align-items:center">No soy yo — registrarme a mano</button></div>'
+    +'</div>';
+}
+async function doGoogleRegister(){
+  var phone=gv('g-phone').trim(),ref=gv('g-ref').trim();
+  var err=(document.getElementById('gauth-err') as HTMLInputElement | null);
+  // Mismo mínimo que doOrder() y que actReg en el servidor. Se valida acá además de allá
+  // para que el aviso llegue sin un viaje de red.
+  if(phone.replace(/\D/g,'').length<6){
+    fieldCheck(document.getElementById('g-phone'),'tel',true);
+    if(err)err.textContent='Ingresa un teléfono válido.';return;
+  }
+  if(!_googleIdToken){if(err)err.textContent='Tu sesión de Google expiró. Vuelve a tocar el botón de Google.';return;}
+  busy=true;busyMsg='Creando tu cuenta...';render();
+  try{
+    // Sin dni, sin bday y sin pin: el servidor los resuelve cuando hay googleIdToken (ver
+    // actRegister). Nombre y correo tampoco se mandan — los toma del token firmado.
+    // Mismas dos claves que usa doReg(): el pedido de invitado que se reclama al crear la
+    // cuenta y de dónde vino la persona. Sin esto, quien pide como invitado y recién
+    // después crea su cuenta con Google perdería los puntos de ese pedido.
+    var r=await api('register',{phone:phone,googleIdToken:_googleIdToken,referredBy:ref||null,
+      claimOrderRef:localStorage.getItem('sw_last_ref')||null,
+      acquisitionSource:localStorage.getItem('sw_src')||null});
+    clearGoogleLink();
+    // Mismo evento que doReg(): sin esto, toda cuenta creada por Google quedaría invisible
+    // para Meta y el CAC medido saldría más alto de lo real justo por el camino que lo baja.
+    fbTrack('CompleteRegistration',{content_name:ref?'referido':'google'});
+    cust=r.customer;isAdmin=!!r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
+    localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
+    busy=false;go('p_welcome');loadUserExtras();
+  }catch(e){
+    busy=false;render();
+    var e2=(document.getElementById('gauth-err') as HTMLInputElement | null);
+    if(e2)e2.textContent=e.message;
+  }
+}
 function mountGoogleButton(){
   if(!googleConfigured())return;
   if(typeof google==='undefined'||!google.accounts||!google.accounts.id)return;

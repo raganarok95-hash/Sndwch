@@ -402,6 +402,10 @@ async function loadStoreHoursBackground(){
     }
     businessLaunched=r.businessLaunched===true;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
+    // Mismo mecanismo que el píxel: el literal de 01-* es solo la semilla, y el valor real
+    // llega del servidor. Sin esto, poner el secret no prendía "Continuar con Google" y el
+    // único modo de arreglarlo era editar el literal y redesplegar el cliente entero.
+    if(r.googleClientId)GOOGLE_CLIENT_ID=r.googleClientId;
     // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
     // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
     // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.
@@ -605,17 +609,20 @@ function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
 // sumar el recargo, la fila "Doble" no se pinta y el upsell de confirmación pasa de largo
 // a la salsa extra. Un solo punto de corte en vez de tres condiciones repetidas.
 //
-// P04 (atún) queda fuera por decisión del dueño (2026-08-21), y el número lo respalda: el
-// recargo `pDbl` es plano pero la porción que agrega SÍ escala con el tamaño, así que en
-// un 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — el negocio PERDÍA S/2.39
-// en cada doble de atún. Además 170g de ensalada de atún en un pan de 30CM es un sándwich
-// que se desarma. El servidor lo rechaza también (NO_DOUBLE_PROTS en catalog.ts): esto
-// solo evita ofrecerlo en la UI.
+// Dos banderas, no una, desde el 2026-09-12: `noDouble` apaga el doble en los dos tamaños y
+// `noDouble30` solo en el de 30CM. Hoy ninguna proteína usa la primera y el atún usa la
+// segunda — ver el comentario largo de P04 en 01-*: el motivo de margen que lo apagó entero
+// murió (hoy deja 70% en los dos tamaños), pero el motivo FÍSICO era específico del 30CM,
+// donde la porción extra son 170 g de ensalada de atún y el sándwich se desarma.
+// El servidor rechaza lo mismo (NO_DOUBLE_PROTS / NO_DOUBLE_30_PROTS en catalog.ts): esto
+// solo evita ofrecerlo en la UI, nunca es la única defensa.
 function dblProtRef(){
   var sig=SIGS.find(function(x){return x.id===sigId;});
   var protId=mode==='sig'?(sig?sig.prot:null):prot;
   var p: any=PROTS.find(function(x){return x.id===protId;});
-  return (p&&p.noDouble)?undefined:p;
+  if(!p||p.noDouble)return undefined;
+  if(p.noDouble30&&size==='30')return undefined;
+  return p;
 }
 // Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
 // pDbl30 en el cliente — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
@@ -702,14 +709,35 @@ function CAB(quien,texto,activo?){
 // aparece WICHO. Dejarlo elegir a mano sería la forma de que un día no coincidan el color
 // de la pantalla y el hermano que la habita.
 //
-// ⚠ SANDO tiene UNA sola pose (`sando_cuerpo.png`) y WICHO cuatro. Eso es dibujo del
-// dueño, no algo que se pueda fabricar acá — está anotado en `marca/PERSONAJES.md`. Por
-// eso esta función no promete poses distintas por situación: usa el cuerpo entero, que es
-// lo único que los dos tienen.
-function VACIO(titulo,texto,cta?){
+// ⚠ LOS DOS HERMANOS NO TIENEN LAS MISMAS POSES, y por eso existe este mapa en vez de
+// concatenar el nombre del estado al del personaje. En `img/` hay hoy siete poses de SANDO
+// (cuerpo, grita, mira, piensa, saluda, serio, sonrie) y cuatro de WICHO (cuerpo, grita,
+// rie, saluda). Pedir `img/wicho_piensa.png` no da un error de compilación ni de runtime:
+// da una imagen rota en la pantalla del cliente, que es el peor sitio para enterarse.
+//
+// Cada estado declara qué archivo usa PARA CADA HERMANO, y donde WICHO no tiene la pose
+// cae a `cuerpo`, que sí existe. Eso deja el hueco a la vista en vez de taparlo: las tres
+// entradas donde WICHO dice 'cuerpo' son exactamente las tres poses que faltan por generar
+// (ver docs/PROMPTS_PERSONAJES.md § 4.3).
+var POSES: Record<string, Record<string, string>> = {
+  cuerpo: { sando: 'cuerpo', wicho: 'cuerpo' },
+  saluda: { sando: 'saluda', wicho: 'saluda' },
+  grita:  { sando: 'grita',  wicho: 'grita'  },
+  alegre: { sando: 'sonrie', wicho: 'rie'    },
+  // WICHO todavía no tiene estas tres:
+  mira:   { sando: 'mira',   wicho: 'cuerpo' },
+  piensa: { sando: 'piensa', wicho: 'cuerpo' },
+  serio:  { sando: 'serio',  wicho: 'cuerpo' },
+};
+function broPose(quien,estado){
+  var fila=POSES[estado||'cuerpo']||POSES.cuerpo;
+  return 'img/'+quien+'_'+(fila[quien]||'cuerpo')+'.png';
+}
+
+function VACIO(titulo,texto,cta?,estado?){
   var quien=ladoActual();
   return'<div style="text-align:center;padding:34px 10px 10px">'
-    +'<img src="img/'+quien+'_cuerpo.png" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
+    +'<img src="'+broPose(quien,estado)+'" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.2em">'+esc(titulo)+' //</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin:10px auto 0;max-width:280px;line-height:1.55">'+texto+'</p>'
     +(cta||'')

@@ -152,6 +152,20 @@ function CARD(item,sel,fn,right?,thumb?){
   var inner='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+item.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+item.d+'</p>':'');
   return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
 }
+// Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
+// de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
+// Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
+// —PUNTOS sin sesión, el checkout de invitado y la primera apertura— y tres copias del
+// mismo markup se desincronizan a la primera.
+// mountGoogleButton() lo busca por id después de cada render y no hace nada si no está,
+// así que una pantalla que no lo incluya sigue funcionando igual.
+function googleCtaHTML(texto?){
+  if(!googleConfigured())return'';
+  return'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
+    +'<div id="google-btn-mount"></div>'
+    +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
+    +'</div>';
+}
 function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
@@ -160,7 +174,9 @@ function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-famil
 // puede autocompletar y se incumple WCAG 1.3.5 (identificar el propósito del campo); en un
 // checkout donde se escribe nombre, teléfono y dirección a mano en el celular, además es
 // fricción pura.
-function INP(id,ph,type?,val?,iconName?,ac?){
+// `chk` = clave de FIELD_RULES (ver más abajo) para validar en vivo. Sin ella el input
+// se comporta exactamente como antes — ningún campo gana un aviso por accidente.
+function INP(id,ph,type?,val?,iconName?,ac?,chk?){
   var padLeft=iconName?'44px':'16px';
   // aria-label derivado del placeholder. Ningún input de la app tenía <label> ni
   // aria-label: el placeholder era la única etiqueta y desaparece apenas se escribe la
@@ -174,17 +190,97 @@ function INP(id,ph,type?,val?,iconName?,ac?){
   // numérico (hallazgo de auditoría UX, MEDIO). inputmode="numeric" abre el teclado
   // correcto sin dejar de ocultar el valor tecleado.
   var numAttrs=type==='password'?' inputmode="numeric" pattern="[0-9]*"':'';
+  // El chequeo corre al salir del campo (blur, con force) y en cada tecla (input, sin
+  // force): así el aviso nunca aparece mientras se escribe por primera vez, pero
+  // desaparece apenas el campo queda bien. `data-chk` lo deja repintable tras un render().
+  var chkAttrs=chk?' data-chk="'+chk+'" onblur="fieldCheck(this,\''+chk+'\',true)" oninput="fieldCheck(this,\''+chk+'\')"':'';
   return'<div style="position:relative">'
     +(iconName?'<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">'+icon(iconName,16,'#A8C8B0')+'</div>':'')
-    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+acAttr+' aria-label="'+esc(lbl)+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
+    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+acAttr+chkAttrs+' aria-label="'+esc(lbl)+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
+    +(chk?'<div id="'+id+'-msg" role="alert" aria-live="polite" style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);margin-top:4px;min-height:13px"></div>':'')
     +'</div>';
+}
+// Validación en vivo del checkout. DOS reglas y ni una más: son exactamente las que
+// doOrder() ya rechaza al tocar PAGAR (nombre vacío, teléfono con menos de 6 dígitos),
+// copiadas de ahí — y la del teléfono es además la misma que exige actReg en el servidor
+// (actions/auth.ts). Lo que cambia NO es qué se rechaza sino CUÁNDO se entera el cliente:
+// antes armaba el sándwich entero, escribía todo y recién al pagar le decían que el
+// teléfono estaba mal. Mismo defecto que ya obligó a poner el selector de distrito y a
+// pintar tachadas las horas llenas. El teléfono es el que más importa: es el único campo
+// que se ve lleno estando mal, y sin él un pedido ya cobrado no se puede entregar.
+// Dos campos quedan FUERA a propósito:
+// - El CORREO, porque ni doOrder ni place-order lo validan — pintarlo de rojo marcaría
+//   como error algo que el pedido igual acepta.
+// - La DIRECCIÓN, porque su input comparte contenedor con el botón de GPS, que se estira
+//   con `bottom:0`: meterle un mensaje debajo descentraría el botón. Y una dirección
+//   vacía se ve vacía, mientras que un teléfono corto no.
+var FIELD_RULES: Record<string,{ok:(v:string)=>boolean,msg:string}> = {
+  nombre:{ok:function(v){return v.trim().length>0;},msg:'Necesitamos tu nombre para el pedido.'},
+  tel:{ok:function(v){return v.replace(/\D/g,'').length>=6;},msg:'Ingresa un teléfono de contacto válido.'}
+};
+// Qué campos ya se marcaron mal. Vive FUERA del DOM a propósito: render() reconstruye
+// todo el innerHTML del checkout en cada toque (recompensa, crédito, horario, dirección
+// guardada), así que un estado guardado en el propio input se perdería y el error se
+// borraría solo sin que el cliente arreglara nada.
+var _fieldBad: Record<string,boolean> = {};
+// Pinta el estado de un campo SIN pasar por render(): reconstruir el innerHTML del
+// checkout haría perder el foco y el cursor a mitad de una palabra.
+function paintField(id,msg){
+  var el=(document.getElementById(id) as HTMLInputElement | null);
+  var m=document.getElementById(id+'-msg');
+  if(el){
+    el.style.borderColor=msg?'var(--sw-danger-strong,#ff5555)':'var(--sw-border-soft,#1c1c1c)';
+    // aria-invalid además del color: un lector de pantalla no ve el borde rojo, y el
+    // mensaje va en aria-live para que se anuncie al aparecer.
+    el.setAttribute('aria-invalid',msg?'true':'false');
+  }
+  if(m)m.textContent=msg||'';
+}
+// `force` = el cliente ya salió del campo (blur). Mientras escribe por primera vez no se
+// marca nada: un error que aparece en la primera letra es un rechazo antes de que
+// terminara de escribir. Una vez marcado, sí se revisa en cada tecla, para que el aviso
+// desaparezca en el momento exacto en que el campo queda bien.
+function fieldCheck(el,kind,force?){
+  if(!el)return true;
+  var rule=FIELD_RULES[kind];
+  if(!rule)return true;
+  var ok=rule.ok(el.value);
+  if(ok)_fieldBad[el.id]=false;
+  else if(force)_fieldBad[el.id]=true;
+  paintField(el.id,_fieldBad[el.id]?rule.msg:'');
+  return ok;
+}
+// Re-pinta lo ya marcado después de un render(). Se llama desde la pantalla de checkout,
+// no desde INP(), porque en el momento en que INP() devuelve su string el input todavía
+// no existe en el DOM.
+function repaintFields(){
+  Object.keys(_fieldBad).forEach(function(id){
+    if(!_fieldBad[id])return;
+    var el=(document.getElementById(id) as HTMLInputElement | null);
+    if(!el)return;
+    var kind=el.getAttribute('data-chk')||'';
+    var rule=FIELD_RULES[kind];
+    // Revalida en vez de confiar en la marca vieja: entre un render y otro el valor pudo
+    // cambiar por otra vía (elegir una dirección guardada rellena o-addr sin que nadie
+    // toque el teclado), y dejar el rojo puesto sobre un campo ya correcto sería un
+    // error inventado.
+    if(rule)paintField(id,rule.ok(el.value)?'':rule.msg);
+  });
 }
 // box-sizing:border-box a propósito — `all:unset` resetea box-sizing a content-box, así
 // que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
 // padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
 // angostos (ej. GUARDAR HORARIO en el panel admin). Hallazgo de la auditoría visual.
 function BTN(l,fn,out?){return'<button onclick="'+fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':GOLD)+';border:'+(out?'1px solid #A8C8B0':'none')+';color:'+(out?'#A8C8B0':'var(--sw-on-gold,#241a08)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
-function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#1E3932)"><div style="margin-bottom:16px">'+WORDMARK(38,true)+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
+// El indicador de carga es EL OJO DE WICHO, no una rueda genérica (idea del dueño,
+// 2026-09-12). La espiral ya existía dibujada —SPIRAL() en 02-*, cuyo propio comentario
+// decía que `gira` la convierte en indicador de carga— pero nunca se había usado para
+// eso: la pieza estaba construida y sin enchufar. Una espiral que gira es literalmente
+// lo que ya significa en la marca, así que no hay nada que aprender.
+function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#1E3932)">'
+  +'<div style="margin-bottom:14px">'+SPIRAL(34,'var(--sw-spiral,#C3A6D2)',true)+'</div>'
+  +'<div style="margin-bottom:14px">'+WORDMARK(30,true)+'</div>'
+  +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
 // mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
 // botón atrás) con bloques pulsantes del mismo tamaño que las tarjetas reales, en vez de
@@ -313,6 +409,9 @@ function initCheckoutFields(){
   checkoutLocked=false;lockedMsg='';
   _payingInProgress=false;
   appliedReward=null;
+  // Un pedido nuevo no arrastra los avisos del anterior: el carrito pasó de vacío a
+  // tener su primer producto, así que el checkout empieza limpio igual que los campos.
+  _fieldBad={};
 }
 // Antes de cualquier re-render disparado DESDE la propia pantalla de carrito/checkout
 // (toggle de recompensa, horario, crédito, elegir una dirección guardada) hay que
@@ -372,24 +471,41 @@ function itemLabel(item){
 //
 // Para un Signature expande la receta desde SIGS por el mismo motivo: el operador no tiene
 // por qué recordar de memoria qué lleva cada uno de los 8, y menos en hora pico.
+// ⚠ UN INGREDIENTE QUE YA NO ESTÁ EN EL CATÁLOGO NO PUEDE DESAPARECER EN SILENCIO.
+// `fn()` devuelve cadena VACÍA cuando no encuentra el id, así que hasta el 2026-09-12 esta
+// función empujaba igual la línea y la pantalla de cocina mostraba «Pan:» seguido de nada.
+// Y si el Signature entero no estaba en SIGS, devolvía [] y `orderRecipeHTML` omitía el
+// bloque completo: un pedido que se ve SIN receta.
+//
+// No es hipotético — este repo ya retiró P07 (res laminada), T07 (giardiniera), T08 (apio),
+// D09 (chai) y SIG07/SIG08. Un pedido programado hecho antes de un retiro, o el historial,
+// cae justo ahí. En la pantalla que dice QUÉ COCINAR, un dato que falta se dice; no se borra.
+function nombreOId(arr,id,etiqueta){
+  if(!id)return '(sin '+etiqueta+')';
+  var n=fn(arr,id);
+  // El id crudo entre paréntesis es feo a propósito: se lee como "esto hay que mirarlo",
+  // que es exactamente lo que hay que hacer.
+  return n||('⚠ '+id+' — ya no está en la carta, confirma con el cliente');
+}
 function itemRecipeLines(item){
   if(item.type==='side')return[];
   var lines=[];
   var base,prot,tops,sauces,cheese;
   if(item.type==='sig'){
     var sig=SIGS.find(function(x){return x.id===item.sigId;});
-    if(!sig)return[];
+    // Antes: `return []`, y el sándwich desaparecía de la comanda sin decir nada.
+    if(!sig)return['⚠ '+(item.sigId||'este Signature')+' ya no está en la carta — llama al cliente antes de armarlo'];
     base=sig.base;prot=sig.prot;tops=sig.tops||[];sauces=sig.sauces||[];
     cheese=sig.fixedCheese||item.cheese||null;
   }else{
     base=item.base;prot=item.prot;tops=item.tops||[];sauces=item.sauces||[];
     cheese=item.cheese||null;
   }
-  lines.push('Pan: '+fn(BASES,base));
-  lines.push('Proteína: '+fn(PROTS,prot)+(item.doubleProt?' (DOBLE)':''));
-  if(cheese)lines.push('Queso: '+fn(CHEESE,cheese));
-  lines.push('Toppings: '+(tops.length?tops.map(function(id){return fn(TOPS,id);}).join(' · '):'sin toppings'));
-  lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return fn(SAUCES,id);}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
+  lines.push('Pan: '+nombreOId(BASES,base,'pan'));
+  lines.push('Proteína: '+nombreOId(PROTS,prot,'proteína')+(item.doubleProt?' (DOBLE)':''));
+  if(cheese)lines.push('Queso: '+nombreOId(CHEESE,cheese,'queso'));
+  lines.push('Toppings: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'topping');}).join(' · '):'sin toppings'));
+  lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return nombreOId(SAUCES,id,'salsa');}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
   if(item.note)lines.push('Nota: '+item.note);
   return lines;
 }

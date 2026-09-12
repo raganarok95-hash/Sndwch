@@ -14,7 +14,7 @@ function sPRecurring(){
   var h=H('MI PEDIDO FIJO',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#F2F0EB)">nunca te cobramos sin que confirmes</b>.</div>';
   if(!myRecurring.length){
-    h+=VACIO('Sin pedidos fijos','Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.');
+    h+=VACIO('Sin pedidos fijos','Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.','','mira');
   }else{
     h+=myRecurring.map(function(r){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:10px">'
@@ -81,7 +81,7 @@ async function loadFavorites(){
 function sPFavorites(){
   var h=H('MIS FAVORITOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(!myFavorites.length){
-    h+=VACIO('Sin favoritos','Guarda un build desde la pantalla de confirmación de tu pedido.');
+    h+=VACIO('Sin favoritos','Guarda un build desde la pantalla de confirmación de tu pedido.','','mira');
   }else{
     h+=myFavorites.map(function(f){
       // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
@@ -129,7 +129,7 @@ function sPAddresses(){
       return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
     }).join('');
   }else{
-    h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.');
+    h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.','','mira');
   }
   h+='<div style="margin-top:20px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
   h+='</div>'+NAV();
@@ -197,6 +197,19 @@ async function loadAdmin(){
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
   try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;}
   catch(e){adminOrders=[];}
+  // ⚠ ACÁ HUBO UN AUTO-SALTO A MODO COCINA Y SE RETIRÓ EL MISMO DÍA (2026-09-12).
+  // La idea era ahorrar el paso de atravesar el home (4 600 px, 53 controles) con pedidos
+  // entrando. No valía lo que costaba:
+  //  · Ahorraba UN toque. El acceso "Cocina" ya es la primera tarjeta del bloque de servicio
+  //    y la única destacada en dorado, así que el camino ya era corto.
+  //  · Cambiaba la pantalla bajo el dedo de quien abrió el panel para otra cosa — el MISMO
+  //    patrón que se acababa de arreglar dentro del modo cocina, donde un pedido nuevo movía
+  //    el botón de abajo.
+  //  · Y ataba el comportamiento del panel al RELOJ: `storeStatus()` mira la hora de Lima, así
+  //    que el panel abría distinto a las 13:00 que a las 23:00. Eso lo delataron los tests de
+  //    admin, que empezaron a fallar solo de día — con la tienda cerrada pasaban todos.
+  // Si alguna vez se reintenta, tiene que ser una preferencia guardada del dueño, no una
+  // condición de reloj, y los specs de admin necesitan poder apagarla.
   busy=false;startPoll();render();
 }
 

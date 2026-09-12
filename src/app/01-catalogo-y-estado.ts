@@ -91,6 +91,11 @@ var VAPID_PUBLIC_KEY='BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3B
 // esto sigue el mismo criterio que CULQI_PUBLIC_KEY/REEMPLAZA: mientras no se reemplace,
 // el botón de Google queda deshabilitado y el registro/login por teléfono+PIN de siempre
 // sigue funcionando igual (ver googleConfigured() y sPAuth()).
+// SEMILLA, no la fuente. El valor real llega en `get-store-hours` (campo googleClientId,
+// ver hours.ts) y lo aplica loadStoreHoursBackground() — así, poner el secret con
+// `supabase secrets set GOOGLE_CLIENT_ID=...` prende el botón SIN redesplegar el cliente,
+// igual que el píxel de Meta. Mientras siga el marcador, googleConfigured() es falso y todo
+// lo de Google no se dibuja: la app se ve exactamente como si no existiera.
 var GOOGLE_CLIENT_ID='REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 function googleConfigured(){return GOOGLE_CLIENT_ID&&GOOGLE_CLIENT_ID.indexOf('REEMPLAZA')<0;}
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
@@ -138,7 +143,7 @@ var BASES=[
 // Los valores nuevos suben SOLO donde el costo pasaba el techo de 45%; donde ya estaba
 // sano no se toca (P06 15CM sigue en 6, que es 22% de costo — el 45% es un techo, no una
 // meta a la que haya que subir). DEBEN coincidir con PROT_PRICE en catalog.ts.
-var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;pDbl30:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean}[]=[
+var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;pDbl30:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean;noDouble30?:boolean}[]=[
   // l/s invertidos (antes 'Asado // Res') — rompía la convención genérico+estilo que
   // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Albóndiga/Marinara): "Res" es
   // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
@@ -160,14 +165,24 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
   // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
   // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
-  // noDouble: el atún es la ÚNICA proteína sin opción de doble (decisión del dueño
-  // 2026-08-21). El recargo pDbl es plano pero la porción que agrega escala con el tamaño:
-  // en 30CM se cobraban S/9 por 170g de atún que cuestan S/11.39 — pérdida real de S/2.39
-  // por unidad, la única operación del catálogo con margen negativo. `pDbl` se deja en 9
-  // a propósito para no romper la paridad con PROT_PRICE.P04 del servidor; lo que apaga la
-  // opción es esta bandera, respetada por dblProtRef() en el cliente y por NO_DOUBLE_PROTS
-  // en supabase/functions/api/catalog.ts.
-  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble:true},
+  // ⚠ EL DOBLE DE ATÚN VUELVE EN 15CM, Y SIGUE APAGADO EN 30CM (2026-09-12, decisión del
+  // dueño). Se había apagado entero el 2026-08-21 por DOS motivos, y solo uno sigue vivo:
+  //
+  //  1. MARGEN — ya no aplica. Decía «en 30CM se cobraban S/9 por 170 g de atún que cuestan
+  //     S/11.39, pérdida real de S/2.39». Las dos mitades de esa frase cambiaron: `pDbl`
+  //     dejó de ser plano AL DÍA SIGUIENTE (se partió en pDbl/pDbl30 el 2026-08-22) y el
+  //     atún se cotizó el 2026-09-04 a S/43.96/kg en vez de los S/67 investigados online.
+  //     Hoy: 15CM cobra 10.90 y cuesta 3.25 (29.8%); 30CM cobra 21.90 y cuesta 6.50 (29.7%).
+  //     Son de los mejores márgenes del catálogo — estaba apagado un upsell que ganaba plata.
+  //  2. FÍSICO — sigue vivo, y por eso el 30CM NO se prende. «170 g de ensalada de atún en
+  //     un pan de 30CM es un sándwich que se desarma». Eso no lo arregla ninguna cotización
+  //     y lo sabe quien lo arma, no el modelo. En 15CM la porción extra son 85 g y ese
+  //     motivo nunca lo describió.
+  //
+  // Para prender también el 30CM: quitar `noDouble30` de acá y "P04" de NO_DOUBLE_30_PROTS
+  // en supabase/functions/api/catalog.ts. Los DOS lados, o el cliente lo ofrece y el
+  // servidor lo rechaza al pagar.
+  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble30:true},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
@@ -230,15 +245,16 @@ var TOPS:{id:string;l:string;s:string;d?:string;vaultOnly?:boolean;sigOnly?:bool
   {id:'T04',l:'Jalapeño', s:'Encurtido',d:'Picor limpio y corto, del que no tapa lo demás.',vaultOnly:true},
   {id:'T05',l:'Aceituna', s:'Negra en rodajas',d:'Salada, con un fondo amargo que despierta el resto.'},
   {id:'T06',l:'Pimiento', s:'Curado',d:'Curado en aceite: dulce, ahumado y sin nada de agua.'},
-  // Nueva 2026-08-08 (decisión del dueño, LLM Council de menú) — reemplaza a Pimiento en
-  // SIG04 (ver SIGS.SIG04 abajo): el pimiento curado es tierno, no aporta crocancia real,
-  // y esa receta quedó con un solo elemento crocante (Pepinillo). Apio picado es el
-  // ingrediente clásico de ensalada de atún para esto exacto — sin proveedor nuevo.
-  // Disponible también en BUILD YOUR OWN (no hay razón para restringirlo). DEBE coincidir
-  // con VALID_TOPS en supabase/functions/api/catalog.ts.
-  // Apio fuera de ARMA EL TUYO el 2026-09-04 (decisión del dueño). NO se borra: THE FRESH
-  // lo lleva y es su único elemento crocante. DEBE coincidir con SIG_ONLY_TOPS en catalog.ts.
-  {id:'T08',l:'Apio',     s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.',sigOnly:true},
+  // T08 (Apio) RETIRADO del catálogo el 2026-09-12 (decisión del dueño: "chau al apio").
+  // Había quedado en un estado que no podía durar: salió de ARMA EL TUYO el 2026-09-04
+  // marcándolo sigOnly porque THE FRESH lo llevaba, y el 2026-09-05 THE FRESH pasó a atún
+  // escurrido + mayonesa + pimienta con tops:[]. Desde ese día era un insumo que había que
+  // comprar, lavar y picar al momento para CERO pedidos posibles — y nada avisaba, porque
+  // un ingrediente inalcanzable no produce ningún error.
+  // Para restaurarlo: volver a poner acá
+  //   {id:'T08',l:'Apio',s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.'}
+  // y agregar T08 a VALID_TOPS y TOP_LABEL en supabase/functions/api/catalog.ts (NO a
+  // SIG_ONLY_TOPS, salvo que alguna receta vuelva a llevarlo).
   // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
   // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
   // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
@@ -1392,6 +1408,16 @@ var rawUploads=null,rawVideoUploading=false;
 var waitlistData=null;
 var bulkSelected={};
 var focusIdx=0;
+// El modo cocina se ancla al ID del pedido, no a su posición en la lista. La lista se
+// reordena sola: el poll trae pedidos nuevos cada 25 s y sortedActiveOrders() los pone
+// donde les toca por prioridad, así que un pedido nuevo puede meterse DELANTE del que el
+// dueño está mirando. Con el ancla en el índice, la pantalla cambiaba de pedido sola y el
+// botón de abajo —mismo sitio, mismo tamaño— pasaba de "marcar EN CAMINO el de Rosa" a
+// "confirmar el pago del nuevo" con el dedo ya bajando. Medido: el onclick pasaba de
+// updateStatus('ROSA','EN CAMINO') a confirmAndAdvance('NUEVO'). Confirmar un pago Yape
+// que nadie miró contra la cuenta es exactamente lo que el lector de comprobantes existe
+// para NO hacer solo.
+var focusRef='';
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
 var NOTIF_SOUND_PRESETS={
@@ -1448,6 +1474,8 @@ var previewSigId=null;
 var newAddrMsg='',favMsg='';
 var cart=[];
 var groupCodeFromUrl=null;
+// Pantalla legal pedida por ?legal=... — la aplica el arranque en 08-*.
+var legalFromUrl=null;
 // ?grupo=1 — el QR de la tarjeta que va dentro de cada bolsa. Un pedido individual
 // entregado a las 12:30 en una oficina YA es una muestra gratis repartida adentro del
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
@@ -1458,6 +1486,24 @@ var wantsNewGroup=false;
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
   var sc2=qp.get('src');if(sc2)localStorage.setItem('sw_src',sc2.trim().slice(0,60));
+  // ?legal=... — enlace DIRECTO a cada texto legal. Hasta el 2026-09-12 los tres solo se
+  // alcanzaban tocando dentro de la app, así que el negocio no tenía ninguna URL pública que
+  // dar cuando alguien la pide por escrito. Y la piden: Google no publica la pantalla de
+  // consentimiento de OAuth sin un link a la Política de Privacidad y a las Condiciones del
+  // Servicio, y Meta pide lo mismo para verificar el negocio.
+  //
+  // No cambia NI UNA COMA del texto legal — solo agrega una forma de llegar a él. La pantalla
+  // es la misma que ya se ve desde Mi Perfil.
+  var lg=qp.get('legal');
+  if(lg){
+    lg=lg.trim().toLowerCase();
+    // Términos y Política de Privacidad viven en la MISMA pantalla (sPLegal), así que las
+    // dos claves llevan ahí. Google pide dos links distintos y los acepta aunque apunten a
+    // la misma página; lo que no acepta es que no exista ninguno.
+    if(lg==='privacidad'||lg==='terminos'||lg==='términos')legalFromUrl='p_legal';
+    else if(lg==='devoluciones'||lg==='cambios')legalFromUrl='p_returns';
+    else if(lg==='reclamaciones'||lg==='libro')legalFromUrl='p_complaints';
+  }
 }catch(e){}})();
 // Pedido grupal / de oficina — organiza el que tiene cuenta (actCreateGroupOrder exige
 // sesión), pero contribuir NO exige cuenta, solo un nombre (ver actAddGroupItem, server).

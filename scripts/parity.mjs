@@ -503,28 +503,38 @@ cmp('RANKS (nombres y umbrales de rango)',
   ranks(app, /var RANKS=\[([\s\S]*?)\];/, 'src/app/'),
   ranks(env, /export const RANKS: \{ name: string; minOrders: number \}\[\] = \[([\s\S]*?)\];/, 'env.ts'));
 
-// Proteínas sin opción de doble. El cliente la esconde con `noDouble`, el servidor la
-// rechaza con NO_DOUBLE_PROTS. Si se separan, o se ofrece un extra que el servidor no
-// cobra, o se cobra uno que el cliente nunca mostró.
-function clientNoDouble() {
+// Proteínas sin opción de doble. Son DOS conjuntos desde el 2026-09-12: `noDouble` apaga el
+// doble en los dos tamaños y `noDouble30` solo en el de 30CM (el atún usa el segundo — ver
+// el comentario de P04). El cliente las esconde, el servidor las rechaza. Si se separan, o
+// se ofrece un extra que el servidor no cobra, o se cobra uno que el cliente nunca mostró.
+//
+// El conjunto de 15CM está VACÍO hoy, y eso es justo lo que hay que poder leer: el parseo
+// tiene que distinguir "vacío" de "no lo encontré". La primera versión de este bloque quedó
+// ciega apenas se agregó el tipo genérico (`new Set<string>([])` no casaba con su regex) y
+// dio un falso positivo. Un chequeo de paridad que no sabe leer un conjunto vacío es
+// exactamente el que se calla el día que alguien lo vacíe sin querer.
+function clientDoubleFlag(flag) {
   const start = app.indexOf('var PROTS');
   if (start < 0) return null;
   const block = app.slice(start, app.indexOf('];', start));
   const out = [];
-  const rx = /\{\s*id:\s*'(P\d+)'[^}]*?noDouble:\s*true/g;
+  // `noDouble` no puede casar dentro de `noDouble30`: se ancla a la coma o la llave previa.
+  const rx = new RegExp(`\\{\\s*id:\\s*'(P\\d+)'[^}]*?[,{]\\s*${flag}:\\s*true`, 'g');
   let m;
   while ((m = rx.exec(block))) out.push(m[1]);
   return out.sort();
 }
-function serverNoDouble() {
-  const m = catalog.match(/export const NO_DOUBLE_PROTS = new Set\(\[([^\]]*)\]\)/);
+function serverDoubleSet(name) {
+  // `<string>` opcional: el conjunto vacío lo necesita para tipar, el lleno lo infiere.
+  const m = catalog.match(new RegExp(`export const ${name} = new Set(?:<string>)?\\(\\[([^\\]]*)\\]\\)`));
   if (!m) {
-    problems.push('NO_DOUBLE_PROTS: no se encontró en catalog.ts — el formato cambió y este script quedó ciego');
+    problems.push(`${name}: no se encontró en catalog.ts — el formato cambió y este script quedó ciego`);
     return null;
   }
   return (m[1].match(/"(P\d+)"/g) ?? []).map((x) => x.replace(/"/g, '')).sort();
 }
-cmp('NO_DOUBLE_PROTS (proteínas sin doble)', clientNoDouble(), serverNoDouble());
+cmp('NO_DOUBLE_PROTS (sin doble en ningún tamaño)', clientDoubleFlag('noDouble'), serverDoubleSet('NO_DOUBLE_PROTS'));
+cmp('NO_DOUBLE_30_PROTS (sin doble solo en 30CM)', clientDoubleFlag('noDouble30'), serverDoubleSet('NO_DOUBLE_30_PROTS'));
 
 // ---------- los supuestos del modelo financiero: env.ts ↔ Python ----------
 //

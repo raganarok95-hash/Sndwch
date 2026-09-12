@@ -614,9 +614,10 @@ Signature o build.
   no exista canal B2B. Pide sesión, porque el servidor necesita saber a quién cobrarle al
   cerrar; si no hay, se anota la intención y `resumeWantedGroup()` la retoma tras el
   login/registro. Distinto de `?group=CODE`, que es unirse a uno existente y NO pide cuenta.
-- **Cuenta**: registro (DNI obligatorio, nunca opcional), login, Google Sign-In
-  (`actGoogleAuth`, solo inicia sesión si el `google_id` ya está vinculado — nunca crea
-  cuenta sin pasar por el registro normal), recuperación de PIN (DNI+fecha nacimiento),
+- **Cuenta**: registro (DNI obligatorio por el formulario normal), login, Google Sign-In
+  (`actGoogleAuth` + `actRegister` con `googleIdToken` — **desde el 2026-09-12 SÍ crea
+  cuenta, en un solo campo**, ver la sección propia más abajo), recuperación de PIN
+  (DNI+fecha nacimiento),
   cerrar sesión en todos los dispositivos, borrar cuenta (anonimiza pedidos/ratings,
   borra datos estrictamente personales).
 - **Otros**: direcciones guardadas, favoritos, calificación post-entrega, "avísame cuando
@@ -856,12 +857,34 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
   **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
   S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
-- **El apio (T08) salió de ARMA EL TUYO el 2026-09-04** (decisión del dueño) pero **NO se borró
-  del catálogo**: pasó a `SIG_ONLY_TOPS`/`sigOnly:true` porque **THE FRESH (SIG04) lo lleva y es
-  su único elemento crocante** — entró ahí el 2026-08-08 justamente porque el pimiento curado
-  no aportaba crocancia. Borrarlo dejaría ese Signature sin la textura por la que se eligió.
-  Es el primer uso real del mecanismo `sigOnly` desde que se fue THE CHICAGO, y la razón por la
-  que este archivo insiste en no borrar esa anotación de tipo "porque nadie la usa".
+- **El doble de atún vuelve en 15CM y sigue apagado en 30CM (2026-09-12).** Se había apagado
+  entero el 2026-08-21 por DOS motivos y solo uno sigue vivo. El de MARGEN murió: decía «en
+  30CM se cobraban S/9 por 170 g de atún que cuestan S/11.39», y las dos mitades cambiaron
+  —`pDbl` se partió en `pDbl`/`pDbl30` AL DÍA SIGUIENTE y el atún se cotizó el 2026-09-04 a
+  S/43.96/kg en vez de S/67. Hoy deja ~70% en los dos tamaños. El FÍSICO sigue: «170 g de
+  ensalada de atún en un pan de 30CM es un sándwich que se desarma», y eso lo sabe quien lo
+  arma, no el modelo. De ahí **dos conjuntos**: `NO_DOUBLE_PROTS` (ningún tamaño, hoy vacío)
+  y `NO_DOUBLE_30_PROTS` (solo 30CM). `npm run parity` compara los dos y `assertDoubleAllowed`
+  es el único punto de corte del servidor — antes la condición estaba repetida palabra por
+  palabra en las dos rutas de tasación. Probado en `tests-api/doble-proteina.test.ts` (7).
+  **Lección para el próximo apagón de producto: un motivo escrito en un comentario caduca.**
+  Este llevaba tres semanas muerto y nadie volvió a mirarlo porque apagar algo no produce
+  ningún error — solo deja de entrar plata.
+- **El apio (T08) está RETIRADO del catálogo desde el 2026-09-12** (decisión del dueño: "chau
+  al apio"). Su historia es la advertencia: salió de ARMA EL TUYO el 2026-09-04 marcándolo
+  `sigOnly` **porque THE FRESH lo llevaba**, y al día siguiente esa receta pasó a atún
+  escurrido + mayonesa + pimienta con `tops:[]`. Desde entonces era un insumo que había que
+  comprar, lavar y picar al momento **para cero pedidos posibles**, y nadie se enteró en una
+  semana — un ingrediente inalcanzable no produce ningún error.
+  **Regla que sale de esto: `sigOnly` sin consumidor no restringe, INHABILITA.** Al sacar un
+  ingrediente del armador hay que verificar que alguna receta lo use, y al cambiar una receta
+  hay que verificar que no deje huérfano a nada. `tests/menu-exclusivity-toppings-sauces.spec.ts`
+  lo comprueba solo ahora: lee `SIGS` y falla nombrando cualquier `sigOnly` que ningún
+  Signature use (verificado inyectando el defecto con la lechuga).
+  El mecanismo `sigOnly` sigue vivo y con consumidores reales — T02 (Pepinillo), P01 (Res) y
+  P05 (Embutido) — así que **la anotación de tipo explícita no se borra "porque nadie la usa"**.
+- **NO habrá opciones vegetarianas** (decisión del dueño, 2026-09-12), aunque la proteína siga
+  siendo obligatoria en ARMA EL TUYO. No proponerlas de nuevo como hueco de catálogo.
 - **+S/2 en el 30CM de las 6 proteínas de ARMA EL TUYO (2026-09-04, decisión del dueño).**
   Quedan: Res 24.90 · Pollo teriyaki 23.90 · Pollo cajún 23.90 · Atún 32.90 · Embutido 32.90 ·
   Albóndiga 26.90. El 30CM era donde el BYO se rompía: pan y proteína se duplican pero el
@@ -1371,12 +1394,141 @@ agrega porque en ese momento "se veía mejor así".
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
 
+
+## "Continuar con Google" crea la cuenta en un solo campo (2026-09-12)
+
+Hasta esta fecha el botón verificaba la identidad y **después mandaba al formulario
+completo**: nombre, teléfono, PIN, DNI, fecha de nacimiento y correo. Ahorraba dos campos de
+seis y seguía siendo un registro — o sea que no era lo que un cliente espera al ver ese
+botón en cualquier otra web.
+
+Ahora queda **un solo campo: el teléfono**, y la decisión de cuáles caen fue del dueño.
+
+**El teléfono no se puede quitar, y no es una decisión de producto.** Es la `PRIMARY KEY` de
+`customers`, con **seis tablas apuntándole por foreign key** (`orders`, `ratings`,
+`favorites`, `saved_addresses`, `transactions`, `credit_ledger`), y además es lo único con lo
+que el negocio ubica a alguien para entregarle el pedido. Google no devuelve teléfono en
+ningún scope de Sign-In. Antes de proponer "cuenta con cero campos", mirar esas seis FK.
+
+Cuatro cosas que no hay que romper:
+
+- **El nombre y el correo se toman del token firmado por Google, NUNCA del cuerpo de la
+  petición.** Si se aceptara lo que manda el cliente, cualquiera podría registrarse con el
+  token de otra persona poniéndole el nombre que quisiera. Por eso la pantalla los muestra
+  como texto y no como input: un campo editable mentiría sobre lo que se va a guardar.
+- **El PIN lo genera el servidor y nunca se muestra.** Quien entra con Google no lo escribe
+  jamás; obligarlo a inventar uno de 4 dígitos era un campo más y una cosa más que recordar.
+  Si algún día pierde su cuenta de Google, "recuperar PIN" le deja fijar uno.
+- **`dni` y `birthday` se guardan como `null`, no como `""`.** Una cadena vacía chocaría con
+  la `UNIQUE` del DNI en cuanto hubiera dos cuentas de Google, y haría que `actRecover`
+  encontrara coincidencia con cualquiera que deje el campo en blanco. Por lo mismo, el
+  término `dni.eq.` **solo entra en el filtro de duplicados si hay DNI**: PostgREST lee
+  `dni.eq.` sin valor como "igual a la cadena vacía" y el `or=()` empieza a traer filas que
+  no tienen nada que ver — incluido el de `deleted_account_identities`, que decide si alguien
+  cobra o no el bono de bienvenida.
+- **`fbTrack('CompleteRegistration')` también se dispara acá.** Sin eso, toda cuenta creada
+  por Google quedaría invisible para Meta y el CAC medido saldría más alto de lo real, justo
+  por el camino que lo baja.
+
+**Dónde aparece el botón** (elegido por el dueño): PUNTOS sin sesión —donde ya estaba—, el
+checkout de invitado **arriba de los campos** (existe para ahorrar escribir; ofrecerlo
+después de que ya escribieron no ahorra nada), y una pantalla de **primera apertura**.
+
+⚠ **La primera apertura es una puerta antes del menú**, y el dueño la aceptó sabiéndolo. Por
+eso "VER LA CARTA" es un botón del mismo ancho que el de Google y no un enlace al pie: quien
+llega de un anuncio quiere ver comida, y una puerta que no se salta de un toque se cierra
+saliendo de la app. La marca `sw_seen_hello` se escribe **al mostrarla, no al salir** — si se
+escribiera al salir, cerrar la pestaña ahí la haría reaparecer para siempre. Y no se
+interpone cuando la URL trae destino propio (`?group=`, `?ref=`, `?entrega=`): ahí romperia
+el link que la persona tocó.
+
+### ⚠ El client id VIAJA DESDE EL SERVIDOR — antes poner el secret no prendía nada
+
+`env.ts` decía que el id "viaja también al cliente, ver `GOOGLE_CLIENT_ID` en `shell.html`".
+**No viajaba, y en `shell.html` no estaba**: el cliente lo tenía escrito a mano en
+`src/app/01-*` como `REEMPLAZA_...` y nada lo sobreescribía. O sea que correr
+`supabase secrets set GOOGLE_CLIENT_ID=...` dejaba el botón igual de invisible, y no había
+manera de enterarse — el único síntoma era la ausencia de un botón.
+
+Desde el 2026-09-12 va en `get-store-hours` (campo `googleClientId`), **mismo patrón que
+`META_PIXEL_ID`**: el client id de Google es público por diseño (viaja en el HTML de cualquier
+sitio que use Sign-In), así que poner el secret **prende el botón sin redesplegar el cliente**.
+El literal de `01-*` es SEMILLA, nunca la fuente.
+
+**Lo que falta es del dueño y no se puede hacer desde una sesión**: crear el OAuth Client ID
+(tipo *Aplicación web*) en **su** Google Cloud Console, con `https://sndwch.app` en los
+orígenes autorizados de JavaScript, y correr `supabase secrets set`. Verificado el 2026-09-12:
+`api.supabase.com` está **bloqueada por el proxy** (`http=000`), no hay `SUPABASE_ACCESS_TOKEN`
+en el entorno de la sesión, y **el MCP de Supabase no tiene ninguna herramienta de secrets**
+(solo migraciones, SQL, edge functions y ramas). No insistir por esa vía.
+
+Nada de esto se ve sin el secret: `googleConfigured()` es falso con el marcador
+`REEMPLAZA_...` y `googleCtaHTML()` devuelve cadena vacía, así que la app sin
+`GOOGLE_CLIENT_ID` se ve exactamente como antes. Por eso `tests/google-en-segundos.spec.ts`
+(7) **inyecta un client id de prueba con un accessor definido antes de que corra el bundle**
+en vez de saltarse las pruebas: una prueba que se salta no protege nada, y alguien podía
+borrar `googleCtaHTML()` del checkout con la suite en verde.
+
+## El modo cocina se rehizo contra un celular de gama baja (2026-09-12)
+
+El dueño opera con un **celular aparte, de gama baja, dedicado a la tienda abierta**. Todo lo
+que sigue salió de **renderizar la pantalla real a 360×640** (viewport CSS típico de gama
+baja), no de suponer. `docs/AUDITORIA_PANEL_ADMIN.md` tiene la medición completa.
+
+- **Un pedido medía 1 239 px en una ventana útil de 429**, y la barra fija cortaba la receta
+  a media palabra —en "Proteína:" del 30CM— con un corte tan limpio que parecía el borde de
+  la tarjeta. Ahora la receta **entra entera sin scroll**: se fundieron las dos barras
+  superiores en una (el rótulo "Modo // cocina" se comía 44 px para decir algo que el dueño
+  ya sabe), el nombre del cliente bajó a "Para entregar" —sirve para despachar, no para
+  armar— y hay un degradado que avisa que hay más abajo.
+- **El degradado va DENTRO de la barra fija**, anclado con `translateY(-100%)`, no a una
+  distancia fija del fondo: la barra cambia de alto según el pedido (un pago sin confirmar
+  le agrega una línea), así que cualquier número escrito a mano se desalinea en la mitad de
+  los casos.
+- **Wake Lock mientras el modo cocina está abierto.** Sin él la pantalla se apaga sola en
+  30 s–1 min y cada aviso obliga a desbloquear con las manos grasosas. Tres cosas: todo en
+  `try/catch` (la API no existe en todos los navegadores), **se vuelve a pedir en
+  `visibilitychange`** —el sistema lo suelta al cambiar de app y no lo devuelve solo, así que
+  sin eso funciona una vez y después no, que es peor que no tenerlo— y **se suelta al salir**,
+  porque dejar la pantalla encendida toda la noche quema la batería del celular dedicado.
+- **Cuatro accesos de servicio en el home, solo con la tienda ABIERTA** (`storeStatus()`, sin
+  interruptor nuevo: un modo que hay que acordarse de apagar se queda prendido). Cocina,
+  Pagos, Inventario y Salud — las únicas decisiones que se toman con pedidos entrando. El
+  botón de Pagos **baja a la cola del mismo home** en vez de abrir otra pantalla: dos listas
+  del mismo dato terminan contradiciéndose.
+- **Con la tienda abierta y pedidos en cola, el panel abre DIRECTO en modo cocina.** El home
+  mide 4 600 px con 53 controles; atravesarlo para llegar a cocinar era el camino de todos
+  los días. `← Salir` sigue a un toque.
+
+### ⚠ La receta no puede callar un ingrediente retirado
+
+`fn()` devuelve **cadena vacía** cuando no encuentra un id, así que la comanda mostraba
+**«Pan:»** seguido de nada — y si el Signature entero faltaba en `SIGS`, `itemRecipeLines`
+devolvía `[]` y el bloque desaparecía: **un pedido que se ve SIN receta**. No es hipotético:
+este repo ya retiró P07, T07, T08, D09 y SIG07/SIG08, y un pedido programado o el historial
+cae justo ahí. Ahora dice el id y «ya no está en la carta». En la pantalla que dice qué
+cocinar, un dato que falta se dice; no se borra.
+
+### Medir un DOM con animación de entrada da tamaños encogidos
+
+`tests/modo-cocina-gama-baja.spec.ts` fija todo lo anterior, y su primera versión reportó un
+defecto falso: el enlace de Maps medía **43.34 px** con `min-height:44px` puesto. La causa era
+medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquier prueba que
+mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
+existen y, peor, deja de distinguir el día que sí existan.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y
   Devoluciones (incluida la sección de CANCELACIONES) sin que el usuario lo pida
   explícitamente.
-- **El DNI es obligatorio en el registro** — nunca lo vuelvas opcional ni lo quites.
+- **El DNI es obligatorio en el registro por el formulario normal** — nunca lo vuelvas
+  opcional ni lo quites de ahí. **Única excepción, autorizada explícitamente por el dueño el
+  2026-09-12: el registro con Google no lo pide.** Ahí la recuperación de acceso es volver a
+  entrar con Google, así que el DNI no sostiene nada. La base lo sigue exigiendo por su
+  cuenta con el constraint `customers_dni_o_google` (`dni is not null or google_id is not
+  null`), o sea que la garantía no quedó viviendo solo en el código del servidor. Ampliar
+  esa excepción a otro camino requiere pedido explícito del dueño otra vez.
 - **Nunca inventes datos legales del negocio** (RUC, razón social, dirección) ni fotos
   de producto reales — si falta un dato real, pregunta antes de rellenarlo.
 - **Operaciones git destructivas** (force-push, reset --hard, eliminar ramas) requieren
@@ -1656,6 +1808,50 @@ lo que **no** es un problema aunque lo parezca.
     actual de correo/texto-plano, un solo flujo más seguro para el 100% de las cuentas.
   - Retomar cuando haya volumen real de recuperaciones de cuenta que justifique el costo
     y la fricción de configurar el número en Meta Business Platform — no antes.
+- **Conectarse a Google Flow desde una sesión: NO se puede desde acá, y el motivo no es que no
+  exista la herramienta — es dónde vive (investigado 2026-09-11).** Tres datos:
+  1. **Flow no tiene API pública.** El acceso programático a sus mismos modelos va por la
+     **Gemini API / Vertex AI**, o sea **Veo** — exactamente lo que se retiró el 2026-09-10 por
+     costar US$0.10-0.15 por segundo y duplicar el proceso que el dueño ya tiene. "Conectarse a
+     Flow por API" y "volver a poner Veo" son la misma cosa con otro nombre.
+  2. **Sí existen MCP de Flow, pero son LOCALES y de terceros** (`hitjcl/google-flow-mcp`,
+     `Mitanshp5/Google-Flow_MCP`, `gabrielgargiulodev/google-flow-mcp`). Funcionan manejando un
+     Chrome **ya logueado en la cuenta del dueño** por CDP — o sea que necesitan su máquina y su
+     sesión de Google. En un contenedor remoto y efímero como este no hay ninguna de las dos. Y
+     conviene decirlo: son paquetes de la comunidad a los que se les entrega el control de un
+     navegador con la cuenta de Google abierta.
+  3. **El proxy lo confirma**: `labs.google` (donde vive Flow) no responde, mientras que
+     `generativelanguage.googleapis.com` y `aiplatform.googleapis.com` **sí son alcanzables**
+     (404 en la raíz, que es respuesta real). O sea que técnicamente Veo se podría llamar desde
+     una sesión — lo que lo impide es la decisión de costo ya tomada, no la red.
+  La vía real, si el dueño la quiere: instalar uno de esos MCP en **su** Claude Code local.
+  **El dueño lo pidió el 2026-09-11 y la guía quedó en `docs/FLOW_EN_TU_LAPTOP.md`**, escrita
+  leyendo los README reales por `raw.githubusercontent.com` (que NO está bloqueado), no de
+  memoria. Los tres NO son equivalentes y la comparación decide: **`hitjcl/google-flow-mcp`** se
+  instala con un comando (`claude mcp add --scope user google-flow -- npx -y
+  google-flow-browser-mcp`), está hecho para Claude Code, **usa un perfil de navegador propio en
+  `~/.google-flow-creator/` en vez del Chrome del dueño**, dice explícitamente que no lee ni
+  guarda contraseñas ni 2FA, y **pide confirmación antes de cada generación que gasta créditos**.
+  El de `Mitanshp5` usa o copia el perfil real de Chrome y no menciona ninguna de esas dos
+  salvaguardas; lo único que tiene de más son personajes y escenas, que conviene hacer a mano
+  desde la interfaz de Flow igual.
+  **Y lo primero que hay que hacer ahí no es un video: es crear a SANDO, WICHO y MAFE como
+  PERSONAJES de Flow**, subiendo `sando_sonrie.png` y `wicho_rie.png` — los BUSTOS, no los
+  `_cuerpo`, que traen pegada la elipse de sombra del piso. Eso es lo que resuelve que el estilo
+  no viaje en palabras, que es el defecto probado en la regla 5 de
+  `docs/PROMPTS_PERSONAJES.md`.
+- **`mcp__Gamma__generate_image` SÍ existe y funciona — corrige lo que decía este archivo**
+  (probado 2026-09-11). La nota vieja de más abajo dice que no hay herramienta directa de
+  texto-a-imagen; eso era sobre `mcp__Gamma__generate`, que arma un documento entero. La
+  herramienta nueva genera **una imagen suelta** y devolvió 1856x2304 px, por encima del mínimo
+  de 2048 en el lado largo que piden las fichas de personaje. Dos límites reales:
+  **cuesta ~70 créditos por imagen** (quedaban 115 tras la primera, o sea que el presupuesto se
+  agota en dos), y **`referenceImages` solo acepta URLs públicas**, así que no se le puede pasar
+  un archivo del repo. Eso último importa más de lo que parece: sin referencia **el estilo no
+  viaja** (ver `docs/PROMPTS_PERSONAJES.md`, regla 5 — probado pidiendo SANDO al estilo de WICHO:
+  salió la identidad y no salió el estilo). Y **`cdn.gamma.app` está bloqueado por el proxy**,
+  así que la imagen generada no se puede descargar acá ni pasar por `asset_inline_preview` de
+  Adobe, que rechaza ese host: solo queda entregarle la URL al dueño.
 - **Producción de video para marketing: el dueño ya tiene su propio proceso con Google
   Flow (generación de video con IA), confirmado 2026-08-10** — y **el 2026-09-10 se retiró
   `admin-video-generate`**, la acción que generaba el video llamando a Veo por API.
@@ -1755,6 +1951,25 @@ lo que **no** es un problema aunque lo parezca.
   dueño el link directo al archivo (ej. URL de Figma `figma.com/design/<fileKey>`) para
   que lo abra/exporte con su propio navegador (sin la restricción de red de este
   sandbox), en vez de insistir en traerlo localmente.
+- **Creative Cloud SIRVE para ENCONTRAR archivos del dueño, pero NO para traerlos a este
+  sandbox — probado por tres vías distintas el 2026-09-12.** `asset_search` con
+  `entityScope:"CCAsset"` funciona perfecto y lista lo que el dueño subió (nombre, tamaño,
+  fecha, id). El problema es la descarga: **`renditionURL`, `downloadURL` y la URL que
+  devuelve `asset_get_presigned_urls` resuelven las TRES a `at.adobe.com` o a
+  `platform-cs-va6.adobe.io`**, y el proxy responde `http=000` a las dos. La descripción de
+  `asset_get_presigned_urls` promete "presigned S3 URLs" — para assets `acp` no lo son, así
+  que no hay que gastar la llamada esperando un host de S3.
+  **La vía que SÍ funciona para que el dueño le pase un archivo a la sesión es Google
+  Drive**: `mcp__Google_Drive__download_file_content` devuelve el contenido en **base64** y
+  soporta `image/png`, `image/jpeg` y `image/jpg` explícitamente, así que se decodifica y se
+  escribe en disco sin pasar por la red. **Requiere que el conector tenga alcance de lectura**
+  — si no, responde `Insufficient scope` aunque aparezca conectado, y eso se arregla
+  reconectándolo desde Ajustes de conectores de claude.ai (una sola vez).
+  **Y lo que NO funciona de ninguna forma: las imágenes que el usuario PEGA en el chat.**
+  Llegan como contenido de la conversación, no como archivo — se pueden ver pero no guardar.
+  Verificado: `/mnt/user-data/working` existe y queda vacío, y no aparece ningún archivo
+  nuevo en disco. Si el dueño pide "mete tú las imágenes", la respuesta es pedirle Drive (o
+  que las pushee), no buscar la ruta otra vez.
 - **No existe ninguna skill de cocina/restaurantes ("chef", menu engineering, costeo de
   recetas) en esta cuenta — confirmado de nuevo 2026-07-30 con 6 términos de búsqueda
   distintos** (chef, menu, restaurant, culinary, recipe, food cost) tanto en

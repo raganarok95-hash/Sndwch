@@ -307,6 +307,19 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     }catch(e){}
   }
   restoreCart();
+  // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
+  // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
+  // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
+  // ?legal=... gana sobre todo lo demás: quien llega con ese link viene a LEER el texto, sea
+  // Google revisando la app o un cliente que lo pidió. Mandarlo al menú primero sería
+  // exactamente lo contrario de lo que el link promete.
+  if(legalFromUrl)sndScreen=legalFromUrl;
+  else try{
+    if(!token && !localStorage.getItem('sw_seen_hello') && googleConfigured()
+       && !groupCodeFromUrl && !location.search){
+      sndScreen='p_hello';
+    }
+  }catch(e){}
   render();
   if(token){
     if(!haveCachedCust){busy=true;busyMsg='Verificando tu sesión...';render();}
@@ -439,6 +452,16 @@ function render(){
     }catch(_){}
   }
 }
+// Pantallas del CLIENTE cuyo contenido es una lista de tarjetas: mientras cargan se pinta
+// el armazón con bloques del tamaño real en vez del splash de pantalla completa. El número
+// es cuántos bloques dibujar — se elige parecido a lo que suele llegar, porque un esqueleto
+// que no se parece a lo que aparece después es peor que un spinner.
+var LIST_SCREENS: Record<string, number> = {
+  p_favorites: 3,
+  p_addresses: 3,
+  p_recurring: 2,
+};
+
 function renderScreen(){
   if(busy){
     var appElBusy=(document.getElementById('app') as HTMLInputElement | null);
@@ -447,6 +470,12 @@ function renderScreen(){
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
     if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
+    // Las pantallas de LISTA del cliente reciben el mismo trato que ya tenía el admin: el
+    // armazón con bloques del tamaño real en vez del splash de pantalla completa. El splash
+    // borra el contexto y deja al cerebro en una espera sin final a la vista; el esqueleto
+    // dice qué viene. Solo aplica donde lo que llega ES una lista de tarjetas — en un cobro
+    // o un login no hay armazón que anticipar y el splash sigue siendo lo correcto.
+    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
@@ -494,6 +523,10 @@ function renderScreen(){
     case'o_sides':     h=sOSides();break;
     case'o_sent':      h=sOSent();break;
     case'p_auth':      h=sPAuth();break;
+    // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
+    case'p_gauth':     h=sGoogleAuth();break;
+    // Primera apertura. Ver sHello() en 05-*.
+    case'p_hello':     h=sHello();break;
     case'p_welcome':   h=sWelcome();break;
     case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;
@@ -548,7 +581,15 @@ function renderScreen(){
   (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+updateBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;
-  if(sndScreen==='p_auth')mountGoogleButton();
+  // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias
+  // pantallas (checkout, PUNTOS sin sesión, bienvenida), y mountGoogleButton() ya no hace
+  // nada si no encuentra su punto de anclaje — así que preguntarle a cada render es más
+  // barato que mantener una lista de pantallas que alguien va a olvidar actualizar.
+  mountGoogleButton();
   renderOverlays();
   makeClickablesAccessible();
+  // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como
+  // inválido perdió su borde rojo y su mensaje. repaintFields() los vuelve a pintar
+  // revalidando el valor actual — es no-op mientras no haya ningún campo marcado.
+  repaintFields();
 }

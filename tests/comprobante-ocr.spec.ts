@@ -55,7 +55,12 @@ test('sin el lector disponible, el comprobante se sigue abriendo igual que siemp
   // en un requisito para ver la imagen que ya se veía antes.
   const calls = await abrirCola(page);
   await page.locator('[onclick*="viewReceipt"]').first().click();
-  expect(calls.filter((c) => c.action === 'admin-receipt-url')).toHaveLength(1);
+  // expect.poll y no un expect síncrono: `viewReceipt` pide la URL con fetch, así que el
+  // clic resuelve ANTES de que la llamada quede registrada. Leer el array al toque hace que
+  // la prueba dependa de cuánto tarde ese render, y cualquier cambio en el camino de
+  // renderizado la vuelve intermitente sin que nada esté roto de verdad. Lo que se comprueba
+  // es exactamente lo mismo: que se pida la URL UNA vez.
+  await expect.poll(() => calls.filter((c) => c.action === 'admin-receipt-url').length).toBe(1);
   // Y el fallo se DICE, en vez de quedar en silencio pareciendo aprobación.
   await expect(page.locator('text=/No se pudo leer el comprobante/')).toBeVisible();
   await expect(page.locator('text=/Revísalo a ojo, como siempre/')).toBeVisible();
