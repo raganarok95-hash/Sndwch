@@ -788,7 +788,7 @@ function doLogout(){
   promoCodesData=null;pcCode='';pcType='percent';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';pcMsg='';campaignPerfData=null;
   calendarData=null;calDate='';calChannel='instagram';calTitle='';calCaption='';calWhatsapp='';calPhoto='';calTag='';calMsg='';waitlistData=null;
   calImageUploadingId=null;calPublishingId=null;
-  adminOrders=[];bulkSelected={};focusIdx=0;
+  adminOrders=[];bulkSelected={};focusIdx=0;focusRef='';
   sndScreen='p_auth';render();
 }
 

@@ -1392,6 +1392,16 @@ var rawUploads=null,rawVideoUploading=false;
 var waitlistData=null;
 var bulkSelected={};
 var focusIdx=0;
+// El modo cocina se ancla al ID del pedido, no a su posición en la lista. La lista se
+// reordena sola: el poll trae pedidos nuevos cada 25 s y sortedActiveOrders() los pone
+// donde les toca por prioridad, así que un pedido nuevo puede meterse DELANTE del que el
+// dueño está mirando. Con el ancla en el índice, la pantalla cambiaba de pedido sola y el
+// botón de abajo —mismo sitio, mismo tamaño— pasaba de "marcar EN CAMINO el de Rosa" a
+// "confirmar el pago del nuevo" con el dedo ya bajando. Medido: el onclick pasaba de
+// updateStatus('ROSA','EN CAMINO') a confirmAndAdvance('NUEVO'). Confirmar un pago Yape
+// que nadie miró contra la cuenta es exactamente lo que el lector de comprobantes existe
+// para NO hacer solo.
+var focusRef='';
 // Preset de sonido de nuevo pedido — antes era un único tono fijo sin forma de
 // distinguirlo de otras notificaciones del navegador si el operador tiene varias apps abiertas.
 var NOTIF_SOUND_PRESETS={

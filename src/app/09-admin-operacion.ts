@@ -561,12 +561,34 @@ function addressFlagsBanner(){
 // botón agrandado de la tarjeta normal de admin_home no podía lograr — ver comentario en
 // esa tarjeta: con varias tarjetas en la cola, un botón fijo de viewport no tiene un solo
 // pedido al que apuntar; acá sí, porque solo se muestra uno).
-function enterFocusMode(){focusIdx=0;sndScreen='admin_focus';render();}
+function enterFocusMode(){
+  var ao=sortedActiveOrders();
+  focusRef=ao.length?ao[0].id:'';
+  focusIdx=0;
+  sndScreen='admin_focus';render();
+}
 function exitFocusMode(){sndScreen='admin_home';render();}
+// Devuelve la posición ACTUAL del pedido anclado. Si desapareció (se entregó, se canceló,
+// lo atendió otra pantalla), cae al que ocupa su lugar en vez de saltar al primero: quien
+// cocina venía avanzando en orden y mandarlo al principio le hace repetir la vista.
+function focusPos(ao){
+  if(!ao.length)return -1;
+  var i=ao.findIndex(function(o){return o.id===focusRef;});
+  if(i>=0)return i;
+  return Math.min(focusIdx,ao.length-1);
+}
+// Salta al primero de la cola. Existe para que el aviso de "entró un pedido antes que
+// este" sea accionable de un toque: sin esto habría que tocar ‹ varias veces.
+function focusFirst(){
+  var ao=sortedActiveOrders();
+  if(!ao.length)return;
+  focusIdx=0;focusRef=ao[0].id;render();
+}
 function focusStep(delta){
   var ao=sortedActiveOrders();
   if(!ao.length)return;
-  focusIdx=((focusIdx+delta)%ao.length+ao.length)%ao.length;
+  var i=((focusPos(ao)+delta)%ao.length+ao.length)%ao.length;
+  focusIdx=i;focusRef=ao[i].id;
   render();
 }
 function sAdminFocus(){
@@ -580,8 +602,15 @@ function sAdminFocus(){
     return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar
       +'<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px" class="fi">'+icon('check',32,'var(--sw-ok,#25D366)')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:12px">Sin pedidos activos — todo en orden //</div></div></div>';
   }
-  if(focusIdx>=ao.length)focusIdx=0;
-  var o=ao[focusIdx];
+  var pos=focusPos(ao);
+  focusIdx=pos;
+  var o=ao[pos];
+  // Se re-ancla en cada render para que el ancla siga viva tras una entrega o cancelación.
+  focusRef=o.id;
+  // Cuántos pedidos se metieron DELANTE del que está mirando. No se le cambia la pantalla
+  // —eso es justo lo que había que dejar de hacer— pero tampoco se le esconde: quien
+  // cocina tiene que enterarse de que entró algo urgente, y decidir él cuándo mirarlo.
+  var delante=pos;
   var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
   var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
   var manualLabel='Yape/Plin';
@@ -597,9 +626,12 @@ function sAdminFocus(){
   };
   var nav='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 14px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
     +navBtn(-1,'‹','Pedido anterior')
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">Pedido '+(focusIdx+1)+' de '+ao.length+'</span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">Pedido '+(pos+1)+' de '+ao.length+'</span>'
     +navBtn(1,'›','Pedido siguiente')
-    +'</div>';
+    +'</div>'
+    // Aviso, no salto. Antes el pedido nuevo se ponía solo en pantalla; ahora se anuncia y
+    // quien cocina decide cuándo. Es tocable: lleva al primero de la cola de un toque.
+    +(delante>0?'<button onclick="focusFirst()" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;background:rgba(255,165,0,.14);border-bottom:1px solid rgba(255,165,0,.35);padding:11px 16px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-warn,#ffa500);text-align:center">'+delante+(delante===1?' pedido entró antes que este':' pedidos entraron antes que este')+' — ver →</button>':'');
   // ORDEN DE LECTURA EN COCINA: primero QUÉ SE ARMA, después a quién se le manda.
   // Antes el cuerpo abría con nombre + dirección + pin + referencia + línea de ref, y la
   // receta —lo único que se necesita mientras se arma— quedaba debajo del pliegue, en
