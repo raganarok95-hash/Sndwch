@@ -857,14 +857,16 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   Subway, no a favor — decidirlo es del dueño, pero no se puede presentar como "igualar".
   **El queso sigue GRATIS** (decisión del dueño 2026-09-04, tras verse el número: cuesta
   S/0.39 en 15CM y S/0.77 en 30CM, y sale entero del margen).
-- **El doble de atún vuelve en 15CM y sigue apagado en 30CM (2026-09-12).** Se había apagado
-  entero el 2026-08-21 por DOS motivos y solo uno sigue vivo. El de MARGEN murió: decía «en
-  30CM se cobraban S/9 por 170 g de atún que cuestan S/11.39», y las dos mitades cambiaron
-  —`pDbl` se partió en `pDbl`/`pDbl30` AL DÍA SIGUIENTE y el atún se cotizó el 2026-09-04 a
-  S/43.96/kg en vez de S/67. Hoy deja ~70% en los dos tamaños. El FÍSICO sigue: «170 g de
-  ensalada de atún en un pan de 30CM es un sándwich que se desarma», y eso lo sabe quien lo
-  arma, no el modelo. De ahí **dos conjuntos**: `NO_DOUBLE_PROTS` (ningún tamaño, hoy vacío)
-  y `NO_DOUBLE_30_PROTS` (solo 30CM). `npm run parity` compara los dos y `assertDoubleAllowed`
+- **El doble de atún vuelve ENTERO (2026-09-12, decisión del dueño en dos pasos).** Se había
+  apagado el 2026-08-21 por DOS motivos. El de MARGEN estaba muerto desde el día siguiente:
+  decía «en 30CM se cobraban S/9 por 170 g de atún que cuestan S/11.39», y las dos mitades
+  cambiaron —`pDbl` se partió en `pDbl`/`pDbl30` AL DÍA SIGUIENTE y el atún se cotizó el
+  2026-09-04 a S/43.96/kg en vez de S/67. Hoy deja ~70% en los dos tamaños. El FÍSICO —«170 g
+  de ensalada en un pan de 30CM se desarma»— lo revisó el dueño y lo aprobó, así que el 30CM
+  también se prendió. De ahí **dos conjuntos**: `NO_DOUBLE_PROTS` (ningún tamaño) y
+  `NO_DOUBLE_30_PROTS` (solo 30CM), **los dos vacíos hoy**. No se borran: el mecanismo cuesta
+  nada mantenerlo y mucho reconstruirlo, y hay una prueba que lo ejercita con una lista
+  poblada a mano — un mecanismo sin usuarios es el que se rompe sin que nadie se entere. `npm run parity` compara los dos y `assertDoubleAllowed`
   es el único punto de corte del servidor — antes la condición estaba repetida palabra por
   palabra en las dos rutas de tasación. Probado en `tests-api/doble-proteina.test.ts` (7).
   **Lección para el próximo apagón de producto: un motivo escrito en un comentario caduca.**
@@ -1120,9 +1122,12 @@ en S/3.35 (15CM) y S/5.41 (30CM). `pDbl 9 / pDbl30 17` se calcularon contra el c
 porción extra (41.8% y 44.2%), **no copiando el de otra proteína** — que es el defecto que ya
 obligó a partir `pDbl` en dos y a corregir P06.
 
-**Está cotizado a medias**: S/44.20/kg se deriva del precio *retail* de Braedt en Metro/Vivanda
-(S/43.75/kg). Falta cotización propia al por mayor, y ahí importa saber que **Sigma Alimentos es
-dueño de Braedt, Otto Kunz y La Segoviana a la vez** — entre esas tres no hay competencia real de
+**COTIZADO Y CONFIRMADO (dueño, 2026-09-12): el precio al por mayor es el MISMO, S/44.20/kg.**
+Se derivaba del *retail* de Braedt en Metro/Vivanda (S/43.75/kg) y quedaba como el número más
+frágil del catálogo — el pavo entró a 44.7% de costo, a tres décimas del techo, así que
+cualquier sorpresa lo pasaba. Ya no hay sorpresa: el 44.7% es real.
+Dato que conviene no perder si algún día hay que renegociar: **Sigma Alimentos es dueño de
+Braedt, Otto Kunz y La Segoviana a la vez**, así que entre esas tres no hay competencia real de
 precio. Los independientes son San Fernando y Laive; Makro tiene local en Trujillo.
 
 **Ningún Signature lleva pavo.** Meterlo en una receta cerrada es una decisión de producto que el
@@ -1441,6 +1446,35 @@ saliendo de la app. La marca `sw_seen_hello` se escribe **al mostrarla, no al sa
 escribiera al salir, cerrar la pestaña ahí la haría reaparecer para siempre. Y no se
 interpone cuando la URL trae destino propio (`?group=`, `?ref=`, `?entrega=`): ahí romperia
 el link que la persona tocó.
+
+### ⚠ UNA PRUEBA QUE PREPARA EL ESTADO A MANO PUEDE VALIDAR UN CAMINO IMPOSIBLE
+
+La pantalla de bienvenida (`p_hello`) **no se mostró NUNCA** desde que se escribió, y la
+prueba que la cubría pasaba en verde todo el tiempo. Vale entender exactamente por qué,
+porque el mecanismo se repite:
+
+- La condición vivía suelta en el arranque y llamaba a `googleConfigured()` **de forma
+  síncrona**. El client id llega por RED, dentro de `get-store-hours`, así que en ese momento
+  `GOOGLE_CLIENT_ID` todavía es el marcador y la condición da `false` **siempre**, con secret
+  o sin él.
+- La prueba inyectaba el id con `addInitScript` **antes** de cargar la app. O sea que
+  construía un estado que producción no puede alcanzar, y ahí la pantalla sí aparecía.
+
+**Regla:** cuando una prueba tiene que PREPARAR un valor que en producción llega por red,
+pregúntate si llega a tiempo. Si la prueba lo pone antes y la app lo recibe después, no estás
+probando el mismo programa. Lo mismo vale para cualquier estado sembrado a mano.
+
+La solución tiene dos mitades, y las dos hacen falta:
+1. **`mostrarHolaSiCorresponde()` es UNA función** llamada desde los dos momentos en que hay
+   que decidir —el arranque y la llegada del id— en vez de la condición escrita dos veces.
+   Lleva `_holaYaDecidido` para no decidir dos veces, y `conRender` porque en el arranque el
+   propio arranque ya pinta y renderizar dos veces se nota en un celular de gama baja.
+2. **El id se cachea en `localStorage` (`sw_gcid`)**, así que de la segunda visita en adelante
+   se sabe en el primer render sin esperar a la red. Es un valor público, no un secreto.
+
+Y una salvaguarda que no hay que quitar: la bienvenida **no aparece si ya se navegó, si hay
+algo en el carrito o si la URL trae destino propio**. Es para quien acaba de entrar, no una
+pared que cae encima de quien ya está mirando la carta.
 
 ### ⚠ El client id VIAJA DESDE EL SERVIDOR — antes poner el secret no prendía nada
 

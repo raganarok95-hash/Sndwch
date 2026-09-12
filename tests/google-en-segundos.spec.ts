@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, APP_FILE } from './helpers';
+import { gotoApp, mockBackend, APP_FILE, OPEN_ALL_DAY_HOURS as HORARIO_ABIERTO } from './helpers';
 
 // "Continuar con Google" tiene que crear la cuenta en segundos (decisión del dueño,
 // 2026-09-12). Antes verificaba la identidad y después mandaba al formulario COMPLETO:
@@ -131,26 +131,62 @@ test('hay salida si el celular es prestado', async ({ page }) => {
 // GOOGLE_CLIENT_ID no está configurado — así que sin el secret la app se ve exactamente
 // como antes en vez de mostrar un hueco.
 
-test('la primera apertura ofrece Google, pero VER LA CARTA es un botón del mismo peso', async ({ page }) => {
-  // Navegación a mano y no gotoApp(): gotoApp espera el home, y el sentido de esta pantalla
-  // es precisamente aparecer antes que él.
+// ⚠ ESTA PRUEBA SE REESCRIBIÓ ENTERA (2026-09-12) PORQUE VALIDABA UN CAMINO IMPOSIBLE.
+// La primera versión inyectaba el client id ANTES de cargar la app, y así la bienvenida salía
+// en el primer render. En producción eso NO puede pasar: el id llega por RED, dentro de
+// `get-store-hours`, y la decisión se tomaba antes de que respondiera. O sea que la pantalla
+// no se mostró nunca — y la prueba pasaba en verde, que es lo peor de todo el episodio.
+//
+// Ahora se prueba lo que de verdad ocurre: el id llega TARDE, y la bienvenida tiene que
+// aparecer igual.
+test('la bienvenida aparece aunque el client id llegue DESPUÉS del primer render', async ({ page }) => {
   await page.addInitScript(() => {
-    const valor = 'prueba.apps.googleusercontent.com';
-    Object.defineProperty(window, 'GOOGLE_CLIENT_ID', { configurable: true, get: () => valor, set: () => {} });
+    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); localStorage.removeItem('sw_tok'); } catch (e) { /* sin storage */ }
   });
-  await mockBackend(page);
+  // Sin tocar GOOGLE_CLIENT_ID: arranca con el marcador, exactamente como una primera visita
+  // real. El id viaja en la respuesta de get-store-hours, como en producción.
+  await mockBackend(page, {
+    'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
+  });
   await page.goto(APP_FILE);
 
-  // Es una puerta antes del menú y el dueño la aceptó sabiéndolo. Lo que no puede pasar es
-  // que no se pueda saltar de un toque: quien llega de un anuncio quiere ver comida.
   const verCarta = page.getByRole('button', { name: 'VER LA CARTA //' });
   await expect(verCarta).toBeVisible();
+
+  // Es una puerta antes del menú y el dueño la aceptó sabiéndolo. Lo que no puede pasar es
+  // que no se salte de un toque: quien llega de un anuncio quiere ver comida.
   await verCarta.click();
   await expect(verCarta).toHaveCount(0);
-
-  // Y no vuelve a aparecer: la marca se escribe al MOSTRARLA, no al salir, así que cerrar
-  // la pestaña en esa pantalla no la deja reapareciendo para siempre.
   expect(await page.evaluate(() => localStorage.getItem('sw_seen_hello'))).toBe('1');
+});
+
+test('el client id se guarda para que la SIGUIENTE visita no dependa de la red', async ({ page }) => {
+  await page.addInitScript(() => {
+    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); } catch (e) { /* sin storage */ }
+  });
+  await mockBackend(page, {
+    'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
+  });
+  await page.goto(APP_FILE);
+  await page.waitForTimeout(800);
+  // Es un valor PÚBLICO, no un secreto: viaja en el HTML de cualquier sitio con Sign-In.
+  // Guardarlo es lo que permite decidir de forma síncrona en el arranque siguiente.
+  expect(await page.evaluate(() => localStorage.getItem('sw_gcid'))).toContain('apps.googleusercontent.com');
+});
+
+test('la bienvenida NO le cae encima a quien ya está navegando', async ({ page }) => {
+  await page.addInitScript(() => {
+    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); } catch (e) { /* sin storage */ }
+  });
+  await mockBackend(page, {
+    'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
+  });
+  await page.goto(APP_FILE);
+  // Se navega ANTES de que llegue el id. La bienvenida es para quien acaba de entrar, no una
+  // pared que cae encima de quien ya eligió a dónde ir.
+  await page.evaluate(() => { (window as any).sndScreen = 'p_legal'; (window as any).render(); });
+  await page.evaluate(() => (window as any).mostrarHolaSiCorresponde(true));
+  await expect(page.getByRole('button', { name: 'VER LA CARTA //' })).toHaveCount(0);
 });
 
 test('el checkout de invitado ofrece Google ARRIBA de los campos, no después', async ({ page }) => {

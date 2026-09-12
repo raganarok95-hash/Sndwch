@@ -108,15 +108,18 @@ export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // cuestan S/11.39 — la única operación del catálogo con margen NEGATIVO (−26.6%). El
 // cliente ya no la ofrece (bandera `noDouble` en PROTS), pero el servidor tiene que
 // rechazarla igual: nunca confía en lo que manda el cliente.
-// Dos conjuntos desde el 2026-09-12: NO_DOUBLE_PROTS apaga el doble en los DOS tamaños y
-// NO_DOUBLE_30_PROTS solo en el de 30CM. El atún pasó del primero al segundo — el motivo de
-// margen que lo apagó entero murió (pDbl dejó de ser plano el 2026-08-22 y el atún se cotizó
-// el 2026-09-04 a S/43.96/kg: hoy el doble deja ~70% en los dos tamaños), pero el motivo
-// FÍSICO era específico del 30CM, donde la porción extra son 170 g de ensalada de atún y el
-// sándwich se desarma. Ver el comentario largo de P04 en src/app/01-*.
+// Dos conjuntos: NO_DOUBLE_PROTS apaga el doble en los DOS tamaños y NO_DOUBLE_30_PROTS solo
+// en el de 30CM. HOY LOS DOS ESTÁN VACÍOS — el atún, que era el único, volvió entero el
+// 2026-09-12: el motivo de margen había caducado tres semanas antes (pDbl dejó de ser plano
+// y el atún se cotizó a S/43.96/kg, así que el doble deja ~70% en los dos tamaños) y el
+// motivo físico —«170 g de ensalada en un pan de 30CM se desarma»— lo revisó el dueño y lo
+// aprobó. Ver el comentario largo de P04 en src/app/01-*.
+// Los conjuntos NO se borran aunque estén vacíos: el mecanismo cuesta nada mantenerlo y
+// mucho reconstruirlo, y `npm run parity` los compara igual — leer un conjunto vacío es
+// justamente lo que su parseo tuvo que aprender a distinguir de "no lo encontré".
 // DEBEN coincidir con noDouble / noDouble30 en PROTS del cliente.
 export const NO_DOUBLE_PROTS = new Set<string>([]);
-export const NO_DOUBLE_30_PROTS = new Set(["P04"]);
+export const NO_DOUBLE_30_PROTS = new Set<string>([]);
 // UN solo punto de corte para las dos rutas (Signature y ARMA EL TUYO), que antes repetían
 // la misma condición palabra por palabra — el patrón que ya obligó a extraer
 // cancellationDeltas. Con dos conjuntos, repetirla eran cuatro condiciones que mantener.

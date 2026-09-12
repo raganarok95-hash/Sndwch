@@ -405,7 +405,20 @@ async function loadStoreHoursBackground(){
     // Mismo mecanismo que el píxel: el literal de 01-* es solo la semilla, y el valor real
     // llega del servidor. Sin esto, poner el secret no prendía "Continuar con Google" y el
     // único modo de arreglarlo era editar el literal y redesplegar el cliente entero.
-    if(r.googleClientId)GOOGLE_CLIENT_ID=r.googleClientId;
+    if(r.googleClientId){
+      GOOGLE_CLIENT_ID=r.googleClientId;
+      // Se guarda para el PRÓXIMO arranque. El id llega por red, así que en el primer
+      // render de la primera visita todavía no existe — y la pantalla de bienvenida, que
+      // es justo lo que hay que decidir ahí, se decide antes. Con esto, de la segunda
+      // visita en adelante se sabe de forma síncrona, sin esperar a la red.
+      // Es una caché de un valor PÚBLICO (viaja en el HTML de cualquier sitio con Sign-In),
+      // no un secreto: lo peor que puede pasar es que quede uno viejo, y el de abajo lo
+      // pisa en cuanto responde el servidor.
+      try{localStorage.setItem('sw_gcid',r.googleClientId);}catch(e){}
+      // Y para la PRIMERA visita: si el id llegó y todavía no se tocó nada, se muestra la
+      // bienvenida ahora. Ver mostrarHolaSiCorresponde() en 08-*.
+      if(typeof mostrarHolaSiCorresponde==='function')mostrarHolaSiCorresponde(true);
+    }
     // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
     // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
     // protege es la restricción por referrer que se le pone en Google Cloud, no esconderla.

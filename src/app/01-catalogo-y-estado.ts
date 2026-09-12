@@ -97,6 +97,16 @@ var VAPID_PUBLIC_KEY='BKTQjrOAOBVbt-wG_vUol13SrlwS0FrWppXxgu0velMopQOsIzxHF0hu3B
 // igual que el píxel de Meta. Mientras siga el marcador, googleConfigured() es falso y todo
 // lo de Google no se dibuja: la app se ve exactamente como si no existiera.
 var GOOGLE_CLIENT_ID='REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+// Si una visita anterior ya recibió el id del servidor, se recupera ANTES del primer render.
+// Sin esto, todo lo que dependa de googleConfigured() en el arranque —la pantalla de
+// bienvenida, sobre todo— se decide con el marcador puesto y nunca se muestra.
+// `indexOf('.apps.googleusercontent.com')` y no una comprobación laxa: en localStorage puede
+// haber quedado cualquier cosa, y arrancar con basura ahí rompería el botón en vez de
+// dejarlo apagado, que es el peor de los dos fallos.
+try{
+  var _gc=localStorage.getItem('sw_gcid');
+  if(_gc&&_gc.indexOf('.apps.googleusercontent.com')>0)GOOGLE_CLIENT_ID=_gc;
+}catch(e){}
 function googleConfigured(){return GOOGLE_CLIENT_ID&&GOOGLE_CLIENT_ID.indexOf('REEMPLAZA')<0;}
 var CHARGE_FN_URL=SB_URL+'/functions/v1/create-charge';
 var CREDIT_CHARGE_FN_URL=SB_URL+'/functions/v1/create-credit-charge';
@@ -174,15 +184,16 @@ var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:numbe
   //     atún se cotizó el 2026-09-04 a S/43.96/kg en vez de los S/67 investigados online.
   //     Hoy: 15CM cobra 10.90 y cuesta 3.25 (29.8%); 30CM cobra 21.90 y cuesta 6.50 (29.7%).
   //     Son de los mejores márgenes del catálogo — estaba apagado un upsell que ganaba plata.
-  //  2. FÍSICO — sigue vivo, y por eso el 30CM NO se prende. «170 g de ensalada de atún en
-  //     un pan de 30CM es un sándwich que se desarma». Eso no lo arregla ninguna cotización
-  //     y lo sabe quien lo arma, no el modelo. En 15CM la porción extra son 85 g y ese
-  //     motivo nunca lo describió.
+  //  2. FÍSICO — «170 g de ensalada de atún en un pan de 30CM es un sándwich que se desarma».
+  //     El dueño lo revisó y lo APROBÓ el 2026-09-12: el 30CM también se prende. Era lo único
+  //     que quedaba, y no lo decidía el modelo sino quien arma el sándwich.
   //
-  // Para prender también el 30CM: quitar `noDouble30` de acá y "P04" de NO_DOUBLE_30_PROTS
-  // en supabase/functions/api/catalog.ts. Los DOS lados, o el cliente lo ofrece y el
-  // servidor lo rechaza al pagar.
-  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9,noDouble30:true},
+  // Las dos banderas siguen existiendo y no se borran: `noDouble` apaga el doble en los dos
+  // tamaños y `noDouble30` solo en el de 30CM. Hoy ninguna proteína usa ninguna de las dos,
+  // pero el mecanismo se queda —igual que `sigOnly`— porque el día que haga falta, agregarlo
+  // de cero es mucho más caro que dejar la puerta puesta. `npm run parity` compara los dos
+  // conjuntos contra el servidor aunque estén vacíos.
+  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9},
   // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
   // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
   // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de

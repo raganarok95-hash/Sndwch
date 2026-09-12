@@ -41,32 +41,38 @@ Deno.test("el doble de atún SE PUEDE pedir en 15CM", () => {
   acepta(() => assertDoubleAllowed(true, "P04", "15"), "el 15CM de atún tiene que admitir doble");
 });
 
-Deno.test("el doble de atún NO se puede pedir en 30CM", () => {
-  rechaza(
-    () => assertDoubleAllowed(true, "P04", "30"),
-    "el 30CM de atún NO puede admitir doble: 170 g extra de ensalada desarman el sándwich",
-  );
+Deno.test("el doble de atún también se puede pedir en 30CM", () => {
+  // Aprobado por el dueño el 2026-09-12 tras revisar el motivo FÍSICO, que era el único que
+  // seguía vivo. El de margen había caducado tres semanas antes.
+  acepta(() => assertDoubleAllowed(true, "P04", "30"), "el 30CM de atún tiene que admitir doble");
 });
 
-Deno.test("el rechazo del 30CM dice que en 15CM sí se puede", () => {
-  // Un «esa proteína no admite doble» sobre un 30CM, cuando el 15CM sí lo admite, manda a
-  // buscar el problema al lugar equivocado — y al cliente lo deja sin saber que hay una
-  // salida a un toque.
+Deno.test("el mecanismo por tamaño sigue funcionando aunque hoy no lo use nadie", () => {
+  // Las dos listas están vacías. Eso NO las vuelve inútiles: el día que una proteína necesite
+  // apagarse solo en 30CM, el corte tiene que seguir ahí. Esta prueba lo ejercita con una
+  // lista poblada a mano, porque un mecanismo sin usuarios es el que se rompe sin que nadie
+  // se entere y se descubre recién cuando hace falta.
+  NO_DOUBLE_30_PROTS.add("P99");
   try {
-    assertDoubleAllowed(true, "P04", "30");
-  } catch (e) {
-    const m = (e as Error).message;
-    assert(m.includes("30CM"), `el mensaje tiene que nombrar el tamaño: "${m}"`);
-    assert(m.includes("15CM"), `el mensaje tiene que ofrecer la salida: "${m}"`);
-    return;
+    acepta(() => assertDoubleAllowed(true, "P99", "15"), "P99 tiene que seguir admitiendo doble en 15CM");
+    rechaza(() => assertDoubleAllowed(true, "P99", "30"), "P99 tiene que quedar bloqueado en 30CM");
+    try {
+      assertDoubleAllowed(true, "P99", "30");
+    } catch (e) {
+      const m = (e as Error).message;
+      // Un «esa proteína no admite doble» sobre un 30CM, cuando el 15CM sí lo admite, manda a
+      // buscar el problema al lugar equivocado.
+      assert(m.includes("30CM"), `el mensaje tiene que nombrar el tamaño: "${m}"`);
+      assert(m.includes("15CM"), `el mensaje tiene que ofrecer la salida: "${m}"`);
+    }
+  } finally {
+    NO_DOUBLE_30_PROTS.delete("P99");
   }
-  throw new Error("no rechazó");
 });
 
 Deno.test("sin doble pedido, nunca rechaza", () => {
   // assertDoubleAllowed corre en las DOS rutas de tasación, incluso cuando el cliente no
-  // pidió doble. Si llegara a rechazar con doubleProt=false, ningún pedido de atún en
-  // 30CM se podría pagar.
+  // pidió doble. Si llegara a rechazar con doubleProt=false, ningún pedido se podría pagar.
   acepta(() => assertDoubleAllowed(false, "P04", "30"), "sin doble no puede rechazar nada");
 });
 
