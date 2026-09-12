@@ -85,7 +85,19 @@ test('ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armado
   await gotoApp(page);
   await page.locator('text=Arma el tuyo').click();
   await expect(page.locator('text=¿Prefieres que ya esté resuelto?')).toBeVisible();
-  await expect(page.locator('text=The Original')).toBeVisible();
+  // ⚠ ACÁ DECÍA `text=The Original`, escrito a mano — y el código dice explícitamente lo
+  // contrario: «El nombre sale del catálogo (que el servidor refresca), nunca escrito a
+  // mano: si el dueño renombra o retira ese Signature, este texto lo sigue solo».
+  // La prueba fijaba justo lo que el código hace dinámico, así que se rompió el
+  // 2026-09-12 al mover la estrella a THE MARINARA sin que nada estuviera mal.
+  // Ahora se lee del catálogo igual que el puente: es más estricto (falla si el puente
+  // deja de seguir a `recommended`) y no se rompe cuando el dueño mueve la estrella.
+  const recomendado = await page.evaluate(() => {
+    const s = ((window as any).SIGS as any[]).find((x) => x.recommended);
+    return s ? s.n : null;
+  });
+  expect(recomendado).toBeTruthy();
+  await expect(page.locator('text=¿Prefieres que ya esté resuelto?')).toContainText(recomendado as string);
   // El armador sigue completo: los panes se pueden elegir y el paso a paso sigue ahí.
   await expect(page.getByRole('button', { name: 'Ver el paso a paso completo →' })).toBeVisible();
   await expect(page.locator('[onclick*="startOrderWithBase"]').first()).toBeVisible();

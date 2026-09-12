@@ -1292,6 +1292,13 @@ bug):
   consolidada, no como negocio local).
 - Badge "Ligero" (THE FRESH) → **"Cítrico"** (referencia honesta al toque de limón del
   aioli, ya nombrado en el pitch).
+  > ⚠ **DEJÓ DE SER HONESTA, y por eso se corrigió de nuevo el 2026-09-12 a "Sin vueltas".**
+  > La frase de arriba dice literalmente por qué era cierta: *el toque de limón*. El
+  > 2026-09-05 el dueño rehízo la receta a atún escurrido + mayonesa + pimienta, `tops` y
+  > `sauces` quedaron vacíos y el limón se fue con ellos — pero el badge se quedó una semana
+  > prometiendo un cítrico inexistente, al lado de un pitch que ya decía "Nada más".
+  > **Un rótulo de sabor envejece igual que un número escrito a mano**: si la receta se
+  > mueve, se revisa en la misma operación. Ver migración `20260912204541`.
 - Bug adicional encontrado al implementar: el pitch de SIG07 seguía diciendo "res
   mechada" — corregido a "res laminada" (ya identificado en §10.1, quedó pendiente,
   corregido junto con lo demás).

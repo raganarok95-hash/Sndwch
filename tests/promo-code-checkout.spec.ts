@@ -28,7 +28,7 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
   // SIG01 (THE ORIGINAL) 15CM = S/20.90 — primer Signature del catálogo, precio conocido.
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -93,7 +93,7 @@ test('código promocional inválido muestra el error del servidor sin bloquear e
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await expect(page.locator('text=SIGNATURE BUILDS')).toBeVisible();
+  await expect(page.locator('text=SIGNATURES')).toBeVisible();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();

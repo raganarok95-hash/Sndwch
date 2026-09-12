@@ -355,8 +355,15 @@ var SIGS:any[]=[
   // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
   // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
   // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',recommended:true,base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:20.9,p30:26.9,
-    pitch:'El primero de la carta y el que manda la receta: res mechada jugosa de cocción lenta, con el equilibrio justo entre fresco y dulce. Empieza por acá.'},
+  //
+  // ⚠ LA ESTRELLA SE MOVIÓ A SIG02 EL 2026-09-12, y no por gusto: THE ORIGINAL deja
+  // S/14.70 en 15CM contra los S/17.43 de THE MARINARA (29.7% de costo contra 20.4%).
+  // Recomendar el cuarto de cinco en contribución es regalar S/2.73 cada vez que alguien
+  // hace caso. `recommended` NO vive en `catalog_items` (SIG_CONTENT solo lleva n/s/badge/
+  // pitch/img/active, ver catalog.ts), así que este literal SÍ es la fuente real de la
+  // bandera — es la única del bloque que no se puede mover desde el panel.
+  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:20.9,p30:26.9,
+    pitch:'El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola, con pepinillo encurtido que le corta la grasa a cada bocado. Si es tu primera vez acá, empieza por este.'},
   // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
   // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
   // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
@@ -391,8 +398,8 @@ var SIGS:any[]=[
   // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
   // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
   // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',   base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:21.9,p30:28.9,fixedCheese:'C01',
-    pitch:'Albóndigas caseras bañadas en marinara, con mozzarella derretida hasta el borde y aceituna negra sobre una vinagreta al estilo italiano. El clásico de toda la vida, hecho como se debe: con queso de verdad.'},
+  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',recommended:true,base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:21.9,p30:28.9,fixedCheese:'C01',
+    pitch:'Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con mozzarella derretida hasta el borde. Se come con las dos manos y con servilleta al lado.'},
   // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
   // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
   // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
@@ -408,7 +415,7 @@ var SIGS:any[]=[
   // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
   // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
   {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:23.9,p30:34.9,fixedCheese:'C02',
-    pitch:'Fiambres italianos ahumados y cheddar derretido sobre focaccia artesanal, con un glaseado dulce-ahumado que se queda contigo. Nuestro build más premium, bocado a bocado.'},
+    pitch:'El del viernes, cuando el día ya se acabó y te lo estás cobrando. Tres fiambres ahumados puestos en pliegues sobre focaccia, cheddar derretido y una BBQ espesa con miel y pimentón. De los que se quedan contigo.'},
   // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
   // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
   // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
@@ -437,7 +444,7 @@ var SIGS:any[]=[
   // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
   // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
   // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Cítrico',    base:'B01',prot:'P04',tops:[],sauces:[],p15:20.9,p30:34.9,
+  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Sin vueltas',    base:'B01',prot:'P04',tops:[],sauces:[],p15:20.9,p30:34.9,
     // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
     // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
     // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
@@ -446,14 +453,33 @@ var SIGS:any[]=[
     // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
     // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
     // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
-    pitch:'Atún premium escurrido, con la mayonesa de la receta original y un golpe de pimienta. Nada más: así es como se hace en Estados Unidos, y así es como debe saber.'},
-  // badge:'Asiático' es el permanente (mismo rol que Clásico/Premium/Ahumado/Ligero en el
-  // resto) — 'Nuevo' se muestra solo mientras newUntil no haya pasado, vía sigBadge()
-  // abajo. Antes 'Nuevo' era un string fijo sin ningún mecanismo de expiración, se habría
-  // quedado ahí para siempre. newUntil se ancla a la fecha estimada de lanzamiento del
-  // negocio (~septiembre 2026, ver "Contexto de negocio" en CLAUDE.md) + ~60 días de
-  // ventana — AJUSTAR a la fecha real de apertura en cuanto se confirme, esto es un
-  // placeholder documentado, no un dato certero (hallazgo de auditoría de copy, BAJO).
+    //
+    // ⚠ Y EL BADGE ES PARTE DE ESE TEXTO — se corrigió recién el 2026-09-12, una semana
+    // después de la receta. Decía 'Cítrico', que era cierto cuando la receta llevaba S11
+    // (dijon y limón) y dejó de serlo el día que salió: quedó un rótulo de sabor prometiendo
+    // un cítrico que el sándwich no tiene, al lado de un pitch que ya decía "Nada más". La
+    // regla de este repo para los números escritos a mano vale igual para los rótulos de
+    // sabor: si la receta se mueve, el badge se revisa en la MISMA operación.
+    // 'Sin vueltas' describe lo único que el producto de verdad es. Reversible desde
+    // Admin // Catálogo en un toque — el badge vive en catalog_items, esto es solo semilla.
+    pitch:'Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más.'},
+  // badge:'Asiático' es el permanente (mismo rol que Clásico/Italiano/Ahumado en el resto).
+  //
+  // ⚠ `newUntil` SE RETIRÓ DE ESTE SIGNATURE EL 2026-09-12, y no por incumplir la fecha:
+  // el comentario anterior pedía "AJUSTAR a la fecha real de apertura en cuanto se
+  // confirme" (era 2026-10-31, anclado a un lanzamiento de ~septiembre que ya se movió a
+  // la segunda semana de octubre). Ajustarlo hacia adelante lo habría EMPEORADO.
+  //
+  // El motivo es que `sigBadge()` REEMPLAZA el badge, no lo agrega: mientras `newUntil` no
+  // pase, esta tarjeta dice "Nuevo" EN LUGAR DE "Asiático". Y el día de la apertura el
+  // 100% de la carta es nuevo para el 100% de los clientes, así que "Nuevo" no distingue
+  // nada — mientras que "Asiático" es lo único que le dice a alguien a qué sabe. El badge
+  // costaba información en vez de darla, justo en las semanas que más importan.
+  //
+  // EL MECANISMO SE QUEDA, y está bien construido: expira solo, que era el defecto que
+  // vino a arreglar ('Nuevo' era un string fijo que se habría quedado ahí para siempre).
+  // Sirve el día que entre un Signature de verdad nuevo a una carta que el cliente ya
+  // conoce — que es el único momento en que la palabra significa algo.
   // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño) — el consejo de
   // menú había señalado que el pepinillo mitigaba sin querer el riesgo de "doble dulce"
   // (teriyaki+satay, dos salsas dulces sin nada ácido) documentado por fuentes de chef;
@@ -470,8 +496,8 @@ var SIGS:any[]=[
   // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
   // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
   // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',newUntil:'2026-10-31', base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:19.9,p30:25.9,
-    pitch:'Pollo teriyaki caramelizado con salsa satay de maní y nuestra salsa de la casa — dulce, tostado, con la firma SND//WCH en cada bocado. El sabor asiático que le faltaba al menú.'},
+  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:19.9,p30:25.9,
+    pitch:'Para cuando ya te aburriste de lo de siempre. Muslo marinado toda la noche en sillao, jengibre y ajo, glaseado recién al armarlo, con maní tostado y pimiento curado en aceite. Dulce y salado en el mismo bocado.'},
   // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
   // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
   // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de

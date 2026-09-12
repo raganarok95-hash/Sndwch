@@ -230,12 +230,30 @@ if __name__ == "__main__":
     for d, (n, pr) in BEBIDA.items():
         ln, _ = fila(n, pr, costo_bebida(d))
         print(ln)
-    cab(f"en combo (-S/{COMBO:.0f})")
+    # ⚠ EL COMBO NO SALE DE LA BEBIDA, Y ESTA TABLA HACIA CREER QUE SI (corregido 2026-09-12).
+    # `cartComboDiscount()` se resta del TOTAL del carrito (cartFinalTotal = cartBaseTotal -
+    # cartStackedDiscount), no del precio de la bebida. Restarselo aca a la bebida es UNA
+    # ATRIBUCION, no un hecho: la contribucion del pedido es identica se le cargue a la bebida
+    # o al sandwich.
+    #
+    # No es un detalle de presentacion. Esta tabla llevo a proponer "mover el combo al
+    # sandwich" como una mejora de margen de 4-8 puntos por bebida — y esa mejora NO EXISTE:
+    # mover un descuento de una linea a otra en una cuenta que se suma entera no cambia nada.
+    # Un modelo que atribuye un descuento a un producto tiene que decir que lo esta
+    # atribuyendo, o alguien va a tomar una decision sobre su propia contabilidad.
+    cab(f"si el combo (-S/{COMBO:.0f}) se le carga ENTERO a la bebida")
+    print("  (atribucion, no hecho: el descuento sale del TOTAL del pedido. Ver nota abajo.)")
     for d, (n, pr) in BEBIDA.items():
         ln, pct = fila(n, pr - COMBO, costo_bebida(d))
         print(ln)
-        if pct > TECHO:
-            malos.append((f"{n} en combo", pct))
+    print("""
+  Por que se muestra igual: es el PEOR caso contable de la bebida, y sirve para saber si el
+  combo puede llegar a comerse lo que deja. A S/2 si pasaba — THE MIDNIGHT en combo dejaba
+  -S/0.31, o sea que el par sandwich+bebida rendia MENOS que el sandwich solo, y por eso el
+  combo bajo a S/1 el 2026-08-22. Hoy ninguna bebida pasa el techo ni con el combo entero
+  encima, asi que el mecanismo esta sano.
+  Lo que NO se puede concluir de esta tabla es que haya margen que recuperar moviendo el
+  descuento: el sandwich y la bebida van en la misma cuenta.""")
 
     # ── 4. LOS MECANISMOS QUE REGALAN ─────────────────────────────────────────────────
     sep('4 · LOS MECANISMOS QUE REGALAN — cuanto cuesta cada uno de verdad')

@@ -586,6 +586,64 @@ cmpModelo('Supuesto del modelo: attach de bebida (DRINK_ATTACH ↔ drinkPct)', '
 cmpModelo('Supuesto del modelo: viralidad (VIRAL ↔ referralsPer100)', 'modelo/modelo_v11_metas.py',
     tsSupuesto('referralsPer100'), (pyNum(metasPy, 'VIRAL', 'modelo_v11_metas.py') ?? 0) * 100);
 
+// ---------- exclusividad de ingredientes (sigOnly / vaultOnly) ----------
+//
+// ⚠ ESTAS LISTAS DECIDEN QUÉ SE PUEDE PEDIR, y hasta el 2026-09-12 no las comparaba nadie.
+//
+// El servidor las tiene como Sets (`SIG_ONLY_PROTS`, `VAULT_ONLY_TOPS`, …) y `priceByoBuild`
+// rechaza con ellas: "Proteína inválida.", "Topping inválido.", "Salsa inválida.". El cliente
+// las tiene como banderas `sigOnly:true` / `vaultOnly:true` en los literales de PROTS/TOPS/
+// SAUCES, y filtra con ellas el armador y la repetición de un pedido pasado.
+//
+// Si se separan, falla en SILENCIO y en las dos direcciones:
+//   · cliente MÁS PERMISIVO → el cliente arma el sándwich entero, escribe su dirección y el
+//     servidor lo rechaza al pagar. Es el defecto que ya obligó a poner el selector de
+//     distrito y a tachar las horas llenas, y el que reapareció en "repetir pedido".
+//   · cliente MÁS ESTRICTO → un ingrediente desaparece del armador sin que nadie lo retirara.
+//     Venta perdida, cero errores, nada que mirar.
+//
+// Es el mismo caso de los precios duplicados, con la diferencia de que acá no hay un número
+// visible que delate la diferencia: no se nota hasta que un cliente se queda sin pagar.
+function clientFlagSet(varName, bandera) {
+  const start = app.indexOf('var ' + varName);
+  if (start < 0) {
+    problems.push(`${varName}: no se encontró en src/app — este chequeo quedó ciego`);
+    return null;
+  }
+  const fin = app.indexOf('\n];', start);
+  const bloque = app.slice(start, fin < 0 ? start + 9000 : fin);
+  const ids = [];
+  // Una sola línea por ítem (así están escritos los tres arrays); se toma el id solo si la
+  // bandera aparece en ESA línea, nunca en el bloque entero.
+  for (const linea of bloque.split('\n')) {
+    const m = linea.match(/\{\s*id:\s*'([A-Z0-9]+)'/);
+    if (m && new RegExp(bandera + '\\s*:\\s*true').test(linea)) ids.push(m[1]);
+  }
+  return ids.sort();
+}
+function serverSet(nombre) {
+  // Acepta `new Set([...])` y `new Set<string>([...])` — el genérico apareció al vaciar
+  // NO_DOUBLE_PROTS y ya dejó ciego a este script una vez.
+  const m = catalog.match(new RegExp('export const ' + nombre + '\\s*=\\s*new Set(?:<[^>]*>)?\\(\\[([^\\]]*)\\]'));
+  if (!m) {
+    problems.push(`${nombre}: no se encontró en catalog.ts — este chequeo quedó ciego`);
+    return null;
+  }
+  return (m[1].match(/"([A-Z0-9]+)"/g) || []).map((x) => x.replace(/"/g, '')).sort();
+}
+for (const [varName, bandera, setName] of [
+  ['PROTS', 'sigOnly', 'SIG_ONLY_PROTS'],
+  ['PROTS', 'vaultOnly', 'VAULT_ONLY_PROTS'],
+  ['TOPS', 'sigOnly', 'SIG_ONLY_TOPS'],
+  ['TOPS', 'vaultOnly', 'VAULT_ONLY_TOPS'],
+  ['SAUCES', 'sigOnly', 'SIG_ONLY_SAUCES'],
+  ['SAUCES', 'vaultOnly', 'VAULT_ONLY_SAUCES'],
+]) {
+  const c = clientFlagSet(varName, bandera);
+  const sv = serverSet(setName);
+  if (c && sv) cmp(`Exclusividad: ${varName}.${bandera} ↔ ${setName}`, c, sv);
+}
+
 // ---------- salida ----------
 if (problems.length) {
   console.error(`\n✗ Paridad cliente ↔ servidor: ${problems.length} diferencia(s) de ${checks} comprobaciones\n`);

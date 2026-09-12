@@ -60,7 +60,16 @@ function sOBuild(){
     }).join('');
   }else if(byoStep===1){
     h+=ST('','Proteína','');
-    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);var priceTag=size?SOLES+pz(protPrice(p)):'—';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
+    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);// ⚠ MISMO DEFECTO QUE EN LOS SIGNATURES, y acá pega más fuerte (corregido 2026-09-12):
+    // `size` arranca en null y el paso de tamaño va ANTES que el de proteína, así que quien
+    // entra a ARMA EL TUYO ve las siete proteínas con un guion donde va el precio. Y a
+    // diferencia del otro lado, acá el cliente NO viene de ver ningún precio: los panes no
+    // tienen uno propio, así que este es el primero que la pantalla le enseñaría — y le
+    // enseñaba un guion.
+    // Se muestra el precio del 15CM con el de 30CM debajo, igual que el otro hermano. No es
+    // un default disfrazado: `size` sigue en null y el paso de tamaño sigue exigiéndose.
+    var priceTag=size?SOLES+pz(protPrice(p)):SOLES+pz(p.p15);
+    var priceSub=size||p.p30<=p.p15?'':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">30CM '+SOLES+pz(p.p30)+'</div>';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="display:inline-block;text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+priceSub+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
   // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
   // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
   // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
