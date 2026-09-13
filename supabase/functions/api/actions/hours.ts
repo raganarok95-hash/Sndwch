@@ -22,9 +22,30 @@ export async function storePausedUntil(): Promise<string | null> {
   return new Date(until).getTime() > Date.now() ? until : null;
 }
 
+// ── EL KILL SWITCH DE PROMOCIONES ─────────────────────────────────────────────────────
+//
+// Vive junto a `storePausedUntil` porque es su hermano, pero con el modo de fallo AL REVÉS:
+// la pausa se reanuda sola comparando contra el reloj (olvidarla encendida cierra el
+// negocio); ésta NO se auto-revierte nunca (si la bajaste porque un código se filtró, que se
+// encienda sola es lo peor que puede pasar). El riesgo se invierte —queda abajo y nadie se
+// acuerda— y por eso se guarda la HORA: el panel puede decir cuánto lleva apagado, que es lo
+// único que impide que se quede así.
+export async function promosKilled(): Promise<boolean> {
+  try {
+    const rows = await sbGet("app_settings", "select=promos_killed_at&id=eq.true");
+    return !!rows?.[0]?.promos_killed_at;
+  } catch (_e) {
+    // Si la consulta falla, las promociones SIGUEN ACTIVAS. Es deliberado y es la dirección
+    // menos mala: un fallo de red apagando las promociones de todos los clientes a la vez
+    // sería un incidente peor que el que este interruptor viene a resolver, y silencioso.
+    // El corte es una decisión del dueño, no un efecto de que la base tosa.
+    return false;
+  }
+}
+
 export async function actGetStoreHours(_b: any) {
   await loadStoreHours();
-  const settings = await sbGet("app_settings", "select=business_launched,paused_until&id=eq.true");
+  const settings = await sbGet("app_settings", "select=business_launched,paused_until,promos_killed_at&id=eq.true");
   const pausedUntilRaw = settings?.[0]?.paused_until;
   const pausedUntil = pausedUntilRaw && new Date(pausedUntilRaw).getTime() > Date.now() ? pausedUntilRaw : null;
   return {
@@ -45,6 +66,11 @@ export async function actGetStoreHours(_b: any) {
     googleMapsKey: GOOGLE_MAPS_KEY || null,
     // El cliente lo usa para mostrar "volvemos a las X" en vez de un genérico "cerrado".
     pausedUntil,
+    // Viaja al cliente SOLO para que no le ofrezca al cliente un campo de código que el
+    // servidor va a rechazar — enseñar la casilla y después decir "pausado" es peor que no
+    // enseñarla. El corte de verdad está en `computePromoDiscount`, no acá: esto es
+    // cortesía de interfaz, nunca la autorización.
+    promosKilled: !!settings?.[0]?.promos_killed_at,
     ...(await capacidad()),
   };
 }

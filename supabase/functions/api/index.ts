@@ -43,7 +43,7 @@ import {
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
-  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminPurchases, actAdminPurchaseAdd, actAdminCulqiReport, actAdminTechHealth, actAdminCompliance, actAlertAdminAccess, actSendRetentionReport, actAdminExportOrders, actAdminExportCustomers,
+  actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminPurchases, actAdminPurchaseAdd, actAdminCulqiReport, actAdminTechHealth, actAdminCacBrake, actAdminAdSpendSet, actAlertCacBrake, actAdminKillPromos, actAdminCompliance, actAlertAdminAccess, actSendRetentionReport, actAdminExportOrders, actAdminExportCustomers,
   actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
@@ -162,6 +162,13 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-purchase-add": actAdminPurchaseAdd,
   "admin-culqi-report": actAdminCulqiReport,
   "admin-tech-health": actAdminTechHealth,
+  // ⚠ REGISTRAR ES UN PASO APARTE DE IMPORTAR, y nada avisa si falta: `deno check` no marca
+  // un import sin usar dentro de un objeto. Ya pasó con `actAdminRetentionReport`, que estuvo
+  // importada y nunca alcanzable — el mejor dato del panel, invisible desde la app.
+  "admin-cac-brake": actAdminCacBrake,
+  "admin-ad-spend-set": actAdminAdSpendSet,
+  "alert-cac-brake": actAlertCacBrake,
+  "admin-kill-promos": actAdminKillPromos,
   // ⚠ ESTA ACCIÓN ESTABA IMPORTADA Y NUNCA REGISTRADA (encontrado 2026-09-06). O sea que
   // `retention_report` —que CLAUDE.md llama "el mejor dato del panel"— no era alcanzable
   // desde la app: solo lo veía el correo mensual de `send-retention-report`, que llama al

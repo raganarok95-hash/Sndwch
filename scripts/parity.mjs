@@ -21,7 +21,9 @@
 // pueden seguir sin coincidir con lo que se cobra de verdad (ver CLAUDE.md). Esto solo
 // garantiza que los dos lados del CÓDIGO digan lo mismo.
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -642,6 +644,76 @@ for (const [varName, bandera, setName] of [
   const c = clientFlagSet(varName, bandera);
   const sv = serverSet(setName);
   if (c && sv) cmp(`Exclusividad: ${varName}.${bandera} ↔ ${setName}`, c, sv);
+}
+
+// ---------- el techo de CAC contra el Python ----------
+//
+// Estos NO se comparan contra una copia del número en otro archivo: se obtienen CORRIENDO
+// `modelo/modelo_v11.py`. `CONTRIB_PEDIDO` allá no es un literal — lo calcula
+// `_contrib_menu("actual", FRAC_BYO)` a partir del catálogo — así que un regex sobre el
+// fuente no lo vería, y una copia escrita a mano se desincronizaría el día que cambie un
+// precio desde el panel sin que nada avise.
+//
+// Es el mismo criterio que ya se aplica a MODELO_SUPUESTOS, llevado un paso más allá: aquel
+// compara dos literales, éste compara contra el resultado real del modelo. Importa porque
+// sobre `contribPedido` se calcula el TECHO: si el servidor cree que un pedido deja S/14.13
+// y en realidad deja S/12, el freno deja pasar un CAC que ya está quemando plata.
+function modeloV11Numeros() {
+  const py = [
+    'import sys; sys.path.insert(0, "modelo")',
+    'import modelo_v11 as M',
+    'print("%.2f|%.2f|%.2f|%.2f" % (M.CONTRIB_PEDIDO, M.OVERHEAD_POR_PEDIDO, M.COSTO_REFERIDO, M.CONV_APRENDIZAJE_7D))',
+  ].join('; ');
+  // ⚠ `-B` Y `PYTHONPYCACHEPREFIX` NO SON HIGIENE: sin ellos este chequeo compara contra un
+  // modelo VIEJO y no se entera. Python valida su bytecode cacheado por (mtime, tamaño) del
+  // fuente, así que cambiar `0.50` por `0.85` —mismo número de bytes— dentro del mismo
+  // segundo deja la caché dándose por válida. Pasó de verdad al probar este chequeo: el
+  // fuente decía 0.50, `import` devolvía 0.85, y parity reportaba una diferencia que ya no
+  // existía. Al revés es peor: habría dado verde sobre un techo desactualizado.
+  // `-B` no basta por sí solo (impide ESCRIBIR caché, no leerla); el prefijo a un directorio
+  // temporal es lo que garantiza compilación en frío. Cuesta ~0.1 s.
+  const cacheFria = mkdtempSync(join(tmpdir(), 'sndwch-pyc-'));
+  try {
+    const out = execFileSync('python3', ['-B', '-c', py], {
+      cwd: ROOT, encoding: 'utf8', timeout: 30000,
+      env: { ...process.env, PYTHONPYCACHEPREFIX: cacheFria, PYTHONDONTWRITEBYTECODE: '1' },
+    }).trim();
+    const partes = out.split('\n').pop().split('|').map(Number);
+    if (partes.length !== 4 || partes.some((n) => !Number.isFinite(n))) throw new Error('salida inesperada: ' + out);
+    return partes;
+  } catch (e) {
+    problems.push(`modelo_v11.py: no se pudo correr para verificar el techo de CAC (${e.message.split('\n')[0]}) — este chequeo quedó ciego`);
+    return null;
+  } finally {
+    try { rmSync(cacheFria, { recursive: true, force: true }); } catch { /* nada que limpiar */ }
+  }
+}
+function tsCacTecho(nombre) {
+  const bloque = env.match(/export const CAC_TECHO = \{([\s\S]*?)\n\}/);
+  if (!bloque) {
+    problems.push('CAC_TECHO: no se encontró en env.ts — el formato cambió y este chequeo quedó ciego');
+    return null;
+  }
+  const m = bloque[1].match(new RegExp(nombre + ':\\s*([0-9.]+)'));
+  if (!m) {
+    problems.push(`CAC_TECHO.${nombre}: no está en env.ts`);
+    return null;
+  }
+  return Number(m[1]);
+}
+{
+  const py = modeloV11Numeros();
+  if (py) {
+    const [contrib, overhead, referido, aprendizaje] = py;
+    cmpModelo('Techo de CAC: contribución por pedido (CONTRIB_PEDIDO ↔ contribPedido)', 'modelo/modelo_v11.py',
+        tsCacTecho('contribPedido'), contrib);
+    cmpModelo('Techo de CAC: overhead por pedido (OVERHEAD_POR_PEDIDO ↔ overheadPedido)', 'modelo/modelo_v11.py',
+        tsCacTecho('overheadPedido'), overhead);
+    cmpModelo('Techo de CAC: costo del referido (COSTO_REFERIDO ↔ costoReferido)', 'modelo/modelo_v11.py',
+        tsCacTecho('costoReferido'), referido);
+    cmpModelo('Techo de CAC: conversiones de aprendizaje (CONV_APRENDIZAJE_7D ↔ convAprendizaje7d)', 'modelo/modelo_v11.py',
+        tsCacTecho('convAprendizaje7d'), aprendizaje);
+  }
 }
 
 // ---------- salida ----------

@@ -1091,7 +1091,11 @@ function sOHome(){
                  :'rgba(26,48,40,0) 0%,rgba(22,42,36,.76) 42%,rgba(17,34,29,.97) 100%')+')"></div>'
           +'<div style="position:relative;text-align:'+(esByo?'left':'right')+'">'
           +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
-          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WICHO':'SANDO')+'</div>'
+          // El rótulo dice SND y WCH, no los nombres (decisión del dueño 2026-09-12): en la
+          // pantalla donde se elige cómo pedir, lo que tiene que leerse es la MARCA partida
+          // en dos por su propio "//" — cada hermano es una mitad del nombre. Los nombres
+          // propios siguen vivos en el `alt` y en el resto del universo de la marca.
+          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WCH':'SND')+'</div>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
           +(activo?'20':'16')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
           +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+sub

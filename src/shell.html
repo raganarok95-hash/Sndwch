@@ -323,10 +323,19 @@ body.kb-open #app{padding-bottom:0}
 .sw-bro img{display:block;width:100%;height:auto}
 /* La reacción al tocar. SANDO se yergue —el que mide antes de moverse— y WICHO se lanza
    hacia adelante. Son las dos personalidades, no dos animaciones distintas por gusto. */
-.sw-bro-sando{transform-origin:bottom center;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
-.sw-bro-wicho{transform-origin:bottom center;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
-.sw-on .sw-bro-sando{transform:translateY(-6px) scale(1.05) rotate(-2deg)}
-.sw-on .sw-bro-wicho{transform:translateY(-9px) scale(1.09) rotate(3deg)}
+/* ⚠ EL ORIGEN DE LA TRANSFORMACIÓN ES LO QUE EVITA QUE EL HERMANO SE CORTE (2026-09-12).
+   Con `bottom center` el que está ACTIVO crece y rota hacia los DOS lados, y su tarjeta
+   tiene `overflow:hidden`: medido, a SANDO le salían 9px por la izquierda y le cortaban el
+   brazo. Y como Signatures es la pestaña por defecto, el cortado era siempre él — el dueño
+   lo reportó como "mal recortada, eso no es su diseño".
+   Cada hermano se ancla al borde por el que está pegado (SANDO a la izquierda, WICHO a la
+   derecha), así que la escala crece HACIA ADENTRO de la tarjeta y el borde de afuera no se
+   mueve. La rotación acompaña: cada uno se inclina hacia el centro, nunca hacia su borde.
+   Esto NO unifica a los hermanos — siguen con escalas y ángulos distintos a propósito. */
+.sw-bro-sando{transform-origin:bottom left;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
+.sw-bro-wicho{transform-origin:bottom right;transition:transform .34s cubic-bezier(.34,1.56,.64,1)}
+.sw-on .sw-bro-sando{transform:translateY(-6px) scale(1.05) rotate(2deg)}
+.sw-on .sw-bro-wicho{transform:translateY(-9px) scale(1.09) rotate(-3deg)}
 /* El ojo espiral de WICHO, encima del que ya trae la ilustración. Las medidas salen de
    muestrear el archivo: centro al 27% / 43.6% y radio 11.4% del ancho. Si algún día
    cambia el logo, esto se descuadra — por eso está anotado de dónde salen. */

@@ -433,3 +433,48 @@ export const MODELO_SUPUESTOS = {
   // contra S/17.87 del CAC pagado.
   referralsPer100: 6,
 };
+
+// ── EL TECHO DE CAC — hasta cuánto se puede pagar por un cliente ───────────────────────
+//
+// POR QUÉ EXISTE. `PREDICCION_V12.md` concluye que la meta NO se alcanza con más publicidad,
+// y todo eso cuelga de un CAC que **nadie midió**: sale de tasas de agencia (CPM S/5-12,
+// CTR 2.97%, CVR 1.89%) que dan un rango de S/10.51 a S/25.23. Esa horquilla es la distancia
+// entre "la publicidad sostiene el negocio" y "lo desangra", así que gastar sin medirla es
+// apostar, no invertir.
+//
+// ⚠ EL DATO QUE OBLIGA A QUE ESTO EXISTA: con el CPM medio el CAC es **S/17.87** y la
+// contribución del primer pedido es **S/13.63**. O sea que al CPM medio un cliente comprado
+// NO se paga a sí mismo con su primer pedido — se recupera recién si vuelve. Eso puede estar
+// bien (casi todo el delivery funciona así) pero solo si la repetición existe DE VERDAD, y
+// hoy no está medida. El freno no dice "no hagas publicidad": dice cuánto estás apostando a
+// una repetición que todavía no viste.
+//
+// Los cuatro números salen de `modelo/modelo_v11.py` y **`npm run parity` los verifica
+// corriendo el Python**, no comparando contra una copia. Es el segundo chequeo del script que
+// cruza lenguajes, por el mismo motivo que el primero: la pantalla no puede medir contra una
+// meta que el modelo ya movió.
+export const CAC_TECHO = {
+  // [DERIVADO] `CONTRIB_PEDIDO` — contribución por pedido con la mezcla que el modelo asume
+  // (mitad ARMA EL TUYO). NO es el 16.42 de los Signatures solos.
+  contribPedido: 14.13,
+  // [MÉTODO] `OVERHEAD_POR_PEDIDO` — gas, frío y coordinación, aparte del insumo.
+  overheadPedido: 0.5,
+  // [MEDIDO] `COSTO_REFERIDO` — el insumo del 15CM de R06 + la bebida de R05. Es el canal
+  // alternativo, y el número contra el que hay que comparar cualquier CAC pagado.
+  costoReferido: 7.65,
+  // [PLATAFORMA] Regla oficial de Meta: un conjunto de anuncios necesita ~50 conversiones
+  // cada 7 días para salir de la fase de aprendizaje. Por debajo de eso el CAC medido es
+  // ruido caro, no una medición — y avisarlo importa tanto como el techo mismo.
+  convAprendizaje7d: 50,
+};
+
+// El techo duro: lo que deja un cliente en su PRIMER pedido. Se deriva, nunca se escribe.
+//
+// Se eligió el primer pedido y no el valor de vida a propósito. Un techo con repetición
+// exige asumir cuántas veces vuelve un cliente, y ese número hoy NO está medido — asumirlo
+// daría un techo generoso construido sobre fe, que es exactamente la clase de dato con
+// aspecto de medición que este repo evita. Por encima de este techo el negocio está
+// apostando a la repetición; por debajo, el cliente ya se pagó solo.
+export function cacTechoPrimerPedido(): number {
+  return Math.round((CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido) * 100) / 100;
+}

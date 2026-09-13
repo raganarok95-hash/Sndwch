@@ -330,6 +330,11 @@ function adminToolsSections(){
       // Va en Marketing y no en "Salud del sistema" porque las tres se mueven con
       // decisiones de marketing y producto, no con infraestructura.
       ['reportes','Las tres palancas','loadPalancas()'],
+      // El freno de CAC va JUNTO a las palancas y no en otra sección: es la cuarta
+      // cifra de la misma conversación — cuánto cuesta traer a un cliente contra
+      // cuánto deja. La pantalla de palancas termina diciendo que el CAC es "lo que
+      // NO está acá y decide igual de fuerte"; esto es ese hueco.
+      ['estrella','Freno de CAC','loadCacBrake()'],
       ['clientes','Lista de espera','loadWaitlist()'],
     ]],
     ['Catálogo //',[

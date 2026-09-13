@@ -15,7 +15,7 @@ import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesA
 import { organizerFreeSandwichApplies } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
-import { storePausedUntil } from "./hours.ts";
+import { storePausedUntil, promosKilled } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 
@@ -672,6 +672,14 @@ async function computePromoDiscount(
 ): Promise<{ promoCodeId: string; code: string; discount: number }> {
   const code = codeRaw.trim().toUpperCase();
   if (!code) throw new ApiError("Ingresa un código promocional.", 400);
+  // ⚠ EL KILL SWITCH SE COMPRUEBA ACÁ Y NO EN LA PANTALLA. `computePromoDiscount` es el
+  // ÚNICO camino por el que un código termina descontando —lo usan tanto la vista previa
+  // (`actValidatePromoCode`) como el reclamo real (`claimPromoDiscount`)— así que cortarlo
+  // acá lo apaga entero. Ponerlo en el cliente sería decorativo: quien llame la acción
+  // directamente seguiría cobrando el descuento.
+  if (await promosKilled()) {
+    throw new ApiError("Los códigos promocionales están pausados por ahora.", 409);
+  }
   const rows = await sbGet("promo_codes", `code=eq.${encodeURIComponent(code)}&select=*`);
   const promo = rows[0];
   if (!promo || !promo.active) throw new ApiError("Ese código promocional no existe o ya no está activo.", 404);
