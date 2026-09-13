@@ -1129,6 +1129,12 @@ var GIFT_CARD_POINTS_PER_SOL=40;
 // estos dos contra GIFT_CARD_AMOUNT_MIN/MAX del servidor.
 var GIFT_CARD_AMOUNT_MIN=10;
 var GIFT_CARD_AMOUNT_MAX=500;
+// Lo que recibe quien CREA su cuenta. Estaba escrito a mano dentro del texto de la pantalla
+// de registro ("Bono de bienvenida: +40 pts"), con un comentario que decía "DEBE coincidir" y
+// NADA que lo verificara — la clase exacta de promesa pública que este repo ya vio romperse
+// tres veces. Ahora se interpola desde acá y `npm run parity` lo compara contra el servidor.
+// Solo se usa para el copy: quien otorga los puntos es el servidor.
+var WELCOME_BONUS_POINTS=40;
 // Lo que recibe EL INVITADO al pagar su primer pedido — 120 pts = una bebida gratis (R05).
 // Subido de 50 el 2026-08-20: el invitado es quien tiene que decidir comprar y 50 puntos
 // (S/1.25) no le dicen nada a alguien que nunca pidió. Solo se usa para el copy — quien

@@ -20,6 +20,25 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | P3 | **Cerrar los lunes** el martes 8 de septiembre | Decisión ya tomada; hay que ejecutarla en el panel el día indicado |
 | P4 | **Cotizar precios reales** al comprar la primera tanda | Todo el costeo del menú corre hoy sobre estimados. Ver P8 |
 
+## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
+
+`PREDICCION_V14.md` midió qué hace falta para **S/3,000 netos en diciembre**. El resultado es
+incómodo y útil: **la publicidad NO lo mueve** (con S/8,000 de pauta sale peor que con S/0,
+porque el gasto se resta hoy y el cliente vuelve recién a las cinco semanas). Lo que sí lo
+mueve es esto, en orden:
+
+| # | Qué | Cuánto mueve |
+|---|---|---|
+| P0a | **Avísale a 300 personas de tu red el primer mes.** El panel te da el link y el mensaje listo en Admin // Marketing // "Avísale a tu gente". **Usa ESE link** (lleva `?src=lanzamiento`): sin él, el sistema los cuenta como gente que llega sola todos los días y meses después te apaga los anuncios solo | P(S/3,000 en el mes 3): de 0% a **44.7%** con 200 · **73%** con 300 |
+| P0b | **Google Business Profile publicado** (ya tienes el texto listo) **y el QR de la bolsa impreso** | lleva el orgánico a ~3/día: suma **+15 puntos** |
+| P0c | **Que los referidos lleguen a 25 por cada 100 pedidos** (hoy el modelo asume 6). El mecanismo ya está en la app; lo que falta es que lo uses en cada entrega | de 15.5% a **52%** |
+| P0d | S/2,000 de pauta con reinversión — **para el año que viene, no para diciembre** | m12: S/3,476 → S/4,058 |
+
+Con las cuatro: **79.9%** de llegar a S/3,000 en el mes 3, y **la caja nunca baja de cero**
+(el peor momento es +S/4,399, así que no hay pozo que financiar).
+
+⚠ **Las 300 personas son un supuesto tuyo, no mío.** Si tu red son 80, esa fila no aplica.
+
 ## 1b. ⚠ Una sola oportunidad: la ventana sin publicidad, al abrir
 
 | # | Qué | Por qué no se puede posponer |

@@ -1569,6 +1569,66 @@ medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquie
 mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
 existen y, peor, deja de distinguir el día que sí existan.
 
+## El techo de CAC es el del CLIENTE, no el del primer pedido (2026-09-13)
+
+**Corrección del dueño**: la publicidad es **reinversión** y no debe limitar hasta S/10,000; y
+**"mano de obra = S/0" deja de ser regla** — tiene que haber sueldo para él, y a futuro se
+puede contratar.
+
+El freno comparaba el CAC contra S/13.63, que es lo que deja **un solo pedido**. El CAC de Meta
+arranca por encima de eso en todo el rango, así que el freno **cortaba siempre** y el negocio se
+quedaba sin su único canal de adquisición — el modelo lo mostró clavado en −S/500 para siempre.
+
+`cacTechoValorVida()` (`env.ts`) usa lo que deja el cliente COMPLETO. Lo que no hay que romper:
+
+- **La cadena de reórdenes es explícita, no un ajuste opaco.** [FUENTE propia 2026-09-13]
+  Genesys, delivery: solo el **45%** vuelve a pedir; de esos, **85%** hace un tercero; después,
+  **60%** sigue. Da **2.41 pedidos por cliente**. El modelo heredado daba 2.20 por un ajuste sBG
+  sobre otras fuentes — **dos derivaciones independientes dentro del 10%**.
+- **`confianzaValorVida` (0.75) recorta a propósito**: la repetición de ESTE negocio no está
+  medida. Con 1.0 se le cree entero a un dato prestado.
+- **Los DOS techos viajan al cliente y los dos se muestran.** El de vida contesta "¿se paga si
+  vuelve como vuelve la industria?"; el del primer pedido, "¿ya se pagó hoy?". Colapsarlos
+  escondería cuál se contestó.
+- **El freno sigue cortando** cuando ni el valor de vida alcanza. Reinvertir no es gastar a ciegas.
+
+### ⚠ Y el CAC heredado estaba 36% subestimado
+
+[FUENTE propia] Benchmarks 2026: CTR **1.85%** (Alimentos y Bebidas) a **2.97%** (Restaurantes),
+CVR **1.54%** a **1.89%**. El modelo v11 tomó **el extremo optimista de los dos a la vez**, y
+como el CAC es inversamente proporcional a ambos, el error se MULTIPLICA: el medio real es
+**S/24.27**, no S/17.87. Y el CPM tiene un rango de 1:9 entre fuentes (agencia peruana S/5-12 vs
+mercados emergentes ≈S/11-45), así que **el CAC medio queda en el filo del techo nuevo**.
+
+### ⚠ UN LANZAMIENTO NO ES UN RITMO — defecto real que introdujo la palanca del mes 3
+
+La simulación midió que lo único que mueve el mes 3 es **avisarle a la red personal**: 200
+personas hacen que P(S/3,000 netos en diciembre) pase de 1.2% a 44.7%, y **más publicidad lo
+EMPEORA** (a S/8,000 sale peor que a S/0: el gasto se resta hoy y el cliente devuelve en su
+segundo pedido, cinco semanas después).
+
+Pero esas 200 caen dentro de la ventana de la línea base y ninguna trae referidor, así que el
+promedio simple las leía como **10 clientes orgánicos por día para siempre** — y meses después
+el freno restaba ese ritmo inventado, los atribuibles daban 0 y el veredicto era
+`sin-incrementales`: **la publicidad apagada por una fiesta de apertura.** Se cierra por dos
+vías y las dos hacen falta:
+
+1. **Promedio recortado por arriba** (`ritmoRecortado`, descarta el 20% de días más altos). No
+   depende de que nadie etiquete nada, que es su virtud. Su costo va declarado: a volumen bajo
+   baja la base unas centésimas, y una base más baja da un CAC más barato — la dirección
+   peligrosa. Se acepta porque es de centésimas contra un error de 10 a 3.
+2. **`FUENTES_DE_RAFAGA`**: lo que llega marcado como lanzamiento no cuenta como orgánico. El
+   mecanismo de atribución **ya existía** (`?src=` → `acquisition_source`): no hubo que construir
+   nada, solo usarlo.
+
+**"Avísale a tu gente"** es el primer bloque de Admin // Marketing (antes estaba escondido tras
+el rótulo "Contenido semanal", que el dueño no tiene por qué abrir en la semana de apertura), y
+**va ANTES del `return` de error de esa pantalla**: no depende del brief semanal, así que un
+fallo cargando otra cosa no puede hacer desaparecer la palanca que más mueve los primeros tres
+meses.
+
+Ver `PREDICCION_V14.md` para el plan completo y `modelo/modelo_v14.py` para el motor.
+
 ## Cinco métodos de predicción, y por qué uno solo no alcanzaba (2026-09-13)
 
 Los modelos v7 a v12 eran **el mismo esqueleto** con entradas distintas: simulación estructural
@@ -1744,7 +1804,14 @@ Lo que cambia prioridades, y NO es opinión:
   referidos y menos rentables**. Y premiar solo al INVITADO rindió parecido a un premio de dos
   lados que costaba el doble.
 - **El 50.3% de las segundas compras cae dentro de los 30 días** y la conversión se desploma
-  después del día 45. `remind-second-order` toca esa ventana **una sola vez, día 7-10**.
+  después del día 45.
+  ⚠ **Corregido el 2026-09-13 leyendo el código**: este archivo decía que `remind-second-order`
+  toca esa ventana "una sola vez, día 7-10", y **son DOS toques ya construidos** —
+  `bounce-back-first-order` a las 20-48 h (con la bebida de regalo) y el recordatorio de día
+  7-10—. La versión vieja invitaba a agregar un tercer envío que no hace falta: la ventana
+  temprana, que es la que la evidencia señala, ya está cubierta. Lo que sí queda sin tocar son
+  los **días 11 a 30**, y para eso no encontré evidencia de que un push más ayude — más avisos
+  no es mejor, y este repo ya limita a `MAX_PUSH_PER_RUN` por algo.
 - **El descuento recurrente entrena a esperar descuento** (estudio de cupones de Alibaba): baja
   el precio de referencia y sube la sensibilidad al precio **incluso en vendedores que no
   promocionan**. Es el respaldo de que el combo y las recompensas NO son descuentos

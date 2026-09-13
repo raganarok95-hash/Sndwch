@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~331 KB que antes
+// de admin. Ningún cliente lo descarga: son ~338 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -372,9 +372,14 @@ function adminToolsSections() {
                 ['reclamo', 'Reclamaciones', 'loadAdminComplaints()'],
             ]],
         ['Marketing //', [
+                // ⚠ "Avísale a tu gente" va PRIMERO de todo Marketing. La simulación del 2026-09-13
+                // midió que avisarle a la red personal es la ÚNICA palanca que mueve el mes 3 —de 1.2%
+                // a 44.7% de probabilidad de llegar a S/3,000 netos— y estaba escondida detrás de un
+                // rótulo que decía "Contenido semanal": el dueño no tenía por qué entrar ahí durante la
+                // semana de apertura, que es justo cuando sirve.
+                ['megaphone', 'Avísale a tu gente', 'loadMarketingContent()'],
                 ['calendar', 'Calendario de contenido', 'loadCalendar()'],
                 ['camera', 'Guion de video', 'loadVideoScript()'],
-                ['megaphone', 'Contenido semanal', 'loadMarketingContent()'],
                 ['precios', 'Códigos promo', 'loadPromoCodes()'],
                 ['estrella', 'Rendimiento campañas', 'loadCampaignPerformance()'],
                 // Las tres palancas del modelo financiero, medidas contra lo que el modelo asume.
@@ -2531,11 +2536,65 @@ function mktBlock(pkg, week) {
         + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">' + esc(pkg.photoIdea) + '</div>'
         + '</div>';
 }
+// ── EL LANZAMIENTO A LA RED PROPIA ────────────────────────────────────────────────────────
+//
+// La simulación del 2026-09-13 midió que es LA palanca del mes 3, y por mucho: avisarle a 200
+// personas hace que la probabilidad de llegar a S/3,000 netos en diciembre pase de 1.2% a
+// 44.7%. Más publicidad NO lo mueve —a S/8,000 de lanzamiento sale peor que a S/0, porque el
+// gasto se resta hoy y el cliente devuelve en su segundo pedido, cinco semanas después—.
+//
+// El mecanismo de atribución YA EXISTÍA (`?src=` → `acquisition_source`), así que no hubo que
+// construir nada: lo que faltaba era que el dueño tuviera el link a mano y supiera que el
+// parámetro importa. Sin él, esos clientes entran a la línea base orgánica como si fueran un
+// ritmo sostenido — ver `FUENTES_DE_RAFAGA` en el servidor.
+var LANZAMIENTO_SRC = 'lanzamiento';
+function lanzamientoLink() {
+    try {
+        return location.origin + location.pathname + '?src=' + LANZAMIENTO_SRC;
+    }
+    catch (e) {
+        return '?src=' + LANZAMIENTO_SRC;
+    }
+}
+function lanzamientoTexto() {
+    // ⚠ El bono se INTERPOLA. Un número escrito a mano en un texto que el dueño copia y pega es
+    // una promesa pública que se rompe sola el día que el servidor cambie — este repo ya tuvo
+    // tres a la vez.
+    return 'Abrí SND//WCH 🥪 Sándwiches hechos por mí, con delivery en Trujillo.\n\n'
+        + 'Te dejo el link para que pidas: ' + lanzamientoLink() + '\n\n'
+        + 'Si creas tu cuenta te doy ' + WELCOME_BONUS_POINTS + ' puntos de bienvenida. '
+        + 'Cualquier cosa me escribes por acá.';
+}
+function copiarLanzamiento() {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(lanzamientoTexto()).then(function () { showToast('Copiado ✓', 'info'); });
+    }
+}
+function bloqueLanzamiento() {
+    return '<div style="background:var(--sw-card,#2D5246);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:18px">'
+        + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:6px">Avísale a tu gente</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55;margin-bottom:10px">'
+        + 'Es lo que más mueve tus primeros tres meses, y no cuesta nada. Mándaselo a todos los que '
+        + 'conoces — uno por uno o por difusión. <b style="font-style:normal">Usa ESTE link</b>: trae '
+        + 'la marca que los separa de tus clientes de publicidad, y sin eso el panel los cuenta como '
+        + 'si llegaran solos todos los días y te apaga los anuncios más adelante.</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:' + GOLD + ';word-break:break-all;background:var(--sw-card2,#1A3028);border-radius:8px;padding:10px 12px;margin-bottom:10px">' + esc(lanzamientoLink()) + '</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5;white-space:pre-wrap;margin-bottom:10px">' + esc(lanzamientoTexto()) + '</div>'
+        + '<button onclick="copiarLanzamiento()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:9px 14px;border-radius:8px;display:inline-block;min-height:20px">Copiar mensaje</button>'
+        + '</div>';
+}
 function sAdminMarketing() {
     var h = H('MARKETING', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
     var d = marketingContentData;
+    // ⚠ EL LANZAMIENTO VA ANTES DEL `return` DE ERROR, y no es un detalle de orden. No depende
+    // del contenido semanal —es un link y un texto que se arman en el cliente— así que dejarlo
+    // detrás del early return lo hacía desaparecer entero cuando el brief no cargaba. La palanca
+    // que más mueve los primeros tres meses no se puede caer con el fetch de otra cosa.
+    // Y va PRIMERO también cuando todo carga bien: lo que se deja para después del contenido
+    // semanal no se hace nunca.
+    h += bloqueLanzamiento();
     if (!d)
-        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadMarketingContent()') + '</div>';
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar el contenido semanal //</div></div>' + BTN('Reintentar //', 'loadMarketingContent()') + '</div>';
     h += '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Contenido listo para copiar y pegar — cambia cada semana. Nada se publica solo, tú decides cuándo y dónde.</div>';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Esta semana //</div>';
     h += mktBlock(d.current, 'current');
@@ -3839,9 +3898,16 @@ async function loadPalancas() {
 }
 // Una palanca puede ir por encima o por debajo del supuesto, y en las tres "más es mejor"
 // menos en la mezcla: ahí lo bueno es MENOS armado, porque un Signature deja ~S/5.50 más.
-function palancaCard(titulo, real, meta, sufijo, menosEsMejor, explica) {
+// ⚠ TRES NÚMEROS, NO DOS: lo medido, de dónde PARTE el modelo, y a dónde hay que LLEGAR.
+// Antes se comparaba solo contra el supuesto del modelo, así que "8 referidos por 100" contra
+// un supuesto de 6 se leía como *vamos bien* — cuando el plan que llega a S/3,000 netos en el
+// mes 3 necesita 25. Un tablero que da por bueno el punto de partida no empuja a ningún lado.
+// El color se decide contra el OBJETIVO, que es lo que hay que mover; el supuesto queda como
+// referencia de dónde arrancó el modelo.
+function palancaCard(titulo, real, meta, sufijo, menosEsMejor, explica, objetivo) {
     var hay = real !== null && real !== undefined;
-    var mejor = hay && (menosEsMejor ? Number(real) <= meta : Number(real) >= meta);
+    var ref = (objetivo === undefined || objetivo === null) ? meta : objetivo;
+    var mejor = hay && (menosEsMejor ? Number(real) <= ref : Number(real) >= ref);
     var col = !hay ? 'var(--sw-text-muted,#A8C8B0)' : (mejor ? 'var(--sw-ok,#25D366)' : 'var(--sw-warn,#ffa500)');
     return '<div style="background:var(--sw-card2,#1A3028);border:1px solid ' + (hay ? (mejor ? 'rgba(37,211,102,.35)' : 'rgba(255,165,0,.35)') : 'var(--sw-border,#3A6B58)') + ';border-radius:12px;padding:16px;margin-bottom:10px">'
         + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">' + esc(titulo) + ' //</div>'
@@ -3849,7 +3915,10 @@ function palancaCard(titulo, real, meta, sufijo, menosEsMejor, explica) {
         + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:' + col + ';line-height:1">'
         // Un guion y NUNCA un 0 donde no hay dato: un 0 se lee como "medimos y dio cero".
         + (hay ? (real + sufijo) : '—') + '</div>'
-        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">el modelo asume ' + meta + sufijo + '</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'
+        + (objetivo !== undefined && objetivo !== null
+            ? ('objetivo <b style="font-style:normal;color:' + GOLD + '">' + objetivo + sufijo + '</b> · el modelo parte de ' + meta + sufijo)
+            : ('el modelo asume ' + meta + sufijo)) + '</div>'
         + '</div>'
         + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-top:8px">' + explica + '</div>'
         + '</div>';
@@ -3861,6 +3930,7 @@ function sAdminPalancas() {
     }
     var p = palancasData.palancas || {};
     var m = palancasData.modelo || {};
+    var o = palancasData.objetivo || {};
     // LA SALVAGUARDA VA ARRIBA DE LAS CIFRAS, NO AL PIE. Al pie se lee después de haberles
     // creído. Mismo criterio que el plan de tanda y el reporte de cohortes.
     if (!p.reliable) {
@@ -3871,12 +3941,12 @@ function sAdminPalancas() {
     }
     h += palancaCard('MEZCLA — cuánto se arma', p.byoPct, m.byoPct, '%', true, 'Es la fracción de SÁNDWICHES armados en ARMA EL TUYO (no de pedidos: uno puede llevar de los dos). '
         + 'Un Signature deja ~S/5.50 más que un armado, así que acá lo bueno es que baje. '
-        + (p.sigUnits !== undefined ? ('Van ' + p.sigUnits + ' Signature contra ' + p.byoUnits + ' armados.') : ''));
+        + (p.sigUnits !== undefined ? ('Van ' + p.sigUnits + ' Signature contra ' + p.byoUnits + ' armados.') : ''), o.byoPct);
     h += palancaCard('BEBIDA — cuántos pedidos la llevan', p.drinkPct, m.drinkPct, '%', false, 'La palanca más barata de las tres: no exige adquirir a nadie y las bebidas están al 19-32% de costo. '
-        + 'Cada 15 puntos de attach valen ~S/0.48 más por pedido.');
+        + 'Cada 15 puntos de attach valen ~S/0.48 más por pedido.', o.drinkPct);
     h += palancaCard('REFERIDOS — por cada 100 pedidos', p.referralsPer100, m.referralsPer100, '', false, 'Clientes captados por referido, por cada 100 pedidos servidos. '
         + 'Es la palanca que en el modelo convierte "no llega nunca" en "sostiene desde feb-27": un referido cuesta S/7.65 contra ~S/17.87 de comprarlo en Meta. '
-        + (p.referredCustomers !== undefined ? ('Van ' + p.referredCustomers + ' clientes por referido en 90 días.') : ''));
+        + (p.referredCustomers !== undefined ? ('Van ' + p.referredCustomers + ' clientes por referido en 90 días.') : ''), o.referralsPer100);
     h += '<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-top:16px">'
         + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">'
         + '<b style="font-style:normal;color:var(--sw-text-body,#F2F0EB)">Lo que NO está acá y decide igual de fuerte:</b> el CAC real. '
@@ -4213,7 +4283,16 @@ function sAdminCacBrake() {
             + '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
             // Un guion y NUNCA un 0: un 0 se lee como "medimos y salió gratis".
             + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:' + col + ';line-height:1">' + (hayCac ? SOLES + pz(d.cac) : '—') + '</div>'
+            // ⚠ DOS TECHOS, Y CONTESTAN PREGUNTAS DISTINTAS. El grande —contra el que decide el
+            // freno— es lo que deja el cliente COMPLETO: "¿se paga si vuelve como vuelve la
+            // industria?". El chico es lo que deja UN pedido: "¿ya se pagó hoy?". Mostrar solo uno
+            // escondería cuál se contestó, y este repo ya pagó el precio de tener dos números para
+            // lo mismo con uno ganando en silencio.
             + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0)">techo ' + SOLES + pz(d.techo) + '</div></div>'
+            + (d.techoPrimerPedido ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'
+                + 'El techo son ' + SOLES + pz(d.techo) + ' porque un cliente pide <b style="font-style:normal">' + d.pedidosPorCliente + ' veces</b>, no una. '
+                + 'Con un solo pedido serían ' + SOLES + pz(d.techoPrimerPedido) + ' — por debajo de eso el cliente ya se pagó el mismo día.'
+                + '</div>' : '')
             + '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:13px;color:' + col + ';margin-top:8px">' + titular + '</div>'
             // El intervalo va DEBAJO de la cifra y con los dos extremos escritos: "±11%" solo no dice
             // nada, "entre S/12 y S/15" sí — y es lo que deja ver de un vistazo si el techo cae
@@ -4229,7 +4308,14 @@ function sAdminCacBrake() {
             + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-top:8px">'
             + (d.veredicto === 'sin-incrementales'
                 ? 'Entraron ' + d.nuevosPagados + ' clientes nuevos en ' + d.dias + ' días, pero antes de la publicidad ya entraban ' + d.baseOrganicaDia + ' por día — o sea unos ' + Math.round((d.baseOrganicaDia || 0) * d.dias) + ' en el mismo tiempo. No hay ninguno por encima de eso, así que no hay a quién atribuirle el gasto.'
-                : 'El techo es lo que te deja un cliente en su PRIMER pedido. Por encima de eso no pierdes necesariamente — recuperas si vuelve — pero estás apostando a una repetición que todavía no mediste.')
+                // ⚠ ESTE TEXTO DECÍA "el techo es lo que te deja un cliente en su PRIMER pedido" y dejó
+                // de ser cierto el 2026-09-13, cuando el freno pasó a decidir contra el valor de vida.
+                // Un texto que describe un mecanismo que ya no existe es peor que no tenerlo: manda a
+                // interpretar el número al revés. Los dos números se interpolan, ninguno se escribe.
+                : 'El techo ya cuenta con que el cliente vuelve ' + (d.pedidosPorCliente || '') + ' veces, no una — por eso son '
+                    + SOLES + pz(d.techo) + ' y no ' + SOLES + pz(d.techoPrimerPedido) + '. Está recortado al '
+                    + Math.round((d.confianzaValorVida || 0) * 100) + '% a propósito: esa repetición es de la industria, todavía no la tuya. '
+                    + 'Por encima de este número ya no lo recuperas ni volviendo.')
             + (hayCac && !d.salioDeAprendizaje ? ' Y Meta sigue en fase de aprendizaje (' + d.nuevosPagados + ' de ' + d.minAprendizajeMeta + ' conversiones): este CAC es el de arranque y puede mejorar solo.' : '')
             + '</div>'
             + '</div>';

@@ -434,6 +434,23 @@ export const MODELO_SUPUESTOS = {
   referralsPer100: 6,
 };
 
+// ⚠ LO QUE EL MODELO ASUME NO ES LO QUE EL PLAN NECESITA, y confundirlos es el defecto que
+// esto cierra (2026-09-13). La pantalla comparaba la medición SOLO contra `MODELO_SUPUESTOS`,
+// que es el punto de partida del modelo — así que ver "8 referidos por 100" contra un supuesto
+// de 6 se lee como *vamos bien*, cuando el plan que llega a S/3,000 netos en el mes 3 necesita
+// **25**. Un tablero que da por bueno el punto de partida no empuja a ningún lado.
+//
+// Son dos números distintos y los dos son ciertos: uno es de dónde parte el modelo, el otro es
+// a dónde hay que llegar. Se muestran juntos por el mismo criterio que los dos techos de CAC —
+// colapsarlos escondería cuál se contestó.
+//
+// [DECISIÓN] Valores de `PREDICCION_V14.md`, escenario que alcanza 80% de probabilidad.
+export const MODELO_OBJETIVOS = {
+  byoPct: 35,          // 65/35 hacia Signature
+  drinkPct: 40,        // +15 puntos de attach valen ~S/0.48 por pedido
+  referralsPer100: 25, // la palanca que convierte "no llega" en "llega"
+};
+
 // ── EL TECHO DE CAC — hasta cuánto se puede pagar por un cliente ───────────────────────
 //
 // POR QUÉ EXISTE. `PREDICCION_V12.md` concluye que la meta NO se alcanza con más publicidad,
@@ -466,6 +483,24 @@ export const CAC_TECHO = {
   // cada 7 días para salir de la fase de aprendizaje. Por debajo de eso el CAC medido es
   // ruido caro, no una medición — y avisarlo importa tanto como el techo mismo.
   convAprendizaje7d: 50,
+
+  // ── CUÁNTAS VECES PIDE UN CLIENTE CAPTADO (2026-09-13) ────────────────────────────────
+  // [FUENTE] Genesys, delivery de comida: solo el **45%** de los clientes nuevos vuelve a
+  // pedir (la "brecha del segundo pedido"); de los que hacen un 2.º, **~85%** hace un 3.º;
+  // pasado el 3.º, **60%** sigue. La cadena da 2.41 pedidos por cliente.
+  //
+  // Es una cadena explícita a propósito: se puede discutir número por número. El modelo del
+  // repo llegaba a 2.20 por un ajuste sBG sobre OTRAS fuentes — dos derivaciones
+  // independientes dentro del 10%, que es lo más cerca de una validación a la que se puede
+  // llegar sin datos propios.
+  reordena2do: 0.45,
+  reordena3ro: 0.85,
+  reordenaSiguiente: 0.60,
+
+  // [DECISIÓN] dueño 2026-09-13. Cuánto de ese valor de vida se acepta como techo. NO es 1
+  // porque la repetición de ESTE negocio no está medida: 2.41 sale de industria. Con 0.75 se
+  // exige que tres cuartos del dato prestado se cumplan antes de gastar contra él.
+  confianzaValorVida: 0.75,
 };
 
 // El techo duro: lo que deja un cliente en su PRIMER pedido. Se deriva, nunca se escribe.
@@ -477,4 +512,37 @@ export const CAC_TECHO = {
 // apostando a la repetición; por debajo, el cliente ya se pagó solo.
 export function cacTechoPrimerPedido(): number {
   return Math.round((CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido) * 100) / 100;
+}
+
+/** [DERIVADO] Cuántos pedidos hace un cliente captado, sumando la cadena de reórdenes.
+ *  1 + 0.45 + 0.45·0.85 + esa cola geométrica al 60%. Da 2.41. */
+export function pedidosPorCliente(): number {
+  const { reordena2do: p2, reordena3ro: p3, reordenaSiguiente: pn } = CAC_TECHO;
+  const tercero = p2 * p3;
+  // La cola después del 3.º es geométrica de razón `pn`; su suma cerrada evita truncarla a
+  // un número de pedidos elegido a ojo.
+  return Math.round((1 + p2 + tercero / (1 - pn)) * 100) / 100;
+}
+
+/** ⚠ EL TECHO CON EL QUE DECIDE EL FRENO DESDE EL 2026-09-13 — corrección del dueño.
+ *
+ *  El techo del PRIMER pedido (S/13.63) era correcto mientras la publicidad se juzgara como
+ *  un gasto que tiene que pagarse solo de inmediato. Pero la decisión del dueño es tratarla
+ *  como **reinversión**, y contra ese criterio el techo de un pedido apaga la publicidad
+ *  SIEMPRE: el CAC de Meta arranca por encima de S/13.63 en todo el rango, así que el freno
+ *  cortaba el único canal de adquisición que existe y el negocio se quedaba clavado.
+ *
+ *  El techo correcto para reinvertir es lo que deja el cliente COMPLETO: 2.41 pedidos ×
+ *  S/13.63 ≈ S/33, recortado por `confianzaValorVida` porque la repetición de este negocio
+ *  todavía no está medida. A 0.75 da ~S/25.
+ *
+ *  Los DOS se siguen calculando y la pantalla muestra los dos: el del primer pedido dice
+ *  "este cliente ya se pagó hoy" y el del valor de vida dice "se paga si vuelve como vuelve
+ *  la industria". Son preguntas distintas y colapsarlas en una escondería cuál se contestó.
+ */
+export function cacTechoValorVida(): number {
+  return Math.round(
+    pedidosPorCliente() * (CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido)
+    * CAC_TECHO.confianzaValorVida * 100,
+  ) / 100;
 }

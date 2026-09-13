@@ -273,6 +273,14 @@ cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
 // El cliente ENSEÑA este número en la invitación a referir ("te ganas un sándwich 15CM
 // gratis (400 pts)"), así que si se separa del servidor la app promete un premio que la
 // recompensa ya no paga. El chequeo de abajo ata además ese valor a R06.
+// El bono de bienvenida estaba ESCRITO A MANO dentro del texto de la pantalla de registro,
+// con un comentario que decía "DEBE coincidir con WELCOME_BONUS_POINTS" y nada que lo
+// comprobara. Es la clase de promesa pública que este repo ya vio romperse tres veces: el
+// cliente lee un número en pantalla y el servidor le acredita otro.
+cmp('WELCOME_BONUS_POINTS (lo que se promete al crear la cuenta)',
+  scalar(app, 'WELCOME_BONUS_POINTS', /var WELCOME_BONUS_POINTS=(\d+)/, 'src/app/'),
+  scalar(env, 'WELCOME_BONUS_POINTS', /const WELCOME_BONUS_POINTS = (\d+)/, 'env.ts'));
+
 cmp('REFERRER_REWARD_POINTS (lo que recibe quien invita)',
   scalar(app, 'REFERRER_REWARD_POINTS', /var REFERRER_REWARD_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'));

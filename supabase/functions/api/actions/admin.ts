@@ -6,7 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, CAC_TECHO, cacTechoPrimerPedido } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, MODELO_OBJETIVOS, CAC_TECHO, cacTechoPrimerPedido, cacTechoValorVida, pedidosPorCliente } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
@@ -3242,6 +3242,10 @@ export async function actAdminRetentionReport(b: any) {
     // servidor y no escritos en el cliente a propósito: un número a mano en la pantalla se
     // desincroniza del modelo el día que el modelo cambie, sin que nada falle.
     modelo: MODELO_SUPUESTOS,
+    // De dónde PARTE el modelo y a dónde hay que LLEGAR son dos cosas distintas, y la pantalla
+    // tiene que poder decir las dos: medir solo contra el supuesto hace que el punto de partida
+    // se lea como un logro.
+    objetivo: MODELO_OBJETIVOS,
     alarm: {
       thresholdPct: RETENTION_ALARM_PCT,
       // Solo tiene sentido dar la alarma cuando hay clientes activos que medir; con 0
@@ -3294,7 +3298,17 @@ export type CacFreno = {
   /** Extremos del CAC una vez aplicado ese margen. */
   cacMin: number | null;
   cacMax: number | null;
+  /** El techo con el que DECIDE el freno: valor de vida del cliente, recortado por
+   *  confianza. Ver `cacTechoValorVida` en `env.ts`. */
   techo: number;
+  /** El otro techo, el de un solo pedido. Contesta "¿ya se pagó hoy?" — no se colapsa con el
+   *  de arriba porque son preguntas distintas y la pantalla tiene que poder decir cuál se
+   *  contestó. */
+  techoPrimerPedido: number;
+  /** Cuántos pedidos hace un cliente captado según la cadena de reórdenes. */
+  pedidosPorCliente: number;
+  /** Cuánto de ese valor de vida se acepta como techo (la repetición local no está medida). */
+  confianzaValorVida: number;
   costoReferido: number;
   veredicto: CacVeredicto;
   fiable: boolean;
@@ -3353,7 +3367,14 @@ export function cacFreno(input: {
   const gasto = Math.max(0, Number(input.gasto) || 0);
   const nuevosPagados = Math.max(0, Math.round(Number(input.nuevosPagados) || 0));
   const nuevosReferidos = Math.max(0, Math.round(Number(input.nuevosReferidos) || 0));
-  const techo = cacTechoPrimerPedido();
+  // ⚠ EL FRENO DECIDE CONTRA EL TECHO DEL VALOR DE VIDA desde el 2026-09-13 (decisión del
+  // dueño: la publicidad es reinversión y no debe limitar). Con el techo del primer pedido
+  // el freno cortaba SIEMPRE —el CAC de Meta arranca por encima de S/13.63 en todo el
+  // rango— y el negocio se quedaba sin su único canal de adquisición.
+  // El del primer pedido se sigue calculando y viaja al cliente: contesta otra pregunta
+  // ("¿este cliente ya se pagó hoy?") y colapsarlas escondería cuál se contestó.
+  const techo = cacTechoValorVida();
+  const techoPrimerPedido = cacTechoPrimerPedido();
 
   const baseDias = Number.isFinite(Number(input.baseDias)) ? Math.max(0, Math.round(Number(input.baseDias))) : null;
   const baseNuevos = Number.isFinite(Number(input.baseNuevos)) ? Math.max(0, Math.round(Number(input.baseNuevos))) : null;
@@ -3382,6 +3403,8 @@ export function cacFreno(input: {
 
   const base = {
     dias, gasto, nuevosPagados, nuevosReferidos, techo,
+    techoPrimerPedido, pedidosPorCliente: pedidosPorCliente(),
+    confianzaValorVida: CAC_TECHO.confianzaValorVida,
     costoReferido: CAC_TECHO.costoReferido,
     minAprendizajeMeta,
     salioDeAprendizaje: nuevosPagados >= minAprendizajeMeta,
@@ -3494,6 +3517,42 @@ const CAC_DIAS_POR_DEFECTO = 28;
 // del periodo de medición, así que las dos ventanas tienen la misma mezcla de días de semana.
 const BASE_VENTANA_DIAS = 28;
 
+// ⚠ UN LANZAMIENTO NO ES UN RITMO, Y LA PRIMERA VERSIÓN DE ESTO LOS CONFUNDÍA.
+//
+// La simulación de esta fecha encontró que lo único que mueve el mes 3 es avisarle a la red
+// personal del dueño: 200 personas de golpe hacen que P(S/3,000 netos en el mes 3) pase de
+// 1.2% a 44.7%. Pero esas 200 caen DENTRO de la ventana de la línea base y ninguna trae
+// referidor, así que el promedio simple las leía como **10 clientes orgánicos por día para
+// siempre**. Después, al empezar a gastar, el freno restaba ese ritmo inventado, los
+// atribuibles daban 0 y el veredicto era `sin-incrementales`: **la publicidad apagada por una
+// fiesta de lanzamiento que ocurrió una sola vez.**
+//
+// Se cierra por dos vías, y las dos hacen falta porque cada una tapa lo que la otra deja:
+//
+//   1. PROMEDIO RECORTADO POR ARRIBA. Se descarta el 20% de días con más altas y se promedia
+//      el resto. Un lanzamiento son uno a tres días enormes y se van; un ritmo parejo no se
+//      mueve (28 días a 3 dan 3 antes y después). No depende de que nadie etiquete nada, que
+//      es su virtud: funciona aunque el dueño mande el link pelado.
+//      ⚠ Su costo, declarado: a volumen bajo el recorte baja un poco la base (0.50 → 0.39 en
+//      el peor caso probado), y una base más baja da un CAC más barato, que es la dirección
+//      peligrosa. Se acepta porque el sesgo es de centésimas contra un error de 10 a 3.
+//   2. LAS FUENTES DE RÁFAGA NO CUENTAN. `acquisition_source` ya existe y ya se captura con
+//      `?src=` — no hubo que construir nada. Lo que llega marcado como lanzamiento se excluye
+//      explícitamente: es empuje del dueño, no gente que encontró el negocio sola.
+const FUENTES_DE_RAFAGA = ["lanzamiento"];
+const RECORTE_SUPERIOR = 0.20;
+
+/** Promedio de altas por día descartando el 20% de días más altos. Exportado para poder
+ *  probarlo sin base: su modo de fallo es silencio — si vuelve al promedio simple, nada
+ *  revienta y el freno apaga la publicidad por una fiesta de lanzamiento. */
+export function ritmoRecortado(porDia: number[]): number {
+  if (!porDia.length) return 0;
+  const orden = [...porDia].sort((a, b) => a - b);
+  const quedan = Math.max(1, Math.floor(orden.length * (1 - RECORTE_SUPERIOR)));
+  const usados = orden.slice(0, quedan);
+  return usados.reduce((s, x) => s + x, 0) / usados.length;
+}
+
 async function lineaBaseOrganica(): Promise<{
   porDia: number | null; dias: number | null; nuevos: number | null; hasta: string | null;
 }> {
@@ -3507,8 +3566,8 @@ async function lineaBaseOrganica(): Promise<{
 
   const previos = (await sbGet(
     "customers",
-    `created_at=gte.${encodeURIComponent(inicio.toISOString())}&created_at=lt.${encodeURIComponent(corte.toISOString())}&select=created_at,referred_by&order=created_at.asc&limit=20000`,
-  ) || []) as Array<{ created_at: string; referred_by: string | null }>;
+    `created_at=gte.${encodeURIComponent(inicio.toISOString())}&created_at=lt.${encodeURIComponent(corte.toISOString())}&select=created_at,referred_by,acquisition_source&order=created_at.asc&limit=20000`,
+  ) || []) as Array<{ created_at: string; referred_by: string | null; acquisition_source: string | null }>;
 
   if (!previos.length) return { porDia: null, dias: null, nuevos: null, hasta };
 
@@ -3516,8 +3575,28 @@ async function lineaBaseOrganica(): Promise<{
   // negocio abrió hace 6 días, son 6 y no 28 — dividir entre 28 diluiría la base a la cuarta
   // parte, y `baseDias` por debajo del mínimo es exactamente lo que tiene que pasar ahí.
   const dias = Math.max(1, Math.round((corte.getTime() - new Date(previos[0].created_at).getTime()) / 86400000));
-  const nuevos = previos.filter((c) => !c.referred_by).length;
-  return { porDia: nuevos / dias, dias, nuevos, hasta };
+
+  const organicos = previos.filter((c) =>
+    !c.referred_by
+    && !FUENTES_DE_RAFAGA.includes((c.acquisition_source || "").toLowerCase())
+  );
+  const nuevos = organicos.length;
+
+  // Altas por día calendario dentro de la ventana, para poder recortar los días de ráfaga.
+  const porFecha = new Map<string, number>();
+  for (const c of organicos) {
+    const d = c.created_at.slice(0, 10);
+    porFecha.set(d, (porFecha.get(d) || 0) + 1);
+  }
+  // Los días SIN altas cuentan como 0: si no, el promedio se calcularía solo sobre los días
+  // buenos y la base saldría inflada justo cuando hay poco volumen.
+  const serie: number[] = [];
+  for (let i = 0; i < dias; i++) {
+    const d = new Date(corte.getTime() - (i + 1) * 86400000).toISOString().slice(0, 10);
+    serie.push(porFecha.get(d) || 0);
+  }
+
+  return { porDia: ritmoRecortado(serie), dias, nuevos, hasta };
 }
 
 // ── EL GASTO SE CARGA A MANO, Y OLVIDARSE ABARATA EL CAC ──────────────────────────────────

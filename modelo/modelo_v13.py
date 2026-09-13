@@ -56,6 +56,13 @@ M.DIAS = [c[3] for c in M.CAL]
 M.HORIZONTE = len(M.CAL)
 ETIQ, DIAS, H = M.ETIQ, M.DIAS, M.HORIZONTE
 
+# ⚠ SUPERADO POR EL v14 EL MISMO DÍA — no se corrige acá a propósito.
+# Este archivo decide la política de anuncios contra el techo del PRIMER pedido, que es lo que
+# el servidor usaba cuando se escribió. El dueño corrigió después que la publicidad es
+# reinversión, y el techo pasó a ser el del cliente completo (`cacTechoValorVida`, S/24.59).
+# Reescribir este archivo borraría el hallazgo que justifica el cambio: con el techo de un solo
+# pedido, el freno apaga la publicidad SIEMPRE y el negocio se queda clavado en −S/500. Ver
+# `modelo/modelo_v14.py` y `PREDICCION_V14.md` para la política vigente.
 TECHO_CAC = 13.63          # [DERIVADO] `cacTechoPrimerPedido()` en el servidor
 
 

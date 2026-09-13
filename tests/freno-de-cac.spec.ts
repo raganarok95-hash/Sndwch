@@ -24,7 +24,8 @@ const ADMIN = { phone: '900000000', name: 'Admin' };
 const frenoBase = {
   dias: 28, gasto: 0, nuevosPagados: 0, nuevosReferidos: 0,
   cac: null, margenPct: null, cacMin: null, cacMax: null,
-  techo: 13.63, costoReferido: 7.65,
+  techo: 24.63, techoPrimerPedido: 13.63, pedidosPorCliente: 2.41, confianzaValorVida: 0.75,
+  costoReferido: 7.65,
   veredicto: 'sin-gasto', fiable: false,
   motivo: 'No hay gasto cargado en este periodo, así que no hay CAC que medir.',
   minAprendizajeMeta: 200, salioDeAprendizaje: false,
@@ -133,7 +134,11 @@ test.describe('freno de CAC', () => {
   test('el techo NO está escrito en la pantalla: viene del servidor', async ({ page }) => {
     // Se sirve un techo distinto del real y la pantalla tiene que pintar ESE.
     await abrirFreno(page, { ...frenoBase, techo: 99.99, gasto: 100, nuevosPagados: 10, cac: 10, margenPct: 31.6, cacMin: 6.84, cacMax: 13.16, veredicto: 'sano', fiable: true });
-    await expect(page.locator('text=99.99')).toBeVisible();
+    // Aparece en DOS sitios desde que se muestran los dos techos: la píldora de al lado de la
+    // cifra y la línea que explica de dónde sale. Los dos tienen que traer el valor servido —
+    // si uno se quedara con un número propio, la pantalla se contradiría a sí misma.
+    await expect(page.locator('text=techo S/99.99')).toBeVisible();
+    await expect(page.locator('text=El techo son S/99.99')).toBeVisible();
   });
 
   test('el freno de emergencia apaga TODAS las promociones y dice qué NO toca', async ({ page }) => {
@@ -281,4 +286,39 @@ test('los umbrales de la línea base vienen del servidor, no escritos en la pant
   });
   // 30 − 20 = 10 días y 25 − 4 = 21 clientes. Con los umbrales escritos a mano diría 0 y 6.
   await expect(page.locator('text=Faltan 10 días y 21 clientes')).toBeVisible();
+});
+
+// ⚠ LOS DOS TECHOS SE MUESTRAN, y contestan preguntas distintas (2026-09-13).
+// El freno decide contra el valor de vida del cliente porque la publicidad es reinversión;
+// el del primer pedido sigue visible porque contesta "¿ya se pagó hoy?". Modo de fallo si
+// alguien colapsa los dos en uno: silencio — la pantalla deja de decir cuál se contestó.
+test('la pantalla muestra los dos techos y de dónde sale el grande', async ({ page }) => {
+  await abrirFreno(page, {
+    ...frenoBase, gasto: 500, nuevosPagados: 25, cac: 20, margenPct: 20, cacMin: 16, cacMax: 24,
+    veredicto: 'sano', fiable: true, motivo: null,
+  });
+  // El techo con el que se decide es el grande, y la pantalla explica POR QUÉ lo es.
+  await expect(page.locator('text=techo S/24.63')).toBeVisible();
+  await expect(page.locator('text=un cliente pide 2.41 veces, no una')).toBeVisible();
+  // Y el del primer pedido sigue ahí: sin él no se puede saber si el cliente se pagó hoy.
+  await expect(page.locator('text=Con un solo pedido serían S/13.63')).toBeVisible();
+  // Con el techo viejo este CAC habría dicho "Por encima del techo" y apagado la campaña.
+  await expect(page.locator('text=Dentro del techo')).toBeVisible();
+});
+
+test('el texto NO puede describir el techo del primer pedido — ya no es el que decide', async ({ page }) => {
+  await abrirFreno(page, {
+    ...frenoBase, gasto: 500, nuevosPagados: 25, cac: 20, margenPct: 20, cacMin: 16, cacMax: 24,
+    veredicto: 'sano', fiable: true, motivo: null,
+  });
+  // ⚠ El texto decía "el techo es lo que te deja un cliente en su PRIMER pedido" y siguió
+  // diciéndolo después de que el freno cambió de ancla. Un texto que describe un mecanismo
+  // retirado manda a interpretar el número al revés — es el mismo defecto que ya obligó a
+  // que el brief semanal dejara de nombrar la hora valle.
+  await expect(page.locator('text=en su PRIMER pedido')).toHaveCount(0);
+  await expect(page.locator('text=ya cuenta con que el cliente vuelve 2.41 veces')).toBeVisible();
+  // Y el recorte por confianza se dice, con su motivo: un techo prestado que se presenta como
+  // propio es el dato con aspecto de medición que este repo evita.
+  await expect(page.locator('text=recortado al 75%')).toBeVisible();
+  await expect(page.locator('text=todavía no la tuya')).toBeVisible();
 });

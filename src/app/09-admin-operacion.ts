@@ -321,9 +321,14 @@ function adminToolsSections(){
       ['reclamo','Reclamaciones','loadAdminComplaints()'],
     ]],
     ['Marketing //',[
+      // ⚠ "Avísale a tu gente" va PRIMERO de todo Marketing. La simulación del 2026-09-13
+      // midió que avisarle a la red personal es la ÚNICA palanca que mueve el mes 3 —de 1.2%
+      // a 44.7% de probabilidad de llegar a S/3,000 netos— y estaba escondida detrás de un
+      // rótulo que decía "Contenido semanal": el dueño no tenía por qué entrar ahí durante la
+      // semana de apertura, que es justo cuando sirve.
+      ['megaphone','Avísale a tu gente','loadMarketingContent()'],
       ['calendar','Calendario de contenido','loadCalendar()'],
       ['camera','Guion de video','loadVideoScript()'],
-      ['megaphone','Contenido semanal','loadMarketingContent()'],
       ['precios','Códigos promo','loadPromoCodes()'],
       ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
       // Las tres palancas del modelo financiero, medidas contra lo que el modelo asume.
