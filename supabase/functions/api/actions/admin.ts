@@ -1,12 +1,12 @@
 // SND//WCH — api / actions/admin
 // Puntos manuales, gestión de cuentas admin, inventario, exportación CSV y las métricas
 // del panel de negocio.
-import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva } from "../catalog.ts";
-import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS } from "../env.ts";
+import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, CAC_TECHO, cacTechoPrimerPedido } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
@@ -3249,4 +3249,276 @@ export async function actAdminRetentionReport(b: any) {
       triggered: (rolling.active || 0) > 0 && (rolling.returningPct || 0) < RETENTION_ALARM_PCT,
     },
   };
+}
+
+// ── EL FRENO POR TECHO DE CAC ─────────────────────────────────────────────────────────
+//
+// POR QUÉ EXISTE. Todo `PREDICCION_V12.md` cuelga de un CAC que nadie midió: sale de tasas de
+// agencia (CPM S/5-12, CTR 2.97%, CVR 1.89%) que dan un rango de **S/10.51 a S/25.23**. Esa
+// horquilla es la diferencia entre "la publicidad sostiene el negocio" y "lo desangra", y el
+// dueño no tiene forma de saber en qué punto está mientras gasta.
+//
+// Y el número que lo vuelve urgente: al CPM medio el CAC es **S/17.87** contra una
+// contribución de primer pedido de **S/13.63**. O sea que al precio medio de la subasta, un
+// cliente comprado NO se paga con su primer pedido. Eso puede estar bien —casi todo el
+// delivery funciona así— pero SOLO si la repetición existe, y la repetición hoy no está
+// medida. El freno no dice "no hagas publicidad": dice cuánto estás apostando a algo que
+// todavía no viste.
+//
+// ⚠ EL CAC QUE ESTO CALCULA ES UN PISO, NO EL REAL, y el rótulo va PEGADO al número, no al
+// pie. Se cuenta como "pagado" a todo cliente nuevo que no vino por referido — pero ahí
+// adentro también están los que llegaron por Google Business Profile, por el QR de la bolsa o
+// porque alguien les habló del sitio. Con más gente en el denominador, el CAC sale MÁS BARATO
+// de lo que es. Para un freno esa es la dirección peligrosa (callarse cuando debería sonar),
+// así que la lectura correcta es: **si hasta este CAC optimista pasa el techo, el real lo pasa
+// seguro**. Separarlos de verdad exige el píxel de Meta, que hoy está apagado.
+//
+// El cálculo es PURO y vive acá para poder probarlo sin base (`tests-api/freno-cac.test.ts`).
+// Su modo de fallo es silencio: si el veredicto se rompe nada revienta, solo se sigue gastando.
+
+export type CacVeredicto = "sin-gasto" | "sin-conversiones" | "sobre-el-techo" | "sano";
+
+export type CacFreno = {
+  dias: number;
+  gasto: number;
+  nuevosPagados: number;
+  nuevosReferidos: number;
+  cac: number | null;
+  /** Margen de error relativo del CAC medido, en %. Poisson: 1/√n. */
+  margenPct: number | null;
+  /** Extremos del CAC una vez aplicado ese margen. */
+  cacMin: number | null;
+  cacMax: number | null;
+  techo: number;
+  costoReferido: number;
+  veredicto: CacVeredicto;
+  fiable: boolean;
+  motivo: string | null;
+  /** Conversiones que pide Meta para salir de aprendizaje en este periodo. CONTEXTO, no la
+   *  salvaguarda: con presupuesto chico casi nunca se alcanza, y aun así hay que decidir. */
+  minAprendizajeMeta: number;
+  /** Si Meta ya salió de fase de aprendizaje en el periodo. */
+  salioDeAprendizaje: boolean;
+};
+
+export function cacFreno(input: {
+  dias: number;
+  gasto: number;
+  nuevosPagados: number;
+  nuevosReferidos: number;
+}): CacFreno {
+  const dias = Math.max(1, Math.round(input.dias));
+  const gasto = Math.max(0, Number(input.gasto) || 0);
+  const nuevosPagados = Math.max(0, Math.round(Number(input.nuevosPagados) || 0));
+  const nuevosReferidos = Math.max(0, Math.round(Number(input.nuevosReferidos) || 0));
+  const techo = cacTechoPrimerPedido();
+
+  // ⚠ EL MÍNIMO DE APRENDIZAJE DE META NO PUEDE SER LA SALVAGUARDA, y la primera versión de
+  // esto lo usaba como tal. Meta pide ~50 conversiones cada 7 días por conjunto; a 28 días son
+  // 200. Con un presupuesto de S/40/día y un CAC de S/15 entran ~75 clientes en ese mismo
+  // periodo, así que el freno habría quedado marcado "no fiable" PARA SIEMPRE y nunca habría
+  // sonado. Un freno que no puede sonar no es un freno.
+  // Se reporta igual, como CONTEXTO: si Meta sigue en aprendizaje, el CAC que ves es el de
+  // arranque y tiene margen de mejorar solo.
+  const minAprendizajeMeta = Math.ceil((CAC_TECHO.convAprendizaje7d * dias) / 7);
+
+  const base = {
+    dias, gasto, nuevosPagados, nuevosReferidos, techo,
+    costoReferido: CAC_TECHO.costoReferido,
+    minAprendizajeMeta,
+    salioDeAprendizaje: nuevosPagados >= minAprendizajeMeta,
+  };
+
+  // Sin gasto no hay CAC. Un 0 acá se leería como "medimos y salió gratis".
+  if (gasto <= 0) {
+    return {
+      ...base, cac: null, margenPct: null, cacMin: null, cacMax: null,
+      veredicto: "sin-gasto", fiable: false,
+      motivo: "No hay gasto cargado en este periodo, así que no hay CAC que medir.",
+    };
+  }
+
+  // Gastó y no entró NADIE. Es el peor caso posible y tiene veredicto propio: `gasto/0` daría
+  // infinito o NaN, y cualquiera de los dos se pinta mal o se confunde con "sin datos". Esto
+  // NO es ausencia de información — es información pésima, y por eso va marcada como fiable.
+  if (nuevosPagados <= 0) {
+    return {
+      ...base, cac: null, margenPct: null, cacMin: null, cacMax: null,
+      veredicto: "sin-conversiones", fiable: true, motivo: null,
+    };
+  }
+
+  const cac = Math.round((gasto / nuevosPagados) * 100) / 100;
+
+  // ⚠ LA FIABILIDAD SE DECIDE CON EL INTERVALO, NO CON UN UMBRAL INVENTADO.
+  //
+  // El error relativo de un conteo es 1/√n (Poisson): con 10 conversiones el CAC medido tiene
+  // ±32% de margen, con 25 ±20%, con 50 ±14%. O sea que "S/14 medido" con 10 conversiones es
+  // compatible con cualquier cosa entre S/9.50 y S/18.50 — y el techo cae justo en el medio.
+  // Decidir ahí es apagar al ganador o escalar al perdedor sin enterarse nunca.
+  //
+  // Por eso la pregunta no es "¿tengo N conversiones?" sino "¿el intervalo cae ENTERO de un
+  // lado del techo?". Eso responde lo único que importa —¿puedo actuar?— y además deja de
+  // exigir un número fijo: si el CAC está altísimo, con pocas conversiones ya alcanza; si está
+  // pegado al techo, hacen falta muchas más. La estadística decide cuántas, no yo.
+  const margenPct = Math.round((100 / Math.sqrt(nuevosPagados)) * 10) / 10;
+  const cacMin = Math.round(cac * (1 - margenPct / 100) * 100) / 100;
+  const cacMax = Math.round(cac * (1 + margenPct / 100) * 100) / 100;
+  const claramenteArriba = cacMin > techo;
+  const claramenteAbajo = cacMax < techo;
+  const fiable = claramenteArriba || claramenteAbajo;
+
+  return {
+    ...base, cac, margenPct, cacMin, cacMax,
+    veredicto: cac > techo ? "sobre-el-techo" : "sano",
+    fiable,
+    motivo: fiable
+      ? null
+      : `Con ${nuevosPagados} conversión${nuevosPagados === 1 ? "" : "es"} el margen de error es ±${margenPct}%: el CAC real está entre S/${cacMin.toFixed(2)} y S/${cacMax.toFixed(2)}, y el techo (S/${techo.toFixed(2)}) cae dentro de ese rango. Todavía no se puede decir de qué lado estás.`,
+  };
+}
+
+// "3 días", "9 días", "hoy". En palabras y no en fecha: lo que importa no es CUÁNDO se apagó
+// sino CUÁNTO LLEVA así — una fecha obliga a hacer la resta mentalmente y por eso no alarma.
+function diasDesde(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d <= 0) return "menos de un día";
+  return d === 1 ? "1 día" : `${d} días`;
+}
+
+// Rango por defecto del freno: 28 días. No es redondo por gusto — son CUATRO semanas
+// exactas, así que cada día de la semana pesa lo mismo. Con 30 días, dos días de semana
+// aparecen tres veces y el resto dos: en un negocio de comida, donde el viernes no se parece
+// al martes, eso mueve el número sin que nada haya cambiado en la campaña.
+const CAC_DIAS_POR_DEFECTO = 28;
+
+export async function actAdminCacBrake(b: any) {
+  await requireAdmin(b.token);
+  const dias = Math.min(180, Math.max(7, Math.round(Number(b.dias) || CAC_DIAS_POR_DEFECTO)));
+  const desde = new Date(Date.now() - dias * 86400000);
+  const desdeDia = desde.toISOString().slice(0, 10);
+
+  const [gastos, nuevos] = await Promise.all([
+    sbGet("ad_spend", `spend_date=gte.${desdeDia}&select=spend_date,platform,amount,note&order=spend_date.desc&limit=400`),
+    // `referred_by` es lo único que separa un cliente traído por un referido de todos los
+    // demás. Lo que queda NO es "captado por publicidad" a secas — ver la advertencia del
+    // cálculo: acá adentro también está el orgánico, y por eso el CAC sale optimista.
+    sbGet("customers", `created_at=gte.${encodeURIComponent(desde.toISOString())}&select=phone,referred_by&limit=20000`),
+  ]);
+
+  const filas = (gastos || []) as Array<{ amount: string | number; spend_date: string; platform: string; note: string | null }>;
+  const gasto = filas.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const clientes = (nuevos || []) as Array<{ referred_by: string | null }>;
+  const nuevosReferidos = clientes.filter((c) => !!c.referred_by).length;
+
+  // El estado del interruptor viaja con el freno porque se miran juntos: un CAC medido en un
+  // periodo con las promociones apagadas no es comparable con uno medido con ellas.
+  const ajustes = await sbGet("app_settings", "select=promos_killed_at&id=eq.true");
+  const killedAt = ajustes?.[0]?.promos_killed_at || null;
+  return {
+    ...cacFreno({
+      dias,
+      gasto: Math.round(gasto * 100) / 100,
+      nuevosPagados: clientes.length - nuevosReferidos,
+      nuevosReferidos,
+    }),
+    desde: desdeDia,
+    gastos: filas,
+    promosKilled: !!killedAt,
+    // Cuánto lleva apagado, en palabras. Es lo único que evita que un kill switch se quede
+    // bajado para siempre: un booleano no puede decir "llevas 9 días sin promociones".
+    promosKilledHace: killedAt ? diasDesde(killedAt) : null,
+  };
+}
+
+export async function actAdminAdSpendSet(b: any) {
+  const admin = await requireAdmin(b.token);
+  const fecha = String(b.spendDate || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new ApiError("Fecha inválida.", 400);
+  // Un gasto con fecha futura no es un gasto: es un plan. Dejarlo entrar ensuciaría el CAC de
+  // hoy con plata que todavía no salió.
+  if (fecha > new Date().toISOString().slice(0, 10)) throw new ApiError("Esa fecha todavía no llegó.", 400);
+  const monto = Number(b.amount);
+  if (!Number.isFinite(monto) || monto < 0) throw new ApiError("Monto inválido.", 400);
+  if (monto > 100000) throw new ApiError("Ese monto es demasiado alto — revisa que no sobre un cero.", 400);
+  const plataforma = String(b.platform || "meta").slice(0, 30);
+
+  // Upsert por (spend_date, platform): volver a cargar el martes lo CORRIGE, no lo suma. Sin
+  // esto el gasto se duplicaría y el CAC saldría al doble, que es justo el error que empuja a
+  // apagar una campaña sana.
+  await sbUpsert("ad_spend", {
+    spend_date: fecha,
+    platform: plataforma,
+    amount: Math.round(monto * 100) / 100,
+    note: b.note ? String(b.note).slice(0, 200) : null,
+    created_by: admin?.phone || null,
+    updated_at: new Date().toISOString(),
+  }, "spend_date,platform");
+
+  return { ok: true };
+}
+
+// El freno que suena solo. Sin esto, todo lo anterior es una pantalla que hay que ACORDARSE
+// de abrir — exactamente el defecto que ya tenía el reporte de cohortes ("el problema nunca
+// fue el cálculo sino que hay que acordarse de abrir la pantalla"). Y el caso que más importa
+// es justo el que nadie va a ir a mirar: la campaña lleva días comprando caro mientras el
+// dueño está cocinando.
+export async function actAlertCacBrake(b: any) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const freno = await (async () => {
+    // Se reusa la MISMA acción que pinta la pantalla, con el mismo rango, para que la alerta
+    // y el panel no puedan decir cosas distintas sobre el mismo día.
+    const dias = CAC_DIAS_POR_DEFECTO;
+    const desde = new Date(Date.now() - dias * 86400000);
+    const [gastos, nuevos] = await Promise.all([
+      sbGet("ad_spend", `spend_date=gte.${desde.toISOString().slice(0, 10)}&select=amount&limit=400`),
+      sbGet("customers", `created_at=gte.${encodeURIComponent(desde.toISOString())}&select=referred_by&limit=20000`),
+    ]);
+    const gasto = ((gastos || []) as Array<{ amount: string | number }>).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const clientes = (nuevos || []) as Array<{ referred_by: string | null }>;
+    const nuevosReferidos = clientes.filter((c) => !!c.referred_by).length;
+    return cacFreno({ dias, gasto: Math.round(gasto * 100) / 100, nuevosPagados: clientes.length - nuevosReferidos, nuevosReferidos });
+  })();
+
+  // ⚠ NO SUENA MIENTRAS EL NÚMERO NO SE LO MEREZCA. Por debajo del mínimo de aprendizaje de
+  // Meta, lo que se mide es el CAC de arranque: avisar ahí empujaría a apagar la campaña
+  // JUSTO antes de que empiece a funcionar, y ese error además parece prudencia. Es el mismo
+  // criterio que ya exige un mínimo de volumen la alerta de rechazos de tarjeta.
+  const merece = freno.veredicto === "sin-conversiones" || (freno.veredicto === "sobre-el-techo" && freno.fiable);
+  if (!merece) return { success: true, alerted: false, ...freno };
+
+  // Una vez al día. El CAC de 28 días no se mueve de una hora a otra, así que repetirlo cada
+  // hora lo volvería ruido — y una alarma que se ignora es peor que no tenerla.
+  if (!(await rpc("check_rate_limit", { p_key: "cac-brake", p_limit: 1, p_window_minutes: 1440 }))) {
+    return { success: true, alerted: false, throttled: true, ...freno };
+  }
+
+  const cuerpo = freno.veredicto === "sin-conversiones"
+    ? `Llevas S/${freno.gasto.toFixed(2)} gastados en ${freno.dias} días y ningún cliente nuevo sin referido. Revisa que los anuncios estén llegando a tu zona.`
+    : `Estás pagando S/${(freno.cac as number).toFixed(2)} por cliente y el techo es S/${freno.techo.toFixed(2)}. Y ese número es el mejor caso: el real es igual o peor.`;
+
+  await sendPushToAdmins({
+    title: "📉 La publicidad está saliendo cara",
+    body: cuerpo,
+    url: "./index.html",
+    tag: "sndwch-cac-brake",
+    renotify: true,
+  });
+  return { success: true, alerted: true, ...freno };
+}
+
+// El interruptor, desde el panel. Guarda QUIÉN lo tocó: si un día las promociones llevan una
+// semana apagadas, la primera pregunta es quién y cuándo.
+export async function actAdminKillPromos(b: any) {
+  const admin = await requireAdmin(b.token);
+  const apagar = b.kill === true;
+  await sbUpdate("app_settings", "id=eq.true", {
+    promos_killed_at: apagar ? new Date().toISOString() : null,
+    promos_killed_by: apagar ? (admin?.phone || null) : null,
+    updated_at: new Date().toISOString(),
+  });
+  // Queda en el log de auditoría: apagar todas las promociones de golpe es de las cosas que
+  // más conviene poder reconstruir después.
+  await logAdminAction(admin?.phone || "?", apagar ? "promos-kill" : "promos-restore");
+  return { ok: true, killed: apagar };
 }

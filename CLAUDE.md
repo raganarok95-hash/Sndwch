@@ -1551,6 +1551,124 @@ medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquie
 mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
 existen y, peor, deja de distinguir el día que sí existan.
 
+## El freno por techo de CAC (2026-09-12)
+
+Todo `PREDICCION_V12.md` cuelga de un CAC que **nadie midió**: sale de tasas de agencia y da un
+rango de **S/10.51 a S/25.23**, que es la distancia entre "la publicidad sostiene el negocio" y
+"lo desangra". Y el número que obliga a que esto exista: al CPM medio el CAC es **S/17.87**
+contra una contribución de primer pedido de **S/13.63**. O sea que al precio medio de la
+subasta **un cliente comprado no se paga con su primer pedido** — se recupera solo si vuelve, y
+la repetición todavía no está medida.
+
+- **`ad_spend`** guarda el gasto diario, cargado a mano desde Admin // Marketing // Freno de
+  CAC. Leerlo de Meta por API exigiría el permiso `ads_read` y un token de facturación viviendo
+  en el servidor; transcribir un número al día sale más barato y no falla en silencio.
+  **`unique(spend_date, platform)`**: cargar el mismo día lo CORRIGE, no lo suma — duplicarlo
+  daría un CAC al doble, que es el error que empuja a apagar una campaña sana.
+- **El techo se DERIVA** (`cacTechoPrimerPedido()` en `env.ts`), nunca se escribe. Es la
+  contribución menos el overhead. Se eligió el PRIMER pedido y no el valor de vida a propósito:
+  un techo con repetición exige asumir cuántas veces vuelve alguien, y eso hoy es fe.
+- **`npm run parity` verifica las cuatro constantes CORRIENDO `modelo/modelo_v11.py`**, no
+  comparando contra una copia — `CONTRIB_PEDIDO` allá no es un literal, lo calcula el modelo a
+  partir del catálogo. Es el segundo chequeo del script que cruza lenguajes.
+  ⚠ **Y corre el Python con `-B` y `PYTHONPYCACHEPREFIX` a un directorio temporal.** Sin eso el
+  chequeo compara contra un modelo VIEJO y no se entera: Python valida su bytecode por
+  (mtime, tamaño) del fuente, así que cambiar `0.50` por `0.85` —mismo número de bytes— dentro
+  del mismo segundo deja la caché dándose por válida. **Pasó de verdad al probar el chequeo.**
+- **El CAC que se muestra es un PISO, no el real**, y el rótulo va PEGADO al número, no al pie:
+  cuenta como captado por publicidad a todo cliente nuevo sin referidor, y ahí adentro también
+  está el orgánico. Con más gente en el reparto sale más barato de lo que es — para un freno
+  esa es la dirección peligrosa. La lectura correcta: **si hasta ese número optimista pasa el
+  techo, el real lo pasa seguro.**
+- **No suena por debajo del mínimo de aprendizaje de Meta** (50 conversiones cada 7 días,
+  escalado al periodo). Avisar ahí empujaría a apagar la campaña justo antes de que empiece a
+  funcionar, y ese error además parece prudencia.
+- **Gastar y no captar a nadie tiene veredicto propio** (`sin-conversiones`), no se confunde con
+  "sin datos": `gasto/0` daría Infinity o NaN y los dos se pintan mal. No es ausencia de
+  información, es información pésima.
+- `alert-cac-brake` (cron diario, 09:05 hora Lima) es lo que lo vuelve un FRENO y no una
+  pantalla que hay que acordarse de abrir — el mismo defecto que ya tenía el reporte de
+  cohortes.
+- La campaña lista para aprobar está en **`docs/CAMPANA_DE_ANUNCIOS.md`**, con cada cifra
+  derivada del modelo. Su conclusión: **salir de la fase de aprendizaje cuesta entre S/2,285 y
+  S/3,885 al mes, o sea 4.6 a 7.8 veces TODOS los costos fijos del negocio (S/500)**. Por eso
+  la primera campaña se aprueba para MEDIR, no para vender: su entregable es el CAC real.
+
+Probado en `tests-api/freno-cac.test.ts` (11) y `tests/freno-de-cac.spec.ts` (6), los dos
+verificados inyectando los defectos. **Dos de esas pruebas nacieron ciegas y hay que saber por
+qué**: una comparaba la función del techo contra la misma fórmula que la produce (así que
+`return 13.63;` la pasaba entera), y otra comprobaba que el body contuviera un guion —lo cumple
+cualquier página con un texto largo— en vez de mirar la cifra. Un chequeo que se mide contra sí
+mismo no protege nada.
+
+## La maquinaria de marketing, con la evidencia delante (2026-09-12)
+
+Cuatro investigaciones externas (retención, adquisición orgánica, Meta Ads con presupuesto
+chico, referidos) en `docs/MAQUINARIA_DE_MARKETING.md`, cada cifra etiquetada [CAUSAL] /
+[BENCHMARK] / [OPINIÓN]. **Casi todo lo publicado sobre marketing de restaurantes lo escribe
+quien vende software de marketing para restaurantes** — las cuatro investigaciones lo marcaron
+solas. Y hay un hueco real: **no existe un solo estudio de recompra de delivery en Perú a
+nivel de restaurante individual.**
+
+Lo que cambia prioridades, y NO es opinión:
+
+- **Las primeras 50 reseñas de Google valen más que el programa de referidos.** Luca (HBS,
+  regresión discontinua sobre datos fiscales): **+1 estrella = +5-9% de ingresos**, efecto
+  **solo en independientes**, y **50% más fuerte pasadas las 50 reseñas**. Apareció por
+  separado en DOS de las cuatro investigaciones. **Hoy la app pide calificación tras la entrega
+  y esa calificación se queda adentro: nadie pide nunca una reseña de Google.** Es el hueco más
+  caro detectado.
+- **NO subir el bono de referido — considerar bajarlo.** Wolters/Schulze/Gedenk (*Marketing
+  Science* 2020, experimento de campo con 160,000 clientes): premios más grandes traen **más
+  referidos y menos rentables**. Y premiar solo al INVITADO rindió parecido a un premio de dos
+  lados que costaba el doble.
+- **El 50.3% de las segundas compras cae dentro de los 30 días** y la conversión se desploma
+  después del día 45. `remind-second-order` toca esa ventana **una sola vez, día 7-10**.
+- **El descuento recurrente entrena a esperar descuento** (estudio de cupones de Alibaba): baja
+  el precio de referencia y sube la sensibilidad al precio **incluso en vendedores que no
+  promocionan**. Es el respaldo de que el combo y las recompensas NO son descuentos
+  recurrentes, y de que el kill switch exista.
+- **Progreso regalado** (Nunes & Drèze 2006, causal): 2 sellos regalados de 10 contra 8 desde
+  cero — mismo esfuerzo real — dan **34% contra 19%** de canje. ⚠ **El efecto desaparece si no
+  das una RAZÓN del regalo.**
+- **Escalones sin barra de progreso son teatro** (Ko & Song, Cornell 2025, restaurantes). Acá
+  ya está bien: `REFERRAL_MILESTONES` vive en el cliente justamente para pintarlo.
+- **El 84% del compartir ocurre en canales privados** (WhatsApp/DM): el referido nunca se va a
+  ver en un dashboard.
+- **Hashtags: teatro.** Mosseri (CEO de Instagram) lo dijo explícito. Instagram orgánico con
+  cuenta chica alcanza ~9.8% → unas 20 personas por post; comida tiene 0.23% de engagement, de
+  los más bajos. **TikTok es la apuesta asimétrica** porque no depende de seguidores.
+- **La difusión de WhatsApp SOLO llega a quien te guardó el número** (política de la
+  plataforma): es canal de RETENCIÓN, nunca de adquisición.
+
+### El MCP oficial de Meta Ads SÍ está conectado (corrige lo que decía este archivo)
+
+Verificado el 2026-09-12: `mcp__Meta_Ads__*` responde. Cuenta **221839797**, ACTIVA, en
+**soles**, presupuesto diario mínimo **S/3.39** — y **`has_payment_method: false`**, así que
+hoy no puede gastar. Esto corrige la nota de 2026-08-11 que lo daba por no conectado.
+**Sigue sin haber ninguna skill de marketing** en los registros (confirmado de nuevo).
+
+## El freno de CAC y el kill switch de promociones (2026-09-12)
+
+El detalle técnico está más arriba, en su propia sección. Dos cosas que no hay que romper y
+que salieron de la investigación:
+
+- **La fiabilidad del CAC se decide con el INTERVALO, no con un umbral.** La primera versión
+  usaba el mínimo de aprendizaje de Meta (50 conversiones/7 días → 200 en 28 días) y eso dejaba
+  el freno **mudo para siempre**: a S/40/día entran ~75 clientes en 28 días. Ahora se calcula
+  el margen `1/√n` (Poisson: ±32% con 10 conversiones, ±20% con 25, ±14% con 50) y solo se
+  declara accionable cuando el intervalo cae ENTERO de un lado del techo. La estadística decide
+  cuántas conversiones hacen falta, no una constante. El umbral de Meta se sigue reportando
+  como CONTEXTO ("este CAC es el de arranque y puede mejorar solo").
+- **El kill switch tiene el modo de fallo INVERSO al de la pausa de tienda.** La pausa se
+  reanuda sola contra el reloj porque olvidarla encendida cierra el negocio; éste **no se
+  auto-revierte nunca** porque si lo bajaste por un código filtrado, que se encienda solo es lo
+  peor posible. Por eso guarda la **HORA** y no un booleano: el panel dice "llevas 9 días sin
+  promociones", que es lo único que impide que se quede abajo para siempre.
+  **NO apaga lo que el cliente ya se ganó** (recompensas, crédito, referidos, sándwich del
+  organizador) ni el combo (es estructura de carta: apagarlo haría que el cliente vea un precio
+  y se le cobre otro). `tests-api/kill-switch-promociones.test.ts` fija ese límite.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y

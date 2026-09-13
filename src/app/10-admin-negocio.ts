@@ -2530,6 +2530,7 @@ Object.assign(ADMIN_SCREENS, {
   admin_recipes: sAdminRecipes,
   admin_cash: sAdminCashClose,
   admin_palancas: sAdminPalancas,
+  admin_cac: sAdminCacBrake,
   admin_tech: sAdminTechHealth,
   admin_compliance: sAdminCompliance,
   admin_purchases: sAdminPurchases,
@@ -2543,3 +2544,138 @@ Object.assign(ADMIN_SCREENS, {
   admin_waitlist: sAdminWaitlist,
   admin_focus: sAdminFocus,
 });
+
+// ── FRENO POR TECHO DE CAC ────────────────────────────────────────────────────────────
+//
+// Qué contesta esta pantalla: **¿cuánto estoy pagando por cliente, y me lo puedo pagar?**
+// El techo lo calcula el SERVIDOR (`cacTechoPrimerPedido`, derivado del modelo) — acá solo
+// se pinta. Escribir el número en la pantalla lo desincronizaría el día que cambie un precio.
+var cacData=null;
+async function loadCacBrake(){
+  sndScreen='admin_cac';busy=true;busyMsg='Midiendo el CAC...';render();
+  try{cacData=await api('admin-cac-brake',{token:token});}
+  catch(e){cacData=null;}
+  busy=false;render();
+}
+async function doKillPromos(apagar){
+  var msg=apagar
+    ?'¿Apagar TODOS los códigos promocionales ahora mismo? Las recompensas por puntos, el crédito y los referidos siguen funcionando.'
+    :'¿Volver a encender los códigos promocionales?';
+  if(!(await showConfirm(msg)))return;
+  busy=true;busyMsg=apagar?'Apagando...':'Encendiendo...';render();
+  try{
+    await api('admin-kill-promos',{token:token,kill:apagar});
+    showToast(apagar?'Promociones apagadas.':'Promociones encendidas.','success');
+    await loadCacBrake();
+  }catch(e){busy=false;showToast(e.message);render();}
+}
+async function doAdSpendSet(){
+  var f=(document.getElementById('cac-fecha') as HTMLInputElement|null);
+  var m=(document.getElementById('cac-monto') as HTMLInputElement|null);
+  if(!f||!m||!f.value||!m.value){showToast('Pon la fecha y el monto.','info');return;}
+  busy=true;busyMsg='Guardando...';render();
+  try{
+    await api('admin-ad-spend-set',{token:token,spendDate:f.value,amount:Number(m.value)});
+    showToast('Gasto guardado.','success');
+    await loadCacBrake();
+  }catch(e){busy=false;showToast(e.message);render();}
+}
+function sAdminCacBrake(){
+  var h=H('FRENO DE CAC',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!cacData){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadCacBrake()')+'</div>';
+  }
+  var d=cacData;
+
+  // ⚠ LA ADVERTENCIA VA ARRIBA DEL NÚMERO, SIEMPRE, y no solo cuando hay pocos datos: este
+  // CAC es un PISO por construcción (cuenta como pagado a todo el que no vino por referido,
+  // incluido el orgánico). Al pie se leería después de haberle creído.
+  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-bottom:4px">Este CAC es el MEJOR caso, no el real</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
+    +'Cuenta como captado por publicidad a todo cliente nuevo que no vino por un referido — y ahí adentro también está quien te encontró en Google o por el QR de la bolsa. '
+    +'Con más gente en el reparto, el costo por cliente sale más barato de lo que es. '
+    +'<b style="font-style:normal">Si hasta este número pasa el techo, el real lo pasa seguro.</b> Separarlos exige el píxel de Meta.</div></div>';
+
+  if(!d.fiable&&d.motivo){
+    h+='<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-warn,#ffa500);margin-bottom:4px">Todavía no decidas con este número</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'+esc(String(d.motivo))+'</div></div>';
+  }
+  // El estado del interruptor va ARRIBA de todo lo demás: si las promociones están apagadas,
+  // es lo primero que hay que saber al mirar esta pantalla — el CAC de abajo se midió en un
+  // periodo sin promociones y no se parece al de uno con ellas.
+  if(d.promosKilled){
+    h+='<div style="background:rgba(255,85,85,.14);border:1px solid rgba(255,85,85,.45);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:13px;color:var(--sw-danger,#ff8888);margin-bottom:4px">Promociones APAGADAS</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
+      +'Ningún código promocional funciona ahora mismo'+(d.promosKilledHace?' — llevas '+esc(String(d.promosKilledHace)):'')+'. '
+      +'Las recompensas por puntos, el crédito y los referidos NO están afectados.</div>'
+      +'<div style="margin-top:10px">'+BTN('Volver a encender //','doKillPromos(false)')+'</div></div>';
+  }
+
+  var hayCac=d.cac!==null&&d.cac!==undefined;
+  var malo=d.veredicto==='sobre-el-techo'||d.veredicto==='sin-conversiones';
+  var col=!hayCac&&!malo?'var(--sw-text-muted,#A8C8B0)':(malo?'var(--sw-danger,#ff8888)':'var(--sw-ok,#25D366)');
+  var titular=d.veredicto==='sin-conversiones'
+    ?'Gastaste y no entró nadie'
+    :d.veredicto==='sin-gasto'?'Sin gasto cargado'
+    :d.veredicto==='sobre-el-techo'?'Por encima del techo':'Dentro del techo';
+
+  h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+(malo?'rgba(255,85,85,.4)':'var(--sw-border,#3A6B58)')+';border-radius:12px;padding:18px;margin-bottom:14px">'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">COSTO POR CLIENTE · '+d.dias+' DÍAS //</div>'
+    +'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+    // Un guion y NUNCA un 0: un 0 se lee como "medimos y salió gratis".
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:'+col+';line-height:1">'+(hayCac?SOLES+pz(d.cac):'—')+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0)">techo '+SOLES+pz(d.techo)+'</div></div>'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:13px;color:'+col+';margin-top:8px">'+titular+'</div>'
+    // El intervalo va DEBAJO de la cifra y con los dos extremos escritos: "±11%" solo no dice
+    // nada, "entre S/12 y S/15" sí — y es lo que deja ver de un vistazo si el techo cae
+    // adentro. El margen sale de 1/√n (Poisson), no de un umbral elegido a ojo.
+    +(hayCac&&d.margenPct!==null?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'
+      +'Con '+d.nuevosPagados+' conversiones el margen es ±'+d.margenPct+'%: entre '+SOLES+pz(d.cacMin)+' y '+SOLES+pz(d.cacMax)+'.</div>':'')
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-top:8px">'
+    +'El techo es lo que te deja un cliente en su PRIMER pedido. Por encima de eso no pierdes necesariamente — recuperas si vuelve — pero estás apostando a una repetición que todavía no mediste.'
+    +(hayCac&&!d.salioDeAprendizaje?' Y Meta sigue en fase de aprendizaje ('+d.nuevosPagados+' de '+d.minAprendizajeMeta+' conversiones): este CAC es el de arranque y puede mejorar solo.':'')
+    +'</div>'
+    +'</div>';
+
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
+    +'<div style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border-radius:10px;padding:12px 14px">'
+    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(d.gasto)+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">gastado</div></div>'
+    +'<div style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border-radius:10px;padding:12px 14px">'
+    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+d.nuevosPagados+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">clientes nuevos (sin referido)</div></div>'
+    +'<div style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border-radius:10px;padding:12px 14px">'
+    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+d.nuevosReferidos+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">por referido · '+SOLES+pz(d.costoReferido)+' c/u</div></div>'
+    +'</div>';
+
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">CARGAR LO QUE GASTASTE //</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-bottom:10px">'
+    +'Cópialo del panel de Meta, un día a la vez. Volver a cargar el mismo día lo CORRIGE, no lo suma.</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:10px">'
+    +'<input id="cac-fecha" type="date" style="flex:1;box-sizing:border-box;min-height:44px;padding:10px 12px;border-radius:8px;border:1px solid var(--sw-border-soft,#1c1c1c);background:var(--sw-card,#2D5246);color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+    +'<input id="cac-monto" type="number" step="0.01" min="0" placeholder="S/ gastado" style="flex:1;box-sizing:border-box;min-height:44px;padding:10px 12px;border-radius:8px;border:1px solid var(--sw-border-soft,#1c1c1c);background:var(--sw-card,#2D5246);color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+    +'</div>'
+    +BTN('Guardar gasto //','doAdSpendSet()');
+
+  if(!d.promosKilled){
+    h+='<div style="margin-top:22px;background:var(--sw-card2,#1A3028);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:14px 16px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.2em;margin-bottom:6px">FRENO DE EMERGENCIA //</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-bottom:10px">'
+      +'Apaga TODOS los códigos promocionales de golpe, al instante. Para cuando un código se filtró o una campaña se te fue de las manos. '
+      +'No toca las recompensas por puntos, el crédito ni los referidos: eso el cliente ya se lo ganó.</div>'
+      +BTN('Apagar las promociones //','doKillPromos(true)')+'</div>';
+  }
+  if(d.gastos&&d.gastos.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:22px 0 10px">LO CARGADO //</div>';
+    h+=d.gastos.map(function(g){
+      return'<div style="display:flex;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--sw-border,#3A6B58)">'
+        +'<span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted4,#C8D6CE)">'+esc(String(g.spend_date))+'</span>'
+        +'<span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(Number(g.amount))+'</span></div>';
+    }).join('');
+  }
+  return h+'</div>';
+}
