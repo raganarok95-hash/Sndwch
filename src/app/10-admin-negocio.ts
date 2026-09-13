@@ -2587,15 +2587,49 @@ function sAdminCacBrake(){
   }
   var d=cacData;
 
-  // ⚠ LA ADVERTENCIA VA ARRIBA DEL NÚMERO, SIEMPRE, y no solo cuando hay pocos datos: este
-  // CAC es un PISO por construcción (cuenta como pagado a todo el que no vino por referido,
-  // incluido el orgánico). Al pie se leería después de haberle creído.
-  h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-bottom:4px">Este CAC es el MEJOR caso, no el real</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
-    +'Cuenta como captado por publicidad a todo cliente nuevo que no vino por un referido — y ahí adentro también está quien te encontró en Google o por el QR de la bolsa. '
-    +'Con más gente en el reparto, el costo por cliente sale más barato de lo que es. '
-    +'<b style="font-style:normal">Si hasta este número pasa el techo, el real lo pasa seguro.</b> Separarlos exige el píxel de Meta.</div></div>';
+  // Los mínimos de la línea base los manda el SERVIDOR. Escribir un 14 y un 10 acá los
+  // desincronizaría el día que se muevan allá, y la pantalla diría cuántos días faltan contra
+  // un umbral que ya no existe — la regla de este repo: si el código ya conoce la cifra, se
+  // interpola, nunca se escribe.
+  var minDias=d.baseMinDias||14, minCli=d.baseMinClientes||10;
+
+  // ⚠ ESTE AVISO VA PRIMERO, ANTES QUE CUALQUIER OTRO. El gasto se carga a mano; mientras
+  // falten días, el numerador está corto y el denominador no, así que el costo por cliente
+  // sale MÁS BARATO de lo que es y la pantalla se ve perfecta. Es el único aviso que invalida
+  // el número entero y no solo su precisión, y por eso no puede ir segundo.
+  if(d.desactualizado){
+    h+='<div style="background:rgba(255,85,85,.14);border:1px solid rgba(255,85,85,.45);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:13px;color:var(--sw-danger,#ff8888);margin-bottom:4px">Falta cargar '+d.diasSinCargar+' días de gasto</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
+      +'El último día cargado es '+esc(String(d.ultimoDia))+'. Mientras falte, el costo por cliente de abajo sale <b style="font-style:normal">más barato de lo que es</b> — se divide un gasto incompleto entre todos los clientes que sí entraron. '
+      +'Cárgalos abajo antes de decidir nada.</div></div>';
+  }
+
+  // ⚠ LA ADVERTENCIA VA ARRIBA DEL NÚMERO, SIEMPRE, y no solo cuando hay pocos datos: al pie
+  // se leería después de haberle creído.
+  //
+  // Cuál advertencia depende de si ya existe la línea base. Sin ella el CAC es un PISO por
+  // construcción (cuenta como pagado a todo el que no vino por referido, incluido el orgánico).
+  // Con ella ya está descontado lo que entraba solo, y seguir diciendo "es el mejor caso" sería
+  // pedir desconfianza del número más verdadero que hay — eso desgasta la pantalla igual que
+  // exagerar. Lo que queda entonces es el límite REAL que sigue vivo: la base es de un periodo
+  // anterior y el negocio pudo haber crecido solo desde entonces.
+  if(d.baseFiable){
+    h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-bottom:4px">Ya está descontado lo que entraba solo</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
+      +'Antes de tu primer sol de publicidad entraban <b style="font-style:normal">'+esc(String(d.baseOrganicaDia))+' clientes nuevos por día</b> ('+d.baseNuevos+' en '+d.baseDias+' días). '
+      +'Ese ritmo se resta antes de dividir, así que este CAC ya no le acredita a Meta a quien iba a llegar igual. '
+      +'Lo que sigue sin poder saberse: si el boca a boca creció solo desde entonces, la base quedó corta y el CAC sale barato.</div></div>';
+  }else{
+    h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-bottom:4px">Este CAC es el MEJOR caso, no el real</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55">'
+      +'Cuenta como captado por publicidad a todo cliente nuevo que no vino por un referido — y ahí adentro también está quien te encontró en Google o por el QR de la bolsa. '
+      +'Con más gente en el reparto, el costo por cliente sale más barato de lo que es. '
+      +'<b style="font-style:normal">Si hasta este número pasa el techo, el real lo pasa seguro.</b> '
+      +'Para descontarlo hace falta una línea base de al menos '+minDias+' días sin publicidad, y todavía no la hay.</div></div>';
+  }
 
   if(!d.fiable&&d.motivo){
     h+='<div style="background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
@@ -2614,14 +2648,42 @@ function sAdminCacBrake(){
       +'<div style="margin-top:10px">'+BTN('Volver a encender //','doKillPromos(false)')+'</div></div>';
   }
 
+  // ⚠ LA VENTANA DE LA LÍNEA BASE SOLO EXISTE UNA VEZ, y este es el único sitio donde el dueño
+  // la va a leer. Mientras no haya gasto cargado, la pantalla NO está vacía: está midiendo el
+  // dato que después no se puede reconstruir. Pintarlo como "sin gasto" y nada más haría que el
+  // periodo más valioso de medición pase sin que nadie sepa que estaba corriendo.
+  if(d.veredicto==='sin-gasto'){
+    var listo=(d.baseDias||0)>=minDias&&(d.baseNuevos||0)>=minCli;
+    h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+(listo?'rgba(37,211,102,.45)':'rgba(203,162,88,.35)')+';border-radius:12px;padding:18px;margin-bottom:14px">'
+      +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">LÍNEA BASE · MIDIENDO //</div>'
+      +'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:'+(listo?'var(--sw-ok,#25D366)':'var(--sw-text,#FFFFFF)')+';line-height:1">'+(d.baseOrganicaDia!==null&&d.baseOrganicaDia!==undefined?String(d.baseOrganicaDia):'—')+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0)">clientes nuevos por día, sin publicidad</div></div>'
+      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-top:8px">'
+      +(d.baseDias?(d.baseNuevos+' clientes en '+d.baseDias+' días. '):'Todavía no entró ningún cliente. ')
+      +(listo
+        ?'<b style="font-style:normal;color:var(--sw-ok,#25D366)">Ya alcanza para descontarla.</b> Desde acá, lo que gastes en publicidad se mide contra este ritmo y no contra cero.'
+        :'Faltan '+Math.max(0,minDias-(d.baseDias||0))+' días y '+Math.max(0,minCli-(d.baseNuevos||0))+' clientes para que sirva. ')
+      +'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-body,#F2F0EB);line-height:1.55;margin-top:10px;border-top:1px solid var(--sw-border,#3A6B58);padding-top:10px">'
+      +'Esto solo se puede medir <b style="font-style:normal">antes</b> del primer sol de publicidad. Una vez que empiezas a gastar no hay periodo limpio con el cual comparar, y el CAC pasa a acreditarle a Meta también a quien iba a llegar solo.'
+      +'</div></div>';
+  }
+
   var hayCac=d.cac!==null&&d.cac!==undefined;
-  var malo=d.veredicto==='sobre-el-techo'||d.veredicto==='sin-conversiones';
+  var malo=d.veredicto==='sobre-el-techo'||d.veredicto==='sin-conversiones'||d.veredicto==='sin-incrementales';
   var col=!hayCac&&!malo?'var(--sw-text-muted,#A8C8B0)':(malo?'var(--sw-danger,#ff8888)':'var(--sw-ok,#25D366)');
   var titular=d.veredicto==='sin-conversiones'
     ?'Gastaste y no entró nadie'
+    // No es lo mismo que "no entró nadie" y no puede leerse igual: acá SÍ entraron clientes, y
+    // el hallazgo es que ninguno llegó por encima de lo que ya entraba solo.
+    :d.veredicto==='sin-incrementales'?'Entraron clientes, pero no más de los que ya entraban'
     :d.veredicto==='sin-gasto'?'Sin gasto cargado'
     :d.veredicto==='sobre-el-techo'?'Por encima del techo':'Dentro del techo';
 
+  // Sin gasto no se pinta la tarjeta del CAC: la de arriba ya dice qué está pasando, y un
+  // "COSTO POR CLIENTE —" debajo solo agrega un hueco que hay que interpretar.
+  if(d.veredicto!=='sin-gasto'){
   h+='<div style="background:var(--sw-card,#2D5246);border:1px solid '+(malo?'rgba(255,85,85,.4)':'var(--sw-border,#3A6B58)')+';border-radius:12px;padding:18px;margin-bottom:14px">'
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">COSTO POR CLIENTE · '+d.dias+' DÍAS //</div>'
     +'<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
@@ -2633,12 +2695,21 @@ function sAdminCacBrake(){
     // nada, "entre S/12 y S/15" sí — y es lo que deja ver de un vistazo si el techo cae
     // adentro. El margen sale de 1/√n (Poisson), no de un umbral elegido a ojo.
     +(hayCac&&d.margenPct!==null?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'
-      +'Con '+d.nuevosPagados+' conversiones el margen es ±'+d.margenPct+'%: entre '+SOLES+pz(d.cacMin)+' y '+SOLES+pz(d.cacMax)+'.</div>':'')
+      +'Con '+(d.baseFiable?d.atribuibles:d.nuevosPagados)+' conversiones el margen es ±'+d.margenPct+'%: entre '+SOLES+pz(d.cacMin)+' y '+SOLES+pz(d.cacMax)+'.</div>':'')
+    // Los DOS extremos, y el ajustado como titular. Mostrarlos como equivalentes dejaría elegir
+    // cuál creer, y en una pantalla que existe para frenar el gasto siempre se elegiría el
+    // barato. El piso va abajo, chico, y dicho como lo que es.
+    +(hayCac&&d.baseFiable&&d.cacPiso!==null&&d.cacPiso!==undefined
+      ?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'
+        +'Sin descontar la base darían '+SOLES+pz(d.cacPiso)+' sobre '+d.nuevosPagados+' clientes — ese es el número optimista.</div>':'')
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.55;margin-top:8px">'
-    +'El techo es lo que te deja un cliente en su PRIMER pedido. Por encima de eso no pierdes necesariamente — recuperas si vuelve — pero estás apostando a una repetición que todavía no mediste.'
+    +(d.veredicto==='sin-incrementales'
+      ?'Entraron '+d.nuevosPagados+' clientes nuevos en '+d.dias+' días, pero antes de la publicidad ya entraban '+d.baseOrganicaDia+' por día — o sea unos '+Math.round((d.baseOrganicaDia||0)*d.dias)+' en el mismo tiempo. No hay ninguno por encima de eso, así que no hay a quién atribuirle el gasto.'
+      :'El techo es lo que te deja un cliente en su PRIMER pedido. Por encima de eso no pierdes necesariamente — recuperas si vuelve — pero estás apostando a una repetición que todavía no mediste.')
     +(hayCac&&!d.salioDeAprendizaje?' Y Meta sigue en fase de aprendizaje ('+d.nuevosPagados+' de '+d.minAprendizajeMeta+' conversiones): este CAC es el de arranque y puede mejorar solo.':'')
     +'</div>'
     +'</div>';
+  }
 
   h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'
     +'<div style="flex:1;min-width:120px;background:var(--sw-card2,#1A3028);border-radius:10px;padding:12px 14px">'

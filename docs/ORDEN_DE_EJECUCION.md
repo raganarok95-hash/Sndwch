@@ -315,6 +315,12 @@ Ver `docs/PENDIENTE_DEL_DUENO.md`. Números: 13, 18, 41, 42, 43, 45, 46, 47, 53,
 
 Casi todos cuelgan de una sola cosa: **los secrets de Meta**.
 
+⚠ **Y hay un paso previo que no cuelga de ningún secret y solo se puede dar una vez**: abrir y
+**no gastar nada en publicidad durante al menos 14 días**, para levantar la línea base orgánica
+(cuánta gente llega sola). Sin ella, el costo por cliente le acredita a Meta también a quien
+iba a llegar igual y sale más barato de lo que es. Después no se puede reconstruir. Ver
+`docs/CAMPANA_DE_ANUNCIOS.md` §3b — la campaña arranca en **noviembre**, no en octubre.
+
 ## Fuera de lote — resuelto SIN COSTO ✅ (2026-08-30)
 
 - **28** (lectura del comprobante de Yape). Estaba archivado por costo; el dueño pidió

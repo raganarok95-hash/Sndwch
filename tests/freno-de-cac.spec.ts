@@ -81,7 +81,8 @@ test.describe('freno de CAC', () => {
 
   test('sin gasto cargado muestra un GUION, nunca un 0', async ({ page }) => {
     await abrirFreno(page, frenoBase);
-    await expect(page.locator('text=Sin gasto cargado')).toBeVisible();
+    // Sin gasto la pantalla ya no dice "sin gasto y nada más": está midiendo la línea base.
+    await expect(page.locator('text=LÍNEA BASE · MIDIENDO')).toBeVisible();
 
     // ⚠ SE MIRA LA CIFRA, NO LA PÁGINA. La primera versión comprobaba que el texto del body
     // contuviera un guion — y pasaba con el defecto inyectado, porque los párrafos de
@@ -154,4 +155,130 @@ test.describe('freno de CAC', () => {
     // Y el botón de apagar desaparece: ofrecer apagar algo ya apagado es ruido.
     await expect(page.locator('text=FRENO DE EMERGENCIA')).toHaveCount(0);
   });
+});
+
+// ── LÍNEA BASE ORGÁNICA ───────────────────────────────────────────────────────────────────
+//
+// MODO DE FALLO: SILENCIO, y del peor tipo — el que se descubre tarde. La ventana en que se
+// puede medir cuánta gente entra SIN publicidad existe una sola vez, antes del primer sol
+// gastado, y no se puede reconstruir después. Si la pantalla la pinta como un hueco ("sin
+// gasto cargado" y nada más), el periodo pasa sin que nadie sepa que estaba corriendo, y a
+// partir de ahí el CAC le acredita a Meta para siempre a quien iba a llegar solo.
+test.describe('freno de CAC — línea base', () => {
+  test('sin gasto, la pantalla dice que está midiendo algo IRREPETIBLE, no que está vacía', async ({ page }) => {
+    await abrirFreno(page, { ...frenoBase, nuevosPagados: 9, baseOrganicaDia: 0.32, baseDias: 28, baseNuevos: 9, baseFiable: false, atribuibles: null, cacPiso: null, baseMinDias: 14, baseMinClientes: 10 });
+
+    await expect(page.locator('text=LÍNEA BASE · MIDIENDO')).toBeVisible();
+    await expect(page.locator('text=clientes nuevos por día, sin publicidad')).toBeVisible();
+    // Lo que hace que el dueño NO gaste antes de tiempo es esta frase, no el número.
+    await expect(page.locator('text=no hay periodo limpio con el cual comparar')).toBeVisible();
+    // Y cuánto falta para que sirva, en días y clientes concretos: "todavía no" sin un número
+    // no dice si esperar dos días o dos meses.
+    await expect(page.locator('text=Faltan')).toBeVisible();
+  });
+
+  test('cuando la base ya alcanza, lo dice — es la señal de que se puede empezar a gastar', async ({ page }) => {
+    await abrirFreno(page, { ...frenoBase, nuevosPagados: 18, baseOrganicaDia: 0.64, baseDias: 28, baseNuevos: 18, baseFiable: false, atribuibles: null, cacPiso: null, baseMinDias: 14, baseMinClientes: 10 });
+    await expect(page.locator('text=Ya alcanza para descontarla')).toBeVisible();
+    await expect(page.locator('text=Faltan')).toHaveCount(0);
+  });
+
+  test('⚠ con base fiable, el TITULAR es el CAC ajustado y el optimista queda abajo y chico', async ({ page }) => {
+    // El caso que justifica todo: el piso (S/10) queda cómodo bajo el techo de S/13.63 y
+    // habría pintado "Dentro del techo"; el real (S/18.75) lo pasa.
+    await abrirFreno(page, {
+      ...frenoBase, gasto: 300, nuevosPagados: 30,
+      cac: 18.75, margenPct: 25, cacMin: 14.06, cacMax: 23.44, cacPiso: 10,
+      baseOrganicaDia: 0.5, baseDias: 28, baseNuevos: 14, baseFiable: true, atribuibles: 16, baseMinDias: 14, baseMinClientes: 10,
+      veredicto: 'sobre-el-techo', fiable: true, motivo: null,
+    });
+
+    await expect(page.locator('text=Por encima del techo')).toBeVisible();
+    await expect(page.locator('text=Dentro del techo')).toHaveCount(0);
+
+    // El ajustado es LA cifra grande; el piso va abajo y dicho como lo que es.
+    const grande = await page.evaluate(() => {
+      const el = Array.from(document.querySelectorAll('div'))
+        .find((d) => getComputedStyle(d).fontSize === '40px');
+      return el ? (el.textContent || '').trim() : null;
+    });
+    expect(grande).toBe('S/18.75');
+    await expect(page.locator('text=Sin descontar la base darían S/10 sobre 30 clientes')).toBeVisible();
+
+    // Y la advertencia de arriba CAMBIA: seguir diciendo "es el mejor caso" después de haber
+    // restado la base pediría desconfianza del número más verdadero que hay.
+    await expect(page.locator('text=Ya está descontado lo que entraba solo')).toBeVisible();
+    await expect(page.locator('text=Este CAC es el MEJOR caso')).toHaveCount(0);
+  });
+
+  test('gastar y no traer a nadie por encima de la base NO se lee como "no entró nadie"', async ({ page }) => {
+    await abrirFreno(page, {
+      ...frenoBase, gasto: 400, nuevosPagados: 10, cacPiso: 40,
+      baseOrganicaDia: 0.5, baseDias: 28, baseNuevos: 14, baseFiable: true, atribuibles: 0, baseMinDias: 14, baseMinClientes: 10,
+      veredicto: 'sin-incrementales', fiable: true, motivo: null,
+    });
+    await expect(page.locator('text=Entraron clientes, pero no más de los que ya entraban')).toBeVisible();
+    // Son dos hallazgos distintos y no pueden pintarse igual: acá el negocio SÍ sumó clientes.
+    await expect(page.locator('text=Gastaste y no entró nadie')).toHaveCount(0);
+    await expect(page.locator('text=Dentro del techo')).toHaveCount(0);
+    // `gasto/0` daría Infinity: nunca una cifra inventada.
+    await expect(page.locator('text=S/Infinity')).toHaveCount(0);
+    await expect(page.locator('text=NaN')).toHaveCount(0);
+  });
+});
+
+// ── EL GASTO SE CARGA A MANO ──────────────────────────────────────────────────────────────
+//
+// MODO DE FALLO: SILENCIO, y en la dirección peligrosa. Todo el freno divide gasto ÷ clientes,
+// y el gasto lo transcribe el dueño del panel de Meta. Si se olvida unos días, el numerador
+// queda corto mientras el denominador sigue creciendo: **el costo por cliente sale más barato
+// de lo que es y la pantalla se ve perfecta**. Ese aviso es el único que invalida el número
+// entero, no solo su precisión, y por eso va arriba de todos los demás.
+test.describe('freno de CAC — el gasto sin cargar', () => {
+  test('si faltan días de gasto lo dice ARRIBA de la cifra, y dice hacia qué lado miente', async ({ page }) => {
+    await abrirFreno(page, {
+      ...frenoBase, gasto: 180, nuevosPagados: 20, cac: 9, margenPct: 22.4, cacMin: 6.98, cacMax: 11.02,
+      veredicto: 'sano', fiable: true, motivo: null,
+      ultimoDia: '2026-11-14', diasSinCargar: 6, desactualizado: true,
+    });
+
+    const aviso = page.locator('text=Falta cargar 6 días de gasto');
+    await expect(aviso).toBeVisible();
+    // Decir "falta cargar" sin decir hacia qué lado se equivoca el número deja al dueño
+    // creyendo que es un detalle administrativo. No lo es: acá abajo dice "Dentro del techo".
+    //
+    // Se busca la frase ÚNICA de este aviso y no "más barato de lo que es", que también está en
+    // la advertencia del piso y casaba con dos nodos — un selector ambiguo, el mismo tropiezo
+    // que ya está anotado arriba en este archivo.
+    await expect(page.locator('text=se divide un gasto incompleto')).toBeVisible();
+    await expect(page.locator('text=2026-11-14')).toBeVisible();
+
+    const yAviso = await aviso.boundingBox();
+    const yCifra = await page.locator('text=S/9').first().boundingBox();
+    expect(yAviso!.y).toBeLessThan(yCifra!.y);
+  });
+
+  test('con el gasto al día no aparece ningún aviso — no es ruido de fondo', async ({ page }) => {
+    await abrirFreno(page, {
+      ...frenoBase, gasto: 300, nuevosPagados: 20, cac: 15, margenPct: 22.4, cacMin: 11.64, cacMax: 18.36,
+      veredicto: 'sobre-el-techo', fiable: false, motivo: 'Con 20 conversiones el margen de error es ±22.4%.',
+      ultimoDia: '2026-11-19', diasSinCargar: 1, desactualizado: false,
+    });
+    await expect(page.locator('text=Falta cargar')).toHaveCount(0);
+  });
+});
+
+// ⚠ LOS MÍNIMOS DE LA LÍNEA BASE LOS MANDA EL SERVIDOR, no están escritos en la pantalla.
+// Es la regla del repo —si el código ya conoce la cifra, se interpola— y acá el modo de fallo
+// es el de siempre: escribir un 14 a mano no rompe nada hasta el día que el servidor lo mueva,
+// y entonces la pantalla dice cuántos días faltan contra un umbral que ya no existe.
+test('los umbrales de la línea base vienen del servidor, no escritos en la pantalla', async ({ page }) => {
+  // Se sirven mínimos DISTINTOS de los reales y la pantalla tiene que hacer la cuenta con esos.
+  await abrirFreno(page, {
+    ...frenoBase, nuevosPagados: 4, baseOrganicaDia: 0.2, baseDias: 20, baseNuevos: 4,
+    baseFiable: false, atribuibles: null, cacPiso: null,
+    baseMinDias: 30, baseMinClientes: 25,
+  });
+  // 30 − 20 = 10 días y 25 − 4 = 21 clientes. Con los umbrales escritos a mano diría 0 y 6.
+  await expect(page.locator('text=Faltan 10 días y 21 clientes')).toBeVisible();
 });

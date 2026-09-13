@@ -19,7 +19,7 @@ function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
 }
 
-import { cacFreno } from "../supabase/functions/api/actions/admin.ts";
+import { cacFreno, gastoDesactualizado, GASTO_DIAS_TOLERADOS } from "../supabase/functions/api/actions/admin.ts";
 import { CAC_TECHO, cacTechoPrimerPedido } from "../supabase/functions/api/env.ts";
 
 const TECHO = cacTechoPrimerPedido();
@@ -157,4 +157,156 @@ Deno.test("el referido se reporta al lado, porque es el canal contra el que hay 
   // Un referido cuesta S/7.65 y el CAC pagado más bajo medido es S/10.51: el referido SIEMPRE
   // sale más barato. La pantalla tiene que poder decirlo sin recalcular nada.
   assert(r.costoReferido < r.techo, "si el referido costara más que el techo, el canal entero cambiaría");
+});
+
+// ── LÍNEA BASE ORGÁNICA ───────────────────────────────────────────────────────────────────
+//
+// El defecto que cierran estas pruebas NO lanza nada: sin restar la base, el CAC le acredita a
+// la publicidad al cliente que iba a llegar igual, sale más barato de lo que es, y el freno se
+// queda en verde mientras el negocio compra a pérdida. Es la dirección peligrosa, y es la que
+// Gordon, Zettelmeyer, Bhargava y Chapsky midieron en Facebook: la atribución observacional
+// exagera el efecto de la publicidad.
+
+Deno.test("sin línea base, el CAC es exactamente el de antes — el piso y el titular coinciden", () => {
+  const r = cacFreno({ dias: 28, gasto: 300, nuevosPagados: 20, nuevosReferidos: 3 });
+  assertEquals(r.baseFiable, false);
+  assertEquals(r.atribuibles, null);
+  assertEquals(r.cac, 15);
+  // El piso existe SIEMPRE que haya CAC, aunque no haya base: es el mismo número, y que la
+  // pantalla pueda leerlo sin condicionales es lo que evita que muestre un hueco.
+  assertEquals(r.cacPiso, 15);
+});
+
+Deno.test("⚠ con base fiable el CAC SUBE — restar los que venían solos es el punto entero", () => {
+  // 30 clientes en 28 días, pero antes de gastar ya entraban 0.5/día = 14 en el mismo periodo.
+  const r = cacFreno({
+    dias: 28, gasto: 300, nuevosPagados: 30, nuevosReferidos: 0,
+    baseOrganicaDia: 0.5, baseDias: 28, baseNuevos: 14,
+  });
+  assertEquals(r.baseFiable, true);
+  assertEquals(r.atribuibles, 16);
+  assertEquals(r.cac, 18.75);
+  assertEquals(r.cacPiso, 10);
+  assert((r.cac as number) > (r.cacPiso as number), "el ajustado NUNCA puede salir más barato que el piso");
+
+  // ⚠ ESTE ES EL CASO QUE JUSTIFICA TODO: el piso (S/10) está CÓMODO bajo el techo y habría
+  // pintado la pantalla de verde con el veredicto "sano"; el real (S/18.75) lo pasa y además
+  // con el intervalo entero por encima, o sea accionable. Sin restar la base, el freno no solo
+  // no suena: dice explícitamente que se puede escalar.
+  assert((r.cacPiso as number) < r.techo, "el piso de este caso tiene que quedar bajo el techo");
+  assertEquals(r.veredicto, "sobre-el-techo");
+  assertEquals(r.fiable, true);
+});
+
+Deno.test("una base corta NO se resta: 6 días o 4 clientes es ruido, y restar ruido ensucia", () => {
+  const pocosDias = cacFreno({
+    dias: 28, gasto: 300, nuevosPagados: 20, nuevosReferidos: 0,
+    baseOrganicaDia: 0.5, baseDias: 6, baseNuevos: 3,
+  });
+  assertEquals(pocosDias.baseFiable, false);
+  assertEquals(pocosDias.atribuibles, null);
+  assertEquals(pocosDias.cac, 15, "con base no fiable el CAC tiene que quedar igual que sin base");
+
+  const pocosClientes = cacFreno({
+    dias: 28, gasto: 300, nuevosPagados: 20, nuevosReferidos: 0,
+    baseOrganicaDia: 0.2, baseDias: 30, baseNuevos: 6,
+  });
+  assertEquals(pocosClientes.baseFiable, false);
+  assertEquals(pocosClientes.cac, 15);
+
+  // Pero el número SÍ se reporta aunque no sea fiable: la pantalla tiene que poder decir
+  // cuánto falta para que sirva. Esconderlo dejaría la ventana pasando sin que nadie lo vea.
+  assertEquals(pocosDias.baseDias, 6);
+  assertEquals(pocosDias.baseNuevos, 3);
+});
+
+Deno.test("gastar y no traer a NADIE por encima de la base tiene veredicto propio y es fiable", () => {
+  const r = cacFreno({
+    dias: 28, gasto: 400, nuevosPagados: 10, nuevosReferidos: 0,
+    baseOrganicaDia: 0.5, baseDias: 28, baseNuevos: 14,
+  });
+  assertEquals(r.atribuibles, 0);
+  assertEquals(r.veredicto, "sin-incrementales");
+  // No es "sin datos": es el resultado. Si pidiera fiabilidad estadística no sonaría nunca.
+  assertEquals(r.fiable, true);
+  // Y NO es lo mismo que "no entró nadie" — el negocio sí sumó 10 clientes.
+  assertEquals(r.nuevosPagados, 10);
+  // `gasto/0` daría Infinity: el CAC tiene que ser null, nunca un número inventado.
+  assertEquals(r.cac, null);
+  // El piso sí existe, y es justo el número que habría pintado esto de verde.
+  assertEquals(r.cacPiso, 40);
+});
+
+Deno.test("⚠ el margen se calcula sobre los ATRIBUIBLES, no sobre el total", () => {
+  const r = cacFreno({
+    dias: 28, gasto: 300, nuevosPagados: 100, nuevosReferidos: 0,
+    baseOrganicaDia: 3, baseDias: 28, baseNuevos: 84,
+  });
+  assertEquals(r.atribuibles, 16);
+  // 1/√16 = 25%. Si se calculara sobre los 100 daría 10%, o sea que se restaría la base y
+  // después se reclamaría la precisión del número grande: lo bueno de las dos cuentas.
+  assertEquals(r.margenPct, 25);
+  assert(r.margenPct !== 10, "el margen no puede salir del conteo sin descontar");
+});
+
+Deno.test("los atribuibles se redondean hacia ABAJO — el error nunca acredita de más", () => {
+  // 0.34/día × 28 = 9.52 esperados. 20 − 9.52 = 10.48 → 10, no 11.
+  const r = cacFreno({
+    dias: 28, gasto: 300, nuevosPagados: 20, nuevosReferidos: 0,
+    baseOrganicaDia: 0.34, baseDias: 28, baseNuevos: 10,
+  });
+  assertEquals(r.atribuibles, 10);
+});
+
+Deno.test("sin gasto, el estado dice que la ventana se está midiendo y no se puede reconstruir", () => {
+  const r = cacFreno({ dias: 28, gasto: 0, nuevosPagados: 12, nuevosReferidos: 2 });
+  assertEquals(r.veredicto, "sin-gasto");
+  assertEquals(r.cac, null);
+  // Sin esta frase el periodo más valioso de medición pasa como si fuera una pantalla vacía.
+  assert((r.motivo || "").includes("línea base"), "tiene que nombrar la línea base");
+  assert((r.motivo || "").includes("no se puede reconstruir"), "tiene que decir que es irrepetible");
+});
+
+// ── EL GASTO SE CARGA A MANO ──────────────────────────────────────────────────────────────
+//
+// Todo el freno divide gasto ÷ clientes, y el gasto lo transcribe una persona del panel de
+// Meta. Olvidarse unos días deja el numerador corto mientras el denominador sigue creciendo:
+// el CAC sale MÁS BARATO de lo que es y el freno se queda en verde. Es la dirección peligrosa
+// y no produce ningún error — la pantalla se ve perfecta.
+
+Deno.test("sin ninguna carga NO está desactualizado: está sin empezar, que es otro estado", () => {
+  const r = gastoDesactualizado({ fechas: [], hoyDia: "2026-11-20" });
+  assertEquals(r.ultimoDia, null);
+  assertEquals(r.diasSinCargar, null);
+  // Si confundiera los dos, la alarma sonaría todos los días desde antes de la primera campaña
+  // — y una alarma que suena sin motivo se apaga antes del día que importa.
+  assertEquals(r.desactualizado, false);
+});
+
+Deno.test("cargar ayer está al día; tres días sin cargar ya no", () => {
+  assertEquals(gastoDesactualizado({ fechas: ["2026-11-19"], hoyDia: "2026-11-20" }).desactualizado, false);
+  assertEquals(gastoDesactualizado({ fechas: ["2026-11-18"], hoyDia: "2026-11-20" }).desactualizado, false);
+  const tres = gastoDesactualizado({ fechas: ["2026-11-17"], hoyDia: "2026-11-20" });
+  assertEquals(tres.diasSinCargar, 3);
+  assertEquals(tres.desactualizado, true);
+  assertEquals(tres.ultimoDia, "2026-11-17");
+});
+
+Deno.test("lo que manda es el día MÁS RECIENTE, aunque las filas vengan desordenadas", () => {
+  const r = gastoDesactualizado({ fechas: ["2026-11-02", "2026-11-19", "2026-11-08"], hoyDia: "2026-11-20" });
+  assertEquals(r.ultimoDia, "2026-11-19");
+  assertEquals(r.desactualizado, false);
+});
+
+Deno.test("una fecha corrupta se ignora en vez de tumbar el cron o inventar un hueco", () => {
+  const r = gastoDesactualizado({ fechas: ["no-es-fecha", "2026-11-19", ""], hoyDia: "2026-11-20" });
+  assertEquals(r.ultimoDia, "2026-11-19");
+  assertEquals(r.diasSinCargar, 1);
+});
+
+Deno.test("el umbral es una constante exportada, no un número suelto en el cuerpo", () => {
+  assertEquals(GASTO_DIAS_TOLERADOS, 3);
+  const justo = gastoDesactualizado({ fechas: ["2026-11-20"], hoyDia: "2026-11-20" });
+  assertEquals(justo.diasSinCargar, 0);
+  assertEquals(justo.desactualizado, false);
 });
