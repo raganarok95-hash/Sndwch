@@ -1569,6 +1569,45 @@ medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquie
 mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
 existen y, peor, deja de distinguir el día que sí existan.
 
+## Cinco métodos de predicción, y por qué uno solo no alcanzaba (2026-09-13)
+
+Los modelos v7 a v12 eran **el mismo esqueleto** con entradas distintas: simulación estructural
+de abajo hacia arriba con Monte Carlo encima. Si el esqueleto está mal, 20,000 corridas lo
+repiten 20,000 veces con una barra de error preciosa alrededor de un número equivocado. En la
+competencia M4, **12 de los 17 modelos más precisos usaban combinación**, y el promedio simple
+de métodos heterogéneos resulta difícil de batir. `modelo/metodos_de_prediccion.py` contrasta
+cinco (`PREDICCION_V13.md`).
+
+Lo que cambió de conclusión, y no por afinar entradas:
+
+- **P(S/5,000 netos en el mes 3) = 0.0% en las 12 combinaciones.** No es de marketing: en
+  dic-26 el negocio lleva 2.5 meses abierto. Sale del retrocálculo, que es aritmética.
+- **⚠ EL MOTOR NO TENÍA CANAL ORGÁNICO Y NADIE LO HABÍA DICHO.** En el v11
+  `nuevos = comprados + referidos`: nadie encuentra el negocio por Google, por el QR de la
+  bolsa ni porque un amigo le contó sin usar el código. Es un supuesto fortísimo, **pesimista**,
+  y estaba invisible. Ahora es un parámetro que se RECORRE — y es justo lo que mide la ventana
+  sin publicidad.
+- **Dos métodos independientes convergen dentro del 8%** (cohortes y difusión de Bass) una vez
+  alineado el ritmo orgánico. Eso no valida el número: valida que **toda la respuesta cuelga de
+  ese único parámetro sin medir**.
+- **Con cero orgánico el negocio se queda clavado en −S/500 para siempre.** No pierde más
+  porque el freno corta la publicidad; no gana nada porque no le queda motor. Eso no es un
+  fallo del freno, es el diagnóstico: **este negocio no tiene motor de crecimiento aparte de lo
+  orgánico y los referidos.**
+- **S/10,000 es otro negocio**: cabe en una persona (29.6 ped/día) solo SIN publicidad; con
+  pauta pasa al techo físico y obliga a contratar, rompiendo el supuesto "mano de obra = S/0"
+  que sostiene todo el costeo del menú.
+- **Faltaban dos cosas que nunca estuvieron en ningún modelo**: multiplicar por P(el negocio
+  sigue abierto) —clase de referencia, vista de afuera— y el **punto único de falla**: el dueño
+  solo, sin reemplazo, 20 días caídos al año valen S/673/mes contra la meta de S/10,000.
+
+⚠ **Dos errores propios al implementar Bass, que conviene no repetir**: los coeficientes
+publicados (Sultan/Farley/Lehmann) son **anuales** y la primera versión los aplicó
+mensualmente, dando S/267,336 de neto en el mes 12 con diez empleados; y **Bass modela la
+adopción de una CATEGORÍA, no la cuota de un vendedor** — poner M = todo el mercado asume 100%
+de cuota. De ese método se toma **la forma, nunca el nivel**: lo que viaja es la razón
+**q/p = 13**, o sea que el boca a boca pesa trece veces la adopción espontánea.
+
 ## La línea base orgánica: el dato que solo se puede medir UNA VEZ (2026-09-13)
 
 El CAC del freno contaba como captado por publicidad **a todo cliente nuevo sin referidor** —
