@@ -351,7 +351,23 @@ no hay dato va un guion, nunca un 0: un 0 se lee como "medimos y dio cero".
    cliente) de verdad SE DA CUENTA cuando producción sirve una versión vieja: se le sirven 6
    formas de estar desactualizada y tiene que señalar cada una. Va DESPUÉS de `build` porque
    compara contra el `index.html` recién construido.
-6. `npm test` (o `npm run verify`, que ahora encadena diez) — deben pasar TODOS (revisa el
+5e. `npm run check:acciones` — que ninguna acción quede escrita y muerta, ni registrada e
+   inalcanzable. Cierra el defecto real que este archivo ya documenta más abajo:
+   `actAdminRetentionReport` estaba IMPORTADA y nunca REGISTRADA en `ACTIONS`, así que la app
+   no podía abrirla y nada avisaba — `deno check` no marca un import que sí se usa dentro de un
+   objeto. Cruza tres fuentes independientes (lo que el servidor exporta, lo que registra, y
+   quién lo llama desde `src/app` o `scripts/`), y reconoce un cron por estructura —que su
+   cuerpo llame a `verifyCronSecret`— en vez de por una lista de nombres que se desactualiza.
+   **Registrar una acción es un paso APARTE de importarla.**
+5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
+   Este archivo lo llama abajo "el séptimo caso del mismo defecto en este repo"; ahora hay algo
+   que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
+   normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,
+   y sin comparar la firma el drop de la sobrecarga vieja daba por muerta a la que está viva —
+   cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
+   script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
+   verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+6. `npm test` (o `npm run verify`, que ahora encadena doce) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
@@ -758,8 +774,9 @@ ocurre. `dead_cron_jobs()` cruza las dos fuentes y avisa a los 3 disparos sin la
 **Las 4 RPC del latido llevan `revoke execute ... from public, anon, authenticated`** — se
 crearon sin él y `record_cron_heartbeat` quedó llamable con la anon key, o sea que
 cualquiera podía escribir un latido falso y DEJAR MUDA la alarma justo mientras la
-automatización estaba caída. Toda RPC `security definer` nueva necesita ese revoke: es el
-sexto caso del mismo defecto en este repo. Cubre
+automatización estaba caída. Toda RPC `security definer` nueva necesita ese revoke: fue el
+sexto caso del mismo defecto en este repo, y por eso desde el 2026-09-13 lo mira
+`npm run check:rpc` en vez de la memoria de quien escriba la próxima migración. Cubre
 solo los 20 jobs que llaman a `api` con un `action`; los otros 6 (4 edge functions aparte +
 2 de SQL puro) quedan fuera a propósito y documentados en la migración.
 Limpieza/expiración: pagos manuales sin confirmar,
@@ -1168,7 +1185,8 @@ El reporte de cohortes —que este archivo llama "el mejor dato del panel"— no
 desde la app: solo lo veía el correo mensual, que llama al RPC por su cuenta. Modo de fallo
 puro silencio: la importación compila y `deno check` no marca un import sin usar dentro de un
 objeto. Ya está en `ACTIONS`. **Al agregar una acción nueva, registrarla es un paso aparte de
-importarla y nada avisa si falta.**
+importarla** — y desde el 2026-09-13 sí avisa algo: `npm run check:acciones`, verificado
+inyectando exactamente este defecto (quitarle la línea de `ACTIONS` a `admin-retention-report`).
 
 ### Lo que se empujó, y lo que deliberadamente no
 
@@ -1550,6 +1568,70 @@ defecto falso: el enlace de Maps medía **43.34 px** con `min-height:44px` puest
 medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquier prueba que
 mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
 existen y, peor, deja de distinguir el día que sí existan.
+
+## La línea base orgánica: el dato que solo se puede medir UNA VEZ (2026-09-13)
+
+El CAC del freno contaba como captado por publicidad **a todo cliente nuevo sin referidor** —
+incluido el que llegó por el QR de la bolsa, por Google o porque un amigo le contó sin usar el
+código. El repo ya lo advertía en la pantalla, pero advertir no arregla el número. Y la
+dirección del error importa: Gordon, Zettelmeyer, Bhargava y Chapsky (*Marketing Science*, 15
+experimentos en Facebook, 500 millones de observaciones) demostraron que **la atribución
+observacional exagera el efecto de la publicidad**; trabajos posteriores lo cuantificaron en
+factores de **2 a 5 veces**. Un CAC exagerado a la baja es justo el que hace escalar un canal
+que pierde plata.
+
+`lineaBaseOrganica()` (`actions/admin.ts`) mide cuántos clientes entraban **antes del primer
+sol gastado**, y `cacFreno` resta ese ritmo antes de dividir. Lo que no hay que romper:
+
+- **La ventana se deriva sola** del primer `ad_spend` con `amount > 0`, nunca de un campo que
+  alguien tenga que acordarse de llenar. Una fila cargada en 0 es un día sin campaña, no el
+  arranque: tomarla como corte cerraría la ventana antes de tiempo y en silencio.
+- **Son los 28 días ANTERIORES al primer gasto, no "desde el primer cliente".** Una cuenta de
+  prueba creada hace medio año estiraría el denominador y dejaría la base cerca de cero — la
+  dirección peligrosa. Y 28 son los mismos del periodo de medición, así que las dos ventanas
+  tienen la misma mezcla de días de semana.
+- **Exige 14 días y 10 clientes.** Por debajo, `porDia` es ruido, y restar ruido no mejora una
+  medición: la ensucia donde nadie puede verlo. El número se reporta igual para que la pantalla
+  diga cuánto falta.
+- **Los atribuibles se redondean hacia ABAJO** (`Math.floor`): el error nunca puede acreditarle
+  a la publicidad un cliente que iba a venir igual.
+- **El margen `1/√n` se calcula sobre los ATRIBUIBLES**, no sobre el total. Restar la base y
+  después reclamar la precisión del número grande sería quedarse con lo bueno de las dos cuentas.
+- **Con base fiable, el CAC ES el ajustado**; `cacPiso` queda al lado como el extremo optimista.
+  Mostrarlos como equivalentes dejaría elegir cuál creer, y en una pantalla que existe para
+  frenar el gasto siempre se elegiría el barato. Y la advertencia de arriba **cambia**: seguir
+  diciendo "es el mejor caso" después de restar la base pide desconfianza del número más
+  verdadero que hay, y eso desgasta la pantalla igual que exagerar.
+- **`sin-incrementales` es un veredicto propio** y no se confunde con `sin-conversiones`: acá el
+  negocio SÍ sumó clientes, y el hallazgo —que no los trajo la publicidad— es el incómodo. Es
+  fiable sin pedir mínimo estadístico: no es una medición imprecisa, es el resultado.
+- **`alert-cac-brake` usa la MISMA línea base.** Si la alerta midiera sin restarla sonaría más
+  tarde que el panel, o no sonaría, sobre exactamente el mismo día.
+- **Sin gasto, la pantalla NO está vacía: está midiendo.** Ese estado era un hueco ("sin gasto
+  cargado" y nada más) y es el periodo más valioso de medición del negocio. Ahora es la tarjeta
+  titular, con lo que falta en días y clientes, y con la frase de que después no se reconstruye.
+
+### Y el gasto se carga A MANO, así que olvidarse ABARATA el CAC
+
+Todo el freno divide gasto ÷ clientes, y el numerador lo transcribe el dueño del panel de Meta.
+Olvidarse tres días deja el numerador corto mientras el denominador sigue creciendo: **el costo
+por cliente sale más barato de lo que es y el freno se queda en verde.** La pantalla se ve
+perfecta; solo que miente, y hacia el lado que hace escalar.
+
+`gastoDesactualizado()` (cálculo puro) avisa a los **3 días** — uno o dos de atraso son vida
+normal en un negocio donde el dueño cocina, y avisar ahí convertiría la alerta en ruido. Va en
+la pantalla **arriba de todo lo demás** (es el único aviso que invalida el número entero, no
+solo su precisión) y en `alert-cac-brake`, con **su propio límite de frecuencia**: compartir el
+de `cac-brake` haría que un día con las dos condiciones mandara solo una, y cuál se perdería
+sería impredecible. **Sin ninguna carga NO está desactualizado**: está sin empezar, que es el
+estado de la línea base y ya tiene su veredicto — confundirlos haría sonar la alarma todos los
+días desde antes de que exista la primera campaña.
+
+Consecuencia de calendario, y es una decisión del dueño ya tomada: **el negocio abre sin gastar
+un sol en anuncios durante al menos 14 días.** La campaña arranca después.
+Probado en `tests-api/freno-cac.test.ts` y `tests/freno-de-cac.spec.ts`, los dos verificados
+inyectando los defectos (no restar la base, el margen sobre el total, aceptar una base corta,
+redondear hacia arriba, y las dos mitades de la pantalla).
 
 ## El freno por techo de CAC (2026-09-12)
 

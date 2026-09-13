@@ -20,6 +20,13 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | P3 | **Cerrar los lunes** el martes 8 de septiembre | Decisión ya tomada; hay que ejecutarla en el panel el día indicado |
 | P4 | **Cotizar precios reales** al comprar la primera tanda | Todo el costeo del menú corre hoy sobre estimados. Ver P8 |
 
+## 1b. ⚠ Una sola oportunidad: la ventana sin publicidad, al abrir
+
+| # | Qué | Por qué no se puede posponer |
+|---|---|---|
+| P1b | **Abrir y NO gastar un sol en anuncios durante al menos 14 días** | Es la única forma de saber cuánta gente llega sola. Después, el costo por cliente le acredita a Meta también a quien iba a llegar igual, y sale **más barato de lo que es** — el error que hace escalar un canal que pierde plata. **No se puede reconstruir después.** El panel (Admin // Marketing // Freno de CAC) lo cuenta solo y te dice cuánto falta; la campaña arranca en noviembre, no en octubre |
+| P1c | **Una vez que empiece la campaña: cargar el gasto de Meta todos los días** | El freno divide gasto ÷ clientes y el gasto lo escribes tú. Tres días sin cargar y el costo por cliente sale más barato de lo que es, con el freno en verde. A los 3 días te llega un aviso al celular, pero el número ya estuvo mal ese tiempo |
+
 ## 2. Plata directa — desbloquean ingresos o miden si los hay
 
 | # | Qué | Desbloquea |

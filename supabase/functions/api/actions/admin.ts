@@ -3276,7 +3276,12 @@ export async function actAdminRetentionReport(b: any) {
 // El cálculo es PURO y vive acá para poder probarlo sin base (`tests-api/freno-cac.test.ts`).
 // Su modo de fallo es silencio: si el veredicto se rompe nada revienta, solo se sigue gastando.
 
-export type CacVeredicto = "sin-gasto" | "sin-conversiones" | "sobre-el-techo" | "sano";
+export type CacVeredicto =
+  | "sin-gasto"
+  | "sin-conversiones"
+  | "sin-incrementales"
+  | "sobre-el-techo"
+  | "sano";
 
 export type CacFreno = {
   dias: number;
@@ -3299,19 +3304,65 @@ export type CacFreno = {
   minAprendizajeMeta: number;
   /** Si Meta ya salió de fase de aprendizaje en el periodo. */
   salioDeAprendizaje: boolean;
+
+  // ── LÍNEA BASE ORGÁNICA ─────────────────────────────────────────────────────────────
+  // Clientes nuevos por día que entraban ANTES de gastar el primer sol en publicidad. Sin
+  // esto, `gasto / (nuevos sin referido)` le atribuye a la publicidad también al que te
+  // encontró solo, y el CAC sale más barato de lo que es. No es un matiz: Gordon,
+  // Zettelmeyer, Bhargava y Chapsky (Marketing Science, 15 experimentos en Facebook, 500
+  // millones de observaciones) midieron que la atribución observacional EXAGERA el efecto de
+  // la publicidad, en trabajos posteriores por factores de 2 a 5 veces. Un CAC exagerado a la
+  // baja es exactamente el error que hace escalar un canal que pierde plata.
+  /** Clientes orgánicos por día medidos antes del primer gasto. `null` si todavía no se puede. */
+  baseOrganicaDia: number | null;
+  /** Días y clientes de los que salió esa base — para poder desconfiar de ella con criterio. */
+  baseDias: number | null;
+  baseNuevos: number | null;
+  /** Si la base tiene suficiente ventana y volumen como para restarla. */
+  baseFiable: boolean;
+  /** Los mínimos que exige, VIAJANDO al cliente. La pantalla tiene que decir cuántos días y
+   *  cuántos clientes faltan, y escribir ahí un 14 y un 10 a mano los desincronizaría el día
+   *  que se muevan acá — es la regla de este repo: si el código ya conoce la cifra, se
+   *  interpola, nunca se escribe. */
+  baseMinDias: number;
+  baseMinClientes: number;
+  /** Nuevos por encima de la base: los que la publicidad de verdad trajo. */
+  atribuibles: number | null;
+  /** El CAC optimista (gasto ÷ todos los nuevos sin referido). Es un PISO, nunca el real.
+   *  Cuando hay base fiable, `cac` pasa a ser el ajustado y este queda como el otro extremo. */
+  cacPiso: number | null;
 };
+
+/** La base necesita ventana Y volumen. Con 3 días o 4 clientes, `porDia` es ruido, y restar
+ *  ruido de una medición no la mejora: la ensucia en una dirección que nadie puede ver. */
+const BASE_MIN_DIAS = 14;
+const BASE_MIN_CLIENTES = 10;
 
 export function cacFreno(input: {
   dias: number;
   gasto: number;
   nuevosPagados: number;
   nuevosReferidos: number;
+  /** Clientes orgánicos por día medidos ANTES del primer gasto. Opcional: mientras esa
+   *  ventana no exista, el freno se comporta igual que antes, con el CAC optimista. */
+  baseOrganicaDia?: number | null;
+  baseDias?: number | null;
+  baseNuevos?: number | null;
 }): CacFreno {
   const dias = Math.max(1, Math.round(input.dias));
   const gasto = Math.max(0, Number(input.gasto) || 0);
   const nuevosPagados = Math.max(0, Math.round(Number(input.nuevosPagados) || 0));
   const nuevosReferidos = Math.max(0, Math.round(Number(input.nuevosReferidos) || 0));
   const techo = cacTechoPrimerPedido();
+
+  const baseDias = Number.isFinite(Number(input.baseDias)) ? Math.max(0, Math.round(Number(input.baseDias))) : null;
+  const baseNuevos = Number.isFinite(Number(input.baseNuevos)) ? Math.max(0, Math.round(Number(input.baseNuevos))) : null;
+  const baseOrganicaDia = Number.isFinite(Number(input.baseOrganicaDia))
+    ? Math.round(Math.max(0, Number(input.baseOrganicaDia)) * 1000) / 1000
+    : null;
+  const baseFiable = baseOrganicaDia !== null
+    && baseDias !== null && baseDias >= BASE_MIN_DIAS
+    && baseNuevos !== null && baseNuevos >= BASE_MIN_CLIENTES;
 
   // ⚠ EL MÍNIMO DE APRENDIZAJE DE META NO PUEDE SER LA SALVAGUARDA, y la primera versión de
   // esto lo usaba como tal. Meta pide ~50 conversiones cada 7 días por conjunto; a 28 días son
@@ -3322,19 +3373,33 @@ export function cacFreno(input: {
   // arranque y tiene margen de mejorar solo.
   const minAprendizajeMeta = Math.ceil((CAC_TECHO.convAprendizaje7d * dias) / 7);
 
+  // Los que la publicidad trajo POR ENCIMA de lo que entraba solo. Se redondea hacia ABAJO a
+  // propósito: el error nunca puede caer del lado de acreditarle a la publicidad un cliente
+  // que iba a venir igual, porque ese es justo el error que hace escalar un canal que pierde.
+  const atribuibles = baseFiable
+    ? Math.max(0, Math.floor(nuevosPagados - (baseOrganicaDia as number) * dias))
+    : null;
+
   const base = {
     dias, gasto, nuevosPagados, nuevosReferidos, techo,
     costoReferido: CAC_TECHO.costoReferido,
     minAprendizajeMeta,
     salioDeAprendizaje: nuevosPagados >= minAprendizajeMeta,
+    baseOrganicaDia, baseDias, baseNuevos, baseFiable, atribuibles,
+    baseMinDias: BASE_MIN_DIAS, baseMinClientes: BASE_MIN_CLIENTES,
   };
+  const vacio = { cac: null, margenPct: null, cacMin: null, cacMax: null, cacPiso: null };
 
   // Sin gasto no hay CAC. Un 0 acá se leería como "medimos y salió gratis".
+  //
+  // Y este NO es un estado muerto: es la VENTANA DE MEDICIÓN de la línea base, que solo se
+  // puede levantar una vez —antes del primer sol de publicidad— y que después no se puede
+  // reconstruir. Por eso se dice acá, donde el dueño lo va a leer, y no en un documento.
   if (gasto <= 0) {
     return {
-      ...base, cac: null, margenPct: null, cacMin: null, cacMax: null,
+      ...base, ...vacio,
       veredicto: "sin-gasto", fiable: false,
-      motivo: "No hay gasto cargado en este periodo, así que no hay CAC que medir.",
+      motivo: "No hay gasto cargado en este periodo, así que no hay CAC que medir. Lo que sí se está midiendo es tu línea base: cuántos clientes entran SIN publicidad. Ese número no se puede reconstruir después.",
     };
   }
 
@@ -3342,13 +3407,25 @@ export function cacFreno(input: {
   // infinito o NaN, y cualquiera de los dos se pinta mal o se confunde con "sin datos". Esto
   // NO es ausencia de información — es información pésima, y por eso va marcada como fiable.
   if (nuevosPagados <= 0) {
-    return {
-      ...base, cac: null, margenPct: null, cacMin: null, cacMax: null,
-      veredicto: "sin-conversiones", fiable: true, motivo: null,
-    };
+    return { ...base, ...vacio, veredicto: "sin-conversiones", fiable: true, motivo: null };
   }
 
-  const cac = Math.round((gasto / nuevosPagados) * 100) / 100;
+  // El piso: gasto ÷ TODOS los nuevos sin referido. Es el número que esta pantalla mostraba
+  // antes de que existiera la línea base, y queda como el extremo optimista.
+  const cacPiso = Math.round((gasto / nuevosPagados) * 100) / 100;
+
+  // Gastó, entraron clientes, pero NINGUNO por encima de lo que ya entraba solo. No es lo
+  // mismo que "no entró nadie" y no puede pintarse igual: acá el negocio SÍ sumó clientes, y
+  // la conclusión —que no los trajo la publicidad— es la incómoda y la fácil de discutir.
+  if (atribuibles !== null && atribuibles <= 0) {
+    return { ...base, ...vacio, cacPiso, veredicto: "sin-incrementales", fiable: true, motivo: null };
+  }
+
+  // Cuando hay base fiable, EL CAC ES EL AJUSTADO. No se muestran los dos como equivalentes
+  // dejando elegir: el freno tiene que decidir con el número más verdadero que exista, y el
+  // piso queda al lado como el otro extremo.
+  const conversiones = atribuibles !== null ? atribuibles : nuevosPagados;
+  const cac = Math.round((gasto / conversiones) * 100) / 100;
 
   // ⚠ LA FIABILIDAD SE DECIDE CON EL INTERVALO, NO CON UN UMBRAL INVENTADO.
   //
@@ -3361,7 +3438,11 @@ export function cacFreno(input: {
   // lado del techo?". Eso responde lo único que importa —¿puedo actuar?— y además deja de
   // exigir un número fijo: si el CAC está altísimo, con pocas conversiones ya alcanza; si está
   // pegado al techo, hacen falta muchas más. La estadística decide cuántas, no yo.
-  const margenPct = Math.round((100 / Math.sqrt(nuevosPagados)) * 10) / 10;
+  //
+  // El margen se calcula sobre las conversiones QUE SOSTIENEN EL CAC —las atribuibles cuando
+  // hay línea base— y nunca sobre el total: restar la base y después reclamar la precisión del
+  // número grande sería quedarse con lo bueno de las dos cuentas a la vez.
+  const margenPct = Math.round((100 / Math.sqrt(conversiones)) * 10) / 10;
   const cacMin = Math.round(cac * (1 - margenPct / 100) * 100) / 100;
   const cacMax = Math.round(cac * (1 + margenPct / 100) * 100) / 100;
   const claramenteArriba = cacMin > techo;
@@ -3369,12 +3450,12 @@ export function cacFreno(input: {
   const fiable = claramenteArriba || claramenteAbajo;
 
   return {
-    ...base, cac, margenPct, cacMin, cacMax,
+    ...base, cac, margenPct, cacMin, cacMax, cacPiso,
     veredicto: cac > techo ? "sobre-el-techo" : "sano",
     fiable,
     motivo: fiable
       ? null
-      : `Con ${nuevosPagados} conversión${nuevosPagados === 1 ? "" : "es"} el margen de error es ±${margenPct}%: el CAC real está entre S/${cacMin.toFixed(2)} y S/${cacMax.toFixed(2)}, y el techo (S/${techo.toFixed(2)}) cae dentro de ese rango. Todavía no se puede decir de qué lado estás.`,
+      : `Con ${conversiones} conversión${conversiones === 1 ? "" : "es"} el margen de error es ±${margenPct}%: el CAC real está entre S/${cacMin.toFixed(2)} y S/${cacMax.toFixed(2)}, y el techo (S/${techo.toFixed(2)}) cae dentro de ese rango. Todavía no se puede decir de qué lado estás.`,
   };
 }
 
@@ -3392,18 +3473,99 @@ function diasDesde(iso: string): string {
 // al martes, eso mueve el número sin que nada haya cambiado en la campaña.
 const CAC_DIAS_POR_DEFECTO = 28;
 
+// ── LA LÍNEA BASE ORGÁNICA ────────────────────────────────────────────────────────────────
+//
+// Cuántos clientes entraban SOLOS, antes de que existiera un sol de publicidad. Sin este
+// número, `gasto ÷ (nuevos sin referido)` le acredita a Meta también al que llegó por el QR de
+// la bolsa, por Google o porque un amigo le contó sin usar el código de referido — y el CAC
+// sale más barato de lo que es. Gordon, Zettelmeyer, Bhargava y Chapsky (Marketing Science,
+// 15 experimentos en Facebook, 500 millones de observaciones) midieron que la atribución
+// observacional EXAGERA el efecto de la publicidad; trabajos posteriores lo cuantificaron en
+// factores de 2 a 5 veces. Un CAC exagerado a la baja es el error que hace escalar un canal
+// que pierde plata, así que es el que hay que cerrar.
+//
+// ⚠ SOLO SE PUEDE MEDIR UNA VEZ. Una vez que empieza el gasto, ya no hay periodo limpio con el
+// cual comparar, y no se puede reconstruir después. Por eso la ventana se deriva sola del dato
+// que ya existe (el primer `ad_spend` cargado) en vez de depender de que alguien se acuerde.
+//
+// La ventana son los 28 días ANTERIORES al primer gasto, no "desde el primer cliente": una
+// cuenta de prueba creada hace medio año estiraría el denominador y dejaría la base cerca de
+// cero, que es justo la dirección peligrosa (base baja = CAC optimista). Y 28 son los mismos
+// del periodo de medición, así que las dos ventanas tienen la misma mezcla de días de semana.
+const BASE_VENTANA_DIAS = 28;
+
+async function lineaBaseOrganica(): Promise<{
+  porDia: number | null; dias: number | null; nuevos: number | null; hasta: string | null;
+}> {
+  // `amount=gt.0`: una fila cargada en 0 es un día sin campaña, no el arranque de la
+  // publicidad. Tomarla como corte cerraría la ventana antes de tiempo y sin avisar.
+  const primero = await sbGet("ad_spend", "amount=gt.0&select=spend_date&order=spend_date.asc&limit=1");
+  const hasta: string | null = primero?.[0]?.spend_date || null;
+  // Sin gasto todavía, el corte es AHORA: la ventana sigue abierta y es lo que se mide hoy.
+  const corte = hasta ? new Date(hasta + "T00:00:00.000Z") : new Date();
+  const inicio = new Date(corte.getTime() - BASE_VENTANA_DIAS * 86400000);
+
+  const previos = (await sbGet(
+    "customers",
+    `created_at=gte.${encodeURIComponent(inicio.toISOString())}&created_at=lt.${encodeURIComponent(corte.toISOString())}&select=created_at,referred_by&order=created_at.asc&limit=20000`,
+  ) || []) as Array<{ created_at: string; referred_by: string | null }>;
+
+  if (!previos.length) return { porDia: null, dias: null, nuevos: null, hasta };
+
+  // Los días realmente observados: desde el primer cliente de la ventana hasta el corte. Si el
+  // negocio abrió hace 6 días, son 6 y no 28 — dividir entre 28 diluiría la base a la cuarta
+  // parte, y `baseDias` por debajo del mínimo es exactamente lo que tiene que pasar ahí.
+  const dias = Math.max(1, Math.round((corte.getTime() - new Date(previos[0].created_at).getTime()) / 86400000));
+  const nuevos = previos.filter((c) => !c.referred_by).length;
+  return { porDia: nuevos / dias, dias, nuevos, hasta };
+}
+
+// ── EL GASTO SE CARGA A MANO, Y OLVIDARSE ABARATA EL CAC ──────────────────────────────────
+//
+// Todo el freno divide gasto ÷ clientes, y el gasto lo transcribe el dueño del panel de Meta.
+// Si se olvida tres días, el numerador se queda corto mientras el denominador sigue subiendo:
+// **el CAC sale MÁS BARATO de lo que es y el freno se queda en verde**. Es la dirección
+// peligrosa, y no produce ningún error — la pantalla se ve perfecta, solo que miente.
+//
+// Este cálculo es puro para poder probarlo (`tests-api/freno-cac.test.ts`).
+//
+// Los 3 días no son redondos por gusto: Meta cobra por día y el dueño cocina, así que uno o
+// dos días de atraso son vida normal y avisar ahí convierte la alerta en ruido. Al tercero ya
+// no es un olvido, es un hueco en el dato con el que se decide el gasto.
+export const GASTO_DIAS_TOLERADOS = 3;
+
+export function gastoDesactualizado(input: { fechas: string[]; hoyDia: string }): {
+  ultimoDia: string | null; diasSinCargar: number | null; desactualizado: boolean;
+} {
+  const validas = (input.fechas || []).filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)).sort();
+  const ultimoDia = validas.length ? validas[validas.length - 1] : null;
+  // Sin ninguna carga NO está desactualizado: está sin empezar, que es un estado distinto y ya
+  // tiene su propio veredicto (`sin-gasto`, la ventana de la línea base). Confundirlos haría
+  // sonar la alarma todos los días desde antes de existir la primera campaña.
+  if (!ultimoDia) return { ultimoDia: null, diasSinCargar: null, desactualizado: false };
+  const dif = Math.floor(
+    (Date.parse(input.hoyDia + "T00:00:00.000Z") - Date.parse(ultimoDia + "T00:00:00.000Z")) / 86400000,
+  );
+  const diasSinCargar = Math.max(0, dif);
+  return { ultimoDia, diasSinCargar, desactualizado: diasSinCargar >= GASTO_DIAS_TOLERADOS };
+}
+
 export async function actAdminCacBrake(b: any) {
   await requireAdmin(b.token);
   const dias = Math.min(180, Math.max(7, Math.round(Number(b.dias) || CAC_DIAS_POR_DEFECTO)));
   const desde = new Date(Date.now() - dias * 86400000);
   const desdeDia = desde.toISOString().slice(0, 10);
 
-  const [gastos, nuevos] = await Promise.all([
+  // La línea base entra en el MISMO `Promise.all`: el panel se usa en un celular de gama baja
+  // con datos móviles, y encadenarla detrás de las otras dos agregaría una ida y vuelta entera
+  // a una pantalla que no la necesita — sus consultas no dependen de estas.
+  const [gastos, nuevos, linea] = await Promise.all([
     sbGet("ad_spend", `spend_date=gte.${desdeDia}&select=spend_date,platform,amount,note&order=spend_date.desc&limit=400`),
     // `referred_by` es lo único que separa un cliente traído por un referido de todos los
     // demás. Lo que queda NO es "captado por publicidad" a secas — ver la advertencia del
-    // cálculo: acá adentro también está el orgánico, y por eso el CAC sale optimista.
+    // cálculo: ahí adentro también está el orgánico, y por eso ese CAC es solo el piso.
     sbGet("customers", `created_at=gte.${encodeURIComponent(desde.toISOString())}&select=phone,referred_by&limit=20000`),
+    lineaBaseOrganica(),
   ]);
 
   const filas = (gastos || []) as Array<{ amount: string | number; spend_date: string; platform: string; note: string | null }>;
@@ -3421,8 +3583,15 @@ export async function actAdminCacBrake(b: any) {
       gasto: Math.round(gasto * 100) / 100,
       nuevosPagados: clientes.length - nuevosReferidos,
       nuevosReferidos,
+      baseOrganicaDia: linea.porDia,
+      baseDias: linea.dias,
+      baseNuevos: linea.nuevos,
     }),
     desde: desdeDia,
+    /** Día del primer gasto cargado. Es lo que cierra la ventana de la línea base: después de
+     *  esa fecha ya no se puede medir cuánta gente entraba sin publicidad. */
+    baseHasta: linea.hasta,
+    ...gastoDesactualizado({ fechas: filas.map((r) => r.spend_date), hoyDia: new Date().toISOString().slice(0, 10) }),
     gastos: filas,
     promosKilled: !!killedAt,
     // Cuánto lleva apagado, en palabras. Es lo único que evita que un kill switch se quede
@@ -3465,26 +3634,64 @@ export async function actAdminAdSpendSet(b: any) {
 // dueño está cocinando.
 export async function actAlertCacBrake(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  let filasGasto: Array<{ amount: string | number; spend_date: string }> = [];
   const freno = await (async () => {
     // Se reusa la MISMA acción que pinta la pantalla, con el mismo rango, para que la alerta
     // y el panel no puedan decir cosas distintas sobre el mismo día.
     const dias = CAC_DIAS_POR_DEFECTO;
     const desde = new Date(Date.now() - dias * 86400000);
     const [gastos, nuevos] = await Promise.all([
-      sbGet("ad_spend", `spend_date=gte.${desde.toISOString().slice(0, 10)}&select=amount&limit=400`),
+      sbGet("ad_spend", `spend_date=gte.${desde.toISOString().slice(0, 10)}&select=amount,spend_date&limit=400`),
       sbGet("customers", `created_at=gte.${encodeURIComponent(desde.toISOString())}&select=referred_by&limit=20000`),
     ]);
-    const gasto = ((gastos || []) as Array<{ amount: string | number }>).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    filasGasto = (gastos || []) as Array<{ amount: string | number; spend_date: string }>;
+    const gasto = filasGasto.reduce((s, r) => s + (Number(r.amount) || 0), 0);
     const clientes = (nuevos || []) as Array<{ referred_by: string | null }>;
     const nuevosReferidos = clientes.filter((c) => !!c.referred_by).length;
-    return cacFreno({ dias, gasto: Math.round(gasto * 100) / 100, nuevosPagados: clientes.length - nuevosReferidos, nuevosReferidos });
+    // La línea base entra ACÁ TAMBIÉN, y no solo en la pantalla. Si la alerta midiera sin
+    // restarla, sonaría más tarde que el panel —o no sonaría— sobre exactamente el mismo día:
+    // dos fuentes de verdad para el mismo número, que es el defecto que este repo ya pagó caro.
+    const linea = await lineaBaseOrganica();
+    return cacFreno({
+      dias, gasto: Math.round(gasto * 100) / 100,
+      nuevosPagados: clientes.length - nuevosReferidos, nuevosReferidos,
+      baseOrganicaDia: linea.porDia, baseDias: linea.dias, baseNuevos: linea.nuevos,
+    });
   })();
+
+  // ⚠ PRIMERO: ¿ES CONFIABLE EL NUMERADOR? El gasto lo transcribe el dueño a mano, y olvidarse
+  // unos días deja el numerador corto mientras el denominador sigue creciendo — o sea que el
+  // CAC sale MÁS BARATO de lo que es y el freno se queda en verde. Este aviso va ANTES que el
+  // del techo porque mientras el dato esté incompleto, el veredicto de abajo no vale nada.
+  //
+  // Tiene su PROPIO límite de frecuencia: compartir el de `cac-brake` haría que un día con las
+  // dos condiciones mandara solo una de las dos, y la que se perdería sería impredecible.
+  const gastoAlDia = gastoDesactualizado({
+    fechas: filasGasto.map((r) => r.spend_date),
+    hoyDia: new Date().toISOString().slice(0, 10),
+  });
+  if (gastoAlDia.desactualizado) {
+    if (await rpc("check_rate_limit", { p_key: "cac-spend-stale", p_limit: 1, p_window_minutes: 1440 })) {
+      await sendPushToAdmins({
+        title: "📋 Falta cargar lo que gastaste en anuncios",
+        body: `El último día cargado es ${gastoAlDia.ultimoDia} — hace ${gastoAlDia.diasSinCargar} días. Mientras falte, el costo por cliente sale más barato de lo que es y el freno no puede avisarte.`,
+        url: "./index.html",
+        tag: "sndwch-cac-spend-stale",
+        renotify: true,
+      });
+    }
+  }
 
   // ⚠ NO SUENA MIENTRAS EL NÚMERO NO SE LO MEREZCA. Por debajo del mínimo de aprendizaje de
   // Meta, lo que se mide es el CAC de arranque: avisar ahí empujaría a apagar la campaña
   // JUSTO antes de que empiece a funcionar, y ese error además parece prudencia. Es el mismo
   // criterio que ya exige un mínimo de volumen la alerta de rechazos de tarjeta.
-  const merece = freno.veredicto === "sin-conversiones" || (freno.veredicto === "sobre-el-techo" && freno.fiable);
+  // `sin-incrementales` entra sin pedir fiabilidad, igual que `sin-conversiones`: gastar y no
+  // traer a nadie por encima de lo que ya entraba solo no es una medición imprecisa, es el
+  // resultado. Y es el caso que un CAC optimista pintaba de verde.
+  const merece = freno.veredicto === "sin-conversiones"
+    || freno.veredicto === "sin-incrementales"
+    || (freno.veredicto === "sobre-el-techo" && freno.fiable);
   if (!merece) return { success: true, alerted: false, ...freno };
 
   // Una vez al día. El CAC de 28 días no se mueve de una hora a otra, así que repetirlo cada
@@ -3495,7 +3702,15 @@ export async function actAlertCacBrake(b: any) {
 
   const cuerpo = freno.veredicto === "sin-conversiones"
     ? `Llevas S/${freno.gasto.toFixed(2)} gastados en ${freno.dias} días y ningún cliente nuevo sin referido. Revisa que los anuncios estén llegando a tu zona.`
-    : `Estás pagando S/${(freno.cac as number).toFixed(2)} por cliente y el techo es S/${freno.techo.toFixed(2)}. Y ese número es el mejor caso: el real es igual o peor.`;
+    : freno.veredicto === "sin-incrementales"
+    ? `Llevas S/${freno.gasto.toFixed(2)} gastados en ${freno.dias} días y entraron ${freno.nuevosPagados} clientes nuevos — pero antes de la publicidad ya entraban ${(freno.baseOrganicaDia as number).toFixed(1)} por día. Ninguno llegó por encima de eso.`
+    // La coletilla del "mejor caso" solo es cierta mientras NO se haya restado la línea base.
+    // Dejarla puesta después de restarla sería pedir desconfianza del número más verdadero que
+    // el negocio tiene, y eso desgasta la alarma tanto como exagerarla.
+    : `Estás pagando S/${(freno.cac as number).toFixed(2)} por cliente y el techo es S/${freno.techo.toFixed(2)}.`
+      + (freno.baseFiable
+        ? ` Ya está descontado lo que entraba sin publicidad (${(freno.baseOrganicaDia as number).toFixed(1)} clientes al día).`
+        : ` Y ese número es el mejor caso: el real es igual o peor.`);
 
   await sendPushToAdmins({
     title: "📉 La publicidad está saliendo cara",

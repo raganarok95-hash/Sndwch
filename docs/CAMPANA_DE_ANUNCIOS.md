@@ -56,17 +56,75 @@ publicidad**.
 —tu CAC real— y ese número decide todo lo demás. Gastar S/3,885 al mes antes de saber si estás
 en S/11 o en S/25 es apostar el presupuesto de siete meses de operación a una moneda al aire.
 
+### ⚠ Y la respuesta cuesta S/300, no S/840 — corregido el 2026-09-13
+
+Este documento pedía S/40/día durante 21 días. **Era más del doble de lo necesario**, y la regla
+del propio freno lo demuestra: el veredicto no llega a un número fijo de conversiones, llega
+cuando el intervalo `1/√n` cae entero de un lado del techo. Eso tiene una propiedad que la
+versión anterior no aprovechaba — **el veredicto es más barato cuanto más extremo es el
+resultado**:
+
+| si tu CAC real es… | conversiones para el veredicto | gasto |
+|---|---|---|
+| S/8 (excelente) | 3 | **S/24** |
+| S/10.51 (el mejor del rango) | 12 | **S/126** |
+| S/20 | 10 | **S/200** |
+| S/25.23 (el peor del rango) | 5 | **S/126** |
+| S/12 o S/15 (pegado al techo) | 55 / 120 | S/660 / S/1,800 |
+
+**Lo caro de probar es justo lo que no hace falta probar.** Entre S/11 y S/17.6 estás a menos
+de un cuarto del punto de equilibrio del primer pedido: ahí la decisión no la resuelve más
+publicidad, la resuelve la repetición, que se mide gratis con los clientes que ya tengas.
+
+**Lo aprobado: S/30/día con tope duro de S/300**, y el freno corta antes si el intervalo se
+separa. A ese gasto entran ~17 primeras compras ya descontado el IGV del 18% — margen ±24%,
+suficiente salvo que caigas en la banda de empate. **Si llegas a S/300 sin veredicto, ese ES el
+veredicto**: estás en el empate y no se escala.
+
 ### Lo que se aprueba
 
 | campo | valor | por qué |
 |---|---|---|
 | **Objetivo** | Ventas (Conversiones) · evento **Purchase** | El píxel ya reporta `Purchase` por navegador Y por Conversions API con el mismo `event_id`, así que Meta deduplica en vez de contar doble. Optimizar a "tráfico" compraría visitas, no pedidos. |
 | **Un solo conjunto de anuncios** | sí | Repartir el presupuesto multiplica el problema: varios aprendizajes que ninguno completa. |
-| **Presupuesto** | **S/40/día durante 21 días = S/840** | ⚠ **Corregido el 2026-09-12 tras la investigación de Meta Ads**: decía 14 días, y la aritmética no daba. A S/40/día con un CAC de S/15 entran ~2.7 compras diarias, o sea **~19 días para juntar 50**. Y 50 es el número donde el margen de error del CAC baja a ±14%; con las ~37 de 14 días el margen es ±16% y el techo todavía cae dentro. La primera lectura confiable es a **21 días o 50 compras, lo que llegue después**. |
+| **Presupuesto** | **S/30/día, tope duro S/300** | Ver la sección de arriba. El tope es duro; el freno puede cortar antes, nunca después. |
 | **Ubicación** | Trujillo + 5 km, cruzado con los distritos que de verdad cubres | `DELIVERY_DISTRICTS` manda. Pagar por alcanzar a alguien a quien no le puedes entregar es tirar el dinero dos veces: el clic y la frustración. |
-| **Edad** | 18-45 | |
-| **Segmentación por intereses** | **ninguna** | Con este presupuesto, segmentar reduce el grupo y encarece el CPM. Deja que Meta busque. |
+| **Edad** | **18-60**, no 18-45 | Cada filtro encoge el grupo y encarece el CPM. Recortar la edad "por intuición" se paga en subasta y no se recupera con nada. |
+| **Segmentación por intereses** | **ninguna** | Ver abajo. Es aritmética, no confianza ciega en el algoritmo. |
+| **Ubicaciones (placements)** | automáticas | |
 | **Horario** | todo el día | El brief ya ancla los temas a ocasiones; que el algoritmo encuentre a qué hora convierte tu gente en vez de decidirlo tú sin datos. |
+
+### Qué controlas tú y qué delegas — el criterio, no una preferencia
+
+La línea no es "confío o no confío en el algoritmo". Es esta: **tú controlas lo que es una
+restricción del negocio; Meta controla lo que es una hipótesis que no has probado.**
+
+| lo controlas TÚ | por qué no es negociable |
+|---|---|
+| Ubicación: los 8 distritos que sí cubres | El Porvenir y El Milagro están `out:true` en `DELIVERY_DISTRICTS`. |
+| El evento: `Purchase` | Es el único cableado por navegador y por CAPI con el mismo `event_id`. |
+| El destino: la app, nunca WhatsApp | Un clic que termina en un chat no dispara `Purchase`: Meta no aprende y tú no mides. |
+| Las 3 creatividades | El algoritmo no inventa tu producto. |
+| El tope de gasto y la regla de corte | |
+
+| lo delegas a META | por qué |
+|---|---|
+| Intereses y comportamientos: NINGUNO | Ver el párrafo de abajo. |
+| Ubicaciones, horario, género | Cero datos propios para decidirlo mejor que la subasta. |
+| Qué creatividad se lleva el presupuesto | |
+
+⚠ **Y sobre "¿cuánto mejor es que Meta se adapte?": no hay un número honesto.** No existe un
+estudio revisado que compare segmentación amplia contra intereses; todo lo publicado lo escribe
+alguien que vende software de anuncios — el mismo patrón que ya detectaron solas las cuatro
+investigaciones de `MAQUINARIA_DE_MARKETING.md`. La documentación de Meta dice que su expansión
+"puede mejorar el rendimiento", pero es el vendedor hablando de su producto.
+
+Lo que sí se sostiene sin ningún estudio es la aritmética: **con S/300 compras ~30,000
+impresiones en total.** Contra los cientos de miles de adultos alcanzables de tus 8 distritos,
+eso es frecuencia por debajo de 0.1 — no llegas ni a rozar el grupo entero. **No tienes
+presupuesto para elegir un subgrupo: no alcanzas a cubrir el grupo completo.** Segmentar ahí
+solo sube el CPM a cambio de una hipótesis que no probaste. Verificable antes de gastar un sol:
+pon los distritos en el estimador de audiencia, mira el CPM, agrega un interés y mira cómo sube.
 
 ### Las creatividades — una por ocasión, que ya están escritas
 
@@ -87,6 +145,37 @@ y Meta no aprende nada — y medir es todo el punto de esta campaña.
 
 ---
 
+## 3b · ⚠ LO PRIMERO NO ES LA CAMPAÑA: ES NO GASTAR NADA DURANTE 2-3 SEMANAS
+
+Cuesta cero, solo se puede hacer una vez, y sin ello todo lo demás de este documento mide mal.
+
+El CAC del panel cuenta como captado por publicidad **a todo cliente nuevo sin referidor** —
+incluido el que te encontró solo, por el QR de la bolsa o porque un amigo le contó sin usar el
+código. Eso no es un matiz: Gordon, Zettelmeyer, Bhargava y Chapsky (*Marketing Science*, 15
+experimentos en Facebook, 500 millones de observaciones) demostraron que **la atribución
+observacional exagera el efecto de la publicidad**, y trabajos posteriores lo cuantificaron en
+factores de **2 a 5 veces**. Un CAC exagerado a la baja es exactamente el error que hace
+escalar un canal que pierde plata.
+
+**La corrección:** abre en la segunda semana de octubre y **no gastes un sol en anuncios
+durante al menos 14 días**. Admin // Marketing // Freno de CAC cuenta solo los clientes nuevos
+que entran en ese periodo y te dice cuántos por día son. Ese es tu **línea base orgánica**.
+Cuando empieces a gastar, ese ritmo se resta antes de dividir, y el CAC pasa de ser un piso
+optimista a ser el número real.
+
+- Se deriva **sola**, del primer `ad_spend` que cargues — no hay que acordarse de nada.
+- Necesita **14 días y 10 clientes** como mínimo. Por debajo, `porDia` es ruido y restarlo
+  ensuciaría la medición en una dirección que nadie puede ver, así que no se resta.
+- Los días son los **28 anteriores al primer gasto**, no "desde el primer cliente": una cuenta
+  de prueba creada hace medio año estiraría el denominador y dejaría la base cerca de cero,
+  que es la dirección peligrosa.
+- **Una vez que empiezas a gastar no se puede reconstruir.** No hay periodo limpio con el cual
+  comparar, y no existe forma de recuperarlo después.
+
+Consecuencia de calendario: **la campaña arranca en noviembre, no en octubre.**
+
+---
+
 ## 4 · El freno: cuándo cortar, decidido ANTES de gastar
 
 En **Admin // Marketing // Freno de CAC**. Carga ahí lo que gastaste cada día (cópialo del
@@ -98,6 +187,10 @@ referido.
 1. **Días 1-14: no decidas nada, y no toques nada.** Cada edición de audiencia, creatividad o
    evento **reinicia la fase de aprendizaje** (documentación oficial de Meta). Lo único que se
    permite es pausar un anuncio con cero compras y más de S/80 gastados.
+1b. **Si gastaste y entraron clientes pero ninguno por encima de tu línea base** → corta. Tiene
+   veredicto propio (`sin-incrementales`) y no espera a ningún mínimo estadístico: no es una
+   medición imprecisa, es el resultado. Y es justo el caso que el CAC optimista pintaba de
+   verde, porque dividía el gasto entre clientes que iban a llegar igual.
 2. **La pantalla decide por ti cuándo el número ya sirve.** No usa un umbral de conversiones:
    calcula el intervalo de confianza (`1/√n`) y solo dice "puedes actuar" cuando ese intervalo
    cae ENTERO de un lado del techo. Mientras el techo caiga dentro del rango, te lo dice con
@@ -115,11 +208,16 @@ referido.
 CTR, hook rate del video (>25%) y costo por *inicio de pago*. Sirven para detectar un desastre,
 no para declarar un éxito.
 
-⚠ **El CAC que ves es el MEJOR caso, no el real.** Cuenta como captado por publicidad a todo
-cliente nuevo sin referidor — y ahí adentro también está quien te encontró por Google Business
-Profile o por el QR de la bolsa. Con más gente en el reparto, el costo sale más barato de lo
-que es. **Si hasta ese número optimista pasa el techo, el real lo pasa seguro.** Separarlos de
-verdad exige el píxel, que es justo lo que esta campaña viene a encender.
+⚠ **Cuánto vale el CAC que ves depende de si levantaste la línea base** (sección 3b):
+
+- **Sin línea base** es el MEJOR caso, no el real: cuenta como captado por publicidad a todo
+  cliente nuevo sin referidor, incluido quien te encontró por Google Business Profile o por el
+  QR de la bolsa. Con más gente en el reparto sale más barato de lo que es. **Si hasta ese
+  número optimista pasa el techo, el real lo pasa seguro.** La pantalla lo dice arriba de la
+  cifra y explica que faltan 14 días sin publicidad para poder descontarlo.
+- **Con línea base** ya está restado el ritmo que entraba solo, y el titular pasa a ser el
+  ajustado; el optimista queda abajo, en chico, dicho como lo que es. Lo que sigue sin poder
+  saberse: si el boca a boca creció por su cuenta desde entonces, la base quedó corta.
 
 ---
 
