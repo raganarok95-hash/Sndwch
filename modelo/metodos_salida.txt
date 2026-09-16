@@ -1,0 +1,197 @@
+                               SND//WCH — CINCO MÉTODOS DE PREDICCIÓN                               
+Contribución por pedido: 14.13 · techo CAC 13.63 · CAC medio Meta 17.87 · horizonte 24 meses (oct-26 a sep-28)
+
+====================================================================================================
+           M4 · RETROCÁLCULO — qué tiene que ser cierto, sin ningún supuesto de marketing           
+====================================================================================================
+Pedidos diarios que hacen falta. Aritmética sobre contribución, fijos y sueldos.
+
+   meta neta    sin pauta    pauta 1,500    pauta 3,000    pauta 6,000
+      5,000        15.5/d        19.8/d        24.0/d        32.5/d ⚠
+     10,000        29.6/d        33.9/d ⚠        38.1/d ⚠        50.8/d
+
+Techo físico de una persona: 40 pedidos/día (cocina por tandas; en servicio solo arma). ⚠ = por encima del 75% de ese techo.
+
+====================================================================================================
+       M1 · ESTRUCTURAL — Monte Carlo de cohortes, con la política de anuncios de 2026-09-13        
+====================================================================================================
+4000 corridas por celda. La publicidad NO es un gasto fijo: son S/300 para medir en el
+mes 3 y después la regla del freno decide escalar, cortar o quedarse.
+
+ orgánico   viral   P(m3≥5k)  P(5k sost)  P(10k sost)       m12       m24  sostiene
+       0/d    0.06      0.0%       0.0%        0.0%    S/-493    S/-500         —
+       0/d    0.15      0.0%       0.0%        0.0%    S/-490    S/-500         —
+       0/d    0.25      0.0%       0.0%        0.0%    S/-484    S/-498    abr-28
+       1/d    0.06      0.0%       0.0%        0.0%     S/270     S/281         —
+       1/d    0.15      0.0%       0.0%        0.0%     S/389     S/423         —
+       1/d    0.25      0.0%       0.1%        0.0%     S/599     S/696    sep-28
+       2/d    0.06      0.0%       0.0%        0.0%   S/1,000   S/1,038         —
+       2/d    0.15      0.0%       0.1%        0.0%   S/1,271   S/1,336    ago-28
+       2/d    0.25      0.0%       0.4%        0.0%   S/1,646   S/1,901    sep-28
+       3/d    0.06      0.0%       0.1%        0.0%   S/1,764   S/1,784    sep-28
+       3/d    0.15      0.0%       0.2%        0.0%   S/2,103   S/2,215    sep-28
+       3/d    0.25      0.0%       6.8%        0.0%   S/2,698   S/3,041    sep-28
+
+====================================================================================================
+                    M2 · DIFUSIÓN DE BASS — el único método con TECHO DE MERCADO                    
+====================================================================================================
+p = 0.03 (adopción espontánea: publicidad + orgánico) · q = imitación (boca a boca).
+[FUENTE] Sultan/Farley/Lehmann, 213 productos: p≈0.03, q≈0.30-0.38.
+        Del propio rubro: comida rápida q=0.54, moteles q=0.36.
+
+   mercado M   q/mes  ped/día m6  ped/día m12  ped/día m24   neto m24  personas
+      31,557  0.0250        5.7         7.3         9.3    S/2,793         1
+      31,557  0.0317        5.8         7.8        10.6    S/3,244         1
+      31,557  0.0450        6.2         8.7        13.6    S/4,319         1
+      78,893  0.0250       14.2        18.3        23.2    S/7,731         1
+      78,893  0.0317       14.6        19.4        26.4    S/8,861         1
+      78,893  0.0450       15.4        21.8        34.0   S/11,548         1
+     157,786  0.0250       28.4        36.6        46.5   S/14,463         2
+     157,786  0.0317       29.2        38.8        52.8   S/16,722         2
+     157,786  0.0450       30.8        43.7        68.0   S/22,096         2
+
+⚠ DE ESTE MÉTODO NO SE TOMA EL NIVEL, SE TOMA LA FORMA. Bass fue validado sobre la
+  adopción de CATEGORÍAS por un mercado, no sobre la cuota de un vendedor nuevo; poner
+  M = todo el mercado equivale a asumir 100% de cuota. Lo que sí viaja es la razón
+  q/p = 13: la imitación pesa 13 veces más que la adopción espontánea.
+  Traducido: el boca a boca debería dominar a la publicidad pagada por un orden de
+  magnitud — la MISMA conclusión del método estructural, por un camino independiente.
+
+====================================================================================================
+           CONVERGENCIA — los dos métodos dicen lo mismo cuando se alinea UN solo número            
+====================================================================================================
+El `p` de Bass no es un parámetro abstracto: p·M son los adoptantes espontáneos del
+primer mes, o sea EL RITMO ORGÁNICO, el mismo que el método estructural recorre a mano.
+Si los dos modelos son razonables, alineado ese número tienen que coincidir.
+
+   mercado M  implica orgánico   M2 neto m24   M1 neto m24    brecha
+      31,557             3.0/d       S/3,244       S/3,134      -3%
+      78,893             7.6/d       S/8,861       S/8,188      -8%
+     157,786            15.2/d      S/16,722      S/15,647      -6%
+
+⇒ Dos métodos con esqueletos distintos —uno de cohortes, uno de difusión— aterrizan
+  en el mismo orden de magnitud una vez alineado el ritmo orgánico. Eso NO valida el
+  número: valida que TODA la respuesta cuelga de ese único parámetro sin medir.
+
+====================================================================================================
+          M3 · CLASE DE REFERENCIA — la vista de afuera, que ningún modelo anterior aplicó          
+====================================================================================================
+Los métodos de adentro calculan P(meta | el negocio sigue abierto) y se olvidan de
+multiplicar por P(sigue abierto). Las fuentes de cierre NO coinciden entre sí:
+
+                            fuente  cierre año 1  sobrevive 24m
+          Datassential 2025 (0.9%)         0.9%         98.7%
+     servicios/restaurantes (~17%)        17.0%         75.9%
+  National Restaurant Assoc. (30%)        30.0%         59.5%
+
+El rango 0.9%-30% es tan ancho que el número puntual no sirve. Lo que sirve es la
+DIRECCIÓN: toda probabilidad de arriba hay que multiplicarla por esto, y ninguna lo hacía.
+
+====================================================================================================
+        M5 · VALOR DE LA INFORMACIÓN — no predice el resultado, predice cuándo se va a SABER        
+====================================================================================================
+Techo de CAC: S/14. ¿Cuántas compras hacen falta para que el intervalo
+1/√n caiga ENTERO de un lado, y cuánto cuesta juntarlas?
+
+ si el CAC real es  conversiones     gasto    veredicto
+               S/8             3      S/24        sirve
+              S/11            12     S/126        sirve
+              S/12            55     S/660        sirve ⚠ banda de empate
+              S/15           120   S/1,800       cortar ⚠ banda de empate
+              S/18            18     S/322       cortar
+              S/20            10     S/200       cortar
+              S/25             5     S/126       cortar
+
+Lo caro de probar es justo lo que no hace falta probar: en la banda S/12-15 estás a
+menos de un cuarto del equilibrio y la decisión no la resuelve más publicidad.
+
+====================================================================================================
+                  ¿QUÉ TENDRÍA QUE PASAR PARA QUE S/10,000 SOSTENIDOS SEA POSIBLE?                  
+====================================================================================================
+Se busca, sobre el motor estructural, la combinación mínima que lo consigue.
+
+ orgánico   viral  contrib  P(10k sost)        m24  ped/día m24
+       3/d    0.25    14.13        0.0%    S/3,046        11.8
+       5/d    0.25    14.13        1.9%    S/5,366        19.5
+       5/d    0.40    14.13       43.4%    S/9,501        39.3
+       8/d    0.25    14.13       34.2%    S/8,860        30.8
+       8/d    0.40    14.13       82.6%   S/15,431        63.3
+       8/d    0.40    17.13       96.9%   S/20,456        63.8
+      12/d    0.40    14.13       97.2%   S/21,529        90.4
+      12/d    0.40    17.13       99.9%   S/29,448        93.7
+
+====================================================================================================
+             LA VARIABLE QUE NINGÚN MODELO DE ESTE REPO TUVO NUNCA: el dueño se enferma             
+====================================================================================================
+Una persona sola, sin reemplazo. Cada día que no puede trabajar, el negocio factura 0
+—y los costos fijos siguen—. Ningún modelo v7-v12 lo tuvo, ni como supuesto declarado.
+
+ días caídos/año  disponibilidad   neto S/5,000 →   neto S/10,000 →
+               0         100.0%          S/5,000          S/10,000
+               5          98.4%          S/4,912           S/9,832
+              10          96.8%          S/4,824           S/9,663
+              20          93.6%          S/4,647           S/9,327
+              30          90.4%          S/4,471           S/8,990
+
+No es ruido: 20 días caídos AL AÑO (una gripe fuerte más un imprevisto) cuestan S/353
+AL MES en promedio contra la meta de S/5,000, y S/673 al mes contra la de S/10,000. Y a
+S/10,000 el negocio ya opera al 74-95% del techo físico de una persona, así que no
+hay margen para recuperar los días perdidos trabajando más.
+
+====================================================================================================
+             COMBINACIÓN — promedio simple, que es lo que la evidencia del M4 respalda              
+====================================================================================================
+P(meta) de la vista de adentro, MULTIPLICADA por P(el negocio sigue abierto).
+Ningún modelo anterior hacía esa multiplicación.
+
+Supervivencia a 24 meses (caso central, cierre 17% el año 1): 75.9%
+
+ orgánico   viral  P(5k) adentro   × superviv  P(10k) adentro   × superviv
+       0/d    0.25          0.0%        0.0%           0.0%        0.0%
+       1/d    0.25          0.1%        0.1%           0.0%        0.0%
+       2/d    0.25          0.4%        0.3%           0.0%        0.0%
+       3/d    0.25          6.8%        5.2%           0.0%        0.0%
+
+====================================================================================================
+                INVENTARIO DE VARIABLES — qué entra, qué no, y qué no se puede saber                
+====================================================================================================
+DENTRO DEL MODELO (21):
+  · contribución por pedido                [DERIVADO] del catálogo real, no de un promedio de Signatures
+  · mezcla ARMA EL TUYO / Signature        [SIN MEDIR] 50/50; se mide en el panel desde sep-26
+  · attach de bebida                       [SIN MEDIR] 25%; se mide en el panel
+  · retención (r1, brecha entre pedidos)   [FUENTE] Bloom + Paytronix, sBG calibrado
+  · CAC (CPM·CTR·CVR·IGV)                  [AGENCIA] rango S/10.51-25.23, NO medición propia
+  · fase de aprendizaje de Meta            [PLATAFORMA] 50 conv/7d + castigo 1.30 [SIN MEDIR]
+  · saturación del CAC                     [SIN MEDIR] +10% por cada 1,000 captados — decide si el año 2 existe
+  · arranque en frío                       [MÉTODO] ×1.6 decayendo en 4 meses
+  · ruido mensual de demanda               [MÉTODO] lognormal σ=0.18
+  · referidos por pedido                   [SIN MEDIR] 0.06-0.40; se mide en el panel
+  · costo del referido                     [MEDIDO] S/7.65 de insumo
+  · capacidad por persona                  [MEDIDO] 40 ped/día, cocina por tandas
+  · contratación y su rendimiento inicial  [DECISIÓN] S/1,500 y 60% el primer mes
+  · costos fijos                           [MEDIDO] S/500, opera desde casa
+  · días operativos                        [MEDIDO] lunes cerrado, derivado del calendario
+  · ritmo orgánico                         [SIN MEDIR] ⚠ NUEVO en v13 — y toda la respuesta cuelga de él
+  · política de decisión publicitaria      [DECISIÓN] ⚠ NUEVO — medir S/300 y decidir
+  · sesgo de atribución del CAC            [FUENTE] ⚠ NUEVO — Gordon et al., exagera 2-5×
+  · techo de mercado                       [FUENTE] ⚠ NUEVO vía Bass — el v12 admitía no tenerlo
+  · supervivencia del negocio              [FUENTE] ⚠ NUEVO vía clase de referencia
+  · punto único de falla (el dueño)        [MÉTODO] ⚠ NUEVO — sensibilidad de arriba
+
+FUERA, DECLARADO (12):
+  · estacionalidad peruana                 Fiestas Patrias, Navidad, verano en la costa norte
+  · día de la semana                       el viernes no se parece al martes en comida
+  · fatiga creativa de los anuncios        el CTR cae con la repetición; acá es constante
+  · tiempo de cobro de Culqi               capital de trabajo: se paga el insumo antes de cobrar
+  · competencia que reacciona              un rival que baja precios o copia el producto
+  · elasticidad precio                     cuánto cae la demanda si suben los precios
+  · quiebres de stock                      ya hay alertas, pero el modelo nunca deja de vender
+  · disponibilidad del motorizado          es un tercero con 50+ repartidores, no propio
+  · reseñas de Google                      [FUENTE] Luca: +1 estrella = +5-9% ingresos, solo independientes
+  · inflación de insumos                   el costeo es a precios de 2026
+  · cierre sanitario o regulatorio         permisos en trámite a la fecha
+  · clima                                  Trujillo es desierto; probablemente menor, pero no está medido
+
+⚠ Ninguna de las de abajo se inventa con un número: nombrarlas es el trabajo honesto.
+  Las dos que más podrían mover el resultado y NO están: estacionalidad y reseñas de
+  Google — la segunda es la única con evidencia causal de todo el expediente.

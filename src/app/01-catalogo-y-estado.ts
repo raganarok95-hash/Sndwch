@@ -605,20 +605,26 @@ var DRINK_IMG={D06:'img/drink_d06.jpg',D07:'img/drink_d07.jpg',D08:'img/drink_d0
 // rompiendo la convención que sí siguen R04/R05/R06 (sustantivo // sustantivo) —
 // hallazgo de auditoría de copy, BAJO. R03 DEBE coincidir con REWARDS.R03.label en
 // catalog.ts.
-// TASA ÚNICA: 20 PUNTOS POR CADA SOL QUE PERDONA LA RECOMPENSA.
-// Los puntos se ganan 1 por sol gastado, así que 20 pts/sol = 5% de retorno para el
-// cliente, igual en las cinco. R03 y R04 estaban en 40 y 53 pts/sol (2.5% y 1.9%), o sea
-// que un cliente racional NUNCA las iba a canjear: por los mismos 320 puntos le convenía
-// esperar a R06 y llevarse un sándwich entero de ~S/20 en vez de perdonar S/6-8. Eran dos
-// opciones muertas ocupando sitio en la pantalla, y encima hacían ver el programa como
-// arbitrario. Recalibradas a la misma tasa que las otras tres:
-//   R02  40 pts ÷ S/2 (EXTRA_SAUCE_PRICE) = 20
-//   R05 120 pts ÷ S/6 (R05_FLAT_WAIVER)   = 20
-//   R03 160 pts ÷ S/8 (R03_FLAT_WAIVER)   = 20   ← era 320
-//   R04 120 pts ÷ S/6 (R04_FLAT_WAIVER)   = 20   ← era 320
-//   R06 400 pts ÷ ~S/20 (un 15CM)         = 20
-// No sube el techo de lo que regala el negocio: R06 ya fijaba ese 5% sobre el premio más
-// caro del programa. Lo que cambia es que ahora ninguna opción domina a las otras.
+// ⚠ ESTE BLOQUE DESCRIBÍA UNA CALIBRACIÓN QUE NUNCA SE APLICÓ, y hasta el 2026-09-13 tenía
+// CUATRO de sus cinco cifras equivocadas (decía R02 40, R05 120, R03 160 y R04 120; los
+// valores reales son 20, 160, 320 y 160). Describía además otra BASE: "puntos por cada sol
+// que perdona la recompensa". La recalibración que sí se aplicó el 2026-09-05 se hizo contra
+// lo que a NOSOTROS nos cuesta honrar el canje, que es lo único que iguala el costo del
+// programa — ver el comentario largo de REWARDS en catalog.ts, que es la fuente.
+//
+// TODAS DEVUELVEN ~1.5% (lo que nos cuesta ÷ los puntos que pide):
+//   R02  20 pts, nos cuesta S/0.27  ->  1.33%
+//   R03 320 pts, nos cuesta S/4.61  ->  1.44%
+//   R04 160 pts, nos cuesta S/2.47  ->  1.54%
+//   R05 160 pts, nos cuesta S/2.34  ->  1.46%
+//   R06 400 pts, nos cuesta S/5.90  ->  1.48%   ← el ancla, no se mueve
+// Antes había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO: al cliente le
+// convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado, y el programa
+// terminaba pagando el canje más caro cada vez. Hoy la dispersión es 1.2x.
+//
+// Un comentario con los números cambiados es peor que ninguno: el próximo que recalibre parte
+// de él. Salió del mismo día que el bono del invitado — la recalibración movió los valores y
+// no volvió a mirar lo que estaba escrito al lado.
 // DEBE coincidir con REWARDS en supabase/functions/api/catalog.ts — y ojo, esos puntos
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
@@ -1129,12 +1135,20 @@ var GIFT_CARD_POINTS_PER_SOL=40;
 // estos dos contra GIFT_CARD_AMOUNT_MIN/MAX del servidor.
 var GIFT_CARD_AMOUNT_MIN=10;
 var GIFT_CARD_AMOUNT_MAX=500;
-// Lo que recibe EL INVITADO al pagar su primer pedido — 120 pts = una bebida gratis (R05).
-// Subido de 50 el 2026-08-20: el invitado es quien tiene que decidir comprar y 50 puntos
-// (S/1.25) no le dicen nada a alguien que nunca pidió. Solo se usa para el copy — quien
-// otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
-// supabase/functions/api/env.ts.
-var REFERRAL_BONUS_POINTS=120;
+// Lo que recibe quien CREA su cuenta. Estaba escrito a mano dentro del texto de la pantalla
+// de registro ("Bono de bienvenida: +40 pts"), con un comentario que decía "DEBE coincidir" y
+// NADA que lo verificara — la clase exacta de promesa pública que este repo ya vio romperse
+// tres veces. Ahora se interpola desde acá y `npm run parity` lo compara contra el servidor.
+// Solo se usa para el copy: quien otorga los puntos es el servidor.
+var WELCOME_BONUS_POINTS=40;
+// Lo que recibe EL INVITADO al pagar su primer pedido — tiene que valer exactamente lo
+// mismo que R05 (BEBIDA // GRATIS), porque eso es lo que la app le promete en tres sitios
+// y lo que el dueño copia a WhatsApp. Estuvo en 120 desde el 2026-08-20 y se quedó ahí
+// cuando R05 subió a 160 el 2026-09-05: ocho días prometiendo una bebida que el bono no
+// alcanzaba a pagar. `npm run parity` compara las dos cosas ahora. Solo se usa para el
+// copy — quien otorga los puntos de verdad es el servidor. DEBE coincidir con
+// REFERRAL_BONUS_POINTS en supabase/functions/api/env.ts.
+var REFERRAL_BONUS_POINTS=160;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido — 400 pts = un
 // sándwich 15CM gratis. Solo se usa para el copy; quien otorga los puntos es el servidor.
 // DEBE coincidir con REFERRER_REWARD_POINTS en supabase/functions/api/env.ts, que a su vez
@@ -1150,10 +1164,15 @@ var REFERRER_REWARD_POINTS=400;
 // Existe en el cliente porque un premio escalonado que nadie VE es exactamente igual que
 // no tenerlo: lo que hace que alguien invite al tercero es saber que el tercero paga
 // distinto, y eso solo puede decirlo la pantalla de referidos.
+// `covers`/`veces` dicen qué recompensa nombra cada etiqueta. Sirven para dos cosas y las dos
+// hacen falta: `npm run parity` comprueba que los puntos alcancen para pagarla, y
+// `referralLadderHTML` deja de nombrarla si el dueño la repricea desde el panel por encima
+// del escalón. El primer escalón decía 120 con la bebida en 160 — pasaba el chequeo viejo
+// porque 120 es múltiplo de la salsa extra (20).
 var REFERRAL_MILESTONES=[
-  {count:3,points:120,label:'Una bebida de la casa gratis'},
-  {count:5,points:400,label:'Otro sándwich 15CM gratis'},
-  {count:10,points:800,label:'Dos sándwiches 15CM gratis'}
+  {count:3,points:160,label:'Una bebida de la casa gratis',covers:'R05',veces:1},
+  {count:5,points:400,label:'Otro sándwich 15CM gratis',covers:'R06',veces:1},
+  {count:10,points:800,label:'Dos sándwiches 15CM gratis',covers:'R06',veces:2}
 ];
 // Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
 // ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".

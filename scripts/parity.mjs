@@ -273,6 +273,14 @@ cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
 // El cliente ENSEÑA este número en la invitación a referir ("te ganas un sándwich 15CM
 // gratis (400 pts)"), así que si se separa del servidor la app promete un premio que la
 // recompensa ya no paga. El chequeo de abajo ata además ese valor a R06.
+// El bono de bienvenida estaba ESCRITO A MANO dentro del texto de la pantalla de registro,
+// con un comentario que decía "DEBE coincidir con WELCOME_BONUS_POINTS" y nada que lo
+// comprobara. Es la clase de promesa pública que este repo ya vio romperse tres veces: el
+// cliente lee un número en pantalla y el servidor le acredita otro.
+cmp('WELCOME_BONUS_POINTS (lo que se promete al crear la cuenta)',
+  scalar(app, 'WELCOME_BONUS_POINTS', /var WELCOME_BONUS_POINTS=(\d+)/, 'src/app/'),
+  scalar(env, 'WELCOME_BONUS_POINTS', /const WELCOME_BONUS_POINTS = (\d+)/, 'env.ts'));
+
 cmp('REFERRER_REWARD_POINTS (lo que recibe quien invita)',
   scalar(app, 'REFERRER_REWARD_POINTS', /var REFERRER_REWARD_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'));
@@ -287,6 +295,18 @@ cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
 cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'),
   sRew.R06 ? sRew.R06.pts : null);
+
+// ⚠ EL MISMO INVARIANTE DEL OTRO LADO, Y ESTE SÍ SE ROMPIÓ. Lo que recibe EL INVITADO es
+// "una bebida gratis" entregada como puntos, así que tiene que valer exactamente lo mismo
+// que R05. El comentario de arriba describía el defecto y solo protegía al que invita: el
+// 2026-09-05 la recalibración subió R05 de 120 a 160, `REFERRAL_BONUS_POINTS` se quedó en
+// 120, y durante ocho días la app, el perfil y el texto de WhatsApp que el dueño copia a
+// Instagram le prometieron al invitado una bebida que su bono no alcanzaba a pagar.
+// Y quedaba en tierra de nadie: por encima de la salsa extra (20) y por debajo de todo lo
+// demás (160), o sea sin NADA que canjear. Lo encontró una revisión a mano, no el CI.
+cmp('REFERRAL_BONUS_POINTS debe valer lo mismo que R05 (una bebida gratis)',
+  scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'),
+  sRew.R05 ? sRew.R05.pts : null);
 
 // #55 — La escalera de referidos vive en los dos lados: el servidor la PAGA y el cliente la
 // PINTA. Si se desincronizan, la pantalla le promete al cliente un premio que el servidor
@@ -310,18 +330,36 @@ cmp('REFERRAL_MILESTONES (escalera de referidos: amigos → puntos extra)',
   milestones(app, /var REFERRAL_MILESTONES=\[([\s\S]*?)\];/, 'src/app/'),
   milestones(env, /export const REFERRAL_MILESTONES[^=]*=\s*\[([\s\S]*?)\];/, 'env.ts'));
 
-// Y cada escalón tiene que valer una recompensa NOMBRABLE (o un múltiplo de una): si un
-// escalón cayera en un número suelto, la notificación no podría decir qué se ganó, que es
-// lo único que hace que el premio empuje a invitar otra vez.
+// ⚠ Y cada escalón tiene que ALCANZAR PARA LA RECOMPENSA QUE SU PROPIA ETIQUETA NOMBRA.
+//
+// Este chequeo pedía otra cosa hasta el 2026-09-13: que los puntos fueran múltiplo de ALGUNA
+// recompensa. `120 % 20 === 0`, así que el primer escalón pasaba como "seis salsas extra"
+// mientras su etiqueta decía «una bebida de la casa gratis» y la bebida costaba 160 desde la
+// recalibración del 2026-09-05. Verificaba la aritmética, no la promesa — y la promesa es lo
+// único que el cliente lee.
+//
+// Por eso los escalones llevan `covers` (el código de la recompensa que nombran) y `veces`:
+// el chequeo ya no adivina a qué se refiere la etiqueta, la etiqueta lo declara.
 {
   checks++;
-  const pares = milestones(env, /export const REFERRAL_MILESTONES[^=]*=\s*\[([\s\S]*?)\];/, 'env.ts') || [];
-  const valores = Object.values(sRew).map((r) => r.pts);
-  const sueltos = pares
-    .map(([, pts]) => pts)
-    .filter((pts) => !valores.some((v) => v > 0 && pts % v === 0));
-  if (sueltos.length) {
-    problems.push(`REFERRAL_MILESTONES: ${sueltos.join(', ')} no es múltiplo de ninguna recompensa de REWARDS (${valores.join(', ')}) — no se puede nombrar el premio`);
+  const bloque = /export const REFERRAL_MILESTONES[^=]*=\s*\[([\s\S]*?)\];/.exec(env);
+  const entradas = bloque
+    ? [...bloque[1].matchAll(/count:\s*(\d+)\s*,\s*points:\s*(\d+)[^}]*?covers:\s*"([A-Z0-9]+)"[^}]*?veces:\s*(\d+)/g)]
+    : [];
+  if (!entradas.length) {
+    problems.push('REFERRAL_MILESTONES: ningún escalón declara `covers`/`veces` en env.ts — sin eso no se puede verificar que el premio alcance para lo que su etiqueta promete');
+  }
+  for (const e of entradas) {
+    const [, count, pts, code, veces] = e;
+    const r = sRew[code];
+    if (!r) {
+      problems.push(`REFERRAL_MILESTONES: el escalón de ${count} amigos dice cubrir ${code}, que no existe en REWARDS`);
+      continue;
+    }
+    const necesita = Number(veces) * r.pts;
+    if (Number(pts) < necesita) {
+      problems.push(`REFERRAL_MILESTONES: el escalón de ${count} amigos da ${pts} pts pero su etiqueta promete ${veces}× ${code} = ${necesita} pts — promete un premio que no alcanza a pagar`);
+    }
   }
 }
 

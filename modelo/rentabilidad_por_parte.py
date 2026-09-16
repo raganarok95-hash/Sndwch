@@ -118,7 +118,11 @@ R05_CAP, R03_CAP = 6.00, 8.00
 GIFT_PTS_POR_SOL = 40
 PLAN_PAGA, PLAN_RECIBE = 95.0, 100.0
 COSTO_REFERIDO = 7.65
-REF_INVITA, REF_INVITADO = 400, 120
+# El del invitado son 160 desde el 2026-09-13: es el precio de R05 (una bebida), y R05 subió
+# de 120 a 160 en la recalibración del 2026-09-05 sin que este número la siguiera.
+# COSTO_REFERIDO no cambia — el premio siempre fue la misma bebida, lo que cambió fue su
+# etiqueta en puntos.
+REF_INVITA, REF_INVITADO = 400, 160
 
 
 def veg(gramos, i):

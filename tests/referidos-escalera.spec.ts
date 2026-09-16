@@ -54,9 +54,41 @@ test('con 0 referidos ya se ven los tres premios y cuántos amigos faltan', asyn
 
 test('los puntos que se muestran son los que paga el servidor, no un texto suelto', async ({ page }) => {
   await entrarComo(page, 0);
-  await expect(page.locator('text=/\\+120 pts/')).toBeVisible();
+  // ⚠ El primer escalón decía 120 hasta el 2026-09-13 y la etiqueta prometía «una bebida de
+  // la casa gratis» — con la bebida (R05) costando 160 desde la recalibración del 2026-09-05.
+  // Son 160 para que la etiqueta sea cierta. Ver tests-api/bono-del-invitado.test.ts.
+  await expect(page.locator('text=/\\+160 pts/')).toBeVisible();
   await expect(page.locator('text=/\\+400 pts/')).toBeVisible();
   await expect(page.locator('text=/\\+800 pts/')).toBeVisible();
+});
+
+test('si el panel encarece la bebida, el escalón deja de prometerla', async ({ page }) => {
+  // El hueco que `npm run parity` NO puede ver: los puntos de cada recompensa se editan desde
+  // el panel (`catalog_prices`, categoría `reward`) y llegan vivos en `get-catalog`. Un
+  // literal en la pantalla se vuelve mentira ese día, sin tocar código y sin que nada avise.
+  // MODO DE FALLO: silencio — la escalera se ve igual de bien, solo que promete algo que el
+  // cliente no va a poder canjear.
+  await gotoApp(page, {
+    login: {
+      customer: { phone: '900000056', name: 'Rosa Referidora', points: 500, credit_balance: 0,
+                  total_orders: 6, total_referrals: 0 },
+      isAdmin: false, token: 'tok-rosa2',
+    },
+    'get-catalog': { proteins: {}, sigs: {}, sides: {}, inventory: {}, rewardPts: { R05: 999 } },
+  });
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
+  await page.getByRole('button', { name: 'INGRESAR' }).click();
+  await page.locator('#l-phone').fill('900000056');
+  await page.locator('#l-pin').fill('1234');
+  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await page.locator('[onclick*="p_profile"]').first().click();
+  await expect(page.locator('text=PREMIOS EXTRA //')).toBeVisible();
+
+  // Con la bebida a 999 puntos, el escalón de 160 ya no la paga: se dice lo único cierto.
+  await expect(page.locator('text=Una bebida de la casa gratis')).toHaveCount(0);
+  await expect(page.locator('text=/160 puntos para tu próximo pedido/')).toBeVisible();
+  // Y los otros dos escalones, que sí siguen alcanzando, NO se apagan de rebote.
+  await expect(page.locator('text=Otro sándwich 15CM gratis')).toBeVisible();
 });
 
 test('un escalón alcanzado se marca ganado y el siguiente dice cuánto falta', async ({ page }) => {

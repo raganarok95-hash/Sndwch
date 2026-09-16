@@ -4,7 +4,7 @@
 // reporte el cliente, todo se recalcula aquí a partir de estos datos.
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
-import { computeRankName , baseSurcharge } from "./env.ts";
+import { computeRankName , baseSurcharge, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -1077,6 +1077,48 @@ const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [];
 // de tenerlo escrito. Ver `offpeakActiva()` abajo y su uso en marketingContent().
 export function offpeakActiva(): boolean {
   return OFFPEAK_DRINK_PROMO_HOURS_LIMA.length > 0;
+}
+// ⚠ MISMO CRITERIO QUE offpeakActiva, PARA EL BONO DEL INVITADO. La app y el texto que el
+// dueño copia a Instagram le prometen al invitado "una bebida de la casa" — y eso es cierto
+// solo mientras su bono alcance para R05. `REFERRAL_BONUS_POINTS` es un literal del código,
+// pero **R05 se puede repricear desde el panel** (categoría `reward` de `catalog_prices`,
+// que loadCatalogPrices() vuelca encima de REWARDS), así que el dueño puede volver falsa esa
+// frase sin tocar una línea de código y sin que nada avise. `npm run parity` no llega acá:
+// compara la SEMILLA, no lo que manda la tabla en runtime.
+//
+// Ya pasó una vez por el otro camino, el del código: R05 subió de 120 a 160 el 2026-09-05 y
+// el bono se quedó en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar.
+// Por eso la frase no se afirma, se DERIVA: si el bono cubre R05 se nombra el producto, y si
+// no, el texto se queda en los puntos, que es lo único que sigue siendo verdad.
+export function bonoCubreBebida(): boolean {
+  return REFERRAL_BONUS_POINTS >= (REWARDS.R05 ? REWARDS.R05.pts : Infinity);
+}
+export function loQueGanaElInvitado(): string {
+  return bonoCubreBebida()
+    ? `${REFERRAL_BONUS_POINTS} puntos, una bebida de la casa`
+    : `${REFERRAL_BONUS_POINTS} puntos para su primer pedido`;
+}
+// La misma derivación para los escalones de la escalera de referidos, que tienen el problema
+// idéntico: su etiqueta NOMBRA una recompensa (`covers` × `veces`) y el dueño puede
+// reprecearla desde el panel por encima de lo que el escalón paga. `npm run parity` cubre el
+// hueco del código; esto cubre el del panel. Si deja de alcanzar, se dice lo único cierto —
+// los puntos — en vez de nombrar un premio que el cliente no va a poder canjear.
+// El simétrico para QUIEN INVITA. `REFERRER_REWARD_POINTS` sí estaba atado a R06 por
+// `npm run parity` desde que R06 bajó de 720 a 400 — pero eso cubre la SEMILLA, y R06 también
+// se repricea desde el panel. Dejar derivado un solo lado del referido sería arreglar la
+// mitad de un defecto simétrico.
+export function loQueGanaQuienInvita(): string {
+  const r = REWARDS.R06;
+  return r && REFERRER_REWARD_POINTS >= r.pts
+    ? `${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis`
+    : `${REFERRER_REWARD_POINTS} puntos para tu próximo pedido`;
+}
+export function etiquetaDeEscalon(
+  hito: { points: number; label: string; covers?: string; veces?: number },
+): string {
+  const r = hito.covers ? REWARDS[hito.covers] : null;
+  const necesita = r ? (hito.veces ?? 1) * r.pts : 0;
+  return !r || hito.points >= necesita ? hito.label : `${hito.points} puntos para tu próximo pedido`;
 }
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.

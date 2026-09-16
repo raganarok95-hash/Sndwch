@@ -853,9 +853,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
   `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
   número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg.
-  **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
-  el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
-  conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
+  ⚠ **Este párrafo decía hasta el 2026-09-13 que «el atún sigue siendo el único insumo sin
+  cotización propia confirmada» y que el análisis usa ~S/67/kg. Es FALSO desde el 2026-09-04**,
+  y la contradicción vivía a cuarenta líneas de la sección de arriba que ya dice el precio
+  real: **S/4 la lata de 140 g al por mayor = S/43.96/kg escurrido**, confirmado por el dueño.
+  Quedan como estimados sin cotizar el rendimiento de P06 (albóndiga) y los precios de carne
+  molida (~S/10/kg) y queso (~S/35/kg). Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
@@ -950,7 +953,8 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Bono de referido asimétrico (decisión del dueño 2026-08-15, recalibrado 2026-08-20)**:
   quien INVITA recibe `REFERRER_REWARD_POINTS = 400` (= un 15CM gratis: DEBE valer siempre
   lo mismo que R06 en `REWARDS`, y el chequeo `npm run parity` ahora lo verifica). El
-  invitado recibe `REFERRAL_BONUS_POINTS = 120` (= una bebida gratis, R05), subido desde 50
+  invitado recibe `REFERRAL_BONUS_POINTS` (= una bebida gratis, R05 — **160 desde el
+  2026-09-13**, ver su propia sección), subido desde 50
   el 2026-08-20 porque él es quien tiene que decidir comprar y S/1.25 no le dicen nada a
   alguien que nunca pidió. Antes ambos recibían 50 (≈S/1.25, el 5% del ticket, muy debajo
   del 10-25% que mueve la aguja). **Los 720/50 que decía esta sección hasta el 2026-08-20
@@ -960,7 +964,8 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 400
   otorgados y quedaban 350 puntos regalados por un pedido que nunca existió.
   **Escalera de referidos (#55, 2026-08-30)**: encima de los 400 planos por CADA referido
-  convertido, hay un premio extra al 3.º (120 pts = bebida), 5.º (400 = otro 15CM) y 10.º
+  convertido, hay un premio extra al 3.º (**160** pts = bebida — eran 120 hasta el
+  2026-09-13, ver su sección), 5.º (400 = otro 15CM) y 10.º
   (800 = dos 15CM). Los escalones viven en `REFERRAL_MILESTONES` (`env.ts`) y **están
   duplicados en `src/app/01-*` solo para pintarlos**, con `npm run parity` verificando los
   dos lados — el cliente nunca suma puntos. Quién decide qué escalón toca es
@@ -1569,6 +1574,203 @@ medir a mitad de la animación `.fi` — al terminar mide 44 exactos. **Cualquie
 mida geometría tiene que esperar a que la animación asiente**, o reporta defectos que no
 existen y, peor, deja de distinguir el día que sí existan.
 
+## El techo de CAC es el del CLIENTE, no el del primer pedido (2026-09-13)
+
+**Corrección del dueño**: la publicidad es **reinversión** y no debe limitar hasta S/10,000; y
+**"mano de obra = S/0" deja de ser regla** — tiene que haber sueldo para él, y a futuro se
+puede contratar.
+
+El freno comparaba el CAC contra S/13.63, que es lo que deja **un solo pedido**. El CAC de Meta
+arranca por encima de eso en todo el rango, así que el freno **cortaba siempre** y el negocio se
+quedaba sin su único canal de adquisición — el modelo lo mostró clavado en −S/500 para siempre.
+
+`cacTechoValorVida()` (`env.ts`) usa lo que deja el cliente COMPLETO. Lo que no hay que romper:
+
+- **La cadena de reórdenes es explícita, no un ajuste opaco.** [FUENTE propia 2026-09-13]
+  Genesys, delivery: solo el **45%** vuelve a pedir; de esos, **85%** hace un tercero; después,
+  **60%** sigue. Da **2.41 pedidos por cliente**. El modelo heredado daba 2.20 por un ajuste sBG
+  sobre otras fuentes — **dos derivaciones independientes dentro del 10%**.
+- **`confianzaValorVida` (0.75) recorta a propósito**: la repetición de ESTE negocio no está
+  medida. Con 1.0 se le cree entero a un dato prestado.
+- **Los DOS techos viajan al cliente y los dos se muestran.** El de vida contesta "¿se paga si
+  vuelve como vuelve la industria?"; el del primer pedido, "¿ya se pagó hoy?". Colapsarlos
+  escondería cuál se contestó.
+- **El freno sigue cortando** cuando ni el valor de vida alcanza. Reinvertir no es gastar a ciegas.
+
+### ⚠ Y el CAC heredado estaba 36% subestimado
+
+[FUENTE propia] Benchmarks 2026: CTR **1.85%** (Alimentos y Bebidas) a **2.97%** (Restaurantes),
+CVR **1.54%** a **1.89%**. El modelo v11 tomó **el extremo optimista de los dos a la vez**, y
+como el CAC es inversamente proporcional a ambos, el error se MULTIPLICA: el medio real es
+**S/24.27**, no S/17.87. Y el CPM tiene un rango de 1:9 entre fuentes (agencia peruana S/5-12 vs
+mercados emergentes ≈S/11-45), así que **el CAC medio queda en el filo del techo nuevo**.
+
+### ⚠ UN LANZAMIENTO NO ES UN RITMO — defecto real que introdujo la palanca del mes 3
+
+La simulación midió que lo único que mueve el mes 3 es **avisarle a la red personal**: 200
+personas hacen que P(S/3,000 netos en diciembre) pase de 1.2% a 44.7%, y **más publicidad lo
+EMPEORA** (a S/8,000 sale peor que a S/0: el gasto se resta hoy y el cliente devuelve en su
+segundo pedido, cinco semanas después).
+
+Pero esas 200 caen dentro de la ventana de la línea base y ninguna trae referidor, así que el
+promedio simple las leía como **10 clientes orgánicos por día para siempre** — y meses después
+el freno restaba ese ritmo inventado, los atribuibles daban 0 y el veredicto era
+`sin-incrementales`: **la publicidad apagada por una fiesta de apertura.** Se cierra por dos
+vías y las dos hacen falta:
+
+1. **Promedio recortado por arriba** (`ritmoRecortado`, descarta el 20% de días más altos). No
+   depende de que nadie etiquete nada, que es su virtud. Su costo va declarado: a volumen bajo
+   baja la base unas centésimas, y una base más baja da un CAC más barato — la dirección
+   peligrosa. Se acepta porque es de centésimas contra un error de 10 a 3.
+2. **`FUENTES_DE_RAFAGA`**: lo que llega marcado como lanzamiento no cuenta como orgánico. El
+   mecanismo de atribución **ya existía** (`?src=` → `acquisition_source`): no hubo que construir
+   nada, solo usarlo.
+
+**"Avísale a tu gente"** es el primer bloque de Admin // Marketing (antes estaba escondido tras
+el rótulo "Contenido semanal", que el dueño no tiene por qué abrir en la semana de apertura), y
+**va ANTES del `return` de error de esa pantalla**: no depende del brief semanal, así que un
+fallo cargando otra cosa no puede hacer desaparecer la palanca que más mueve los primeros tres
+meses.
+
+Ver `PREDICCION_V14.md` para el plan completo y `modelo/modelo_v14.py` para el motor.
+
+## El bono del invitado prometió ocho días una bebida que no podía pagar (2026-09-13)
+
+`REFERRAL_BONUS_POINTS` **es** "una bebida gratis": esa fue la decisión del dueño el
+2026-08-20, y 120 era su implementación porque entonces R05 costaba 120. El 2026-09-05 la
+recalibración de puntos subió **R05 de 120 a 160** y el literal se quedó donde estaba.
+
+Desde entonces la app le prometía al invitado una bebida **en SEIS sitios** —la invitación que
+aparece al entregar el pedido (`refInviteHTML`, el momento de mayor intención), la tarjeta del
+perfil, el mensaje que se comparte por WhatsApp, y los tres textos de marketing que el dueño
+copia a Instagram— con un bono que no alcanzaba a pagarla.
+
+⚠ **Y el sexto solo apareció cuando falló una prueba**: `tests/palancas-del-modelo.spec.ts`
+afirmaba `120 pts` sobre la invitación del pedido entregado, así que una búsqueda de la
+constante no bastaba — había que correr la suite. Esa prueba ahora exige además que los dos
+**productos** estén nombrados («sándwich 15CM GRATIS», «una bebida de la casa»), no solo los
+dígitos: comprobar el número es justo lo que dejó pasar el defecto ocho días. Y no era solo un número corto: **120 caía
+en tierra de nadie**, por encima de la salsa extra (20) y por debajo de todo lo demás (160),
+o sea que el invitado **no podía canjear NADA** de lo que se le dijo. Justo el lado del
+referido que tiene que decidir comprar sin haber pedido nunca, y justo la palanca de la que
+cuelga el mes 3.
+
+**Subirlo a 160 no cuesta más**: el premio siempre fue la misma bebida (~S/2.34 de insumo);
+lo que cambió fue su etiqueta de precio en puntos. No contradice la evidencia de
+Wolters/Schulze/Gedenk sobre no subir el bono — no sube el premio, restaura el que ya estaba
+decidido.
+
+**Lo que más duele es que el defecto estaba escrito.** El comentario de
+`REFERRER_REWARD_POINTS` lo describe palabra por palabra para el OTRO lado del referido
+(«si alguien mueve uno de los dos números y no el otro, la app promete un sándwich que la
+recompensa ya no alcanza a pagar») y ese sí tenía su comprobación en `npm run parity` desde
+que R06 bajó de 720 a 400. Este no. Lo encontró una revisión a mano, no el CI.
+
+**Son DOS huecos distintos y hacen falta las dos defensas:**
+
+1. **El del código** — alguien recalibra `REWARDS` y olvida el bono. Lo cierra
+   `npm run parity`, que ahora ata `REFERRAL_BONUS_POINTS` a R05 igual que ya ataba
+   `REFERRER_REWARD_POINTS` a R06.
+2. **El del panel** — **R05 se repricea desde `catalog_prices`** (categoría `reward`), que
+   `loadCatalogPrices()` vuelca encima de `REWARDS` en runtime, y que el cliente recibe en
+   `rewardPts` de `get-catalog`. Parity **no puede verlo**: compara la SEMILLA. Lo cierra
+   `loQueGanaElInvitado()` (`catalog.ts` y `src/app/06-*`), que **DERIVA la frase en vez de
+   afirmarla** — si el bono cubre R05 nombra la bebida, y si no se queda en los puntos, que es
+   lo único que sigue siendo verdad. Mismo criterio exacto que `offpeakActiva()` usa para la
+   hora valle retirada, y la frase **vuelve sola** si el bono vuelve a alcanzar: apagarla para
+   siempre sería igual de malo, porque el premio concreto y nombrable es lo que hace funcionar
+   la invitación.
+
+**Regla que sale de esto, y es un paso más allá de la que ya estaba escrita en este archivo:**
+interpolar la cifra no alcanza. Si un texto **nombra un producto** que el cliente va a poder
+canjear o no según un número editable, ese nombre también tiene que derivarse.
+
+### Y la ESCALERA tenía el mismo defecto, del mismo día — con un chequeo que lo dejaba pasar
+
+El escalón de 3 amigos (`REFERRAL_MILESTONES`) pagaba **120 puntos** con la etiqueta «una
+bebida de la casa gratis». Misma recalibración, mismo día, segunda víctima.
+
+Lo interesante es por qué `npm run parity` no lo vio teniéndolo delante: su chequeo exigía que
+los puntos de cada escalón fueran **múltiplo de ALGUNA recompensa**, y `120 % 20 === 0`, así
+que el escalón se validaba como «seis salsas extra» mientras prometía una bebida.
+**Verificaba la aritmética, no la promesa** — y la promesa es lo único que el cliente lee.
+
+Ahora cada escalón declara `covers` (el código de la recompensa que su etiqueta nombra) y
+`veces`, así que el chequeo no adivina a qué se refiere el texto: el texto lo dice. Y
+`etiquetaDeEscalon()` (servidor y cliente) deja de nombrar el premio si el panel lo repricea
+por encima del escalón — incluido el push de «te llevas N puntos extra: …», que es donde el
+cliente lo lee en el momento de mayor intención.
+
+De paso quedó corregido un comentario que ya mentía: el de `WELCOME_BONUS_POINTS` decía que
+R02 cuesta 40; cuesta 20 desde la misma recalibración.
+
+### Y el lado de QUIEN INVITA, por simetría
+
+`REFERRER_REWARD_POINTS` nunca estuvo roto —`npm run parity` lo ata a R06 desde que R06 bajó
+de 720 a 400— pero esa comprobación cubre la SEMILLA, y R06 se repricea desde el panel igual
+que R05. El push «Ya tienes 400 puntos: canjéalos por un 15CM gratis» y la tarjeta del perfil
+pasan por `loQueGanaQuienInvita()`. Arreglar un solo lado de un defecto simétrico deja el otro
+esperando su turno.
+
+### Un tercer caso, en una prueba que creía cubrir más de lo que cubría
+
+`tests-api/carrito.test.ts` tiene una prueba titulada «R05 cubre entera la bebida más cara que
+hoy existe» — y ejercía `D06` **escrito a mano**. Una bebida nueva más cara entraba al catálogo
+y la prueba seguía en verde midiendo otra cosa, justo la que dice proteger. Ahora la bebida más
+cara **se deriva de `SIDE_PRICE`**. Verificado subiendo D08 a S/8: falla nombrando la bebida y
+el monto.
+
+Sigue cubriendo solo la SEMILLA. El precio de las bebidas también es editable desde el panel
+(`catalog_prices`, categoría `side`), así que subir una bebida por encima de `R05_FLAT_WAIVER`
+deja «BEBIDA // GRATIS» cubriendo una parte. Lo que salva hoy ese caso es que la pantalla de
+canje muestra el ahorro REAL al seleccionarla («· ahorras S/6»), no el rótulo — o sea que el
+número que el cliente ve es cierto aunque el titular se quede grande. Cambiar el titular es
+decisión del dueño, no un defecto que se pueda corregir solo.
+
+Probado en `tests-api/bono-del-invitado.test.ts` (8), verificado inyectando los cuatro
+defectos: devolver el bono a 120 (falla nombrando que solo alcanzaba para R02), volver a
+escribir «una bebida de regalo» a mano en el texto público, devolver el escalón a 120, y
+quitarle `covers`/`veces` a la escalera.
+
+## Cinco métodos de predicción, y por qué uno solo no alcanzaba (2026-09-13)
+
+Los modelos v7 a v12 eran **el mismo esqueleto** con entradas distintas: simulación estructural
+de abajo hacia arriba con Monte Carlo encima. Si el esqueleto está mal, 20,000 corridas lo
+repiten 20,000 veces con una barra de error preciosa alrededor de un número equivocado. En la
+competencia M4, **12 de los 17 modelos más precisos usaban combinación**, y el promedio simple
+de métodos heterogéneos resulta difícil de batir. `modelo/metodos_de_prediccion.py` contrasta
+cinco (`PREDICCION_V13.md`).
+
+Lo que cambió de conclusión, y no por afinar entradas:
+
+- **P(S/5,000 netos en el mes 3) = 0.0% en las 12 combinaciones.** No es de marketing: en
+  dic-26 el negocio lleva 2.5 meses abierto. Sale del retrocálculo, que es aritmética.
+- **⚠ EL MOTOR NO TENÍA CANAL ORGÁNICO Y NADIE LO HABÍA DICHO.** En el v11
+  `nuevos = comprados + referidos`: nadie encuentra el negocio por Google, por el QR de la
+  bolsa ni porque un amigo le contó sin usar el código. Es un supuesto fortísimo, **pesimista**,
+  y estaba invisible. Ahora es un parámetro que se RECORRE — y es justo lo que mide la ventana
+  sin publicidad.
+- **Dos métodos independientes convergen dentro del 8%** (cohortes y difusión de Bass) una vez
+  alineado el ritmo orgánico. Eso no valida el número: valida que **toda la respuesta cuelga de
+  ese único parámetro sin medir**.
+- **Con cero orgánico el negocio se queda clavado en −S/500 para siempre.** No pierde más
+  porque el freno corta la publicidad; no gana nada porque no le queda motor. Eso no es un
+  fallo del freno, es el diagnóstico: **este negocio no tiene motor de crecimiento aparte de lo
+  orgánico y los referidos.**
+- **S/10,000 es otro negocio**: cabe en una persona (29.6 ped/día) solo SIN publicidad; con
+  pauta pasa al techo físico y obliga a contratar, rompiendo el supuesto "mano de obra = S/0"
+  que sostiene todo el costeo del menú.
+- **Faltaban dos cosas que nunca estuvieron en ningún modelo**: multiplicar por P(el negocio
+  sigue abierto) —clase de referencia, vista de afuera— y el **punto único de falla**: el dueño
+  solo, sin reemplazo, 20 días caídos al año valen S/673/mes contra la meta de S/10,000.
+
+⚠ **Dos errores propios al implementar Bass, que conviene no repetir**: los coeficientes
+publicados (Sultan/Farley/Lehmann) son **anuales** y la primera versión los aplicó
+mensualmente, dando S/267,336 de neto en el mes 12 con diez empleados; y **Bass modela la
+adopción de una CATEGORÍA, no la cuota de un vendedor** — poner M = todo el mercado asume 100%
+de cuota. De ese método se toma **la forma, nunca el nivel**: lo que viaja es la razón
+**q/p = 13**, o sea que el boca a boca pesa trece veces la adopción espontánea.
+
 ## La línea base orgánica: el dato que solo se puede medir UNA VEZ (2026-09-13)
 
 El CAC del freno contaba como captado por publicidad **a todo cliente nuevo sin referidor** —
@@ -1705,7 +1907,14 @@ Lo que cambia prioridades, y NO es opinión:
   referidos y menos rentables**. Y premiar solo al INVITADO rindió parecido a un premio de dos
   lados que costaba el doble.
 - **El 50.3% de las segundas compras cae dentro de los 30 días** y la conversión se desploma
-  después del día 45. `remind-second-order` toca esa ventana **una sola vez, día 7-10**.
+  después del día 45.
+  ⚠ **Corregido el 2026-09-13 leyendo el código**: este archivo decía que `remind-second-order`
+  toca esa ventana "una sola vez, día 7-10", y **son DOS toques ya construidos** —
+  `bounce-back-first-order` a las 20-48 h (con la bebida de regalo) y el recordatorio de día
+  7-10—. La versión vieja invitaba a agregar un tercer envío que no hace falta: la ventana
+  temprana, que es la que la evidencia señala, ya está cubierta. Lo que sí queda sin tocar son
+  los **días 11 a 30**, y para eso no encontré evidencia de que un push más ayude — más avisos
+  no es mejor, y este repo ya limita a `MAX_PUSH_PER_RUN` por algo.
 - **El descuento recurrente entrena a esperar descuento** (estudio de cupones de Alibaba): baja
   el precio de referencia y sube la sensibilidad al precio **incluso en vendedores que no
   promocionan**. Es el respaldo de que el combo y las recompensas NO son descuentos

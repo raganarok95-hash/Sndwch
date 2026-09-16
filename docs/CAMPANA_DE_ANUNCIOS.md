@@ -14,10 +14,28 @@ ejecutando el Python** — si alguien mueve una, el chequeo falla.
 |---|---|
 | Lo que deja un pedido | **S/14.13** |
 | Menos overhead (gas, frío, coordinación) | −S/0.50 |
-| **Techo: lo que deja un cliente en su PRIMER pedido** | **S/13.63** |
+| **Techo del PRIMER pedido** | **S/13.63** |
+| **Techo del CLIENTE COMPLETO** (2.41 pedidos × 0.75 de confianza) | **S/24.59** ← con el que decide el freno desde el 2026-09-13 |
 | CAC de Meta con el CPM más barato (S/5) | S/10.51 |
 | CAC de Meta con el CPM medio (S/8.50) | **S/17.87** |
 | CAC de Meta con el CPM más caro (S/12) | S/25.23 |
+
+⚠ **ACTUALIZADO EL 2026-09-13, DOS CORRECCIONES QUE SE MUEVEN EN DIRECCIONES OPUESTAS:**
+
+1. **El techo subió.** La publicidad se trata como **reinversión** (decisión del dueño), así
+   que el techo correcto es el del cliente completo. Investigación propia (Genesys, delivery):
+   solo el **45%** vuelve a pedir, de esos el **85%** hace un tercero, y después sigue el
+   **60%** → **2.41 pedidos por cliente**. Recortado al 75% porque esa repetición es de
+   industria, no de este negocio: **S/24.59**.
+2. **Y el CAC también subió.** El rango de este documento (S/10.51-25.23) tomaba el extremo
+   optimista de CTR **y** de CVR a la vez. Con los rangos reales —CTR 1.85-2.97%, CVR
+   1.54-1.89%— el CAC medio es **S/24.27**, no S/17.87.
+
+**El resultado neto es un empate al filo**: S/24.27 de CAC medio contra S/24.59 de techo. Por
+eso la medición de S/300 vale más que antes, no menos — y por eso el freno sigue existiendo.
+
+Lo que sigue en este documento usa el análisis original; la lectura de la primera tabla cambia
+con lo de arriba.
 
 **Al CPM medio pagas S/17.87 por un cliente que te deja S/13.63 en su primer pedido.** Vas
 S/4.24 abajo desde el minuto uno, y solo lo recuperas si vuelve.
@@ -195,9 +213,9 @@ referido.
    calcula el intervalo de confianza (`1/√n`) y solo dice "puedes actuar" cuando ese intervalo
    cae ENTERO de un lado del techo. Mientras el techo caiga dentro del rango, te lo dice con
    los dos extremos escritos.
-3. **Si el intervalo entero queda bajo S/13.63** → funciona. Sube **20-25% cada 5 días**,
+3. **Si el intervalo entero queda bajo el techo (S/24.59)** → funciona. Sube **20-25% cada 5 días**,
    nunca de golpe.
-4. **Si el intervalo entero queda sobre S/13.63** → corta. No subas el presupuesto "a ver si
+4. **Si el intervalo entero queda sobre el techo (S/24.59)** → corta. No subas el presupuesto "a ver si
    mejora".
 5. **Si gastaste y no entró nadie** → corta ya. Ese caso tiene veredicto propio en la pantalla
    y no espera a ningún mínimo: es información dura, no falta de datos.

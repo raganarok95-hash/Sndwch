@@ -25,14 +25,28 @@ export const SESSION_SECRET = Deno.env.get("SESSION_SECRET");
 export const TOKEN_TTL_SECONDS = 30 * 24 * 3600;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
-// Lo que recibe EL INVITADO al pagar su primer pedido. Subido de 50 a 120 puntos
-// (decisión del dueño 2026-08-20): 50 puntos son S/1.25 de valor percibido — nada para
-// alguien que todavía no ha pedido nunca, y es justo el lado que tiene que decidir
-// comprar. 120 puntos = una bebida gratis (R05), un premio concreto y nombrable ("tu
-// primera bebida va por cuenta de quien te invitó"). Cuesta ~S/1.20 de insumo real contra
-// un cliente que deja ~S/24 de contribución en 90 días: con que suba la conversión de la
-// invitación un 2.7% ya se paga. DEBE coincidir con REFERRAL_BONUS_POINTS en src/app.ts.
-export const REFERRAL_BONUS_POINTS = 120;
+// Lo que recibe EL INVITADO al pagar su primer pedido: exactamente lo que cuesta una
+// BEBIDA GRATIS (R05 en catalog.ts), que es la decisión real del dueño del 2026-08-20 —
+// 120 puntos entonces, porque entonces R05 costaba 120. El número es la implementación;
+// la decisión es "su primera bebida va por cuenta de quien lo invitó".
+//
+// ⚠ ESTUVO OCHO DÍAS ROTO Y NADIE SE ENTERÓ. El 2026-09-05 la recalibración de puntos
+// subió R05 de 120 a 160 y este literal se quedó en 120, así que el invitado recibía un
+// bono que NO alcanzaba para la bebida que la app, el perfil y el texto de WhatsApp que
+// el dueño copia a Instagram le prometían los tres. Peor que desactualizado: 120 caía en
+// tierra de nadie — por encima de la salsa extra (20) y por debajo de todo lo demás
+// (160), o sea que el invitado no podía canjear NADA de lo que se le dijo. Y ese lado es
+// justo el que tiene que decidir comprar sin haber pedido nunca.
+//
+// El comentario de REFERRER_REWARD_POINTS acá abajo describe este defecto exacto, palabra
+// por palabra, para el otro lado del referido — y ese sí estaba protegido por
+// `npm run parity`. Este no. Ahora sí: hay una comprobación que lo ata a R05.
+//
+// Costo real: honrar R05 cuesta ~S/2.34 de insumo contra un cliente que deja ~S/24 de
+// contribución en 90 días. Subirlo de 120 a 160 NO cuesta más — el premio siempre fue la
+// misma bebida; lo que cambió fue su etiqueta de precio en puntos.
+// DEBE coincidir con REFERRAL_BONUS_POINTS en src/app/01-*.
+export const REFERRAL_BONUS_POINTS = 160;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido (decisión del dueño
 // 2026-08-15). Antes ambos lados recibían los mismos 50 puntos — unos S/1.25 de valor, el
 // 5% del ticket, muy por debajo del 10-25% que mueve la aguja en esta categoría. Ahora el
@@ -69,15 +83,25 @@ export const REFERRER_REWARD_POINTS = 400;
 // llega a rozar el techo: S/8.0 y S/8.3.
 //
 // DEBE coincidir con REFERRAL_MILESTONES en src/app.ts (lo verifica `npm run parity`).
-export const REFERRAL_MILESTONES: { count: number; points: number; label: string }[] = [
-  { count: 3, points: 120, label: "una bebida de la casa gratis" },
-  { count: 5, points: 400, label: "otro sándwich 15CM gratis" },
-  { count: 10, points: 800, label: "dos sándwiches 15CM gratis" },
+//
+// ⚠ `covers`/`veces` NO son decoración: dicen QUÉ recompensa nombra cada etiqueta, y son lo
+// que permite comprobar que el escalón alcanza para pagarla. El chequeo anterior de
+// `npm run parity` solo exigía que los puntos fueran múltiplo de ALGUNA recompensa — y
+// `120 % 20 === 0`, así que el primer escalón pasaba como "seis salsas extra" mientras su
+// etiqueta prometía una bebida que costaba 160. Es el mismo defecto que tuvo
+// `REFERRAL_BONUS_POINTS` y viene del mismo día: la recalibración del 2026-09-05 subió R05 de
+// 120 a 160 y estos dos números se quedaron atrás. Un chequeo que acepta cualquier múltiplo
+// no verifica la promesa, verifica la aritmética.
+export const REFERRAL_MILESTONES: { count: number; points: number; label: string; covers: string; veces: number }[] = [
+  { count: 3, points: 160, label: "una bebida de la casa gratis", covers: "R05", veces: 1 },
+  { count: 5, points: 400, label: "otro sándwich 15CM gratis", covers: "R06", veces: 1 },
+  { count: 10, points: 800, label: "dos sándwiches 15CM gratis", covers: "R06", veces: 2 },
 ];
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 // Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
-// recompensa (la más barata, R02, cuesta 40 — ver REWARDS en catalog.ts), así que todo
+// recompensa (la más barata entonces, R02, costaba 40 — hoy cuesta 20 tras la
+// recalibración del 2026-09-05; ver REWARDS en catalog.ts), así que todo
 // cliente nuevo veía su checkout del primer pedido sin nada canjeable, justo el momento
 // de mayor intención de compra. DEBE coincidir con el texto en sPAuth() en src/app.ts.
 export const WELCOME_BONUS_POINTS = 40;
@@ -434,6 +458,23 @@ export const MODELO_SUPUESTOS = {
   referralsPer100: 6,
 };
 
+// ⚠ LO QUE EL MODELO ASUME NO ES LO QUE EL PLAN NECESITA, y confundirlos es el defecto que
+// esto cierra (2026-09-13). La pantalla comparaba la medición SOLO contra `MODELO_SUPUESTOS`,
+// que es el punto de partida del modelo — así que ver "8 referidos por 100" contra un supuesto
+// de 6 se lee como *vamos bien*, cuando el plan que llega a S/3,000 netos en el mes 3 necesita
+// **25**. Un tablero que da por bueno el punto de partida no empuja a ningún lado.
+//
+// Son dos números distintos y los dos son ciertos: uno es de dónde parte el modelo, el otro es
+// a dónde hay que llegar. Se muestran juntos por el mismo criterio que los dos techos de CAC —
+// colapsarlos escondería cuál se contestó.
+//
+// [DECISIÓN] Valores de `PREDICCION_V14.md`, escenario que alcanza 80% de probabilidad.
+export const MODELO_OBJETIVOS = {
+  byoPct: 35,          // 65/35 hacia Signature
+  drinkPct: 40,        // +15 puntos de attach valen ~S/0.48 por pedido
+  referralsPer100: 25, // la palanca que convierte "no llega" en "llega"
+};
+
 // ── EL TECHO DE CAC — hasta cuánto se puede pagar por un cliente ───────────────────────
 //
 // POR QUÉ EXISTE. `PREDICCION_V12.md` concluye que la meta NO se alcanza con más publicidad,
@@ -466,6 +507,24 @@ export const CAC_TECHO = {
   // cada 7 días para salir de la fase de aprendizaje. Por debajo de eso el CAC medido es
   // ruido caro, no una medición — y avisarlo importa tanto como el techo mismo.
   convAprendizaje7d: 50,
+
+  // ── CUÁNTAS VECES PIDE UN CLIENTE CAPTADO (2026-09-13) ────────────────────────────────
+  // [FUENTE] Genesys, delivery de comida: solo el **45%** de los clientes nuevos vuelve a
+  // pedir (la "brecha del segundo pedido"); de los que hacen un 2.º, **~85%** hace un 3.º;
+  // pasado el 3.º, **60%** sigue. La cadena da 2.41 pedidos por cliente.
+  //
+  // Es una cadena explícita a propósito: se puede discutir número por número. El modelo del
+  // repo llegaba a 2.20 por un ajuste sBG sobre OTRAS fuentes — dos derivaciones
+  // independientes dentro del 10%, que es lo más cerca de una validación a la que se puede
+  // llegar sin datos propios.
+  reordena2do: 0.45,
+  reordena3ro: 0.85,
+  reordenaSiguiente: 0.60,
+
+  // [DECISIÓN] dueño 2026-09-13. Cuánto de ese valor de vida se acepta como techo. NO es 1
+  // porque la repetición de ESTE negocio no está medida: 2.41 sale de industria. Con 0.75 se
+  // exige que tres cuartos del dato prestado se cumplan antes de gastar contra él.
+  confianzaValorVida: 0.75,
 };
 
 // El techo duro: lo que deja un cliente en su PRIMER pedido. Se deriva, nunca se escribe.
@@ -477,4 +536,37 @@ export const CAC_TECHO = {
 // apostando a la repetición; por debajo, el cliente ya se pagó solo.
 export function cacTechoPrimerPedido(): number {
   return Math.round((CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido) * 100) / 100;
+}
+
+/** [DERIVADO] Cuántos pedidos hace un cliente captado, sumando la cadena de reórdenes.
+ *  1 + 0.45 + 0.45·0.85 + esa cola geométrica al 60%. Da 2.41. */
+export function pedidosPorCliente(): number {
+  const { reordena2do: p2, reordena3ro: p3, reordenaSiguiente: pn } = CAC_TECHO;
+  const tercero = p2 * p3;
+  // La cola después del 3.º es geométrica de razón `pn`; su suma cerrada evita truncarla a
+  // un número de pedidos elegido a ojo.
+  return Math.round((1 + p2 + tercero / (1 - pn)) * 100) / 100;
+}
+
+/** ⚠ EL TECHO CON EL QUE DECIDE EL FRENO DESDE EL 2026-09-13 — corrección del dueño.
+ *
+ *  El techo del PRIMER pedido (S/13.63) era correcto mientras la publicidad se juzgara como
+ *  un gasto que tiene que pagarse solo de inmediato. Pero la decisión del dueño es tratarla
+ *  como **reinversión**, y contra ese criterio el techo de un pedido apaga la publicidad
+ *  SIEMPRE: el CAC de Meta arranca por encima de S/13.63 en todo el rango, así que el freno
+ *  cortaba el único canal de adquisición que existe y el negocio se quedaba clavado.
+ *
+ *  El techo correcto para reinvertir es lo que deja el cliente COMPLETO: 2.41 pedidos ×
+ *  S/13.63 ≈ S/33, recortado por `confianzaValorVida` porque la repetición de este negocio
+ *  todavía no está medida. A 0.75 da ~S/25.
+ *
+ *  Los DOS se siguen calculando y la pantalla muestra los dos: el del primer pedido dice
+ *  "este cliente ya se pagó hoy" y el del valor de vida dice "se paga si vuelve como vuelve
+ *  la industria". Son preguntas distintas y colapsarlas en una escondería cuál se contestó.
+ */
+export function cacTechoValorVida(): number {
+  return Math.round(
+    pedidosPorCliente() * (CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido)
+    * CAC_TECHO.confianzaValorVida * 100,
+  ) / 100;
 }

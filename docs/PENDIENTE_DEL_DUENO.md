@@ -1,6 +1,6 @@
 # Lo que depende de ti — SND//WCH
 
-Última actualización: 2026-09-02 · **Apertura: a más tardar la 2ª semana de octubre de 2026** (movida desde el 7 de septiembre por trámites de permisos)
+Última actualización: 2026-09-13 · **Apertura: a más tardar la 2ª semana de octubre de 2026** (movida desde el 7 de septiembre por trámites de permisos)
 
 Todo lo de esta lista está bloqueado por algo que **solo tú** puedes conseguir: una cuenta,
 un secret, una cotización, una fecha real. Yo no lo puedo inventar — es la misma regla que
@@ -20,6 +20,25 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | P3 | **Cerrar los lunes** el martes 8 de septiembre | Decisión ya tomada; hay que ejecutarla en el panel el día indicado |
 | P4 | **Cotizar precios reales** al comprar la primera tanda | Todo el costeo del menú corre hoy sobre estimados. Ver P8 |
 
+## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
+
+`PREDICCION_V14.md` midió qué hace falta para **S/3,000 netos en diciembre**. El resultado es
+incómodo y útil: **la publicidad NO lo mueve** (con S/8,000 de pauta sale peor que con S/0,
+porque el gasto se resta hoy y el cliente vuelve recién a las cinco semanas). Lo que sí lo
+mueve es esto, en orden:
+
+| # | Qué | Cuánto mueve |
+|---|---|---|
+| P0a | **Avísale a 300 personas de tu red el primer mes.** El panel te da el link y el mensaje listo en Admin // Marketing // "Avísale a tu gente". **Usa ESE link** (lleva `?src=lanzamiento`): sin él, el sistema los cuenta como gente que llega sola todos los días y meses después te apaga los anuncios solo | P(S/3,000 en el mes 3): de 0% a **44.7%** con 200 · **73%** con 300 |
+| P0b | **Google Business Profile publicado** (ya tienes el texto listo) **y el QR de la bolsa impreso** | lleva el orgánico a ~3/día: suma **+15 puntos** |
+| P0c | **Que los referidos lleguen a 25 por cada 100 pedidos** (hoy el modelo asume 6). El mecanismo ya está en la app **y desde el 2026-09-13 paga lo que promete**: tu invitado recibía 120 puntos con la bebida costando 160, así que no podía canjear nada de lo que la app le decía. Lo que falta es que lo uses en cada entrega | de 15.5% a **52%** |
+| P0d | S/2,000 de pauta con reinversión — **para el año que viene, no para diciembre** | m12: S/3,476 → S/4,058 |
+
+Con las cuatro: **79.9%** de llegar a S/3,000 en el mes 3, y **la caja nunca baja de cero**
+(el peor momento es +S/4,399, así que no hay pozo que financiar).
+
+⚠ **Las 300 personas son un supuesto tuyo, no mío.** Si tu red son 80, esa fila no aplica.
+
 ## 1b. ⚠ Una sola oportunidad: la ventana sin publicidad, al abrir
 
 | # | Qué | Por qué no se puede posponer |
@@ -34,9 +53,15 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | P5 | **3 secrets de Meta**: `META_PIXEL_ID`, `META_CAPI_TOKEN` y los de publicación (`META_PAGE_ACCESS_TOKEN`, `META_PAGE_ID`, `META_IG_USER_ID`) | Sin esto no se puede medir NADA de publicidad, y la publicidad pagada es prácticamente tu único canal de adquisición. Bloquea las automatizaciones 41, 42, 43, 45, 46, 47 y 53 |
 | P6 | **Botón "Order Food"** de Meta en Instagram/Facebook | Convierte el perfil en un canal de pedido, no solo de fotos |
 | P7 | **Perfil + herramientas gratuitas de WhatsApp Business** | Catálogo, respuestas rápidas, horario. Todo gratis, sin API |
-| P8 | **Cotización real de atún y embutido** | El atún no tiene cotización propia (se usa ~S/67/kg investigado online). Sin esto, el margen de SIG04 y P04 es una suposición |
-| P9 | **Cuántas porciones de 15CM salen de una focaccia entera** | El pan es una elección GRATUITA del cliente, así que todo sobrecosto de la focaccia sale de tu margen sin que nadie pague más. Hoy no se puede costear |
-| P10 | **Costo del envase de bebida** (botella con tapa a rosca, estimado ~S/1) | El margen de bebidas se calculó sin envase. Con envase real baja de 61-84% a 56-66% |
+| ~~P8~~ | ~~Cotización real de atún y embutido~~ | **RESUELTO: los dos.** Embutido S/48/kg (confirmado por ti 2026-08-01) y atún S/4 la lata de 140 g al por mayor (2026-09-04) = S/43.96/kg escurrido, contra los S/67/kg que se venían usando. El atún dejó de ser la peor proteína del catálogo y pasó a 42% de costo en los dos tamaños |
+| ~~P9~~ | ~~Cuántas porciones de 15CM salen de una focaccia entera~~ | **RESUELTO 2026-09-03: 10 de 15CM o 5 de 30CM** (medido por ti). De ahí salió `BASE_SURCHARGE` — la focaccia ya no es una elección gratuita, cobra S/0.50 y S/1.00 |
+| ~~P10~~ | ~~Costo del envase de bebida~~ | **RESUELTO 2026-09-05: S/138 por 200 unidades = S/0.69 la botella** (comprado por ti), menos que el ~S/1 estimado. Y el tamaño quedó en MEDIO LITRO (2026-09-06) |
+
+⚠ **P8, P9 y P10 aparecían como pendientes hasta el 2026-09-13 aunque tú ya los habías
+entregado** (el atún el 4 de septiembre, la focaccia el 3, el envase el 5). Una lista que te
+pide cosas que ya diste es una lista que se deja de mirar — el mismo motivo por el que la
+alerta de caducidad no puede sonar por comida buena. Si ves algo acá que ya resolviste, dilo y
+lo tacho.
 
 ## 3. Datos operativos — desbloquean automatizaciones concretas
 
@@ -98,5 +123,6 @@ pedido, así que la comparación contra lo que te cobre el motorizado es directa
 
 ---
 
-Solo **11** están bloqueadas por esta lista. Son las de la sección 2 y 3 de arriba, y casi
-todas cuelgan de una sola cosa: **los secrets de Meta (P5)**.
+Solo **8** siguen bloqueadas por esta lista (eran 11 hasta el 2026-09-13, cuando se tacharon
+P8, P9 y P10 — ya los habías entregado). Son las de la sección 2 y 3 de arriba, y casi todas
+cuelgan de una sola cosa: **los secrets de Meta (P5)**.

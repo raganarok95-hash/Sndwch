@@ -19,13 +19,18 @@ function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
 }
 
-import { cacFreno, gastoDesactualizado, GASTO_DIAS_TOLERADOS } from "../supabase/functions/api/actions/admin.ts";
-import { CAC_TECHO, cacTechoPrimerPedido } from "../supabase/functions/api/env.ts";
+import { cacFreno, gastoDesactualizado, GASTO_DIAS_TOLERADOS, ritmoRecortado } from "../supabase/functions/api/actions/admin.ts";
+import { CAC_TECHO, cacTechoPrimerPedido, cacTechoValorVida, pedidosPorCliente } from "../supabase/functions/api/env.ts";
 
-const TECHO = cacTechoPrimerPedido();
+// ⚠ EL TECHO CON EL QUE DECIDE EL FRENO es el del VALOR DE VIDA desde el 2026-09-13, no el
+// del primer pedido. Estas pruebas construyen escenarios relativos al techo, así que tienen
+// que leer EL MISMO que usa el cálculo — anclarlas al otro las dejaría midiendo un programa
+// que ya no existe, en verde.
+const TECHO = cacTechoValorVida();
+const TECHO_1ER = cacTechoPrimerPedido();
 
 Deno.test("el techo vale lo que dice la fórmula", () => {
-  assertEquals(TECHO, Math.round((CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido) * 100) / 100);
+  assertEquals(TECHO_1ER, Math.round((CAC_TECHO.contribPedido - CAC_TECHO.overheadPedido) * 100) / 100);
   assert(TECHO > 0, "el techo tiene que ser positivo");
 });
 
@@ -59,7 +64,10 @@ Deno.test("el dato que obliga a que este freno exista: el CAC medio de Meta PASA
   // que el modelo ya usa. Si algún día el techo sube por encima del CAC medio, esta prueba
   // falla y hay que releer la conclusión del modelo, no borrarla.
   const cacMedio = (8.5 / (1000 * 0.0297 * 0.0189)) * 1.18;
-  assert(cacMedio > TECHO, `el CAC medio (${cacMedio.toFixed(2)}) ya no pasa el techo (${TECHO})`);
+  assert(
+    cacMedio > TECHO_1ER,
+    `el CAC medio (${cacMedio.toFixed(2)}) ya no pasa el techo de un pedido (${TECHO_1ER})`,
+  );
 });
 
 Deno.test("sin gasto NO devuelve 0: devuelve null y lo dice", () => {
@@ -118,13 +126,18 @@ Deno.test("⚠ el umbral de aprendizaje de Meta NO puede ser la salvaguarda — 
 
 Deno.test("la fiabilidad sale del INTERVALO de confianza, no de un umbral inventado", () => {
   // Error relativo de un conteo = 1/√n (Poisson). Con 25 conversiones es ±20%.
-  const r = cacFreno({ dias: 14, gasto: 25 * 30, nuevosPagados: 25, nuevosReferidos: 0 });
-  assertEquals(r.cac, 30);
+  //
+  // ⚠ EL CAC DEL ESCENARIO SE DERIVA DEL TECHO, no se escribe. La primera versión usaba
+  // S/30 fijo, que estaba cómodamente por encima del techo del primer pedido y quedó por
+  // DEBAJO del techo del valor de vida en cuanto el freno cambió de ancla — o sea que la
+  // prueba dejó de medir lo que dice medir por un motivo que no tiene nada que ver con la
+  // fiabilidad. Escrito así sigue valiendo con cualquier techo.
+  const cac = Math.round(TECHO * 1.5 * 100) / 100;   // interval al 20% ⇒ mínimo = 1.2·techo
+  const r = cacFreno({ dias: 14, gasto: 25 * cac, nuevosPagados: 25, nuevosReferidos: 0 });
+  assertEquals(r.cac, cac);
   assertEquals(r.margenPct, 20);
-  assertEquals(r.cacMin, 24);
-  assertEquals(r.cacMax, 36);
-  // S/24 ya está por encima del techo: el intervalo entero cae de un lado, así que se puede
-  // actuar aunque sean "solo" 25 conversiones.
+  assert((r.cacMin as number) > r.techo, "el extremo bajo tiene que quedar por encima del techo");
+  // El intervalo entero cae de un lado, así que se puede actuar aunque sean "solo" 25.
   assertEquals(r.fiable, true);
   assertEquals(r.veredicto, "sobre-el-techo");
 });
@@ -178,22 +191,25 @@ Deno.test("sin línea base, el CAC es exactamente el de antes — el piso y el t
 });
 
 Deno.test("⚠ con base fiable el CAC SUBE — restar los que venían solos es el punto entero", () => {
-  // 30 clientes en 28 días, pero antes de gastar ya entraban 0.5/día = 14 en el mismo periodo.
+  // 30 clientes en 28 días, pero antes de gastar ya entraban 0.5/día = 14 en el mismo periodo,
+  // así que solo 16 son atribuibles. El GASTO se deriva del techo para que el escenario siga
+  // siendo el que la prueba describe aunque el techo se mueva: el piso queda por DEBAJO y el
+  // ajustado por ENCIMA, con el intervalo entero de un lado.
+  const gasto = Math.ceil(TECHO * 1.5 * 16);
   const r = cacFreno({
-    dias: 28, gasto: 300, nuevosPagados: 30, nuevosReferidos: 0,
+    dias: 28, gasto, nuevosPagados: 30, nuevosReferidos: 0,
     baseOrganicaDia: 0.5, baseDias: 28, baseNuevos: 14,
   });
   assertEquals(r.baseFiable, true);
   assertEquals(r.atribuibles, 16);
-  assertEquals(r.cac, 18.75);
-  assertEquals(r.cacPiso, 10);
+  assert((r.cac as number) > r.techo, "el ajustado tiene que pasar el techo en este escenario");
+  assert((r.cacPiso as number) < r.techo, "el piso tiene que quedar debajo: es el caso que justifica todo");
   assert((r.cac as number) > (r.cacPiso as number), "el ajustado NUNCA puede salir más barato que el piso");
 
   // ⚠ ESTE ES EL CASO QUE JUSTIFICA TODO: el piso (S/10) está CÓMODO bajo el techo y habría
   // pintado la pantalla de verde con el veredicto "sano"; el real (S/18.75) lo pasa y además
   // con el intervalo entero por encima, o sea accionable. Sin restar la base, el freno no solo
   // no suena: dice explícitamente que se puede escalar.
-  assert((r.cacPiso as number) < r.techo, "el piso de este caso tiene que quedar bajo el techo");
   assertEquals(r.veredicto, "sobre-el-techo");
   assertEquals(r.fiable, true);
 });
@@ -309,4 +325,108 @@ Deno.test("el umbral es una constante exportada, no un número suelto en el cuer
   const justo = gastoDesactualizado({ fechas: ["2026-11-20"], hoyDia: "2026-11-20" });
   assertEquals(justo.diasSinCargar, 0);
   assertEquals(justo.desactualizado, false);
+});
+
+
+// ── EL TECHO PASA A SER EL DEL VALOR DE VIDA (2026-09-13, decisión del dueño) ──────────────
+//
+// El freno comparaba contra lo que deja UN pedido, y el CAC de Meta arranca por encima de eso
+// en todo el rango: el freno cortaba SIEMPRE y el negocio se quedaba sin su único canal de
+// adquisición. Con la publicidad tratada como reinversión, el techo correcto es el del cliente
+// completo. Modo de fallo si esto se rompe: silencio — el freno vuelve a apagarlo todo y el
+// panel dice "sobre el techo" sobre una campaña que se estaba pagando sola.
+
+Deno.test("un cliente pide más de una vez, y el techo de vida lo refleja", () => {
+  // Cadena: 1 + 0.45 + 0.45·0.85 + cola geométrica al 60%.
+  const esperado = 1 + CAC_TECHO.reordena2do
+    + (CAC_TECHO.reordena2do * CAC_TECHO.reordena3ro) / (1 - CAC_TECHO.reordenaSiguiente);
+  assertEquals(pedidosPorCliente(), Math.round(esperado * 100) / 100);
+  assert(pedidosPorCliente() > 1, "si diera 1, el valor de vida sería el primer pedido otra vez");
+});
+
+Deno.test("⚠ el techo de vida es MAYOR que el del primer pedido — si no, el cambio no hizo nada", () => {
+  assert(
+    cacTechoValorVida() > cacTechoPrimerPedido(),
+    `el techo de vida (${cacTechoValorVida()}) no supera al del primer pedido (${cacTechoPrimerPedido()})`,
+  );
+  // Y el recorte por confianza tiene que MORDER: con 1.0 el techo sería el valor de vida
+  // entero, y eso es creerle al dato prestado sin descuento.
+  assert(CAC_TECHO.confianzaValorVida < 1, "sin recorte, el techo le cree entero a industria");
+  assertEquals(
+    cacTechoValorVida(),
+    Math.round(pedidosPorCliente() * cacTechoPrimerPedido() * CAC_TECHO.confianzaValorVida * 100) / 100,
+  );
+});
+
+Deno.test("el CAC medio de Meta ya NO pasa el techo de vida — que es el punto del cambio", () => {
+  // Con las tasas que el propio repo usa, el CAC medio es S/17.87. Contra el techo de un
+  // pedido lo pasa (por eso el freno apagaba todo); contra el de vida, no.
+  const cacMedio = (8.5 / (1000 * 0.0297 * 0.0189)) * 1.18;
+  assert(cacMedio > cacTechoPrimerPedido(), "contra un pedido tiene que seguir pasándolo");
+  assert(
+    cacMedio < cacTechoValorVida(),
+    "si el CAC medio también pasa el techo de vida, la publicidad no es reinversión: es pérdida",
+  );
+});
+
+Deno.test("el freno sigue cortando cuando ni el valor de vida alcanza", () => {
+  const carisimo = (cacTechoValorVida() + 10) * 60;
+  const r = cacFreno({ dias: 7, gasto: carisimo, nuevosPagados: 60, nuevosReferidos: 0 });
+  assertEquals(r.veredicto, "sobre-el-techo");
+  assertEquals(r.fiable, true);
+  // Reinvertir no es gastar a ciegas: el freno tiene que poder seguir sonando.
+});
+
+Deno.test("los dos techos viajan al cliente — son preguntas distintas y no se colapsan", () => {
+  const r = cacFreno({ dias: 28, gasto: 300, nuevosPagados: 20, nuevosReferidos: 0 });
+  assertEquals(r.techo, cacTechoValorVida());
+  assertEquals(r.techoPrimerPedido, cacTechoPrimerPedido());
+  assertEquals(r.pedidosPorCliente, pedidosPorCliente());
+  assertEquals(r.confianzaValorVida, CAC_TECHO.confianzaValorVida);
+});
+
+// ── UN LANZAMIENTO NO ES UN RITMO ─────────────────────────────────────────────────────────
+//
+// El defecto es real y lo destapó la simulación del 2026-09-13: lo único que mueve el mes 3
+// es avisarle a la red personal del dueño (200 personas hacen que P(S/3,000) pase de 1.2% a
+// 44.7%). Pero esas 200 caen dentro de la ventana de la línea base y ninguna trae referidor,
+// así que un promedio simple las lee como 10 clientes orgánicos POR DÍA, para siempre. Al
+// empezar a gastar, el freno resta ese ritmo inventado, los atribuibles dan 0 y el veredicto
+// es `sin-incrementales`: la publicidad apagada por una fiesta que ocurrió una sola vez.
+//
+// Modo de fallo si esto se rompe: SILENCIO. Nada revienta — solo se apaga el único canal de
+// adquisición que el negocio tiene, con el panel diciendo que hace bien.
+
+Deno.test("⚠ un lanzamiento de 200 no se convierte en un ritmo diario", () => {
+  // 28 días: uno con 200 altas (el aviso a la red) y 27 con 3.
+  const serie = [200, ...Array(27).fill(3)];
+  const promedioSimple = serie.reduce((a, b) => a + b, 0) / serie.length;
+  assert(promedioSimple > 9, `el promedio simple da ${promedioSimple.toFixed(1)}/día — ése era el defecto`);
+  assertEquals(ritmoRecortado(serie), 3, "el recorte tiene que devolver el ritmo real, no el de la ráfaga");
+});
+
+Deno.test("un lanzamiento repartido en TRES días tampoco pasa", () => {
+  // Avisar a la red no ocurre en un solo día: la gente entra cuando ve el mensaje.
+  const serie = [120, 60, 40, ...Array(25).fill(2)];
+  assertEquals(ritmoRecortado(serie), 2);
+});
+
+Deno.test("un ritmo parejo NO se mueve por el recorte — si no, el remedio sería el problema", () => {
+  assertEquals(ritmoRecortado(Array(28).fill(3)), 3);
+  assertEquals(ritmoRecortado(Array(28).fill(0)), 0);
+});
+
+Deno.test("el costo del recorte está acotado y va en la dirección declarada", () => {
+  // 14 días con 1 alta y 14 con 0: el promedio real es 0.5. El recorte baja un poco, y bajar
+  // la base da un CAC más barato — la dirección peligrosa. Se acepta porque es de centésimas
+  // contra el error de 10 a 3 que evita; lo que NO se acepta es que sea grande.
+  const serie = [...Array(14).fill(1), ...Array(14).fill(0)];
+  const real = 0.5;
+  const recortado = ritmoRecortado(serie);
+  assert(recortado <= real, "el recorte por arriba nunca puede SUBIR la base");
+  assert(real - recortado < 0.15, `el recorte se comió ${(real - recortado).toFixed(2)}/día: demasiado`);
+});
+
+Deno.test("una serie vacía da 0, no NaN", () => {
+  assertEquals(ritmoRecortado([]), 0);
 });

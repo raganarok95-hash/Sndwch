@@ -1004,20 +1004,26 @@ var DRINK_IMG = { D06: 'img/drink_d06.jpg', D07: 'img/drink_d07.jpg', D08: 'img/
 // rompiendo la convención que sí siguen R04/R05/R06 (sustantivo // sustantivo) —
 // hallazgo de auditoría de copy, BAJO. R03 DEBE coincidir con REWARDS.R03.label en
 // catalog.ts.
-// TASA ÚNICA: 20 PUNTOS POR CADA SOL QUE PERDONA LA RECOMPENSA.
-// Los puntos se ganan 1 por sol gastado, así que 20 pts/sol = 5% de retorno para el
-// cliente, igual en las cinco. R03 y R04 estaban en 40 y 53 pts/sol (2.5% y 1.9%), o sea
-// que un cliente racional NUNCA las iba a canjear: por los mismos 320 puntos le convenía
-// esperar a R06 y llevarse un sándwich entero de ~S/20 en vez de perdonar S/6-8. Eran dos
-// opciones muertas ocupando sitio en la pantalla, y encima hacían ver el programa como
-// arbitrario. Recalibradas a la misma tasa que las otras tres:
-//   R02  40 pts ÷ S/2 (EXTRA_SAUCE_PRICE) = 20
-//   R05 120 pts ÷ S/6 (R05_FLAT_WAIVER)   = 20
-//   R03 160 pts ÷ S/8 (R03_FLAT_WAIVER)   = 20   ← era 320
-//   R04 120 pts ÷ S/6 (R04_FLAT_WAIVER)   = 20   ← era 320
-//   R06 400 pts ÷ ~S/20 (un 15CM)         = 20
-// No sube el techo de lo que regala el negocio: R06 ya fijaba ese 5% sobre el premio más
-// caro del programa. Lo que cambia es que ahora ninguna opción domina a las otras.
+// ⚠ ESTE BLOQUE DESCRIBÍA UNA CALIBRACIÓN QUE NUNCA SE APLICÓ, y hasta el 2026-09-13 tenía
+// CUATRO de sus cinco cifras equivocadas (decía R02 40, R05 120, R03 160 y R04 120; los
+// valores reales son 20, 160, 320 y 160). Describía además otra BASE: "puntos por cada sol
+// que perdona la recompensa". La recalibración que sí se aplicó el 2026-09-05 se hizo contra
+// lo que a NOSOTROS nos cuesta honrar el canje, que es lo único que iguala el costo del
+// programa — ver el comentario largo de REWARDS en catalog.ts, que es la fuente.
+//
+// TODAS DEVUELVEN ~1.5% (lo que nos cuesta ÷ los puntos que pide):
+//   R02  20 pts, nos cuesta S/0.27  ->  1.33%
+//   R03 320 pts, nos cuesta S/4.61  ->  1.44%
+//   R04 160 pts, nos cuesta S/2.47  ->  1.54%
+//   R05 160 pts, nos cuesta S/2.34  ->  1.46%
+//   R06 400 pts, nos cuesta S/5.90  ->  1.48%   ← el ancla, no se mueve
+// Antes había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO: al cliente le
+// convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado, y el programa
+// terminaba pagando el canje más caro cada vez. Hoy la dispersión es 1.2x.
+//
+// Un comentario con los números cambiados es peor que ninguno: el próximo que recalibre parte
+// de él. Salió del mismo día que el bono del invitado — la recalibración movió los valores y
+// no volvió a mirar lo que estaba escrito al lado.
 // DEBE coincidir con REWARDS en supabase/functions/api/catalog.ts — y ojo, esos puntos
 // también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
 // runtime: cambiar solo estos literales no cambia nada.
@@ -1563,12 +1569,20 @@ var GIFT_CARD_POINTS_PER_SOL = 40;
 // estos dos contra GIFT_CARD_AMOUNT_MIN/MAX del servidor.
 var GIFT_CARD_AMOUNT_MIN = 10;
 var GIFT_CARD_AMOUNT_MAX = 500;
-// Lo que recibe EL INVITADO al pagar su primer pedido — 120 pts = una bebida gratis (R05).
-// Subido de 50 el 2026-08-20: el invitado es quien tiene que decidir comprar y 50 puntos
-// (S/1.25) no le dicen nada a alguien que nunca pidió. Solo se usa para el copy — quien
-// otorga los puntos de verdad es el servidor. DEBE coincidir con REFERRAL_BONUS_POINTS en
-// supabase/functions/api/env.ts.
-var REFERRAL_BONUS_POINTS = 120;
+// Lo que recibe quien CREA su cuenta. Estaba escrito a mano dentro del texto de la pantalla
+// de registro ("Bono de bienvenida: +40 pts"), con un comentario que decía "DEBE coincidir" y
+// NADA que lo verificara — la clase exacta de promesa pública que este repo ya vio romperse
+// tres veces. Ahora se interpola desde acá y `npm run parity` lo compara contra el servidor.
+// Solo se usa para el copy: quien otorga los puntos es el servidor.
+var WELCOME_BONUS_POINTS = 40;
+// Lo que recibe EL INVITADO al pagar su primer pedido — tiene que valer exactamente lo
+// mismo que R05 (BEBIDA // GRATIS), porque eso es lo que la app le promete en tres sitios
+// y lo que el dueño copia a WhatsApp. Estuvo en 120 desde el 2026-08-20 y se quedó ahí
+// cuando R05 subió a 160 el 2026-09-05: ocho días prometiendo una bebida que el bono no
+// alcanzaba a pagar. `npm run parity` compara las dos cosas ahora. Solo se usa para el
+// copy — quien otorga los puntos de verdad es el servidor. DEBE coincidir con
+// REFERRAL_BONUS_POINTS en supabase/functions/api/env.ts.
+var REFERRAL_BONUS_POINTS = 160;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido — 400 pts = un
 // sándwich 15CM gratis. Solo se usa para el copy; quien otorga los puntos es el servidor.
 // DEBE coincidir con REFERRER_REWARD_POINTS en supabase/functions/api/env.ts, que a su vez
@@ -1584,10 +1598,15 @@ var REFERRER_REWARD_POINTS = 400;
 // Existe en el cliente porque un premio escalonado que nadie VE es exactamente igual que
 // no tenerlo: lo que hace que alguien invite al tercero es saber que el tercero paga
 // distinto, y eso solo puede decirlo la pantalla de referidos.
+// `covers`/`veces` dicen qué recompensa nombra cada etiqueta. Sirven para dos cosas y las dos
+// hacen falta: `npm run parity` comprueba que los puntos alcancen para pagarla, y
+// `referralLadderHTML` deja de nombrarla si el dueño la repricea desde el panel por encima
+// del escalón. El primer escalón decía 120 con la bebida en 160 — pasaba el chequeo viejo
+// porque 120 es múltiplo de la salsa extra (20).
 var REFERRAL_MILESTONES = [
-    { count: 3, points: 120, label: 'Una bebida de la casa gratis' },
-    { count: 5, points: 400, label: 'Otro sándwich 15CM gratis' },
-    { count: 10, points: 800, label: 'Dos sándwiches 15CM gratis' }
+    { count: 3, points: 160, label: 'Una bebida de la casa gratis', covers: 'R05', veces: 1 },
+    { count: 5, points: 400, label: 'Otro sándwich 15CM gratis', covers: 'R06', veces: 1 },
+    { count: 10, points: 800, label: 'Dos sándwiches 15CM gratis', covers: 'R06', veces: 2 }
 ];
 // Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
 // ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".
@@ -1853,7 +1872,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '430077ea3a';
+var APP_BUILD = '2a2d47aba4';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6960,10 +6979,11 @@ function sOSent() {
 // AUTH
 // Antes el bono de bienvenida se otorgaba en silencio (server-side, sin que este
 // formulario lo mencionara nunca) — un incentivo que no se comunica no convierte
-// (hallazgo de auditoría, BAJO). DEBE coincidir con WELCOME_BONUS_POINTS en
-// supabase/functions/api/env.ts.
+// (hallazgo de auditoría, BAJO). El número se INTERPOLA de `WELCOME_BONUS_POINTS` y
+// `npm run parity` lo compara contra el servidor: estaba escrito a mano con un comentario que
+// decía "debe coincidir" y nada que lo comprobara.
 function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:' + GOLD + '"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +40 pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'Crear cuenta'], ['login', 'Ingresar']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'Nombre // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'Teléfono // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN personal // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'Correo // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'Fecha de nacimiento // DD/MM/AAAA (obligatorio)', 'text', undefined, 'calendar') + INP('r-ref', 'Código de referido // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sndScreen=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('Crear cuenta //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'Teléfono // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN personal', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + BTN('Ingresar //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sndScreen='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + r.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + r.s + '</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:' + GOLD + '"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +' + WELCOME_BONUS_POINTS + ' pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#2D5246);border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'Crear cuenta'], ['login', 'Ingresar']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text-muted,#A8C8B0)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#2D5246)"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'Nombre // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'Teléfono // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + INP('r-pin', 'PIN personal // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'Correo // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail') + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'Fecha de nacimiento // DD/MM/AAAA (obligatorio)', 'text', undefined, 'calendar') + INP('r-ref', 'Código de referido // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sndScreen=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('Crear cuenta //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + INP('l-phone', 'Teléfono // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN personal', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + BTN('Ingresar //', 'doLogin()') + ' ' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sndScreen='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` + '</div>') + '<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">' + r.n + '<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>' + r.s + '</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
 }
 async function doReg() {
     var name = gv('r-name').trim(), phone = gv('r-phone').trim(), pin = gv('r-pin').trim(), email = gv('r-email').trim(), dni = gv('r-dni').trim(), bdayRaw = gv('r-bday').trim(), refEl = document.getElementById('r-ref'), referredBy = refEl ? refEl.value.trim() : '';
@@ -7981,7 +8001,7 @@ function refInviteHTML(compacta) {
         // ya costó tres promesas rotas a la vez en los textos de marketing. `npm run parity`
         // verifica además que REFERRER_REWARD_POINTS valga exactamente lo mismo que R06, que es
         // lo que hace cierta la frase "un sándwich 15CM gratis".
-        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un <b>sándwich 15CM GRATIS</b> (' + REFERRER_REWARD_POINTS + ' pts) cuando tu invitado haga su primer pedido, y él arranca con ' + REFERRAL_BONUS_POINTS + ' pts — una bebida de la casa.</div>'
+        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas ' + loQueGanaQuienInvita() + ' cuando tu invitado haga su primer pedido, y él arranca con ' + loQueGanaElInvitado() + '.</div>'
         + BTN('Compartir //', 'shareReferral()') + '</div>';
 }
 function ratingHTML(o) {
@@ -8134,6 +8154,31 @@ function badgesHTML(c) {
 // y nunca habrían sido una razón para invitar al tercero, que es justamente para lo que se
 // puso la escalera. Por eso el escalón siguiente se muestra SIEMPRE con cuántos amigos
 // faltan, no solo los ya ganados.
+// ⚠ LA FRASE SE DERIVA, NO SE AFIRMA — mismo criterio que `offpeakActiva()` en el servidor.
+// "una bebida de la casa" es cierto solo mientras el bono del invitado alcance para R05, y
+// R05 se puede repricear **desde el panel** (`catalog_prices`, categoría `reward`), que es
+// justo lo que `RWDS[].pts` recibe de `get-catalog`. Un literal acá se vuelve mentira el día
+// que el dueño mueva ese número, sin tocar código y sin que nada avise.
+// Ya pasó por el camino del código: R05 subió de 120 a 160 el 2026-09-05 y el bono se quedó
+// en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar, y encima 120 no cubría
+// NINGUNA recompensa salvo la salsa extra.
+function loQueGanaQuienInvita() {
+    var r = RWDS.filter(function (x) { return x.id === 'R06'; })[0];
+    return (r && REFERRER_REWARD_POINTS >= r.pts)
+        ? 'un <b>sándwich 15CM GRATIS</b> (' + REFERRER_REWARD_POINTS + ' pts)'
+        : '<b>' + REFERRER_REWARD_POINTS + ' pts</b> para tu próximo pedido';
+}
+function etiquetaDeEscalon(m) {
+    var r = m.covers ? RWDS.filter(function (x) { return x.id === m.covers; })[0] : null;
+    var necesita = r ? (m.veces || 1) * r.pts : 0;
+    return (!r || m.points >= necesita) ? m.label : (m.points + ' puntos para tu próximo pedido');
+}
+function loQueGanaElInvitado() {
+    var r05 = RWDS.filter(function (x) { return x.id === 'R05'; })[0];
+    return (r05 && REFERRAL_BONUS_POINTS >= r05.pts)
+        ? REFERRAL_BONUS_POINTS + ' pts — una bebida de la casa'
+        : REFERRAL_BONUS_POINTS + ' pts para su primer pedido';
+}
 function referralLadderHTML(refs) {
     var n = Number(refs) || 0;
     var sig = nextReferralMilestone(n);
@@ -8141,9 +8186,14 @@ function referralLadderHTML(refs) {
         var ganado = n >= m.count;
         var esSiguiente = !!sig && sig.m.count === m.count;
         var col = ganado ? GOLD : (esSiguiente ? 'var(--sw-text,#FFFFFF)' : 'var(--sw-text-muted,#A8C8B0)');
+        // La etiqueta nombra una recompensa concreta ("una bebida de la casa gratis"), y esa
+        // recompensa se puede repricear desde el panel por encima de lo que el escalón paga —
+        // `RWDS[].pts` llega vivo en `get-catalog`. Si deja de alcanzar se dice lo único cierto:
+        // los puntos. Mismo criterio que `loQueGanaElInvitado()`, y vuelve solo si vuelve a
+        // alcanzar. `npm run parity` cubre el hueco del código; esto cubre el del panel.
         return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:' + (ganado || esSiguiente ? 1 : .5) + '">'
             + '<div style="flex:0 0 auto;width:18px;text-align:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:640;color:' + col + '">' + (ganado ? '&#10003;' : m.count) + '</div>'
-            + '<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:' + col + '">' + esc(m.label) + '</div>'
+            + '<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:' + col + '">' + esc(etiquetaDeEscalon(m)) + '</div>'
             + '<div style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + col + '">+' + m.points + ' pts</div></div>';
     }).join('');
     var pie = sig
@@ -8199,7 +8249,10 @@ function shareReferral() {
     // en el registro. El link con ?ref= ya existe y auto-rellena ese campo (ver refCode
     // arriba); solo faltaba usarlo aquí.
     var link = location.origin + location.pathname + '?ref=' + encodeURIComponent(cust.phone);
-    var text = 'Usa mi link para crear tu cuenta en SND//WCH — tu primera bebida va por mi cuenta y yo me gano un sándwich: ' + link;
+    // El mensaje que sale por WhatsApp es una promesa pública igual que el brief semanal: no
+    // puede nombrar la bebida si el bono dejó de cubrirla. `loQueGanaElInvitado()` lo decide.
+    var text = 'Usa mi link para crear tu cuenta en SND//WCH — arrancas con ' + loQueGanaElInvitado()
+        + ', y yo me gano un sándwich: ' + link;
     if (navigator.share) {
         navigator.share({ title: 'SND//WCH', text: text, url: link }).catch(function () { });
     }
