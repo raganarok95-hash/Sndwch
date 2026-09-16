@@ -49,19 +49,33 @@
    estimados a ojo. Son muy cercanos a los que ya había, así que el cambio no rompe
    ninguna pantalla; lo que gana el proyecto es poder mover la paleta desde un solo sitio. */
 :root{
-  /* Verde bosque: el lado de SANDO. Es el contorno y la mitad izquierda del mono. */
-  --sw-bg:#1E3932;
-  --sw-card:#2D5246;
-  --sw-card2:#1A3028;
-  --sw-card-danger:#1A2420;
-  --sw-border:#3A6B58;
-  --sw-border-soft:#1c1c1c;
+  /* ⚠ EL VERDE DEJA DE SER EL FONDO Y PASA A SER EL ACENTO (2026-09-16).
+     El dueño lo dijo así: "la web sigue pareciendo bastante amateur mas en la versión
+     verde". Y al elegir entre diez direcciones visuales eligió cinco, TODAS sobre fondo
+     casi negro — no es gusto suelto, es el mismo voto cinco veces.
+     El motivo es concreto: un verde medio saturado ocupando el 100% de la pantalla compite
+     con la foto del producto, que es lo único que vende. Sobre negro la foto es lo más
+     luminoso del cuadro y el verde vuelve a significar algo — el lado de SANDO — en vez de
+     ser el color del papel tapiz.
+     ⚠ NO es un fondo neutro: lleva verde dentro (#12150F, no #121212). El tinte por lado
+     sigue existiendo (ver data-lado abajo), solo que ahora la temperatura del negro hace
+     el trabajo silencioso y el acento el ruidoso. */
+  --sw-bg:#12150F;
+  --sw-card:#1B1F18;
+  --sw-card2:#171A14;
+  --sw-card-danger:#1E1614;
+  --sw-border:#2C3228;
+  --sw-border-soft:#1A1D17;
   --sw-text:#FFFFFF;
-  --sw-text-body:#F2F0EB;
-  --sw-text-muted:#A8C8B0;
-  --sw-text-muted2:#8BAF9A;
-  --sw-text-muted3:#7FA08D;
-  --sw-text-muted4:#C8D6CE;
+  --sw-text-body:#EFEDE4;
+  --sw-text-muted:#9DA096;
+  --sw-text-muted2:#868A7E;
+  --sw-text-muted3:#73776C;
+  --sw-text-muted4:#C6C9BE;
+  /* El verde de SANDO, ahora que ya no es el fondo. Es lo que marca su lado: la receta
+     cerrada, lo que ya está decidido. Mismo papel que --sw-sky para WICHO. */
+  --sw-forest:#2F6B54;
+  --sw-forest-deep:#1E4636;
 
   /* ── COLORES DE ESTADO (2026-09-10) ──
      Antes eran ~230 literales sueltos repartidos por src/app/. El de error estaba escrito
@@ -112,18 +126,21 @@
    que verse igual en los dos lados: un precio que cambia de color según dónde estás es
    exactamente la clase de duda que no queremos en un checkout. */
 :root[data-lado="wicho"]{
-  --sw-bg:#102430;
-  --sw-card:#1C3B4D;
-  --sw-card2:#142C3A;
-  --sw-card-danger:#1E1A22;
-  --sw-border:#2F6180;
-  --sw-border-soft:#12222C;
+  /* El lado de WICHO: el mismo negro, con azul dentro en vez de verde. El salto se siente
+     —la app SÍ se va con él— pero ninguna de las dos mitades vuelve a ser un bloque de
+     color plano peleándose con la foto. */
+  --sw-bg:#0D1216;
+  --sw-card:#161D23;
+  --sw-card2:#12181D;
+  --sw-card-danger:#1E1614;
+  --sw-border:#27313A;
+  --sw-border-soft:#161C21;
   --sw-text:#FFFFFF;
-  --sw-text-body:#EAF2F6;
-  --sw-text-muted:#A6C9DD;
-  --sw-text-muted2:#89AFC6;
-  --sw-text-muted3:#7B9FB4;
-  --sw-text-muted4:#C6DCE8;
+  --sw-text-body:#E9EFF3;
+  --sw-text-muted:#98A3AB;
+  --sw-text-muted2:#828D95;
+  --sw-text-muted3:#6F7980;
+  --sw-text-muted4:#C1CBD2;
 }
 /* La transición es del FONDO, no de cada elemento: animar 997 nodos a la vez hace tironear
    cualquier teléfono de gama baja. Así solo se interpolan los pocos que pintan superficie. */
