@@ -11,7 +11,7 @@ import {
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES } from "../catalog.ts";
+import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
 import { organizerFreeSandwichApplies } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
@@ -351,7 +351,7 @@ async function sendConfirmationEmailSafely(p: FinalizeOrderParams): Promise<void
 export function nextReferralMilestone(
   totalReferrals: number,
   alreadyGranted: number,
-  milestones: { count: number; points: number; label: string }[] = REFERRAL_MILESTONES,
+  milestones: { count: number; points: number; label: string; covers?: string; veces?: number }[] = REFERRAL_MILESTONES,
 ): { count: number; points: number; label: string } | null {
   const total = Number(totalReferrals);
   const done = Number(alreadyGranted);
@@ -420,14 +420,14 @@ export async function rewardReferrer(referrerPhone: string, referredName: string
     await sendPushToPhone(referrerPhone, hito
       ? {
         title: `🏆 ¡${hito.count} amigos referidos!`,
-        body: `${referredName} hizo su primer pedido. Además de tu sándwich, te llevas ${hito.points} puntos extra: ${hito.label}.`,
+        body: `${referredName} hizo su primer pedido. Además de tu sándwich, te llevas ${hito.points} puntos extra: ${etiquetaDeEscalon(hito)}.`,
         url: "./index.html",
         tag: "sndwch-referral-milestone-" + hito.count,
         vibrate: [120, 60, 120, 60, 240],
       }
       : {
         title: "🥪 ¡Te ganaste un sándwich!",
-        body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis.`,
+        body: `${referredName} hizo su primer pedido con tu código. Ya tienes ${loQueGanaQuienInvita()}.`,
         url: "./index.html",
         tag: "sndwch-referral-reward",
         vibrate: [120, 60, 120, 60, 240],

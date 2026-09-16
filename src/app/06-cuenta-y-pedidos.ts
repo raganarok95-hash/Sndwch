@@ -249,7 +249,7 @@ function refInviteHTML(compacta: boolean){
     // ya costó tres promesas rotas a la vez en los textos de marketing. `npm run parity`
     // verifica además que REFERRER_REWARD_POINTS valga exactamente lo mismo que R06, que es
     // lo que hace cierta la frase "un sándwich 15CM gratis".
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts) cuando tu invitado haga su primer pedido, y él arranca con '+REFERRAL_BONUS_POINTS+' pts — una bebida de la casa.</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px;line-height:1.5">Con tu link te ganas '+loQueGanaQuienInvita()+' cuando tu invitado haga su primer pedido, y él arranca con '+loQueGanaElInvitado()+'.</div>'
     +BTN('Compartir //','shareReferral()')+'</div>';
 }
 function ratingHTML(o){
@@ -380,6 +380,31 @@ function badgesHTML(c){
 // y nunca habrían sido una razón para invitar al tercero, que es justamente para lo que se
 // puso la escalera. Por eso el escalón siguiente se muestra SIEMPRE con cuántos amigos
 // faltan, no solo los ya ganados.
+// ⚠ LA FRASE SE DERIVA, NO SE AFIRMA — mismo criterio que `offpeakActiva()` en el servidor.
+// "una bebida de la casa" es cierto solo mientras el bono del invitado alcance para R05, y
+// R05 se puede repricear **desde el panel** (`catalog_prices`, categoría `reward`), que es
+// justo lo que `RWDS[].pts` recibe de `get-catalog`. Un literal acá se vuelve mentira el día
+// que el dueño mueva ese número, sin tocar código y sin que nada avise.
+// Ya pasó por el camino del código: R05 subió de 120 a 160 el 2026-09-05 y el bono se quedó
+// en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar, y encima 120 no cubría
+// NINGUNA recompensa salvo la salsa extra.
+function loQueGanaQuienInvita(){
+  var r=RWDS.filter(function(x){return x.id==='R06';})[0];
+  return (r&&REFERRER_REWARD_POINTS>=r.pts)
+    ? 'un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts)'
+    : '<b>'+REFERRER_REWARD_POINTS+' pts</b> para tu próximo pedido';
+}
+function etiquetaDeEscalon(m){
+  var r=m.covers?RWDS.filter(function(x){return x.id===m.covers;})[0]:null;
+  var necesita=r?(m.veces||1)*r.pts:0;
+  return (!r||m.points>=necesita)?m.label:(m.points+' puntos para tu próximo pedido');
+}
+function loQueGanaElInvitado(){
+  var r05=RWDS.filter(function(x){return x.id==='R05';})[0];
+  return (r05&&REFERRAL_BONUS_POINTS>=r05.pts)
+    ? REFERRAL_BONUS_POINTS+' pts — una bebida de la casa'
+    : REFERRAL_BONUS_POINTS+' pts para su primer pedido';
+}
 function referralLadderHTML(refs){
   var n=Number(refs)||0;
   var sig=nextReferralMilestone(n);
@@ -387,9 +412,14 @@ function referralLadderHTML(refs){
     var ganado=n>=m.count;
     var esSiguiente=!!sig&&sig.m.count===m.count;
     var col=ganado?GOLD:(esSiguiente?'var(--sw-text,#FFFFFF)':'var(--sw-text-muted,#A8C8B0)');
+    // La etiqueta nombra una recompensa concreta ("una bebida de la casa gratis"), y esa
+    // recompensa se puede repricear desde el panel por encima de lo que el escalón paga —
+    // `RWDS[].pts` llega vivo en `get-catalog`. Si deja de alcanzar se dice lo único cierto:
+    // los puntos. Mismo criterio que `loQueGanaElInvitado()`, y vuelve solo si vuelve a
+    // alcanzar. `npm run parity` cubre el hueco del código; esto cubre el del panel.
     return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:'+(ganado||esSiguiente?1:.5)+'">'
       +'<div style="flex:0 0 auto;width:18px;text-align:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:640;color:'+col+'">'+(ganado?'&#10003;':m.count)+'</div>'
-      +'<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:'+col+'">'+esc(m.label)+'</div>'
+      +'<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:'+col+'">'+esc(etiquetaDeEscalon(m))+'</div>'
       +'<div style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+col+'">+'+m.points+' pts</div></div>';
   }).join('');
   var pie=sig
@@ -445,7 +475,10 @@ function shareReferral(){
   // en el registro. El link con ?ref= ya existe y auto-rellena ese campo (ver refCode
   // arriba); solo faltaba usarlo aquí.
   var link=location.origin+location.pathname+'?ref='+encodeURIComponent(cust.phone);
-  var text='Usa mi link para crear tu cuenta en SND//WCH — tu primera bebida va por mi cuenta y yo me gano un sándwich: '+link;
+  // El mensaje que sale por WhatsApp es una promesa pública igual que el brief semanal: no
+  // puede nombrar la bebida si el bono dejó de cubrirla. `loQueGanaElInvitado()` lo decide.
+  var text='Usa mi link para crear tu cuenta en SND//WCH — arrancas con '+loQueGanaElInvitado()
+    +', y yo me gano un sándwich: '+link;
   if(navigator.share){
     navigator.share({title:'SND//WCH',text:text,url:link}).catch(function(){});
   }else{

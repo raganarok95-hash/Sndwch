@@ -89,11 +89,22 @@ Deno.test("R06 (sándwich gratis) no regala además la bebida del combo", () => 
 });
 
 Deno.test("R05 (bebida gratis) cubre entera la bebida más cara que hoy existe", () => {
-  // R05_FLAT_WAIVER es S/6 y D06 cuesta S/6: la recompensa la cubre completa, sin resto.
-  // Ese "sin resto" es la promesa — "BEBIDA // GRATIS" que no alcanza para ninguna bebida
-  // del catálogo es la misma clase de promesa falsa que obligó a retirar dos badges.
-  const r = deriveCart([sig15(), bebida("D06")], "R05", HORA_NORMAL);
-  assertSoles(r.expectedTotal, SIG15);
+  // R05_FLAT_WAIVER es S/6 y la bebida más cara cuesta S/6: la recompensa la cubre completa,
+  // sin resto. Ese "sin resto" es la promesa — "BEBIDA // GRATIS" que no alcanza para alguna
+  // bebida del catálogo es la misma clase de promesa falsa que obligó a retirar dos badges.
+  //
+  // ⚠ LA BEBIDA SE DERIVA DE `SIDE_PRICE`, NO SE ESCRIBE. Hasta el 2026-09-13 esta prueba
+  // decía "la más cara que hoy existe" en su título y ejercía `D06` a mano: una bebida nueva
+  // más cara entraba al catálogo y la prueba seguía en verde midiendo otra cosa. Es el mismo
+  // defecto que este repo ya documentó dos veces — un chequeo que se mide contra un caso fijo
+  // no protege la afirmación general que dice proteger.
+  const masCara = Object.keys(SIDE_PRICE).reduce((a, b) => SIDE_PRICE[a] >= SIDE_PRICE[b] ? a : b);
+  const r = deriveCart([sig15(), bebida(masCara)], "R05", HORA_NORMAL);
+  assertSoles(
+    r.expectedTotal,
+    SIG15,
+    `R05 no cubrió entera ${masCara} (S/${SIDE_PRICE[masCara]}): "BEBIDA // GRATIS" ya no es cierto`,
+  );
 });
 
 Deno.test("el tope de R05 sigue vivo aunque hoy ninguna bebida lo pase", () => {

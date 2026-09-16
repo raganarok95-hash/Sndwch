@@ -25,14 +25,28 @@ export const SESSION_SECRET = Deno.env.get("SESSION_SECRET");
 export const TOKEN_TTL_SECONDS = 30 * 24 * 3600;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
-// Lo que recibe EL INVITADO al pagar su primer pedido. Subido de 50 a 120 puntos
-// (decisión del dueño 2026-08-20): 50 puntos son S/1.25 de valor percibido — nada para
-// alguien que todavía no ha pedido nunca, y es justo el lado que tiene que decidir
-// comprar. 120 puntos = una bebida gratis (R05), un premio concreto y nombrable ("tu
-// primera bebida va por cuenta de quien te invitó"). Cuesta ~S/1.20 de insumo real contra
-// un cliente que deja ~S/24 de contribución en 90 días: con que suba la conversión de la
-// invitación un 2.7% ya se paga. DEBE coincidir con REFERRAL_BONUS_POINTS en src/app.ts.
-export const REFERRAL_BONUS_POINTS = 120;
+// Lo que recibe EL INVITADO al pagar su primer pedido: exactamente lo que cuesta una
+// BEBIDA GRATIS (R05 en catalog.ts), que es la decisión real del dueño del 2026-08-20 —
+// 120 puntos entonces, porque entonces R05 costaba 120. El número es la implementación;
+// la decisión es "su primera bebida va por cuenta de quien lo invitó".
+//
+// ⚠ ESTUVO OCHO DÍAS ROTO Y NADIE SE ENTERÓ. El 2026-09-05 la recalibración de puntos
+// subió R05 de 120 a 160 y este literal se quedó en 120, así que el invitado recibía un
+// bono que NO alcanzaba para la bebida que la app, el perfil y el texto de WhatsApp que
+// el dueño copia a Instagram le prometían los tres. Peor que desactualizado: 120 caía en
+// tierra de nadie — por encima de la salsa extra (20) y por debajo de todo lo demás
+// (160), o sea que el invitado no podía canjear NADA de lo que se le dijo. Y ese lado es
+// justo el que tiene que decidir comprar sin haber pedido nunca.
+//
+// El comentario de REFERRER_REWARD_POINTS acá abajo describe este defecto exacto, palabra
+// por palabra, para el otro lado del referido — y ese sí estaba protegido por
+// `npm run parity`. Este no. Ahora sí: hay una comprobación que lo ata a R05.
+//
+// Costo real: honrar R05 cuesta ~S/2.34 de insumo contra un cliente que deja ~S/24 de
+// contribución en 90 días. Subirlo de 120 a 160 NO cuesta más — el premio siempre fue la
+// misma bebida; lo que cambió fue su etiqueta de precio en puntos.
+// DEBE coincidir con REFERRAL_BONUS_POINTS en src/app/01-*.
+export const REFERRAL_BONUS_POINTS = 160;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido (decisión del dueño
 // 2026-08-15). Antes ambos lados recibían los mismos 50 puntos — unos S/1.25 de valor, el
 // 5% del ticket, muy por debajo del 10-25% que mueve la aguja en esta categoría. Ahora el
@@ -69,15 +83,25 @@ export const REFERRER_REWARD_POINTS = 400;
 // llega a rozar el techo: S/8.0 y S/8.3.
 //
 // DEBE coincidir con REFERRAL_MILESTONES en src/app.ts (lo verifica `npm run parity`).
-export const REFERRAL_MILESTONES: { count: number; points: number; label: string }[] = [
-  { count: 3, points: 120, label: "una bebida de la casa gratis" },
-  { count: 5, points: 400, label: "otro sándwich 15CM gratis" },
-  { count: 10, points: 800, label: "dos sándwiches 15CM gratis" },
+//
+// ⚠ `covers`/`veces` NO son decoración: dicen QUÉ recompensa nombra cada etiqueta, y son lo
+// que permite comprobar que el escalón alcanza para pagarla. El chequeo anterior de
+// `npm run parity` solo exigía que los puntos fueran múltiplo de ALGUNA recompensa — y
+// `120 % 20 === 0`, así que el primer escalón pasaba como "seis salsas extra" mientras su
+// etiqueta prometía una bebida que costaba 160. Es el mismo defecto que tuvo
+// `REFERRAL_BONUS_POINTS` y viene del mismo día: la recalibración del 2026-09-05 subió R05 de
+// 120 a 160 y estos dos números se quedaron atrás. Un chequeo que acepta cualquier múltiplo
+// no verifica la promesa, verifica la aritmética.
+export const REFERRAL_MILESTONES: { count: number; points: number; label: string; covers: string; veces: number }[] = [
+  { count: 3, points: 160, label: "una bebida de la casa gratis", covers: "R05", veces: 1 },
+  { count: 5, points: 400, label: "otro sándwich 15CM gratis", covers: "R06", veces: 1 },
+  { count: 10, points: 800, label: "dos sándwiches 15CM gratis", covers: "R06", veces: 2 },
 ];
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 // Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
-// recompensa (la más barata, R02, cuesta 40 — ver REWARDS en catalog.ts), así que todo
+// recompensa (la más barata entonces, R02, costaba 40 — hoy cuesta 20 tras la
+// recalibración del 2026-09-05; ver REWARDS en catalog.ts), así que todo
 // cliente nuevo veía su checkout del primer pedido sin nada canjeable, justo el momento
 // de mayor intención de compra. DEBE coincidir con el texto en sPAuth() en src/app.ts.
 export const WELCOME_BONUS_POINTS = 40;

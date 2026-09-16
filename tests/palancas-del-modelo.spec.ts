@@ -59,7 +59,15 @@ test('la invitación dice los DOS bonos, con el número real de cada uno', async
   await expect(page.locator('text=REF-001')).toBeVisible({ timeout: 10000 });
   await page.locator('text=REF-001').click();
   await expect(page.locator('text=400 pts')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=120 pts')).toBeVisible();
+  // ⚠ Esta línea decía `120 pts` y era el CUARTO sitio que prometía la bebida con un bono
+  // que no la pagaba: R05 subió de 120 a 160 el 2026-09-05 y el bono se quedó atrás. Son 160.
+  await expect(page.locator('text=160 pts')).toBeVisible();
+  // Y los NÚMEROS solos no alcanzan — es justo lo que dejó pasar el defecto durante ocho días.
+  // Lo que el cliente lee es el PRODUCTO, así que la prueba exige que los dos estén nombrados:
+  // si el bono deja de cubrir su recompensa, `loQueGanaElInvitado()` quita la palabra "bebida"
+  // y esto falla en vez de dejar una promesa falsa en verde.
+  await expect(page.locator('text=/sándwich 15CM GRATIS/i')).toBeVisible();
+  await expect(page.locator('text=/una bebida de la casa/i')).toBeVisible();
 });
 
 test('a un invitado sin cuenta no se le ofrece referir', async ({ page }) => {

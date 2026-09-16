@@ -853,9 +853,12 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   2026-08-01** (reemplaza el estimado investigado online de S/50/kg usado hasta la v4 de
   `MENU_FINANCIAL_ANALYSIS.md`; la simulación financiera sigue sin recalcular con este
   número, ver ese documento), carne molida ~S/10/kg, queso ~S/35/kg.
-  **Atún en lata sigue siendo el único insumo sin cotización propia confirmada** —
-  el análisis financiero usa ~S/67/kg (investigado online, Tottus) como estimado
-  conservador mientras el dueño cotiza con un proveedor real. Las bebidas caseras (infusiones)
+  ⚠ **Este párrafo decía hasta el 2026-09-13 que «el atún sigue siendo el único insumo sin
+  cotización propia confirmada» y que el análisis usa ~S/67/kg. Es FALSO desde el 2026-09-04**,
+  y la contradicción vivía a cuarenta líneas de la sección de arriba que ya dice el precio
+  real: **S/4 la lata de 140 g al por mayor = S/43.96/kg escurrido**, confirmado por el dueño.
+  Quedan como estimados sin cotizar el rendimiento de P06 (albóndiga) y los precios de carne
+  molida (~S/10/kg) y queso (~S/35/kg). Las bebidas caseras (infusiones)
   tienen margen bruto real 61-84%, mucho mejor que los sándwiches — no conviene agregar
   gaseosas embotelladas de reventa (peor margen a precios de delivery creíbles, además de
   diluir la diferenciación de marca que ya se buscó al retirar D01-D05 del catálogo).
@@ -950,7 +953,8 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Bono de referido asimétrico (decisión del dueño 2026-08-15, recalibrado 2026-08-20)**:
   quien INVITA recibe `REFERRER_REWARD_POINTS = 400` (= un 15CM gratis: DEBE valer siempre
   lo mismo que R06 en `REWARDS`, y el chequeo `npm run parity` ahora lo verifica). El
-  invitado recibe `REFERRAL_BONUS_POINTS = 120` (= una bebida gratis, R05), subido desde 50
+  invitado recibe `REFERRAL_BONUS_POINTS` (= una bebida gratis, R05 — **160 desde el
+  2026-09-13**, ver su propia sección), subido desde 50
   el 2026-08-20 porque él es quien tiene que decidir comprar y S/1.25 no le dicen nada a
   alguien que nunca pidió. Antes ambos recibían 50 (≈S/1.25, el 5% del ticket, muy debajo
   del 10-25% que mueve la aguja). **Los 720/50 que decía esta sección hasta el 2026-08-20
@@ -960,7 +964,8 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   de cada lado por separado**, con el parámetro único anterior se devolvían 50 de los 400
   otorgados y quedaban 350 puntos regalados por un pedido que nunca existió.
   **Escalera de referidos (#55, 2026-08-30)**: encima de los 400 planos por CADA referido
-  convertido, hay un premio extra al 3.º (120 pts = bebida), 5.º (400 = otro 15CM) y 10.º
+  convertido, hay un premio extra al 3.º (**160** pts = bebida — eran 120 hasta el
+  2026-09-13, ver su sección), 5.º (400 = otro 15CM) y 10.º
   (800 = dos 15CM). Los escalones viven en `REFERRAL_MILESTONES` (`env.ts`) y **están
   duplicados en `src/app/01-*` solo para pintarlos**, con `npm run parity` verificando los
   dos lados — el cliente nunca suma puntos. Quién decide qué escalón toca es
@@ -1628,6 +1633,104 @@ fallo cargando otra cosa no puede hacer desaparecer la palanca que más mueve lo
 meses.
 
 Ver `PREDICCION_V14.md` para el plan completo y `modelo/modelo_v14.py` para el motor.
+
+## El bono del invitado prometió ocho días una bebida que no podía pagar (2026-09-13)
+
+`REFERRAL_BONUS_POINTS` **es** "una bebida gratis": esa fue la decisión del dueño el
+2026-08-20, y 120 era su implementación porque entonces R05 costaba 120. El 2026-09-05 la
+recalibración de puntos subió **R05 de 120 a 160** y el literal se quedó donde estaba.
+
+Desde entonces la app le prometía al invitado una bebida **en SEIS sitios** —la invitación que
+aparece al entregar el pedido (`refInviteHTML`, el momento de mayor intención), la tarjeta del
+perfil, el mensaje que se comparte por WhatsApp, y los tres textos de marketing que el dueño
+copia a Instagram— con un bono que no alcanzaba a pagarla.
+
+⚠ **Y el sexto solo apareció cuando falló una prueba**: `tests/palancas-del-modelo.spec.ts`
+afirmaba `120 pts` sobre la invitación del pedido entregado, así que una búsqueda de la
+constante no bastaba — había que correr la suite. Esa prueba ahora exige además que los dos
+**productos** estén nombrados («sándwich 15CM GRATIS», «una bebida de la casa»), no solo los
+dígitos: comprobar el número es justo lo que dejó pasar el defecto ocho días. Y no era solo un número corto: **120 caía
+en tierra de nadie**, por encima de la salsa extra (20) y por debajo de todo lo demás (160),
+o sea que el invitado **no podía canjear NADA** de lo que se le dijo. Justo el lado del
+referido que tiene que decidir comprar sin haber pedido nunca, y justo la palanca de la que
+cuelga el mes 3.
+
+**Subirlo a 160 no cuesta más**: el premio siempre fue la misma bebida (~S/2.34 de insumo);
+lo que cambió fue su etiqueta de precio en puntos. No contradice la evidencia de
+Wolters/Schulze/Gedenk sobre no subir el bono — no sube el premio, restaura el que ya estaba
+decidido.
+
+**Lo que más duele es que el defecto estaba escrito.** El comentario de
+`REFERRER_REWARD_POINTS` lo describe palabra por palabra para el OTRO lado del referido
+(«si alguien mueve uno de los dos números y no el otro, la app promete un sándwich que la
+recompensa ya no alcanza a pagar») y ese sí tenía su comprobación en `npm run parity` desde
+que R06 bajó de 720 a 400. Este no. Lo encontró una revisión a mano, no el CI.
+
+**Son DOS huecos distintos y hacen falta las dos defensas:**
+
+1. **El del código** — alguien recalibra `REWARDS` y olvida el bono. Lo cierra
+   `npm run parity`, que ahora ata `REFERRAL_BONUS_POINTS` a R05 igual que ya ataba
+   `REFERRER_REWARD_POINTS` a R06.
+2. **El del panel** — **R05 se repricea desde `catalog_prices`** (categoría `reward`), que
+   `loadCatalogPrices()` vuelca encima de `REWARDS` en runtime, y que el cliente recibe en
+   `rewardPts` de `get-catalog`. Parity **no puede verlo**: compara la SEMILLA. Lo cierra
+   `loQueGanaElInvitado()` (`catalog.ts` y `src/app/06-*`), que **DERIVA la frase en vez de
+   afirmarla** — si el bono cubre R05 nombra la bebida, y si no se queda en los puntos, que es
+   lo único que sigue siendo verdad. Mismo criterio exacto que `offpeakActiva()` usa para la
+   hora valle retirada, y la frase **vuelve sola** si el bono vuelve a alcanzar: apagarla para
+   siempre sería igual de malo, porque el premio concreto y nombrable es lo que hace funcionar
+   la invitación.
+
+**Regla que sale de esto, y es un paso más allá de la que ya estaba escrita en este archivo:**
+interpolar la cifra no alcanza. Si un texto **nombra un producto** que el cliente va a poder
+canjear o no según un número editable, ese nombre también tiene que derivarse.
+
+### Y la ESCALERA tenía el mismo defecto, del mismo día — con un chequeo que lo dejaba pasar
+
+El escalón de 3 amigos (`REFERRAL_MILESTONES`) pagaba **120 puntos** con la etiqueta «una
+bebida de la casa gratis». Misma recalibración, mismo día, segunda víctima.
+
+Lo interesante es por qué `npm run parity` no lo vio teniéndolo delante: su chequeo exigía que
+los puntos de cada escalón fueran **múltiplo de ALGUNA recompensa**, y `120 % 20 === 0`, así
+que el escalón se validaba como «seis salsas extra» mientras prometía una bebida.
+**Verificaba la aritmética, no la promesa** — y la promesa es lo único que el cliente lee.
+
+Ahora cada escalón declara `covers` (el código de la recompensa que su etiqueta nombra) y
+`veces`, así que el chequeo no adivina a qué se refiere el texto: el texto lo dice. Y
+`etiquetaDeEscalon()` (servidor y cliente) deja de nombrar el premio si el panel lo repricea
+por encima del escalón — incluido el push de «te llevas N puntos extra: …», que es donde el
+cliente lo lee en el momento de mayor intención.
+
+De paso quedó corregido un comentario que ya mentía: el de `WELCOME_BONUS_POINTS` decía que
+R02 cuesta 40; cuesta 20 desde la misma recalibración.
+
+### Y el lado de QUIEN INVITA, por simetría
+
+`REFERRER_REWARD_POINTS` nunca estuvo roto —`npm run parity` lo ata a R06 desde que R06 bajó
+de 720 a 400— pero esa comprobación cubre la SEMILLA, y R06 se repricea desde el panel igual
+que R05. El push «Ya tienes 400 puntos: canjéalos por un 15CM gratis» y la tarjeta del perfil
+pasan por `loQueGanaQuienInvita()`. Arreglar un solo lado de un defecto simétrico deja el otro
+esperando su turno.
+
+### Un tercer caso, en una prueba que creía cubrir más de lo que cubría
+
+`tests-api/carrito.test.ts` tiene una prueba titulada «R05 cubre entera la bebida más cara que
+hoy existe» — y ejercía `D06` **escrito a mano**. Una bebida nueva más cara entraba al catálogo
+y la prueba seguía en verde midiendo otra cosa, justo la que dice proteger. Ahora la bebida más
+cara **se deriva de `SIDE_PRICE`**. Verificado subiendo D08 a S/8: falla nombrando la bebida y
+el monto.
+
+Sigue cubriendo solo la SEMILLA. El precio de las bebidas también es editable desde el panel
+(`catalog_prices`, categoría `side`), así que subir una bebida por encima de `R05_FLAT_WAIVER`
+deja «BEBIDA // GRATIS» cubriendo una parte. Lo que salva hoy ese caso es que la pantalla de
+canje muestra el ahorro REAL al seleccionarla («· ahorras S/6»), no el rótulo — o sea que el
+número que el cliente ve es cierto aunque el titular se quede grande. Cambiar el titular es
+decisión del dueño, no un defecto que se pueda corregir solo.
+
+Probado en `tests-api/bono-del-invitado.test.ts` (8), verificado inyectando los cuatro
+defectos: devolver el bono a 120 (falla nombrando que solo alcanzaba para R02), volver a
+escribir «una bebida de regalo» a mano en el texto público, devolver el escalón a 120, y
+quitarle `covers`/`veces` a la escalera.
 
 ## Cinco métodos de predicción, y por qué uno solo no alcanzaba (2026-09-13)
 

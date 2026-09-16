@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva, loQueGanaElInvitado } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, MODELO_OBJETIVOS, CAC_TECHO, cacTechoPrimerPedido, cacTechoValorVida, pedidosPorCliente } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
@@ -1326,10 +1326,10 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   {
     theme: "REFERIDOS",
     ocasion: { momento: "Cuando un amigo pregunta dónde pediste eso", disparador: "Alguien ve tu sándwich y quiere el mismo", dow: 0, hora: 13 },
-    whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él una bebida (${REFERRAL_BONUS_POINTS}). Tu código está en tu perfil de la app.`,
-    caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con una bebida de regalo. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
+    whatsapp: `Invita a un amigo a SND//WCH: cuando haga su primer pedido, tú te ganas un sándwich 15CM gratis (${REFERRER_REWARD_POINTS} puntos) y él ${loQueGanaElInvitado()}. Tu código está en tu perfil de la app.`,
+    caption: `Comparte y gana // Cada amigo que invitas con tu código te deja un sándwich 15CM gratis cuando hace su primer pedido, y él arranca con ${loQueGanaElInvitado()}. Y hay premios extra al 3.º, 5.º y 10.º amigo — la escalera completa está en tu perfil.`,
     photoIdea: "Gráfico simple de la escalera (3 · 5 · 10 amigos) sobre el verde/dorado de la marca, o dos sándwiches juntos.",
-    videoIdea: `E · LA MESA LARGA — 9:16, 16 s. Único formato donde colaboran. 0-2s el alocado arrastra a alguien fuera de cuadro hacia la mesa. 2-8s el calmado le sirve un sándwich al recién llegado, sin decir nada. 8-13s los dos sándwiches y el "//" en cuadro. 13-16s cierre: quien invita se gana un 15CM (${REFERRER_REWARD_POINTS} pts) y el invitado una bebida (${REFERRAL_BONUS_POINTS} pts).`,
+    videoIdea: `E · LA MESA LARGA — 9:16, 16 s. Único formato donde colaboran. 0-2s el alocado arrastra a alguien fuera de cuadro hacia la mesa. 2-8s el calmado le sirve un sándwich al recién llegado, sin decir nada. 8-13s los dos sándwiches y el "//" en cuadro. 13-16s cierre: quien invita se gana un 15CM (${REFERRER_REWARD_POINTS} pts) y el invitado ${loQueGanaElInvitado()}.`,
   },
   {
     theme: "PRUEBA SOCIAL",
