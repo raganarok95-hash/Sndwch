@@ -1049,55 +1049,59 @@ function sOHome(){
       // pantalla, y es lo que permite que el resto de la suite los localice por rol.
       var lado=function(id,titulo,bajada,activo){
         var esByo=id==='byo';
-        var fg=esByo?'var(--sw-sky-ink,#0E1A17)':'#fff';
-        var sub=esByo?'rgba(14,26,23,.74)':'var(--sw-text-muted,#A8C8B0)';
+        // ⚠ LOS DOS LADOS LLEVAN TEXTO CLARO. El de WICHO era `--sw-sky-ink` (casi negro),
+        // que era correcto cuando su panel era un bloque de celeste solido — pero desde que
+        // el fondo es casi negro y el panel un plano tenue, texto casi negro sobre fondo
+        // casi negro es texto invisible. El fallo no lanza nada: solo deja de leerse.
+        var fg='#fff';
+        var sub='var(--sw-text-muted,#A8C8B0)';
         var fondo=esByo
-          ?'linear-gradient(200deg,var(--sw-sky,#8CC8EC),var(--sw-sky-deep,#3F86B4))'
-          :'linear-gradient(155deg,var(--sw-card,#2D5246),var(--sw-card2,#1A3028))';
+          // Sobre el fondo casi negro, cada mitad lleva un plano TENUE de su color en vez
+          // del bloque saturado de antes: el personaje y la foto tienen que ser lo mas
+          // luminoso del cuadro, no el panel que los contiene.
+          ?'linear-gradient(200deg,rgba(140,200,236,.16),rgba(63,134,180,.06))'
+          :'linear-gradient(155deg,rgba(47,107,84,.22),rgba(30,70,54,.07))';
         // WICHO tiene varias poses; SANDO por ahora solo una. Al tocarlo, WICHO saluda —
         // es lo que hace el que se lanza. Cuando el dueño genere más poses de SANDO, acá
         // se le agrega la suya y nada más cambia.
-        var pose=esByo?(activo?'wicho_saluda':'wicho_cuerpo'):'sando_cuerpo';
+        // ⚠ LOS DOS HERMANOS SON UNA SOLA CARA PARTIDA, y hasta hoy esta pantalla no lo
+        // mostraba. `sando.png` y `wicho.png` son las DOS MITADES del logo, cortadas por su
+        // costura central (lo dice shell.html): puestas a tocarse forman una cabeza entera
+        // mordiendo el sub. Esta pantalla usaba `sando_cuerpo`/`wicho_cuerpo`, que son otra
+        // ilustracion —de cuerpo entero, con chaqueta— asi que el activo de marca mas fuerte
+        // del negocio no aparecia en la pantalla donde se elige como pedir.
+        //
+        // Ahora cada mitad se ancla a la COSTURA (SANDO por su derecha, WICHO por su
+        // izquierda) y la cara se lee completa. Separarlas con un hueco la parte al medio, y
+        // es lo que hacia la primera version de esto.
+        var mitad = esByo ? 'wicho' : 'sando';
         return'<button onclick="homeTab=\''+id+'\';render()" aria-pressed="'+(activo?'true':'false')
-          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:'+(activo?'1.35':'1')
-          +';min-height:212px;position:relative;overflow:hidden;background:'+fondo
-          +';display:flex;flex-direction:column;justify-content:flex-end;'
-          +'padding:12px 12px 13px;transition:flex .3s ease">'
-          // El hermano ocupa su panel de pie, pegado al borde de afuera y al piso.
-          //
-          // ⚠ SE DIMENSIONA POR ALTURA, NUNCA POR ANCHO. Con `width` fijo, cada hermano
-          // ocupa el alto que le dicte SU proporción — y `sando_cuerpo` es 302×640, así que
-          // a 116px de ancho medía 246px en un contenedor de 212 con `overflow:hidden`.
-          // Anclado al piso, los 34px que sobraban salían por arriba: **la cabeza**. El
-          // dueño lo reportó como que la app "parece un agregado a la web antigua", y un
-          // personaje decapitado por su propio marco es exactamente eso.
-          //
-          // Por altura los dos entran completos aunque sus proporciones no se parezcan —
-          // y no se parecen a propósito, porque los hermanos no comparten ilustrador.
-          +'<div class="sw-bro'+(activo?' sw-on':'')+'" style="position:absolute;bottom:0;'
-          +(esByo?'right:0':'left:0')+';height:'+(activo?'182px':'150px')
-          +';opacity:'+(activo?'1':'.72')+';transition:height .3s ease,opacity .3s ease">'
-          +'<img class="sw-bro-'+(esByo?'wicho':'sando')+'" src="img/'+pose+'.png" alt="'
-          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%;width:auto;display:block">'
-          +'</div>'
-          // Velo bajo el texto: sin esto el título cae encima del personaje y no se lee.
-          //
-          // Va al 62% de la altura y con TRES paradas, no dos: el degradado de dos paradas
-          // sube tan despacio que en la zona donde de verdad está el texto todavía es medio
-          // transparente, y el rótulo caía sobre el torso del hermano. La parada del medio
-          // hace que el velo ya esté casi opaco cuando llega la primera línea.
-          +'<div style="position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(180deg,'
-          +(esByo?'rgba(63,134,180,0) 0%,rgba(48,105,143,.72) 42%,rgba(38,88,120,.96) 100%'
-                 :'rgba(26,48,40,0) 0%,rgba(22,42,36,.76) 42%,rgba(17,34,29,.97) 100%')+')"></div>'
-          +'<div style="position:relative;text-align:'+(esByo?'left':'right')+'">'
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
-          // El rótulo dice SND y WCH, no los nombres (decisión del dueño 2026-09-12): en la
-          // pantalla donde se elige cómo pedir, lo que tiene que leerse es la MARCA partida
+          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;'
+          +'position:relative;overflow:hidden;background:'+fondo
+          +';display:flex;flex-direction:column;justify-content:flex-end;transition:background .3s ease">'
+          // La figura vive en SU caja y el rotulo en la suya. Sin eso el titulo cae encima
+          // del personaje, que es el defecto que este archivo ya documenta mas arriba y que
+          // el dueno reporto como "mal recortada, eso no es su diseno".
+          +'<div style="height:212px;display:flex;align-items:flex-end;'
+          +'justify-content:'+(esByo?'flex-start':'flex-end')+';overflow:hidden">'
+          // ⚠ LAS DOS MITADES MIDEN SIEMPRE LO MISMO. La version anterior agrandaba la
+          // activa (100% contra 88%) para senalar cual estaba elegida — y eso PARTE la cara:
+          // son dos mitades de UNA cabeza, asi que un lado mas grande que el otro deja el
+          // ojo, la oreja y el sandwich desalineados en la costura. La senal de activo la
+          // dan el plano de color y el rotulo, nunca la escala del personaje.
+          +'<img class="sw-bro-'+mitad+(activo?' sw-on':'')+'" src="img/'+mitad+'.png" alt="'
+          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%'
+          +';width:auto;max-width:none;display:block;opacity:'+(activo?'1':'.52')
+          +';transition:opacity .3s ease"></div>'
+          +'<div style="position:relative;padding:11px 13px 13px;text-align:'+(esByo?'left':'right')+'">'
+          // El rotulo dice SND y WCH, no los nombres (decision del dueno 2026-09-12): en la
+          // pantalla donde se elige como pedir, lo que tiene que leerse es la MARCA partida
           // en dos por su propio "//" — cada hermano es una mitad del nombre. Los nombres
           // propios siguen vivos en el `alt` y en el resto del universo de la marca.
-          +'text-transform:uppercase;color:'+(esByo?'rgba(14,26,23,.82)':GOLD)+'">'+esc(esByo?'WCH':'SND')+'</div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
+          +'text-transform:uppercase;color:'+(esByo?'var(--sw-sky,#8CC8EC)':GOLD)+'">'+esc(esByo?'WCH':'SND')+'</div>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(activo?'20':'16')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
+          +(activo?'20':'18')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
           +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+sub
           +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
       };
