@@ -110,12 +110,13 @@ function sOBuild(){
       var av=isAvail(b.id),sel=base===b.id;
       var extra=size?baseSurcharge(b.id,size):0;
       if(!av)return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+b.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:4px">Agotado</div></div>';
-      return'<div onclick="base=\''+b.id+'\';render()" style="position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+      // Mismo criterio que FICHA: control real, alcanzable con teclado y anunciado como tal.
+      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="base=\''+b.id+'\';render()" style="all:unset;box-sizing:border-box;position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
         +(extra>0?'<div style="position:absolute;top:12px;right:13px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+'">+'+SOLES+pz(extra)+'</div>':'')
         +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#fff);line-height:1.1">'+b.l+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+(sel?ACC():'var(--sw-text-muted3,#73776C)')+';margin-top:5px">'+b.s.toUpperCase()+'</div>'
         +(b.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(b.d)+'</p>':'')
-        +'</div>';
+        +'</button>';
     }).join('');
     h+='</div>';
   }else if(byoStep===1){
@@ -137,7 +138,7 @@ function sOBuild(){
       if(!av)return'<div style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:flex-end;padding:13px;opacity:.4">'
         +(img?'<img src="'+img+'" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1)">':'')
         +'<div style="position:relative"><div style="font-family:\'Bodoni Moda\',serif;font-size:15px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+p.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</div></div></div>';
-      return'<div onclick="prot=\''+p.id+'\';render()" style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:'+(sel?'2px solid '+ACC():'1px solid var(--sw-border,#2C3228)')+';background:var(--sw-card,#1B1F18);transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" aria-label="'+esc(p.l+' '+p.s+', '+SOLES+pz(precio))+'" onclick="prot=\''+p.id+'\';render()" style="all:unset;box-sizing:border-box;display:block;width:100%;position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:'+(sel?'2px solid '+ACC():'1px solid var(--sw-border,#2C3228)')+';background:var(--sw-card,#1B1F18);transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
         +(img?'<img src="'+img+'" alt="'+esc(p.l+' '+p.s)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">':'')
         // El degradado no es decoración: sin él el nombre se pierde sobre la parte clara
         // de la foto, y cada foto tiene la parte clara en otro sitio.
@@ -150,7 +151,7 @@ function sOBuild(){
         +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'#fff')+';text-shadow:0 1px 6px rgba(0,0,0,.8)">'+SOLES+pz(precio)+'</span>'
         +'</div></div>'
         +lowStockNote(p.id)
-        +'</div>';
+        +'</button>';
     }).join('');
     h+='</div>';
     // La descripción de la proteína elegida, UNA sola, debajo del mosaico. Antes las seis
@@ -190,7 +191,7 @@ function sOBuild(){
     var todos=tL>0&&todosIds.every(function(id){return tops.indexOf(id)>=0;});
     h+='<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px">'
       +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(tL?ACC():'var(--sw-text-muted3,#73776C)')+'">'+(tL?tL+(tL===1?' elegido':' elegidos'):'ninguno todavía')+'</span>'
-      +'<span onclick="tops='+(todos?'[]':'['+todosIds.map(function(id){return'\''+id+'\'';}).join(',')+']')+';render()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+ACC()+';border-bottom:1px solid '+ACC()+'">'+(todos?'QUITAR TODOS':'PONER TODOS')+'</span>'
+      +'<button type="button" onclick="tops='+(todos?'[]':'['+todosIds.map(function(id){return'\''+id+'\'';}).join(',')+']')+';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+ACC()+';border-bottom:1px solid '+ACC()+'">'+(todos?'QUITAR TODOS':'PONER TODOS')+'</button>'
       +'</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
     h+=TOPS.filter(function(t: any){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
@@ -221,14 +222,14 @@ function sOBuild(){
     h+=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;}).map(function(s){
       if(!isAvail(s.id))return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 13px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:3px">Agotado</div></div>';
       var sel=sauces.indexOf(s.id)>=0,lleno=!sel&&sL>=3,sug=sauceSuggest.indexOf(s.id)>=0;
-      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 13px;cursor:'+(lleno?'not-allowed':'pointer')+';opacity:'+(lleno?.32:1)+';transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'"'+(lleno?' disabled':'')+' onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="all:unset;box-sizing:border-box;display:block;width:100%;position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 13px;cursor:'+(lleno?'not-allowed':'pointer')+';opacity:'+(lleno?.32:1)+';transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
         +(sug&&!sel?'<div style="position:absolute;top:10px;right:11px;width:5px;height:5px;border-radius:999px;background:'+ACC()+'" title="Sugerida para tu proteína"></div>':'')
         +(sel?'<div style="position:absolute;top:9px;right:10px;font-size:11px;color:'+ACC()+'">&#10003;</div>':'')
         +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#fff);padding-right:16px">'+s.l+(s.spicy?' '+icon('chili',11,'#ff8a5c'):'')+'</div>'
         // Una sola frase, no el párrafo entero: son 11 salsas en pantalla y el párrafo
         // completo convertía el paso en un muro que nadie lee.
         +(s.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.4;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(primeraFrase(s.d))+'</div>':'')
-        +'</div>';
+        +'</button>';
     }).join('');
     h+='</div>';
     if(sauceSuggest.length)h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted3,#73776C);margin-top:12px"><span style="display:inline-block;width:5px;height:5px;border-radius:999px;background:'+ACC()+';vertical-align:middle;margin-right:6px"></span>Va bien con la proteína que elegiste — sigue siendo tu elección.</div>';
@@ -241,7 +242,12 @@ function sOBuild(){
 // párrafo para "Tomate" no informa: ocupa. La ficha cabe 3 por fila, así que los 8
 // vegetales entran en una pantalla en vez de dos y medio.
 function FICHA(etiqueta,sel,fn){
-  return'<div onclick="'+fn+'" style="display:inline-flex;align-items:center;gap:5px;background:'+(sel?ACC():'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')+'">'+etiqueta+'</div>';
+  // Botón real, no un <div onclick>. El panel ya había tenido que corregir esto mismo en su
+  // cajón de navegación: un div con onclick no se alcanza con teclado, no se anuncia como
+  // control y no responde a Enter. Estas fichas son el ÚNICO modo de elegir vegetales y
+  // queso, así que un cliente con teclado o lector de pantalla se quedaba sin el paso.
+  // `aria-pressed` porque son interruptores, no enlaces: dicen si están puestas o no.
+  return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="'+fn+'" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;background:'+(sel?ACC():'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')+'">'+etiqueta+'</button>';
 }
 function FICHA_OFF(etiqueta){
   return'<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+etiqueta+'</div>';

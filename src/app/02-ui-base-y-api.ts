@@ -809,7 +809,11 @@ function reciboLinea(k,v,tono?){
 // ACC() y no GOLD: la selección es ESTADO, y el dorado es del dinero. Estaba haciendo los
 // dos trabajos a la vez, y en el mundo celeste un control dorado se lee como plata.
 function SZTOG(){
-  function opt(sz,l,d){var sel=size===sz;return'<div onclick="size=\''+sz+'\';render()" style="flex:1;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(sel?'#FFFFFF':'#9DA096')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+d+'</div></div>';}
+  // Botón real, no un <div onclick>: es la primera elección del pedido en las DOS puertas
+  // (el Signature y el armador), así que un div acá deja fuera del pedido entero a quien
+  // navega con teclado o con lector de pantalla. `aria-pressed` dice cuál está elegido, que
+  // es lo que el color por sí solo no comunica.
+  function opt(sz,l,d){var sel=size===sz;return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+sz+'\';render()" style="all:unset;box-sizing:border-box;flex:1;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(sel?'#FFFFFF':'#9DA096')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+d+'</div></button>';}
   // "Individual"/"Clásico" no comunicaban porción real (hallazgo de auditoría UX, MEDIO)
   // — un cliente sin contexto de la marca no sabía si "Clásico" alcanzaba para compartir.
   return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','Para uno')+opt('30','30CM','Para compartir')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
