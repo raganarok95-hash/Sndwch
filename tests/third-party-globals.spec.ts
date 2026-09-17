@@ -71,7 +71,12 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
   const paso = page.locator('text=/Ver el paso a paso completo/i').first();
   await expect(paso).toBeVisible();
   await paso.click();
-  await expect(page.locator('text=Paso 1 // 5')).toBeVisible();
+  // El armador ya no rotula "Paso 1 // 5": desde el concepto 6 (2026-09-16) el progreso es
+  // un riel que además muestra QUE llevas elegido en cada paso. Se afirma sobre el riel —
+  // que exista y que el paso encendido sea el primero— porque eso es lo que el cliente ve
+  // hoy, y porque un `data-actual` es un gancho más estable que un texto de rótulo.
+  await expect(page.locator('[data-paso]')).toHaveCount(5);
+  await expect(page.locator('[data-actual="1"]')).toHaveText(/PAN/i);
 
   expect(errores, 'no debe quedar ningún error de JavaScript sin manejar').toEqual([]);
 });

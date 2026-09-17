@@ -7,7 +7,7 @@ function WORDMARK(size,hero?){
   return'<span style="font-family:\'Fraunces\',serif;font-optical-sizing:auto;font-size:'+size+'px;font-weight:620;color:var(--sw-text,#FFFFFF);letter-spacing:.02em;line-height:1">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>';
 }
 function H(sub?,bk?,showCart?){
-  var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-family:\'EB Garamond\',serif;font-size:22px;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
+  var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-family:\'EB Garamond\',serif;font-size:22px;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
   var sz=sub?26:40;
   // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
   // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
@@ -26,7 +26,7 @@ function H(sub?,bk?,showCart?){
   var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'';
   // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
   // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
-  var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">'+icon('cart',18,'#F2F0EB')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
+  var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#1B1F18);border-radius:8px;display:flex">'+icon('cart',18,'#EFEDE4')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
   // Toggle claro/oscuro — antes SOLO existía en sAdminHome, así que un operador en
   // cualquiera de las 14 pantallas secundarias del admin (Inventario, Catálogo, Ficha de
   // cliente, etc.) tenía que volver a la cola primero para cambiar de tema (hallazgo de
@@ -39,7 +39,7 @@ function H(sub?,bk?,showCart?){
   // cola (ver adminToolsGridHTML/reordenamiento en sAdminHome) — hallazgo de auditoría
   // UX, confirmado por el dueño.
   var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
-  return'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="line-height:1">'+WORDMARK(sz)+'</div>'+s2+'</div>'+cartIcon+toolsNav+lightToggle+'</div>';
+  return'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="line-height:1">'+WORDMARK(sz)+'</div>'+s2+'</div>'+cartIcon+toolsNav+lightToggle+'</div>';
 }
 function NAV(){
   var oa=sndTab==='order';
@@ -60,14 +60,14 @@ function NAV(){
 // repetir el mismo bloque en cada pantalla de la app.
 function contactFooterHTML(){
   var igIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
-  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#1E3932)">'
+  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#12150F)">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Contacto //</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:2.1">'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#A8C8B0')+'Delivery — '+BIZ_CITY+'</div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('mail',13,'#A8C8B0')+'<a href="mailto:'+BIZ_EMAIL+'" style="color:var(--sw-text-muted,#A8C8B0);text-decoration:none">'+BIZ_EMAIL+'</a></div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#A8C8B0')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#A8C8B0);text-decoration:none">+51 930 957 640</a></div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
+    +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#9DA096')+'Delivery — '+BIZ_CITY+'</div>'
+    +'<div style="display:flex;align-items:center;gap:7px">'+icon('mail',13,'#9DA096')+'<a href="mailto:'+BIZ_EMAIL+'" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">'+BIZ_EMAIL+'</a></div>'
+    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#A8C8B0);text-decoration:none">+51 930 957 640</a></div>'
     +'</div>'
-    +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+GOLD+'">'+igIcon+'</a>'
+    +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+GOLD+'">'+igIcon+'</a>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
     // <button> y no <span onclick>: son navegables con teclado y las anuncia un lector de
     // pantalla. El del Libro de Reclamaciones es obligatorio por ley para TODO consumidor y
@@ -97,11 +97,11 @@ function contactFooterHTML(){
 // Reclamaciones era inalcanzable para quien no usa mouse — que es precisamente el
 // consumidor al que la ley más protege.
 function legalFooterLink(label,screen,extra?){
-  return'<button type="button" onclick="bkTo=\'o_home\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+  return'<button type="button" onclick="bkTo=\'o_home\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-text-muted,#9DA096);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
 }
 function legalLinksHTML(backTo){
   function lnk(label,screen,extra?){
-    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
   }
   return'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;justify-content:center">'
     +lnk('Cambios y devoluciones','p_returns')
@@ -109,7 +109,7 @@ function legalLinksHTML(backTo){
     +'</div>';
 }
 function AB(t,can?,bk?,nfn?,nl?,hint?){
-  var bb=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;border:1px solid var(--sw-border,#3A6B58);color:var(--sw-text-muted,#A8C8B0);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← Atrás</button>':'';
+  var bb=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;border:1px solid var(--sw-border,#2C3228);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:12px 16px;border-radius:8px;flex-shrink:0">← Atrás</button>':'';
   // ⚠ pz() VA ACÁ DENTRO, no en quien llama. Estaba al revés y las CUATRO pantallas con
   // total —Signature, armador, confirmación y carrito— pintaban el número crudo: un
   // Signature de S/20.90 se anunciaba como "S/20.9" justo encima del botón de pagar, y el
@@ -130,8 +130,8 @@ function AB(t,can?,bk?,nfn?,nl?,hint?){
   // Caffè: selección/énfasis se comunican con color plano y borde, nunca con glow).
   // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
   // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
-  var hintRow=(!can&&hint)?'<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">'+esc(hint)+'</span></div>':'';
-  return hintRow+'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?GOLD:'#1E3932')+';color:'+(can?'var(--sw-on-gold,#241a08)':'#4A7A68')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'Continuar //')+'</button></div>';
+  var hintRow=(!can&&hint)?'<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">'+esc(hint)+'</span></div>':'';
+  return hintRow+'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?GOLD:'#12150F')+';color:'+(can?'var(--sw-on-gold,#241a08)':'#73776C')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'Continuar //')+'</button></div>';
 }
 // PÍLDORA DE VIDRIO — el rótulo que se puede poner ENCIMA DE UNA FOTO.
 // Nace con el tratamiento a sangre: cuando la foto es la tarjeta, un rótulo con fondo de
@@ -162,7 +162,7 @@ function sigAvailable(s){return!s.availableUntil||Date.now()<new Date(s.availabl
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
 function CARD(item,sel,fn,right?,thumb?){
   var inner='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+item.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+item.s+'</span>'+(right||'')+'</div>'+(item.d?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+item.d+'</p>':'');
-  return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
+  return'<div onclick="'+fn+'" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+(thumb?'<div style="display:flex;gap:14px">'+thumb+'<div style="flex:1;min-width:0">'+inner+'</div></div>':inner)+'</div>';
 }
 // Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
 // de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
@@ -175,7 +175,7 @@ function googleCtaHTML(texto?){
   if(!googleConfigured())return'';
   return'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
     +'<div id="google-btn-mount"></div>'
-    +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
+    +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
     +'</div>';
 }
 function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
@@ -207,8 +207,8 @@ function INP(id,ph,type?,val?,iconName?,ac?,chk?){
   // desaparece apenas el campo queda bien. `data-chk` lo deja repintable tras un render().
   var chkAttrs=chk?' data-chk="'+chk+'" onblur="fieldCheck(this,\''+chk+'\',true)" oninput="fieldCheck(this,\''+chk+'\')"':'';
   return'<div style="position:relative">'
-    +(iconName?'<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">'+icon(iconName,16,'#A8C8B0')+'</div>':'')
-    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+acAttr+chkAttrs+' aria-label="'+esc(lbl)+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
+    +(iconName?'<div style="position:absolute;left:15px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.55">'+icon(iconName,16,'#9DA096')+'</div>':'')
+    +'<input id="'+id+'" type="'+(type||'text')+'"'+numAttrs+acAttr+chkAttrs+' aria-label="'+esc(lbl)+'" placeholder="'+ph+'" value="'+esc(val||'')+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px 14px '+padLeft+';color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;caret-color:'+GOLD+';box-shadow:'+SHADOW_SM+';box-sizing:border-box">'
     +(chk?'<div id="'+id+'-msg" role="alert" aria-live="polite" style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);margin-top:4px;min-height:13px"></div>':'')
     +'</div>';
 }
@@ -296,23 +296,23 @@ function repaintFields(){
 // que sin esto todo botón width:100% construido con BTN() se pasaba 28px (2×14px de
 // padding) del ancho de su contenedor, cortándose fuera de pantalla en formularios
 // angostos (ej. GUARDAR HORARIO en el panel admin). Hallazgo de la auditoría visual.
-function BTN(l,fn,out?){return'<button onclick="'+fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':GOLD)+';border:'+(out?'1px solid #A8C8B0':'none')+';color:'+(out?'#A8C8B0':'var(--sw-on-gold,#241a08)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
+function BTN(l,fn,out?){return'<button onclick="'+fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:'+(out?'transparent':GOLD)+';border:'+(out?'1px solid #9DA096':'none')+';color:'+(out?'#9DA096':'var(--sw-on-gold,#241a08)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:14px;border-radius:10px;text-align:center">'+l+'</button>';}
 // El indicador de carga es EL OJO DE WICHO, no una rueda genérica (idea del dueño,
 // 2026-09-12). La espiral ya existía dibujada —SPIRAL() en 02-*, cuyo propio comentario
 // decía que `gira` la convierte en indicador de carga— pero nunca se había usado para
 // eso: la pieza estaba construida y sin enchufar. Una espiral que gira es literalmente
 // lo que ya significa en la marca, así que no hay nada que aprender.
-function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#1E3932)">'
+function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#12150F)">'
   +'<div style="margin-bottom:14px">'+SPIRAL(34,'var(--sw-spiral,#C3A6D2)',true)+'</div>'
   +'<div style="margin-bottom:14px">'+WORDMARK(30,true)+'</div>'
-  +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
+  +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
 // Antes MIS PEDIDOS/HISTORIAL usaban el spinner genérico de pantalla completa (LOAD())
 // mientras cargaban — con esto se ve de inmediato el armazón real de la pantalla (título,
 // botón atrás) con bloques pulsantes del mismo tamaño que las tarjetas reales, en vez de
 // un splash sin relación con lo que está por aparecer.
 var listLoading=false;
 function skeletonCards(n,heightPx){
-  var row='<div class="pulse" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;height:'+(heightPx||64)+'px;margin-bottom:10px"></div>';
+  var row='<div class="pulse" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;height:'+(heightPx||64)+'px;margin-bottom:10px"></div>';
   return new Array(n||3).fill(row).join('');
 }
 
@@ -586,17 +586,17 @@ function orderRecipeHTML(items,big?){
     if(!lines.length)return'';
     return'<div style="margin-bottom:'+gapB+'px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+fTitle+'px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:'+(big?6:0)+'px">'+(it.qty>1?it.qty+'x ':'')+esc(itemLabel(it))+'</div>'
       +lines.map(function(l){
-        if(!big)return'<div style="font-family:\'EB Garamond\',serif;font-size:'+fLine+'px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">'+esc(l)+'</div>';
+        if(!big)return'<div style="font-family:\'EB Garamond\',serif;font-size:'+fLine+'px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">'+esc(l)+'</div>';
         // En escala de cocina se parte "Etiqueta: valor" para que el valor domine.
         var i=l.indexOf(': '),k=i>0?l.slice(0,i+1):'',v=i>0?l.slice(i+2):l;
         return'<div style="font-family:\'EB Garamond\',serif;font-size:'+fLine+'px;line-height:1.55;margin-bottom:2px">'
-          +(k?'<span style="color:var(--sw-text-muted,#A8C8B0)">'+esc(k)+' </span>':'')
-          +'<span style="color:var(--sw-text-body,#F2F0EB);font-weight:600">'+esc(v)+'</span></div>';
+          +(k?'<span style="color:var(--sw-text-muted,#9DA096)">'+esc(k)+' </span>':'')
+          +'<span style="color:var(--sw-text-body,#EFEDE4);font-weight:600">'+esc(v)+'</span></div>';
       }).join('')
       +'</div>';
   }).filter(Boolean).join('');
   if(!blocks)return'';
-  return'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,'+(big?'.55':'.3')+');border-radius:'+(big?10:8)+'px;padding:'+pad+';margin-bottom:'+(big?16:12)+'px">'
+  return'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,'+(big?'.55':'.3')+');border-radius:'+(big?10:8)+'px;padding:'+pad+';margin-bottom:'+(big?16:12)+'px">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:'+(big?11:8)+'px;color:'+GOLD+';letter-spacing:.18em;margin-bottom:'+(big?12:8)+'px">Para armar //</div>'
     +blocks+'</div>';
 }
@@ -982,9 +982,9 @@ function waitlistCardHTML(){
   // el primer segundo. Ahora menciona el código BIENVENIDA real (ya creado, -S/5, mínimo
   // S/15) en vez de prometer un mecanismo de "primeros N inscritos" que no existe en el
   // backend — nunca se promete algo que la app no cumple de verdad (Product Principle #2).
-  return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:12px;padding:16px;margin-bottom:16px">'
+  return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:16px;margin-bottom:16px">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sé de los primeros<span class="cut-sep" style="color:'+GOLD+'"> // </span>en probarlo</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:'+GOLD+'">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:'+GOLD+'">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
     +'<div style="display:flex;flex-direction:column;gap:8px">'+INP('wl-phone','Teléfono','tel',wlPhone)+INP('wl-name','Nombre // opcional','text',wlName)+'</div>'
     +(wlMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:8px">'+esc(wlMsg)+'</div>':'')
     +'<div style="margin-top:10px">'+BTN('Avísame //','joinWaitlist()')+'</div>'
@@ -1028,7 +1028,7 @@ function sOEleccion(){
       +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
       +'color:var(--sw-text,#fff);line-height:1.04;margin-top:5px;text-wrap:balance">'+esc(titulo)+'</div>'
       +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-      +'color:var(--sw-text-muted,#A8C8B0);margin-top:5px;line-height:1.35">'+esc(bajada)+'</div>'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:5px;line-height:1.35">'+esc(bajada)+'</div>'
       +'</div></button>';
   };
   return'<div class="fi" style="position:relative;min-height:calc(100dvh - 49px);display:flex;flex-direction:column">'
@@ -1073,8 +1073,8 @@ function sOHome(){
   // de la visita usa el catalogo normal. Volver a elegir es el boton del pie.
   if(homeTab===null)return sOEleccion();
   var pc=cust
-    ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
-    :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:'+GOLD+'"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Unirse \u2192</span></div>';
+    ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
+    :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:'+GOLD+'"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Unirse \u2192</span></div>';
   var ss=storeStatus();
   // storeStatus() solo mira el horario del día (11-22) — antes eso bastaba para decidir
   // "abierto/cerrado", pero desde que existe businessLaunched (el negocio real aún no
@@ -1086,19 +1086,19 @@ function sOHome(){
   var showOpenBadge=ss.open&&businessLaunched;
   // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
   // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#A8C8B0);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+estimatedRangeText()+'</span>':'')+'</div>'
+  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#9DA096);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+estimatedRangeText()+'</span>':'')+'</div>'
   // El costo de envío ya se mostraba en el checkout, pero recién ahí: el cliente armaba
   // todo el pedido y se enteraba del delivery al final. Esa sorpresa al final es la causa
   // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
   // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
   // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia — lo cobra el motorizado, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por km.</div>';
+  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia — lo cobra el motorizado, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por km.</div>';
   var lastOrd=cust?lastPaidOrder():null;
   var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
-  var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
-  var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#2D5246);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('cart',16,'#FFFFFF')+'Carrito<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'';
-  var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('device',15,GOLD)+'Instalar<span class="cut-sep" style="color:'+GOLD+'"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#1A3028);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
+  var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
+  var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('cart',16,'#FFFFFF')+'Carrito<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'';
+  var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('device',15,GOLD)+'Instalar<span class="cut-sep" style="color:'+GOLD+'"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
+  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#171A14);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +hoursBadge
@@ -1107,7 +1107,7 @@ function sOHome(){
     +pwaCard
     +cartCard
     +recoCard
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#F2F0EB);opacity:.8;letter-spacing:.15em;margin-bottom:16px">¿Cómo quieres pedir? //</div>'
+    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#EFEDE4);opacity:.8;letter-spacing:.15em;margin-bottom:16px">¿Cómo quieres pedir? //</div>'
     // Rediseño de esta sesión (fase 2 de fidelidad al mockup Prada Caffè): las 2 tarjetas
     // hero (una por modo) se reemplazan por tabs + lista plana de filas, como en el
     // mockup — un cliente puede ver los 6-7 Signatures reales (nombre, badge, precio) sin
@@ -1147,7 +1147,7 @@ function sOHome(){
         // el fondo es casi negro y el panel un plano tenue, texto casi negro sobre fondo
         // casi negro es texto invisible. El fallo no lanza nada: solo deja de leerse.
         var fg='#fff';
-        var sub='var(--sw-text-muted,#A8C8B0)';
+        var sub='var(--sw-text-muted,#9DA096)';
         var fondo=esByo
           // Sobre el fondo casi negro, cada mitad lleva un plano TENUE de su color en vez
           // del bloque saturado de antes: el personaje y la foto tienen que ser lo mas
@@ -1212,12 +1212,12 @@ function sOHome(){
         +'<button onclick="elegirLado(\'drink\')" aria-pressed="'+(homeTab==='drink'?'true':'false')
         +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
         +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'
-        +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#2D5246)')
-        +';border:1px solid '+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-border,#3A6B58)')+'">'
+        +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#1B1F18)')
+        +';border:1px solid '+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-border,#2C3228)')+'">'
         +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;'
         +'color:'+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-text,#FFFFFF)')+'">Bebidas</span>'
         +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
-        +'color:var(--sw-text-muted,#A8C8B0)">Medio litro, hechas acá — se piden solas</span></button>';
+        +'color:var(--sw-text-muted,#9DA096)">Medio litro, hechas acá — se piden solas</span></button>';
       // ── MOSAICO DE SIGNATURES (concepto 10, elegido por el dueno) ────────────────
       //
       // Antes esto era una fila por producto con una MINIATURA DE 48px. A ese tamano una
@@ -1260,17 +1260,17 @@ function sOHome(){
           +(ancho?'22':'18')+'px;font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(s.n)+'</div>'
           +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD
               +';margin-top:4px">'+SOLES+pz(s.p15)
-              +'<span style="color:var(--sw-text-muted,#A8C8B0);font-size:9px;margin-left:6px">30CM '
+              +'<span style="color:var(--sw-text-muted,#9DA096);font-size:9px;margin-left:6px">30CM '
               +SOLES+pz(s.p30)+'</span></div>':'')
           +'</div></div>';
       };
       var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
         +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
       var byoPanel='<div style="margin-bottom:8px">'
-        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
+        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
         +BASES.map(function(b){
           var av=isAvail(b.id);
-          return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
+          return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
         }).join('')
         +'<div style="margin-top:14px">'+BTN('Ver el paso a paso completo →',"startOrder('byo')",true)+'</div>'
         // ── EL PUENTE DE VUELTA A LOS SIGNATURES (2026-09-06) ──────────────────────────
@@ -1295,8 +1295,8 @@ function sOHome(){
         +(function(){
           var rec=visibleSigs.filter(function(x){return x.recommended&&sigInStock(x);})[0]||visibleSigs.filter(sigInStock)[0];
           if(!rec)return'';
-          return'<div onclick="startOrderWithSig(\''+rec.id+'\')" style="margin-top:12px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
-            +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+pz(rec.p15)+' en 15CM.</div></div>';
+          return'<div onclick="startOrderWithSig(\''+rec.id+'\')" style="margin-top:12px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
+            +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+pz(rec.p15)+' en 15CM.</div></div>';
         })()
         +'</div>';
       // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
@@ -1379,10 +1379,10 @@ function sOHome(){
       // aparecía DENTRO del carrito y solo para quien ya tenía sesión iniciada: quien
       // llegaba por primera vez no se enteraba nunca de que existía. Acá lo ve todo el
       // mundo; si no tiene cuenta, doCreateGroupOrder lo manda a crearla.
-      var officeCard='<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
+      var officeCard='<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
         +icon('clientes',18,GOLD)
         +'<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">¿Piden en grupo<span class="cut-sep" style="color:'+GOLD+'"> // </span>en la oficina?</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div>'
         // El sándwich gratis solo se anunciaba DENTRO del pedido grupal, o sea después de
         // que la persona ya decidió organizarlo. La decisión se toma acá, en la puerta.
         +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:5px">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, uno va gratis.</div></div>'
@@ -1391,7 +1391,7 @@ function sOHome(){
       // BEBIDAS Y SIDES: si fueran dos plantillas, el día que cambie el precio o la foto
       // una de las dos se queda atrás y nadie se entera.
       var drinkPanel='<div style="margin-bottom:8px">'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.45;margin:2px 0 12px">'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin:2px 0 12px">'
         +'Infusiones hechas acá, medio litro. Puedes pedirlas solas — no hace falta armar un sándwich.</div>'
         +SIDES.map(drinkRowHTML).join('')+'</div>';
       return tabBar+(homeTab==='byo'?byoPanel:homeTab==='drink'?drinkPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
@@ -1402,7 +1402,7 @@ function sOHome(){
     // officeCard (visible también para invitados) nadie borró esta, así que un cliente
     // logueado veía dos puertas al mismo sitio, una encima de la otra — reportado por el
     // dueño con captura. Queda solo officeCard.
-    +(cust&&myFavorites.length?'<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
+    +(cust&&myFavorites.length?'<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
     +pc
     +contactFooterHTML()
     +'</div>'+NAV();
@@ -1512,16 +1512,16 @@ function sGroupOrder(){
     if(msLeft>0){
       var minsLeft=Math.floor(msLeft/60000),secsLeft=Math.floor((msLeft%60000)/1000);
       var urgent=msLeft<120000;
-      h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+(urgent?'var(--sw-danger,#ff8888)':'#A8C8B0')+';letter-spacing:.1em;margin-bottom:14px">Cierra en '+minsLeft+':'+String(secsLeft).padStart(2,'0')+'</div>';
+      h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+(urgent?'var(--sw-danger,#ff8888)':'#9DA096')+';letter-spacing:.1em;margin-bottom:14px">Cierra en '+minsLeft+':'+String(secsLeft).padStart(2,'0')+'</div>';
     }
   }
   if(g.isOrganizer&&g.status==='open'){
     h+=BTN('Compartir link //','shareGroupOrder()');
   }
   h+=(g.items.length?g.items.map(function(it){
-    return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(it.label)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0)">'+esc(it.contributorName)+'</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(it.unitPrice)+'</div></div>';
-  }).join(''):'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:14px">Nadie agregó su pedido todavía.</div>');
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-body,#F2F0EB)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(g.total)+'</span></div>';
+    return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(it.label)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+esc(it.contributorName)+'</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(it.unitPrice)+'</div></div>';
+  }).join(''):'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Nadie agregó su pedido todavía.</div>');
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-body,#EFEDE4)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(g.total)+'</span></div>';
   // Avance del sándwich gratis del organizador. Es el motor del canal de oficinas: le
   // da a quien está juntando al grupo una razón concreta para insistirle a un compañero
   // más, y esa insistencia es la venta que el dueño no puede hacer él mismo.
@@ -1530,38 +1530,38 @@ function sGroupOrder(){
   if(g.status==='open'){
     var falta=Math.max(0,freeAt-swQty);
     var pctFree=Math.min(100,Math.round(swQty/freeAt*100));
-    h+='<div style="background:var(--sw-card2,#1A3028);border:1px solid '+(falta?'var(--sw-border,#3A6B58)':GOLD)+';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+    h+='<div style="background:var(--sw-card2,#171A14);border:1px solid '+(falta?'var(--sw-border,#2C3228)':GOLD)+';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
       +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(falta?'var(--sw-text,#FFFFFF)':GOLD)+'">'
       +(falta?('Faltan '+falta+' sándwich'+(falta===1?'':'es')+' para que uno vaya gratis'):'¡Un sándwich va gratis!')+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:3px">'
       +(falta?('Con '+freeAt+' o más, el 15CM más barato del grupo no se cobra.'):'Se descuenta el 15CM más barato al cerrar y pagar.')+'</div>'
-      +'<div style="height:4px;background:var(--sw-bg,#1E3932);border-radius:4px;margin-top:10px;overflow:hidden"><div style="height:100%;width:'+pctFree+'%;background:'+GOLD+'"></div></div>'
+      +'<div style="height:4px;background:var(--sw-bg,#12150F);border-radius:4px;margin-top:10px;overflow:hidden"><div style="height:100%;width:'+pctFree+'%;background:'+GOLD+'"></div></div>'
       +'</div>';
   }
   if(g.status!=='open'){
-    h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':'Este pedido grupal ya se cerró')+'</div>';
+    h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':'Este pedido grupal ya se cerró')+'</div>';
   }else{
     // Antes esta sección solo se mostraba a quien NO organizaba — quien creó el pedido
     // grupal podía compartir el link y cerrar/cobrar, pero nunca agregar su propio
     // sándwich (hallazgo reportado en vivo). Ahora se muestra siempre que el pedido
     // siga abierto, sin importar quién sea.
-    h+='<div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
+    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
     h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:12px">Agregar mi pedido //</div>';
     h+=INP('grp-name','Tu nombre','text',groupJoinName||(g.isOrganizer&&cust?cust.name:''),'clientes');
-    h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#1A3028')+';color:'+(groupSize==='15'?'var(--sw-on-gold,#241a08)':'#A8C8B0')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#1A3028')+';color:'+(groupSize==='30'?'var(--sw-on-gold,#241a08)':'#A8C8B0')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
+    h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#171A14')+';color:'+(groupSize==='15'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#171A14')+';color:'+(groupSize==='30'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
     h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
       var price=groupSize==='15'?s.p15:s.p30;
-      return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(price)+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(price)+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
     }).join('');
     // Antes solo se podían agregar Signatures — quien solo quería sumar una bebida sin
     // sándwich (o completar la suya) no tenía forma de hacerlo (hallazgo de auditoría UX).
     h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin:14px 0 12px">Bebidas y sides //</div>';
     h+=SIDES.map(function(s){
-      return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p)+'</div></div><button onclick="doAddGroupSide(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p)+'</div></div><button onclick="doAddGroupSide(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
     }).join('');
     h+='<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px;min-height:14px">'+esc(groupMsg)+'</div>';
     if(g.isOrganizer){
-      h+='<div style="height:1px;background:var(--sw-bg,#1E3932);margin:20px 0"></div>';
+      h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
       h+=BTN('Cerrar y pagar //','doCloseGroupOrder()');
       h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Cancelar pedido grupal</div>';
     }
@@ -1576,7 +1576,7 @@ function sOSig(){
   // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
-  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
+  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
   // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
   // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
   // el repo está en comentarios, que nombran el modo por su nombre viejo y no los ve nadie).
@@ -1592,7 +1592,7 @@ function sOSig(){
       var myTotal=cust.total_orders||0;
       if(myTotal<s.minOrders){
         var missing=s.minOrders-myTotal;
-        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#A8C8B0')+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
       }
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
@@ -1614,7 +1614,7 @@ function sOSig(){
     var priceSub=size||s.p30<=s.p15?'':'30CM '+SOLES+pz(s.p30);
     if(!av){
       var notifyRequested=restockNotified.indexOf(s.id)>=0;
-      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
+      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
         // Antes esto desaparecía sin dejar rastro para un invitado sin cuenta — parecía un
         // callejón sin salida en vez de una invitación a registrarse (hallazgo de auditoría
         // UX, MEDIO).
@@ -1651,7 +1651,7 @@ function sOSig(){
     // seguridad para un Signature nuevo que todavía no tiene fotografía.
     var lienzo=foto
       ?'<img src="'+foto+'" alt="'+esc(s.n)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">'
-      :'<div style="position:absolute;inset:0;background:linear-gradient(160deg,var(--sw-card,#2D5246),var(--sw-card2,#1A3028));display:flex;align-items:center;justify-content:center;opacity:.55">'+icon('sandwich',64,GOLD)+'</div>';
+      :'<div style="position:absolute;inset:0;background:linear-gradient(160deg,var(--sw-card,#1B1F18),var(--sw-card2,#171A14));display:flex;align-items:center;justify-content:center;opacity:.55">'+icon('sandwich',64,GOLD)+'</div>';
     // El degradado es lo que hace legible el texto sobre CUALQUIER foto — una foto clara
     // debajo de texto blanco es ilegible, y no controlamos qué foto sube el dueño desde
     // el panel. Oscurece abajo (donde va el nombre) y un poco arriba (donde van las
@@ -1762,31 +1762,31 @@ function sigPreviewOverlayHTML(){
     // (ver arriba), que es donde de verdad puede diferir de lo que llega a la mesa.
     // Estaba al revés: se mostraba solo en el placeholder sin imagen, o sea justo donde
     // no había imagen que advertir, y nunca sobre las fotos reales.
-    :'<div style="background:linear-gradient(160deg,#2D5246,#1A3028);border-radius:12px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
+    :'<div style="background:linear-gradient(160deg,#1B1F18,#171A14);border-radius:12px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
     +'<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">'+icon('sandwich',56,GOLD)+'</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'
     +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>'
     +'</div>';
   return'<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-    +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#1E3932);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
+    +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
     +hero
     +'<div style="padding:20px">'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.6;margin-bottom:16px">'+esc(s.pitch||'')+'</p>'
+    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.6;margin-bottom:16px">'+esc(s.pitch||'')+'</p>'
     // el menú secreto (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
     // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
     // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
     +(s.secret
-      ?'<div style="background:var(--sw-card,#2D5246);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
-      :'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.8">'
+      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
+      :'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.8">'
       +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
       +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s+(pr.d?' — '+pr.d:''):'')+'</div>'
       +(cheeseLbl?'<div><span style="color:'+GOLD+'">Queso · </span>'+cheeseLbl+'</div>':'')
       +'<div><span style="color:'+GOLD+'">Toppings · </span>'+toppingsLbl+'</div>'
       +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
       +'</div></div>')
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
     +'<button onclick="closeSigPreview();sigId=\''+s.id+'\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">Pedir este Signature //</button>'
-    +'<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;padding:4px">Cerrar</div>'
+    +'<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;padding:4px">Cerrar</div>'
     +'</div></div></div>';
 }

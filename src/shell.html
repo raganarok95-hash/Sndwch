@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1E3932">
+<meta name="theme-color" content="#12150F">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +39,7 @@
 <style>
 /* ── PALETA DEL CLIENTE — LOS TOKENS DE VERDAD (2026-09-09) ────────────────────
    Hasta hoy los colores del cliente NO eran variables: eran el FALLBACK de cada
-   `var(--sw-card,#2D5246)`, repetido en 997 sitios de src/app/. Nadie definía esas
+   `var(--sw-card,#1B1F18)`, repetido en 997 sitios de src/app/. Nadie definía esas
    properties en ningún lado, así que cambiar la paleta significaba 997 ediciones y la
    garantía de que alguna se quedaba atrás — el mismo defecto de fondo que ya costó tres
    semanas de precios fantasma, pero en color.
@@ -218,7 +218,7 @@ body,#app{transition:background-color .42s ease}
 /* Identidad admin "Modo cocina de una mano" (elegida por el dueño entre 3 mockups,
    2026-07-29) — reemplaza la piel "misma que el cliente" que tenía el admin antes.
    .admin-dark es el estado por defecto (antes el admin oscuro no tenía NINGUNA clase
-   propia, solo heredaba los valores de fallback del cliente #1E3932/etc. — por eso hacía
+   propia, solo heredaba los valores de fallback del cliente #12150F/etc. — por eso hacía
    falta esta clase nueva, no solo ajustar .admin-light). Negro puro + un solo acento ámbar
    (ver GOLD reasignado en render()/app.ts, mismo mecanismo ya usado para adminLight)
    pensado para legibilidad bajo luz de cocina y con el pulgar, no para "verse elegante". */
@@ -256,7 +256,7 @@ body,#app{transition:background-color .42s ease}
 .admin-light .wm-mark i:first-child{background:#8A5000}
 .admin-light .wm-mark i:last-child{background:#1F5F86}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
+html,body{background:#12150F;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
 .cut-sep{}
 /* Marca "//" del wordmark — dos barras sesgadas, en vez del simple glifo "//" (que en
@@ -289,10 +289,10 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
    armador 68, la del panel otra). El valor de respaldo es el de la nav, y solo se usa
    entre que la página existe y el primer render. La altura medida ya incluye el área
    segura del iPhone, porque cada barra la lleva en su propio padding. */
-#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#12150F;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
-input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
+input::placeholder{color:var(--sw-text-muted,#9DA096);font-size:13px}
 button{cursor:pointer;border:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .pulse{animation:pulse 1.8s infinite}
@@ -310,8 +310,8 @@ button{cursor:pointer;border:none}
 .rank-pop{animation:rankpop .5s cubic-bezier(.34,1.56,.64,1)}
 @media (prefers-reduced-motion: reduce){.rank-pop{animation:none}}
 
-input,textarea,select{color:#F2F0EB !important}
-input::placeholder,textarea::placeholder{color:#A8C8B0 !important;opacity:1}
+input,textarea,select{color:#EFEDE4 !important}
+input::placeholder,textarea::placeholder{color:#9DA096 !important;opacity:1}
 input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shadow:0 0 0 2px rgba(203,162,88,.15)}
 /* Foco de teclado visible en botones/tarjetas interactivas — hallazgo de la re-auditoría
    de 10 agentes (ALTO): casi todo elemento interactivo usa style="all:unset;..." (74
@@ -351,7 +351,7 @@ body.kb-open #app{padding-bottom:0}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
 </style>
 <style>
-#mmap{display:none;position:fixed;inset:0;background:#1E3932;z-index:9999;flex-direction:column}
+#mmap{display:none;position:fixed;inset:0;background:#12150F;z-index:9999;flex-direction:column}
 #mmap.open{display:flex}
 #lmap{flex:1;min-height:0}
 #mpin{position:absolute;top:50%;left:50%;transform:translate(-50%,-110%);font-size:36px;z-index:9998;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7))}
@@ -367,7 +367,7 @@ body.kb-open #app{padding-bottom:0}
    único brillo es una línea de canto de un píxel, que es lo que hace que se lea como un
    corte con filo y no como un hueco. */
 .sw-cut{display:flex;gap:5px;align-items:stretch;flex-shrink:0;pointer-events:none;height:100%}
-.sw-cut i{display:block;width:7px;background:var(--sw-bg,#1E3932);
+.sw-cut i{display:block;width:7px;background:var(--sw-bg,#12150F);
   transform:skewX(-16deg);box-shadow:1px 0 0 rgba(233,201,138,.5),-1px 0 0 rgba(0,0,0,.35)}
 /* ── LOS HERMANOS COMO ELEMENTO DE INTERFAZ (2026-09-10) ──────────────────────
    `img/sando.png` e `img/wicho.png` son las DOS MITADES del logo del dueño, partido por
@@ -477,9 +477,9 @@ body.kb-open #app{padding-bottom:0}
      privacidad que COINCIDA con el de la configuración». Esto cumple las tres.
      Un navegador normal nunca ve este bloque. -->
 <noscript>
-  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#F2F0EB">
+  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#EFEDE4">
     <h1 style="font-size:1.75rem;margin:0 0 .5rem">SND//WCH</h1>
-    <p style="color:#A8C8B0;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
+    <p style="color:#9DA096;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
     <p>Desde esta aplicación puedes ver la carta, armar tu sándwich —eligiendo pan, proteína, vegetales, salsas y queso— o pedir uno de los Signature de la casa, agregar bebidas, elegir tu dirección, pagar con Yape, Plin o tarjeta, y seguir el estado de tu pedido hasta que llega.</p>
     <p>Puedes crear una cuenta para acumular puntos y canjearlos por recompensas. Al crearla te pedimos tu teléfono, que es con lo que te ubicamos para entregarte el pedido; si entras con Google, ése es el único dato que te pedimos. Todo lo que recogemos, para qué lo usamos y con quién lo compartimos está detallado acá:</p>
     <p><strong><a href="/privacidad.html" style="color:#CBA258">Política de Privacidad y Términos del Servicio</a></strong></p>
@@ -491,6 +491,6 @@ body.kb-open #app{padding-bottom:0}
 <script>
 __APP_JS__
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Escribe tu dirección abajo y elígela de la lista — o arrastra el mapa hasta el punto exacto</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Busca tu dirección //</div><div id="maddr-results" style="display:none;max-height:170px;overflow-y:auto;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;margin-bottom:8px"></div><input id="maddr-input" type="text" autocomplete="off" placeholder="Ej: Av. España 123, Trujillo" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:16px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<div id="mmap"><div style="background:#1B1F18;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2C3228;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#9DA096;flex-shrink:0">Escribe tu dirección abajo y elígela de la lista — o arrastra el mapa hasta el punto exacto</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#1B1F18;padding:12px 16px;border-top:1px solid #2C3228;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#EFEDE4;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Busca tu dirección //</div><div id="maddr-results" style="display:none;max-height:170px;overflow-y:auto;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;margin-bottom:8px"></div><input id="maddr-input" type="text" autocomplete="off" placeholder="Ej: Av. España 123, Trujillo" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:16px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
 </body>
 </html>

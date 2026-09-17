@@ -559,7 +559,7 @@ var SIGS:any[]=[
 // distinguen tipográficamente del resto del texto — cursiva y más grande, como una
 // firma — para reforzar que son curados por la casa.
 function sigTypeTag(tag){
-  if(tag==='Signature'||tag==='Reserve')return'<i style="font-style:italic;font-size:.7em;color:var(--sw-text-muted,#A8C8B0)">'+tag+'</i>';
+  if(tag==='Signature'||tag==='Reserve')return'<i style="font-style:italic;font-size:.7em;color:var(--sw-text-muted,#9DA096)">'+tag+'</i>';
   return tag;
 }
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
@@ -802,17 +802,17 @@ function scheduleTimePickerHTML(){
   var dayChips=days.map(function(dd){
     var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
     var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
-    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)'))+';border:1px solid '+(sel&&!closed?GOLD:'#3A6B58')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
+    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
   var slots=schedSlotsDetailed(schedDay);
   var libres=slots.filter(function(s){return !s.full;});
   var slotsHTML=slots.length
     ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
-        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">'+s.t+'</div>';
-        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
+        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #2C3228;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+s.t+'</div>';
+        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#9DA096')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
       }).join('')+'</div>'
-      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
-    :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No hay horarios disponibles ese día.</div>';
+      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
+    :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">No hay horarios disponibles ese día.</div>';
   if(slots.length&&!libres.length)slotsHTML+='<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+'">Todas las horas de ese día están completas. Prueba el otro día.</div>';
   return'<div style="display:flex;gap:8px">'+dayChips+'</div>'+slotsHTML+'<input type="hidden" id="o-sched" value="'+esc(schedInputValue())+'">';
 }

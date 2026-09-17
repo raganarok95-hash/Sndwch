@@ -7,7 +7,16 @@
 // mismos datos/validaciones de siempre (base/prot/tops/cheese/sauces), solo cambia
 // cómo se presentan. BYO_STEP_LABELS/byoStep* viven junto al resto del estado del
 // builder (ver resetBuilder/loadBuild).
-var BYO_STEP_LABELS=['PAN','PROTEÍNA','TOPPINGS','QUESO','SALSAS'];
+// ⚠ ESTE ARRAY ES EL ORDEN REAL DE LOS PASOS, no una lista de nombres bonitos.
+// El 2026-09-05 se intercambió el CONTENIDO de los pasos 2 y 3 para seguir el orden del
+// mostrador de Subway (queso antes que vegetales) y nadie tocó esto ni `byoValor`. Durante
+// doce días el riel dijo TOPPINGS mientras la pantalla decía Queso, y QUESO mientras la
+// pantalla decía Vegetales — con el valor equivocado al lado, además. No rompía nada: solo
+// mentía. Lo vigila `tests/armador-riel.spec.ts`, que compara el rótulo encendido del riel
+// contra el título que de verdad se pintó.
+// "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el cliente
+// peruano ya trae; "toppings" es jerga de heladería.
+var BYO_STEP_LABELS=['PAN','PROTEÍNA','QUESO','VEGETALES','SALSAS'];
 function byoStepCanContinue(){
   if(byoStep===0)return!!(size&&base);
   if(byoStep===1)return!!prot;
@@ -49,8 +58,8 @@ function sOBuild(){
       return b?(t?t+' · ':'')+b.l:(t||'');
     }
     if(i===1){var pr=PROTS.find(function(x){return x.id===prot;});return pr?pr.l+(doubleProt?' · doble':''):'';}
-    if(i===2)return tops.length?tops.length+(tops.length===1?' topping':' toppings'):'';
-    if(i===3){var c=CHEESE.find(function(x){return x.id===cheese;});return c?c.l:'';}
+    if(i===2){var c=CHEESE.find(function(x){return x.id===cheese;});return c?c.l:(cheese===null&&byoStep>2?'sin queso':'');}
+    if(i===3)return tops.length?tops.length+(tops.length===1?' vegetal':' vegetales'):'';
     if(i===4)return sauces.length?sauces.length+(sauces.length===1?' salsa':' salsas'):'';
     return'';
   };
@@ -61,7 +70,10 @@ function sOBuild(){
       // El paso ACTUAL lleva el color del lado; los hechos, su valor en claro; los que
       // faltan quedan atenuados. Sin resplandor: ninguna señal de estado en esta app lo
       // usa (ver DESIGN.md), el contraste lo dan la opacidad y el color.
-      return'<div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;'
+      // `data-paso`/`data-actual` los lee `tests/armador-riel.spec.ts` para comparar el
+      // rótulo encendido contra el título que se pintó. Sin un gancho estable habría que
+      // reconocer el paso activo por su color inline, que cambia con el lado y con el tema.
+      return'<div data-paso="'+i+'"'+(actual?' data-actual="1"':'')+' style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;'
         +(actual?'background:'+ACC()+';':'')+'">'
         +'<span style="width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;'
         +'align-items:center;justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;'
@@ -87,100 +99,155 @@ function sOBuild(){
   if(byoStep===0){
     h+=SZTOG();
     h+=ST('','Pan','');
-    // El recargo del pan se muestra EN la tarjeta, antes de elegir. La focaccia dejó de ser
-    // gratis el 2026-09-03 (su sobrecosto real salía del margen), y un precio que aparece
-    // recién en el carrito es la clase de sorpresa que hace abandonar el pedido.
+    // ── DOS PANES, DOS PANELES — no dos filas de una lista ────────────────────────────
+    // Son exactamente dos opciones y la decisión es una comparación, no un recorrido. Una
+    // lista vertical obliga a leer una, bajar, leer la otra y recordar la primera; lado a
+    // lado se comparan de un vistazo. El recargo va ARRIBA, visible antes de elegir: la
+    // focaccia dejó de ser gratis el 2026-09-03 y un precio que aparece recién en el
+    // carrito es la clase de sorpresa que hace abandonar el pedido.
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
     h+=BASES.map(function(b){
-      var av=isAvail(b.id);
+      var av=isAvail(b.id),sel=base===b.id;
       var extra=size?baseSurcharge(b.id,size):0;
-      var tag=extra>0
-        ?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(base===b.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">+'+SOLES+pz(extra)+'</span>'
-        :'';
-      return av?CARD(b,base===b.id,'base=\''+b.id+'\';render()',tag):CARDOFF(b);
+      if(!av)return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+b.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:4px">Agotado</div></div>';
+      return'<div onclick="base=\''+b.id+'\';render()" style="position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+        +(extra>0?'<div style="position:absolute;top:12px;right:13px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+'">+'+SOLES+pz(extra)+'</div>':'')
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#fff);line-height:1.1">'+b.l+'</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+(sel?ACC():'var(--sw-text-muted3,#73776C)')+';margin-top:5px">'+b.s.toUpperCase()+'</div>'
+        +(b.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(b.d)+'</p>':'')
+        +'</div>';
     }).join('');
+    h+='</div>';
   }else if(byoStep===1){
+    // ── LA PROTEÍNA SE ELIGE MIRÁNDOLA ───────────────────────────────────────────────
+    // Es la decisión que define el sándwich y la única del armador que tiene fotografía
+    // propia. En una fila de lista esa foto era una miniatura de 56px al costado de un
+    // párrafo: el tamaño de un ícono, para lo único que el cliente de verdad quiere ver.
+    // Acá la foto ES la tarjeta, en el mismo mosaico de dos columnas que los Signatures.
     h+=ST('','Proteína','');
-    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){var av=isAvail(p.id);// ⚠ MISMO DEFECTO QUE EN LOS SIGNATURES, y acá pega más fuerte (corregido 2026-09-12):
-    // `size` arranca en null y el paso de tamaño va ANTES que el de proteína, así que quien
-    // entra a ARMA EL TUYO ve las siete proteínas con un guion donde va el precio. Y a
-    // diferencia del otro lado, acá el cliente NO viene de ver ningún precio: los panes no
-    // tienen uno propio, así que este es el primero que la pantalla le enseñaría — y le
-    // enseñaba un guion.
-    // Se muestra el precio del 15CM con el de 30CM debajo, igual que el otro hermano. No es
-    // un default disfrazado: `size` sigue en null y el paso de tamaño sigue exigiéndose.
-    var priceTag=size?SOLES+pz(protPrice(p)):SOLES+pz(p.p15);
-    var priceSub=size||p.p30<=p.p15?'':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">30CM '+SOLES+pz(p.p30)+'</div>';var thumb=PROT_IMG[p.id]?'<img src="'+PROT_IMG[p.id]+'" alt="'+esc(p.l+' '+p.s)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'';return av?CARD(p,prot===p.id,'prot=\''+p.id+'\';render()','<span style="display:inline-block;text-align:right;flex-shrink:0"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(prot===p.id?GOLD:'var(--sw-text-muted,#A8C8B0)')+'">'+priceTag+'</span>'+priceSub+'</span>'+lowStockNote(p.id),thumb):CARDOFF(p);}).join('');
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){
+      var av=isAvail(p.id),sel=prot===p.id;
+      // `size` arranca en null y el paso de tamaño va ANTES, así que sin esto las
+      // proteínas mostrarían un guion donde va el precio — y acá el cliente no viene de
+      // ver ningún precio: los panes no tienen uno propio, este sería el primero que la
+      // pantalla le enseña. Se muestra el del 15CM; `size` sigue exigiéndose igual.
+      var precio=size?protPrice(p):p.p15;
+      var img=PROT_IMG[p.id];
+      if(!av)return'<div style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:flex-end;padding:13px;opacity:.4">'
+        +(img?'<img src="'+img+'" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1)">':'')
+        +'<div style="position:relative"><div style="font-family:\'Bodoni Moda\',serif;font-size:15px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+p.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</div></div></div>';
+      return'<div onclick="prot=\''+p.id+'\';render()" style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:'+(sel?'2px solid '+ACC():'1px solid var(--sw-border,#2C3228)')+';background:var(--sw-card,#1B1F18);transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+        +(img?'<img src="'+img+'" alt="'+esc(p.l+' '+p.s)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">':'')
+        // El degradado no es decoración: sin él el nombre se pierde sobre la parte clara
+        // de la foto, y cada foto tiene la parte clara en otro sitio.
+        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.05) 38%,rgba(0,0,0,.72) 100%)"></div>'
+        +(sel?'<div style="position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:999px;background:'+ACC()+';display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--sw-on-gold,#241a08)">&#10003;</div>':'')
+        +'<div style="position:absolute;left:12px;right:12px;bottom:11px">'
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff;line-height:1.1;text-shadow:0 1px 6px rgba(0,0,0,.8)">'+p.l+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:2px">'
+        +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.12em;color:rgba(255,255,255,.72)">'+p.s.toUpperCase()+'</span>'
+        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'#fff')+';text-shadow:0 1px 6px rgba(0,0,0,.8)">'+SOLES+pz(precio)+'</span>'
+        +'</div></div>'
+        +lowStockNote(p.id)
+        +'</div>';
+    }).join('');
+    h+='</div>';
+    // La descripción de la proteína elegida, UNA sola, debajo del mosaico. Antes las seis
+    // descripciones estaban a la vez en pantalla y ninguna se leía.
+    var pSel=PROTS.find(function(x){return x.id===prot;});
+    if(pSel&&pSel.d)h+='<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;color:var(--sw-text-muted,#9DA096);margin-top:14px">'+esc(pSel.d)+'</p>';
   // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
   // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
   // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
   // ya trae aprendido: el queso se pone sobre la proteína porque va debajo, y porque es lo
-  // que se funde al tostar. Antes acá era pan -> proteína -> vegetales -> queso -> salsas,
-  // que obliga a levantar todo lo de encima para meter el queso abajo.
-  //
-  // Solo se intercambió el CONTENIDO de los pasos 2 y 3. Los índices no significan nada por
-  // sí mismos: `byoStepOK`/`byoStepHint` solo validan los pasos 0 y 1, así que este cambio
-  // no toca ninguna validación.
+  // que se funde al tostar.
   }else if(byoStep===2){
-    h+=ST('','Queso','Opcional — incluido sin costo si eliges 1.');
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=ST('','Queso','Incluido sin costo si eliges uno.');
+    // ── "SIN QUESO" ES UNA OPCIÓN, NO LA AUSENCIA DE UNA ──────────────────────────────
+    // Antes la única forma de decir "ninguno" era no tocar nada, o tocar dos veces el que
+    // ya estaba. Eso deja al cliente sin saber si el paso está resuelto o si se lo saltó
+    // por error — y el riel de pasos le muestra un guion que parece un pendiente.
+    h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    h+=FICHA('Sin queso',cheese===null,'cheese=null;render()');
     h+=CHEESE.map(function(c){
-      var av=isAvail(c.id);
-      if(!av)return TOPOFF(c);
-      var sel=cheese===c.id;
-      return'<div onclick="cheese=(cheese===\''+c.id+'\'?null:\''+c.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+c.l+'</div></div>';
+      if(!isAvail(c.id))return FICHA_OFF(c.l);
+      return FICHA(c.l,cheese===c.id,'cheese=\''+c.id+'\';render()');
     }).join('');
     h+='</div>';
   }else if(byoStep===3){
     // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el
     // cliente peruano ya trae. "Toppings" es jerga de heladería y de pizza.
-    h+=ST('','Vegetales','Sin límite, elige los que quieras.');
-    h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-bottom:12px">'+tL+' seleccionados</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    h+=TOPS.filter(function(t){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
-      var av=isAvail(t.id);
-      if(!av)return TOPOFF(t);
+    //
+    // ── SON GRATIS E ILIMITADOS, ASÍ QUE LO QUE HACE FALTA ES VELOCIDAD ───────────────
+    // Cada vegetal traía su párrafo de venta — y por un defecto real, DOS VECES el mismo
+    // párrafo. Pero acá no hay nada que vender: no cuestan, no hay tope y los nombres se
+    // explican solos (tomate, cebolla, lechuga). El párrafo solo alargaba el paso a dos
+    // pantallas de scroll para una decisión de tres toques. Fichas, y "todos" de un golpe.
+    h+=ST('','Vegetales','Sin límite, y ninguno cuesta.');
+    var vegDisp=TOPS.filter(function(t: any){return !t.vaultOnly&&!t.sigOnly&&isAvail(t.id);});
+    var todosIds=vegDisp.map(function(t: any){return t.id;});
+    var todos=tL>0&&todosIds.every(function(id){return tops.indexOf(id)>=0;});
+    h+='<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px">'
+      +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(tL?ACC():'var(--sw-text-muted3,#73776C)')+'">'+(tL?tL+(tL===1?' elegido':' elegidos'):'ninguno todavía')+'</span>'
+      +'<span onclick="tops='+(todos?'[]':'['+todosIds.map(function(id){return'\''+id+'\'';}).join(',')+']')+';render()" style="cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+ACC()+';border-bottom:1px solid '+ACC()+'">'+(todos?'QUITAR TODOS':'PONER TODOS')+'</span>'
+      +'</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    h+=TOPS.filter(function(t: any){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
+      if(!isAvail(t.id))return FICHA_OFF(t.l);
       var sel=tops.indexOf(t.id)>=0;
-      return'<div onclick="var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:13px 14px;cursor:pointer;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+t.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+t.s+'</span>'+(t.spicy?icon('chili',12,'#ff8a5c'):'')+'</div>'+(t.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px">'+t.d+'</div>':'')+(t.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.4;margin-top:4px">'+esc(t.d)+'</div>':'')+'</div>';
+      return FICHA(t.l+(t.spicy?' '+icon('chili',11,'#ff8a5c'):''),sel,'var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()');
     }).join('');
     h+='</div>';
   }else{
-    h+=ST('','Salsas','Hasta 3, incluidas sin costo. Opcional — si no quieres ninguna, sigue de largo.');
-    h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-bottom:12px">'+sL+' // 3</div>';
+    h+=ST('','Salsas','Hasta 3, incluidas sin costo.');
+    // ── LA BANDEJA DE TRES ESPACIOS ──────────────────────────────────────────────────
+    // El tope de 3 era un texto ("0 // 3") que nadie mira hasta que la cuarta salsa deja
+    // de responder al toque — y una carta que no responde parece rota, no llena. Tres
+    // espacios dibujados dicen cuántos quedan ANTES de tocar, y al llenarse explican solos
+    // por qué las demás se apagan.
+    h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
+    for(var _i=0;_i<3;_i++){
+      var lleno=_i<sL;
+      h+='<div style="flex:1;height:4px;border-radius:999px;background:'+(lleno?ACC():'var(--sw-border,#2C3228)')+';transition:background .2s"></div>';
+    }
+    h+='</div>';
     // Sugerencia no restrictiva por proteína, anclada a los maridajes que ya usan los
     // propios Signatures (auditoría de menú 2026-08-05: Atún→Aioli/Dijon, Pollo
-    // Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar) — solo marca las cartas
-    // sugeridas con un tag, nunca bloquea ni preselecciona ninguna otra salsa.
+    // Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar) — solo marca las sugeridas,
+    // nunca bloquea ni preselecciona ninguna otra salsa.
     var sauceSuggest=({P04:['S01','S11'],P02:['S10','S05'],P06:['S06']})[prot]||[];
-    if(sauceSuggest.length){
-      h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:12px">Sugerencia para tu proteína, marcada abajo — sigue siendo tu elección.</div>';
-    }
-    // Antes las 13 salsas eran una sola lista plana sin ningún elemento visual que las
-    // distinguiera entre sí (el único paso de BUILD YOUR OWN sin agrupar/iconos, hallazgo
-    // de auditoría UX). Se agrupan en PICANTES/OTRAS SALSAS y se marca con el ícono de ají
-    // solo a las 2 cuya propia descripción ya declaraba picor — no es una clasificación
-    // nueva, solo hace visible un dato que ya estaba en el texto.
-    var sauceCard=function(s){
-      var av=isAvail(s.id);
-      if(!av)return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:8px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.l+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+s.s+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-left:8px">Agotado</span></div></div>';
-      var sel=sauces.indexOf(s.id)>=0,full=!sel&&sL>=3,suggested=sauceSuggest.indexOf(s.id)>=0;
-      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:10px;padding:14px 16px;cursor:'+(full?'not-allowed':'pointer')+';opacity:'+(full?.3:1)+';margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</span>'+(s.spicy?icon('chili',14,'#ff8a5c'):'')+(suggested?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';border:1px solid '+GOLD+';border-radius:20px;padding:1px 8px;margin-left:auto">Sugerida</span>':'')+'</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">'+s.d+'</p></div>';
-    };
-    // UNA sola lista, en el orden del catálogo. El picante se marca con el ícono de ají al
-    // costado del nombre y nada más — que es lo que ya hace sauceCard.
-    //
-    // Antes esto se partía en dos secciones, "Picantes //" arriba y "Otras salsas //"
-    // debajo. Eso le daba a una sola salsa un encabezado propio y el primer lugar de la
-    // pantalla: el picante quedaba presentado como la categoría principal en vez de como
-    // un atributo más (decisión del dueño 2026-08-21, "Ají está demasiado priorizado,
-    // debe estar con las demás salsas solo al costado indicar que es picante"). Con una
-    // sola salsa picante en el catálogo el agrupamiento además no ordenaba nada.
-    var byoSauces=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;});
-    h+=byoSauces.map(sauceCard).join('');
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;}).map(function(s){
+      if(!isAvail(s.id))return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 13px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:3px">Agotado</div></div>';
+      var sel=sauces.indexOf(s.id)>=0,lleno=!sel&&sL>=3,sug=sauceSuggest.indexOf(s.id)>=0;
+      return'<div onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 13px;cursor:'+(lleno?'not-allowed':'pointer')+';opacity:'+(lleno?.32:1)+';transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
+        +(sug&&!sel?'<div style="position:absolute;top:10px;right:11px;width:5px;height:5px;border-radius:999px;background:'+ACC()+'" title="Sugerida para tu proteína"></div>':'')
+        +(sel?'<div style="position:absolute;top:9px;right:10px;font-size:11px;color:'+ACC()+'">&#10003;</div>':'')
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#fff);padding-right:16px">'+s.l+(s.spicy?' '+icon('chili',11,'#ff8a5c'):'')+'</div>'
+        // Una sola frase, no el párrafo entero: son 11 salsas en pantalla y el párrafo
+        // completo convertía el paso en un muro que nadie lee.
+        +(s.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.4;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(primeraFrase(s.d))+'</div>':'')
+        +'</div>';
+    }).join('');
+    h+='</div>';
+    if(sauceSuggest.length)h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted3,#73776C);margin-top:12px"><span style="display:inline-block;width:5px;height:5px;border-radius:999px;background:'+ACC()+';vertical-align:middle;margin-right:6px"></span>Va bien con la proteína que elegiste — sigue siendo tu elección.</div>';
   }
   h+=AB(size?total():null,byoStepCanContinue(),'byoStepBack()','byoStepNext()',byoStep<4?'Siguiente →':'Continuar //',byoStepHint());
   return h;
 }
-function CARDOFF(item){return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+item.l+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+item.s+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div></div>';}
-function TOPOFF(t){return'<div style="background:var(--sw-card2,#1A3028);border:1px solid #2a2a2a;border-radius:10px;padding:13px 14px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+t.l+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-danger,#ff8888);display:block;margin-top:3px">Agotado</span></div></div>';}
+// ── LA FICHA ─────────────────────────────────────────────────────────────────────────
+// Para elegir entre cosas cuyo NOMBRE ya lo dice todo (quesos, vegetales). Una tarjeta con
+// párrafo para "Tomate" no informa: ocupa. La ficha cabe 3 por fila, así que los 8
+// vegetales entran en una pantalla en vez de dos y medio.
+function FICHA(etiqueta,sel,fn){
+  return'<div onclick="'+fn+'" style="display:inline-flex;align-items:center;gap:5px;background:'+(sel?ACC():'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')+'">'+etiqueta+'</div>';
+}
+function FICHA_OFF(etiqueta){
+  return'<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+etiqueta+'</div>';
+}
+function CARDOFF(item){return'<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+item.l+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+item.s+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div></div>';}
+function TOPOFF(t){return'<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:13px 14px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+t.l+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-danger,#ff8888);display:block;margin-top:3px">Agotado</span></div></div>';}
 
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito
@@ -227,7 +294,7 @@ function sOItemConfirm(){
   function uBtn(k,e,l,d,p,sel){
     var act=(k==='doubleProt'?'doubleProt=!doubleProt':k==='sauce'?'extraSauce=!extraSauce':'cheese=(cheese?null:\'C02\')')+(quickPayEligible?';cart[0]=currentBuiltItem()':'');
     var priceLabel=p?SOLES+pz(p):'GRATIS';
-    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">'+d+'</div></div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?GOLD:'#A8C8B0')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+priceLabel+'</span></div>';
+    return'<div onclick="'+act+';'+(quickPayEligible?'confirmRerender()':'render()')+'" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;position:relative;transition:all .15s;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+e+'</span><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">'+d+'</div></div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?GOLD:'#9DA096')+';flex-shrink:0;margin-left:8px">'+(sel?'✓ ':'+')+priceLabel+'</span></div>';
   }
   // ── HERO A SANGRE ─────────────────────────────────────────────────────────────────
   // El nombre del Signature estaba escrito DEBAJO del desglose: se leía "Tamaño · 15CM"
@@ -248,7 +315,7 @@ function sOItemConfirm(){
       +'<img src="'+heroImg+'" alt="'+esc(mode==='sig'&&sig?sig.n:'')+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
       // El degradado cierra contra el fondo de la app (no contra negro) para que la foto
       // no termine en un corte duro: se funde con la pantalla en vez de estar pegada.
-      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#1E3932) 100%)"></div>'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#12150F) 100%)"></div>'
       +'<div style="position:absolute;left:20px;right:20px;bottom:12px">'
       +PILL(heroSub,false)+'<span style="margin-left:6px">'+PILL(szLabel(size),true)+'</span>'
       +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.12;margin-top:7px;text-shadow:0 2px 8px rgba(0,0,0,.75)">'+heroTitulo+'</div>'
@@ -290,12 +357,12 @@ function sOItemConfirm(){
           : reciboLinea('Envío','se calcula con tu dirección','mudo'))
       :'')
     +PAPEL_TOTAL('TOTAL',t)
-    +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#1A3028)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:'+GOLD+'">+'+SOLES+pz(sizeUpsellDelta)+'</span></div></div>':'')
-    +(recU?'<div style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
+    +(sizeUpsellDelta>0?'<div onclick="size=\'30\';'+(quickPayEligible?'cart[0]=currentBuiltItem();confirmRerender()':'render()')+'" style="background:'+'var(--sw-card2,#171A14)'+';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:'+SHADOW_SM+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:'+GOLD+'">+'+SOLES+pz(sizeUpsellDelta)+'</span></div></div>':'')
+    +(recU?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>'+uBtn(recU.k,recU.e,recU.l,recU.d,recU.p,uSel(recU.k))+'</div>':'')
     +'<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">'+(dbl?uBtn('doubleProt',icon('dumbbell',18,GOLD),'Doble proteína','El doble de tu proteína elegida'+dblStockWarn(dbl.id),dblFee(dbl,size),doubleProt):'')+(sauceExtraAllowed?uBtn('sauce',icon('chili',18,GOLD),'Salsa extra','Salsa adicional a tu elección',EXTRA_SAUCE_PRICE,extraSauce):'')+(cheeseSigAllowed?uBtn('cheese',icon('queso',18,GOLD),'Queso','Cheddar derretido, opcional y gratis',0,!!cheese):'')+'</div></details>'
-    +(cust?'<div style="margin-top:16px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('estrella',11,GOLD)+'<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
+    +(cust?'<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('estrella',11,GOLD)+'<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#2D5246);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:6px">'+favMsg+'</div></div>':'')
     +(quickPayEligible
-        ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
+        ?checkoutExtrasHTML()+'<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
         :'<div id="o-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:8px;min-height:16px"></div>')
     +'</div>'
     +(quickPayEligible
@@ -332,7 +399,7 @@ function sideThumbHTML(d){
 function drinkRowHTML(d){
     var inCart=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
     var qty=inCart?inCart.qty:0;
-    return'<div style="background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1">'+sideThumbHTML(d)+'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+pz(d.p)+'</div></div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>')+'</div>';
+    return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="display:flex;align-items:flex-start;gap:12px;flex:1">'+sideThumbHTML(d)+'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+d.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+d.s+'</div>'+(d.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:3px;line-height:1.4">'+esc(d.d)+'</div>':'')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:4px">'+SOLES+pz(d.p)+'</div></div></div>'+(qty>0?'<div style="display:flex;align-items:center;gap:10px"><button onclick="sideQtyChange(\''+d.id+'\',-1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:14px;text-align:center">'+qty+'</span><button onclick="sideQtyChange(\''+d.id+'\',1)" style="all:unset;cursor:pointer;width:34px;height:34px;background:var(--sw-card,#2D5246);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">+</button></div>':'<button onclick="addSideToCart(\''+d.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button>')+'</div>';
 }
 
 // SIDES/BEBIDAS

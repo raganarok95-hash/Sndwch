@@ -35,7 +35,55 @@ const ESTADO = {
   '#0d0d0d': '--sw-on-gold',
 };
 
+// ── LA PALETA ANTERIOR NO PUEDE SOBREVIVIR NI COMO RESPALDO (2026-09-17) ─────────────
+// El front se rehízo desde cero y el verde de la app anterior seguía vivo en 968 sitios.
+// 127 eran VALORES REALES —`html,body` y `#app` tenían `background:#1E3932` a pelo, así que
+// el verde viejo asomaba debajo de cada pantalla, y el modal del mapa (que el cliente ve al
+// elegir su dirección en el checkout) estaba entero en la paleta vieja—, y los otros 841
+// eran el respaldo dentro de `var(--sw-x, #viejo)`: el día que un token no cargue, la app
+// no se degrada a un gris neutro, REAPARECE la app anterior.
+//
+// Acá se persiguen los dos casos, y a diferencia de los colores de estado de arriba, el
+// respaldo TAMBIÉN cuenta: no hay ninguna razón legítima para que el hex de la paleta
+// anterior siga escrito en este repo.
+const PALETA_VIEJA = {
+  '#1E3932': '--sw-bg',
+  '#2D5246': '--sw-card',
+  '#1A3028': '--sw-card2',
+  '#3A6B58': '--sw-border',
+  '#A8C8B0': '--sw-text-muted',
+  '#F2F0EB': '--sw-text-body',
+  '#4A7A68': '--sw-text-muted3',
+};
+
 const problems = [];
+const viejos = [];
+// El shell también se revisa: es donde estaban los dos peores casos, y hasta hoy ningún
+// chequeo lo miraba.
+for (const [nombre, src] of [
+  ['src/shell.html', readFileSync(join(ROOT, 'src/shell.html'), 'utf8')],
+  ...readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()
+    .map((x) => ['src/app/' + x, readFileSync(join(APP_DIR, x), 'utf8')]),
+]) {
+  src.split('\n').forEach((line, i) => {
+    // Los comentarios SÍ pueden nombrar la paleta vieja: media docena de ellos cuentan
+    // justamente por qué se fue, y borrar ese relato para pasar un chequeo sería cambiar
+    // historia por verde. Solo se persigue el hex que de verdad pinta algo.
+    const enComentario = (idx) => {
+      const antes = line.slice(0, idx);
+      return antes.includes('//') || antes.includes('/*') || antes.trimStart().startsWith('*');
+    };
+    for (const [hex, token] of Object.entries(PALETA_VIEJA)) {
+      const re = new RegExp(`${hex}(?![0-9A-Fa-f])`, 'gi');
+      let m;
+      while ((m = re.exec(line))) {
+        if (enComentario(m.index)) continue;
+        viejos.push(`${nombre}:${i + 1} — ${hex} es de la paleta ANTERIOR; su token hoy es ${token}`);
+      }
+    }
+  });
+}
+
 for (const f of readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()) {
   const src = readFileSync(join(APP_DIR, f), 'utf8');
   src.split('\n').forEach((line, i) => {
@@ -55,6 +103,18 @@ for (const f of readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()) {
   });
 }
 
+if (viejos.length) {
+  console.error('✗ check:colores — la paleta de la app ANTERIOR sigue escrita en el repo:\n');
+  for (const p of viejos.slice(0, 40)) console.error('  ' + p);
+  if (viejos.length > 40) console.error(`  ... y ${viejos.length - 40} más`);
+  console.error(
+    `\n${viejos.length} caso(s). El front se rehízo desde cero: ninguno de esos hex debería\n` +
+      'seguir existiendo, ni siquiera como respaldo de un var(). Un respaldo a la paleta vieja\n' +
+      'significa que el día que un token falle, vuelve la app anterior en vez de degradarse.',
+  );
+  process.exit(1);
+}
+
 if (problems.length) {
   console.error('✗ check:colores — colores de estado escritos a mano:\n');
   for (const p of problems) console.error('  ' + p);
@@ -66,4 +126,4 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log('✓ check:colores — ningún color de estado escrito a mano');
+console.log('✓ check:colores — ningún color de estado escrito a mano y ni un hex de la paleta anterior');

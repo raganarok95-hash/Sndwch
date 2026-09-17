@@ -12,17 +12,17 @@ var DIAS_SEMANA=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sá
 
 function sPRecurring(){
   var h=H('MI PEDIDO FIJO',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#F2F0EB)">nunca te cobramos sin que confirmes</b>.</div>';
+  h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#EFEDE4)">nunca te cobramos sin que confirmes</b>.</div>';
   if(!myRecurring.length){
     h+=VACIO('Sin pedidos fijos','Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.','','mira');
   }else{
     h+=myRecurring.map(function(r){
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:10px">'
+      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
         +'<span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(DIAS_SEMANA[r.weekday]||'')+' · '+esc(r.slot)+'</span>'
         +'<button onclick="doDeleteRecurring(\''+r.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Quitar</button>'
         +'</div>'
-        +(r.label?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:10px">'+esc(r.label)+'</div>':'')
+        +(r.label?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px">'+esc(r.label)+'</div>':'')
         +'<button onclick="loadCart('+JSON.stringify(r.items||[]).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedirlo ahora //</button>'
         +'</div>';
     }).join('');
@@ -87,7 +87,7 @@ function sPFavorites(){
       // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
       // criterio que ya usa la fila de direcciones) — antes un nombre largo sin tope
       // podía tapar o empujar el botón de eliminar en pantallas angostas.
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Eliminar</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedir este //</button></div>';
+      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Eliminar</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedir este //</button></div>';
     }).join('');
   }
   h+='</div>'+NAV();
@@ -126,12 +126,12 @@ function sPAddresses(){
   var h=H('MIS DIRECCIONES',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(myAddresses.length){
     h+=myAddresses.map(function(a){
-      return'<div style="background:var(--sw-card,#2D5246);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#3A6B58)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
+      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
     }).join('');
   }else{
     h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.','','mira');
   }
-  h+='<div style="margin-top:20px;background:var(--sw-card2,#1A3028);border:1px solid var(--sw-border,#3A6B58);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
+  h+='<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
   h+='</div>'+NAV();
   return h;
 }
@@ -528,12 +528,12 @@ function printTicket(ordId){
 // no se podía sacar del bundle sin dejar sin pantalla a las dos personas que MENOS cuenta
 // de admin tienen.
 function sPRecover(){
-  var pinBox=recNewPin?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:'+GOLD+(recPinRevealed?'':';filter:blur(9px);user-select:none')+'">'+recNewPin+'</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">'+icon(recPinRevealed?'lock':'camera',11,GOLD)+(recPinRevealed?'OCULTAR':'TOCA PARA VER')+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
-    :(recEmailMasked?'<div style="background:var(--sw-card2,#1A3028);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:'+GOLD+'">'+esc(recEmailMasked)+'</b></div></div>':'');
+  var pinBox=recNewPin?'<div style="background:var(--sw-card2,#171A14);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:'+GOLD+(recPinRevealed?'':';filter:blur(9px);user-select:none')+'">'+recNewPin+'</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">'+icon(recPinRevealed?'lock':'camera',11,GOLD)+(recPinRevealed?'OCULTAR':'TOCA PARA VER')+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
+    :(recEmailMasked?'<div style="background:var(--sw-card2,#171A14);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:'+GOLD+'">'+esc(recEmailMasked)+'</b></div></div>':'');
   return H('RECUPERAR CUENTA',"sndScreen='p_auth';render()")
     +'<div style="flex:1;padding:24px 20px 40px" class="fi">'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#F2F0EB);margin-bottom:6px">RECUPERAR PIN //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
+    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#EFEDE4);margin-bottom:6px">RECUPERAR PIN //</div>'
+    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
     +pinBox
     // Antes el formulario (teléfono/DNI/fecha) y el botón "Recuperar mi PIN //" seguían
     // visibles sin cambio tras generar el PIN — un segundo tap invalidaba en silencio el
@@ -554,23 +554,23 @@ function sPRecover(){
 function sDeliveryConfirm(){
   var d=deliveryConfirmState||{};
   var caja=function(inner){
-    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#1E3932)">'
+    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#12150F)">'
       +'<div style="max-width:360px;width:100%;text-align:center">'+inner+'</div></div>';
   };
   if(d.loading){
-    return caja('<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.2em">CONFIRMANDO ENTREGA //</div>');
+    return caja('<div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.2em">CONFIRMANDO ENTREGA //</div>');
   }
   if(d.ok){
     return caja('<div style="font-size:56px;line-height:1;margin-bottom:14px">&#9989;</div>'
       +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">'+(d.already?'Ya estaba confirmado':'Entrega confirmada')+'</div>'
-      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Pedido '+esc(d.ref||'')+'.'+(d.already?' Alguien ya lo cerró antes — no hace falta hacer nada más.':' Gracias, ya está cerrado.')+'</div>');
+      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6">Pedido '+esc(d.ref||'')+'.'+(d.already?' Alguien ya lo cerró antes — no hace falta hacer nada más.':' Gracias, ya está cerrado.')+'</div>');
   }
   // El error dice qué pasó y qué hacer. Un "algo salió mal" deja al motorizado llamando por
   // teléfono, que es exactamente el trabajo que este link tenía que ahorrar.
   return caja('<div style="font-size:56px;line-height:1;margin-bottom:14px">&#9888;&#65039;</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">No se pudo confirmar</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6;margin-bottom:16px">'+esc(d.error||'')+'</div>'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
+    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:16px">'+esc(d.error||'')+'</div>'
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.6">Avisa por WhatsApp para que lo cierren a mano.</div>');
 }
 
 
