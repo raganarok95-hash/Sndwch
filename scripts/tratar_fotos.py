@@ -47,6 +47,33 @@ RATIO = 350 / 236
 ZOOM_MAX = 1.34
 ANCHO_OBJETIVO = 1050   # lo que la tarjeta ocupa en un celular a DPR 3, medido en el navegador
 
+# ── DOS FAMILIAS DE FOTO, DOS ENCUADRES ────────────────────────────────────────────────
+# Las de Signature son una tarjeta a sangre horizontal. Las de PROTEÍNA se usan en DOS
+# sitios a la vez con formas distintas: la miniatura de 56×56 de la lista del armador y el
+# hero de 190 px de alto de la pantalla de confirmación. Lo único que sirve para las dos es
+# un CUADRADO — `object-fit:cover` recorta el sobrante en cada sitio sin deformar nada.
+#
+# ⚠ Y SU ZOOM ES 1.0, no 1.34. El zoom automático existe para sacar del cuadro la
+# escenografía de una foto ajena; en las de proteína esa escenografía ya no está, porque el
+# recorte al sujeto (fuera el mantel a cuadros, las aceitunas, el fondo turquesa) se hizo al
+# guardar la fuente, y cada una necesitaba su propio encuadre. Cerrar OTRA VEZ acá se
+# comería la proteína en vez del mantel.
+# El FORMATO también cambia por familia. Un cuadrado de 1050 px tiene 4x los píxeles de la
+# tarjeta de Signature (640×432), y en JPEG las seis juntas pesaban 1.3 MB — que es lo que
+# el cliente descarga de golpe al abrir ARMA EL TUYO, porque las seis miniaturas se ven a la
+# vez. En WebP las mismas seis pesan ~600 KB SIN perder un píxel. No es una apuesta: la
+# pantalla de entrada ya sirve a los dos hermanos en .webp, así que el formato ya era
+# requisito duro de la app antes de esto.
+PERFILES = {
+    "sig":  {"ratio": RATIO, "ancho": ANCHO_OBJETIVO, "zoom": ZOOM_MAX, "fmt": "JPEG", "ext": ".jpg"},
+    "prot": {"ratio": 1.0,   "ancho": ANCHO_OBJETIVO, "zoom": 1.0,      "fmt": "WEBP", "ext": ".webp"},
+}
+
+
+def perfil(nombre):
+    return PERFILES["prot"] if nombre.startswith("prot_") else PERFILES["sig"]
+
+
 # El centro de interés está un pelo ARRIBA del centro geométrico: en las 8 fotos el
 # sándwich se apoya en algo, así que el tercio inferior es superficie y no producto.
 SESGO_VERTICAL = 0.92
@@ -59,20 +86,21 @@ LUZ_MARCA = (0xE9, 0xC9, 0x8A)
 VINETA = 0.40         # cuánto se oscurecen los bordes
 GRANO = 0.055         # textura compartida — poca, pero es la que termina de unificarlas
 CALIDAD = 88
+CALIDAD_WEBP = 80     # WebP a 80 se ve como JPEG 88 y pesa la mitad
 
 
-def zoom_util(w):
+def zoom_util(w, ancho=ANCHO_OBJETIVO, zmax=ZOOM_MAX):
     """Cuánto se puede cerrar sin bajar del ancho que la pantalla pide."""
-    return max(1.0, min(ZOOM_MAX, w / ANCHO_OBJETIVO))
+    return max(1.0, min(zmax, w / ancho))
 
 
-def encuadrar(im):
+def encuadrar(im, ratio=RATIO, ancho=ANCHO_OBJETIVO, zmax=ZOOM_MAX):
     w, h = im.size
-    z = zoom_util(w)
-    cw, ch = w / z, w / z / RATIO
+    z = zoom_util(w, ancho, zmax)
+    cw, ch = w / z, w / z / ratio
     if ch > h:
         ch = h / z
-        cw = ch * RATIO
+        cw = ch * ratio
     x = (w - cw) / 2
     y = (h - ch) / 2 * SESGO_VERTICAL
     return im.crop((int(x), int(y), int(x + cw), int(y + ch)))
@@ -117,8 +145,23 @@ def granular(im):
     return Image.blend(im, ruido.convert("RGB"), GRANO)
 
 
-def tratar(im):
-    im = encuadrar(im.convert("RGB"))
+def ajustar(im, ancho):
+    """Baja al ancho que la pantalla pide. NUNCA sube.
+
+    Las 8 fotos de Signature vienen a 640 px — por debajo del objetivo — así que acá no les
+    pasa nada; subirlas solo inventaría píxeles y engordaría el archivo. Las de proteína sí
+    vienen grandes, y sin este paso el archivo servido saldría de 1600 px y ~600 KB por una
+    tarjeta que ocupa 1050. Va ANTES del grano a propósito: el grano se mezcla por píxel, y
+    aplicarlo antes de reducir lo dejaría más fino en unas fotos que en otras — justo la
+    textura distinta que este script existe para eliminar.
+    """
+    if im.width <= ancho:
+        return im
+    return im.resize((ancho, round(im.height * ancho / im.width)), Image.LANCZOS)
+
+
+def tratar(im, ratio=RATIO, ancho=ANCHO_OBJETIVO, zmax=ZOOM_MAX):
+    im = ajustar(encuadrar(im.convert("RGB"), ratio, ancho, zmax), ancho)
     im = ImageEnhance.Color(im).enhance(SATURACION)
     im = ImageEnhance.Contrast(im).enhance(CONTRASTE)
     return granular(vinetear(virar(im)))
@@ -134,19 +177,26 @@ def main():
         return 1
     for nombre in archivos:
         origen = Image.open(os.path.join(FUENTE, nombre))
-        salida = tratar(origen)
-        salida.save(os.path.join(DESTINO, nombre), "JPEG", quality=CALIDAD, optimize=True)
+        pf = perfil(nombre)
+        salida = tratar(origen, pf["ratio"], pf["ancho"], pf["zoom"])
+        destino = os.path.splitext(nombre)[0] + pf["ext"]
+        if pf["fmt"] == "WEBP":
+            salida.save(os.path.join(DESTINO, destino), "WEBP", quality=CALIDAD_WEBP, method=6)
+        else:
+            salida.save(os.path.join(DESTINO, destino), "JPEG", quality=CALIDAD, optimize=True)
         # Se avisa cuando la foto no da los píxeles que la pantalla pide: la tarjeta ocupa
         # 1050 px reales en un celular a DPR 3, así que menos que eso se ve blando por más
         # tratamiento que se le aplique.
-        z = zoom_util(origen.size[0])
-        if salida.width < ANCHO_OBJETIVO:
-            aviso = f"  ⚠ le faltan píxeles: se estirará {ANCHO_OBJETIVO / salida.width:.2f}x"
-            if z < ZOOM_MAX:
-                aviso += f" — y el encuadre solo pudo cerrar a {z:.2f} de {ZOOM_MAX}"
+        z = zoom_util(origen.size[0], pf["ancho"], pf["zoom"])
+        if salida.width < pf["ancho"]:
+            aviso = f"  ⚠ le faltan píxeles: se estirará {pf['ancho'] / salida.width:.2f}x"
+            if z < pf["zoom"]:
+                aviso += f" — y el encuadre solo pudo cerrar a {z:.2f} de {pf['zoom']}"
         else:
             aviso = ""
-        print(f"  · {nombre}: {origen.size[0]}×{origen.size[1]} → {salida.size[0]}×{salida.size[1]}{aviso}")
+        peso = os.path.getsize(os.path.join(DESTINO, destino)) // 1024
+        print(f"  · {nombre} → {destino}: {origen.size[0]}×{origen.size[1]} → "
+              f"{salida.size[0]}×{salida.size[1]}, {peso} KB{aviso}")
     print(f"✓ {len(archivos)} fotos tratadas desde img/fuente/")
     return 0
 

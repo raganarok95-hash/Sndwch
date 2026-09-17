@@ -284,9 +284,12 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
 /* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
    soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
    Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
-   El padding inferior reserva el alto de la barra fija de navegación (49px) más el
-   área segura del indicador de inicio de iOS — antes el contenido quedaba debajo. */
-#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(49px + env(safe-area-inset-bottom,0px));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
+   El hueco inferior lo pone `medirBarraFija()` (08-router) en `--sw-barra`: mide la
+   barra fija que HAY en pantalla, porque no hay una sola (la nav son 49px, la del
+   armador 68, la del panel otra). El valor de respaldo es el de la nav, y solo se usa
+   entre que la página existe y el primer render. La altura medida ya incluye el área
+   segura del iPhone, porque cada barra la lleva en su propio padding. */
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
 input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
@@ -1060,13 +1063,24 @@ function sigTypeTag(tag) {
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
 var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG06: 'img/sig06.jpg' };
-// Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
+// Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
-// P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
-// P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
-// como el resto del set.
-var PROT_IMG = { P01: 'img/prot_p01.jpg', P02: 'img/prot_p02.jpg', P04: 'img/prot_p04.jpg', P05: 'img/prot_p05.jpg', P06: 'img/prot_p06.jpg', P08: 'img/prot_p08.jpg' };
+//
+// LAS SEIS SE REHICIERON EL 2026-09-17. Las anteriores eran seis stock sueltos que nunca
+// pasaron por `scripts/tratar_fotos.py` —el script existe justo para que un set de fotos
+// ajenas no se lea como los resultados de una búsqueda de imágenes— y tres mostraban cosas
+// que no están en ninguna receta: un mantel a cuadros azul, tomates cherry, aceitunas.
+// Las nuevas salen del mismo tratamiento que los Signatures y su procedencia (id de Adobe
+// Stock, licencia y recorte) está anotada en `img/fuente/FUENTES.md`.
+//
+// ⚠ SON CUADRADAS Y VAN EN .webp A PROPÓSITO. El archivo se usa en DOS sitios con formas
+// distintas —la miniatura de 56×56 de esta lista y el hero de 190 px de alto de la pantalla
+// de confirmación—, y el cuadrado es lo único que `object-fit:cover` sirve bien en los dos.
+// A 1050 px (4.4x los píxeles de las de 500) en JPEG las seis pesaban 1.3 MB, que es lo que
+// el cliente baja de golpe al abrir esta pantalla porque las seis miniaturas se ven a la
+// vez; en WebP pesan 635 KB sin perder un píxel.
+var PROT_IMG = { P01: 'img/prot_p01.webp', P02: 'img/prot_p02.webp', P04: 'img/prot_p04.webp', P05: 'img/prot_p05.webp', P06: 'img/prot_p06.webp', P08: 'img/prot_p08.webp' };
 // Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
 // dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
@@ -1999,7 +2013,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '45a05e2aba';
+var APP_BUILD = '0fef0bb19b';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2539,6 +2553,7 @@ function showRuntimeError(msg) {
         if (!bar) {
             bar = document.createElement('div');
             bar.id = 'rt-err';
+            bar.className = 'sw-barra';
             bar.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#5A1414;color:#FFE8E8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;box-shadow:0 -6px 20px rgba(0,0,0,.35)');
             document.body.appendChild(bar);
         }
@@ -3188,7 +3203,7 @@ function NAV() {
     // medido a 320x330 (alto típico con teclado Android), esta barra caía justo encima del
     // campo de teléfono del checkout y tapaba el de nombre — el primer formulario que ve un
     // cliente nuevo. Ver el listener de visualViewport en INIT.
-    return '<div class="bottom-nav" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);display:flex;padding-bottom:calc(0px + env(safe-area-inset-bottom,0px));z-index:100">' + nb('order', 'Pedido', oa) + nb('points', 'Puntos', !oa) + '</div>';
+    return '<div class="bottom-nav sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);display:flex;padding-bottom:calc(0px + env(safe-area-inset-bottom,0px));z-index:100">' + nb('order', 'Pedido', oa) + nb('points', 'Puntos', !oa) + '</div>';
 }
 // Pie de contacto — datos del comercio, redes sociales y links legales. Requisito de
 // Culqi para aprobar el comercio en producción (y buena práctica de por sí): un cliente
@@ -3268,7 +3283,7 @@ function AB(t, can, bk, nfn, nl, hint) {
     // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
     // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
     var hintRow = (!can && hint) ? '<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">' + esc(hint) + '</span></div>' : '';
-    return hintRow + '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? 'var(--sw-on-gold,#241a08)' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
+    return hintRow + '<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#1E3932') + ';color:' + (can ? 'var(--sw-on-gold,#241a08)' : '#4A7A68') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
 }
 // PÍLDORA DE VIDRIO — el rótulo que se puede poner ENCIMA DE UNA FOTO.
 // Nace con el tratamiento a sangre: cuando la foto es la tarjeta, un rótulo con fondo de
@@ -10612,6 +10627,39 @@ function mostrarHolaSiCorresponde(conRender) {
     }
     catch (e) { }
 }
+// ── EL HUECO DE ABAJO LO MIDE LA BARRA, NO UN NÚMERO ESCRITO A MANO ────────────────
+// `#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación de dos
+// pestañas el día que alguien la midió. Pero no hay UNA barra: el armador pone una de 68 px
+// (dos botones con su padding), el panel otra, y la de "hay versión nueva" otra más. Con el
+// número fijo, en el armador quedaban 19 px de contenido DEBAJO de una barra opaca —
+// exactamente el último renglón de la última tarjeta, que es lo que el cliente está por
+// tocar. No rompía nada ni avisaba: solo tapaba.
+//
+// Ahora cada barra fija se declara con la clase `sw-barra` y acá se mide la más alta que
+// haya en pantalla, después de pintar. Si no hay ninguna, el hueco es 0 y la pantalla llega
+// hasta abajo, que es lo correcto. La altura medida YA INCLUYE el área segura del iPhone,
+// porque cada barra la lleva en su propio padding — por eso `#app` no vuelve a sumarla.
+function medirBarraFija() {
+    try {
+        var barras = document.querySelectorAll('.sw-barra');
+        var alto = 0;
+        for (var i = 0; i < barras.length; i++) {
+            var r = barras[i].getBoundingClientRect();
+            if (r.height > alto)
+                alto = r.height;
+        }
+        document.documentElement.style.setProperty('--sw-barra', Math.ceil(alto) + 'px');
+    }
+    catch (e) { }
+}
+// Las fuentes serif llegan después del primer pintado y cambian la altura de los botones,
+// así que se vuelve a medir cuando terminan de cargar y cuando la ventana cambia de tamaño.
+try {
+    window.addEventListener('resize', medirBarraFija);
+    if (document.fonts && document.fonts.ready)
+        document.fonts.ready.then(medirBarraFija);
+}
+catch (e) { }
 function render() {
     try {
         // Red de seguridad contra el bug de Culqi (ver el comentario largo junto a la
@@ -10648,6 +10696,7 @@ function render() {
             loadAdminBundle().then(function () { busy = false; render(); }).catch(function () { busy = false; render(); });
         }
         renderScreen();
+        medirBarraFija();
     }
     catch (e) {
         try {

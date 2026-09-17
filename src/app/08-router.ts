@@ -433,6 +433,36 @@ function mostrarHolaSiCorresponde(conRender?){
     if(conRender)render();
   }catch(e){}
 }
+// ── EL HUECO DE ABAJO LO MIDE LA BARRA, NO UN NÚMERO ESCRITO A MANO ────────────────
+// `#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación de dos
+// pestañas el día que alguien la midió. Pero no hay UNA barra: el armador pone una de 68 px
+// (dos botones con su padding), el panel otra, y la de "hay versión nueva" otra más. Con el
+// número fijo, en el armador quedaban 19 px de contenido DEBAJO de una barra opaca —
+// exactamente el último renglón de la última tarjeta, que es lo que el cliente está por
+// tocar. No rompía nada ni avisaba: solo tapaba.
+//
+// Ahora cada barra fija se declara con la clase `sw-barra` y acá se mide la más alta que
+// haya en pantalla, después de pintar. Si no hay ninguna, el hueco es 0 y la pantalla llega
+// hasta abajo, que es lo correcto. La altura medida YA INCLUYE el área segura del iPhone,
+// porque cada barra la lleva en su propio padding — por eso `#app` no vuelve a sumarla.
+function medirBarraFija(){
+  try{
+    var barras=document.querySelectorAll('.sw-barra');
+    var alto=0;
+    for(var i=0;i<barras.length;i++){
+      var r=(barras[i] as HTMLElement).getBoundingClientRect();
+      if(r.height>alto)alto=r.height;
+    }
+    document.documentElement.style.setProperty('--sw-barra',Math.ceil(alto)+'px');
+  }catch(e){}
+}
+// Las fuentes serif llegan después del primer pintado y cambian la altura de los botones,
+// así que se vuelve a medir cuando terminan de cargar y cuando la ventana cambia de tamaño.
+try{
+  window.addEventListener('resize',medirBarraFija);
+  if((document as any).fonts&&(document as any).fonts.ready)(document as any).fonts.ready.then(medirBarraFija);
+}catch(e){}
+
 function render(){
   try{
     // Red de seguridad contra el bug de Culqi (ver el comentario largo junto a la
@@ -467,6 +497,7 @@ function render(){
       loadAdminBundle().then(function(){busy=false;render();}).catch(function(){busy=false;render();});
     }
     renderScreen();
+    medirBarraFija();
   }catch(e){
     try{
       console.error('render() falló en la pantalla "'+sndScreen+'":',e);

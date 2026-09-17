@@ -281,6 +281,7 @@ function showRuntimeError(msg){
     if(!bar){
       bar=document.createElement('div');
       bar.id='rt-err';
+      bar.className='sw-barra';
       bar.setAttribute('style','position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#5A1414;color:#FFE8E8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;box-shadow:0 -6px 20px rgba(0,0,0,.35)');
       document.body.appendChild(bar);
     }

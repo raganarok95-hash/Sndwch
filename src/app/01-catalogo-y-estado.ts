@@ -571,13 +571,24 @@ function sigTypeTag(tag){
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
 var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg'};
-// Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
+// Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
-// P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
-// P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
-// como el resto del set.
-var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg',P08:'img/prot_p08.jpg'};
+//
+// LAS SEIS SE REHICIERON EL 2026-09-17. Las anteriores eran seis stock sueltos que nunca
+// pasaron por `scripts/tratar_fotos.py` —el script existe justo para que un set de fotos
+// ajenas no se lea como los resultados de una búsqueda de imágenes— y tres mostraban cosas
+// que no están en ninguna receta: un mantel a cuadros azul, tomates cherry, aceitunas.
+// Las nuevas salen del mismo tratamiento que los Signatures y su procedencia (id de Adobe
+// Stock, licencia y recorte) está anotada en `img/fuente/FUENTES.md`.
+//
+// ⚠ SON CUADRADAS Y VAN EN .webp A PROPÓSITO. El archivo se usa en DOS sitios con formas
+// distintas —la miniatura de 56×56 de esta lista y el hero de 190 px de alto de la pantalla
+// de confirmación—, y el cuadrado es lo único que `object-fit:cover` sirve bien en los dos.
+// A 1050 px (4.4x los píxeles de las de 500) en JPEG las seis pesaban 1.3 MB, que es lo que
+// el cliente baja de golpe al abrir esta pantalla porque las seis miniaturas se ven a la
+// vez; en WebP pesan 635 KB sin perder un píxel.
+var PROT_IMG={P01:'img/prot_p01.webp',P02:'img/prot_p02.webp',P04:'img/prot_p04.webp',P05:'img/prot_p05.webp',P06:'img/prot_p06.webp',P08:'img/prot_p08.webp'};
 // Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
 // dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un

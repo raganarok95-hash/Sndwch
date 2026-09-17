@@ -284,9 +284,12 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
 /* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
    soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
    Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
-   El padding inferior reserva el alto de la barra fija de navegación (49px) más el
-   área segura del indicador de inicio de iOS — antes el contenido quedaba debajo. */
-#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(49px + env(safe-area-inset-bottom,0px));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
+   El hueco inferior lo pone `medirBarraFija()` (08-router) en `--sw-barra`: mide la
+   barra fija que HAY en pantalla, porque no hay una sola (la nav son 49px, la del
+   armador 68, la del panel otra). El valor de respaldo es el de la nav, y solo se usa
+   entre que la página existe y el primer render. La altura medida ya incluye el área
+   segura del iPhone, porque cada barra la lleva en su propio padding. */
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
 input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}

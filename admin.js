@@ -15,7 +15,7 @@ function bulkBar() {
     // recomendado (~44px), justo en la barra que se usa a las apuradas en hora pico
     // (hallazgo de la re-auditoría del panel admin). Ahora los 4 botones de acción miden
     // ~44px de alto y el botón de cerrar es un cuadrado de 40x40 en vez de un ícono suelto.
-    return '<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:110">'
+    return '<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:110">'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';flex-shrink:0">' + n + ' sel.</div>'
         + '<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:var(--sw-warn,#ffa500);color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">' + iconTxt('check', 'Pago', 'var(--sw-on-gold,#241a08)') + '</button>'
         + '<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:' + STATUSES.PREPARANDO.c + ';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">' + STATUSES.PREPARANDO.label + '</button>'
@@ -889,7 +889,7 @@ function sAdminFocus() {
     // en la mitad de los casos — y un degradado corrido hacia adentro del propio botón no
     // avisa de nada.
     var fade = '<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#1E3932), rgba(0,0,0,0))"></div>';
-    var fixedBar = '<div style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:' + barBg + ';border-top:1px solid var(--sw-border,#3A6B58);box-shadow:0 -6px 20px rgba(0,0,0,.25)">' + fade
+    var fixedBar = '<div class="sw-barra" style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:' + barBg + ';border-top:1px solid var(--sw-border,#3A6B58);box-shadow:0 -6px 20px rgba(0,0,0,.25)">' + fade
         + (manualPending
             ? '<button onclick="confirmAndAdvance(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">' + iconTxt('check', 'Confirmar pago y preparar', '#000') + '</button>'
                 // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
