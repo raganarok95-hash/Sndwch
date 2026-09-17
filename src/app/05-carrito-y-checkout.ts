@@ -2072,7 +2072,7 @@ function confirmMap(){
   var a=inp?inp.value.trim():'';
   if(!a){
     if(inp)inp.style.borderColor='var(--sw-danger-strong,#ff5555)';
-    setTimeout(function(){if(inp)inp.style.borderColor='#2a2a2a';},1500);
+    setTimeout(function(){if(inp)inp.style.borderColor='var(--sw-border,#2C3228)';},1500);
     return;
   }
   if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat;window._mLon=c.lng;}
