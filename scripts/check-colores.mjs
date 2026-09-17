@@ -54,6 +54,20 @@ const PALETA_VIEJA = {
   '#A8C8B0': '--sw-text-muted',
   '#F2F0EB': '--sw-text-body',
   '#4A7A68': '--sw-text-muted3',
+  // Estos cuatro no son la paleta anterior literal — son de su MISMA familia, verde sobre
+  // una app que dejó de ser verde. Sobrevivieron a la migración del 2026-09-17 justamente
+  // porque no estaban en la lista: el chip de insignia ganada, el fondo del bloqueado, el
+  // degradado de un CTA y el día cerrado del horario. Se encontraron midiendo TODOS los hex
+  // sueltos del cliente y mirando los que no eran ni token ni color de estado.
+  '#1E4A38': '--sw-forest-deep',
+  '#162922': '--sw-card2',
+  '#0D1A15': '--sw-card2',
+  '#2A2A2A': '--sw-border',
+  // Y los dos del pie de página, que escondían el RUC y la razón social a 2.5:1 sobre el
+  // fondo — o sea la identificación legal del negocio pintada casi invisible. Los encontró
+  // `tests/contraste.spec.ts` midiendo, no mirando.
+  '#4A5A52': '--sw-text-muted2',
+  '#3E4C46': '--sw-text-muted2',
 };
 
 const problems = [];
@@ -78,6 +92,11 @@ for (const [nombre, src] of [
       let m;
       while ((m = re.exec(line))) {
         if (enComentario(m.index)) continue;
+        // La DEFINICIÓN de un token puede valer cualquier cosa: es justamente donde se
+        // decide el color. `--sw-border:#2A2A2A` en el tema del panel no es un literal
+        // suelto, es el token. Lo que se persigue es el hex escrito donde debería ir
+        // `var(--sw-...)`.
+        if (/--sw-[a-z0-9-]+\s*:\s*$/.test(line.slice(0, m.index))) continue;
         viejos.push(`${nombre}:${i + 1} — ${hex} es de la paleta ANTERIOR; su token hoy es ${token}`);
       }
     }

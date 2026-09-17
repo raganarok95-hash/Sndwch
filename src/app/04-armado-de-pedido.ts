@@ -114,7 +114,7 @@ function sOBuild(){
       return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="base=\''+b.id+'\';render()" style="all:unset;box-sizing:border-box;position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
         +(extra>0?'<div style="position:absolute;top:12px;right:13px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+'">+'+SOLES+pz(extra)+'</div>':'')
         +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#fff);line-height:1.1">'+b.l+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+(sel?ACC():'var(--sw-text-muted3,#73776C)')+';margin-top:5px">'+b.s.toUpperCase()+'</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:5px">'+b.s.toUpperCase()+'</div>'
         +(b.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(b.d)+'</p>':'')
         +'</button>';
     }).join('');
@@ -190,7 +190,7 @@ function sOBuild(){
     var todosIds=vegDisp.map(function(t: any){return t.id;});
     var todos=tL>0&&todosIds.every(function(id){return tops.indexOf(id)>=0;});
     h+='<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px">'
-      +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(tL?ACC():'var(--sw-text-muted3,#73776C)')+'">'+(tL?tL+(tL===1?' elegido':' elegidos'):'ninguno todavía')+'</span>'
+      +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(tL?ACC():'var(--sw-text-muted,#9DA096)')+'">'+(tL?tL+(tL===1?' elegido':' elegidos'):'ninguno todavía')+'</span>'
       +'<button type="button" onclick="tops='+(todos?'[]':'['+todosIds.map(function(id){return'\''+id+'\'';}).join(',')+']')+';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+ACC()+';border-bottom:1px solid '+ACC()+'">'+(todos?'QUITAR TODOS':'PONER TODOS')+'</button>'
       +'</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
@@ -232,7 +232,7 @@ function sOBuild(){
         +'</button>';
     }).join('');
     h+='</div>';
-    if(sauceSuggest.length)h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted3,#73776C);margin-top:12px"><span style="display:inline-block;width:5px;height:5px;border-radius:999px;background:'+ACC()+';vertical-align:middle;margin-right:6px"></span>Va bien con la proteína que elegiste — sigue siendo tu elección.</div>';
+    if(sauceSuggest.length)h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:12px"><span style="display:inline-block;width:5px;height:5px;border-radius:999px;background:'+ACC()+';vertical-align:middle;margin-right:6px"></span>Va bien con la proteína que elegiste — sigue siendo tu elección.</div>';
   }
   h+=AB(size?total():null,byoStepCanContinue(),'byoStepBack()','byoStepNext()',byoStep<4?'Siguiente →':'Continuar //',byoStepHint());
   return h;

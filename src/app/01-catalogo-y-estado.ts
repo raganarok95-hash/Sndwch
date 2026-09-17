@@ -802,13 +802,13 @@ function scheduleTimePickerHTML(){
   var dayChips=days.map(function(dd){
     var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
     var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
-    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
+    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'var(--sw-card2,#171A14)':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
   var slots=schedSlotsDetailed(schedDay);
   var libres=slots.filter(function(s){return !s.full;});
   var slotsHTML=slots.length
     ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
-        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #2C3228;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+s.t+'</div>';
+        if(s.full)return'<div title="Esa hora ya está llena" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+s.t+'</div>';
         var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#9DA096')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
       }).join('')+'</div>'
       +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
@@ -1388,8 +1388,12 @@ function setLado(l){
 var bkTo=null;
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
-// Paso actual del asistente de BUILD YOUR OWN (0=pan,1=proteína,2=toppings,3=queso,
-// 4=salsas) — ver sOBuild/byoStepBack/byoStepNext.
+// Paso actual del asistente de ARMA EL TUYO. El orden REAL es el del mostrador de Subway y
+// vive en `BYO_STEP_LABELS` (04-armado): 0=pan, 1=proteína, 2=queso, 3=vegetales, 4=salsas.
+// ⚠ Este comentario decía "2=toppings, 3=queso" — el orden de ANTES del 2026-09-05, cuando
+// se intercambiaron los pasos 2 y 3. Doce días después el riel seguía anunciando el paso
+// equivocado por ese mismo descuido, así que acá no se repite la lista: se nombra dónde
+// vive. Ver sOBuild/byoStepBack/byoStepNext.
 var byoStep=0;
 var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si

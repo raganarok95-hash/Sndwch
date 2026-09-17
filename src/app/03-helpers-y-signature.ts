@@ -77,11 +77,11 @@ function contactFooterHTML(){
     +legalFooterLink('Cambios y devoluciones','p_returns')
     +legalFooterLink('Libro de reclamaciones','p_complaints',"cmplStep='form';")
     +'</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
     // Sello del build al pie. Deliberadamente discreto (8px, gris del pie) — no le dice
     // nada a un cliente, pero contesta de un vistazo "¿qué versión tienes tú instalada?"
     // sin necesitar la consola del navegador ni tener el teléfono en la mano.
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:#3E4C46;margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
     +'</div>';
 }
 // Fila compacta de enlaces legales, reutilizable fuera del home. El Libro de
@@ -561,7 +561,11 @@ function itemRecipeLines(item){
   lines.push('Pan: '+nombreOId(BASES,base,'pan'));
   lines.push('Proteína: '+nombreOId(PROTS,prot,'proteína')+(item.doubleProt?' (DOBLE)':''));
   if(cheese)lines.push('Queso: '+nombreOId(CHEESE,cheese,'queso'));
-  lines.push('Toppings: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'topping');}).join(' · '):'sin toppings'));
+  // "Vegetales" y no "Toppings", igual que el paso del armador: es la palabra que usa Subway
+  // en español y la que el cliente peruano ya trae. Hasta hoy el armador decía una cosa y el
+  // resumen del pedido otra para lo MISMO — la vista previa, el resumen y la invitación del
+  // armador tenían cada una su nombre.
+  lines.push('Vegetales: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'vegetal');}).join(' · '):'sin vegetales'));
   lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return nombreOId(SAUCES,id,'salsa');}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
   if(item.note)lines.push('Nota: '+item.note);
   return lines;
@@ -1094,7 +1098,7 @@ function sOHome(){
   var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
   var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('cart',16,'#FFFFFF')+'Carrito<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'';
   var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('device',15,GOLD)+'Instalar<span class="cut-sep" style="color:'+GOLD+'"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,#1E4A38,#171A14);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
+  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,var(--sw-forest-deep,#1E4636),var(--sw-card2,#171A14));border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
   return H()
     +'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
     +hoursBadge
@@ -1263,7 +1267,7 @@ function sOHome(){
       var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
         +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
       var byoPanel='<div style="margin-bottom:8px">'
-        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
+        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige pan, proteína, queso, vegetales y salsas — a tu manera.</p>'
         +BASES.map(function(b){
           var av=isAvail(b.id);
           return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
@@ -1588,7 +1592,7 @@ function sOSig(){
       var myTotal=cust.total_orders||0;
       if(myTotal<s.minOrders){
         var missing=s.minOrders-myTotal;
-        return'<div style="background:#0d1a15;border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
       }
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
@@ -1778,7 +1782,7 @@ function sigPreviewOverlayHTML(){
       +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
       +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s+(pr.d?' — '+pr.d:''):'')+'</div>'
       +(cheeseLbl?'<div><span style="color:'+GOLD+'">Queso · </span>'+cheeseLbl+'</div>':'')
-      +'<div><span style="color:'+GOLD+'">Toppings · </span>'+toppingsLbl+'</div>'
+      +'<div><span style="color:'+GOLD+'">Vegetales · </span>'+toppingsLbl+'</div>'
       +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
       +'</div></div>')
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
