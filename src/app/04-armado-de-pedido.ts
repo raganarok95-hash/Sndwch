@@ -16,226 +16,420 @@
 // contra el título que de verdad se pintó.
 // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el cliente
 // peruano ya trae; "toppings" es jerga de heladería.
-var BYO_STEP_LABELS=['PAN','PROTEÍNA','QUESO','VEGETALES','SALSAS'];
+// ══ ARMA EL TUYO — escrito de cero el 2026-09-17 ═══════════════════════════════════════
+//
+// POR QUÉ SE TIRÓ LO ANTERIOR. El dueño entró por el lado de WICHO y encontró: una lista de
+// cinco filas con borde («1 PAN · 2 PROTEÍNA · …») ocupando 200px arriba, un rótulo que
+// decía literalmente «00 // Tamaño», dos rectángulos grises para el tamaño, otro título, dos
+// rectángulos grises más, y una barra abajo con «← Atrás / Siguiente →». O sea: cabecera,
+// lista de cajas con borde, barra fija. La anatomía exacta de la app anterior con otra
+// paleta. Y eso pasó aunque esta pantalla ya se había «rehecho» dos veces.
+//
+// LA CAUSA NO ERA ESTA PANTALLA, ERA EL VOCABULARIO. Mientras una tarjeta sea «rectángulo
+// redondeado con borde, título y subtítulo», da igual cuántas veces se reescriba el archivo:
+// vuelve a salir lo mismo, porque es el único ladrillo disponible. Así que acá NO se usan
+// H(), ST(), AB() ni CAB(): las piezas de abajo nacen con esta pantalla.
+//
+// LAS TRES DECISIONES DE DISEÑO
+//
+// 1. UNA PREGUNTA POR PANTALLA. La lista de cinco pasos desaparece. Dónde estás lo dice una
+//    línea de 3px arriba, no 200px de filas. Lo que se recupera es la pantalla entera para
+//    lo único que importa ahí: elegir.
+//
+// 2. CADA PASO SE VE DISTINTO PORQUE CADA PASO ES DISTINTO. Antes los cinco eran la misma
+//    lista con otro contenido, que es justamente lo que hacía que todo se viera igual.
+//    Tamaño y pan son UNA comparación entre dos → dos mitades, como la puerta. La proteína
+//    es lo que de verdad decide el sándwich y es el único paso con fotos reales → la foto
+//    manda. Queso es una elección chica y gratis → chica. Vegetales y salsas es apilar
+//    cosas → se apilan, y se ven llenarse.
+//
+// 3. SE VE LO QUE ESTÁS HACIENDO. Era lo único que faltaba en todas las versiones: cinco
+//    decisiones y recién al final te enterabas de qué armaste. En un mostrador lo ves
+//    hacerse delante tuyo; ese es medio atractivo del formato. No tenemos ilustración por
+//    capas, así que el sándwich se escribe: una línea que crece con cada paso, abajo, junto
+//    al precio, que también se mueve. El precio a la vista desde el primer paso es además
+//    la defensa contra el costo sorpresa al final, que es el 39% del abandono.
+
+var BYO_STEP_LABELS=['TAMAÑO','PAN','PROTEÍNA','QUESO','VEGETALES','SALSAS'];
+// ⚠ Este array es el ORDEN REAL de los pasos, no una lista de nombres bonitos. Si cambia lo
+// que pinta cada paso sin cambiar esto, la línea de arriba anuncia un paso y la pantalla
+// muestra otro — pasó, y duró doce días. Lo vigila tests/armador-riel.spec.ts.
+var BYO_ULTIMO=BYO_STEP_LABELS.length-1;
 function byoStepCanContinue(){
-  if(byoStep===0)return!!(size&&base);
-  if(byoStep===1)return!!prot;
+  if(byoStep===0)return!!size;
+  if(byoStep===1)return!!base;
+  if(byoStep===2)return!!prot;
   return true;
 }
 function byoStepHint(){
-  if(byoStep===0)return!size&&!base?'Elige tamaño y pan':!size?'Elige un tamaño':'Elige un pan';
-  if(byoStep===1)return'Elige una proteína';
+  if(byoStep===0)return'Elige un tamaño';
+  if(byoStep===1)return'Elige un pan';
+  if(byoStep===2)return'Elige una proteína';
   return'';
 }
 function byoStepBack(){
-  if(byoStep>0){byoStep--;render();}else go('o_home');
+  if(byoStep>0){byoStep--;render();}else volverALaPuerta();
 }
 function byoStepNext(){
   if(!byoStepCanContinue())return;
-  if(byoStep<4){byoStep++;render();}else enterConfirm();
+  if(byoStep<BYO_ULTIMO){byoStep++;render();}else enterConfirm();
 }
-function sOBuild(){
-  var tL=tops.length,sL=sauces.length;
-  // 3 estados en vez de 2 (antes solo dorado/gris): el paso ACTUAL lleva un resplandor
-  // propio para que el ojo lo encuentre de inmediato en vez de tener que leer "PASO X//5".
-  // ── EL RIEL DE PASOS (concepto 6, elegido por el dueño) ─────────────────────────────
-  //
-  // Antes esto era una barra de 5 segmentos + el rótulo "Paso 2 // 5". Con eso el cliente
-  // ve DÓNDE va, pero no QUÉ lleva elegido: para recordar si ya puso el pan tiene que
-  // volver atrás, y volver atrás en un armador es donde se abandona un pedido.
-  //
-  // El riel muestra los cinco pasos con su valor actual al lado. Es el mismo progreso, con
-  // el dato que faltaba.
-  //
-  // ⚠ LO ELEGIDO SE LEE DEL ESTADO REAL, nunca de una copia. Si un paso se guardara aparte
-  // para pintarlo acá, el día que el cliente cambie el pan por el camino largo el riel
-  // diría una cosa y el carrito cobraría otra — que es el defecto que este repo ya pagó
-  // con los precios fantasma, en versión pequeña.
-  var byoValor=function(i){
-    if(i===0){
-      var b=BASES.find(function(x){return x.id===base;});
-      var t=size?(size==='30'?'30CM':'15CM'):'';
-      return b?(t?t+' · ':'')+b.l:(t||'');
-    }
-    if(i===1){var pr=PROTS.find(function(x){return x.id===prot;});return pr?pr.l+(doubleProt?' · doble':''):'';}
-    if(i===2){var c=CHEESE.find(function(x){return x.id===cheese;});return c?c.l:(cheese===null&&byoStep>2?'sin queso':'');}
-    if(i===3)return tops.length?tops.length+(tops.length===1?' vegetal':' vegetales'):'';
-    if(i===4)return sauces.length?sauces.length+(sauces.length===1?' salsa':' salsas'):'';
-    return'';
-  };
-  var progressBar='<div style="margin-bottom:16px;background:var(--sw-card2,#171A14);border-radius:12px;padding:5px">'
-    +BYO_STEP_LABELS.map(function(l,i){
-      var hecho=i<byoStep, actual=i===byoStep;
-      var v=byoValor(i);
-      // El paso ACTUAL lleva el color del lado; los hechos, su valor en claro; los que
-      // faltan quedan atenuados. Sin resplandor: ninguna señal de estado en esta app lo
-      // usa (ver DESIGN.md), el contraste lo dan la opacidad y el color.
-      // `data-paso`/`data-actual` los lee `tests/armador-riel.spec.ts` para comparar el
-      // rótulo encendido contra el título que se pintó. Sin un gancho estable habría que
-      // reconocer el paso activo por su color inline, que cambia con el lado y con el tema.
-      return'<div data-paso="'+i+'"'+(actual?' data-actual="1"':'')+' style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;'
-        +(actual?'background:'+ACC()+';':'')+'">'
-        +'<span style="width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;'
-        +'align-items:center;justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;'
-        +'font-size:9px;border:1px solid '+(actual?'var(--sw-on-gold,#241a08)':hecho?ACC():'var(--sw-border,#2C3228)')+';'
-        +'color:'+(actual?'var(--sw-on-gold,#241a08)':hecho?ACC():'var(--sw-text-muted3,#73776C)')+'">'
-        +(hecho?'&#10003;':(i+1))+'</span>'
-        +'<span style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;'
-        +'letter-spacing:.12em;color:'+(actual?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')
-        +';opacity:'+(actual||hecho?'1':'.5')+'">'+l+'</span>'
-        +'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-        +'color:'+(actual?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#9DA096)')+';'
-        +'opacity:'+(actual?'.8':'1')+';max-width:150px;overflow:hidden;text-overflow:ellipsis;'
-        +'white-space:nowrap">'+esc(v)+'</span>'
-        +'</div>';
-    }).join('')+'</div>';
-  var stepLabel='';
-  // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
-  // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
-  // lea como "pasaste con el otro hermano" y no como "cambió el color".
-  var wichoCab=CAB('wicho',byoStep===0?'Empieza por el pan. Nada está mal.':byoStepHint(),byoStep>0);
-  var h=H('ARMA EL TUYO','byoStepBack()',true)+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-    +wichoCab+progressBar+stepLabel;
-  if(byoStep===0){
-    h+=SZTOG();
-    h+=ST('','Pan','');
-    // ── DOS PANES, DOS PANELES — no dos filas de una lista ────────────────────────────
-    // Son exactamente dos opciones y la decisión es una comparación, no un recorrido. Una
-    // lista vertical obliga a leer una, bajar, leer la otra y recordar la primera; lado a
-    // lado se comparan de un vistazo. El recargo va ARRIBA, visible antes de elegir: la
-    // focaccia dejó de ser gratis el 2026-09-03 y un precio que aparece recién en el
-    // carrito es la clase de sorpresa que hace abandonar el pedido.
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-    h+=BASES.map(function(b){
-      var av=isAvail(b.id),sel=base===b.id;
-      var extra=size?baseSurcharge(b.id,size):0;
-      if(!av)return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+b.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:4px">Agotado</div></div>';
-      // Mismo criterio que FICHA: control real, alcanzable con teclado y anunciado como tal.
-      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="base=\''+b.id+'\';render()" style="all:unset;box-sizing:border-box;position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:18px 15px;min-height:140px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
-        +(extra>0?'<div style="position:absolute;top:12px;right:13px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+'">+'+SOLES+pz(extra)+'</div>':'')
-        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#fff);line-height:1.1">'+b.l+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:5px">'+b.s.toUpperCase()+'</div>'
-        +(b.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(b.d)+'</p>':'')
-        +'</button>';
-    }).join('');
-    h+='</div>';
-  }else if(byoStep===1){
-    // ── LA PROTEÍNA SE ELIGE MIRÁNDOLA ───────────────────────────────────────────────
-    // Es la decisión que define el sándwich y la única del armador que tiene fotografía
-    // propia. En una fila de lista esa foto era una miniatura de 56px al costado de un
-    // párrafo: el tamaño de un ícono, para lo único que el cliente de verdad quiere ver.
-    // Acá la foto ES la tarjeta, en el mismo mosaico de dos columnas que los Signatures.
-    h+=ST('','Proteína','');
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-    h+=PROTS.filter(function(p){return !p.vaultOnly&&!p.sigOnly;}).map(function(p){
-      var av=isAvail(p.id),sel=prot===p.id;
-      // `size` arranca en null y el paso de tamaño va ANTES, así que sin esto las
-      // proteínas mostrarían un guion donde va el precio — y acá el cliente no viene de
-      // ver ningún precio: los panes no tienen uno propio, este sería el primero que la
-      // pantalla le enseña. Se muestra el del 15CM; `size` sigue exigiéndose igual.
-      var precio=size?protPrice(p):p.p15;
-      var img=PROT_IMG[p.id];
-      if(!av)return'<div style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:flex-end;padding:13px;opacity:.4">'
-        +(img?'<img src="'+img+'" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1)">':'')
-        +'<div style="position:relative"><div style="font-family:\'Bodoni Moda\',serif;font-size:15px;font-weight:640;color:var(--sw-text-muted,#9DA096)">'+p.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</div></div></div>';
-      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" aria-label="'+esc(p.l+' '+p.s+', '+SOLES+pz(precio))+'" onclick="prot=\''+p.id+'\';render()" style="all:unset;box-sizing:border-box;display:block;width:100%;position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:'+(sel?'2px solid '+ACC():'1px solid var(--sw-border,#2C3228)')+';background:var(--sw-card,#1B1F18);transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
-        +(img?'<img src="'+img+'" alt="'+esc(p.l+' '+p.s)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">':'')
-        // El degradado no es decoración: sin él el nombre se pierde sobre la parte clara
-        // de la foto, y cada foto tiene la parte clara en otro sitio.
-        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(0,0,0,.05) 38%,rgba(0,0,0,.72) 100%)"></div>'
-        +(sel?'<div style="position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:999px;background:'+ACC()+';display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--sw-on-gold,#241a08)">&#10003;</div>':'')
-        +'<div style="position:absolute;left:12px;right:12px;bottom:11px">'
-        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#fff;line-height:1.1;text-shadow:0 1px 6px rgba(0,0,0,.8)">'+p.l+'</div>'
-        +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:2px">'
-        +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.12em;color:rgba(255,255,255,.72)">'+p.s.toUpperCase()+'</span>'
-        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?ACC():'#fff')+';text-shadow:0 1px 6px rgba(0,0,0,.8)">'+SOLES+pz(precio)+'</span>'
-        +'</div></div>'
-        +lowStockNote(p.id)
-        +'</button>';
-    }).join('');
-    h+='</div>';
-    // La descripción de la proteína elegida, UNA sola, debajo del mosaico. Antes las seis
-    // descripciones estaban a la vez en pantalla y ninguna se leía.
-    var pSel=PROTS.find(function(x){return x.id===prot;});
-    if(pSel&&pSel.d)h+='<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;color:var(--sw-text-muted,#9DA096);margin-top:14px">'+esc(pSel.d)+'</p>';
-  // ── ORDEN SUBWAY (2026-09-05) ──────────────────────────────────────────────────────
-  // El queso va ANTES de los vegetales, no después. Es el orden real del mostrador de
-  // Subway (pan -> proteína -> queso -> tostado -> vegetales -> salsas) y el que el cliente
-  // ya trae aprendido: el queso se pone sobre la proteína porque va debajo, y porque es lo
-  // que se funde al tostar.
-  }else if(byoStep===2){
-    h+=ST('','Queso','Incluido sin costo si eliges uno.');
-    // ── "SIN QUESO" ES UNA OPCIÓN, NO LA AUSENCIA DE UNA ──────────────────────────────
-    // Antes la única forma de decir "ninguno" era no tocar nada, o tocar dos veces el que
-    // ya estaba. Eso deja al cliente sin saber si el paso está resuelto o si se lo saltó
-    // por error — y el riel de pasos le muestra un guion que parece un pendiente.
-    h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
-    h+=FICHA('Sin queso',cheese===null,'cheese=null;render()');
-    h+=CHEESE.map(function(c){
-      if(!isAvail(c.id))return FICHA_OFF(c.l);
-      return FICHA(c.l,cheese===c.id,'cheese=\''+c.id+'\';render()');
-    }).join('');
-    h+='</div>';
-  }else if(byoStep===3){
-    // "Vegetales" y no "Toppings": es la palabra que usa Subway en español y la que el
-    // cliente peruano ya trae. "Toppings" es jerga de heladería y de pizza.
-    //
-    // ── SON GRATIS E ILIMITADOS, ASÍ QUE LO QUE HACE FALTA ES VELOCIDAD ───────────────
-    // Cada vegetal traía su párrafo de venta — y por un defecto real, DOS VECES el mismo
-    // párrafo. Pero acá no hay nada que vender: no cuestan, no hay tope y los nombres se
-    // explican solos (tomate, cebolla, lechuga). El párrafo solo alargaba el paso a dos
-    // pantallas de scroll para una decisión de tres toques. Fichas, y "todos" de un golpe.
-    h+=ST('','Vegetales','Sin límite, y ninguno cuesta.');
-    var vegDisp=TOPS.filter(function(t: any){return !t.vaultOnly&&!t.sigOnly&&isAvail(t.id);});
-    var todosIds=vegDisp.map(function(t: any){return t.id;});
-    var todos=tL>0&&todosIds.every(function(id){return tops.indexOf(id)>=0;});
-    h+='<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px">'
-      +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(tL?ACC():'var(--sw-text-muted,#9DA096)')+'">'+(tL?tL+(tL===1?' elegido':' elegidos'):'ninguno todavía')+'</span>'
-      +'<button type="button" onclick="tops='+(todos?'[]':'['+todosIds.map(function(id){return'\''+id+'\'';}).join(',')+']')+';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:'+ACC()+';border-bottom:1px solid '+ACC()+'">'+(todos?'QUITAR TODOS':'PONER TODOS')+'</button>'
-      +'</div>';
-    h+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
-    h+=TOPS.filter(function(t: any){return !t.vaultOnly&&!t.sigOnly;}).map(function(t: any){
-      if(!isAvail(t.id))return FICHA_OFF(t.l);
-      var sel=tops.indexOf(t.id)>=0;
-      return FICHA(t.l+(t.spicy?' '+icon('chili',11,'#ff8a5c'):''),sel,'var i=tops.indexOf(\''+t.id+'\');if(i>=0)tops.splice(i,1);else tops.push(\''+t.id+'\');render()');
-    }).join('');
-    h+='</div>';
-  }else{
-    h+=ST('','Salsas','Hasta 3, incluidas sin costo.');
-    // ── LA BANDEJA DE TRES ESPACIOS ──────────────────────────────────────────────────
-    // El tope de 3 era un texto ("0 // 3") que nadie mira hasta que la cuarta salsa deja
-    // de responder al toque — y una carta que no responde parece rota, no llena. Tres
-    // espacios dibujados dicen cuántos quedan ANTES de tocar, y al llenarse explican solos
-    // por qué las demás se apagan.
-    h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
-    for(var _i=0;_i<3;_i++){
-      var lleno=_i<sL;
-      h+='<div style="flex:1;height:4px;border-radius:999px;background:'+(lleno?ACC():'var(--sw-border,#2C3228)')+';transition:background .2s"></div>';
-    }
-    h+='</div>';
-    // Sugerencia no restrictiva por proteína, anclada a los maridajes que ya usan los
-    // propios Signatures (auditoría de menú 2026-08-05: Atún→Aioli/Dijon, Pollo
-    // Teriyaki→Satay/SNDWCH Special, Albóndiga→Oil&Vinegar) — solo marca las sugeridas,
-    // nunca bloquea ni preselecciona ninguna otra salsa.
-    var sauceSuggest=({P04:['S01','S11'],P02:['S10','S05'],P06:['S06']})[prot]||[];
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    h+=SAUCES.filter(function(s){return !s.sigOnly&&!s.vaultOnly;}).map(function(s){
-      if(!isAvail(s.id))return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 13px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.l+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);margin-top:3px">Agotado</div></div>';
-      var sel=sauces.indexOf(s.id)>=0,lleno=!sel&&sL>=3,sug=sauceSuggest.indexOf(s.id)>=0;
-      return'<button type="button" aria-pressed="'+(sel?'true':'false')+'"'+(lleno?' disabled':'')+' onclick="var i=sauces.indexOf(\''+s.id+'\');if(i>=0){sauces.splice(i,1);if(!sauces.length)extraSauce=false;}else if(sauces.length<3)sauces.push(\''+s.id+'\');render()" style="all:unset;box-sizing:border-box;display:block;width:100%;position:relative;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 13px;cursor:'+(lleno?'not-allowed':'pointer')+';opacity:'+(lleno?.32:1)+';transition:all .15s;box-shadow:'+(sel?SHADOW_GOLD:SHADOW_SM)+'">'
-        +(sug&&!sel?'<div style="position:absolute;top:10px;right:11px;width:5px;height:5px;border-radius:999px;background:'+ACC()+'" title="Sugerida para tu proteína"></div>':'')
-        +(sel?'<div style="position:absolute;top:9px;right:10px;font-size:11px;color:'+ACC()+'">&#10003;</div>':'')
-        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#fff);padding-right:16px">'+s.l+(s.spicy?' '+icon('chili',11,'#ff8a5c'):'')+'</div>'
-        // Una sola frase, no el párrafo entero: son 11 salsas en pantalla y el párrafo
-        // completo convertía el paso en un muro que nadie lee.
-        +(s.d?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.4;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(primeraFrase(s.d))+'</div>':'')
-        +'</button>';
-    }).join('');
-    h+='</div>';
-    if(sauceSuggest.length)h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:12px"><span style="display:inline-block;width:5px;height:5px;border-radius:999px;background:'+ACC()+';vertical-align:middle;margin-right:6px"></span>Va bien con la proteína que elegiste — sigue siendo tu elección.</div>';
+// Saltar a un paso ya visitado. Sin esto, corregir el pan elegido tres pasos atrás obliga a
+// retroceder de a uno; con la lista vieja al menos se veía todo junto, así que quitarla sin
+// dar esta salida habría sido perder algo real.
+function byoIrAPaso(i){
+  if(i<0||i>byoStep)return;
+  byoStep=i;render();
+}
+
+// ── LA LÍNEA DE PASOS ──────────────────────────────────────────────────────────────────
+// Seis segmentos de 3px pegados al borde de arriba. Lleno = hecho, a medio tono = donde
+// estás, apagado = falta. Es tocable en lo ya hecho: cada segmento es el atajo a su paso.
+function BYO_LINEA(){
+  var segs='';
+  for(var i=0;i<BYO_STEP_LABELS.length;i++){
+    var hecho=i<byoStep,aqui=i===byoStep;
+    segs+='<button type="button"'+(i<=byoStep?' onclick="byoIrAPaso('+i+')"':' disabled')
+      +' aria-label="'+esc(BYO_STEP_LABELS[i])+(hecho?' (hecho)':aqui?' (aquí)':' (falta)')+'"'
+      +' style="all:unset;'+(i<=byoStep?'cursor:pointer;':'')+'flex:1;height:3px;border-radius:999px;'
+      +'background:'+(hecho?ACC():aqui?'rgba(140,200,236,.55)':'var(--sw-border,#1F3243)')+'"></button>';
   }
-  h+=AB(size?total():null,byoStepCanContinue(),'byoStepBack()','byoStepNext()',byoStep<4?'Siguiente →':'Continuar //',byoStepHint());
-  return h;
+  return'<div style="display:flex;gap:3px;padding:0 18px">'+segs+'</div>';
+}
+
+// ── LA CABECERA DEL PASO ───────────────────────────────────────────────────────────────
+// Volver, en qué paso vas, y el carrito si hay algo. Sin logotipo: dentro del armador ya
+// sabes dónde estás, y repetir la marca en cada paso es lo que hacía la app anterior.
+function BYO_CABEZA(){
+  return'<div style="position:sticky;top:0;z-index:20;background:var(--sw-bg,#0B1724);padding-top:10px">'
+    +BYO_LINEA()
+    +'<div style="display:flex;align-items:center;gap:6px;height:46px;padding:0 8px">'
+    +'<button type="button" onclick="byoStepBack()" aria-label="Volver" style="all:unset;cursor:pointer;'
+    +'width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
+    +'color:var(--sw-text-muted,#9DA096);font-size:22px">&#8592;</button>'
+    +'<div style="flex:1;min-width:0;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;'
+    +'font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:'+ACC()+'">'
+    +esc(BYO_STEP_LABELS[byoStep])+'<span style="color:var(--sw-text-muted,#9DA096);margin-left:9px">'
+    +(byoStep+1)+'/'+BYO_STEP_LABELS.length+'</span></div>'
+    +(cart.length?RIEL_CARRITO():'<div style="width:44px"></div>')
+    +'</div></div>';
+}
+
+// ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
+// Lo primero que se lee. Va en pregunta y no en sustantivo («¿Qué proteína?» y no
+// «PROTEÍNA») porque el cliente está respondiendo, no leyendo un índice.
+function BYO_PREGUNTA(q,ayuda){
+  return'<div style="padding:22px 18px 16px">'
+    +'<h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
+    +'color:var(--sw-text,#fff);line-height:1.05;letter-spacing:.01em;text-wrap:balance">'+q+'</h2>'
+    +(ayuda?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:7px;max-width:34ch">'+ayuda+'</p>':'')
+    +'</div>';
+}
+
+// ── DOS MITADES ────────────────────────────────────────────────────────────────────────
+// Para tamaño y pan: dos opciones y la decisión es una comparación. Una lista vertical
+// obliga a leer una, bajar, leer la otra y acordarse de la primera; lado a lado se comparan
+// de un vistazo. Eco deliberado de la puerta: ahí también eliges entre dos mitades.
+function BYO_MITADES(ops){
+  return'<div style="display:flex;gap:8px;padding:0 18px 18px;align-items:stretch">'+ops.map(function(o){
+    var sel=o.sel;
+    return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="'+o.fn+'" '
+      +'style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;min-width:0;display:flex;'
+      +'flex-direction:column;justify-content:flex-end;min-height:168px;padding:16px;border-radius:12px;'
+      +'background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
+      +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
+      +(o.fig?'<div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0">'+o.fig+'</div>':'')
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
+      +'color:var(--sw-text,#fff);line-height:1">'+esc(o.t)+'</div>'
+      +(o.s?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
+        +'text-transform:uppercase;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:5px">'+esc(o.s)+'</div>':'')
+      +(o.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
+        +'color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(o.d)+'</p>':'')
+      +(o.extra?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+';'
+        +'margin-top:9px">'+o.extra+'</div>':'')
+      +'</button>';
+  }).join('')+'</div>';
+}
+
+// ── UNA PROTEÍNA ───────────────────────────────────────────────────────────────────────
+// El único paso con fotos reales (las 6 .webp cuadradas), y el que de verdad decide el
+// sándwich. La foto ocupa un tercio del ancho y toca los bordes de la fila: es el argumento,
+// no una miniatura decorativa de 48px al lado de un texto.
+function BYO_PROTEINA(pr){
+  var av=isAvail(pr.id),sel=prot===pr.id;
+  var img=PROT_IMG[pr.id];
+  var precio=size==='30'?pr.p30:pr.p15;
+  return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" '
+    +(av?'onclick="prot=\''+pr.id+'\';if(doubleProt&&'+(pr.noDouble?'true':'false')+')doubleProt=false;render()"':'disabled')
+    +' aria-label="'+esc(pr.l+' '+pr.s)+'" style="all:unset;box-sizing:border-box;'+(av?'cursor:pointer;':'opacity:.45;')
+    +'display:flex;align-items:stretch;width:100%;min-height:104px;overflow:hidden;border-radius:12px;'
+    +'background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
+    +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
+    +(img?'<img src="'+img+'" alt="" aria-hidden="true" loading="lazy" style="width:104px;height:auto;min-height:104px;'
+      +'object-fit:cover;flex:0 0 auto'+(av?'':';filter:grayscale(1)')+'">':'')
+    +'<span style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:13px 15px">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;'
+    +'color:var(--sw-text,#fff);line-height:1.1">'+esc(pr.l)
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.18em;'
+    +'text-transform:uppercase;color:var(--sw-text-muted,#9DA096);margin-left:8px">'+esc(pr.s)+'</span></span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;'
+    +'color:var(--sw-text-muted,#9DA096);margin-top:5px">'+esc(av?pr.d:'Agotada hoy')+'</span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+';margin-top:7px">'
+    +SOLES+pz(precio)+'</span>'
+    +'</span></button>';
+}
+
+// ── UNA COSA QUE SE APILA ──────────────────────────────────────────────────────────────
+// Vegetales y salsas: no son una lista donde eliges uno, son cosas que se van poniendo
+// encima. Por eso se llenan de color al tocarlas en vez de encender una casilla al costado,
+// y por eso fluyen en vez de ir una debajo de otra: lo que importa es CUÁNTO llevas puesto,
+// y eso se ve de un vistazo con las piezas llenas contra las vacías.
+function BYO_PIEZA(o){
+  var sel=o.sel;
+  return'<button type="button" aria-pressed="'+(sel?'true':'false')+'"'+(o.off?' disabled':' onclick="'+o.fn+'"')
+    +' style="all:unset;box-sizing:border-box;'+(o.off?'opacity:.4;':'cursor:pointer;')
+    +'display:inline-flex;flex-direction:column;gap:2px;padding:11px 15px;border-radius:999px;'
+    +'background:'+(sel?ACC():'var(--sw-card2,#0F1D29)')+';'
+    +'box-shadow:inset 0 0 0 1px '+(sel?ACC():'var(--sw-border,#1F3243)')+'">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;'
+    +'color:'+(sel?ACC_INK():'var(--sw-text,#fff)')+';line-height:1.1">'+esc(o.t)+'</span>'
+    +(o.s?'<span style="font-family:\'EB Garamond\',serif;font-size:9px;letter-spacing:.06em;'
+      +'color:'+(sel?'rgba(14,26,23,.72)':'var(--sw-text-muted,#9DA096)')+'">'+esc(o.s)+'</span>':'')
+    +'</button>';
+}
+
+// ── EL SÁNDWICH QUE LLEVAS ─────────────────────────────────────────────────────────────
+// Lo que estás armando, escrito. Crece con cada paso. No es un resumen para el final: es lo
+// que reemplaza a ver el sándwich hacerse delante tuyo. Cada parte es tocable y te devuelve
+// a su paso, así que además es la navegación que se perdió al quitar la lista de cinco filas.
+function BYO_LOQUELLEVAS(){
+  var partes=[];
+  if(size)partes.push({i:0,t:size==='30'?'30CM':'15CM'});
+  if(base){var b=BASES.find(function(x){return x.id===base;});if(b)partes.push({i:1,t:b.l});}
+  if(prot){var pr=PROTS.find(function(x){return x.id===prot;});if(pr)partes.push({i:2,t:pr.l+(doubleProt?' doble':'')});}
+  if(cheese){var c=CHEESE.find(function(x){return x.id===cheese;});if(c)partes.push({i:3,t:c.l});}
+  if(tops.length)partes.push({i:4,t:tops.length+(tops.length===1?' vegetal':' vegetales')});
+  if(sauces.length)partes.push({i:5,t:sauces.length+(sauces.length===1?' salsa':' salsas')});
+  if(!partes.length)return'';
+  return'<div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px;min-width:0">'
+    +partes.map(function(x,k){
+      return(k?'<span style="color:var(--sw-text-muted,#9DA096);font-size:11px">·</span>':'')
+        +'<button type="button" onclick="byoIrAPaso('+x.i+')" style="all:unset;cursor:pointer;'
+        +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted4,#C6C9BE)">'
+        +esc(x.t)+'</button>';
+    }).join('')+'</div>';
+}
+
+// ── EL PIE ─────────────────────────────────────────────────────────────────────────────
+// Precio + lo que llevas + una sola acción. El precio se mueve desde el primer paso, que es
+// la única forma de que no aparezca una sorpresa al final — el costo inesperado al final del
+// embudo es el 39% del abandono en delivery, y es la palanca de conversión más barata que
+// tenemos. No hay botón de «Atrás» acá: volver es la flecha de arriba a la izquierda, igual
+// que en todas las demás pantallas. Tener dos sitios para lo mismo era de la app anterior.
+function BYO_PIE(){
+  var listo=byoStepCanContinue();
+  var precio=(size&&prot)?itemUnitPrice(currentBuiltItem()):0;
+  var etiqueta=byoStep<BYO_ULTIMO?'Siguiente':'Listo';
+  return'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;'
+    +'max-width:480px;background:rgba(6,12,18,.97);border-top:1px solid var(--sw-border-soft,#111F2B);'
+    +'padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));z-index:90;'
+    +'display:flex;align-items:center;gap:14px">'
+    +'<div style="flex:1;min-width:0">'
+    +(precio>0?'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
+      +'font-weight:640;color:'+GOLD+';line-height:1">'+SOLES+pz(precio)+'</div>':'')
+    +BYO_LOQUELLEVAS()
+    +'</div>'
+    +'<button type="button"'+(listo?' onclick="byoStepNext()"':' disabled')+' style="all:unset;box-sizing:border-box;'
+    +(listo?'cursor:pointer;':'opacity:.4;')+'flex:0 0 auto;background:'+(listo?ACC():'transparent')+';'
+    +'color:'+(listo?ACC_INK():'var(--sw-text-muted,#9DA096)')+';'
+    +(listo?'':'box-shadow:inset 0 0 0 1px var(--sw-border,#1F3243);')
+    +'border-radius:999px;padding:14px 26px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;'
+    +'font-size:15px;font-weight:640;letter-spacing:.03em">'+(listo?etiqueta:byoStepHint())+'</button>'
+    +'</div>';
+}
+
+// Desde cuánto sale un sándwich de este tamaño. Se calcula sobre las proteínas que HOY se
+// pueden elegir, no sobre un número escrito: decir "desde S/13.90" cuando la proteína barata
+// se agotó o el dueño la repreció es una promesa rota, y de las que no avisan.
+function byoDesde(sz){
+  var ps=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly&&isAvail(x.id);})
+              .map(function(x){return sz==='30'?x.p30:x.p15;});
+  return ps.length?Math.min.apply(null,ps):0;
+}
+
+// ══ LA PANTALLA ════════════════════════════════════════════════════════════════════════
+function sOBuild(){
+  var cuerpo='';
+
+  if(byoStep===0){
+    // TAMAÑO. Va primero y solo, como en cualquier mostrador: es lo que cambia el precio de
+    // todo lo que viene después, así que preguntarlo al final sería mover el piso.
+    //
+    // ⚠ Y VA APILADO, NO EN DOS COLUMNAS. Lo que se compara acá es un LARGO, y dos columnas
+    // no pueden mostrar una proporción: cada barra queda medida contra su propia columna, no
+    // contra la otra. Apiladas comparten el mismo ancho, así que la de 30CM se ve el doble
+    // de la de 15CM porque lo es. Es la única forma de que el dibujo diga la verdad.
+    cuerpo=BYO_PREGUNTA('¿De qué tamaño?','Es lo primero porque cambia el precio de todo lo demás.')
+      +'<div style="display:flex;flex-direction:column;gap:10px;padding:0 18px">'
+      // ⚠ Ni una palabra sobre cuánta gente. Ver la nota en SZTOG (02-*): el tamaño se describe
+      // por lo que ES —pan y relleno—, nunca por cuántos deberían comérselo.
+      +[{sz:'15',t:'15CM',s:'El de siempre',d:'Un sándwich completo.',w:'50%'},
+        {sz:'30',t:'30CM',s:'El doble de todo',d:'El doble de pan y el doble de relleno.',w:'100%'}].map(function(o){
+        var sel=size===o.sz;
+        return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+o.sz+'\';render()" '
+          +'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:18px;'
+          +'border-radius:12px;background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
+          +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
+          // La barra ES el sándwich a escala. Va arriba del nombre porque es lo primero que
+          // resuelve la pregunta: se entiende sin leer una palabra.
+          +'<div style="height:26px;width:'+o.w+';border-radius:999px;margin-bottom:15px;'
+          +'background:'+(sel?ACC():'var(--sw-border,#1F3243)')+';'
+          +'box-shadow:inset 0 -7px 0 rgba(0,0,0,.2)"></div>'
+          +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'
+          +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+          +'font-weight:640;color:var(--sw-text,#fff);line-height:1">'+o.t+'</span>'
+          +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+GOLD+'">'
+          +'desde '+SOLES+pz(byoDesde(o.sz))+'</span></div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
+          +'text-transform:uppercase;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:6px">'
+          +o.s+'</div>'
+          +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
+          +'color:var(--sw-text-muted,#9DA096);margin-top:5px">'+o.d+'</p>'
+          +'</button>';
+      }).join('')+'</div>';
+
+  }else if(byoStep===1){
+    // PAN. Dos opciones otra vez, y el recargo de la focaccia ARRIBA, antes de elegir: dejó
+    // de ser gratis el 2026-09-03 y un precio que aparece recién en el carrito es
+    // exactamente la sorpresa que hace abandonar.
+    cuerpo=BYO_PREGUNTA('¿Sobre qué pan?','Los dos se hornean acá.')
+      +BYO_MITADES(BASES.map(function(b){
+        // ⚠ El recargo se PREGUNTA, no se escribe. `BASE_SURCHARGE` es un objeto por pan con
+        // un precio por tamaño, no un número: la primera versión de esta línea lo trataba
+        // como número y habría pintado "[object Object]" al lado del pan — sin romper nada,
+        // sin que el typecheck dijera una palabra. Y va por `baseSurcharge()`, que es el
+        // mismo camino que usa el cobro, para que no puedan decir cosas distintas.
+        var rec=baseSurcharge(b.id,size||'15');
+        return{t:b.l,s:b.s,d:b.d,sel:base===b.id,fn:"base='"+b.id+"';render()",
+               extra:rec>0?'+'+SOLES+pz(rec):'Sin recargo'};
+      }));
+
+  }else if(byoStep===2){
+    // PROTEÍNA. El paso con foto. Y el doble se ofrece DESPUÉS de elegir, no antes: ofrecer
+    // «doble» sin saber doble de qué es una pregunta sin sentido.
+    var dispo=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
+    var elegida=PROTS.find(function(x){return x.id===prot;});
+    var puedeDoble=elegida&&!(size==='30'?elegida.noDouble30:elegida.noDouble);
+    var recargoDbl=elegida?(size==='30'?elegida.pDbl30:elegida.pDbl):0;
+    cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich. Todo lo demás lo acompaña.')
+      +'<div style="display:flex;flex-direction:column;gap:9px;padding:0 18px">'
+      +dispo.map(BYO_PROTEINA).join('')+'</div>'
+      +(puedeDoble
+        ?'<div style="padding:18px 18px 0">'
+         +BYO_PIEZA({t:'Doble de '+elegida.l,s:'+'+SOLES_TXT+pz(recargoDbl),sel:doubleProt,
+                     fn:"doubleProt=!doubleProt;render()"})
+         +'</div>':'');
+
+  }else if(byoStep===3){
+    // QUESO. Chico porque la decisión es chica: son tres, no cuestan, y «sin queso» es una
+    // respuesta legítima que tiene que estar a la vista y no escondida en un «saltar».
+    cuerpo=BYO_PREGUNTA('¿Con queso?','Va incluido, no cuesta nada.')
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +CHEESE.map(function(c){
+        return BYO_PIEZA({t:c.l,s:c.d,sel:cheese===c.id,fn:"cheese=cheese==='"+c.id+"'?null:'"+c.id+"';render()"});
+      }).join('')
+      +BYO_PIEZA({t:'Sin queso',sel:cheese===null&&byoStep>=3,fn:"cheese=null;render()"})
+      +'</div>';
+
+  }else if(byoStep===4){
+    // VEGETALES. Sin límite y sin costo, así que la pregunta no es «cuáles puedes» sino
+    // «cuáles quieres». «Todos» es un atajo real: mucha gente los quiere todos y hacerle
+    // tocar siete veces es trabajo inventado.
+    var veg=TOPS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
+    var ids=veg.filter(function(x){return isAvail(x.id);}).map(function(x){return x.id;});
+    var todos=ids.length>0&&ids.every(function(id){return tops.indexOf(id)>=0;});
+    cuerpo=BYO_PREGUNTA('¿Qué le pones encima?','Todos los que quieras, y ninguno cuesta.')
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +BYO_PIEZA({t:todos?'Ninguno':'Todos',s:todos?'empezar de cero':'los '+ids.length,sel:todos,
+                  fn:"tops="+(todos?'[]':'['+ids.map(function(id){return"'"+id+"'";}).join(',')+']')+";render()"})
+      +veg.map(function(t){
+        var av=isAvail(t.id);
+        return BYO_PIEZA({t:t.l,s:av?t.s:'agotado',off:!av,sel:tops.indexOf(t.id)>=0,
+          fn:"var i=tops.indexOf('"+t.id+"');if(i>=0)tops.splice(i,1);else tops.push('"+t.id+"');render()"});
+      }).join('')
+      +'</div>';
+
+  }else{
+    // SALSAS. Es el único paso con un tope real: van hasta MAX_SAUCES_BYO incluidas y no se
+    // puede elegir una cuarta distinta. Aparte existe una porción EXTRA de la última que
+    // elegiste, que sí se cobra — son dos cosas distintas y la pantalla tiene que decirlo,
+    // porque confundirlas es prometer una salsa gratis que el servidor va a cobrar.
+    var sal=SAUCES.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
+    var n=sauces.length;
+    var lleno=n>=MAX_SAUCES_BYO;
+    cuerpo=BYO_PREGUNTA('¿Y de salsa?','Hasta '+MAX_SAUCES_BYO+' incluidas. Llevas '+n+'.')
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +sal.map(function(x){
+        var av=isAvail(x.id),sel=sauces.indexOf(x.id)>=0;
+        // Al llegar al tope las no elegidas se apagan en vez de desaparecer: una salsa que
+        // se esfuma de la lista parece un error de la app, apagada se lee como "ya elegiste
+        // las tuyas". Y las elegidas siguen tocables, para poder cambiar de opinión.
+        return BYO_PIEZA({t:x.l,s:av?(x.spicy?'pica · '+x.s:x.s):'agotada',off:!av||(lleno&&!sel),sel:sel,
+          fn:"byoToggleSalsa('"+x.id+"')"});
+      }).join('')
+      +'</div>'
+      // La porción extra solo tiene sentido cuando ya hay una salsa que duplicar — el
+      // servidor rechaza el pedido si no la hay, así que ofrecerla antes sería ofrecer algo
+      // que va a fallar al pagar.
+      +(n?'<div style="padding:20px 18px 0">'
+        +BYO_PIEZA({t:'Doble de la última',s:'+'+SOLES_TXT+pz(EXTRA_SAUCE_PRICE),sel:extraSauce,
+                    fn:"extraSauce=!extraSauce;render()"})
+        +'</div>':'');
+  }
+
+  // ⚠ EL PASO OCUPA LA PANTALLA, NO SE AMONTONA ARRIBA. La primera versión dejaba 350px de
+  // vacío debajo de las opciones en cuatro de los seis pasos: la pregunta y las piezas
+  // pegadas al techo y el resto negro. Eso no es minimalismo, es una pantalla a medio
+  // pintar. Los pasos de dos mitades ESTIRAN (son paneles, y a alto completo repiten la
+  // puerta, que es de donde vienes); los de piezas se CENTRAN en el espacio que queda; el de
+  // proteína no hace ninguna de las dos porque su lista ya llena y tiene que poder rodar.
+  // Solo el paso del TAMAÑO estira a alto completo, porque ahí los paneles llevan la figura
+  // del pan y el alto es parte de lo que se compara. El del PAN no: sin figura, estirado
+  // queda una caja vacía con el texto al pie, que es peor que una caja del tamaño de su
+  // contenido. El de PROTEÍNA ni estira ni centra — su lista ya llena y tiene que rodar.
+  // El paso se compone en el alto que tiene: la pregunta y las opciones centradas en el
+  // espacio libre, no pegadas al techo con 350px de negro debajo. Estirar las cajas para
+  // llenar fue el error opuesto y peor —una caja de 460px con una barra y cuatro líneas
+  // adentro—: el vacío no se arregla inflando el contenido, se arregla componiéndolo.
+  // Proteína es la excepción: su lista ya llena y tiene que poder rodar desde arriba.
+  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0B1724)">'
+    +BYO_CABEZA()
+    +'<div class="fi" style="flex:1;display:flex;flex-direction:column;justify-content:'
+    +(byoStep===2?'flex-start':'center')+';padding-bottom:var(--sw-barra,124px)">'
+    +cuerpo
+    +'</div></div>'+BYO_PIE();
+}
+
+// Tocar una salsa. Vive acá y no dentro del onclick porque la regla —la cuarta se cobra— es
+// una regla de dinero, y una regla de dinero escrita dentro de un atributo HTML no se puede
+// leer, ni probar, ni encontrar el día que cambie.
+// Cuántas salsas entran sin costo. Es un tope del CLIENTE, no del servidor: el servidor
+// tasa las que le lleguen. Vive con un nombre y no como un `3` suelto porque aparece en la
+// regla, en el texto de la pregunta y en el apagado de las piezas — tres sitios que se
+// desincronizan a la primera si es un literal.
+var MAX_SAUCES_BYO=3;
+function byoToggleSalsa(id){
+  var i=sauces.indexOf(id);
+  if(i>=0){
+    sauces.splice(i,1);
+    // Sin salsas no puede haber porción extra: el servidor rechaza ese pedido con un error
+    // y el cobro se caería DESPUÉS de pasar por Culqi.
+    if(!sauces.length)extraSauce=false;
+  }else if(sauces.length<MAX_SAUCES_BYO){
+    sauces.push(id);
+  }
+  render();
 }
 // ── LA FICHA ─────────────────────────────────────────────────────────────────────────
 // Para elegir entre cosas cuyo NOMBRE ya lo dice todo (quesos, vegetales). Una tarjeta con

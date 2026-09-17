@@ -817,9 +817,13 @@ function SZTOG(){
   // navega con teclado o con lector de pantalla. `aria-pressed` dice cuál está elegido, que
   // es lo que el color por sí solo no comunica.
   function opt(sz,l,d){var sel=size===sz;return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+sz+'\';render()" style="all:unset;box-sizing:border-box;flex:1;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(sel?'#FFFFFF':'#9DA096')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+d+'</div></button>';}
-  // "Individual"/"Clásico" no comunicaban porción real (hallazgo de auditoría UX, MEDIO)
-  // — un cliente sin contexto de la marca no sabía si "Clásico" alcanzaba para compartir.
-  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','Para uno')+opt('30','30CM','Para compartir')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+  // ⚠ LA APP NO LE DICE AL CLIENTE CUÁNTA GENTE DEBE COMERSE UN SÁNDWICH (dueño, 2026-09-17).
+  // Decía "Para uno" / "Para compartir", y es falso: hay quien se come un 30CM solo — el dueño
+  // el primero. Asignarle comensales a un tamaño no informa, juzga, y encima puede frenar la
+  // venta del producto más caro. La diferencia real es física y no necesita adorno: 30CM es el
+  // doble de pan y el doble de relleno. Eso se dice, y el resto lo dice el precio.
+  // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
+  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
 }
 function today(){return new Date().toLocaleDateString('es-PE');}
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que

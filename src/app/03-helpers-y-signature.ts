@@ -1076,21 +1076,31 @@ function SECCION(titulo,bajada?,numero?){
     +'</div>');
 }
 
-// La PUERTA - llevar a otra pantalla. Reemplaza a la fila con "Elegir ->" de la app
-// anterior, que era el patron que hacia que todo se viera igual: un rectangulo, un titulo y
-// una flecha. Aca el peso lo lleva el nombre y el dato que de verdad decide (el precio, el
-// saldo, cuanto falta), y la flecha desaparece: la tarjeta entera es el boton.
+// ── LLEVAR A OTRA PANTALLA, SIN CAJA (reescrito 2026-09-17) ───────────────────────────
+//
+// La versión anterior era un rectángulo redondeado con borde, título y subtítulo, y el
+// comentario decía orgullosamente que reemplazaba «la fila con Elegir → de la app anterior,
+// el patrón que hacía que todo se viera igual». Era el mismo patrón con la flecha borrada.
+// El dueño lo cazó a la primera: «también es un recolor».
+//
+// La caja no aporta NADA acá. No agrupa nada que no esté ya junto, no separa de nada que
+// esté al lado, y no hay contenido dentro que necesite un contenedor. Lo único que hacía era
+// dar el aspecto de app genérica: tres rectángulos apilados con borde de 1px.
+//
+// Esto es una carta de restaurante, no un panel de control. Así que se lee como una carta:
+// el nombre grande, el dato que decide alineado a la derecha, una línea fina entre uno y
+// otro. Sin relleno, sin borde, sin marco. La fila entera sigue siendo el botón.
 function PUERTA(o){
-  return'<button onclick="'+o.fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;'
-    +'background:var(--sw-card,#16241D);border:1px solid var(--sw-border,#25382D);border-radius:12px;'
-    +'padding:16px 17px">'
-    +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;'
+  return'<button onclick="'+o.fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;'
+    +'width:100%;padding:17px 0;border-top:1px solid var(--sw-border-soft,#16241C)">'
+    +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
     +'color:var(--sw-text,#fff);line-height:1.1">'+o.titulo+'</span>'
-    +(o.dato?'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+ACC()+'">'+o.dato+'</span>':'')
+    +(o.dato?'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;'
+      +'color:'+ACC()+'">'+o.dato+'</span>':'')
     +'</div>'
     +(o.bajada?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
-      +'color:var(--sw-text-muted,#9DA096);margin-top:6px">'+o.bajada+'</div>':'')
+      +'color:var(--sw-text-muted,#9DA096);margin-top:5px;max-width:40ch">'+o.bajada+'</div>':'')
     +'</button>';
 }
 
@@ -1264,7 +1274,7 @@ function sMundoSando(){
       +visibles.map(function(x,i){return TILE_SIGNATURE(x,i===0);}).join('')+'</div>')
     +vaultSection()
     +SECCION('Y además')
-    +BLOQUE('<div style="display:flex;flex-direction:column;gap:9px">'
+    +BLOQUE('<div style="border-bottom:1px solid var(--sw-border-soft,#16241C)">'
       +PUERTA({titulo:'Bebidas',dato:'desde '+SOLES_TXT+pz(precioBebidaMin()),
                bajada:'Medio litro, hechas acá. Se piden solas o con tu sándwich.',
                fn:"irABebidas('o_home')"})
