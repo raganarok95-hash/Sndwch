@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1E3932">
+<meta name="theme-color" content="#12150F">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +39,7 @@
 <style>
 /* ── PALETA DEL CLIENTE — LOS TOKENS DE VERDAD (2026-09-09) ────────────────────
    Hasta hoy los colores del cliente NO eran variables: eran el FALLBACK de cada
-   `var(--sw-card,#2D5246)`, repetido en 997 sitios de src/app/. Nadie definía esas
+   `var(--sw-card,#1B1F18)`, repetido en 997 sitios de src/app/. Nadie definía esas
    properties en ningún lado, así que cambiar la paleta significaba 997 ediciones y la
    garantía de que alguna se quedaba atrás — el mismo defecto de fondo que ya costó tres
    semanas de precios fantasma, pero en color.
@@ -49,19 +49,33 @@
    estimados a ojo. Son muy cercanos a los que ya había, así que el cambio no rompe
    ninguna pantalla; lo que gana el proyecto es poder mover la paleta desde un solo sitio. */
 :root{
-  /* Verde bosque: el lado de SANDO. Es el contorno y la mitad izquierda del mono. */
-  --sw-bg:#1E3932;
-  --sw-card:#2D5246;
-  --sw-card2:#1A3028;
-  --sw-card-danger:#1A2420;
-  --sw-border:#3A6B58;
-  --sw-border-soft:#1c1c1c;
+  /* ⚠ EL VERDE DEJA DE SER EL FONDO Y PASA A SER EL ACENTO (2026-09-16).
+     El dueño lo dijo así: "la web sigue pareciendo bastante amateur mas en la versión
+     verde". Y al elegir entre diez direcciones visuales eligió cinco, TODAS sobre fondo
+     casi negro — no es gusto suelto, es el mismo voto cinco veces.
+     El motivo es concreto: un verde medio saturado ocupando el 100% de la pantalla compite
+     con la foto del producto, que es lo único que vende. Sobre negro la foto es lo más
+     luminoso del cuadro y el verde vuelve a significar algo — el lado de SANDO — en vez de
+     ser el color del papel tapiz.
+     ⚠ NO es un fondo neutro: lleva verde dentro (#12150F, no #121212). El tinte por lado
+     sigue existiendo (ver data-lado abajo), solo que ahora la temperatura del negro hace
+     el trabajo silencioso y el acento el ruidoso. */
+  --sw-bg:#12150F;
+  --sw-card:#1B1F18;
+  --sw-card2:#171A14;
+  --sw-card-danger:#1E1614;
+  --sw-border:#2C3228;
+  --sw-border-soft:#1A1D17;
   --sw-text:#FFFFFF;
-  --sw-text-body:#F2F0EB;
-  --sw-text-muted:#A8C8B0;
-  --sw-text-muted2:#8BAF9A;
-  --sw-text-muted3:#7FA08D;
-  --sw-text-muted4:#C8D6CE;
+  --sw-text-body:#EFEDE4;
+  --sw-text-muted:#9DA096;
+  --sw-text-muted2:#868A7E;
+  --sw-text-muted3:#73776C;
+  --sw-text-muted4:#C6C9BE;
+  /* El verde de SANDO, ahora que ya no es el fondo. Es lo que marca su lado: la receta
+     cerrada, lo que ya está decidido. Mismo papel que --sw-sky para WICHO. */
+  --sw-forest:#2F6B54;
+  --sw-forest-deep:#1E4636;
 
   /* ── COLORES DE ESTADO (2026-09-10) ──
      Antes eran ~230 literales sueltos repartidos por src/app/. El de error estaba escrito
@@ -112,22 +126,65 @@
    que verse igual en los dos lados: un precio que cambia de color según dónde estás es
    exactamente la clase de duda que no queremos en un checkout. */
 :root[data-lado="wicho"]{
-  --sw-bg:#102430;
-  --sw-card:#1C3B4D;
-  --sw-card2:#142C3A;
-  --sw-card-danger:#1E1A22;
-  --sw-border:#2F6180;
-  --sw-border-soft:#12222C;
+  /* El lado de WICHO: el mismo negro, con azul dentro en vez de verde. El salto se siente
+     —la app SÍ se va con él— pero ninguna de las dos mitades vuelve a ser un bloque de
+     color plano peleándose con la foto. */
+  --sw-bg:#0D1216;
+  --sw-card:#161D23;
+  --sw-card2:#12181D;
+  --sw-card-danger:#1E1614;
+  --sw-border:#27313A;
+  --sw-border-soft:#161C21;
   --sw-text:#FFFFFF;
-  --sw-text-body:#EAF2F6;
-  --sw-text-muted:#A6C9DD;
-  --sw-text-muted2:#89AFC6;
-  --sw-text-muted3:#7B9FB4;
-  --sw-text-muted4:#C6DCE8;
+  --sw-text-body:#E9EFF3;
+  --sw-text-muted:#98A3AB;
+  --sw-text-muted2:#828D95;
+  --sw-text-muted3:#6F7980;
+  --sw-text-muted4:#C1CBD2;
 }
 /* La transición es del FONDO, no de cada elemento: animar 997 nodos a la vez hace tironear
    cualquier teléfono de gama baja. Así solo se interpolan los pocos que pintan superficie. */
 body,#app{transition:background-color .42s ease}
+
+/* ── ESCRITORIO: LOS PRIMEROS BREAKPOINTS QUE TIENE LA APP (2026-09-17) ──────────────
+   Hasta hoy `shell.html` tenía CINCO media queries y las cinco eran
+   `prefers-reduced-motion`: ni un solo breakpoint de ancho. En una laptop la app era una
+   columna de teléfono de 480px en el centro de 1440, con el resto vacío — y es justo
+   desde donde el dueño la muestra cuando se la enseña a alguien.
+
+   ⚠ NO SE ENSANCHA LA COLUMNA. Cada pantalla está compuesta para ~390px: estirarla a
+   1000 dejaría líneas de texto de 120 caracteres, fotos deformadas y los botones de
+   acción en el borde opuesto al pulgar. El negocio es delivery: el pedido se hace en el
+   teléfono, y el escritorio es donde se MIRA. Lo que hay que arreglar no es el ancho, es
+   que el vacío se vea deliberado.
+
+   Lo que hace: el fondo deja de ser un vacío y pasa a llevar el color del lado elegido
+   (el mismo `data-lado` que ya tiñe la app), y la columna se lee como un panel con canto
+   propio en vez de un recorte. Dos reglas, cero riesgo de romper una pantalla. */
+@media (min-width:880px){
+  body{
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(47,107,84,.11), transparent 72%),
+      radial-gradient(ellipse 60% 50% at 50% 110%, rgba(47,107,84,.05), transparent 72%),
+      #0A0C08;
+    background-attachment:fixed;
+  }
+  :root[data-lado="wicho"] body{
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(140,200,236,.10), transparent 72%),
+      radial-gradient(ellipse 60% 50% at 50% 110%, rgba(140,200,236,.045), transparent 72%),
+      #070A0C;
+    background-attachment:fixed;
+  }
+  /* El canto: una línea de un píxel y una sombra ancha. Sin esto la columna termina de
+     golpe contra el fondo y se lee como una captura pegada, no como la app. */
+  #app{
+    box-shadow:0 0 0 1px var(--sw-border-soft,#1A1D17), 0 24px 80px -24px rgba(0,0,0,.75);
+  }
+  /* La barra inferior fija vive pegada al viewport, así que sin esto queda flotando en el
+     fondo y no sobre la columna. Se le pone el mismo canto. */
+  .bottom-nav{box-shadow:0 0 0 1px var(--sw-border-soft,#1A1D17)}
+}
 
 /* Modo claro del panel admin — antes era filter:invert(1) hue-rotate(180deg) sobre todo
    el contenedor, lo que invertía matemáticamente el dorado de marca (#CBA258) a un olivo
@@ -161,7 +218,7 @@ body,#app{transition:background-color .42s ease}
 /* Identidad admin "Modo cocina de una mano" (elegida por el dueño entre 3 mockups,
    2026-07-29) — reemplaza la piel "misma que el cliente" que tenía el admin antes.
    .admin-dark es el estado por defecto (antes el admin oscuro no tenía NINGUNA clase
-   propia, solo heredaba los valores de fallback del cliente #1E3932/etc. — por eso hacía
+   propia, solo heredaba los valores de fallback del cliente #12150F/etc. — por eso hacía
    falta esta clase nueva, no solo ajustar .admin-light). Negro puro + un solo acento ámbar
    (ver GOLD reasignado en render()/app.ts, mismo mecanismo ya usado para adminLight)
    pensado para legibilidad bajo luz de cocina y con el pulgar, no para "verse elegante". */
@@ -199,7 +256,7 @@ body,#app{transition:background-color .42s ease}
 .admin-light .wm-mark i:first-child{background:#8A5000}
 .admin-light .wm-mark i:last-child{background:#1F5F86}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#1E3932;min-height:100%;-webkit-tap-highlight-color:transparent}
+html,body{background:#12150F;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
 .cut-sep{}
 /* Marca "//" del wordmark — dos barras sesgadas, en vez del simple glifo "//" (que en
@@ -227,12 +284,15 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
 /* min-height doble a propósito: 100vh primero como respaldo para navegadores sin
    soporte de dvh, y 100dvh encima, que es la que respeta la barra de URL de Chrome
    Android (con 100vh la última sección quedaba fuera de pantalla y el scroll saltaba).
-   El padding inferior reserva el alto de la barra fija de navegación (49px) más el
-   área segura del indicador de inicio de iOS — antes el contenido quedaba debajo. */
-#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:calc(49px + env(safe-area-inset-bottom,0px));background:#1E3932;position:relative;z-index:1;box-sizing:border-box}
+   El hueco inferior lo pone `medirBarraFija()` (08-router) en `--sw-barra`: mide la
+   barra fija que HAY en pantalla, porque no hay una sola (la nav son 49px, la del
+   armador 68, la del panel otra). El valor de respaldo es el de la nav, y solo se usa
+   entre que la página existe y el primer render. La altura medida ya incluye el área
+   segura del iPhone, porque cada barra la lleva en su propio padding. */
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#12150F;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
-input::placeholder{color:var(--sw-text-muted,#A8C8B0);font-size:13px}
+input::placeholder{color:var(--sw-text-muted,#9DA096);font-size:13px}
 button{cursor:pointer;border:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .pulse{animation:pulse 1.8s infinite}
@@ -250,8 +310,8 @@ button{cursor:pointer;border:none}
 .rank-pop{animation:rankpop .5s cubic-bezier(.34,1.56,.64,1)}
 @media (prefers-reduced-motion: reduce){.rank-pop{animation:none}}
 
-input,textarea,select{color:#F2F0EB !important}
-input::placeholder,textarea::placeholder{color:#A8C8B0 !important;opacity:1}
+input,textarea,select{color:#EFEDE4 !important}
+input::placeholder,textarea::placeholder{color:#9DA096 !important;opacity:1}
 input:focus,textarea:focus{outline:none;border-color:#CBA258 !important;box-shadow:0 0 0 2px rgba(203,162,88,.15)}
 /* Foco de teclado visible en botones/tarjetas interactivas — hallazgo de la re-auditoría
    de 10 agentes (ALTO): casi todo elemento interactivo usa style="all:unset;..." (74
@@ -291,9 +351,16 @@ body.kb-open #app{padding-bottom:0}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
 </style>
 <style>
-#mmap{display:none;position:fixed;inset:0;background:#1E3932;z-index:9999;flex-direction:column}
-#mmap.open{display:flex}
-#lmap{flex:1;min-height:0}
+#mmap{display:none;position:fixed;inset:0;background:var(--sw-bg,#12150F);z-index:9999}
+#mmap.open{display:block}
+/* El mapa es el contenido, no una banda entre dos barras: ocupa todo y lo demás flota. */
+#mmap-lienzo{position:absolute;inset:0}
+#lmap{position:absolute;inset:0}
+#mmap-top{position:absolute;top:0;left:0;right:0;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 14px;z-index:2;
+  background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 100%)}
+#mmap-hoja{position:absolute;left:0;right:0;bottom:0;z-index:2;background:var(--sw-card,#1B1F18);
+  border-top:1px solid var(--sw-border,#2C3228);border-radius:20px 20px 0 0;
+  padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(0,0,0,.5)}
 #mpin{position:absolute;top:50%;left:50%;transform:translate(-50%,-110%);font-size:36px;z-index:9998;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7))}
 /* ── EL CORTE — vacío, no franja (2026-09-09, corregido el 2026-09-10) ────────
    La primera versión dibujaba dos barras DORADAS y gruesas entre los dos paneles. El
@@ -307,7 +374,7 @@ body.kb-open #app{padding-bottom:0}
    único brillo es una línea de canto de un píxel, que es lo que hace que se lea como un
    corte con filo y no como un hueco. */
 .sw-cut{display:flex;gap:5px;align-items:stretch;flex-shrink:0;pointer-events:none;height:100%}
-.sw-cut i{display:block;width:7px;background:var(--sw-bg,#1E3932);
+.sw-cut i{display:block;width:7px;background:var(--sw-bg,#12150F);
   transform:skewX(-16deg);box-shadow:1px 0 0 rgba(233,201,138,.5),-1px 0 0 rgba(0,0,0,.35)}
 /* ── LOS HERMANOS COMO ELEMENTO DE INTERFAZ (2026-09-10) ──────────────────────
    `img/sando.png` e `img/wicho.png` son las DOS MITADES del logo del dueño, partido por
@@ -369,6 +436,39 @@ body.kb-open #app{padding-bottom:0}
 .sw-eye svg{width:100%;height:100%}
 @keyframes sw-spin{to{transform:rotate(360deg)}}
 .sw-spiral{animation:sw-spin 1.4s linear infinite;transform-origin:50% 50%}
+
+/* ── EL MENÚ SECRETO (2026-09-17) ────────────────────────────────────────────────────
+   El ojo en espiral de WICHO, recortado del logo del dueño (no dibujado): en esta paleta
+   el morado tiene UN trabajo —lo que sorprende— así que el secreto es para lo que existe.
+   GIRA LENTO, 9s. A la velocidad del spinner (1.4s) se lee como "cargando"; a 9s se lee
+   como hipnosis, que es lo que el dibujo ya dice. */
+.sw-ojo{animation:sw-ojo-gira 9s linear infinite;transform-origin:50% 50%;display:block}
+
+/* La mirada bajo el desenfoque: se mantiene presionado y el velo cede, sin llegar a cero.
+   ⚠ NUNCA LLEGA A 0. La composición del secreto no se revela antes de pedirlo, y una foto
+   nítida la revelaría — 9px sigue diciendo "hay algo" sin decir qué. Y vuelve al soltar:
+   el secreto no se queda abierto. Se cubre :hover (escritorio) y :active (dedo). */
+.sw-tapada{filter:blur(18px) saturate(.45) brightness(.4);transform:scale(1.16);
+  transition:filter .45s ease,transform .45s ease}
+.sw-espiar:hover .sw-tapada,.sw-espiar:active .sw-tapada{filter:blur(7px) saturate(.85) brightness(.72);transform:scale(1.06)}
+
+/* Al desbloquearse, la tarjeta se revela una vez al montarse: pasa de tapada a nítida.
+   No es un adorno — es el único momento en que el cliente VE que se lo ganó. */
+.sw-revelar{animation:sw-revelar 1.15s cubic-bezier(.22,.9,.3,1) both}
+
+@keyframes sw-ojo-gira{to{transform:rotate(360deg)}}
+@keyframes sw-revelar{
+  0%  {filter:blur(16px) brightness(.45);transform:scale(1.06)}
+  60% {filter:blur(2px)  brightness(1.06)}
+  100%{filter:blur(0)    brightness(1);transform:scale(1)}
+}
+/* Quien pidió menos movimiento no recibe ni el giro ni la revelación: se queda el dato,
+   que es lo que la tarjeta tiene que comunicar igual. */
+@media (prefers-reduced-motion:reduce){
+  .sw-ojo{animation:none}
+  .sw-revelar{animation:none}
+  .sw-tapada{transition:none}
+}
 @media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
 .leaflet-container{background:#1a1a2e}
 </style>
@@ -384,9 +484,9 @@ body.kb-open #app{padding-bottom:0}
      privacidad que COINCIDA con el de la configuración». Esto cumple las tres.
      Un navegador normal nunca ve este bloque. -->
 <noscript>
-  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#F2F0EB">
+  <div style="max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem;font-family:Georgia,serif;line-height:1.65;color:#EFEDE4">
     <h1 style="font-size:1.75rem;margin:0 0 .5rem">SND//WCH</h1>
-    <p style="color:#A8C8B0;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
+    <p style="color:#9DA096;font-style:italic;margin:0 0 1.5rem">Sándwiches preparados al momento, con delivery en Trujillo, Perú.</p>
     <p>Desde esta aplicación puedes ver la carta, armar tu sándwich —eligiendo pan, proteína, vegetales, salsas y queso— o pedir uno de los Signature de la casa, agregar bebidas, elegir tu dirección, pagar con Yape, Plin o tarjeta, y seguir el estado de tu pedido hasta que llega.</p>
     <p>Puedes crear una cuenta para acumular puntos y canjearlos por recompensas. Al crearla te pedimos tu teléfono, que es con lo que te ubicamos para entregarte el pedido; si entras con Google, ése es el único dato que te pedimos. Todo lo que recogemos, para qué lo usamos y con quién lo compartimos está detallado acá:</p>
     <p><strong><a href="/privacidad.html" style="color:#CBA258">Política de Privacidad y Términos del Servicio</a></strong></p>
@@ -398,6 +498,15 @@ body.kb-open #app{padding-bottom:0}
 <script>
 __APP_JS__
 </script>
-<div id="mmap"><div style="background:#2D5246;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:#FFFFFF">SELECCIONA DIRECCIÓN</div><button onclick="closeMap()" style="all:unset;cursor:pointer;color:#FFFFFF;font-size:22px;line-height:1;padding:4px 8px">&#10005;</button></div><div style="background:#111;padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;flex-shrink:0">Escribe tu dirección abajo y elígela de la lista — o arrastra el mapa hasta el punto exacto</div><div id="mmap-accuracy-banner" style="display:none;background:rgba(255,165,0,.15);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 16px;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#ffa500;flex-shrink:0">⚠ No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu dirección antes de confirmar.</div><div style="position:relative;flex:1;min-height:0"><div id="lmap" style="width:100%;height:100%"></div><div id="mpin">&#128205;</div></div><div style="background:#2D5246;padding:12px 16px;border-top:1px solid #3A6B58;flex-shrink:0"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:10px;color:#F2F0EB;opacity:.8;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px">Busca tu dirección //</div><div id="maddr-results" style="display:none;max-height:170px;overflow-y:auto;background:#1A3028;border:1px solid #3A6B58;border-radius:8px;margin-bottom:8px"></div><input id="maddr-input" type="text" autocomplete="off" placeholder="Ej: Av. España 123, Trujillo" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="background:#2D5246;border:1px solid #3A6B58;border-radius:8px;padding:12px 14px;color:#FFFFFF;width:100%;font-size:16px;font-family:'EB Garamond',serif;margin-bottom:10px;box-sizing:border-box"><div id="maddr-hint" style="font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#A8C8B0;margin-bottom:10px;min-height:14px"></div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;background:#3A86FF;color:#0d0d0d;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.02em;padding:13px;border-radius:10px;text-align:center">CONFIRMAR DIRECCIÓN</button></div></div>
+<!-- ── ELEGIR LA DIRECCIÓN EN EL MAPA (rehecho 2026-09-17) ───────────────────────────
+     Era la última pantalla completa que el rediseño no había tocado: barra de título,
+     franja de instrucciones, mapa, y debajo un bloque con buscador y un botón AZUL
+     (#3A86FF) que en esta app significa "pedido en preparación" y en ningún sitio
+     significa "acepta". Cuatro bandas apiladas para una pantalla cuyo contenido real es
+     UNO: el mapa.
+     Ahora el mapa ocupa todo y lo demás flota encima, que es como funciona cualquier app
+     de mapas que el cliente ya sabe usar. El buscador arriba, el pin al centro, y abajo
+     una sola hoja con lo que se va a confirmar. -->
+<div id="mmap"><div id="mmap-lienzo"><div id="lmap"></div><div id="mpin">&#128205;</div><div id="mmap-top"><div style="display:flex;gap:8px;align-items:center"><button onclick="closeMap()" aria-label="Cerrar el mapa" style="all:unset;cursor:pointer;flex:0 0 auto;width:40px;height:40px;border-radius:999px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;color:var(--sw-text,#FFFFFF);font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.45)">&#10005;</button><div style="flex:1;min-width:0;position:relative"><input id="maddr-input" type="text" autocomplete="off" placeholder="Busca tu calle y número" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="width:100%;box-sizing:border-box;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:12px 18px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:'EB Garamond',serif;box-shadow:0 4px 14px rgba(0,0,0,.45)"><div id="maddr-results" style="display:none;max-height:190px;overflow-y:auto;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;margin-top:6px;box-shadow:0 10px 28px rgba(0,0,0,.55)"></div></div></div><div id="mmap-accuracy-banner" style="display:none;margin-top:8px;background:rgba(255,165,0,.14);border:1px solid rgba(255,165,0,.34);border-radius:10px;padding:9px 13px;font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu puerta antes de confirmar.</div></div><div id="mmap-hoja"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:9px;letter-spacing:.2em;color:var(--sw-text-muted3,#73776C);margin-bottom:6px">EL PIN MARCA TU PUERTA //</div><div id="maddr-hint" style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.3;min-height:20px">Arrastra el mapa hasta el punto exacto</div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;margin-top:14px;background:var(--sw-forest,#2F6B54);color:var(--sw-text,#FFFFFF);font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.04em;padding:15px;border-radius:12px;text-align:center">Es acá //</button></div></div></div>
 </body>
 </html>

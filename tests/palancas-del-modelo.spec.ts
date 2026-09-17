@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, APP_FILE, stubWindowOpen } from './helpers';
+import { gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando } from './helpers';
 
 // LAS TRES PALANCAS DEL MODELO — medición y empujones (2026-09-06).
 //
@@ -78,7 +78,8 @@ test('a un invitado sin cuenta no se le ofrece referir', async ({ page }) => {
   await mockBackend(page, { 'my-orders': { orders: [pedidoEntregado('REF-002')] } });
   await stubWindowOpen(page);
   await page.goto(APP_FILE);
-  await page.waitForSelector('text=SIGNATURE');
+  // La app abre en la eleccion entre los hermanos; esta prueba necesita el catalogo.
+  await elegirSando(page);
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   // Sin sesión, PUNTOS enseña el registro/login — nunca el historial ni la invitación.
   await expect(page.getByRole('button', { name: 'Compartir //' })).toHaveCount(0);

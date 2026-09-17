@@ -37,7 +37,13 @@ export async function mockBackend(page: Page, handlers: ActionHandlers = {}) {
     const body = route.request().postDataJSON();
     const action = body?.action;
     calls.push({ action, body });
-    const entry = all[action];
+    // `'*'` es el comodín: se usa cuando una prueba recorre MUCHAS acciones y lo que le
+    // importa no es cada respuesta sino que ninguna pantalla se rompa (ver
+    // `panel-todas-las-herramientas.spec.ts`, que abre las 35 herramientas del panel).
+    // El estricto sigue siendo el default: sin handler y sin comodín, la acción responde
+    // 400 con "acción no mockeada" — que es lo que hace que una prueba normal se entere de
+    // que la app empezó a llamar algo que nadie declaró.
+    const entry = all[action] !== undefined ? all[action] : all['*'];
     if (entry === undefined) {
       await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'acción no mockeada: ' + action }) });
       return;
@@ -120,6 +126,15 @@ export async function clearDeliveryPin(page: Page) {
   });
 }
 
+// La app abre en la pantalla de eleccion entre los dos hermanos (`homeTab` arranca en
+// null). Una prueba que necesita el CATALOGO tiene que pasar por ahi igual que un cliente.
+// Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
+// el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
+export async function elegirSando(page: Page) {
+  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
+  await page.waitForSelector('text=SIGNATURE');
+}
+
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   const calls = await mockBackend(page, handlers);
   await stubWindowOpen(page);
@@ -130,6 +145,15 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
     (window as any)._mLon = lo;
   }, [PIN_TEST.lat, PIN_TEST.lon]);
   await page.goto(APP_FILE);
-  await page.waitForSelector('text=SIGNATURE');
+  // ⚠ LA APP ABRE EN LA PANTALLA DE ELECCION (sOEleccion), no en el catalogo. `homeTab`
+  // arranca en null a proposito: la decision entre los dos hermanos es una pantalla, no
+  // una pestana. Asi que cada prueba tiene que pasar por ella igual que un cliente.
+  //
+  // Se HACE CLIC, no se siembra `homeTab='sig'` desde el test. Este repo ya se quemo con
+  // eso: la pantalla de bienvenida tenia una prueba en verde que preparaba a mano un
+  // estado que produccion no podia alcanzar, y la pantalla no se mostro NUNCA. Un clic
+  // recorre el mismo camino que el cliente, y de paso deja la pantalla de eleccion
+  // cubierta por toda la suite: si se rompe, se rompe ruidosamente y en todas partes.
+  await elegirSando(page);
   return calls;
 }

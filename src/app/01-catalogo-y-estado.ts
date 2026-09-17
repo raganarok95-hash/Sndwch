@@ -559,7 +559,7 @@ var SIGS:any[]=[
 // distinguen tipográficamente del resto del texto — cursiva y más grande, como una
 // firma — para reforzar que son curados por la casa.
 function sigTypeTag(tag){
-  if(tag==='Signature'||tag==='Reserve')return'<i style="font-style:italic;font-size:.7em;color:var(--sw-text-muted,#A8C8B0)">'+tag+'</i>';
+  if(tag==='Signature'||tag==='Reserve')return'<i style="font-style:italic;font-size:.7em;color:var(--sw-text-muted,#9DA096)">'+tag+'</i>';
   return tag;
 }
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
@@ -571,13 +571,24 @@ function sigTypeTag(tag){
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
 var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg'};
-// Fotos reales de cada proteína en BUILD YOUR OWN — igual que SIG_IMG arriba, solo se
+// Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
-// P02 (mostraba arroz frito de fondo, ajeno al producto) y P05 (mostraba aceitunas verdes,
-// P05 no las lleva) se re-sourcearon en la ronda de auditoría V3 — recortadas a 500x500
-// como el resto del set.
-var PROT_IMG={P01:'img/prot_p01.jpg',P02:'img/prot_p02.jpg',P04:'img/prot_p04.jpg',P05:'img/prot_p05.jpg',P06:'img/prot_p06.jpg',P08:'img/prot_p08.jpg'};
+//
+// LAS SEIS SE REHICIERON EL 2026-09-17. Las anteriores eran seis stock sueltos que nunca
+// pasaron por `scripts/tratar_fotos.py` —el script existe justo para que un set de fotos
+// ajenas no se lea como los resultados de una búsqueda de imágenes— y tres mostraban cosas
+// que no están en ninguna receta: un mantel a cuadros azul, tomates cherry, aceitunas.
+// Las nuevas salen del mismo tratamiento que los Signatures y su procedencia (id de Adobe
+// Stock, licencia y recorte) está anotada en `img/fuente/FUENTES.md`.
+//
+// ⚠ SON CUADRADAS Y VAN EN .webp A PROPÓSITO. El archivo se usa en DOS sitios con formas
+// distintas —la miniatura de 56×56 de esta lista y el hero de 190 px de alto de la pantalla
+// de confirmación—, y el cuadrado es lo único que `object-fit:cover` sirve bien en los dos.
+// A 1050 px (4.4x los píxeles de las de 500) en JPEG las seis pesaban 1.3 MB, que es lo que
+// el cliente baja de golpe al abrir esta pantalla porque las seis miniaturas se ven a la
+// vez; en WebP pesan 635 KB sin perder un píxel.
+var PROT_IMG={P01:'img/prot_p01.webp',P02:'img/prot_p02.webp',P04:'img/prot_p04.webp',P05:'img/prot_p05.webp',P06:'img/prot_p06.webp',P08:'img/prot_p08.webp'};
 // Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
 // dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
@@ -791,17 +802,17 @@ function scheduleTimePickerHTML(){
   var dayChips=days.map(function(dd){
     var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
     var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
-    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)'))+';border:1px solid '+(sel&&!closed?GOLD:'#3A6B58')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#A8C8B0);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
+    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'#162922':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
   var slots=schedSlotsDetailed(schedDay);
   var libres=slots.filter(function(s){return !s.full;});
   var slotsHTML=slots.length
     ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
-        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #3A6B58;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#A8C8B0);text-decoration:line-through">'+s.t+'</div>';
-        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#1A3028)':'var(--sw-card,#2D5246)')+';border:1px solid '+(sel?GOLD:'#3A6B58')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#A8C8B0')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
+        if(s.full)return'<div title="Esa hora ya está llena" style="background:#162922;border:1px solid #2C3228;border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+s.t+'</div>';
+        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#9DA096')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
       }).join('')+'</div>'
-      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
-    :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">No hay horarios disponibles ese día.</div>';
+      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
+    :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">No hay horarios disponibles ese día.</div>';
   if(slots.length&&!libres.length)slotsHTML+='<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+'">Todas las horas de ese día están completas. Prueba el otro día.</div>';
   return'<div style="display:flex;gap:8px">'+dayChips+'</div>'+slotsHTML+'<input type="hidden" id="o-sched" value="'+esc(schedInputValue())+'">';
 }
@@ -1156,6 +1167,19 @@ var REFERRAL_BONUS_POINTS=160;
 // Es lo que hace CIERTA la frase "un sándwich 15CM gratis" que ve el cliente: si alguien
 // mueve uno de los dos números y no el otro, la app promete un sándwich que la recompensa
 // ya no alcanza a pagar.
+// ── LOS DOS RETOS MENSUALES ──────────────────────────────────────────────────────────
+// El servidor decide con `CHALLENGE_TARGET_ORDERS`/`CHALLENGE_BONUS_POINTS` y
+// `DISCOVERY_TARGET_FLAVORS`/`DISCOVERY_BONUS_POINTS` (actions/customer.ts). El cliente
+// escribía los cuatro números A MANO en el texto del perfil — "Haz 3 pedidos pagados este
+// mes y gana 50 puntos extra" — que es exactamente el defecto que este repo ya documentó
+// en grande: un número escrito a mano en un texto es una promesa que se va a romper, y el
+// día que se rompa nadie se entera, porque es texto y no cálculo.
+//
+// Ahora se interpolan, y `npm run parity` compara los cuatro contra el servidor.
+var CHALLENGE_TARGET_ORDERS=3;
+var CHALLENGE_BONUS_POINTS=50;
+var DISCOVERY_TARGET_FLAVORS=3;
+var DISCOVERY_BONUS_POINTS=50;
 var REFERRER_REWARD_POINTS=400;
 // #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
 // (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
@@ -1313,7 +1337,38 @@ function dblStockWarn(protId){
 var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
-var homeTab='sig';
+// null = todavia no eligio hermano, y eso pinta la pantalla de eleccion (sOEleccion).
+// Antes arrancaba en 'sig', asi que esa pantalla no existia: el cliente caia directo en
+// la lista de Signatures y la decision que estructura la marca era una barra de pestanas.
+//
+// ⚠ SE RECUERDA EL LADO, PERO SOLO PARA NO VOLVER A PREGUNTAR (decision del dueno,
+// 2026-09-17: "que recuerde la eleccion anterior pero no de manera invasiva").
+//
+// La pantalla de eleccion es para quien llega por primera vez. A un cliente que ya pidio
+// diez veces, preguntarle en cada visita de quien es el pedido es un toque de mas cada vez
+// -- y la friccion que mas se nota es la que se repite. Desde la segunda visita entra
+// directo a su lado.
+//
+// No es invasivo porque NO lo encierra: la barra de los dos hermanos sigue arriba del
+// catalogo, asi que cambiarse es un toque y esta a la vista. Recordar sin salida seria
+// invasivo; recordar con la puerta abierta al lado es lo contrario.
+//
+// El valor vive en localStorage y se acepta SOLO si es uno de los tres lados reales: un
+// localStorage manipulado o heredado de una version futura no puede dejar la app en un
+// estado que ningun boton produce.
+var homeTab: string|null = (function(){
+  try{
+    var v = localStorage.getItem('sw_lado');
+    return (v === 'sig' || v === 'byo' || v === 'drink') ? v : null;
+  }catch(e){ return null; }   // navegacion privada, cookies bloqueadas: se pregunta igual
+})();
+// Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
+// arriba del catalogo— para que no haya uno que recuerde y otro que no.
+function elegirLado(id){
+  homeTab = id;
+  try{ localStorage.setItem('sw_lado', id); }catch(e){}
+  render();
+}
 // De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
 // las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
 // tema claro/oscuro — es una decisión del cliente que el color acompaña.

@@ -433,6 +433,36 @@ function mostrarHolaSiCorresponde(conRender?){
     if(conRender)render();
   }catch(e){}
 }
+// ── EL HUECO DE ABAJO LO MIDE LA BARRA, NO UN NÚMERO ESCRITO A MANO ────────────────
+// `#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación de dos
+// pestañas el día que alguien la midió. Pero no hay UNA barra: el armador pone una de 68 px
+// (dos botones con su padding), el panel otra, y la de "hay versión nueva" otra más. Con el
+// número fijo, en el armador quedaban 19 px de contenido DEBAJO de una barra opaca —
+// exactamente el último renglón de la última tarjeta, que es lo que el cliente está por
+// tocar. No rompía nada ni avisaba: solo tapaba.
+//
+// Ahora cada barra fija se declara con la clase `sw-barra` y acá se mide la más alta que
+// haya en pantalla, después de pintar. Si no hay ninguna, el hueco es 0 y la pantalla llega
+// hasta abajo, que es lo correcto. La altura medida YA INCLUYE el área segura del iPhone,
+// porque cada barra la lleva en su propio padding — por eso `#app` no vuelve a sumarla.
+function medirBarraFija(){
+  try{
+    var barras=document.querySelectorAll('.sw-barra');
+    var alto=0;
+    for(var i=0;i<barras.length;i++){
+      var r=(barras[i] as HTMLElement).getBoundingClientRect();
+      if(r.height>alto)alto=r.height;
+    }
+    document.documentElement.style.setProperty('--sw-barra',Math.ceil(alto)+'px');
+  }catch(e){}
+}
+// Las fuentes serif llegan después del primer pintado y cambian la altura de los botones,
+// así que se vuelve a medir cuando terminan de cargar y cuando la ventana cambia de tamaño.
+try{
+  window.addEventListener('resize',medirBarraFija);
+  if((document as any).fonts&&(document as any).fonts.ready)(document as any).fonts.ready.then(medirBarraFija);
+}catch(e){}
+
 function render(){
   try{
     // Red de seguridad contra el bug de Culqi (ver el comentario largo junto a la
@@ -467,15 +497,16 @@ function render(){
       loadAdminBundle().then(function(){busy=false;render();}).catch(function(){busy=false;render();});
     }
     renderScreen();
+    medirBarraFija();
   }catch(e){
     try{
       console.error('render() falló en la pantalla "'+sndScreen+'":',e);
       var appEl=(document.getElementById('app') as HTMLElement | null);
       if(appEl){
-        appEl.innerHTML='<div style="min-height:100vh;background:#1E3932;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#F2F0EB">'
+        appEl.innerHTML='<div style="min-height:100vh;background:#12150F;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-size:22px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
-          +'<p style="font-size:15px;line-height:1.55;color:#A8C8B0;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
-          +'<div style="background:#1A3028;border:1px solid #3A6B58;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
+          +'<p style="font-size:15px;line-height:1.55;color:#9DA096;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
+          +'<div style="background:#171A14;border:1px solid #2C3228;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
           +'<div style="color:'+GOLD+';font-weight:600;letter-spacing:.14em;font-size:11px;margin-bottom:8px">DETALLE //</div>'
           +'<div>Pantalla: '+esc(String(sndScreen))+'</div><div>Versión: '+esc(APP_BUILD)+'</div><div>Error: '+esc(String((e&&(e as any).message)||e))+'</div></div>'
           +'<button onclick="applyAppUpdate()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-size:15px;font-weight:700;padding:18px 0;border-radius:10px;text-align:center">Recargar la app</button></div>';
@@ -500,13 +531,13 @@ function renderScreen(){
     // dashboard, inventario, etc.) mostraba el splash de pantalla completa (logo +
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
-    if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
+    if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
     // Las pantallas de LISTA del cliente reciben el mismo trato que ya tenía el admin: el
     // armazón con bloques del tamaño real en vez del splash de pantalla completa. El splash
     // borra el contexto y deja al cerebro en una espera sin final a la vista; el esqueleto
     // dice qué viene. Solo aplica donde lo que llega ES una lista de tarjetas — en un cobro
     // o un login no hay armazón que anticipar y el splash sigue siendo lo correcto.
-    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#1E3932);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
+    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
@@ -594,7 +625,7 @@ function renderScreen(){
         : (adminBundleError
             ? '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px">'
               + '<div style="font-family:\'Bodoni Moda\',serif;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">El panel no cargó</div>'
-              + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);max-width:280px;line-height:1.55">'+esc(adminBundleError)+'</p>'
+              + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);max-width:280px;line-height:1.55">'+esc(adminBundleError)+'</p>'
               + BTN('Reintentar //','adminBundleError=\'\';render()')
               + '</div>'
             : sOHome());
@@ -609,7 +640,7 @@ function renderScreen(){
   // Nunca mientras hay una operación en vuelo (un pago, por ejemplo): recargar en medio
   // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
   var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';
-  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#1E3932)">'+offlineBanner+updateBanner+h+'</div>';
+  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+offlineBanner+updateBanner+h+'</div>';
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;
   // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias

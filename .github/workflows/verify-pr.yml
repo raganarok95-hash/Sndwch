@@ -31,6 +31,14 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
+      # ⚠ `check:fotos` (dentro de `verify`) es el UNICO paso de la cadena escrito en
+      # Python, y usa Pillow. El workflow nunca instalo dependencias de Python, asi que
+      # desde que ese chequeo entro a `verify` (commit 52fc955) este job venia muriendo
+      # con `ModuleNotFoundError: No module named 'PIL'` antes de llegar a los tests.
+      # El chequeo protege que las 8 fotos de Signature conserven su original y su
+      # tratamiento; sin esta linea el guardarrail existe en el repo y no corre en el CI,
+      # que es la peor de las dos situaciones: da por cubierto algo que no lo esta.
+      - run: python3 -m pip install --quiet Pillow
       - run: npx playwright install --with-deps chromium
       # playwright.config.ts usa PLAYWRIGHT_CHROMIUM_PATH con un fallback a
       # /opt/pw-browsers/chromium (ruta fija del sandbox de Claude Code) — en un runner de

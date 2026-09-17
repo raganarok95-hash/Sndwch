@@ -39,11 +39,19 @@ test('?legal=devoluciones abre cambios y devoluciones', async ({ page }) => {
   await expect(page.locator('text=/Devoluciones|Cambios/i').first()).toBeVisible();
 });
 
-test('un valor que no existe no rompe nada: cae al menú de siempre', async ({ page }) => {
+test('un valor que no existe no rompe nada: cae a la entrada de siempre', async ({ page }) => {
   // Un link mal copiado no puede dejar la app en blanco — el peor caso es el comportamiento
   // normal, nunca una pantalla rota.
+  //
+  // Lo que aqui se afirma cambio el 2026-09-17 y vale decir por que NO es debilitar la
+  // prueba: la entrada normal de la app dejo de ser la lista de Signatures y paso a ser la
+  // eleccion entre los dos hermanos (`homeTab` arranca en null). La intencion de esta
+  // prueba siempre fue "cae a lo normal", no "cae a la lista"; afirmar sobre la lista era
+  // afirmar sobre un detalle de implementacion. Se comprueban los DOS lados, que es mas
+  // fuerte que el `text=SIGNATURE` anterior: una pantalla en blanco no los tiene.
   await abrir(page, APP_FILE + '?legal=cualquiercosa');
-  await expect(page.locator('text=SIGNATURE').first()).toBeVisible();
+  await expect(page.locator('text=/Ya está resuelto/i').first()).toBeVisible();
+  await expect(page.locator('text=/Tú decides/i').first()).toBeVisible();
 });
 
 // ── EL TEXTO LEGAL TIENE QUE DESCRIBIR LO QUE LA APP HACE ──────────────────────────────

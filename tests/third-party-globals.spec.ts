@@ -31,7 +31,11 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
   // número de milisegundos: una espera fija o se queda corta en una máquina lenta (CI) o
   // desperdicia tiempo en una rápida, y en los dos casos el test deja de decir la verdad.
   await page.waitForFunction(() => typeof (window as any).sndRestoreOwnedFns === 'function');
-  await expect(page.locator('text=/ARMA EL TUYO/i').first()).toBeVisible();
+  // Lo que se comprueba es que la app RENDERIZO su entrada, no un texto en particular.
+  // Desde el 2026-09-17 la entrada es la eleccion entre los dos hermanos, asi que se
+  // afirma sobre sus dos lados: una app muerta no tiene ninguno de los dos.
+  await expect(page.locator('text=/Ya está resuelto/i').first()).toBeVisible();
+  await expect(page.locator('text=/Tú decides/i').first()).toBeVisible();
 
   // Un bundle de terceros pisa tres funciones nuestras, igual que hizo Culqi.
   const pisadas = await page.evaluate(() => {
@@ -60,11 +64,19 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
   expect(repuestas.startOrder, 'startOrder() debe haber vuelto a ser la nuestra').toBe(true);
 
   // Y la app tiene que seguir navegando de verdad, no solo tener las funciones bien.
-  await page.locator('text=/ARMA EL TUYO/i').first().click();
+  // Se entra por el lado de WICHO de la pantalla de eleccion, que es la puerta real a
+  // ARMA EL TUYO desde el 2026-09-17. Vale mas que el clic anterior: ejercita la entrada
+  // nueva Y el paso siguiente, con las globales ya pisadas por el script externo.
+  await page.getByRole('button', { name: /Tú decides/ }).click();
   const paso = page.locator('text=/Ver el paso a paso completo/i').first();
   await expect(paso).toBeVisible();
   await paso.click();
-  await expect(page.locator('text=Paso 1 // 5')).toBeVisible();
+  // El armador ya no rotula "Paso 1 // 5": desde el concepto 6 (2026-09-16) el progreso es
+  // un riel que además muestra QUE llevas elegido en cada paso. Se afirma sobre el riel —
+  // que exista y que el paso encendido sea el primero— porque eso es lo que el cliente ve
+  // hoy, y porque un `data-actual` es un gancho más estable que un texto de rótulo.
+  await expect(page.locator('[data-paso]')).toHaveCount(5);
+  await expect(page.locator('[data-actual="1"]')).toHaveText(/PAN/i);
 
   expect(errores, 'no debe quedar ningún error de JavaScript sin manejar').toEqual([]);
 });
@@ -79,7 +91,7 @@ test('un sndScreen corrupto no deja la app muerta', async ({ page }) => {
   await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.goto(APP_FILE);
   await page.waitForFunction(() => typeof (window as any).render === 'function');
-  await expect(page.locator('text=/ARMA EL TUYO|Signatures/i').first()).toBeVisible();
+  await expect(page.locator('text=/Ya está resuelto|Tú decides/i').first()).toBeVisible();
 
   await page.evaluate(() => {
     const w = window as any;
@@ -87,7 +99,7 @@ test('un sndScreen corrupto no deja la app muerta', async ({ page }) => {
     w.render();
   });
 
-  await expect(page.locator('text=/ARMA EL TUYO|Signatures/i').first()).toBeVisible();
+  await expect(page.locator('text=/Ya está resuelto|Tú decides/i').first()).toBeVisible();
   const tipo = await page.evaluate(() => typeof (window as any).sndScreen);
   expect(tipo, 'sndScreen debe haber vuelto a ser un string').toBe('string');
 });
