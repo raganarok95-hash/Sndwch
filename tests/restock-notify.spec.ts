@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockBackend, stubWindowOpen, APP_FILE } from './helpers';
+import { mockBackend, stubWindowOpen, APP_FILE, elegirSando } from './helpers';
 
 // "Avísame cuando vuelva" — antes la tarjeta AGOTADO de un Signature simplemente no
 // dejaba intentar pedirlo, sin ningún registro de quién lo quería. Este test cubre que
@@ -24,7 +24,8 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   // marcarla sin stock mostraría dos tarjetas AGOTADO a la vez.
   await stubWindowOpen(page);
   await page.goto(APP_FILE);
-  await page.waitForSelector('text=SIGNATURE');
+  // La app abre en la eleccion entre los hermanos; esta prueba necesita el catalogo.
+  await elegirSando(page);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await page.getByRole('button', { name: 'INGRESAR' }).click();

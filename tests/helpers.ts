@@ -120,6 +120,15 @@ export async function clearDeliveryPin(page: Page) {
   });
 }
 
+// La app abre en la pantalla de eleccion entre los dos hermanos (`homeTab` arranca en
+// null). Una prueba que necesita el CATALOGO tiene que pasar por ahi igual que un cliente.
+// Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
+// el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
+export async function elegirSando(page: Page) {
+  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
+  await page.waitForSelector('text=SIGNATURE');
+}
+
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   const calls = await mockBackend(page, handlers);
   await stubWindowOpen(page);
@@ -139,7 +148,6 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   // estado que produccion no podia alcanzar, y la pantalla no se mostro NUNCA. Un clic
   // recorre el mismo camino que el cliente, y de paso deja la pantalla de eleccion
   // cubierta por toda la suite: si se rompe, se rompe ruidosamente y en todas partes.
-  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
-  await page.waitForSelector('text=SIGNATURE');
+  await elegirSando(page);
   return calls;
 }
