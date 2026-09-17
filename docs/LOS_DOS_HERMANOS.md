@@ -89,6 +89,49 @@ acanalado no estaba en ninguna. Escribir la regla no la pone delante en el momen
 **El paso es: abrir esta tabla y escribir dónde va cada elemento ANTES de la primera etiqueta.
 Si un elemento característico no tiene sitio asignado, la pantalla no está terminada.**
 
+## El sistema de SANDO — aprobado por el dueño el 2026-09-17
+
+Salió de tres sistemas propuestos: se tomó **él y su frase** de uno y **la foto grande y limpia**
+de otro. Lo aprobado:
+
+| | |
+|---|---|
+| **Fondo** | papel crema `#EFE6D4` — sale de su tan. **Su lado dejó de ser oscuro.** |
+| **Tinta** | `#1E2B22`, su pelaje |
+| **Acento** | el naranja del forro `#D8823C`, en franja vertical |
+| **Apoyo** | oliva salvia `#6C7860` |
+| **Display** | Anton, en mayúsculas, para nombres y títulos |
+| **Su voz** | Instrument Serif en itálica — su frase firmada |
+| **Texto** | EB Garamond |
+| **Números** | IBM Plex Mono — precios tabulares |
+
+**⚠ Ya NO se usa el dorado sobre verde casi negro con Bodoni Moda.** Esa combinación era la de la
+app anterior, y es la razón por la que cinco rediseños seguidos de su carta le siguieron
+pareciendo la web vieja al dueño: se le cambiaba la estructura y la piel seguía siendo la misma.
+El dorado sigue existiendo solo en el `//` del wordmark.
+
+Lo que se aprobó de la composición: él abre la carta con su frase firmada; **la foto va grande y
+sin NADA encima** —el texto vive debajo, sobre el papel—; el forro corre vertical a todo lo alto;
+el acanalado separa plato de plato. El menú secreto entra en el mismo ritmo pero **sin número de
+carta** (no está en la carta, no puede tener número), con el nombre una sola vez y, donde los
+otros llevan precio, lo que te falta.
+
+### ⚠ ESTO NO ES UNA PLANTILLA
+
+**Aprobado no significa replicar.** Palabras del dueño al cerrarlo: *«puedes guardar que me
+gustó, pero no necesariamente vas a replicarlo. Deja de buscar lo más fácil: en diseño importa
+solo cómo se vea.»*
+
+Copiar esta composición a las demás pantallas porque ya está aprobada es exactamente el camino
+fácil de siempre, con otro disfraz. **Lo que se conserva es la paleta, las tipografías y los
+elementos; la composición se decide pantalla por pantalla, mirando cómo queda.** Un carrito, una
+ficha de producto y una pantalla de pago no tienen por qué componerse como una carta.
+
+### La espiral se genera por cálculo, nunca a mano
+
+Se dibujó dos veces a mano en SVG y las dos salió un trébol cortado en vez de una espiral. Se
+genera con un bucle —radio creciente sobre el ángulo, ~3.6 vueltas— y sale bien siempre.
+
 ## ⚠ Lo que NUNCA se hace
 
 - **Teñir una foto de comida con el color del hermano.** Error real cometido el 2026-09-17: se
