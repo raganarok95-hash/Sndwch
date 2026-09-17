@@ -37,7 +37,13 @@ export async function mockBackend(page: Page, handlers: ActionHandlers = {}) {
     const body = route.request().postDataJSON();
     const action = body?.action;
     calls.push({ action, body });
-    const entry = all[action];
+    // `'*'` es el comodín: se usa cuando una prueba recorre MUCHAS acciones y lo que le
+    // importa no es cada respuesta sino que ninguna pantalla se rompa (ver
+    // `panel-todas-las-herramientas.spec.ts`, que abre las 35 herramientas del panel).
+    // El estricto sigue siendo el default: sin handler y sin comodín, la acción responde
+    // 400 con "acción no mockeada" — que es lo que hace que una prueba normal se entere de
+    // que la app empezó a llamar algo que nadie declaró.
+    const entry = all[action] !== undefined ? all[action] : all['*'];
     if (entry === undefined) {
       await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'acción no mockeada: ' + action }) });
       return;
