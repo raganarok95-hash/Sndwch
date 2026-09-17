@@ -11,7 +11,19 @@ function H(sub?,bk?,showCart?){
   var sz=sub?26:40;
   // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
   // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
-  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.04em;margin-top:4px">Sándwiches hechos acá</div>';
+  // ⚠ SIN LEMA BAJO EL WORDMARK (decisión del dueño, 2026-09-17). Decía "Sándwiches hechos
+  // acá", que incumplía la regla escrita en 01-catalogo-y-estado.ts: la marca NO usa
+  // "Casero"/"Tradicional" ni sinónimos, porque se posiciona como compañía consolidada.
+  //
+  // Y no se reemplaza por otro. Tres motivos: competía con la línea de estado que va justo
+  // debajo (abierto/cerrado, ETA, costo de envío), que cambia y que el cliente sí necesita;
+  // un lema es material de anuncio o de bio, no cromo de una app; y el posicionamiento ya
+  // lo dicen los dos hermanos en la pantalla siguiente —"Ya está resuelto" / "Tú decides"—
+  // que además es interactivo en vez de decorativo. Repetirlo arriba lo debilitaba.
+  //
+  // El subtítulo `sub` sigue existiendo: lo usan las pantallas internas para decir DÓNDE
+  // estás (SIGNATURES, CONFIRMAR SÁNDWICH). Eso es navegación, no un lema.
+  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'';
   // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
   // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
   var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#2D5246);border-radius:8px;display:flex">'+icon('cart',18,'#F2F0EB')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
@@ -993,7 +1005,7 @@ function sOEleccion(){
   var colorEstado=!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
   var mitad=function(id,nombre,titulo,bajada,acento,plano){
     var esByo=id==='byo';
-    return'<button onclick="homeTab=\''+id+'\';render()" style="all:unset;cursor:pointer;box-sizing:border-box;'
+    return'<button onclick="elegirLado(\''+id+'\')" style="all:unset;cursor:pointer;box-sizing:border-box;'
       +'flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;'
       +'background:'+plano+';overflow:hidden">'
       // ⚠ LA FIGURA SE DIMENSIONA POR EL ANCHO DE SU MITAD, NUNCA POR EL ALTO.
@@ -1156,7 +1168,7 @@ function sOHome(){
         // izquierda) y la cara se lee completa. Separarlas con un hueco la parte al medio, y
         // es lo que hacia la primera version de esto.
         var mitad = esByo ? 'wicho' : 'sando';
-        return'<button onclick="homeTab=\''+id+'\';render()" aria-pressed="'+(activo?'true':'false')
+        return'<button onclick="elegirLado(\''+id+'\')" aria-pressed="'+(activo?'true':'false')
           +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;'
           +'position:relative;overflow:hidden;background:'+fondo
           +';display:flex;flex-direction:column;justify-content:flex-end;transition:background .3s ease">'
@@ -1197,7 +1209,7 @@ function sOHome(){
         +'</div>'
         // Las bebidas no son un tercer hermano: no son una forma de pedir un sándwich, son
         // otra cosa que se compra. Por eso van debajo y no dentro de la división.
-        +'<button onclick="homeTab=\'drink\';render()" aria-pressed="'+(homeTab==='drink'?'true':'false')
+        +'<button onclick="elegirLado(\'drink\')" aria-pressed="'+(homeTab==='drink'?'true':'false')
         +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
         +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'
         +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#2D5246)')
@@ -1287,22 +1299,80 @@ function sOHome(){
             +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+pz(rec.p15)+' en 15CM.</div></div>';
         })()
         +'</div>';
+      // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
+      //
+      // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
+      // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
+      // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
+      //
+      // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
+      // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
+      // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
+      // jamas antes de pedirlo, y una foto nitida la revelaria.
+      //
+      // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
+      // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
+      // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
       var vaultCard=secretSig?(function(){
         var myTotal=cust?(cust.total_orders||0):0;
         var missing=Math.max(0,secretSig.minOrders-myTotal);
         var unlocked=!!cust&&missing===0;
-        return'<div style="margin:20px 0 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Menú secreto //</div>'
-          // Borde sólido (no dashed) — dashed ya es el lenguaje visual de "opción sin
-          // seleccionar" en el resto de la app (row-byo-opt/CARDOFF); reusarlo acá leía
-          // como placeholder incompleto en vez de exclusivo (hallazgo de auditoría visual).
-          // El chip "Secreto" pasa de rectangular a un sello circular, más cerca del
-          // medallón del mockup que del badge de precio genérico que usa el resto de tarjetas.
-          +'<div onclick="'+(unlocked?'startOrderWithSig(\''+secretSig.id+'\')':'')+'" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px solid rgba(203,162,88,.4);border-radius:12px;padding:24px 20px;text-align:center;'+(unlocked?'cursor:pointer':'')+'">'
-          +'<span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:1px solid '+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.04em;margin:0 auto 14px">Secreto</span>'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+secretSig.n+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea a los '+secretSig.minOrders+' pedidos.</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:12px">'+(unlocked?SOLES+pz(secretSig.p15):'Te faltan '+missing+' pedido'+(missing===1?'':'s'))+'</div>'
-          +'</div></div>';
+        var hechos=Math.min(myTotal,secretSig.minOrders);
+        var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
+        var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
+          +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
+          +'margin-bottom:10px">Menú secreto</div>';
+
+        if(unlocked){
+          // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
+          // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
+          return'<div style="margin:20px 0 16px">'+rot
+            +'<div onclick="startOrderWithSig(\''+secretSig.id+'\')" class="sw-revelar" '
+            +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
+            +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
+              +'" style="width:100%;height:100%;object-fit:cover">':'')
+            +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
+            +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
+            +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
+            +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
+            +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
+            +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
+            +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+            +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
+            +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+            +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
+            +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
+            +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
+            +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
+            +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
+            +'</div></div></div>';
+        }
+
+        // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
+        // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
+        var seg='';
+        for(var i=0;i<secretSig.minOrders;i++){
+          seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
+            +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
+        }
+        return'<div style="margin:20px 0 16px">'+rot
+          +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
+          +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
+            +'style="width:100%;height:100%;object-fit:cover">':'')
+          +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
+          +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
+          +'justify-content:center;padding:26px;text-align:center">'
+          +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+          +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+          +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
+          +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
+          +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
+          +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
+          +'</div></div></div>';
       })():'';
       // Pedido de oficina — el canal con mejor economía del negocio: una sola entrega para
       // 4-8 sándwiches, así que el delivery por persona baja a una fracción. Antes solo

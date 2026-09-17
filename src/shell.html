@@ -386,6 +386,39 @@ body.kb-open #app{padding-bottom:0}
 .sw-eye svg{width:100%;height:100%}
 @keyframes sw-spin{to{transform:rotate(360deg)}}
 .sw-spiral{animation:sw-spin 1.4s linear infinite;transform-origin:50% 50%}
+
+/* ── EL MENÚ SECRETO (2026-09-17) ────────────────────────────────────────────────────
+   El ojo en espiral de WICHO, recortado del logo del dueño (no dibujado): en esta paleta
+   el morado tiene UN trabajo —lo que sorprende— así que el secreto es para lo que existe.
+   GIRA LENTO, 9s. A la velocidad del spinner (1.4s) se lee como "cargando"; a 9s se lee
+   como hipnosis, que es lo que el dibujo ya dice. */
+.sw-ojo{animation:sw-ojo-gira 9s linear infinite;transform-origin:50% 50%;display:block}
+
+/* La mirada bajo el desenfoque: se mantiene presionado y el velo cede, sin llegar a cero.
+   ⚠ NUNCA LLEGA A 0. La composición del secreto no se revela antes de pedirlo, y una foto
+   nítida la revelaría — 9px sigue diciendo "hay algo" sin decir qué. Y vuelve al soltar:
+   el secreto no se queda abierto. Se cubre :hover (escritorio) y :active (dedo). */
+.sw-tapada{filter:blur(18px) saturate(.45) brightness(.4);transform:scale(1.16);
+  transition:filter .45s ease,transform .45s ease}
+.sw-espiar:hover .sw-tapada,.sw-espiar:active .sw-tapada{filter:blur(7px) saturate(.85) brightness(.72);transform:scale(1.06)}
+
+/* Al desbloquearse, la tarjeta se revela una vez al montarse: pasa de tapada a nítida.
+   No es un adorno — es el único momento en que el cliente VE que se lo ganó. */
+.sw-revelar{animation:sw-revelar 1.15s cubic-bezier(.22,.9,.3,1) both}
+
+@keyframes sw-ojo-gira{to{transform:rotate(360deg)}}
+@keyframes sw-revelar{
+  0%  {filter:blur(16px) brightness(.45);transform:scale(1.06)}
+  60% {filter:blur(2px)  brightness(1.06)}
+  100%{filter:blur(0)    brightness(1);transform:scale(1)}
+}
+/* Quien pidió menos movimiento no recibe ni el giro ni la revelación: se queda el dato,
+   que es lo que la tarjeta tiene que comunicar igual. */
+@media (prefers-reduced-motion:reduce){
+  .sw-ojo{animation:none}
+  .sw-revelar{animation:none}
+  .sw-tapada{transition:none}
+}
 @media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
 .leaflet-container{background:#1a1a2e}
 </style>

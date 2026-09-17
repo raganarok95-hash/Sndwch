@@ -1316,7 +1316,35 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // null = todavia no eligio hermano, y eso pinta la pantalla de eleccion (sOEleccion).
 // Antes arrancaba en 'sig', asi que esa pantalla no existia: el cliente caia directo en
 // la lista de Signatures y la decision que estructura la marca era una barra de pestanas.
-var homeTab: string|null = null;
+//
+// ⚠ SE RECUERDA EL LADO, PERO SOLO PARA NO VOLVER A PREGUNTAR (decision del dueno,
+// 2026-09-17: "que recuerde la eleccion anterior pero no de manera invasiva").
+//
+// La pantalla de eleccion es para quien llega por primera vez. A un cliente que ya pidio
+// diez veces, preguntarle en cada visita de quien es el pedido es un toque de mas cada vez
+// -- y la friccion que mas se nota es la que se repite. Desde la segunda visita entra
+// directo a su lado.
+//
+// No es invasivo porque NO lo encierra: la barra de los dos hermanos sigue arriba del
+// catalogo, asi que cambiarse es un toque y esta a la vista. Recordar sin salida seria
+// invasivo; recordar con la puerta abierta al lado es lo contrario.
+//
+// El valor vive en localStorage y se acepta SOLO si es uno de los tres lados reales: un
+// localStorage manipulado o heredado de una version futura no puede dejar la app en un
+// estado que ningun boton produce.
+var homeTab: string|null = (function(){
+  try{
+    var v = localStorage.getItem('sw_lado');
+    return (v === 'sig' || v === 'byo' || v === 'drink') ? v : null;
+  }catch(e){ return null; }   // navegacion privada, cookies bloqueadas: se pregunta igual
+})();
+// Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
+// arriba del catalogo— para que no haya uno que recuerde y otro que no.
+function elegirLado(id){
+  homeTab = id;
+  try{ localStorage.setItem('sw_lado', id); }catch(e){}
+  render();
+}
 // De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
 // las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
 // tema claro/oscuro — es una decisión del cliente que el color acompaña.
