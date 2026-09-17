@@ -1742,8 +1742,22 @@ function sigPreviewOverlayHTML(){
   var ch:any=s.fixedCheese?CHEESE.find(function(x){return x.id===s.fixedCheese;}):null;
   var cheeseLbl=ch?ch.l+(ch.s?' // '+ch.s:'')+(ch.d?' — '+ch.d:''):'';
   var photo=SIG_IMG[s.id];
+  // ⚠ LA FOTO PASA DE 220px A MEDIA PANTALLA (concepto 8, elegido por el dueño).
+  // A 220px la foto tratada se ve como una miniatura grande: el encuadre, la viñeta y el
+  // viraje de scripts/tratar_fotos.py solo rinden cuando la foto tiene sitio. Y esta es la
+  // pantalla donde el cliente YA decidió mirar ESTE sándwich — el único momento del flujo
+  // en que mirar la comida es exactamente lo que quiere hacer.
+  //
+  // Se dimensiona en vh con tope y piso: a pantalla completa en un celular alto la ficha
+  // dejaría el precio y los ingredientes fuera de vista, y en uno bajo la foto se
+  // aplastaría. El degradado y el nombre sobre la foto ya existían; lo que cambia es el
+  // sitio que tienen para respirar.
+  //
+  // El degradado pasa de rgba(30,57,50) —el verde que era el fondo— a casi negro: escrito
+  // a mano como estaba, dejaba una neblina verde encima de cada foto ahora que el fondo
+  // dejó de ser verde.
   var hero=photo
-    ?'<div style="position:relative;border-radius:12px 14px 0 0;overflow:hidden;height:220px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(30,57,50,.92),rgba(30,57,50,.15) 55%,rgba(30,57,50,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
+    ?'<div style="position:relative;border-radius:12px 14px 0 0;overflow:hidden;height:52vh;min-height:300px;max-height:460px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,7,.94),rgba(8,10,7,.18) 55%,rgba(8,10,7,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
     // Sin foto no hay nada que rotular como "referencial" — el aviso va SOBRE la foto
     // (ver arriba), que es donde de verdad puede diferir de lo que llega a la mesa.
     // Estaba al revés: se mostraba solo en el placeholder sin imagen, o sea justo donde
