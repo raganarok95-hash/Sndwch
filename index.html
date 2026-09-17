@@ -146,6 +146,46 @@
    cualquier teléfono de gama baja. Así solo se interpolan los pocos que pintan superficie. */
 body,#app{transition:background-color .42s ease}
 
+/* ── ESCRITORIO: LOS PRIMEROS BREAKPOINTS QUE TIENE LA APP (2026-09-17) ──────────────
+   Hasta hoy `shell.html` tenía CINCO media queries y las cinco eran
+   `prefers-reduced-motion`: ni un solo breakpoint de ancho. En una laptop la app era una
+   columna de teléfono de 480px en el centro de 1440, con el resto vacío — y es justo
+   desde donde el dueño la muestra cuando se la enseña a alguien.
+
+   ⚠ NO SE ENSANCHA LA COLUMNA. Cada pantalla está compuesta para ~390px: estirarla a
+   1000 dejaría líneas de texto de 120 caracteres, fotos deformadas y los botones de
+   acción en el borde opuesto al pulgar. El negocio es delivery: el pedido se hace en el
+   teléfono, y el escritorio es donde se MIRA. Lo que hay que arreglar no es el ancho, es
+   que el vacío se vea deliberado.
+
+   Lo que hace: el fondo deja de ser un vacío y pasa a llevar el color del lado elegido
+   (el mismo `data-lado` que ya tiñe la app), y la columna se lee como un panel con canto
+   propio en vez de un recorte. Dos reglas, cero riesgo de romper una pantalla. */
+@media (min-width:880px){
+  body{
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(47,107,84,.11), transparent 72%),
+      radial-gradient(ellipse 60% 50% at 50% 110%, rgba(47,107,84,.05), transparent 72%),
+      #0A0C08;
+    background-attachment:fixed;
+  }
+  :root[data-lado="wicho"] body{
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(140,200,236,.10), transparent 72%),
+      radial-gradient(ellipse 60% 50% at 50% 110%, rgba(140,200,236,.045), transparent 72%),
+      #070A0C;
+    background-attachment:fixed;
+  }
+  /* El canto: una línea de un píxel y una sombra ancha. Sin esto la columna termina de
+     golpe contra el fondo y se lee como una captura pegada, no como la app. */
+  #app{
+    box-shadow:0 0 0 1px var(--sw-border-soft,#1A1D17), 0 24px 80px -24px rgba(0,0,0,.75);
+  }
+  /* La barra inferior fija vive pegada al viewport, así que sin esto queda flotando en el
+     fondo y no sobre la columna. Se le pone el mismo canto. */
+  .bottom-nav{box-shadow:0 0 0 1px var(--sw-border-soft,#1A1D17)}
+}
+
 /* Modo claro del panel admin — antes era filter:invert(1) hue-rotate(180deg) sobre todo
    el contenedor, lo que invertía matemáticamente el dorado de marca (#CBA258) a un olivo
    lavado (hallazgo de auditoría visual). Ahora es una paleta clara de verdad: cada
