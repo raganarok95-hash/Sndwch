@@ -115,7 +115,11 @@ function renderOverlays(){
   // información que decide la compra, no un campo de formulario. En el home el cliente
   // todavía tiene el enlace de WhatsApp del pie; el botón flotante sigue disponible en el
   // resto de pantallas, que es donde de verdad hace falta pedir ayuda.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'){
+  // o_sig agregado (2026-09-17): es la pantalla con MAS scroll de todas y el boton caia
+  // encima de las tarjetas de producto mientras se recorre. Es la CUARTA instancia del
+  // mismo defecto que el comentario de arriba ya documenta para checkout, carrito y home
+  // -- el patron estaba identificado y a esta pantalla nadie la agrego a la lista.
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }

@@ -1892,7 +1892,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'f032d9cc83';
+var APP_BUILD = '2b601117f2';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2237,7 +2237,11 @@ function renderOverlays() {
     // información que decide la compra, no un campo de formulario. En el home el cliente
     // todavía tiene el enlace de WhatsApp del pie; el botón flotante sigue disponible en el
     // resto de pantallas, que es donde de verdad hace falta pedir ayuda.
-    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home') {
+    // o_sig agregado (2026-09-17): es la pantalla con MAS scroll de todas y el boton caia
+    // encima de las tarjetas de producto mientras se recorre. Es la CUARTA instancia del
+    // mismo defecto que el comentario de arriba ya documenta para checkout, carrito y home
+    // -- el patron estaba identificado y a esta pantalla nadie la agrego a la lista.
+    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, 'var(--sw-on-gold,#241a08)') + '</a>';
     }
@@ -4247,6 +4251,15 @@ function sOEleccion() {
         + mitad('byo', 'WCH', 'Tú decides', 'Pan, proteína, lo que quieras.', 'var(--sw-sky,#8CC8EC)', 'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
         + '</div></div>';
 }
+// Devuelve la primera frase de un texto. Si no encuentra un punto seguido de espacio
+// —un pitch de una sola oracion, por ejemplo— devuelve el texto entero: nunca inventa un
+// corte donde el autor no lo puso, que es justo el defecto que este helper viene a cerrar.
+function primeraFrase(t) {
+    if (!t)
+        return '';
+    var m = /^(.+?[.!?])(\s|$)/.exec(t);
+    return m ? m[1] : t;
+}
 function sOHome() {
     // ── LA ELECCION ES UNA PANTALLA, NO UNA PESTANA (concepto 1, elegido por el dueno) ──
     //
@@ -4504,7 +4517,7 @@ function sOHome() {
                     + '<div onclick="' + (unlocked ? 'startOrderWithSig(\'' + secretSig.id + '\')' : '') + '" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px solid rgba(203,162,88,.4);border-radius:12px;padding:24px 20px;text-align:center;' + (unlocked ? 'cursor:pointer' : '') + '">'
                     + '<span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:1px solid ' + GOLD + ';font-family:\'EB Garamond\',serif;font-style:italic;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.04em;margin:0 auto 14px">Secreto</span>'
                     + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">' + secretSig.n + '</div>'
-                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea en ' + esc(rankName(secretSig.minOrders)) + '<br>(' + secretSig.minOrders + ' pedidos).</div>'
+                    + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea a los ' + secretSig.minOrders + ' pedidos.</div>'
                     + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:12px">' + (unlocked ? SOLES + pz(secretSig.p15) : 'Te faltan ' + missing + ' pedido' + (missing === 1 ? '' : 's')) + '</div>'
                     + '</div></div>';
             })() : '';
@@ -4873,7 +4886,18 @@ function sOSig() {
         // Antes el pitch se truncaba a UNA línea porque competía por espacio con la lista de
         // ingredientes. Sobre la foto hay sitio para dos, que es lo que hace falta para que
         // una frase entera se entienda sin abrir la ficha.
-        var pitchPreview = s.pitch ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin-top:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-shadow:0 1px 4px rgba(0,0,0,.7)">' + esc(s.pitch) + '</div>' : '';
+        // ⚠ EN LA TARJETA VA LA PRIMERA FRASE, NO EL PITCH RECORTADO A DOS LINEAS.
+        // Los cinco pitches miden ~210 caracteres (unas 6 lineas a este ancho) y la tarjeta
+        // les daba 2 con `-webkit-line-clamp`, asi que los CINCO se cortaban a media palabra
+        // ("...cocidas dentro de su propia...", "...puestos en pliegues so..."). Cinco
+        // tarjetas cortadas a media palabra en la pantalla de compra se leen como descuido,
+        // y subir el recorte a 3 lineas solo mueve el corte de sitio.
+        //
+        // La primera frase es el GANCHO DE OCASION con el que se reescribieron a proposito
+        // ("Para la noche en que ya decidiste que no vas a cocinar."): termina en un limite
+        // real, nunca parte una palabra, y es la parte mas fuerte. El pitch completo va en la
+        // ficha del producto, que es donde el cliente ya decidio mirar ese sandwich.
+        var pitchPreview = s.pitch ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin-top:5px;text-shadow:0 1px 4px rgba(0,0,0,.7)">' + esc(primeraFrase(s.pitch)) + '</div>' : '';
         // Precio/receta fijos sin importar el tamaño elegido (hoy solo THE CHICAGO, plato
         // tradicional que no se vende "para compartir") — el selector 15CM/30CM de arriba
         // sigue siendo genérico para todos los Signature, así que sin este aviso el cliente
@@ -7384,6 +7408,17 @@ async function doGoogleRegister() {
             e2.textContent = e.message;
     }
 }
+// ⚠ ONE TAP NO EXISTIA. Hasta el 2026-09-17 esta funcion hacia exactamente dos cosas
+// —`initialize()` y `renderButton()`— y ninguna llamada a `prompt()` ni el parametro
+// `auto_select` aparecian en todo el cliente. O sea que el boton se pintaba y nada mas:
+// quien ya tenia sesion de Google igual tenia que tocarlo. El dueno lo reporto como que
+// la web "no te pide la autenticacion de google o se autentica de inmediato al ya tenerlo
+// puesto", y no era un problema del secret —que el ya habia configurado— sino una
+// funcion que nunca se construyo.
+//
+// `auto_select` es lo que resuelve su pedido: si la persona ya dio consentimiento antes y
+// tiene UNA sola sesion de Google abierta, entra sin tocar nada.
+var _oneTapPedido = false;
 function mountGoogleButton() {
     if (!googleConfigured())
         return;
@@ -7392,8 +7427,19 @@ function mountGoogleButton() {
     var el = document.getElementById('google-btn-mount');
     if (!el)
         return;
-    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential, auto_select: true, cancel_on_tap_outside: false });
     google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', width: 280, text: 'continue_with', locale: 'es' });
+    // La tarjeta de One Tap se pide UNA vez por carga y solo si no hay sesion. Sin el
+    // guard, `mountGoogleButton()` corre despues de CADA render (ver 08-router) y Google
+    // acabaria bloqueando el origen por pedirlo en bucle; y con sesion abierta seria
+    // ofrecerle iniciar sesion a alguien que ya la inicio.
+    if (_oneTapPedido || cust)
+        return;
+    _oneTapPedido = true;
+    try {
+        google.accounts.id.prompt();
+    }
+    catch (e) { }
 }
 // ── DIRECCIÓN DEL CLIENTE: GPS, MAPA Y BUSCADOR ─────────────────────────────────────
 //

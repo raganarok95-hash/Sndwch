@@ -1035,6 +1035,15 @@ function sOEleccion(){
     +'</div></div>';
 }
 
+// Devuelve la primera frase de un texto. Si no encuentra un punto seguido de espacio
+// —un pitch de una sola oracion, por ejemplo— devuelve el texto entero: nunca inventa un
+// corte donde el autor no lo puso, que es justo el defecto que este helper viene a cerrar.
+function primeraFrase(t){
+  if(!t)return'';
+  var m=/^(.+?[.!?])(\s|$)/.exec(t);
+  return m?m[1]:t;
+}
+
 function sOHome(){
   // ── LA ELECCION ES UNA PANTALLA, NO UNA PESTANA (concepto 1, elegido por el dueno) ──
   //
@@ -1291,7 +1300,7 @@ function sOHome(){
           +'<div onclick="'+(unlocked?'startOrderWithSig(\''+secretSig.id+'\')':'')+'" style="background:linear-gradient(160deg,#1A3028,#0d1a15);border:1px solid rgba(203,162,88,.4);border-radius:12px;padding:24px 20px;text-align:center;'+(unlocked?'cursor:pointer':'')+'">'
           +'<span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;border:1px solid '+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.04em;margin:0 auto 14px">Secreto</span>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+secretSig.n+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea en '+esc(rankName(secretSig.minOrders))+'<br>('+secretSig.minOrders+' pedidos).</div>'
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Se desbloquea a los '+secretSig.minOrders+' pedidos.</div>'
           +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:12px">'+(unlocked?SOLES+pz(secretSig.p15):'Te faltan '+missing+' pedido'+(missing===1?'':'s'))+'</div>'
           +'</div></div>';
       })():'';
@@ -1598,7 +1607,18 @@ function sOSig(){
     // Antes el pitch se truncaba a UNA línea porque competía por espacio con la lista de
     // ingredientes. Sobre la foto hay sitio para dos, que es lo que hace falta para que
     // una frase entera se entienda sin abrir la ficha.
-    var pitchPreview=s.pitch?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin-top:5px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;text-shadow:0 1px 4px rgba(0,0,0,.7)">'+esc(s.pitch)+'</div>':'';
+    // ⚠ EN LA TARJETA VA LA PRIMERA FRASE, NO EL PITCH RECORTADO A DOS LINEAS.
+    // Los cinco pitches miden ~210 caracteres (unas 6 lineas a este ancho) y la tarjeta
+    // les daba 2 con `-webkit-line-clamp`, asi que los CINCO se cortaban a media palabra
+    // ("...cocidas dentro de su propia...", "...puestos en pliegues so..."). Cinco
+    // tarjetas cortadas a media palabra en la pantalla de compra se leen como descuido,
+    // y subir el recorte a 3 lineas solo mueve el corte de sitio.
+    //
+    // La primera frase es el GANCHO DE OCASION con el que se reescribieron a proposito
+    // ("Para la noche en que ya decidiste que no vas a cocinar."): termina en un limite
+    // real, nunca parte una palabra, y es la parte mas fuerte. El pitch completo va en la
+    // ficha del producto, que es donde el cliente ya decidio mirar ese sandwich.
+    var pitchPreview=s.pitch?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin-top:5px;text-shadow:0 1px 4px rgba(0,0,0,.7)">'+esc(primeraFrase(s.pitch))+'</div>':'';
     // Precio/receta fijos sin importar el tamaño elegido (hoy solo THE CHICAGO, plato
     // tradicional que no se vende "para compartir") — el selector 15CM/30CM de arriba
     // sigue siendo genérico para todos los Signature, así que sin este aviso el cliente

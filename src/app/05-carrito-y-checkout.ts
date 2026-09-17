@@ -1687,13 +1687,31 @@ async function doGoogleRegister(){
     if(e2)e2.textContent=e.message;
   }
 }
+// ⚠ ONE TAP NO EXISTIA. Hasta el 2026-09-17 esta funcion hacia exactamente dos cosas
+// —`initialize()` y `renderButton()`— y ninguna llamada a `prompt()` ni el parametro
+// `auto_select` aparecian en todo el cliente. O sea que el boton se pintaba y nada mas:
+// quien ya tenia sesion de Google igual tenia que tocarlo. El dueno lo reporto como que
+// la web "no te pide la autenticacion de google o se autentica de inmediato al ya tenerlo
+// puesto", y no era un problema del secret —que el ya habia configurado— sino una
+// funcion que nunca se construyo.
+//
+// `auto_select` es lo que resuelve su pedido: si la persona ya dio consentimiento antes y
+// tiene UNA sola sesion de Google abierta, entra sin tocar nada.
+var _oneTapPedido=false;
 function mountGoogleButton(){
   if(!googleConfigured())return;
   if(typeof google==='undefined'||!google.accounts||!google.accounts.id)return;
   var el=document.getElementById('google-btn-mount');
   if(!el)return;
-  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCredential});
+  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCredential,auto_select:true,cancel_on_tap_outside:false});
   google.accounts.id.renderButton(el,{theme:'filled_black',size:'large',shape:'pill',width:280,text:'continue_with',locale:'es'});
+  // La tarjeta de One Tap se pide UNA vez por carga y solo si no hay sesion. Sin el
+  // guard, `mountGoogleButton()` corre despues de CADA render (ver 08-router) y Google
+  // acabaria bloqueando el origen por pedirlo en bucle; y con sesion abierta seria
+  // ofrecerle iniciar sesion a alguien que ya la inicio.
+  if(_oneTapPedido||cust)return;
+  _oneTapPedido=true;
+  try{google.accounts.id.prompt();}catch(e){}
 }
 
 // ── DIRECCIÓN DEL CLIENTE: GPS, MAPA Y BUSCADOR ─────────────────────────────────────
