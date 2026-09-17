@@ -1313,7 +1313,10 @@ function dblStockWarn(protId){
 var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
-var homeTab='sig';
+// null = todavia no eligio hermano, y eso pinta la pantalla de eleccion (sOEleccion).
+// Antes arrancaba en 'sig', asi que esa pantalla no existia: el cliente caia directo en
+// la lista de Signatures y la decision que estructura la marca era una barra de pestanas.
+var homeTab: string|null = null;
 // De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
 // las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
 // tema claro/oscuro — es una decisión del cliente que el color acompaña.

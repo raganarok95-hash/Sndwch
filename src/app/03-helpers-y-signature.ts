@@ -978,7 +978,79 @@ function waitlistCardHTML(){
     +'<div style="margin-top:10px">'+BTN('Avísame //','joinWaitlist()')+'</div>'
     +'</div>';
 }
+
+// ── PANTALLA DE ELECCION (concepto 1) ─────────────────────────────────────────────
+// Las dos mitades del logo, a sangre, cada una como boton de su lado. Sin lista de
+// producto debajo y sin tarjetas: lo unico que se decide aca es de quien es el pedido.
+//
+// ⚠ LAS DOS MITADES MIDEN LO MISMO Y SE TOCAN. Son media cara cada una: un hueco entre
+// ellas o un lado mas grande parte la cabeza por la costura, y se nota en el ojo, la
+// oreja y el sandwich. La diferencia entre los lados la da el color del plano, nunca la
+// escala del personaje.
+function sOEleccion(){
+  var ss=storeStatus();
+  var estado=!businessLaunched?'AÚN NO ABRIMOS':ss.label;
+  var colorEstado=!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
+  var mitad=function(id,nombre,titulo,bajada,acento,plano){
+    var esByo=id==='byo';
+    return'<button onclick="homeTab=\''+id+'\';render()" style="all:unset;cursor:pointer;box-sizing:border-box;'
+      +'flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;'
+      +'background:'+plano+';overflow:hidden">'
+      // ⚠ LA FIGURA SE DIMENSIONA POR EL ANCHO DE SU MITAD, NUNCA POR EL ALTO.
+      // Con `height:100%` cada mitad ocupa el alto que le dicte SU proporcion (282x520,
+      // o sea 0.54), y a 726px de alto mide 394 de ancho dentro de un panel de 195: se
+      // sale 200px por lado y corta la oreja. Es el mismo defecto que este archivo ya
+      // documenta para los hermanos de cuerpo entero, con los papeles cambiados.
+      +'<div style="position:absolute;left:0;right:0;top:0;bottom:120px;display:flex;'
+      +'align-items:center;'+(esByo?'justify-content:flex-start':'justify-content:flex-end')+'">'
+      // 132% del ancho de la mitad: la cara llena la pantalla en vez de flotar en el medio.
+      // Lo que sobra sale por el borde de AFUERA (la oreja), nunca por la costura — por eso
+      // cada mitad se alinea a su lado interno. Recortar por la costura partiria la cara.
+      +'<img src="img/'+(esByo?'wicho':'sando')+'.webp" alt="'+esc(nombre)+'" '
+      +'style="width:132%;height:auto;max-height:100%;object-fit:contain;display:block;flex:0 0 auto"></div>'
+      +'<div style="position:relative;padding:0 16px 26px;text-align:'+(esByo?'left':'right')+'">'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
+      +'text-transform:uppercase;color:'+acento+'">'+esc(nombre)+'</div>'
+      // El titulo NO lleva <br>: pasa por esc() y se veria el tag literal. Se deja fluir y
+      // el ancho de la mitad lo parte solo, que ademas aguanta cualquier traduccion futura.
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
+      +'color:var(--sw-text,#fff);line-height:1.04;margin-top:5px;text-wrap:balance">'+esc(titulo)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+      +'color:var(--sw-text-muted,#A8C8B0);margin-top:5px;line-height:1.35">'+esc(bajada)+'</div>'
+      +'</div></button>';
+  };
+  return'<div class="fi" style="position:relative;min-height:calc(100dvh - 49px);display:flex;flex-direction:column">'
+    +'<div style="position:absolute;top:0;left:0;right:0;z-index:3;padding:20px 18px;'
+    +'display:flex;justify-content:space-between;align-items:center;pointer-events:none">'
+    // WORDMARK() ya existe y pinta el "//" con las dos barras identicas y un color por
+    // hermano. Reescribirlo aca a mano seria una segunda fuente del mismo glifo.
+    +WORDMARK(19)
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;'
+    +'color:'+colorEstado+'">'+esc(estado)+'</span></div>'
+    +'<div style="flex:1;display:flex;align-items:stretch;min-height:0">'
+    +mitad('sig','SND','Ya está resuelto','Cinco sándwiches de autor.',GOLD,
+           'linear-gradient(160deg,rgba(47,107,84,.30),rgba(30,70,54,.08))')
+    +mitad('byo','WCH','Tú decides','Pan, proteína, lo que quieras.','var(--sw-sky,#8CC8EC)',
+           'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
+    +'</div></div>';
+}
+
 function sOHome(){
+  // ── LA ELECCION ES UNA PANTALLA, NO UNA PESTANA (concepto 1, elegido por el dueno) ──
+  //
+  // Hasta hoy `homeTab` arrancaba en 'sig', asi que la eleccion entre los dos hermanos
+  // NUNCA se mostraba: el cliente caia directo en la lista de Signatures y los hermanos
+  // eran una barra de pestanas de 212px arriba del catalogo. O sea que la decision que
+  // estructura toda la marca —ya esta resuelto / lo decides tu— se presentaba como un
+  // control secundario.
+  //
+  // Ahora `homeTab` arranca en null y eso pinta la cara COMPLETA a pantalla entera: cada
+  // mitad es el boton de su lado. El logo del dueno ES la navegacion, que es lo unico que
+  // justifica que el negocio tenga dos personajes en vez de uno.
+  //
+  // Se elige una sola vez por sesion: al tocar un lado, `homeTab` queda fijado y el resto
+  // de la visita usa el catalogo normal. Volver a elegir es el boton del pie.
+  if(homeTab===null)return sOEleccion();
   var pc=cust
     ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#1A3028);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
     :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#2D5246);border:1px solid var(--sw-border,#3A6B58);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:'+GOLD+'"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Unirse \u2192</span></div>';
@@ -1089,7 +1161,11 @@ function sOHome(){
           // son dos mitades de UNA cabeza, asi que un lado mas grande que el otro deja el
           // ojo, la oreja y el sandwich desalineados en la costura. La senal de activo la
           // dan el plano de color y el rotulo, nunca la escala del personaje.
-          +'<img class="sw-bro-'+mitad+(activo?' sw-on':'')+'" src="img/'+mitad+'.png" alt="'
+          // .webp y no .png: la mitad limpia a 846x1560 pesa 61 KB en webp contra 700 en
+          // png, o sea MENOS que el png de 282x520 que reemplaza (138 KB) con el triple de
+          // resolucion. Verificado que la compresion no ensucia el arte: dentro del dibujo
+          // la diferencia media es 0.95/255 y el canal alfa queda identico bit a bit.
+          +'<img class="sw-bro-'+mitad+(activo?' sw-on':'')+'" src="img/'+mitad+'.webp" alt="'
           +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%'
           +';width:auto;max-width:none;display:block;opacity:'+(activo?'1':'.52')
           +';transition:opacity .3s ease"></div>'
