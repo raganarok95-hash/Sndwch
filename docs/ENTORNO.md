@@ -47,6 +47,13 @@ anótalo acá.
   No invalida el valor real de las partes de WebSearch puro de esos mismos reportes, que
   sí fueron precisas — el punto débil específico es la lectura de código dentro de una
   tarea mayormente orientada a búsqueda externa.
+- ⚠ **LAS IMÁGENES NO SON UN LÍMITE: el dueño las genera en Flow, sin tope** (confirmado por
+  él, 2026-09-17, con estas palabras: «LAS IMÁGENES SON ILIMITADAS EN FLOW, PUEDO GENERAR LAS
+  QUE SEA, QUE NADA LIMITE TU CREATIVIDAD POR LO QUE TENEMOS»). **Nunca recortes un pedazo de
+  una pose existente para fabricar otra** —se intentó sacar el brazo de `wicho_saluda.png` para
+  simular una mano que agarra y salió un parche— ni descartes una idea de diseño porque el asset
+  no existe todavía. Lo que se hace es **escribir el prompt** siguiendo `docs/PROMPTS_PERSONAJES.md`
+  y pedírselo. Si hay una vía mejor y más fácil sin perder calidad, se usa esa.
 - **Generación de imágenes AI**: no hay una herramienta directa de texto-a-imagen
   disponible. La única vía encontrada es a través de `mcp__Gamma__generate` (genera un
   documento/presentación completo, no solo una foto) — y en el plan actual de la cuenta,
