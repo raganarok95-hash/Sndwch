@@ -21,29 +21,25 @@ blanco y negro, se tienen que seguir distinguiendo.**
 
 ## SANDO · el curador
 
-De su ficha: pelaje verde oliva casi negro, mechón corto en punta, máscara y hocico en **tan
-cálido `#C9A87C`**, ojos almendrados de párpado pesado —*la mirada de quien ya decidió*—, boca
-**cerrada, media sonrisa, nunca se le ven los dientes**. Casaca bomber oliva **de cuello y puños
-ACANALADOS**, polo blanco liso. Línea de contorno de **grosor PAREJO, en verde muy oscuro —
-nunca negro puro**. Sombreado **PLANO de dos tonos. Sin textura, sin trama, sin grano, sin
-degradados, sin marcas de pincel.**
+> ⚠ **Su ficha en `PROMPTS_PERSONAJES.md` está vieja y no describe el dibujo real.** Dice
+> «contorno de grosor parejo, sombreado PLANO de dos tonos, sin textura, sin marcas de pincel».
+> Mirando `img/sando_cuerpo.png` de cerca, su casaca tiene **pinceladas visibles** y el contorno
+> **le varía de grosor**. El dueño lo confirmó el 2026-09-17: los dos comparten tipo de dibujo y
+> el que se acerca es SANDO. **Así que "línea pareja / dos tonos planos / cero textura" NO es su
+> identidad — es justo lo que hay que corregirle.** Su identidad es todo lo demás.
 
-### Su idioma
+Lo que sí es suyo, mirado del dibujo y no de la ficha:
 
 | elemento | de dónde sale | cómo se usa |
 |---|---|---|
-| **Cero degradados. Dos tonos planos.** | su sombreado plano | **Ninguna superficie suya lleva degradado, ni un velo sobre foto.** Foto limpia + panel de color liso con borde recto. |
-| **Un solo grosor de línea, en `#1E2B22`** | su contorno parejo | Todas sus reglas y separadores miden lo mismo. No hay pelos de 1px conviviendo con barras de 3. |
-| **Esquina recta, siempre** | su línea cerrada | Nada redondeado en su lado. |
-| **Acanalado (rib)** | cuello y puños de su bomber | Franjas verticales finas y regulares. Es SU textura — donde haya que llenar un campo, se llena con rib, no con degradado. |
-| **Tan cálido `#C9A87C`** | su hocico y su máscara | El segundo color de su mundo, el que lo salva de ser solo verde y dorado. |
-| **Dorado apagado** | el `//` bordado en su pecho | El dinero y lo único que hay que mirar. Apagado, no brillante. |
-| **Silencio** | boca cerrada, párpado pesado | Su mundo no grita: sin signos de exclamación, sin globos, sin animación de rebote. La jerarquía la hace el tamaño, no el volumen. |
-
-**Su color base** (muestreado de `img/sando_cuerpo.png`): pelaje `#183024` · casaca `#6C7860` ·
-tan `#C9A87C` · dorado `#CBA258`.
-
----
+| **El forro NARANJA** `#D8823C` | la tira del forro que asoma en la abertura de su bomber | **El único naranja de toda la marca.** No es cremallera ni va a rayas: es una franja lisa y vertical. Le da la temperatura que un mundo de verde y dorado no tiene. Se usa poquísimo y siempre vertical. |
+| **El acanalado (rib)** | puños y basta de su bomber | Franjas verticales finas y regulares. Donde haya que llenar un campo suyo, se llena con rib. |
+| **El `//` bordado** | su pecho izquierdo | Bordado en el verde de la tela, apenas más oscuro. Discreto, nunca dorado brillante. |
+| **Oliva salvia** `#6C7860` | el cuerpo de la casaca | La superficie de su mundo. |
+| **Verde casi negro** `#183024` | su pelaje | El fondo. |
+| **Tan cálido** `#C9A87C` | su hocico y máscara | Su segundo tono. |
+| **Dorado apagado** `#CBA258` | el `//` y el dinero | Lo único que hay que mirar. Apagado, nunca brillante. |
+| **Ojo almendrado, párpado pesado, boca cerrada** | su cara | Su mundo no grita: sin exclamaciones, sin globos, sin rebotes. La jerarquía la hace el tamaño. |
 
 ## WICHO · el que arma
 
@@ -78,7 +74,9 @@ espiral `#C3A6D2` sobre `#4A3D62` · durazno `#F0D8CC`.
   puso un velo celeste encima de las proteínas y la comida salió azul. La comida se ve como es;
   el color del hermano vive en la superficie de ALREDEDOR.
 - **Inventarle a un hermano algo que no tiene.** Se le dibujó a SANDO una cremallera a rayas
-  que su casaca no lleva. Lo que sí tiene es el **acanalado** del cuello y los puños.
-- **Acercar a WICHO a SANDO.** Ya está escrito en `CLAUDE.md` y sigue siendo el error más fácil
-  de cometer: si WICHO sale prolijo, con línea pareja y relleno plano, está mal.
+  naranja y crema que su casaca no lleva. Lo que sí tiene, y hay que abrir el PNG para verlo, es
+  el **forro naranja liso** de la abertura, el **acanalado** de puños y basta, y el `//` bordado.
+- **Llamar "descuidado" al trazo de WICHO.** No lo es, y el dueño lo corrigió: su línea es la
+  buena. El que se acerca es SANDO — **sin tocarle figura, ropa, color ni expresión**, solo el
+  tratamiento del trazo. Y por ahora SANDO se queda tal cual está.
 - **Elegir un tono "que combine".** Se muestrea del PNG con código, o no va.

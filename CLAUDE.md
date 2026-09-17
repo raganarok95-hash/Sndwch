@@ -370,26 +370,35 @@ agrega porque en ese momento "se veía mejor así".
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
 
-## Los dos hermanos NO comparten estilo de dibujo, y no se unifican (2026-09-10)
+## Los dos hermanos comparten TIPO DE DIBUJO (corregido por el dueño, 2026-09-17)
 
-**Decisión del dueño, corrigiendo una propuesta de esta sesión que quería unificarlos.** SANDO
-tiene línea negra uniforme, sombreado plano de dos tonos y paleta sobria; WICHO tiene trazo
-suelto y texturado, ojos en espiral y color saturado. Parecen dibujados por dos manos distintas
-porque **lo están, a propósito**: SANDO cura los Signatures, donde la receta está cerrada y no la
-tocas, y su dibujo también está cerrado; WICHO es ARMA EL TUYO, donde eliges tú, y su dibujo
-también es suelto. **La gracia es que sean distintos.**
+**Esta regla decía lo contrario hasta hoy** —que SANDO y WICHO estaban dibujados por dos manos
+distintas a propósito y que no se unificaban nunca— y **el dueño la corrigió**: sí comparten
+tipo de dibujo, y **el que se tiene que acercar es SANDO, con WICHO de referencia**. Lo de WICHO
+no es un trazo descuidado que haya que arreglar: es el bueno. (Llamarlo «desprolijo» salió de la
+ficha, no de mirar el dibujo.)
 
-**Cada hermano es un IDIOMA DE INTERFAZ, no un color.** Línea pareja, dos tonos planos, esquina
-recta, acanalado y tan cálido son de SANDO; espiral, curvas de nivel, trazo que se pasa y no
-cierra, trama cruzada y rosa durazno son de WICHO. Puestas en blanco y negro, sus dos pantallas
-se tienen que seguir distinguiendo. **Está todo en `docs/LOS_DOS_HERMANOS.md` y se lee antes de
-diseñar cualquier pantalla del cliente** — se escribió después de que el dueño corrigiera tres
-rondas seguidas con la misma frase, «no es solo un color».
+**Acercarse NO es rediseñarlo.** No se le cambia la figura, ni la ropa, ni el color, ni la
+expresión: solo el tratamiento del trazo y la textura. **Por ahora SANDO se queda tal cual
+está** — lo que no puede seguir escrito es que sean estilos opuestos a propósito.
 
-**Nunca "arregles" a WICHO acercándolo a SANDO** — es exactamente el error que se cometió acá.
-Cada hermano se regenera contra SU PROPIA referencia (`img/sando_sonrie.png`, `img/wicho_rie.png`),
-nunca contra la del otro. Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que la app
-todavía no tiene.
+⚠ Y ojo con su ficha: `docs/PROMPTS_PERSONAJES.md` describe a SANDO como «contorno de grosor
+parejo, sombreado PLANO de dos tonos, sin textura, sin marcas de pincel». **Mirando
+`img/sando_cuerpo.png` de cerca eso es falso** — su casaca tiene pinceladas visibles y el
+contorno le varía de grosor. La ficha quedó vieja respecto al dibujo; manda el dibujo.
+
+**Lo que los distingue no es la mano: es cada personaje.** De SANDO son el **acanalado** de
+puños y basta, el **forro naranja** de su bomber —el único naranja de toda la marca, franja lisa
+y vertical, NO una cremallera a rayas—, el `//` bordado al pecho en el verde de la tela, el oliva
+salvia, el tan cálido y el ojo almendrado de párpado pesado. De WICHO son la **espiral** de sus
+ojos, las **curvas de nivel** estampadas en su polo, el rosa durazno, el lila y la sonrisa
+abierta. **Puestas en blanco y negro, sus dos pantallas se tienen que seguir distinguiendo.**
+Todo en `docs/LOS_DOS_HERMANOS.md`, que se lee antes de diseñar cualquier pantalla del cliente —
+se escribió después de que el dueño corrigiera tres rondas seguidas con la misma frase, «no es
+solo un color».
+
+Cada hermano se sigue regenerando contra SU PROPIA referencia (`img/sando_sonrie.png`,
+`img/wicho_rie.png`). Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que faltan.
 
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
