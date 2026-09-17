@@ -246,8 +246,6 @@ function FICHA(etiqueta,sel,fn){
 function FICHA_OFF(etiqueta){
   return'<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+etiqueta+'</div>';
 }
-function CARDOFF(item){return'<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+item.l+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+item.s+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div></div>';}
-function TOPOFF(t){return'<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:13px 14px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+t.l+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-danger,#ff8888);display:block;margin-top:3px">Agotado</span></div></div>';}
 
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito

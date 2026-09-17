@@ -330,7 +330,10 @@ function sPHistory(){
   if(listLoading){
     h+=skeletonCards(5,48);
   }else if(!txns.length){
-    h+='<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">'+icon('estrella',32,'#9DA096')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.2em">Sin movimientos //</div></div>';
+    // Mismo criterio que el carrito: era una estrellita gris al 50% de opacidad en una app
+    // cuyos otros cinco vacíos reciben con un hermano. Un ícono atenuado no dice qué va a
+    // aparecer acá; la frase sí.
+    h+=VACIO('Sin movimientos','Cada pedido suma puntos. Acá vas a ver de dónde salió cada uno y en qué se fue.',null,'piensa');
   }else{
     h+=txns.map(function(t){
       var pos=(t.points||0)>=0;

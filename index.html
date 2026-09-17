@@ -2020,7 +2020,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '685d153ee6';
+var APP_BUILD = 'ab14f94a26';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3319,10 +3319,6 @@ function sigAvailable(s) { return !s.availableUntil || Date.now() < new Date(s.a
 // `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
 // mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
 // exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
-function CARD(item, sel, fn, right, thumb) {
-    var inner = '<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + item.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + item.s + '</span>' + (right || '') + '</div>' + (item.d ? '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:4px">' + item.d + '</p>' : '');
-    return '<div onclick="' + fn + '" style="background:' + (sel ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? ACC() : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;cursor:pointer;margin-bottom:10px;position:relative;transition:all .15s;box-shadow:' + SHADOW_SM + '">' + selBar(sel) + (thumb ? '<div style="display:flex;gap:14px">' + thumb + '<div style="flex:1;min-width:0">' + inner + '</div></div>' : inner) + '</div>';
-}
 // Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
 // de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
 // Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
@@ -5484,8 +5480,6 @@ function FICHA(etiqueta, sel, fn) {
 function FICHA_OFF(etiqueta) {
     return '<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">' + etiqueta + '</div>';
 }
-function CARDOFF(item) { return '<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;margin-bottom:10px;opacity:.35"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#9DA096)">' + item.l + '<span style="color:var(--sw-text-muted,#9DA096)"> // </span>' + item.s + '</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div></div>'; }
-function TOPOFF(t) { return '<div style="background:var(--sw-card2,#171A14);border:1px solid #2a2a2a;border-radius:10px;padding:13px 14px;opacity:.35"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">' + t.l + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-danger,#ff8888);display:block;margin-top:3px">Agotado</span></div></div>'; }
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito
 function sOItemConfirm() {
@@ -5660,8 +5654,12 @@ function sOSides() {
 }
 // CARRITO + CHECKOUT
 function cartItemsHTML() {
+    // El carrito vacío era la única pantalla sin dueño: un rótulo dorado suelto en medio de
+    // la nada, mientras "sin pedidos", "sin direcciones", "sin favoritos" y "sin pedidos
+    // fijos" ya recibían al cliente con el hermano del lado en el que está. Y es de las
+    // primeras que ve alguien que abre la app por curiosidad. Ahora usa el mismo `VACIO()`.
     if (!cart.length)
-        return '<div style="text-align:center;padding:24px 0"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.2em">Carrito vacío //</div></div>';
+        return VACIO('Carrito vacío', 'Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.', null, 'piensa');
     return cart.map(function (it, idx) {
         var extras = itemExtrasLabel(it);
         var canEdit = it.type !== 'side';
@@ -8607,7 +8605,10 @@ function sPHistory() {
         h += skeletonCards(5, 48);
     }
     else if (!txns.length) {
-        h += '<div style="text-align:center;padding-top:64px"><div style="margin-bottom:12px;opacity:.5;display:flex;justify-content:center">' + icon('estrella', 32, '#9DA096') + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.2em">Sin movimientos //</div></div>';
+        // Mismo criterio que el carrito: era una estrellita gris al 50% de opacidad en una app
+        // cuyos otros cinco vacíos reciben con un hermano. Un ícono atenuado no dice qué va a
+        // aparecer acá; la frase sí.
+        h += VACIO('Sin movimientos', 'Cada pedido suma puntos. Acá vas a ver de dónde salió cada uno y en qué se fue.', null, 'piensa');
     }
     else {
         h += txns.map(function (t) {

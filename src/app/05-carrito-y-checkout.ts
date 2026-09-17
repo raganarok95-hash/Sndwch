@@ -1,6 +1,10 @@
 // CARRITO + CHECKOUT
 function cartItemsHTML(){
-  if(!cart.length)return'<div style="text-align:center;padding:24px 0"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.2em">Carrito vacío //</div></div>';
+  // El carrito vacío era la única pantalla sin dueño: un rótulo dorado suelto en medio de
+  // la nada, mientras "sin pedidos", "sin direcciones", "sin favoritos" y "sin pedidos
+  // fijos" ya recibían al cliente con el hermano del lado en el que está. Y es de las
+  // primeras que ve alguien que abre la app por curiosidad. Ahora usa el mismo `VACIO()`.
+  if(!cart.length)return VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa');
   return cart.map(function(it,idx){
     var extras=itemExtrasLabel(it);
     var canEdit=it.type!=='side';
