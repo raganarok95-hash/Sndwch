@@ -68,6 +68,27 @@ espiral `#C3A6D2` sobre `#4A3D62` · durazno `#F0D8CC`.
 
 ---
 
+## Cuáles son obligatorios (confirmado por el dueño, 2026-09-17)
+
+**Ninguno es obligatorio en todas las pantallas — solo los más característicos.** El reparto,
+confirmado:
+
+- **Siempre presentes, porque son los que se reconocen sin leer:** de SANDO el **forro naranja**,
+  el **acanalado** y el **tan cálido**; de WICHO la **espiral**, las **curvas de nivel** y el
+  **rosa durazno**.
+- **Solo donde toca:** el `//` bordado va en las pantallas donde el hermano aparece en persona —
+  y ojo, **si su figura está en pantalla el `//` YA ESTÁ**, bordado en su casaca dentro del propio
+  dibujo. No hay que agregarlo aparte.
+- El resto (oliva salvia, verde casi negro, lila, tinta) son la paleta de apoyo y se usan donde
+  hagan falta.
+
+⚠ **Y este documento se ABRE antes de dibujar, no después.** Se escribió el 2026-09-17 por la
+mañana y esa misma tarde se diseñaron tres pantallas de SANDO sin consultarlo: de sus ocho
+elementos se usó bien UNO, el naranja apareció como un rótulo de 8px en vez de una franja, y el
+acanalado no estaba en ninguna. Escribir la regla no la pone delante en el momento de generar.
+**El paso es: abrir esta tabla y escribir dónde va cada elemento ANTES de la primera etiqueta.
+Si un elemento característico no tiene sitio asignado, la pantalla no está terminada.**
+
 ## ⚠ Lo que NUNCA se hace
 
 - **Teñir una foto de comida con el color del hermano.** Error real cometido el 2026-09-17: se
