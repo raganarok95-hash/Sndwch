@@ -79,11 +79,22 @@ for (const [nombre, src] of [
   ...readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()
     .map((x) => ['src/app/' + x, readFileSync(join(APP_DIR, x), 'utf8')]),
 ]) {
+  // Un comentario CSS abarca VARIAS líneas, y mirar solo la línea actual daba un falso
+  // positivo en el comentario que explica por qué la paleta anterior se fue — que es
+  // justamente el texto que hay que conservar. Se arrastra el estado de bloque.
+  let dentroDeBloque = false;
   src.split('\n').forEach((line, i) => {
+    const abre = line.lastIndexOf('/*');
+    const cierra = line.lastIndexOf('*/');
+    const empiezaDentro = dentroDeBloque;
+    if (abre > cierra) dentroDeBloque = true;
+    else if (cierra > abre) dentroDeBloque = false;
+    if (empiezaDentro && cierra === -1) return;
     // Los comentarios SÍ pueden nombrar la paleta vieja: media docena de ellos cuentan
     // justamente por qué se fue, y borrar ese relato para pasar un chequeo sería cambiar
     // historia por verde. Solo se persigue el hex que de verdad pinta algo.
     const enComentario = (idx) => {
+      if (empiezaDentro) return true;
       const antes = line.slice(0, idx);
       return antes.includes('//') || antes.includes('/*') || antes.trimStart().startsWith('*');
     };
@@ -92,11 +103,14 @@ for (const [nombre, src] of [
       let m;
       while ((m = re.exec(line))) {
         if (enComentario(m.index)) continue;
-        // La DEFINICIÓN de un token puede valer cualquier cosa: es justamente donde se
-        // decide el color. `--sw-border:#2A2A2A` en el tema del panel no es un literal
-        // suelto, es el token. Lo que se persigue es el hex escrito donde debería ir
-        // `var(--sw-...)`.
-        if (/--sw-[a-z0-9-]+\s*:\s*$/.test(line.slice(0, m.index))) continue;
+        // La definición de un token puede valer cualquier cosa — es donde se decide el
+        // color — PERO solo para los hex que son ambiguos. `#2A2A2A` es un gris neutro que
+        // legítimamente es el borde del panel; `#1E3932` es el verde de la app anterior y no
+        // puede volver a ser el valor de un token, que es EXACTAMENTE por donde volvería
+        // entera. Sin esta distinción el chequeo dejaba pasar `--sw-bg:#1E3932`, o sea el
+        // único cambio que hace falta para deshacer toda la reconstrucción.
+        const AMBIGUOS = ['#2A2A2A'];
+        if (AMBIGUOS.includes(hex.toUpperCase()) && /--sw-[a-z0-9-]+\s*:\s*$/.test(line.slice(0, m.index))) continue;
         viejos.push(`${nombre}:${i + 1} — ${hex} es de la paleta ANTERIOR; su token hoy es ${token}`);
       }
     }

@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#12150F">
+<meta name="theme-color" content="#0F1A14">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -60,12 +60,20 @@
      ⚠ NO es un fondo neutro: lleva verde dentro (#12150F, no #121212). El tinte por lado
      sigue existiendo (ver data-lado abajo), solo que ahora la temperatura del negro hace
      el trabajo silencioso y el acento el ruidoso. */
-  --sw-bg:#12150F;
-  --sw-card:#1B1F18;
-  --sw-card2:#171A14;
+  /* ⚠ SUBIDO EL 2026-09-17, a pedido del dueño. Antes el lado de SANDO era #12150F y el de
+     WICHO #0D1216: tres puntos de diferencia. El atributo `data-lado` cambiaba, la app no.
+     "¿si selecciono derecha o izquierda no debería ir a la opción respectiva con el color
+     respectivo?" — tenía razón, y medirlo lo confirmó.
+     Ahora cada lado tiene su color de verdad y se sigue viendo al instante cuál es cuál.
+     NO se vuelve al verde de la app anterior (#1E3932): aquel era un verde medio que era EL
+     fondo de todo; este es casi negro con verde dentro, y sigue dejando que la foto de
+     comida sea lo más claro de la pantalla. */
+  --sw-bg:#0F1A14;
+  --sw-card:#16241D;
+  --sw-card2:#122019;
   --sw-card-danger:#1E1614;
-  --sw-border:#2C3228;
-  --sw-border-soft:#1A1D17;
+  --sw-border:#25382D;
+  --sw-border-soft:#16241C;
   --sw-text:#FFFFFF;
   --sw-text-body:#EFEDE4;
   --sw-text-muted:#9DA096;
@@ -129,12 +137,12 @@
   /* El lado de WICHO: el mismo negro, con azul dentro en vez de verde. El salto se siente
      —la app SÍ se va con él— pero ninguna de las dos mitades vuelve a ser un bloque de
      color plano peleándose con la foto. */
-  --sw-bg:#0D1216;
-  --sw-card:#161D23;
-  --sw-card2:#12181D;
+  --sw-bg:#0B1724;
+  --sw-card:#12222F;
+  --sw-card2:#0F1D29;
   --sw-card-danger:#1E1614;
-  --sw-border:#27313A;
-  --sw-border-soft:#161C21;
+  --sw-border:#1F3243;
+  --sw-border-soft:#111F2B;
   --sw-text:#FFFFFF;
   --sw-text-body:#E9EFF3;
   --sw-text-muted:#98A3AB;

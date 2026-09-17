@@ -10,6 +10,15 @@
 
 ---
 
+> ⚠ **ACTUALIZADO EL 2026-09-17.** Hasta esa noche este archivo mandaba pedir los fondos en
+> verde `#1E3932` y azul `#102430` — la paleta de la app ANTERIOR. El front se rehízo desde
+> cero y el verde dejó de ser el fondo para pasar a ser un acento: hoy los dos suelos son casi
+> negros. Una pose generada contra el verde viejo llega con un rectángulo de un color que ya no
+> existe en ninguna pantalla, y eso no se arregla después: hay que volver a generarla.
+>
+> Los valores de abajo se leen de `:root` / `:root[data-lado="wicho"]` en `src/shell.html`, que
+> es donde de verdad viven.
+
 ## 1 · Las siete reglas técnicas
 
 Salieron de defectos reales que costaron tiempo. **Ninguna es opinión de estilo.**
@@ -20,8 +29,8 @@ La app **ya no es verde entera**. Tiene cuatro suelos distintos, y es fácil com
 
 | dónde | fondo | selector |
 |---|---|---|
-| **lado de SANDO** — Signatures | verde `#1E3932` | `:root` |
-| **lado de WICHO** — ARMA EL TUYO | **azul `#102430`** | `:root[data-lado="wicho"]` |
+| **lado de SANDO** — Signatures | **oliva muy oscuro `#12150F`** | `:root` |
+| **lado de WICHO** — ARMA EL TUYO | **azul muy oscuro `#0D1216`** | `:root[data-lado="wicho"]` |
 | panel admin claro | crema `#F3EEE1` | `.admin-light` |
 | panel admin oscuro | negro `#000000` | `.admin-dark` |
 
@@ -50,7 +59,7 @@ invisible sobre ese mismo fondo.
 Cuando la misma imagen tiene que vivir en **más de un suelo** — por ejemplo un personaje que
 aparece tanto del lado de SANDO como del de WICHO. Ahí no queda otra, y entonces hay que
 **probar el alfa antes de aceptar la imagen**: componerla sobre los cuatro fondos reales
-(`#1E3932`, `#102430`, `#F3EEE1`, `#000000`) y mirar el borde en los cuatro. Si aparece un halo
+(`#12150F`, `#0D1216`, `#F3EEE1`, `#000000`) y mirar el borde en los cuatro. Si aparece un halo
 en alguno, se descarta y se vuelve a pedir. **Mirarla sobre blanco no sirve de nada** — el halo
 es blanco, así que sobre blanco es invisible: ese es justo el motivo por el que llegó a
 producción.
@@ -111,7 +120,7 @@ En toda imagen, de personaje o de producto. Los nombres de `BASES` (`CLASSIC // 
 ## 2 · Bloque común — pégalo al final de TODOS los prompts de personaje
 
 **Reemplaza `<FONDO>` por el color del sitio donde va la imagen** (tabla de la regla 1):
-`#1E3932` para SANDO, `#102430` para WICHO, `#2B1B2A` para Mafe si se aprueba su fondo.
+`#12150F` para SANDO, `#0D1216` para WICHO, `#2B1B2A` para Mafe si se aprueba su fondo.
 
 ```
 BACKGROUND: flat solid <FONDO> filling the entire frame, edge to edge.
@@ -130,7 +139,7 @@ PNG, 2048 px on the long side.
 > **Sube siempre la referencia** (regla 5). El texto de abajo describe la identidad; el estilo
 > lo lleva la imagen.
 
-### 3.1 · SANDO — el curador · fondo verde `#1E3932`
+### 3.1 · SANDO — el curador · fondo oliva muy oscuro `#12150F`
 
 Referencia: `img/sando_sonrie.png`.
 
@@ -150,9 +159,9 @@ illustration. Outline of EVEN, UNIFORM weight in very dark green — not pure bl
 FLAT two-tone shading. No internal texture, no hatching, no grain, no gradients,
 no brush marks. Mascot illustration, not sticker art.
 ```
-+ el bloque común con `<FONDO>` = `#1E3932`.
++ el bloque común con `<FONDO>` = `#12150F`.
 
-### 3.2 · WICHO — el que arma · fondo azul `#102430`
+### 3.2 · WICHO — el que arma · fondo azul muy oscuro `#0D1216`
 
 Referencia: `img/wicho_rie.png`. **Se conserva su estilo tal cual.** Lo que se pide es el mismo
 WICHO en poses nuevas y en grande, no un WICHO distinto.
@@ -176,7 +185,7 @@ sticker-art energy.
 Do NOT clean him up. Do NOT flatten the shading. Do NOT give him an even outline.
 Do NOT make him match a cleaner-lined character — the looseness is the point.
 ```
-+ el bloque común con `<FONDO>` = `#102430`.
++ el bloque común con `<FONDO>` = `#0D1216`.
 
 > ⚠ Si vuelve prolijo, con línea pareja o relleno plano, **se descarta y se vuelve a pedir**.
 > No se retoca.
@@ -252,13 +261,17 @@ EACH BROTHER KEEPS HIS OWN ART STYLE. They are deliberately drawn as if by two
 different hands. Do NOT unify the two styles.
 The bread is a long sub / hoagie roll — never sliced sandwich bread.
 ```
-+ el bloque común con `<FONDO>` = `#1E3932`. **Esta va del lado verde**: es la imagen de marca,
++ el bloque común con `<FONDO>` = `#12150F`. **Esta va del lado de SANDO**: es la imagen de marca,
 no la de un lado ni la del otro.
 
 ### 4.2 · Escenarios para Flow
 
 Se piden **VACÍOS, sin personajes y sin manos**. Así cada escena sirve para los tres hermanos y
 no hay que regenerarla al cambiar de personaje.
+
+> Ese `#1E3932` NO es el fondo de la app: es el color de los azulejos DENTRO del dibujo, y va
+> igual en las cuatro escenas. Se deja tal cual a propósito — cambiarlo rompería que se vean
+> como la misma cocina, que es justo lo que este bloque existe para garantizar.
 
 **El bloque de la cocina va IDÉNTICO en las escenas 1 a 4.** Si se reescribe en cada una, no se
 ven como la misma cocina — mismo mecanismo que el párrafo fijo de la sección 5.

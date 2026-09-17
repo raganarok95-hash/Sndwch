@@ -6,40 +6,43 @@
 function WORDMARK(size,hero?){
   return'<span style="font-family:\'Fraunces\',serif;font-optical-sizing:auto;font-size:'+size+'px;font-weight:620;color:var(--sw-text,#FFFFFF);letter-spacing:.02em;line-height:1">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>';
 }
+// ── LA CABECERA VIEJA AHORA ES EL RIEL (2026-09-17) ──────────────────────────────────
+//
+// H() era el sello de la app anterior en las ~25 pantallas que no se habian rehecho: 96px
+// de alto que repetian el wordmark a 26-40px en CADA pantalla, con el sitio donde estabas
+// escrito chiquito debajo. O sea que la pantalla mas grande de toda la app decia el nombre
+// de la marca, que es el unico dato que el cliente ya sabe.
+//
+// No se reescribieron 25 pantallas a mano: se reescribio la PIEZA. Mismos parametros, misma
+// llamada, y las 25 pasan a tener la anatomia nueva de una vez. Eso es justamente lo que
+// distingue rehacer el sistema de repintar pantalla por pantalla — si esto viviera copiado
+// en cada pantalla, cambiarlo seria 25 ediciones y la numero 26 volveria a inventarse otra.
+//
+// `sub` deja de ser un subtitulo bajo el logo y pasa a ser el centro del riel: DONDE estas.
+// Cuando no hay `bk` (no hay a donde volver) la izquierda muestra el wordmark en chico, que
+// es todo el espacio que la marca necesita dentro de la app.
 function H(sub?,bk?,showCart?){
-  var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-family:\'EB Garamond\',serif;font-size:22px;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
-  var sz=sub?26:40;
-  // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
-  // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
-  // ⚠ SIN LEMA BAJO EL WORDMARK (decisión del dueño, 2026-09-17). Decía "Sándwiches hechos
-  // acá", que incumplía la regla escrita en 01-catalogo-y-estado.ts: la marca NO usa
-  // "Casero"/"Tradicional" ni sinónimos, porque se posiciona como compañía consolidada.
-  //
-  // Y no se reemplaza por otro. Tres motivos: competía con la línea de estado que va justo
-  // debajo (abierto/cerrado, ETA, costo de envío), que cambia y que el cliente sí necesita;
-  // un lema es material de anuncio o de bio, no cromo de una app; y el posicionamiento ya
-  // lo dicen los dos hermanos en la pantalla siguiente —"Ya está resuelto" / "Tú decides"—
-  // que además es interactivo en vez de decorativo. Repetirlo arriba lo debilitaba.
-  //
-  // El subtítulo `sub` sigue existiendo: lo usan las pantallas internas para decir DÓNDE
-  // estás (SIGNATURES, CONFIRMAR SÁNDWICH). Eso es navegación, no un lema.
-  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'';
-  // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
-  // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
-  var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#1B1F18);border-radius:8px;display:flex">'+icon('cart',18,'#EFEDE4')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
-  // Toggle claro/oscuro — antes SOLO existía en sAdminHome, así que un operador en
-  // cualquiera de las 14 pantallas secundarias del admin (Inventario, Catálogo, Ficha de
-  // cliente, etc.) tenía que volver a la cola primero para cambiar de tema (hallazgo de
-  // auditoría visual, ALTO). H() es el header compartido de esas 14 pantallas — agregarlo
-  // acá, condicionado a estar en una pantalla admin, lo hace alcanzable desde cualquiera.
-  var lightToggle=sndScreen.indexOf('admin')===0?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
-  // Mismo criterio que lightToggle arriba: antes saltar de una herramienta admin a otra
-  // (ej. Inventario → Reportes) exigía volver primero a admin_home. No se muestra en
-  // admin_home mismo porque esa pantalla ya tiene el grid completo visible arriba de la
-  // cola (ver adminToolsGridHTML/reordenamiento en sAdminHome) — hallazgo de auditoría
-  // UX, confirmado por el dueño.
-  var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
-  return'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="line-height:1">'+WORDMARK(sz)+'</div>'+s2+'</div>'+cartIcon+toolsNav+lightToggle+'</div>';
+  var total=cart.reduce(function(a,it){return a+it.qty;},0);
+  var cartIcon=(showCart&&total)
+    ?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito ('+total+')" '
+     +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;'
+     +'justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;'
+     +'color:'+ACC_INK()+';background:'+ACC()+';border-radius:999px">'+total+'</button>'
+    :'';
+  // Estos dos son del panel del dueño y no del cliente. Se quedan por la misma razon de
+  // siempre: sin ellos, un operador en cualquiera de las 14 pantallas internas del admin
+  // tiene que volver a la cola para cambiar de tema o saltar a otra herramienta.
+  var lightToggle=sndScreen.indexOf('admin')===0
+    ?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" '
+     +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
+     +'justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
+  var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')
+    ?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" '
+     +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
+     +'justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
+  var der=cartIcon+toolsNav+lightToggle;
+  return RIEL({volver:bk||'',titulo:sub||'',
+               derecha:der?'<div style="display:flex;align-items:center;gap:2px">'+der+'</div>':''});
 }
 function NAV(){
   var oa=sndTab==='order';
@@ -999,6 +1002,370 @@ function waitlistCardHTML(){
 // ellas o un lado mas grande parte la cabeza por la costura, y se nota en el ojo, la
 // oreja y el sandwich. La diferencia entre los lados la da el color del plano, nunca la
 // escala del personaje.
+// == EL SISTEMA DE PANTALLAS (escrito de cero, 2026-09-17) ==============================
+//
+// POR QUE EXISTE. El front se rehizo pantalla por pantalla y el dueno lo resumio mejor que
+// nadie: "hiciste lo que queremos evitar, que la web se vea amateur arreglando una cosa y
+// otra". Tenia razon, y la causa no era ninguna pantalla en particular: era que CADA UNA
+// inventaba su propio encabezado, su propio margen y su propia tarjeta. Cuando la coherencia
+// depende de que alguien se acuerde, se pierde en la tercera pantalla.
+//
+// Estas piezas son la anatomia. Toda pantalla del cliente se arma con ellas y ninguna vuelve
+// a escribir un padding a mano. Si algo no se puede expresar con estas piezas, la discusion
+// es si falta una pieza, no si esta pantalla merece una excepcion.
+//
+// NO SON UN REFACTOR DE LO ANTERIOR. Estan escritas mirando que necesita una pantalla de
+// esta app, no que hacia H(). La cabecera vieja gastaba 96px en repetir el logotipo en cada
+// pantalla; el riel gasta 52 y los usa para decir donde estas y como salir.
+
+// El RIEL - la franja de arriba. Tres zonas y nada mas: como salgo, donde estoy, que tengo
+// pendiente. Pegada al borde superior porque en un telefono el pulgar llega antes al borde
+// que al centro.
+function RIEL(o?){
+  o=o||{};
+  var izq=o.volver
+    ?'<button onclick="'+o.volver+'" aria-label="Volver" style="all:unset;cursor:pointer;width:44px;height:44px;'
+     +'display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096);font-size:22px">&#8592;</button>'
+    :'<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center">'+WORDMARK(15)+'</div>';
+  var centro=o.titulo
+    ?'<div style="flex:1;min-width:0;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
+     +'letter-spacing:.24em;text-transform:uppercase;color:'+ACC()+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>'
+    :'<div style="flex:1"></div>';
+  var der=o.derecha||'<div style="width:44px"></div>';
+  return'<div style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;'
+    +'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">'+izq+centro+der+'</div>';
+}
+
+// El boton de volver a la puerta. Es el UNICO camino para cambiar de hermano, y es a
+// proposito que no sea un interruptor siempre visible: dos pestanas convertirian otra vez
+// los dos mundos en una sola pantalla con un filtro.
+function BOTON_PUERTA(){
+  return'<button onclick="volverALaPuerta()" aria-label="Cambiar de lado" style="all:unset;cursor:pointer;width:44px;height:44px;'
+    +'display:flex;align-items:center;justify-content:center;gap:3px">'
+    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:'+GOLD+'"></span>'
+    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:var(--sw-sky,#8CC8EC)"></span>'
+    +'</button>';
+}
+
+// La PANTALLA - el contenedor. El cuerpo NO trae margen lateral a proposito: la imagen va a
+// sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
+// natural de una foto y no algo que haya que pelear con margenes negativos.
+function PANTALLA(riel,cuerpo,accion?){
+  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0F1A14)">'
+    +(riel||'')
+    +'<div style="flex:1;min-width:0" class="fi">'+cuerpo+'</div>'
+    +(accion||'')+'</div>';
+}
+
+// El BLOQUE - cualquier cosa que lleve texto vive dentro de uno. Un solo sitio decide el
+// margen lateral de toda la app.
+function BLOQUE(contenido,extra?){
+  return'<div style="padding:0 18px'+(extra?';'+extra:'')+'">'+contenido+'</div>';
+}
+
+// La SECCION - abre un tramo.
+function SECCION(titulo,bajada?,numero?){
+  return BLOQUE(
+    '<div style="padding:26px 0 14px">'
+    +(numero?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
+      +'color:'+ACC()+';margin-bottom:7px">'+esc(numero)+'</div>':'')
+    +'<h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
+    +'color:var(--sw-text,#fff);letter-spacing:.01em;line-height:1.06;text-wrap:balance">'+titulo+'</h2>'
+    +(bajada?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:7px;max-width:34ch">'+bajada+'</p>':'')
+    +'</div>');
+}
+
+// La PUERTA - llevar a otra pantalla. Reemplaza a la fila con "Elegir ->" de la app
+// anterior, que era el patron que hacia que todo se viera igual: un rectangulo, un titulo y
+// una flecha. Aca el peso lo lleva el nombre y el dato que de verdad decide (el precio, el
+// saldo, cuanto falta), y la flecha desaparece: la tarjeta entera es el boton.
+function PUERTA(o){
+  return'<button onclick="'+o.fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;'
+    +'background:var(--sw-card,#16241D);border:1px solid var(--sw-border,#25382D);border-radius:12px;'
+    +'padding:16px 17px">'
+    +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;'
+    +'color:var(--sw-text,#fff);line-height:1.1">'+o.titulo+'</span>'
+    +(o.dato?'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+ACC()+'">'+o.dato+'</span>':'')
+    +'</div>'
+    +(o.bajada?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:6px">'+o.bajada+'</div>':'')
+    +'</button>';
+}
+
+// La tarjeta del menu secreto, ahora una pieza propia. Vivia como una closure dentro del
+// home viejo, asi que era inalcanzable desde cualquier otra pantalla y se perdia con el.
+// El contenido es el mismo que el dueno aprobo el 2026-09-17 (variantes A/B/D), palabra por
+// palabra: lo que cambia es que ahora tiene nombre y se puede colocar donde haga falta.
+function vaultSection(){
+  var secretSig=SIGS.find(function(s){return s.secret;});
+  if(!secretSig)return'';
+  // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
+  //
+  // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
+  // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
+  // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
+  //
+  // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
+  // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
+  // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
+  // jamas antes de pedirlo, y una foto nitida la revelaria.
+  //
+  // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
+  // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
+  // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
+  var vaultCard=secretSig?(function(){
+    var myTotal=cust?(cust.total_orders||0):0;
+    var missing=Math.max(0,secretSig.minOrders-myTotal);
+    var unlocked=!!cust&&missing===0;
+    var hechos=Math.min(myTotal,secretSig.minOrders);
+    var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
+    var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
+      +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
+      +'margin-bottom:10px">Menú secreto</div>';
+
+    if(unlocked){
+      // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
+      // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
+      return'<div style="margin:20px 0 16px">'+rot
+        +'<div onclick="startOrderWithSig(\''+secretSig.id+'\')" class="sw-revelar" '
+        +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
+        +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
+          +'" style="width:100%;height:100%;object-fit:cover">':'')
+        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
+        +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
+        +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
+        +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
+        +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
+        +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+        +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+        +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
+        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
+        +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
+        +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
+        +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
+        +'</div></div></div>';
+    }
+
+    // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
+    // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
+    var seg='';
+    for(var i=0;i<secretSig.minOrders;i++){
+      seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
+        +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
+    }
+    return'<div style="margin:20px 0 16px">'+rot
+      +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
+      +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
+        +'style="width:100%;height:100%;object-fit:cover">':'')
+      +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
+      +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
+      +'justify-content:center;padding:26px;text-align:center">'
+      +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+      +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+      +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
+      +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
+      +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
+      +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
+      +'</div></div></div>';
+  })():'';
+  return vaultCard?BLOQUE(vaultCard):'';
+}
+
+// == LOS DOS MUNDOS (escritos de cero, 2026-09-17) ======================================
+//
+// Hasta hoy elegir un hermano solo cambiaba una pestana dentro de UNA sola pagina: el
+// wordmark grande, la linea de estado, la cara partida como interruptor, una fila
+// "Bebidas", y debajo la lista del lado elegido. Esa pagina era la de la app anterior con
+// pintura nueva, y por eso daba igual donde se tocara.
+//
+// Ahora cada lado ES una pantalla, con su color y su forma:
+//   SANDO   - su carta cerrada. Se mira, se elige una y se acabo.
+//   WICHO   - no tiene pantalla propia: su lado ES armar, asi que entrar por el lo mete
+//             directo en el armador (ver elegirLado en 01-*).
+//   BEBIDAS - pantalla propia alcanzable desde los dos lados, que CONSERVA el color del
+//             lado desde el que se entro. No es un tercer hermano: es el mismo producto
+//             visto desde cualquiera de los dos.
+
+// Una carta de la carta. La foto ES la tarjeta: es lo unico que de verdad vende un
+// sandwich, y en la app anterior competia con un parrafo por el mismo espacio.
+function TILE_SIGNATURE(sig,ancho){
+  var av=sigInStock(sig);
+  var img=SIG_IMG[sig.id];
+  var alto=ancho?232:196;
+  var foto=img
+    ?'<img src="'+img+'" alt="'+esc(sig.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
+    :'<div style="width:100%;height:100%;background:var(--sw-card2,#122019)"></div>';
+  // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo manda
+  // al cliente a buscar a otro lado.
+  var sello=av
+    ?(sig.recommended
+      ?'<span style="position:absolute;top:11px;left:11px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
+       +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
+       +'text-transform:uppercase;border-radius:999px;padding:4px 10px">La estrella</span>'
+      :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
+       +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">'+esc(sigBadge(sig))+'</span>')
+    :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.65);color:var(--sw-danger,#ff8888);'
+     +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">Agotado</span>';
+  var cuerpo='<div style="position:absolute;left:0;right:0;bottom:0;padding:13px;'
+    +'background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.9) 100%)">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(ancho?'22':'18')+'px;'
+    +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02;text-shadow:0 1px 8px rgba(0,0,0,.8)">'+esc(sig.n)+'</div>'
+    +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD+';margin-top:4px;'
+        +'text-shadow:0 1px 8px rgba(0,0,0,.8)">'+SOLES+pz(sig.p15)
+        +'<span style="color:rgba(255,255,255,.72);font-size:9px;margin-left:7px">30CM '+SOLES+pz(sig.p30)+'</span></div>':'')
+    +'</div>';
+  if(!av)return'<div style="grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
+    +'border-radius:10px;background:var(--sw-card2,#122019);opacity:.5">'+foto+sello+cuerpo+'</div>';
+  return'<button type="button" onclick="startOrderWithSig(\''+sig.id+'\')" aria-label="'+esc(sig.n)+'" '
+    +'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;grid-column:span '+(ancho?2:1)+';'
+    +'position:relative;width:100%;height:'+alto+'px;overflow:hidden;border-radius:10px;background:var(--sw-card2,#122019)">'
+    +foto+sello+cuerpo+'</button>';
+}
+
+// El estado del local, en UNA linea. En la app anterior eran tres renglones sueltos arriba
+// del todo; es informacion util pero no es la portada.
+function LINEA_ESTADO(){
+  var ss=storeStatus();
+  var abierto=businessLaunched&&ss.open;
+  var texto=!businessLaunched?'Aún no abrimos':ss.label;
+  var color=!businessLaunched?ACC():(abierto?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
+  return BLOQUE('<div style="display:flex;align-items:center;gap:8px;padding:12px 0 2px;flex-wrap:wrap">'
+    +'<span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:'+color+'"></span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
+    +'text-transform:uppercase;color:'+color+'">'+esc(texto)+'</span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'
+    +'Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia</span></div>');
+}
+
+// El carrito, como zona derecha del riel. Solo aparece cuando hay algo: un carrito vacio
+// dibujado en cada pantalla es ruido que nunca se toca.
+function RIEL_CARRITO(){
+  if(!cart.length)return'';
+  return'<button type="button" onclick="go(\'o_cart\')" aria-label="Ver el carrito ('+cart.length+')" '
+    +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
+    +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+ACC_INK()+';background:'+ACC()+';'
+    +'border-radius:999px">'+cart.length+'</button>';
+}
+
+// El mundo de SANDO: su carta cerrada.
+function sMundoSando(){
+  var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
+  var cuerpo=LINEA_ESTADO()
+    +SECCION('Ya está resuelto','Recetas cerradas. Eliges una y no hay nada más que decidir.')
+    +BLOQUE('<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">'
+      +visibles.map(function(x,i){return TILE_SIGNATURE(x,i===0);}).join('')+'</div>')
+    +vaultSection()
+    +SECCION('Y además')
+    +BLOQUE('<div style="display:flex;flex-direction:column;gap:9px">'
+      +PUERTA({titulo:'Bebidas',dato:'desde '+SOLES_TXT+pz(precioBebidaMin()),
+               bajada:'Medio litro, hechas acá. Se piden solas o con tu sándwich.',
+               fn:"irABebidas('o_home')"})
+      +PUERTA({titulo:'Pedido en grupo',
+               bajada:'Mandas un link, cada quien arma el suyo y el delivery se divide entre todos.',
+               fn:"doCreateGroupOrder()"})
+      +(cust&&myFavorites.length
+        ?PUERTA({titulo:'Tus favoritos',dato:String(myFavorites.length),
+                 bajada:'Los armados que guardaste. Se piden en un toque.',
+                 fn:"sndScreen='p_favorites';render()"}):'')
+      +PUERTA({titulo:'Tus puntos',dato:cust?String(cust.points||0)+' pts':'',
+               bajada:cust?'Canjéalos por salsas, upgrades y sándwiches gratis.':'Gana puntos con cada pedido. El primero ya suma.',
+               fn:"swTab('points')"})
+      +'</div>')
+    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
+  return PANTALLA(RIEL({derecha:RIEL_CARRITO()||BOTON_PUERTA()}),cuerpo)+NAV();
+}
+
+// La bebida mas barata, derivada. Un "desde S/5" escrito a mano se vuelve mentira el dia
+// que el dueno repricie una bebida desde el panel, sin tocar una linea de codigo.
+function precioBebidaMin(){
+  var ps=SIDES.filter(function(d){return isAvail(d.id);}).map(function(d){return d.p;});
+  if(!ps.length)ps=SIDES.map(function(d){return d.p;});
+  return ps.length?Math.min.apply(null,ps):0;
+}
+
+// BEBIDAS - pantalla propia, no una fila. Es el producto de mejor margen del catalogo y la
+// palanca de attach que el modelo mide; en la app anterior era una lista de filas de 48px
+// con una miniatura, o sea el mismo componente que un item de carrito.
+function sMundoBebidas(){
+  // ⚠ EL PANEL NO ES UN BOTON GIGANTE. La primera version lo era, y quedaba una pantalla
+  // preciosa donde nada decia que se pudiera agregar algo: el producto de mejor margen del
+  // catalogo sin una sola llamada a la accion. Ademas un <button> no puede llevar botones
+  // dentro, asi que el contador de cantidad no cabia. Ahora la foto es el escenario y la
+  // accion vive en su esquina, que ademas es donde llega el pulgar.
+  var panel=function(d){
+    var av=isAvail(d.id);
+    var enCarrito=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
+    var qty=enCarrito?enCarrito.qty:0;
+    var img=DRINK_IMG[d.id];
+    var foto=img
+      ?'<img src="'+img+'" alt="'+esc(d.l)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;'
+       +'object-fit:cover'+(av?'':';filter:grayscale(1)')+'">'
+      :'';
+    // El velo arranca opaco a la izquierda, donde va el texto, y se abre hacia la derecha
+    // para que la bebida se vea. Sin foto el velo sobra: seria oscurecer un fondo liso.
+    var velo=foto
+      ?'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.62) 46%,rgba(0,0,0,.08) 100%)"></div>'
+      :'';
+    var accion=!av
+      ?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-danger,#ff8888)">Agotado</span>'
+      :(qty>0
+        ?'<div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);border-radius:999px;padding:5px">'
+         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',-1)" aria-label="Quitar uno de '+esc(d.l)+'" '
+         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
+         +'justify-content:center;background:rgba(255,255,255,.14);color:var(--sw-text,#fff);font-size:15px">−</button>'
+         +'<span class="bump" style="min-width:14px;text-align:center;font-family:\'Bodoni Moda\',serif;'
+         +'font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#fff)">'+qty+'</span>'
+         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',1)" aria-label="Agregar otro '+esc(d.l)+'" '
+         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
+         +'justify-content:center;background:'+ACC()+';color:'+ACC_INK()+';font-size:15px">+</button></div>'
+        :'<button type="button" onclick="addSideToCart(\''+d.id+'\')" aria-label="Agregar '+esc(d.l)+' al carrito" '
+         +'style="all:unset;cursor:pointer;background:'+ACC()+';color:'+ACC_INK()+';border-radius:999px;'
+         +'padding:11px 20px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;'
+         +'font-weight:640;letter-spacing:.03em">Agregar</button>');
+    return'<article style="position:relative;display:flex;align-items:center;min-height:186px;overflow:hidden;'
+      +'border-radius:12px;background:var(--sw-card2,#122019)'+(av?'':';opacity:.55')+'">'
+      +foto+velo
+      +'<div style="position:relative;padding:18px;max-width:24ch">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
+      +'color:var(--sw-text,#fff);line-height:1.04;text-shadow:0 1px 8px rgba(0,0,0,.85)">'+esc(d.l)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.22em;'
+      +'text-transform:uppercase;color:rgba(255,255,255,.75);margin-top:4px">'+esc(d.s)+'</div>'
+      +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;color:rgba(255,255,255,.88);'
+      +'margin-top:9px;text-shadow:0 1px 6px rgba(0,0,0,.8)">'+esc(d.d)+'</p>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:18px;color:'+ACC()+';margin-top:11px;'
+      +'text-shadow:0 1px 8px rgba(0,0,0,.85)">'+SOLES+pz(d.p)+'</div>'
+      +'</div>'
+      +'<div style="position:absolute;right:14px;bottom:14px;display:flex;align-items:center">'+accion+'</div>'
+      +'</article>';
+  };
+  var cuerpo=SECCION('Bebidas','Medio litro, hechas acá. No son gaseosa de reventa: son infusiones de la casa.')
+    +BLOQUE('<div style="display:flex;flex-direction:column;gap:10px">'+SIDES.map(panel).join('')+'</div>')
+    // El combo se nombra con la constante, nunca con un numero escrito: es exactamente el
+    // defecto que ya rompio tres promesas publicas (ver CLAUDE.md).
+    +BLOQUE('<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;line-height:1.6;'
+      +'color:var(--sw-text-muted,#9DA096);padding:16px 0 4px">Con un sándwich en el mismo pedido, el combo te descuenta '
+      +SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.</p>')
+    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
+  return PANTALLA(RIEL({volver:"go('"+bebidasVolverA+"')",titulo:'Bebidas',derecha:RIEL_CARRITO()}),cuerpo)+NAV();
+}
+
+// Cuantos Signatures hay HOY, en palabras. Se cuenta sobre la misma lista que pinta el
+// mosaico, asi que la puerta y la carta no pueden decir cosas distintas.
+function cuantosSignatures(){
+  var n=SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}).length;
+  var palabras=['','Un','Dos','Tres','Cuatro','Cinco','Seis','Siete','Ocho','Nueve','Diez'];
+  if(!n)return'La carta de la casa.';
+  if(n===1)return'Un sándwich de autor.';
+  return(palabras[n]||String(n))+' sándwiches de autor.';
+}
 function sOEleccion(){
   var ss=storeStatus();
   var estado=!businessLaunched?'AÚN NO ABRIMOS':ss.label;
@@ -1040,7 +1407,11 @@ function sOEleccion(){
     +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;'
     +'color:'+colorEstado+'">'+esc(estado)+'</span></div>'
     +'<div style="flex:1;display:flex;align-items:stretch;min-height:0">'
-    +mitad('sig','SND','Ya está resuelto','Cinco sándwiches de autor.',GOLD,
+    // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE. Decia "Cinco sándwiches de autor" con el
+    // cinco a mano; el dia que el dueño publique o retire un Signature desde el panel —que
+    // es como se edita la carta— la puerta seguiria diciendo cinco. Es el mismo defecto que
+    // ya rompio tres promesas publicas en el brief semanal (ver CLAUDE.md).
+    +mitad('sig','SND','Ya está resuelto',cuantosSignatures(),GOLD,
            'linear-gradient(160deg,rgba(47,107,84,.30),rgba(30,70,54,.08))')
     +mitad('byo','WCH','Tú decides','Pan, proteína, lo que quieras.','var(--sw-sky,#8CC8EC)',
            'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
@@ -1056,356 +1427,18 @@ function primeraFrase(t){
   return m?m[1]:t;
 }
 
+// El home ya no PINTA nada: reparte. Antes eran 351 lineas que armaban la barra de
+// pestanas, los tres paneles (sig / byo / drink), la tarjeta del secreto, la de oficina, la
+// de puntos y la de favoritos, todo en una sola funcion con closures adentro — que es
+// exactamente por que cada lado se veia igual que el otro: eran el mismo render con un
+// filtro. Ahora cada destino es su propia pantalla y esto solo decide cual.
 function sOHome(){
-  // ── LA ELECCION ES UNA PANTALLA, NO UNA PESTANA (concepto 1, elegido por el dueno) ──
-  //
-  // Hasta hoy `homeTab` arrancaba en 'sig', asi que la eleccion entre los dos hermanos
-  // NUNCA se mostraba: el cliente caia directo en la lista de Signatures y los hermanos
-  // eran una barra de pestanas de 212px arriba del catalogo. O sea que la decision que
-  // estructura toda la marca —ya esta resuelto / lo decides tu— se presentaba como un
-  // control secundario.
-  //
-  // Ahora `homeTab` arranca en null y eso pinta la cara COMPLETA a pantalla entera: cada
-  // mitad es el boton de su lado. El logo del dueno ES la navegacion, que es lo unico que
-  // justifica que el negocio tenga dos personajes en vez de uno.
-  //
-  // Se elige una sola vez por sesion: al tocar un lado, `homeTab` queda fijado y el resto
-  // de la visita usa el catalogo normal. Volver a elegir es el boton del pie.
   if(homeTab===null)return sOEleccion();
-  var pc=cust
-    ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
-    :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:'+GOLD+'"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Unirse \u2192</span></div>';
-  var ss=storeStatus();
-  // storeStatus() solo mira el horario del día (11-22) — antes eso bastaba para decidir
-  // "abierto/cerrado", pero desde que existe businessLaunched (el negocio real aún no
-  // abrió) mostrar "ABIERTO AHORA" en verde junto a la tarjeta "Avísame cuando abramos"
-  // era una contradicción visible en la misma pantalla (auditoría UX, P1). El badge de
-  // Home ahora respeta businessLaunched sin tocar ss.open en sí — eso sigue gobernando
-  // si se puede pedir "ahora" vs. solo "programar" (isWithinStoreHours), una decisión de
-  // horario real, no de si el negocio ya abrió, y no se toca acá.
-  var showOpenBadge=ss.open&&businessLaunched;
-  // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
-  // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#9DA096);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+estimatedRangeText()+'</span>':'')+'</div>'
-  // El costo de envío ya se mostraba en el checkout, pero recién ahí: el cliente armaba
-  // todo el pedido y se enteraba del delivery al final. Esa sorpresa al final es la causa
-  // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
-  // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
-  // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia — lo cobra el motorizado, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por km.</div>';
-  var lastOrd=cust?lastPaidOrder():null;
-  var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
-  var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
-  var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('cart',16,'#FFFFFF')+'Carrito<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'';
-  var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('device',15,GOLD)+'Instalar<span class="cut-sep" style="color:'+GOLD+'"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,var(--sw-forest-deep,#1E4636),var(--sw-card2,#171A14));border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  return H()
-    +'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-    +hoursBadge
-    +waitlistCardHTML()
-    +nearbyCard
-    +pwaCard
-    +cartCard
-    +recoCard
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#EFEDE4);opacity:.8;letter-spacing:.15em;margin-bottom:16px">¿Cómo quieres pedir? //</div>'
-    // Rediseño de esta sesión (fase 2 de fidelidad al mockup Prada Caffè): las 2 tarjetas
-    // hero (una por modo) se reemplazan por tabs + lista plana de filas, como en el
-    // mockup — un cliente puede ver los 6-7 Signatures reales (nombre, badge, precio) sin
-    // tener que entrar a otra pantalla primero. sOSig() sigue existiendo tal cual (con
-    // toda su lógica de stock/secreto/preview) — estas filas solo son la "vista previa"
-    // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
-    // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
-    +(function(){
-      // el menú secreto nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
-      // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
-      // sección separada, no una fila más entre los Signatures normales). Evita el
-      // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-      // Orden de exhibición: ver `SIG_DISPLAY_ORDER` / `sigsEnOrden()` más arriba en este
-      // archivo, que es el mismo que usa la pantalla de elección (sOSig).
-
-      var visibleSigs=sigsEnOrden(SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}));
-      var secretSig=SIGS.find(function(s){return s.secret;});
-      // ── LOS DOS LADOS: LOS HERMANOS SON LA DIVISIÓN (2026-09-10) ──
-      //
-      // Tercer intento, y el que corrige los dos anteriores con la crítica del dueño:
-      //   · Primero fueron tres pestañas iguales, que borraban lo que la marca ya explica.
-      //   · Después dos paneles con un "//" dorado grueso entre medio. El dueño lo rechazó:
-      //     el wordmark YA tiene su "//" arriba en la misma pantalla, así que repetirlo
-      //     grande era ruido, no marca. "Sinceramente está sobrando y solo es ruido allí."
-      //
-      // Ahora NO hay divisor dibujado. Con los personajes de cuerpo entero, los hermanos
-      // SON la división: SANDO parado en su lado verde, WICHO en el celeste. La marca la
-      // pone quien la habita, no una franja.
-      //
-      // Siguen siendo <button> con los mismos nombres accesibles: un panel que cambia la
-      // pantalla tiene que ser alcanzable con teclado y anunciable por un lector de
-      // pantalla, y es lo que permite que el resto de la suite los localice por rol.
-      var lado=function(id,titulo,bajada,activo){
-        var esByo=id==='byo';
-        // ⚠ LOS DOS LADOS LLEVAN TEXTO CLARO. El de WICHO era `--sw-sky-ink` (casi negro),
-        // que era correcto cuando su panel era un bloque de celeste solido — pero desde que
-        // el fondo es casi negro y el panel un plano tenue, texto casi negro sobre fondo
-        // casi negro es texto invisible. El fallo no lanza nada: solo deja de leerse.
-        var fg='#fff';
-        var sub='var(--sw-text-muted,#9DA096)';
-        var fondo=esByo
-          // Sobre el fondo casi negro, cada mitad lleva un plano TENUE de su color en vez
-          // del bloque saturado de antes: el personaje y la foto tienen que ser lo mas
-          // luminoso del cuadro, no el panel que los contiene.
-          ?'linear-gradient(200deg,rgba(140,200,236,.16),rgba(63,134,180,.06))'
-          :'linear-gradient(155deg,rgba(47,107,84,.22),rgba(30,70,54,.07))';
-        // WICHO tiene varias poses; SANDO por ahora solo una. Al tocarlo, WICHO saluda —
-        // es lo que hace el que se lanza. Cuando el dueño genere más poses de SANDO, acá
-        // se le agrega la suya y nada más cambia.
-        // ⚠ LOS DOS HERMANOS SON UNA SOLA CARA PARTIDA, y hasta hoy esta pantalla no lo
-        // mostraba. `sando.png` y `wicho.png` son las DOS MITADES del logo, cortadas por su
-        // costura central (lo dice shell.html): puestas a tocarse forman una cabeza entera
-        // mordiendo el sub. Esta pantalla usaba `sando_cuerpo`/`wicho_cuerpo`, que son otra
-        // ilustracion —de cuerpo entero, con chaqueta— asi que el activo de marca mas fuerte
-        // del negocio no aparecia en la pantalla donde se elige como pedir.
-        //
-        // Ahora cada mitad se ancla a la COSTURA (SANDO por su derecha, WICHO por su
-        // izquierda) y la cara se lee completa. Separarlas con un hueco la parte al medio, y
-        // es lo que hacia la primera version de esto.
-        var mitad = esByo ? 'wicho' : 'sando';
-        return'<button onclick="elegirLado(\''+id+'\')" aria-pressed="'+(activo?'true':'false')
-          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;'
-          +'position:relative;overflow:hidden;background:'+fondo
-          +';display:flex;flex-direction:column;justify-content:flex-end;transition:background .3s ease">'
-          // La figura vive en SU caja y el rotulo en la suya. Sin eso el titulo cae encima
-          // del personaje, que es el defecto que este archivo ya documenta mas arriba y que
-          // el dueno reporto como "mal recortada, eso no es su diseno".
-          +'<div style="height:212px;display:flex;align-items:flex-end;'
-          +'justify-content:'+(esByo?'flex-start':'flex-end')+';overflow:hidden">'
-          // ⚠ LAS DOS MITADES MIDEN SIEMPRE LO MISMO. La version anterior agrandaba la
-          // activa (100% contra 88%) para senalar cual estaba elegida — y eso PARTE la cara:
-          // son dos mitades de UNA cabeza, asi que un lado mas grande que el otro deja el
-          // ojo, la oreja y el sandwich desalineados en la costura. La senal de activo la
-          // dan el plano de color y el rotulo, nunca la escala del personaje.
-          // .webp y no .png: la mitad limpia a 846x1560 pesa 61 KB en webp contra 700 en
-          // png, o sea MENOS que el png de 282x520 que reemplaza (138 KB) con el triple de
-          // resolucion. Verificado que la compresion no ensucia el arte: dentro del dibujo
-          // la diferencia media es 0.95/255 y el canal alfa queda identico bit a bit.
-          +'<img class="sw-bro-'+mitad+(activo?' sw-on':'')+'" src="img/'+mitad+'.webp" alt="'
-          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%'
-          +';width:auto;max-width:none;display:block;opacity:'+(activo?'1':'.52')
-          +';transition:opacity .3s ease"></div>'
-          +'<div style="position:relative;padding:11px 13px 13px;text-align:'+(esByo?'left':'right')+'">'
-          // El rotulo dice SND y WCH, no los nombres (decision del dueno 2026-09-12): en la
-          // pantalla donde se elige como pedir, lo que tiene que leerse es la MARCA partida
-          // en dos por su propio "//" — cada hermano es una mitad del nombre. Los nombres
-          // propios siguen vivos en el `alt` y en el resto del universo de la marca.
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
-          +'text-transform:uppercase;color:'+(esByo?'var(--sw-sky,#8CC8EC)':GOLD)+'">'+esc(esByo?'WCH':'SND')+'</div>'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(activo?'20':'18')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+sub
-          +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
-      };
-      var tabBar='<div style="display:flex;border-radius:12px;overflow:hidden;'
-        +'margin-bottom:10px;box-shadow:'+SHADOW_SM+'">'
-        +lado('sig','Signatures','Ya está resuelto.',homeTab==='sig')
-        +lado('byo','Arma el tuyo','Tú decides.',homeTab==='byo')
-        +'</div>'
-        // Las bebidas no son un tercer hermano: no son una forma de pedir un sándwich, son
-        // otra cosa que se compra. Por eso van debajo y no dentro de la división.
-        +'<button onclick="elegirLado(\'drink\')" aria-pressed="'+(homeTab==='drink'?'true':'false')
-        +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
-        +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'
-        +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#1B1F18)')
-        +';border:1px solid '+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-border,#2C3228)')+'">'
-        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;'
-        +'color:'+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-text,#FFFFFF)')+'">Bebidas</span>'
-        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
-        +'color:var(--sw-text-muted,#9DA096)">Medio litro, hechas acá — se piden solas</span></button>';
-      // ── MOSAICO DE SIGNATURES (concepto 10, elegido por el dueno) ────────────────
-      //
-      // Antes esto era una fila por producto con una MINIATURA DE 48px. A ese tamano una
-      // foto tratada y una sin tratar se ven igual, asi que el home tiraba a la basura el
-      // trabajo de scripts/tratar_fotos.py -- y el home es la primera impresion. Peor: el
-      // mismo Signature se dibujaba de tres formas distintas en la app (fila de 48px aca,
-      // tarjeta a sangre de 220px en el selector, pildora en bebidas). Eso es lo que el
-      // dueno reporto como "armada una cosa sobre otra".
-      //
-      // El mosaico pone los cinco en una sola pantalla, sin paginar, con la foto a sangre.
-      // El recomendado ocupa el ancho entero: la jerarquia la da el TAMANO, no un badge
-      // mas. El resto va en dos columnas.
-      var sigTile=function(s,ancho){
-        var av=sigInStock(s);
-        var img=SIG_IMG[s.id];
-        var alto=ancho?204:190;
-        var foto=img
-          ?'<img src="'+img+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
-          :'<div style="width:100%;height:100%;background:var(--sw-card2,#171A14)"></div>';
-        // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo
-        // manda al cliente a buscar en otro lado. Se muestra apagado y sin onclick.
-        var etiqueta=av
-          ?(s.recommended
-            ?'<span style="position:absolute;top:10px;left:10px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
-             +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
-             +'text-transform:uppercase;border-radius:999px;padding:4px 9px">Recomendado</span>'
-            :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:var(--sw-text,#fff);'
-             +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;letter-spacing:.06em;'
-             +'border-radius:999px;padding:4px 9px">'+sigBadge(s)+'</span>')
-          :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);'
-           +'color:var(--sw-danger,#ff8888);font-family:\'EB Garamond\',serif;font-style:italic;'
-           +'font-size:9px;border-radius:999px;padding:4px 9px">Agotado</span>';
-        return'<div '+(av?'onclick="startOrderWithSig(\''+s.id+'\')" style="cursor:pointer;':'style="')
-          +'grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
-          +'border-radius:10px;background:var(--sw-card2,#171A14)'+(av?'':';opacity:.5')+'">'
-          +foto+etiqueta
-          +'<div style="position:absolute;left:0;right:0;bottom:0;padding:12px;'
-          +'background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.88) 100%)">'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(ancho?'22':'18')+'px;font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(s.n)+'</div>'
-          +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD
-              +';margin-top:4px">'+SOLES+pz(s.p15)
-              +'<span style="color:var(--sw-text-muted,#9DA096);font-size:9px;margin-left:6px">30CM '
-              +SOLES+pz(s.p30)+'</span></div>':'')
-          +'</div></div>';
-      };
-      var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
-        +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
-      var byoPanel='<div style="margin-bottom:8px">'
-        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige pan, proteína, queso, vegetales y salsas — a tu manera.</p>'
-        +BASES.map(function(b){
-          var av=isAvail(b.id);
-          return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
-        }).join('')
-        +'<div style="margin-top:14px">'+BTN('Ver el paso a paso completo →',"startOrder('byo')",true)+'</div>'
-        // ── EL PUENTE DE VUELTA A LOS SIGNATURES (2026-09-06) ──────────────────────────
-        //
-        // POR QUÉ. `PREDICCION_V12.md` mide la mezcla Signature / ARMA EL TUYO como una de
-        // las tres palancas de la meta: un Signature deja ~S/5.50 más que un armado, y mover
-        // la mezcla de 50/50 a 65/35 vale ~S/0.82 por pedido. El modelo asume mitad y mitad,
-        // y a partir de hoy se MIDE (pantalla "Las tres palancas"), así que este puente se
-        // puede evaluar en vez de suponer que sirvió.
-        //
-        // ⚠ NO SE DEGRADA ARMA EL TUYO PARA CONSEGUIRLO, y eso no es escrúpulo: el armador es
-        // la mitad de la identidad de la marca (los dos hermanos — el calmado son las recetas
-        // cerradas, el alocado es donde elige el cliente). Esconderlo o encarecerlo para
-        // empujar la mezcla rompería el producto para ganar céntimos.
-        //
-        // Va DEBAJO de la lista de panes y no arriba: quien tocó esta pestaña ya eligió armar
-        // el suyo, y cortarle el paso al entrar sería ponerle un obstáculo, no una opción. Lo
-        // ve quien bajó hasta el final sin decidirse, que es justo a quien le sirve.
-        //
-        // El nombre sale del catálogo (que el servidor refresca), nunca escrito a mano: si el
-        // dueño renombra o retira ese Signature desde el panel, este texto lo sigue solo.
-        +(function(){
-          var rec=visibleSigs.filter(function(x){return x.recommended&&sigInStock(x);})[0]||visibleSigs.filter(sigInStock)[0];
-          if(!rec)return'';
-          return'<div onclick="startOrderWithSig(\''+rec.id+'\')" style="margin-top:12px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
-            +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+pz(rec.p15)+' en 15CM.</div></div>';
-        })()
-        +'</div>';
-      // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
-      //
-      // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
-      // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
-      // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
-      //
-      // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
-      // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
-      // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
-      // jamas antes de pedirlo, y una foto nitida la revelaria.
-      //
-      // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
-      // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
-      // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
-      var vaultCard=secretSig?(function(){
-        var myTotal=cust?(cust.total_orders||0):0;
-        var missing=Math.max(0,secretSig.minOrders-myTotal);
-        var unlocked=!!cust&&missing===0;
-        var hechos=Math.min(myTotal,secretSig.minOrders);
-        var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
-        var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
-          +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
-          +'margin-bottom:10px">Menú secreto</div>';
-
-        if(unlocked){
-          // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
-          // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
-          return'<div style="margin:20px 0 16px">'+rot
-            +'<div onclick="startOrderWithSig(\''+secretSig.id+'\')" class="sw-revelar" '
-            +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
-            +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
-              +'" style="width:100%;height:100%;object-fit:cover">':'')
-            +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
-            +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
-            +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
-            +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
-            +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
-            +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
-            +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-            +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
-            +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-            +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
-            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
-            +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
-            +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
-            +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
-            +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
-            +'</div></div></div>';
-        }
-
-        // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
-        // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
-        var seg='';
-        for(var i=0;i<secretSig.minOrders;i++){
-          seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
-            +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
-        }
-        return'<div style="margin:20px 0 16px">'+rot
-          +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
-          +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
-            +'style="width:100%;height:100%;object-fit:cover">':'')
-          +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
-          +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
-          +'justify-content:center;padding:26px;text-align:center">'
-          +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-          +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-          +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
-          +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
-          +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
-          +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
-          +'</div></div></div>';
-      })():'';
-      // Pedido de oficina — el canal con mejor economía del negocio: una sola entrega para
-      // 4-8 sándwiches, así que el delivery por persona baja a una fracción. Antes solo
-      // aparecía DENTRO del carrito y solo para quien ya tenía sesión iniciada: quien
-      // llegaba por primera vez no se enteraba nunca de que existía. Acá lo ve todo el
-      // mundo; si no tiene cuenta, doCreateGroupOrder lo manda a crearla.
-      var officeCard='<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
-        +icon('clientes',18,GOLD)
-        +'<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">¿Piden en grupo<span class="cut-sep" style="color:'+GOLD+'"> // </span>en la oficina?</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div>'
-        // El sándwich gratis solo se anunciaba DENTRO del pedido grupal, o sea después de
-        // que la persona ya decidió organizarlo. La decisión se toma acá, en la puerta.
-        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:5px">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, uno va gratis.</div></div>'
-        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';flex-shrink:0">Armar →</span></div>';
-      // El panel de bebidas reutiliza `drinkRowHTML`, la MISMA fila que pinta la pantalla
-      // BEBIDAS Y SIDES: si fueran dos plantillas, el día que cambie el precio o la foto
-      // una de las dos se queda atrás y nadie se entera.
-      var drinkPanel='<div style="margin-bottom:8px">'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin:2px 0 12px">'
-        +'Infusiones hechas acá, medio litro. Puedes pedirlas solas — no hace falta armar un sándwich.</div>'
-        +SIDES.map(drinkRowHTML).join('')+'</div>';
-      return tabBar+(homeTab==='byo'?byoPanel:homeTab==='drink'?drinkPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
-    })()
-    // Acá había una SEGUNDA tarjeta de pedido grupal ("Pedido // grupal · Organizar →"),
-    // con el mismo onclick y el mismo destino que officeCard de arriba. Era la versión
-    // vieja, de cuando el canal solo se ofrecía a quien ya tenía sesión; al agregar
-    // officeCard (visible también para invitados) nadie borró esta, así que un cliente
-    // logueado veía dos puertas al mismo sitio, una encima de la otra — reportado por el
-    // dueño con captura. Queda solo officeCard.
-    +(cust&&myFavorites.length?'<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
-    +pc
-    +contactFooterHTML()
-    +'</div>'+NAV();
+  // Quien entro por WICHO no tiene un "home": su lado es armar. Puede caer aca al volver
+  // con el lado guardado en localStorage, y se lo devuelve al armador en vez de mostrarle
+  // la carta cerrada de su hermano con los colores cambiados.
+  if(homeTab==='byo'){ mode='byo'; sndScreen='o_build'; return sOBuild(); }
+  return sMundoSando();
 }
 
 // PEDIDO GRUPAL / DE OFICINA

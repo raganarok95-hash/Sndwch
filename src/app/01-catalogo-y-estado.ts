@@ -1359,15 +1359,54 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 var homeTab: string|null = (function(){
   try{
     var v = localStorage.getItem('sw_lado');
-    return (v === 'sig' || v === 'byo' || v === 'drink') ? v : null;
+    return (v === 'sig' || v === 'byo') ? v : null;   // 'drink' fue un lado un dia; ya no
   }catch(e){ return null; }   // navegacion privada, cookies bloqueadas: se pregunta igual
 })();
 // Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
 // arriba del catalogo— para que no haya uno que recuerde y otro que no.
+// ── ELEGIR UN LADO ES ENTRAR A ESE LADO, NO CAMBIAR UNA PESTAÑA (2026-09-17) ──────────
+//
+// Hasta hoy tocar un hermano solo fijaba `homeTab` y volvía a pintar LA MISMA página con
+// otra lista debajo. El dueño lo dijo así: «no importa dónde pulse me manda otra vez a una
+// web reskineada de la anterior. ¿Si selecciono derecha o izquierda no debería ir
+// directamente a la opción respectiva?». Tenía razón: la elección era un interruptor
+// decorativo encima del home de siempre.
+//
+// Ahora cada lado ES una pantalla:
+//   · SANDO  → su mosaico de Signatures, que es su carta cerrada.
+//   · WICHO  → el armador, directo desde el pan. No hay lista intermedia que elegir antes
+//     de elegir: su lado ES armar, así que entrar a su lado es empezar a armar.
+//   · Bebidas → su propia pantalla, que ya existía y era una fila perdida en el home.
+// El lado queda guardado, así que quien vuelve entra directo al suyo sin pasar otra vez por
+// la puerta; cambiarlo es un gesto explícito (`volverALaPuerta`).
 function elegirLado(id){
   homeTab = id;
   try{ localStorage.setItem('sw_lado', id); }catch(e){}
-  render();
+  if(id==='byo'){
+    // Se entra al armador LIMPIO. Sin esto, quien vuelve a entrar por WICHO se encuentra a
+    // medio armar el sándwich de la vez pasada, sin haber pedido nada.
+    if(typeof resetBuilder==='function')resetBuilder();
+    mode='byo';byoStep=0;sndScreen='o_build';render();return;
+  }
+  sndScreen='o_home';render();
+}
+// BEBIDAS NO ES UN TERCER HERMANO. Llego a serlo por un rato y estaba mal: entrar a bebidas
+// desde la carta de SANDO teñia toda la pantalla de azul, o sea que el producto cambiaba de
+// dueño por haber tocado una fila. Ahora es una pantalla alcanzable desde los dos lados que
+// conserva el color del lado desde el que se entro, y recuerda por donde volver — se llega
+// desde la carta, desde el armador y desde el checkout, y las tres vueltas son distintas.
+var bebidasVolverA='o_home';
+function irABebidas(desde){
+  bebidasVolverA=desde||'o_home';
+  sndScreen='o_sides';render();
+}
+// Volver a la puerta: olvida el lado guardado y vuelve a mostrar la cara partida. Es la
+// ÚNICA forma de cambiar de hermano, y es a propósito que sea explícita — un interruptor
+// siempre visible convertiría los dos mundos en dos pestañas otra vez.
+function volverALaPuerta(){
+  homeTab=null;
+  try{ localStorage.removeItem('sw_lado'); }catch(e){}
+  sndScreen='o_home';render();
 }
 // De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
 // las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un

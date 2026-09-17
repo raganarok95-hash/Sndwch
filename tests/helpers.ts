@@ -132,7 +132,11 @@ export async function clearDeliveryPin(page: Page) {
 // el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
 export async function elegirSando(page: Page) {
   await page.getByRole('button', { name: /Ya está resuelto/ }).click();
-  await page.waitForSelector('text=SIGNATURE');
+  // Se espera un texto que SOLO existe en el mundo de SANDO ya pintado. Antes era
+  // "SIGNATURE", que era la pestaña del catálogo viejo; al desaparecer esa barra el helper
+  // se quedaba esperando 30s en cada prueba de la suite. El ancla es el tramo de abajo del
+  // mundo, así que llegar hasta él significa que la pantalla se pintó ENTERA.
+  await page.waitForSelector('text=Y además');
 }
 
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {

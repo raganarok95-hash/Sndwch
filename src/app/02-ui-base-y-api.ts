@@ -584,7 +584,9 @@ function CUT(alto?,ancho?,gap?){
 // una pantalla de cliente y el celeste ahí no significaría nada.
 var LADO_WICHO=[
   'o_build',      // armas el sándwich
-  'o_sides',      // eliges la bebida
+  // 'o_sides' (bebidas) estuvo acá y se fue el 2026-09-17: es la única pantalla que los DOS
+  // lados comparten —el dueño pidió que cada lado tuviera su bebida—, así que su color no
+  // puede estar fijado en esta lista. Lo decide ladoActual() por el lado de entrada.
   'p_rewards',    // eliges qué canjear
   'p_favorites',  // tus armados guardados
   'p_recurring',  // eliges qué se repite y cuándo
@@ -594,7 +596,8 @@ var LADO_WICHO=[
 function ladoActual(){
   if(/^admin/.test(String(sndScreen||'')))return'sando';
   if(LADO_WICHO.indexOf(String(sndScreen||''))>=0)return'wicho';
-  if(sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink'))return'wicho';
+  // Bebidas se pinta del lado por el que se entro: es la misma pantalla para los dos.
+  if((sndScreen==='o_home'||sndScreen==='o_sides')&&homeTab==='byo')return'wicho';
   return'sando';
 }
 function ACC(){return ladoActual()==='wicho'?'var(--sw-sky,#8CC8EC)':GOLD;}
