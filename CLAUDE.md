@@ -379,6 +379,13 @@ porque **lo están, a propósito**: SANDO cura los Signatures, donde la receta e
 tocas, y su dibujo también está cerrado; WICHO es ARMA EL TUYO, donde eliges tú, y su dibujo
 también es suelto. **La gracia es que sean distintos.**
 
+**Cada hermano es un IDIOMA DE INTERFAZ, no un color.** Línea pareja, dos tonos planos, esquina
+recta, acanalado y tan cálido son de SANDO; espiral, curvas de nivel, trazo que se pasa y no
+cierra, trama cruzada y rosa durazno son de WICHO. Puestas en blanco y negro, sus dos pantallas
+se tienen que seguir distinguiendo. **Está todo en `docs/LOS_DOS_HERMANOS.md` y se lee antes de
+diseñar cualquier pantalla del cliente** — se escribió después de que el dueño corrigiera tres
+rondas seguidas con la misma frase, «no es solo un color».
+
 **Nunca "arregles" a WICHO acercándolo a SANDO** — es exactamente el error que se cometió acá.
 Cada hermano se regenera contra SU PROPIA referencia (`img/sando_sonrie.png`, `img/wicho_rie.png`),
 nunca contra la del otro. Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que la app
