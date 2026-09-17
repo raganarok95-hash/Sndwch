@@ -77,11 +77,11 @@ function contactFooterHTML(){
     +legalFooterLink('Cambios y devoluciones','p_returns')
     +legalFooterLink('Libro de reclamaciones','p_complaints',"cmplStep='form';")
     +'</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:#4A5A52;margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
     // Sello del build al pie. Deliberadamente discreto (8px, gris del pie) — no le dice
     // nada a un cliente, pero contesta de un vistazo "¿qué versión tienes tú instalada?"
     // sin necesitar la consola del navegador ni tener el teléfono en la mano.
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:#3E4C46;margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
+    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
     +'</div>';
 }
 // Fila compacta de enlaces legales, reutilizable fuera del home. El Libro de

@@ -63,6 +63,11 @@ const PALETA_VIEJA = {
   '#162922': '--sw-card2',
   '#0D1A15': '--sw-card2',
   '#2A2A2A': '--sw-border',
+  // Y los dos del pie de página, que escondían el RUC y la razón social a 2.5:1 sobre el
+  // fondo — o sea la identificación legal del negocio pintada casi invisible. Los encontró
+  // `tests/contraste.spec.ts` midiendo, no mirando.
+  '#4A5A52': '--sw-text-muted2',
+  '#3E4C46': '--sw-text-muted2',
 };
 
 const problems = [];
