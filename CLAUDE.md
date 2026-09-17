@@ -195,7 +195,7 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    formas de estar desactualizada y tiene que señalar cada una. Va DESPUÉS de `build` porque
    compara contra el `index.html` recién construido.
 5e. `npm run check:acciones` — que ninguna acción quede escrita y muerta, ni registrada e
-   inalcanzable. Cierra el defecto real que este archivo ya documenta más abajo:
+   inalcanzable. Cierra un defecto real (el relato completo en `docs/DECISIONES.md`):
    `actAdminRetentionReport` estaba IMPORTADA y nunca REGISTRADA en `ACTIONS`, así que la app
    no podía abrirla y nada avisaba — `deno check` no marca un import que sí se usa dentro de un
    objeto. Cruza tres fuentes independientes (lo que el servidor exporta, lo que registra, y
@@ -203,8 +203,7 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    cuerpo llame a `verifyCronSecret`— en vez de por una lista de nombres que se desactualiza.
    **Registrar una acción es un paso APARTE de importarla.**
 5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
-   Este archivo lo llama abajo "el séptimo caso del mismo defecto en este repo"; ahora hay algo
-   que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
+   Fue el séptimo caso del mismo defecto en este repo; ahora hay algo que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
    normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,
    y sin comparar la firma el drop de la sobrecarga vieja daba por muerta a la que está viva —
    cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
@@ -405,11 +404,11 @@ todavía no tiene.
    por el usuario: licencias de Adobe Stock en la categoría gratuita (`pricing:"free"`)
    se pueden aprobar directamente sin pedir permiso cada vez, siempre que se confirme que
    son gratuitas antes de licenciar.
-9. **Documentar en este archivo las capacidades/limitaciones técnicas reales que se vayan
-   descubriendo** (qué modelo de generación de imágenes funciona en este plan y cuál no,
-   qué dominios bloquea el proxy de red, qué vías sí funcionan para descargar assets) para
-   que la siguiente sesión no tenga que redescubrirlas desde cero. Ver "Capacidades y
-   limitaciones técnicas descubiertas" más abajo.
+9. **Documentar en `docs/ENTORNO.md` las capacidades/limitaciones técnicas reales que se
+   vayan descubriendo** (qué modelo de generación de imágenes funciona en este plan y cuál
+   no, qué dominios bloquea el proxy de red, qué vías sí funcionan para descargar assets)
+   para que la siguiente sesión no tenga que redescubrirlas desde cero. Va ahí y no acá:
+   son consultas puntuales, no reglas que haya que leer antes de cada turno.
 10. **El "//" es la identidad de marca permanente — pero solo como concepto/ícono, no
     atado a ninguna estética específica.** Se mantiene siempre como símbolo de marca, pero
     NO está ligado a la paleta actual, a la tipografía actual, ni a ninguna connotación

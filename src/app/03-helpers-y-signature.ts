@@ -1197,35 +1197,54 @@ function sOHome(){
         +'color:'+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-text,#FFFFFF)')+'">Bebidas</span>'
         +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
         +'color:var(--sw-text-muted,#A8C8B0)">Medio litro, hechas acá — se piden solas</span></button>';
-      var sigPanel='<div style="margin-bottom:8px">'+visibleSigs.map(function(s,i){
+      // ── MOSAICO DE SIGNATURES (concepto 10, elegido por el dueno) ────────────────
+      //
+      // Antes esto era una fila por producto con una MINIATURA DE 48px. A ese tamano una
+      // foto tratada y una sin tratar se ven igual, asi que el home tiraba a la basura el
+      // trabajo de scripts/tratar_fotos.py -- y el home es la primera impresion. Peor: el
+      // mismo Signature se dibujaba de tres formas distintas en la app (fila de 48px aca,
+      // tarjeta a sangre de 220px en el selector, pildora en bebidas). Eso es lo que el
+      // dueno reporto como "armada una cosa sobre otra".
+      //
+      // El mosaico pone los cinco en una sola pantalla, sin paginar, con la foto a sangre.
+      // El recomendado ocupa el ancho entero: la jerarquia la da el TAMANO, no un badge
+      // mas. El resto va en dos columnas.
+      var sigTile=function(s,ancho){
         var av=sigInStock(s);
-        var thumb=SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0" loading="lazy">':'<div style="width:48px;height:48px;border-radius:8px;flex-shrink:0;background:'+'var(--sw-card2,#1A3028)'+'"></div>';
-        if(!av)return'<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);opacity:.4">'+thumb+'<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#A8C8B0)">'+s.n+'<span style="color:var(--sw-text-muted,#A8C8B0)"> // </span>'+sigTypeTag(s.s)+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);flex-shrink:0">Agotado</span></div>';
-        // Sin el sufijo " // Signature" en la fila: la etiqueta de arriba ya dice el tipo
-        // ("Clásico · Recomendado") y, al agrandar el precio a 22px, ese sufijo empujaba el
-        // nombre hasta cortarlo con puntos suspensivos a 320px ("The Original // Sig…").
-        // Entre mostrar el nombre completo del producto y repetir su categoría, gana el
-        // nombre.
-        // "Recomendado" era un sufijo de 11px en itálica DENTRO de la misma línea del badge
-        // ("Italiano · Recomendado"), del mismo color y del mismo tamaño que todo lo que
-        // tiene al lado: la recomendación existía en el código y no existía en la pantalla.
-        // Ahora es un sello propio antes del badge. El fallo de esto es SILENCIO — si el
-        // sello desaparece nada revienta, solo deja de empujarse el Signature que deja
-        // S/2.73 más por unidad, y no hay forma de notarlo mirando la app.
-        return'<div onclick="startOrderWithSig(\''+s.id+'\')" style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--sw-border,#3A6B58);cursor:pointer'+(s.recommended?';background:rgba(203,162,88,.07)':'')+'">'+thumb+'<div style="flex:1;min-width:0">'+(s.recommended?'<span style="display:inline-block;background:'+GOLD+';color:#0E1A17;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:2px 7px;margin-right:6px;vertical-align:1px">Recomendado</span>':'')+'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.02em;color:'+GOLD+'">'+sigBadge(s)+'</span><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.n+'</div></div>'
-          // Antes solo se veía el precio de 15CM y el de 30CM aparecía recién en la
-          // pantalla siguiente. Mostrar los dos deja ver la escalera completa desde la
-          // lista, que es donde el cliente compara. Solo se muestra el 30CM si de verdad
-          // cuesta más — hoy THE CHICAGO tiene el mismo precio en ambos tamaños y
-          // repetirlo se leería como un error de la app.
-          // El precio va en Bodoni a 22px, no en Garamond itálica a 13px. Cuando cobras S/25
-          // contra un menú del día de S/12, el precio ES el argumento de venta: escribirlo
-          // como letra chica lo vuelve una disculpa. El nombre del Signature ya iba a 16px y
-          // su precio a 13 — invertido respecto a lo que sostiene el ticket.
-          +'<div style="text-align:right;flex-shrink:0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(s.p15)+'</span>'
-          +(s.p30>s.p15?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#A8C8B0);margin-top:1px">30CM '+SOLES+pz(s.p30)+'</div>':'')
+        var img=SIG_IMG[s.id];
+        var alto=ancho?204:190;
+        var foto=img
+          ?'<img src="'+img+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
+          :'<div style="width:100%;height:100%;background:var(--sw-card2,#171A14)"></div>';
+        // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo
+        // manda al cliente a buscar en otro lado. Se muestra apagado y sin onclick.
+        var etiqueta=av
+          ?(s.recommended
+            ?'<span style="position:absolute;top:10px;left:10px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
+             +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
+             +'text-transform:uppercase;border-radius:999px;padding:4px 9px">Recomendado</span>'
+            :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:var(--sw-text,#fff);'
+             +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;letter-spacing:.06em;'
+             +'border-radius:999px;padding:4px 9px">'+sigBadge(s)+'</span>')
+          :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);'
+           +'color:var(--sw-danger,#ff8888);font-family:\'EB Garamond\',serif;font-style:italic;'
+           +'font-size:9px;border-radius:999px;padding:4px 9px">Agotado</span>';
+        return'<div '+(av?'onclick="startOrderWithSig(\''+s.id+'\')" style="cursor:pointer;':'style="')
+          +'grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
+          +'border-radius:10px;background:var(--sw-card2,#171A14)'+(av?'':';opacity:.5')+'">'
+          +foto+etiqueta
+          +'<div style="position:absolute;left:0;right:0;bottom:0;padding:12px;'
+          +'background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.88) 100%)">'
+          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
+          +(ancho?'22':'18')+'px;font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(s.n)+'</div>'
+          +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD
+              +';margin-top:4px">'+SOLES+pz(s.p15)
+              +'<span style="color:var(--sw-text-muted,#A8C8B0);font-size:9px;margin-left:6px">30CM '
+              +SOLES+pz(s.p30)+'</span></div>':'')
           +'</div></div>';
-      }).join('')+'</div>';
+      };
+      var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
+        +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
       var byoPanel='<div style="margin-bottom:8px">'
         +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
         +BASES.map(function(b){
