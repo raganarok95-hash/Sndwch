@@ -162,6 +162,15 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   `tests/armador-riel.spec.ts`, que compara el rótulo encendido contra el título pintado.
 - **Un estado vacío del cliente se pinta con `VACIO()`**, que trae al hermano del lado en el
   que está. Dos pantallas se lo saltaron y quedaron con un rótulo suelto en medio de la nada.
+- **UN SECRET NO SE DA POR AUSENTE MIRANDO EL CÓDIGO.** `GOOGLE_CLIENT_ID`, `META_PIXEL_ID` y
+  compañía viven como **texto de relleno** en `src/app/01-*` **a propósito**: el valor real llega
+  del servidor en `get-store-hours`, leyendo el secret de Supabase, y por eso se prenden sin
+  redesplegar el cliente. Ver el marcador `REEMPLAZA_...` en el archivo **no prueba nada**, y que
+  ninguna fila tenga `google_id` tampoco (puede estar configurado y sin usar: hoy hay 1 cliente de
+  prueba). **El secret de Google SÍ está puesto desde el 2026-09 y el botón ya se dibuja en
+  producción.** Antes de afirmar que falta un secret, verifícalo contra Supabase — nunca por
+  inferencia. Error real cometido dos veces el 2026-09-17, la segunda después de que el dueño lo
+  corrigiera.
 - **El modo de fallo que importa es el SILENCIO.** Casi todo lo listado acá no lanza
   ninguna excepción: solo deja de hacer lo que prometía. Por eso hay tantos chequeos en
   `verify` y por eso cada uno se verifica inyectándole el defecto que caza.
