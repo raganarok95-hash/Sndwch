@@ -2096,10 +2096,17 @@ function confirmMap(){
   if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=!!window._mDistrict;}
   render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
-  if(el){el.style.borderColor='#3A86FF';el.focus();}
+  // El resaltado usa el ACENTO del lado, no el azul de "pedido en preparación". Ese azul es
+  // un color de ESTADO de la cola del panel; acá decía "te llenamos la dirección", que no es
+  // un estado de pedido — y en una app sin azul en ningún otro sitio, aparecía de la nada.
+  if(el){el.style.borderColor=ACC();el.focus();}
   var h=(document.getElementById('gps-hint') as HTMLInputElement | null);
   if(h)h.innerHTML='<a href="https://maps.google.com/?q='+window._mLat+','+window._mLon+'" target="_blank" style="color:'+GOLD+';font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
-  setTimeout(function(){var e=(document.getElementById('o-addr') as HTMLInputElement | null);if(e)e.style.borderColor='var(--sw-on-gold,#241a08)';},3000);
+  // Y al apagarse vuelve al borde REAL de un input (`--sw-border-soft`, el que pone `INP()`),
+  // no a `--sw-on-gold`, que es el color del TEXTO sobre dorado. Ese token quedó acá en la
+  // tokenización y dejaba el campo con un borde que no significa nada — el defecto no se ve
+  // hasta que alguien usa el GPS, y entonces el campo queda marcado de un color ajeno.
+  setTimeout(function(){var e=(document.getElementById('o-addr') as HTMLInputElement | null);if(e)e.style.borderColor='var(--sw-border-soft,#1c1c1c)';},3000);
 }
 
 // Recordamos qué pantalla se pintó la última vez para distinguir "sigo en la

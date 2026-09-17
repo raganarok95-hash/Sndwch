@@ -1957,8 +1957,12 @@ function setLado(l) {
 var bkTo = null;
 var mode = null, sigId = null, base = null, prot = null, cheese = null;
 var tops = [], sauces = [], size = null, doubleProt = false, extraSauce = false;
-// Paso actual del asistente de BUILD YOUR OWN (0=pan,1=proteína,2=toppings,3=queso,
-// 4=salsas) — ver sOBuild/byoStepBack/byoStepNext.
+// Paso actual del asistente de ARMA EL TUYO. El orden REAL es el del mostrador de Subway y
+// vive en `BYO_STEP_LABELS` (04-armado): 0=pan, 1=proteína, 2=queso, 3=vegetales, 4=salsas.
+// ⚠ Este comentario decía "2=toppings, 3=queso" — el orden de ANTES del 2026-09-05, cuando
+// se intercambiaron los pasos 2 y 3. Doce días después el riel seguía anunciando el paso
+// equivocado por ese mismo descuido, así que acá no se repite la lista: se nombra dónde
+// vive. Ver sOBuild/byoStepBack/byoStepNext.
 var byoStep = 0;
 var useCredit = false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
@@ -2033,7 +2037,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '5836bc2b55';
+var APP_BUILD = '89953896b0';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3798,7 +3802,11 @@ function itemRecipeLines(item) {
     lines.push('Proteína: ' + nombreOId(PROTS, prot, 'proteína') + (item.doubleProt ? ' (DOBLE)' : ''));
     if (cheese)
         lines.push('Queso: ' + nombreOId(CHEESE, cheese, 'queso'));
-    lines.push('Toppings: ' + (tops.length ? tops.map(function (id) { return nombreOId(TOPS, id, 'topping'); }).join(' · ') : 'sin toppings'));
+    // "Vegetales" y no "Toppings", igual que el paso del armador: es la palabra que usa Subway
+    // en español y la que el cliente peruano ya trae. Hasta hoy el armador decía una cosa y el
+    // resumen del pedido otra para lo MISMO — la vista previa, el resumen y la invitación del
+    // armador tenían cada una su nombre.
+    lines.push('Vegetales: ' + (tops.length ? tops.map(function (id) { return nombreOId(TOPS, id, 'vegetal'); }).join(' · ') : 'sin vegetales'));
     lines.push('Salsas: ' + (sauces.length ? sauces.map(function (id) { return nombreOId(SAUCES, id, 'salsa'); }).join(' + ') : 'sin salsa') + (item.extraSauce ? ' (+EXTRA)' : ''));
     if (item.note)
         lines.push('Nota: ' + item.note);
@@ -4630,7 +4638,7 @@ function sOHome() {
             var sigPanel = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
                 + visibleSigs.map(function (s, i) { return sigTile(s, i === 0); }).join('') + '</div>';
             var byoPanel = '<div style="margin-bottom:8px">'
-                + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
+                + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige pan, proteína, queso, vegetales y salsas — a tu manera.</p>'
                 + BASES.map(function (b) {
                     var av = isAvail(b.id);
                     return '<div ' + (av ? 'onclick="startOrderWithBase(\'' + b.id + '\')" style="cursor:pointer;' : 'style="opacity:.4;') + 'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + b.l + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + b.s + '</span>' + (av ? '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + '">Elegir →</span>' : '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>') + '</div>';
@@ -5207,7 +5215,7 @@ function sigPreviewOverlayHTML() {
                 + '<div><span style="color:' + GOLD + '">Pan · </span>' + (bs ? bs.l + ' // ' + bs.s + (bs.d ? ' — ' + bs.d : '') : '') + '</div>'
                 + '<div><span style="color:' + GOLD + '">Proteína · </span>' + (pr ? pr.l + ' // ' + pr.s + (pr.d ? ' — ' + pr.d : '') : '') + '</div>'
                 + (cheeseLbl ? '<div><span style="color:' + GOLD + '">Queso · </span>' + cheeseLbl + '</div>' : '')
-                + '<div><span style="color:' + GOLD + '">Toppings · </span>' + toppingsLbl + '</div>'
+                + '<div><span style="color:' + GOLD + '">Vegetales · </span>' + toppingsLbl + '</div>'
                 + '<div><span style="color:' + GOLD + '">Salsas · </span>' + saucesLbl + '</div>'
                 + '</div></div>')
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + pz(s.p15) + ' // ' + SOLES + pz(s.p30) + '</span></div>'
@@ -8231,15 +8239,22 @@ function confirmMap() {
     }
     render();
     var el = document.getElementById('o-addr');
+    // El resaltado usa el ACENTO del lado, no el azul de "pedido en preparación". Ese azul es
+    // un color de ESTADO de la cola del panel; acá decía "te llenamos la dirección", que no es
+    // un estado de pedido — y en una app sin azul en ningún otro sitio, aparecía de la nada.
     if (el) {
-        el.style.borderColor = '#3A86FF';
+        el.style.borderColor = ACC();
         el.focus();
     }
     var h = document.getElementById('gps-hint');
     if (h)
         h.innerHTML = '<a href="https://maps.google.com/?q=' + window._mLat + ',' + window._mLon + '" target="_blank" style="color:' + GOLD + ';font-size:11px;text-decoration:none">&#128205; Ver pin en Google Maps</a>';
+    // Y al apagarse vuelve al borde REAL de un input (`--sw-border-soft`, el que pone `INP()`),
+    // no a `--sw-on-gold`, que es el color del TEXTO sobre dorado. Ese token quedó acá en la
+    // tokenización y dejaba el campo con un borde que no significa nada — el defecto no se ve
+    // hasta que alguien usa el GPS, y entonces el campo queda marcado de un color ajeno.
     setTimeout(function () { var e = document.getElementById('o-addr'); if (e)
-        e.style.borderColor = 'var(--sw-on-gold,#241a08)'; }, 3000);
+        e.style.borderColor = 'var(--sw-border-soft,#1c1c1c)'; }, 3000);
 }
 // Recordamos qué pantalla se pintó la última vez para distinguir "sigo en la
 // misma pantalla, solo cambió algo" (hay que mantener el scroll donde estaba)

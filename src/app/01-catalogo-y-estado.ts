@@ -1388,8 +1388,12 @@ function setLado(l){
 var bkTo=null;
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
-// Paso actual del asistente de BUILD YOUR OWN (0=pan,1=proteína,2=toppings,3=queso,
-// 4=salsas) — ver sOBuild/byoStepBack/byoStepNext.
+// Paso actual del asistente de ARMA EL TUYO. El orden REAL es el del mostrador de Subway y
+// vive en `BYO_STEP_LABELS` (04-armado): 0=pan, 1=proteína, 2=queso, 3=vegetales, 4=salsas.
+// ⚠ Este comentario decía "2=toppings, 3=queso" — el orden de ANTES del 2026-09-05, cuando
+// se intercambiaron los pasos 2 y 3. Doce días después el riel seguía anunciando el paso
+// equivocado por ese mismo descuido, así que acá no se repite la lista: se nombra dónde
+// vive. Ver sOBuild/byoStepBack/byoStepNext.
 var byoStep=0;
 var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si

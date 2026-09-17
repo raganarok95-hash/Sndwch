@@ -561,7 +561,11 @@ function itemRecipeLines(item){
   lines.push('Pan: '+nombreOId(BASES,base,'pan'));
   lines.push('Proteína: '+nombreOId(PROTS,prot,'proteína')+(item.doubleProt?' (DOBLE)':''));
   if(cheese)lines.push('Queso: '+nombreOId(CHEESE,cheese,'queso'));
-  lines.push('Toppings: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'topping');}).join(' · '):'sin toppings'));
+  // "Vegetales" y no "Toppings", igual que el paso del armador: es la palabra que usa Subway
+  // en español y la que el cliente peruano ya trae. Hasta hoy el armador decía una cosa y el
+  // resumen del pedido otra para lo MISMO — la vista previa, el resumen y la invitación del
+  // armador tenían cada una su nombre.
+  lines.push('Vegetales: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'vegetal');}).join(' · '):'sin vegetales'));
   lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return nombreOId(SAUCES,id,'salsa');}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
   if(item.note)lines.push('Nota: '+item.note);
   return lines;
@@ -1263,7 +1267,7 @@ function sOHome(){
       var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
         +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
       var byoPanel='<div style="margin-bottom:8px">'
-        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige base, proteína, toppings y salsas — a tu manera.</p>'
+        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige pan, proteína, queso, vegetales y salsas — a tu manera.</p>'
         +BASES.map(function(b){
           var av=isAvail(b.id);
           return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
@@ -1778,7 +1782,7 @@ function sigPreviewOverlayHTML(){
       +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
       +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s+(pr.d?' — '+pr.d:''):'')+'</div>'
       +(cheeseLbl?'<div><span style="color:'+GOLD+'">Queso · </span>'+cheeseLbl+'</div>':'')
-      +'<div><span style="color:'+GOLD+'">Toppings · </span>'+toppingsLbl+'</div>'
+      +'<div><span style="color:'+GOLD+'">Vegetales · </span>'+toppingsLbl+'</div>'
       +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
       +'</div></div>')
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
