@@ -130,6 +130,16 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
     (window as any)._mLon = lo;
   }, [PIN_TEST.lat, PIN_TEST.lon]);
   await page.goto(APP_FILE);
+  // ⚠ LA APP ABRE EN LA PANTALLA DE ELECCION (sOEleccion), no en el catalogo. `homeTab`
+  // arranca en null a proposito: la decision entre los dos hermanos es una pantalla, no
+  // una pestana. Asi que cada prueba tiene que pasar por ella igual que un cliente.
+  //
+  // Se HACE CLIC, no se siembra `homeTab='sig'` desde el test. Este repo ya se quemo con
+  // eso: la pantalla de bienvenida tenia una prueba en verde que preparaba a mano un
+  // estado que produccion no podia alcanzar, y la pantalla no se mostro NUNCA. Un clic
+  // recorre el mismo camino que el cliente, y de paso deja la pantalla de eleccion
+  // cubierta por toda la suite: si se rompe, se rompe ruidosamente y en todas partes.
+  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
   await page.waitForSelector('text=SIGNATURE');
   return calls;
 }
