@@ -1828,8 +1828,7 @@ async function revGeoGoogle(lat,lon){
   window._mDistrict=districtFromAddress([buscar('locality'),buscar('sublocality'),buscar('administrative_area_level_2'),buscar('administrative_area_level_3')].filter(Boolean).join(', '))||'';
   var calle=buscar('route'),num=buscar('street_number');
   var hint=[calle&&num?calle+' '+num:calle,buscar('sublocality')].filter(Boolean).join(', ');
-  var h=(document.getElementById('maddr-hint') as HTMLInputElement | null);
-  if(h)h.innerHTML=hint?'<span style="color:'+GOLD+'">&#8599; Referencia: </span>'+esc(hint):'';
+  pintarReferenciaMapa(hint);
   var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
   if(inp&&!inp.value&&hint)inp.value=hint;
 }
@@ -1850,8 +1849,7 @@ function revGeoNominatim(lat,lon){
       if(road)parts.push(road);
       if(nb&&nb!==road)parts.push(nb);
       var hint=parts.length?parts.join(', '):'';
-      var h=(document.getElementById('maddr-hint') as HTMLInputElement | null);
-      if(h)h.innerHTML=hint?'<span style="color:'+GOLD+'">&#8599; Referencia: </span>'+esc(hint):'';
+      pintarReferenciaMapa(hint);
       // Pre-fill input if empty
       var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
       if(inp&&!inp.value&&hint)inp.value=hint;
@@ -1947,6 +1945,17 @@ async function buscarConGoogle(q){
   }).filter(Boolean);
 }
 
+// La referencia que se lee bajo el pin. Desde que el mapa se rehizo (2026-09-17) ese hueco
+// es la línea principal de la hoja inferior, no un pie de página: si se deja vacío queda un
+// renglón en blanco encima del botón de confirmar y la hoja parece rota. Sin referencia se
+// vuelve a la instrucción, que es lo único cierto en ese momento.
+function pintarReferenciaMapa(hint){
+  var h=(document.getElementById('maddr-hint') as HTMLElement | null);
+  if(!h)return;
+  h.innerHTML=hint
+    ?esc(hint)
+    :'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-weight:400;color:var(--sw-text-muted,#9DA096)">Arrastra el mapa hasta el punto exacto</span>';
+}
 function addrResultsEl(){return(document.getElementById('maddr-results') as HTMLElement | null);}
 function addrSearchTyped(){
   if(_addrTimer)clearTimeout(_addrTimer);
