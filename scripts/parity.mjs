@@ -281,6 +281,25 @@ cmp('WELCOME_BONUS_POINTS (lo que se promete al crear la cuenta)',
   scalar(app, 'WELCOME_BONUS_POINTS', /var WELCOME_BONUS_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'WELCOME_BONUS_POINTS', /const WELCOME_BONUS_POINTS = (\d+)/, 'env.ts'));
 
+// ── LOS DOS RETOS MENSUALES ──────────────────────────────────────────────────────────
+// Cuatro números que el cliente PROMETE por escrito en el perfil y que el servidor exige
+// al reclamar. Hasta el 2026-09-17 el cliente los tenía escritos a mano dentro del texto:
+// "Haz 3 pedidos pagados este mes y gana 50 puntos extra". Si el dueño sube el reto a 4
+// pedidos, el servidor rechaza el reclamo con "todavía te faltan pedidos" y la pantalla
+// sigue prometiendo 3 — el cliente cree que la app le falló.
+cmp('CHALLENGE_TARGET_ORDERS (pedidos que pide el reto mensual)',
+  scalar(app, 'CHALLENGE_TARGET_ORDERS', /var CHALLENGE_TARGET_ORDERS=(\d+)/, 'src/app/'),
+  scalar(customer, 'CHALLENGE_TARGET_ORDERS', /const CHALLENGE_TARGET_ORDERS = (\d+)/, 'actions/customer.ts'));
+cmp('CHALLENGE_BONUS_POINTS (lo que paga el reto mensual)',
+  scalar(app, 'CHALLENGE_BONUS_POINTS', /var CHALLENGE_BONUS_POINTS=(\d+)/, 'src/app/'),
+  scalar(customer, 'CHALLENGE_BONUS_POINTS', /const CHALLENGE_BONUS_POINTS = (\d+)/, 'actions/customer.ts'));
+cmp('DISCOVERY_TARGET_FLAVORS (Signatures distintos que pide el reto de descubrimiento)',
+  scalar(app, 'DISCOVERY_TARGET_FLAVORS', /var DISCOVERY_TARGET_FLAVORS=(\d+)/, 'src/app/'),
+  scalar(customer, 'DISCOVERY_TARGET_FLAVORS', /const DISCOVERY_TARGET_FLAVORS = (\d+)/, 'actions/customer.ts'));
+cmp('DISCOVERY_BONUS_POINTS (lo que paga el reto de descubrimiento)',
+  scalar(app, 'DISCOVERY_BONUS_POINTS', /var DISCOVERY_BONUS_POINTS=(\d+)/, 'src/app/'),
+  scalar(customer, 'DISCOVERY_BONUS_POINTS', /const DISCOVERY_BONUS_POINTS = (\d+)/, 'actions/customer.ts'));
+
 cmp('REFERRER_REWARD_POINTS (lo que recibe quien invita)',
   scalar(app, 'REFERRER_REWARD_POINTS', /var REFERRER_REWARD_POINTS=(\d+)/, 'src/app/'),
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'));

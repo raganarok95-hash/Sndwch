@@ -1167,6 +1167,19 @@ var REFERRAL_BONUS_POINTS=160;
 // Es lo que hace CIERTA la frase "un sándwich 15CM gratis" que ve el cliente: si alguien
 // mueve uno de los dos números y no el otro, la app promete un sándwich que la recompensa
 // ya no alcanza a pagar.
+// ── LOS DOS RETOS MENSUALES ──────────────────────────────────────────────────────────
+// El servidor decide con `CHALLENGE_TARGET_ORDERS`/`CHALLENGE_BONUS_POINTS` y
+// `DISCOVERY_TARGET_FLAVORS`/`DISCOVERY_BONUS_POINTS` (actions/customer.ts). El cliente
+// escribía los cuatro números A MANO en el texto del perfil — "Haz 3 pedidos pagados este
+// mes y gana 50 puntos extra" — que es exactamente el defecto que este repo ya documentó
+// en grande: un número escrito a mano en un texto es una promesa que se va a romper, y el
+// día que se rompa nadie se entera, porque es texto y no cálculo.
+//
+// Ahora se interpolan, y `npm run parity` compara los cuatro contra el servidor.
+var CHALLENGE_TARGET_ORDERS=3;
+var CHALLENGE_BONUS_POINTS=50;
+var DISCOVERY_TARGET_FLAVORS=3;
+var DISCOVERY_BONUS_POINTS=50;
 var REFERRER_REWARD_POINTS=400;
 // #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
 // (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con

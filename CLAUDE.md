@@ -148,6 +148,20 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
 - **Nunca uses `rankName()` para explicar el menú secreto.** Su umbral (3 pedidos) ya no
   coincide con ningún rango, así que sale "se desbloquea en REGULAR", que es un rango que
   se alcanza al primer pedido. Los textos hablan de PEDIDOS.
+- **La paleta de la app ANTERIOR no puede volver a escribirse, ni como respaldo.** El
+  front se rehízo desde cero; `#1E3932`/`#2D5246`/`#1A3028`/`#3A6B58`/`#A8C8B0`/`#F2F0EB`
+  no existen más. Un `var(--sw-card,#2D5246)` significa que el día que el token falle
+  reaparece la app vieja en vez de degradarse. Lo vigila `npm run check:colores`, que desde
+  el 2026-09-17 también mira `src/shell.html` — ahí estaban los dos peores casos.
+- **Toda barra fija se declara con la clase `sw-barra`.** El hueco al pie de `#app` lo mide
+  `medirBarraFija()` (08-router) después de pintar; un número escrito a mano deja contenido
+  debajo de una barra opaca en las pantallas cuya barra mide otra cosa.
+- **`BYO_STEP_LABELS` es el ORDEN REAL de los pasos del armador, no una lista de nombres.**
+  Cambiar qué pinta cada `if` sin cambiar ese array (y `byoValor`) hace que el riel anuncie
+  un paso y la pantalla muestre otro. Pasó, y duró doce días. Lo vigila
+  `tests/armador-riel.spec.ts`, que compara el rótulo encendido contra el título pintado.
+- **Un estado vacío del cliente se pinta con `VACIO()`**, que trae al hermano del lado en el
+  que está. Dos pantallas se lo saltaron y quedaron con un rótulo suelto en medio de la nada.
 - **El modo de fallo que importa es el SILENCIO.** Casi todo lo listado acá no lanza
   ninguna excepción: solo deja de hacer lo que prometía. Por eso hay tantos chequeos en
   `verify` y por eso cada uno se verifica inyectándole el defecto que caza.
@@ -209,6 +223,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
    script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
    verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+5g. `tests/panel-todas-las-herramientas.spec.ts` abre las 30 herramientas del panel una
+   por una y comprueba que ninguna reviente, se quede en "No se pudo cargar" con una
+   respuesta válida, ni se pinte con la piel del cliente. La lista sale de
+   `adminToolsSections()`, no del test: una herramienta nueva entra sola. Corre dentro de
+   `npm test`.
 6. `npm test` (o `npm run verify`, que ahora encadena doce) — deben pasar TODOS (revisa el
    conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
@@ -216,6 +235,19 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
 8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+
+## Fotos de producto
+
+`scripts/tratar_fotos.py` lee de `img/fuente/` y escribe en `img/` — nunca al revés, porque
+aplicar viñeta y grano sobre una foto que ya los tiene la degrada un poco más en cada
+corrida, sin dar ningún error. Tiene dos perfiles: los **Signatures** salen en `.jpg` con el
+encuadre de su tarjeta, y las **proteínas** en `.webp` CUADRADAS, porque el mismo archivo se
+usa en la miniatura de 56×56 del armador y en el hero de 190 px de la confirmación.
+
+**Toda foto nueva se anota en `img/fuente/FUENTES.md`** el mismo día que entra: de dónde
+salió, con qué licencia y con qué recorte. Antes del 2026-09-17 no había forma de saberlo
+para ninguna foto del repo. Lo vigila `npm run check:fotos`, que además comprueba que
+ninguna foto servida se quede sin original y que no sobreviva un archivo del formato viejo.
 
 ## Cómo desplegar el backend
 

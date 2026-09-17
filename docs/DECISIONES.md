@@ -684,3 +684,116 @@ Probado en `tests-api/bono-del-invitado.test.ts` (8), verificado inyectando los 
 defectos: devolver el bono a 120 (falla nombrando que solo alcanzaba para R02), volver a
 escribir «una bebida de regalo» a mano en el texto público, devolver el escalón a 120, y
 quitarle `covers`/`veces` a la escalera.
+
+---
+
+## 2026-09-17 · La noche en que se fue la app anterior
+
+El dueño lo dijo tres veces, y cada vez más claro: **«no reeskinees»**. Esta sesión empezó
+creyendo que el front ya estaba rehecho y terminó encontrando que gran parte seguía siendo
+la app de antes con pintura nueva.
+
+### El verde que asomaba debajo de todo
+
+La paleta nueva existía desde el 2026-09-09 y estaba bien hecha: tokens en `:root`, ~997
+llamadas a `var(--sw-*)`. Pero el verde anterior seguía escrito **878 veces**. Treinta y
+siete eran valores REALES —`html,body` y `#app` tenían `background:#1E3932` a pelo, así que
+el verde asomaba debajo de cada pantalla; el `theme-color` del manifiesto seguía pintando de
+verde la barra del navegador en Android; y el modal del mapa, el que el cliente usa para
+marcar su puerta en el checkout, estaba entero en la paleta vieja— y las otras 841 eran el
+respaldo dentro de `var(--sw-x,#viejo)`.
+
+Ese respaldo parecía inofensivo y no lo es: significa que el día que un token no cargue, la
+app no se degrada a un gris neutro, **reaparece la app anterior**.
+
+Ninguno de los chequeos lo veía. `check:colores` perseguía colores de ESTADO (el rojo de
+error, el verde de confirmación) y solo miraba `src/app/` — nunca `src/shell.html`, que es
+donde estaban los dos peores casos. Ahora persigue también la paleta anterior, en los dos
+archivos, y **también dentro de los respaldos**. El hex dentro de un comentario sí se
+permite: media docena de comentarios cuentan justamente por qué esa paleta se fue, y borrar
+ese relato para pasar un chequeo sería cambiar historia por verde.
+
+### Los cinco pasos que eran la misma fila
+
+El armador ya tenía el riel de pasos del concepto 6, pero **dentro de cada paso estaba la
+lista de siempre**: rectángulo redondeado, título, párrafo, precio a la derecha, cinco veces
+seguidas. El riel era nuevo; lo que el cliente toca, no.
+
+La corrección no fue pintar distinto: fue darle a cada paso la forma que su contenido pide.
+
+- **Pan** son dos opciones y la decisión es una comparación, no un recorrido. Una lista
+  obliga a leer una, bajar, leer la otra y recordar la primera. Dos paneles lado a lado.
+- **Proteína** es la única decisión del armador con fotografía propia, y esa foto era una
+  miniatura de 56 px al costado de un párrafo: el tamaño de un ícono para lo único que el
+  cliente de verdad quiere ver. Ahora la foto ES la tarjeta.
+- **Queso** ganó «Sin queso» como opción explícita. Antes la única forma de decir «ninguno»
+  era no tocar nada, que se ve igual que saltarse el paso por error.
+- **Vegetales** son gratis, ilimitados y de nombre obvio: no hay nada que vender con un
+  párrafo. Y traían un defecto real —cada descripción se imprimía DOS veces—. Fichas, con
+  «poner todos» de un golpe: de 1084 px a 912.
+- **Salsas** muestran el tope de 3 como tres espacios que se llenan. Antes era un «0 // 3»
+  que nadie mira hasta que la cuarta carta deja de responder al toque — y una carta que no
+  responde parece rota, no llena. De 1482 px a 1140.
+
+Cuando los cinco pasos dejaron de usarla, `CARD()` quedó sin una sola llamada. Se borró:
+dejar la plantilla del patrón viejo esperando en el archivo es la forma más fácil de que
+vuelva.
+
+### El riel mentía desde hacía doce días
+
+Al recapturar el armador apareció algo que no era de diseño: el riel encendía **TOPPINGS**
+mientras la pantalla decía **Queso**, y **QUESO** mientras decía **Vegetales** — con el valor
+del otro paso al lado.
+
+El 2026-09-05 se intercambió el CONTENIDO de los pasos 2 y 3 para seguir el orden del
+mostrador de Subway. Se cambió el `if` que decide qué se pinta y no se tocaron
+`BYO_STEP_LABELS` ni `byoValor`. No rompía nada: mentía.
+
+`tests/armador-riel.spec.ts` no afirma contra una lista escrita en el test —eso sería copiar
+el mismo error— sino que **compara las dos fuentes entre sí**: el rótulo que el riel enciende
+contra el título que de verdad se pintó. Los dos defectos se reinyectaron y cada uno lo caza
+su prueba.
+
+### 19 píxeles debajo de una barra opaca
+
+`#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación el día que
+alguien la midió. Pero no hay UNA barra: el armador pone una de 68 px, el panel otra, la de
+«hay versión nueva» otra más. En el armador quedaban 19 px de contenido debajo de una barra
+opaca — justo el último renglón de la última tarjeta.
+
+Ahora cada barra se declara `sw-barra` y `medirBarraFija()` mide la más alta que haya en
+pantalla después de pintar. Sin barra, el hueco es 0, que es lo correcto.
+
+### Las fotos y su procedencia
+
+Las seis fotos de proteína eran stock suelto que nunca pasó por `tratar_fotos.py` —el script
+existe justo para que un set de fotos ajenas no se lea como los resultados de una búsqueda de
+imágenes— y tres mostraban cosas que no están en ninguna receta: un mantel a cuadros azul,
+tomates cherry, un cuenco de aceitunas.
+
+Las nuevas se licenciaron gratis en Adobe Stock, se recortaron al sujeto y salen del mismo
+tratamiento que los Signatures. La del pavo llevó un paso más: la única foto honesta de
+lonjas horneadas venía sobre blanco de estudio, y junto a las otras cinco rompía el set
+entero — que es exactamente lo que el script existe para evitar. El fondo se reemplazó por el
+oscuro de la marca con una sombra de contacto, enmascarando el blanco **conectado al borde**
+para que los brillos DENTRO de la lonja no se volvieran transparentes.
+
+Y algo que faltaba desde siempre: **`img/fuente/FUENTES.md`**. Hasta esta noche no había
+forma de saber de dónde venía ninguna foto del repo.
+
+### Lo que el panel nunca tuvo
+
+El panel tiene 35 pantallas registradas y nueve pruebas, cada una sobre una herramienta
+concreta. Nadie comprobaba que el RESTO siquiera abriera — y el panel es lo que el dueño usa
+con el local lleno. `panel-todas-las-herramientas.spec.ts` las abre una por una. La lista
+sale de `adminToolsSections()`, no del test: una herramienta nueva entra sola.
+
+### Cuatro números escritos a mano, otra vez
+
+El perfil prometía «Haz 3 pedidos pagados este mes y gana 50 puntos extra» y «Prueba 3
+Signatures distintos... gana 50 puntos extra». Los cuatro números viven en el servidor
+(`CHALLENGE_TARGET_ORDERS`, `CHALLENGE_BONUS_POINTS`, `DISCOVERY_TARGET_FLAVORS`,
+`DISCOVERY_BONUS_POINTS`) y ninguno estaba en `parity`. Si el dueño sube el reto a 4 pedidos,
+el servidor rechaza el reclamo y la pantalla sigue prometiendo 3: el cliente cree que la app
+le falló. Es el mismo defecto que este repo ya documentó en grande; ahora se interpolan y
+`parity` compara los cuatro.
