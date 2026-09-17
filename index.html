@@ -1959,7 +1959,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'e08eccbe6e';
+var APP_BUILD = '45a05e2aba';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2304,11 +2304,16 @@ function renderOverlays() {
     // información que decide la compra, no un campo de formulario. En el home el cliente
     // todavía tiene el enlace de WhatsApp del pie; el botón flotante sigue disponible en el
     // resto de pantallas, que es donde de verdad hace falta pedir ayuda.
-    // o_sig agregado (2026-09-17): es la pantalla con MAS scroll de todas y el boton caia
-    // encima de las tarjetas de producto mientras se recorre. Es la CUARTA instancia del
-    // mismo defecto que el comentario de arriba ya documenta para checkout, carrito y home
-    // -- el patron estaba identificado y a esta pantalla nadie la agrego a la lista.
-    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig') {
+    // o_sig y o_build agregados (2026-09-17): las dos pantallas con mas scroll de la app, y
+    // en las dos el boton quedaba parado encima de las tarjetas de producto mientras se
+    // recorre -- en el armador, sobre el precio del recargo de la focaccia. Son la cuarta y
+    // la quinta instancia del mismo defecto que el comentario de arriba ya documenta para
+    // checkout, carrito y home: el patron estaba identificado y a estas dos nadie las agrego.
+    //
+    // ⚠ La regla, para no volver a listarlas de a una: el boton NO va en ninguna pantalla
+    // donde el cliente este ELIGIENDO que comprar. Ahi tapa justo lo que decide la compra.
+    // Va en las de cuenta, pedidos y ayuda, que es donde de verdad se necesita escribir.
+    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, 'var(--sw-on-gold,#241a08)') + '</a>';
     }
@@ -5181,15 +5186,63 @@ function sOBuild() {
     var tL = tops.length, sL = sauces.length;
     // 3 estados en vez de 2 (antes solo dorado/gris): el paso ACTUAL lleva un resplandor
     // propio para que el ojo lo encuentre de inmediato en vez de tener que leer "PASO X//5".
-    var progressBar = '<div style="display:flex;gap:4px;margin-bottom:10px">' + BYO_STEP_LABELS.map(function (_, i) {
-        var st = i < byoStep ? 'done' : i === byoStep ? 'current' : 'todo';
-        // El glow del paso "current" (box-shadow con blur) violaba la No-Glow Rule de
-        // DESIGN.md — ninguna señal de estado en la app usa resplandor, siempre opacidad/borde
-        // (auditoría UX, P3). El paso actual ya se distingue por opacidad plena vs. .55 de los
-        // completados y el color dorado vs. verde de los pendientes, sin necesitar el glow.
-        return '<div style="flex:1;height:5px;border-radius:4px;background:' + (st === 'todo' ? 'var(--sw-card,#2D5246)' : ACC()) + ';opacity:' + (st === 'todo' ? 1 : st === 'done' ? .55 : 1) + '"></div>';
-    }).join('') + '</div>';
-    var stepLabel = '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + ACC() + ';letter-spacing:.15em;margin-bottom:18px">Paso ' + (byoStep + 1) + ' // 5</div>';
+    // ── EL RIEL DE PASOS (concepto 6, elegido por el dueño) ─────────────────────────────
+    //
+    // Antes esto era una barra de 5 segmentos + el rótulo "Paso 2 // 5". Con eso el cliente
+    // ve DÓNDE va, pero no QUÉ lleva elegido: para recordar si ya puso el pan tiene que
+    // volver atrás, y volver atrás en un armador es donde se abandona un pedido.
+    //
+    // El riel muestra los cinco pasos con su valor actual al lado. Es el mismo progreso, con
+    // el dato que faltaba.
+    //
+    // ⚠ LO ELEGIDO SE LEE DEL ESTADO REAL, nunca de una copia. Si un paso se guardara aparte
+    // para pintarlo acá, el día que el cliente cambie el pan por el camino largo el riel
+    // diría una cosa y el carrito cobraría otra — que es el defecto que este repo ya pagó
+    // con los precios fantasma, en versión pequeña.
+    var byoValor = function (i) {
+        if (i === 0) {
+            var b = BASES.find(function (x) { return x.id === base; });
+            var t = size ? (size === '30' ? '30CM' : '15CM') : '';
+            return b ? (t ? t + ' · ' : '') + b.l : (t || '');
+        }
+        if (i === 1) {
+            var pr = PROTS.find(function (x) { return x.id === prot; });
+            return pr ? pr.l + (doubleProt ? ' · doble' : '') : '';
+        }
+        if (i === 2)
+            return tops.length ? tops.length + (tops.length === 1 ? ' topping' : ' toppings') : '';
+        if (i === 3) {
+            var c = CHEESE.find(function (x) { return x.id === cheese; });
+            return c ? c.l : '';
+        }
+        if (i === 4)
+            return sauces.length ? sauces.length + (sauces.length === 1 ? ' salsa' : ' salsas') : '';
+        return '';
+    };
+    var progressBar = '<div style="margin-bottom:16px;background:var(--sw-card2,#171A14);border-radius:12px;padding:5px">'
+        + BYO_STEP_LABELS.map(function (l, i) {
+            var hecho = i < byoStep, actual = i === byoStep;
+            var v = byoValor(i);
+            // El paso ACTUAL lleva el color del lado; los hechos, su valor en claro; los que
+            // faltan quedan atenuados. Sin resplandor: ninguna señal de estado en esta app lo
+            // usa (ver DESIGN.md), el contraste lo dan la opacidad y el color.
+            return '<div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;'
+                + (actual ? 'background:' + ACC() + ';' : '') + '">'
+                + '<span style="width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;'
+                + 'align-items:center;justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;'
+                + 'font-size:9px;border:1px solid ' + (actual ? 'var(--sw-on-gold,#241a08)' : hecho ? ACC() : 'var(--sw-border,#2C3228)') + ';'
+                + 'color:' + (actual ? 'var(--sw-on-gold,#241a08)' : hecho ? ACC() : 'var(--sw-text-muted3,#73776C)') + '">'
+                + (hecho ? '&#10003;' : (i + 1)) + '</span>'
+                + '<span style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;'
+                + 'letter-spacing:.12em;color:' + (actual ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text,#fff)')
+                + ';opacity:' + (actual || hecho ? '1' : '.5') + '">' + l + '</span>'
+                + '<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+                + 'color:' + (actual ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text-muted,#9DA096)') + ';'
+                + 'opacity:' + (actual ? '.8' : '1') + ';max-width:150px;overflow:hidden;text-overflow:ellipsis;'
+                + 'white-space:nowrap">' + esc(v) + '</span>'
+                + '</div>';
+        }).join('') + '</div>';
+    var stepLabel = '';
     // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
     // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
     // lea como "pasaste con el otro hermano" y no como "cambió el color".

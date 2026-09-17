@@ -29,15 +29,55 @@ function sOBuild(){
   var tL=tops.length,sL=sauces.length;
   // 3 estados en vez de 2 (antes solo dorado/gris): el paso ACTUAL lleva un resplandor
   // propio para que el ojo lo encuentre de inmediato en vez de tener que leer "PASO X//5".
-  var progressBar='<div style="display:flex;gap:4px;margin-bottom:10px">'+BYO_STEP_LABELS.map(function(_,i){
-    var st=i<byoStep?'done':i===byoStep?'current':'todo';
-    // El glow del paso "current" (box-shadow con blur) violaba la No-Glow Rule de
-    // DESIGN.md — ninguna señal de estado en la app usa resplandor, siempre opacidad/borde
-    // (auditoría UX, P3). El paso actual ya se distingue por opacidad plena vs. .55 de los
-    // completados y el color dorado vs. verde de los pendientes, sin necesitar el glow.
-    return'<div style="flex:1;height:5px;border-radius:4px;background:'+(st==='todo'?'var(--sw-card,#2D5246)':ACC())+';opacity:'+(st==='todo'?1:st==='done'?.55:1)+'"></div>';
-  }).join('')+'</div>';
-  var stepLabel='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+ACC()+';letter-spacing:.15em;margin-bottom:18px">Paso '+(byoStep+1)+' // 5</div>';
+  // ── EL RIEL DE PASOS (concepto 6, elegido por el dueño) ─────────────────────────────
+  //
+  // Antes esto era una barra de 5 segmentos + el rótulo "Paso 2 // 5". Con eso el cliente
+  // ve DÓNDE va, pero no QUÉ lleva elegido: para recordar si ya puso el pan tiene que
+  // volver atrás, y volver atrás en un armador es donde se abandona un pedido.
+  //
+  // El riel muestra los cinco pasos con su valor actual al lado. Es el mismo progreso, con
+  // el dato que faltaba.
+  //
+  // ⚠ LO ELEGIDO SE LEE DEL ESTADO REAL, nunca de una copia. Si un paso se guardara aparte
+  // para pintarlo acá, el día que el cliente cambie el pan por el camino largo el riel
+  // diría una cosa y el carrito cobraría otra — que es el defecto que este repo ya pagó
+  // con los precios fantasma, en versión pequeña.
+  var byoValor=function(i){
+    if(i===0){
+      var b=BASES.find(function(x){return x.id===base;});
+      var t=size?(size==='30'?'30CM':'15CM'):'';
+      return b?(t?t+' · ':'')+b.l:(t||'');
+    }
+    if(i===1){var pr=PROTS.find(function(x){return x.id===prot;});return pr?pr.l+(doubleProt?' · doble':''):'';}
+    if(i===2)return tops.length?tops.length+(tops.length===1?' topping':' toppings'):'';
+    if(i===3){var c=CHEESE.find(function(x){return x.id===cheese;});return c?c.l:'';}
+    if(i===4)return sauces.length?sauces.length+(sauces.length===1?' salsa':' salsas'):'';
+    return'';
+  };
+  var progressBar='<div style="margin-bottom:16px;background:var(--sw-card2,#171A14);border-radius:12px;padding:5px">'
+    +BYO_STEP_LABELS.map(function(l,i){
+      var hecho=i<byoStep, actual=i===byoStep;
+      var v=byoValor(i);
+      // El paso ACTUAL lleva el color del lado; los hechos, su valor en claro; los que
+      // faltan quedan atenuados. Sin resplandor: ninguna señal de estado en esta app lo
+      // usa (ver DESIGN.md), el contraste lo dan la opacidad y el color.
+      return'<div style="display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:8px;'
+        +(actual?'background:'+ACC()+';':'')+'">'
+        +'<span style="width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;'
+        +'align-items:center;justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;'
+        +'font-size:9px;border:1px solid '+(actual?'var(--sw-on-gold,#241a08)':hecho?ACC():'var(--sw-border,#2C3228)')+';'
+        +'color:'+(actual?'var(--sw-on-gold,#241a08)':hecho?ACC():'var(--sw-text-muted3,#73776C)')+'">'
+        +(hecho?'&#10003;':(i+1))+'</span>'
+        +'<span style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;'
+        +'letter-spacing:.12em;color:'+(actual?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')
+        +';opacity:'+(actual||hecho?'1':'.5')+'">'+l+'</span>'
+        +'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+        +'color:'+(actual?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#9DA096)')+';'
+        +'opacity:'+(actual?'.8':'1')+';max-width:150px;overflow:hidden;text-overflow:ellipsis;'
+        +'white-space:nowrap">'+esc(v)+'</span>'
+        +'</div>';
+    }).join('')+'</div>';
+  var stepLabel='';
   // WICHO preside su pantalla. No es adorno: el armador ES lo que él representa —el lado
   // donde el cliente decide— y tenerlo presente es lo que hace que el cambio de mundo se
   // lea como "pasaste con el otro hermano" y no como "cambió el color".
