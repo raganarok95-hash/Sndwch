@@ -31,7 +31,7 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Tu cuenta** | «Pantalla de tu cuenta, se aprueba» | — |
 | — | **Estado vacío** (el patrón) | «aprobada, pero sin logo» | **esta va sin logo** |
 | — | **Ficha de Signature · versión WICHO** | «Ficha versión wicho, aprobada» | — |
-| — | **El menú secreto** | «Aprobada, pero como que le falta algo» | se proponen tres formas de completarla |
+| — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
@@ -143,6 +143,29 @@ regla `card img{width:100%;height:100%}` de la foto también capturaba al logo y
 ocupar la tarjeta entera. Se arregló dándole clase propia a la foto. Lo mismo pasó con la
 clase `.tx`, compartida sin querer entre el wordmark y el bloque de texto del estado vacío:
 el logo se iba fuera de la pantalla. **Ninguna de las dos lanza error: solo se ven mal.**
+
+### Cómo quedó el menú secreto, y las nueve que se descartaron
+
+La estructura se cerró rápido: **las tres pistas del mes arriba** (cómo pega, nunca qué
+lleva) y **los que ya no vuelven abajo**, con el contador de días al costado del nombre.
+Eso el dueño lo aprobó como «perfecta».
+
+El fondo costó **nueve intentos**, y el patrón del fracaso vale más que las pantallas:
+las seis primeras eran **maneras de pintar** —acentos chicos, color de fondo pleno, corte
+en diagonal, color en las reglas, degradado vertical, textura de los dos hermanos— y todas
+se rechazaron. Las tres siguientes ya eran **conceptos** —la espiral de WICHO por cálculo,
+bloques de color por sabor, aurora— y también.
+
+Ganó el décimo: **un macro tan cerrado de la foto del sándwich que no se reconoce nada,
+pero el color y la textura de la comida están enteros.** Ni desenfoque ni censura: acercarse
+tanto que deja de ser información y pasa a ser apetito.
+
+**Y se renueva sola**: la foto ampliada es la del secreto del mes, así que el color de la
+pantalla cambia cada vez que el dueño publica uno nuevo, sin tocar una línea.
+
+Lo que hay que recordar de esas nueve rondas: **cuando el dueño pide "más color", casi
+nunca está pidiendo otra paleta — está pidiendo que el color venga de algún lado.** Mientras
+el color fue una decisión de diseño, no funcionó ni una vez.
 
 ## ⚠ EL MENÚ SECRETO NO SE LLAMA "THE VAULT" Y ROTA CADA MES (2026-09-18)
 
