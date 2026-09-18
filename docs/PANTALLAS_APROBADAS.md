@@ -24,6 +24,8 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | 29 | **Tus puntos** — el hermano ES el estado | «Ok listo esa queda» | las tres poses de estado todavía no existen como imagen |
 | 32 | **En camino** | «22, aprobada» — confirmado por el dueño que se refería a la 32 | — |
 | 35 | **Algo salió mal** (reclamo) | «25 también» — confirmado que se refería a la 35 | — |
+| 30 | **El carrito** — papel de estraza | «Me encantó la pantalla 30 G» | falta la franja de los rostros que asoman |
+| 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | falta la mano con el pulgar arriba |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
 
@@ -59,18 +61,28 @@ se dan por cerradas hasta que el dueño las vuelva a ver:
 - **Arriba sí**: el último pedido en foto grande + el botón *Pedir lo mismo*.
 - **Abajo no**: «la lista ya no me gusta solo repetiste pantalla».
 
-### 30 · El carrito — mecanismo elegido, falta la piel
+### Cómo se llegó al carrito aprobado
 
-De las tres opciones ganó el mecanismo de **30A · El mostrador** («me agrada la idea»):
-lo último que agregaste manda en foto grande y el resto se desliza en carrusel.
-Pendiente: **el color** («se me hacen los colores feos»).
+Costó seis rondas y la lección quedó: **mezclar dos pantallas que gustaron da algo tibio.**
+La versión 30D promediaba el fondo de una con el bloque de otra y el dueño la rechazó
+entera («perdiste la creatividad al intentar mezclarlo»). Lo que sí funcionó fue quedarse
+con **la base que tiene carácter propio** —el papel de estraza, que es el material real del
+envoltorio— y traerle una sola pieza de la otra: el titular estampado. Promediar no es
+combinar.
 
-### 31 · El pago — funcionamiento elegido, falta la piel
+### 31 · El pago con Yape — sigue pendiente
 
-**31A** quedó bien de funcionamiento («me agrada como pienso que funciona») y mal de
-diseño: «el estilo es el de sando repetido». El **código de Yape es obligatorio** en la
-pantalla («sí es necesario el código de yape»), pero la ejecución de 31B estaba mal
-hecha y se descartó.
+El código de Yape es **obligatorio** en esa pantalla («sí es necesario el código de yape»).
+La versión con el visor sobre morado gustó («me encantó»), con una corrección aplicada: al
+elegir tarjeta **cambia la pantalla entera**, porque el morado es de Yape.
+
+### ⚠ El recargo por tarjeta estaba mal escrito en las maquetas
+
+Las maquetas decían «+S/2.79», que es el 5.5% del total. **Falso.** El código no recarga el
+total: recupera la comisión de Culqi **engordando solo la tarifa de envío**
+(`feeBase/(1-CULQI_FEE_RATE)`). Con envío de S/7.00 el extra real es **S/0.41**, y sin envío
+no hay extra. Es exactamente el defecto que CLAUDE.md ya prohíbe: una cifra escrita a mano
+en un texto para el cliente. Cualquier pantalla que lo mencione tiene que **derivarlo**.
 
 ---
 

@@ -196,34 +196,28 @@ ilustración generada es lo que hizo que los PNG de hoy tengan los pies cortados
 
 ---
 
-## Pedido nuevo (2026-09-18) — LOS ROSTROS QUE ASOMAN
+## Pedido nuevo (2026-09-18) — LOS ROSTROS QUE ASOMAN Y LAS MANOS
 
 Para el carrito y el pago, el dueño pidió que los hermanos **no estén parados** sino que
-**asomen por los costados de la pantalla, solo el rostro**, ocupando esa franja. Las poses
-de hoy son de cuerpo entero o busto frontal; encuadrarlas contra el borde es una
-aproximación, no la pieza. Estas cuatro sí lo son:
+**asomen por los costados de la pantalla, solo el rostro**, y una mano con el pulgar arriba
+para la pantalla de la tarjeta.
 
-### 1 · `sando_asoma.png` — SANDO entrando por la izquierda
-> SANDO, el mono de la casaca bomber verde oliva salvia, en primerísimo plano, de tres
-> cuartos **mirando hacia la derecha del cuadro**. Solo cabeza y hombro izquierdo; el resto
-> sale del encuadre por el borde IZQUIERDO, cortado a sangre. Su ojo almendrado de párpado
-> pesado bien visible, expresión de estar revisando algo con calma. Si el hombro entra, se
-> ven el puño acanalado y el `//` bordado en el verde de la tela. Mismo tipo de dibujo y
-> trazo que `img/wicho_rie.png`. Fondo transparente, sin sombra de piso. 900×1200.
+⚠ **Estos prompts se reescribieron cortos.** La primera versión describía al personaje
+entero dentro del prompt —como si SANDO no existiera ya— y además le ponía a WICHO de
+referencia. Dos errores: **cada hermano se regenera contra SU PROPIA referencia**
+(`img/sando_sonrie.png` para SANDO, `img/wicho_rie.png` para WICHO), y el prompt no
+redescribe al personaje, solo dice **qué hace**. Los prompts largos además **crashearon
+Flow**: acá van de una o dos frases.
 
-### 2 · `wicho_asoma.png` — WICHO entrando por la derecha
-> WICHO, el mono de pelaje celeste, en primerísimo plano, de tres cuartos **mirando hacia
-> la izquierda del cuadro**. Solo cabeza y hombro derecho; el resto sale por el borde
-> DERECHO a sangre. **Sus ojos en espiral grandes y nítidos** — es lo que lo hace
-> reconocible al instante. Sonrisa abierta. Si entra el hombro, se ven las curvas de nivel
-> de su polo. Fondo transparente, sin sombra de piso. 900×1200.
+| archivo | referencia que se adjunta | prompt |
+|---|---|---|
+| `sando_asoma.png` | `img/sando_sonrie.png` | El mismo personaje de la imagen. Primer plano de su cabeza y su hombro, de tres cuartos, mirando hacia la derecha. El cuerpo sale del cuadro por el borde izquierdo. Fondo transparente. |
+| `wicho_asoma.png` | `img/wicho_rie.png` | El mismo personaje de la imagen. Primer plano de su cabeza y su hombro, de tres cuartos, mirando hacia la izquierda. El cuerpo sale del cuadro por el borde derecho. Fondo transparente. |
+| `sando_pulgar.png` | `img/sando_sonrie.png` | El mismo personaje de la imagen. Solo su brazo y su mano haciendo pulgar arriba, entrando desde el borde izquierdo. Sin cabeza ni cuerpo. Fondo transparente. |
+| `wicho_pulgar.png` | `img/wicho_rie.png` | El mismo personaje de la imagen. Solo su brazo y su mano haciendo pulgar arriba, entrando desde el borde derecho. Sin cabeza ni cuerpo. Fondo transparente. |
 
-### 3 · `sando_asoma_ok.png` — la misma toma, satisfecho
-> Igual que `sando_asoma.png`, con la expresión de quien acaba de cerrar bien algo: media
-> sonrisa, mentón apenas levantado. Para la pantalla de después de pagar.
+**Si Flow vuelve a crashear**, cortar todavía más: «El mismo personaje, solo su cara
+asomando por el borde izquierdo. Fondo transparente.»
 
-### 4 · `wicho_asoma_ok.png` — la misma toma, celebrando
-> Igual que `wicho_asoma.png`, riéndose con los ojos cerrados en espiral apretada.
-
-**Van en pareja siempre.** Estas pantallas no son de un hermano, son de los dos: uno por
-costado, con el total en el medio. Si llega solo una, la pantalla queda coja.
+**Los rostros van en pareja.** Estas pantallas no son de un hermano, son de los dos: uno por
+costado, con el total en el medio. Si llega solo uno, la pantalla queda coja.
