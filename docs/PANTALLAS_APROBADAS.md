@@ -213,3 +213,8 @@ decidir, no dibujar:
 Los `img/sando_*.png` viejos siguen referenciados por el cliente. Cambiarlos a `sando2_*`
 es una tarea aparte **y tiene que hacerse completa**: un SANDO nuevo junto a uno viejo en
 dos pantallas distintas se ve peor que dejar todo viejo.
+
+⚠ **El logo queda FUERA de esa migración.** Decisión del dueño: «Ese logo no se cambia, ya
+está aprobado. Su rostro no cambió.» Aplica a `img/marca/avatar-*`, a `logo-hermanos.png`
+y a **la pantalla de la puerta**, que usa esa ilustración a pantalla completa. No hay nada
+que corregir ahí.

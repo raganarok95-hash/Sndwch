@@ -382,6 +382,13 @@ como quedó.** No intentes acercar uno al otro, en ninguna dirección.
 a WICHO— **quedó sin efecto**. Cuidado al leer sesiones o commits viejos: esa regla vivió un
 solo día y ya no aplica.
 
+⚠ **EL LOGO NO SE MIGRA. Se queda con el SANDO anterior y ya está aprobado así**
+(dueño, 2026-09-18): «Ese logo no se cambia, ya está aprobado. Su rostro no cambió.»
+Vale para `img/marca/avatar-1024-transparente.png`, los demás `img/marca/avatar-*` y
+`logo-hermanos.png`, y para **la pantalla de la puerta**, que usa esa misma ilustración a
+pantalla completa. No es un descuido ni una inconsistencia que haya que arreglar: es una
+decisión. Si una sesión futura ve "el SANDO viejo" en el logo, **lo deja como está**.
+
 Los archivos del SANDO nuevo son `img/sando2_*.png` (retratos, el asoma, el pulgar y los dos
 cuerpos). **Los `img/sando_*.png` sin el `2` son del SANDO viejo y el cliente todavía los
 referencia**: cambiarlos es una tarea aparte y hay que hacerla COMPLETA, porque un SANDO
