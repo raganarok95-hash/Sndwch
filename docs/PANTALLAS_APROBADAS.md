@@ -31,6 +31,9 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Tu cuenta** | «Pantalla de tu cuenta, se aprueba» | — |
 | — | **Estado vacío** (el patrón) | «aprobada, pero sin logo» | **esta va sin logo** |
 | — | **Ficha de Signature · versión WICHO** | «Ficha versión wicho, aprobada» | — |
+| — | **Detalle de un pedido** | «me agradan, aprobadas» | — |
+| — | **Tu pedido fijo** | «me agradan, aprobadas» | — |
+| — | **Lo legal** | «me agradan, aprobadas» | las fechas y los datos fiscales los pone el dueño |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
@@ -181,15 +184,29 @@ Defecto real cometido en la maqueta de esa pantalla, cazado antes de mostrarla d
 Es exactamente la trampa que CLAUDE.md ya describe: un nombre y una cifra escritos a mano en
 un texto que lee el cliente. **Los dos tienen que derivarse**, nunca afirmarse.
 
-## Sin diseñar todavía
+## Lo que falta para cerrar la fase de diseño
 
-Ninguna de estas se ha mostrado nunca. **No asumir que existen.**
+**Ninguna pantalla del recorrido del cliente quedó sin diseñar.** Lo que falta es
+decidir, no dibujar:
 
-- Bebidas (los dos lados) — la única rechazada que además sigue sin reemplazo
-- Ficha de Signature, versión WICHO
-- Detalle de un pedido pasado
-- Perfil y datos de la cuenta
-- Favoritos / pedido fijo
-- Estados vacíos (sin pedidos, sin direcciones, sin favoritos)
-- Textos legales (Términos, Privacidad, Cambios y Devoluciones)
-- Menú secreto: la pantalla del propio SIG05 una vez desbloqueado
+### Esperan que el dueño elija
+- **Bebidas** — hay dos caminos mostrados y ninguno elegido: *A · tres franjas a sangre*
+  (lado WICHO) y *B · la bebida junto al sándwich que ya llevas, con el precio en combo*
+  (lado SANDO). B es la que empuja el attach, que hoy es un supuesto de 40% sin medir.
+- **Tus pedidos · el pincho** y **Dónde te lo dejamos · las etiquetas** — mostradas, sin
+  veredicto.
+
+### Esperan imágenes del dueño
+- Las tres **poses de estado** de la pantalla 29 (lejos / cerca / logrado) por hermano.
+- `sando_asoma` y `wicho_asoma`, y las dos manos, **en PNG con alfa real**: los que hay se
+  reconstruyeron desde `.jpg` y los bordes quedaron duros.
+
+### Aprobadas antes, pero sin poder señalar cuál versión
+- **Entrada / acceso** con correo y Google, **mundo SANDO** y **mundo WICHO**. Se
+  aprobaron en rondas anteriores, pero su captura quedó entre decenas de intermedias.
+  **No se dan por cerradas hasta que el dueño las vuelva a ver.**
+
+### La deuda que deja el SANDO nuevo
+Los `img/sando_*.png` viejos siguen referenciados por el cliente. Cambiarlos a `sando2_*`
+es una tarea aparte **y tiene que hacerse completa**: un SANDO nuevo junto a uno viejo en
+dos pantallas distintas se ve peor que dejar todo viejo.
