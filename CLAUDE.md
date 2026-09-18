@@ -401,6 +401,22 @@ solo un color».
 Cada hermano se sigue regenerando contra SU PROPIA referencia (`img/sando_sonrie.png`,
 `img/wicho_rie.png`). Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que faltan.
 
+## PEDIR LA IMAGEN QUE FALTA ES PARTE DEL DISEÑO (2026-09-18)
+
+**No diseñes contra el inventario de `img/`.** Las imágenes son **ilimitadas** en Flow y el
+dueño las genera el mismo día que se las pides. Elegir una pose que ya existe «porque es la
+que hay» es la trampa de buscar lo más fácil: la pantalla sale peor y encima los hermanos
+terminan siempre parados y siempre iguales, de adorno.
+
+Regla: cuando una pantalla quede mejor con una pose, un encuadre o un gesto que no existe,
+**pídelo** —con su prompt escrito en `docs/POSES_QUE_TE_TOCAN.md`— y muestra la maqueta
+avisando que esa figura es una aproximación. Nunca al revés: que el archivo disponible
+nunca decida la composición.
+
+Corolario que el dueño ha tenido que repetir en varias formas distintas: **en diseño, la
+respuesta más fácil casi nunca es la correcta.** Si la primera solución que se te ocurre es
+reusar lo que ya está a mano, esa misma es la señal de que hay que buscar otra.
+
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 
 - **Nunca modifiques el texto legal** de Términos/Política de Privacidad/Cambios y

@@ -192,3 +192,38 @@ Mándame el zip con los cuatro PNG. Del resto me encargo yo:
 
 **Si alguna vuelve mal**, no la retoques: dime cuál y la volvemos a pedir. Retocar una
 ilustración generada es lo que hizo que los PNG de hoy tengan los pies cortados.
+
+
+---
+
+## Pedido nuevo (2026-09-18) — LOS ROSTROS QUE ASOMAN
+
+Para el carrito y el pago, el dueño pidió que los hermanos **no estén parados** sino que
+**asomen por los costados de la pantalla, solo el rostro**, ocupando esa franja. Las poses
+de hoy son de cuerpo entero o busto frontal; encuadrarlas contra el borde es una
+aproximación, no la pieza. Estas cuatro sí lo son:
+
+### 1 · `sando_asoma.png` — SANDO entrando por la izquierda
+> SANDO, el mono de la casaca bomber verde oliva salvia, en primerísimo plano, de tres
+> cuartos **mirando hacia la derecha del cuadro**. Solo cabeza y hombro izquierdo; el resto
+> sale del encuadre por el borde IZQUIERDO, cortado a sangre. Su ojo almendrado de párpado
+> pesado bien visible, expresión de estar revisando algo con calma. Si el hombro entra, se
+> ven el puño acanalado y el `//` bordado en el verde de la tela. Mismo tipo de dibujo y
+> trazo que `img/wicho_rie.png`. Fondo transparente, sin sombra de piso. 900×1200.
+
+### 2 · `wicho_asoma.png` — WICHO entrando por la derecha
+> WICHO, el mono de pelaje celeste, en primerísimo plano, de tres cuartos **mirando hacia
+> la izquierda del cuadro**. Solo cabeza y hombro derecho; el resto sale por el borde
+> DERECHO a sangre. **Sus ojos en espiral grandes y nítidos** — es lo que lo hace
+> reconocible al instante. Sonrisa abierta. Si entra el hombro, se ven las curvas de nivel
+> de su polo. Fondo transparente, sin sombra de piso. 900×1200.
+
+### 3 · `sando_asoma_ok.png` — la misma toma, satisfecho
+> Igual que `sando_asoma.png`, con la expresión de quien acaba de cerrar bien algo: media
+> sonrisa, mentón apenas levantado. Para la pantalla de después de pagar.
+
+### 4 · `wicho_asoma_ok.png` — la misma toma, celebrando
+> Igual que `wicho_asoma.png`, riéndose con los ojos cerrados en espiral apretada.
+
+**Van en pareja siempre.** Estas pantallas no son de un hermano, son de los dos: uno por
+costado, con el total en el medio. Si llega solo una, la pantalla queda coja.
