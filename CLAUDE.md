@@ -16,6 +16,7 @@ romper nada. Se lee entero, siempre. Lo demás vive al lado y se consulta cuando
 | `docs/DECISIONES.md` | por qué cada cosa está como está, en orden | cuando algo parezca arbitrario, o antes de "simplificarlo" |
 | `docs/FUNCIONALIDADES.md` | qué existe hoy: flujos, crons, medición | antes de proponer algo que quizá ya está |
 | `docs/ENTORNO.md` | qué bloquea el proxy, qué MCP responde, qué no | antes de concluir que algo "no se puede" |
+| `docs/COMO_DISENAR_ACA.md` | ARREGLO vs REPENSAR, y el detector de rediseños falsos | **antes de rediseñar cualquier pantalla** |
 
 ⚠ **Este archivo se partió el 2026-09-17** porque había llegado a 2 473 líneas (~52 000
 tokens) que se inyectaban íntegras en cada turno de cada sesión. No se borró nada: todo lo
