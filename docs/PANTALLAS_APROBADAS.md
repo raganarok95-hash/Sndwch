@@ -34,18 +34,20 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Detalle de un pedido** | «me agradan, aprobadas» | — |
 | — | **Tu pedido fijo** | «me agradan, aprobadas» | — |
 | — | **Lo legal** | «me agradan, aprobadas» | las fechas y los datos fiscales los pone el dueño |
+| 34 | **Dónde te lo dejamos** (etiquetas de bolsa) | «34 y bebidas de wicho aprobadas» | — |
+| — | **Bebidas · lado WICHO** (tres franjas a sangre) | ídem | — |
+| — | **Mundo WICHO** | «M22 wicho aprobada» | captura `M22-wicho` |
+| — | **Mundo SANDO** | «m15 sando» | captura `M15-sando-plato` |
+| — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
-### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
+### Las tres dudosas quedaron identificadas (2026-09-18)
 
-Estas se aprobaron en rondas anteriores, pero su captura quedó entre decenas de
-versiones intermedias y **no puedo garantizar cuál es la versión exacta aprobada**. No
-se dan por cerradas hasta que el dueño las vuelva a ver:
-
-- **Entrada / acceso con correo y Google** — «ambas pantallas van aprobadas».
-- **Mundo SANDO** (home del lado dorado, con el menú secreto) — «Queda de esa forma».
-- **Mundo WICHO** (home del lado celeste) — «queda wicho solo falta imagenes».
+Se le mostró al dueño una hoja de contacto con las veinte capturas intermedias y señaló
+cuáles eran: **`M22-wicho`**, **`M15-sando-plato`** y **`M2-puerta`**. Las demás quedan
+descartadas. **La pantalla de entrada con correo y Google no apareció en ninguna captura**
+— hay que diseñarla de nuevo, no adivinarla.
 
 ---
 
@@ -189,12 +191,13 @@ un texto que lee el cliente. **Los dos tienen que derivarse**, nunca afirmarse.
 **Ninguna pantalla del recorrido del cliente quedó sin diseñar.** Lo que falta es
 decidir, no dibujar:
 
-### Esperan que el dueño elija
-- **Bebidas** — hay dos caminos mostrados y ninguno elegido: *A · tres franjas a sangre*
-  (lado WICHO) y *B · la bebida junto al sándwich que ya llevas, con el precio en combo*
-  (lado SANDO). B es la que empuja el attach, que hoy es un supuesto de 40% sin medir.
-- **Tus pedidos · el pincho** y **Dónde te lo dejamos · las etiquetas** — mostradas, sin
-  veredicto.
+### A rediseñar (rechazadas)
+- **Bebidas · lado SANDO** — «no, ni la primera imagen». El lado WICHO sí quedó, así que
+  la de SANDO no puede ser su reflejo: necesita su propia manera de elegir.
+- **Tus pedidos · el pincho** — el hero de arriba y el botón *Pedir lo mismo* ya gustaban
+  desde antes; lo que se cae es **cómo se muestran los pedidos viejos**, por tercera vez
+  (lista → pincho → ?).
+- **Entrada / acceso con correo y Google** — nunca apareció una captura. Se diseña de cero.
 
 ### Esperan imágenes del dueño
 - Las tres **poses de estado** de la pantalla 29 (lejos / cerca / logrado) por hermano.
