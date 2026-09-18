@@ -371,35 +371,39 @@ agrega porque en ese momento "se veía mejor así".
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
 
-## Los dos hermanos comparten TIPO DE DIBUJO (corregido por el dueño, 2026-09-17)
+## SANDO SE REDIBUJÓ — Y NO COMPARTE TRAZO CON WICHO (dueño, 2026-09-18)
 
-**Esta regla decía lo contrario hasta hoy** —que SANDO y WICHO estaban dibujados por dos manos
-distintas a propósito y que no se unificaban nunca— y **el dueño la corrigió**: sí comparten
-tipo de dibujo, y **el que se tiene que acercar es SANDO, con WICHO de referencia**. Lo de WICHO
-no es un trazo descuidado que haya que arreglar: es el bueno. (Llamarlo «desprolijo» salió de la
-ficha, no de mirar el dibujo.)
+**El dueño rehízo a SANDO y su dibujo nuevo es el bueno.** Es de **línea negra limpia de
+grosor parejo y sombreado plano**, sin pinceladas ni textura. WICHO sigue con su trazo
+pintado. **Que no compartan tipo de dibujo ya no es un defecto que haya que corregir: es
+como quedó.** No intentes acercar uno al otro, en ninguna dirección.
 
-**Acercarse NO es rediseñarlo.** No se le cambia la figura, ni la ropa, ni el color, ni la
-expresión: solo el tratamiento del trazo y la textura. **Por ahora SANDO se queda tal cual
-está** — lo que no puede seguir escrito es que sean estilos opuestos a propósito.
+⚠ Lo que decía esta sección hasta hoy —que sí compartían trazo y que SANDO debía acercarse
+a WICHO— **quedó sin efecto**. Cuidado al leer sesiones o commits viejos: esa regla vivió un
+solo día y ya no aplica.
 
-⚠ Y ojo con su ficha: `docs/PROMPTS_PERSONAJES.md` describe a SANDO como «contorno de grosor
-parejo, sombreado PLANO de dos tonos, sin textura, sin marcas de pincel». **Mirando
-`img/sando_cuerpo.png` de cerca eso es falso** — su casaca tiene pinceladas visibles y el
-contorno le varía de grosor. La ficha quedó vieja respecto al dibujo; manda el dibujo.
+Los archivos del SANDO nuevo son `img/sando2_*.png` (retratos, el asoma, el pulgar y los dos
+cuerpos). **Los `img/sando_*.png` sin el `2` son del SANDO viejo y el cliente todavía los
+referencia**: cambiarlos es una tarea aparte y hay que hacerla COMPLETA, porque un SANDO
+nuevo junto a uno viejo en dos pantallas distintas se ve peor que dejar todo viejo.
 
 **Lo que los distingue no es la mano: es cada personaje.** De SANDO son el **acanalado** de
-puños y basta, el **forro naranja** de su bomber —el único naranja de toda la marca, franja lisa
-y vertical, NO una cremallera a rayas—, el `//` bordado al pecho en el verde de la tela, el oliva
-salvia, el tan cálido y el ojo almendrado de párpado pesado. De WICHO son la **espiral** de sus
-ojos, las **curvas de nivel** estampadas en su polo, el rosa durazno, el lila y la sonrisa
+puños y basta, el **forro naranja** de su bomber —el único naranja de toda la marca, franja
+lisa y vertical, NO una cremallera a rayas—, el `//` bordado al pecho, el oliva salvia, el
+tan cálido y el ojo almendrado de párpado pesado. De WICHO son la **espiral** de sus ojos,
+las **curvas de nivel** estampadas en su polo, el rosa durazno, el lila y la sonrisa
 abierta. **Puestas en blanco y negro, sus dos pantallas se tienen que seguir distinguiendo.**
-Todo en `docs/LOS_DOS_HERMANOS.md`, que se lee antes de diseñar cualquier pantalla del cliente —
-se escribió después de que el dueño corrigiera tres rondas seguidas con la misma frase, «no es
-solo un color».
+Todo en `docs/LOS_DOS_HERMANOS.md`, que se lee antes de diseñar cualquier pantalla del
+cliente — se escribió después de que el dueño corrigiera tres rondas seguidas con la misma
+frase, «no es solo un color».
 
-Cada hermano se sigue regenerando contra SU PROPIA referencia (`img/sando_sonrie.png`,
-`img/wicho_rie.png`). Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que faltan.
+Cada hermano se regenera contra SU PROPIA referencia — hoy `img/sando2_frente.png` y
+`img/wicho_rie.png`, **nunca la del otro**. Ver `docs/POSES_QUE_TE_TOCAN.md` para las poses
+que faltan.
+
+⚠ **Y las referencias para Flow se mandan SIN transparencia.** Un PNG con alfa se aplana
+contra negro al cargarlo como referencia, y ese negro sale como manchas en lo generado.
+Fondo blanco plano y al doble de tamaño.
 
 ## PEDIR LA IMAGEN QUE FALTA ES PARTE DEL DISEÑO (2026-09-18)
 

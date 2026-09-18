@@ -26,9 +26,9 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | 35 | **Algo salió mal** (reclamo) | «25 también» — confirmado que se refería a la 35 | — |
 | 30 | **El carrito** — papel de estraza | «Me encantó la pantalla 30 G» | falta la franja de los rostros que asoman |
 | 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | resuelta: lleva el pulgar de SANDO |
-| — | **Pedido grupal** | «El pedido grupal, hermoso. Queda» | lleva el wordmark, pedido por el dueño |
+| — | **Pedido grupal** | «El pedido grupal, hermoso. Queda» | lleva el logo arriba y en marca de agua |
 | — | **Plan semanal** | «Plan semanal muy bien» | — |
-| — | **Tarjeta de regalo** | «la pantalla conforme me encanta» | **la tarjeta en sí necesita más color** — tres variantes propuestas |
+| — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
 
@@ -111,8 +111,9 @@ Pedido explícito del dueño: **«para las capturas de pantalla siempre salga el
 cliente que comparte una captura de su pedido está repartiendo publicidad gratis, y hasta
 hoy esa captura no decía de quién era.
 
-Regla: el wordmark `SND//WCH` va **arriba a la derecha, en el mismo sitio en todas las
-pantallas**, en tamaño pequeño y sin competir con el contenido. Las dos barras conservan su
+**El logo es la cara partida**, no solo el wordmark: `img/marca/avatar-1024-transparente.png`,
+que ya estaba en el repo recortado y reescalado. Va **junto al wordmark, arriba a la
+derecha, en el mismo sitio en todas las pantallas**, en tamaño pequeño y sin competir con el contenido. Las dos barras conservan su
 especificación exacta (`width:.10em; height:.88em; skewX(-16deg); gap:.16em`, idénticas
 entre sí) y su bicolor: una por hermano.
 
@@ -120,9 +121,13 @@ entre sí) y su bicolor: una por hermano.
 de `#CBA258` y `#8CC8EC`, por la misma razón por la que el panel admin tiene su propio par —
 el celeste del cliente sobre papel claro no se ve. Sigue siendo una barra por hermano.
 
-Donde la pantalla tenga sitio, además puede llevar el wordmark **grande y en marca de agua**
-(el pedido grupal lo tiene así en el hueco de la lista): lo mismo, más presente, sin robarle
-lugar a nada.
+Donde la pantalla tenga sitio, además va **grande y en marca de agua** — el pedido grupal lo
+tiene así en el hueco que queda entre la lista y la cuenta, que es espacio muerto porque ahí
+es donde van entrando los que faltan.
+
+⚠ **Al meter el avatar dentro de una tarjeta con foto de fondo, ojo con el selector.** La
+regla `card img{width:100%;height:100%}` de la foto también capturaba al logo y lo hacía
+ocupar la tarjeta entera. Se arregló dándole clase propia a la foto.
 
 ## Sin diseñar todavía
 
