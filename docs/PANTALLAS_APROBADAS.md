@@ -25,7 +25,10 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | 32 | **En camino** | «22, aprobada» — confirmado por el dueño que se refería a la 32 | — |
 | 35 | **Algo salió mal** (reclamo) | «25 también» — confirmado que se refería a la 35 | — |
 | 30 | **El carrito** — papel de estraza | «Me encantó la pantalla 30 G» | falta la franja de los rostros que asoman |
-| 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | falta la mano con el pulgar arriba |
+| 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | resuelta: lleva el pulgar de SANDO |
+| — | **Pedido grupal** | «El pedido grupal, hermoso. Queda» | lleva el wordmark, pedido por el dueño |
+| — | **Plan semanal** | «Plan semanal muy bien» | — |
+| — | **Tarjeta de regalo** | «la pantalla conforme me encanta» | **la tarjeta en sí necesita más color** — tres variantes propuestas |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
 
@@ -102,15 +105,31 @@ celeste de pelaje de WICHO como fondo.
 
 ---
 
+## ⚠ TODA PANTALLA LLEVA EL WORDMARK (2026-09-18)
+
+Pedido explícito del dueño: **«para las capturas de pantalla siempre salga el logo»**. Un
+cliente que comparte una captura de su pedido está repartiendo publicidad gratis, y hasta
+hoy esa captura no decía de quién era.
+
+Regla: el wordmark `SND//WCH` va **arriba a la derecha, en el mismo sitio en todas las
+pantallas**, en tamaño pequeño y sin competir con el contenido. Las dos barras conservan su
+especificación exacta (`width:.10em; height:.88em; skewX(-16deg); gap:.16em`, idénticas
+entre sí) y su bicolor: una por hermano.
+
+**Sobre fondo claro el par cambia de tono, no de identidad**: `#A8791E` y `#2E7FA8` en vez
+de `#CBA258` y `#8CC8EC`, por la misma razón por la que el panel admin tiene su propio par —
+el celeste del cliente sobre papel claro no se ve. Sigue siendo una barra por hermano.
+
+Donde la pantalla tenga sitio, además puede llevar el wordmark **grande y en marca de agua**
+(el pedido grupal lo tiene así en el hueco de la lista): lo mismo, más presente, sin robarle
+lugar a nada.
+
 ## Sin diseñar todavía
 
 Ninguna de estas se ha mostrado nunca. **No asumir que existen.**
 
 - Bebidas (los dos lados) — la única rechazada que además sigue sin reemplazo
 - Ficha de Signature, versión WICHO
-- Pedido grupal
-- Tarjeta de regalo
-- Plan Semanal
 - Detalle de un pedido pasado
 - Perfil y datos de la cuenta
 - Favoritos / pedido fijo
