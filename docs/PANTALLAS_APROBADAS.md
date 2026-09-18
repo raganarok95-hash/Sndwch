@@ -28,6 +28,10 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | resuelta: lleva el pulgar de SANDO |
 | — | **Pedido grupal** | «El pedido grupal, hermoso. Queda» | lleva el logo arriba y en marca de agua |
 | — | **Plan semanal** | «Plan semanal muy bien» | — |
+| — | **Tu cuenta** | «Pantalla de tu cuenta, se aprueba» | — |
+| — | **Estado vacío** (el patrón) | «aprobada, pero sin logo» | **esta va sin logo** |
+| — | **Ficha de Signature · versión WICHO** | «Ficha versión wicho, aprobada» | — |
+| — | **El menú secreto** | «Aprobada, pero como que le falta algo» | se proponen tres formas de completarla |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
@@ -105,29 +109,54 @@ celeste de pelaje de WICHO como fondo.
 
 ---
 
-## ⚠ TODA PANTALLA LLEVA EL WORDMARK (2026-09-18)
+## EL LOGO TIENE TRES FORMAS, Y NO VA EN TODAS (2026-09-18)
 
-Pedido explícito del dueño: **«para las capturas de pantalla siempre salga el logo»**. Un
-cliente que comparte una captura de su pedido está repartiendo publicidad gratis, y hasta
-hoy esa captura no decía de quién era.
+El dueño lo pidió así: **«para las capturas de pantalla siempre salga el logo»**. Un cliente
+que comparte la captura de su pedido está repartiendo publicidad gratis, y hasta hoy esa
+captura no decía de quién era.
 
-**El logo es la cara partida**, no solo el wordmark: `img/marca/avatar-1024-transparente.png`,
-que ya estaba en el repo recortado y reescalado. Va **junto al wordmark, arriba a la
-derecha, en el mismo sitio en todas las pantallas**, en tamaño pequeño y sin competir con el contenido. Las dos barras conservan su
-especificación exacta (`width:.10em; height:.88em; skewX(-16deg); gap:.16em`, idénticas
-entre sí) y su bicolor: una por hermano.
+⚠ **Pero no es en todas.** Al aprobar el estado vacío lo acotó: «sin logo, no necesitas
+ponerlo siempre». Va donde suma; una pantalla que ya respira apretada no lo necesita.
 
-**Sobre fondo claro el par cambia de tono, no de identidad**: `#A8791E` y `#2E7FA8` en vez
-de `#CBA258` y `#8CC8EC`, por la misma razón por la que el panel admin tiene su propio par —
-el celeste del cliente sobre papel claro no se ve. Sigue siendo una barra por hermano.
+**Las tres formas, las tres válidas:**
 
-Donde la pantalla tenga sitio, además va **grande y en marca de agua** — el pedido grupal lo
-tiene así en el hueco que queda entre la lista y la cuenta, que es espacio muerto porque ahí
-es donde van entrando los que faltan.
+1. **El isotipo** — la cara partida SANDO/WICHO mordiendo el sándwich:
+   `img/marca/avatar-1024-transparente.png`, ya en el repo recortado y reescalado.
+2. **El wordmark** — `SND//WCH` con el par de barras. Las dos conservan su especificación
+   exacta (`width:.10em; height:.88em; skewX(-16deg); gap:.16em`, idénticas entre sí) y su
+   bicolor: una barra por hermano.
+3. **El conjunto** — isotipo + wordmark uno al lado del otro. Es el que llevan el pedido
+   grupal y la tarjeta de regalo.
 
-⚠ **Al meter el avatar dentro de una tarjeta con foto de fondo, ojo con el selector.** La
+Cuando se usa, va **arriba a la derecha**, chico y sin competir con el contenido.
+
+**Sobre fondo claro el par de barras cambia de tono, no de identidad**: `#A8791E` y
+`#2E7FA8` en vez de `#CBA258` y `#8CC8EC`, por la misma razón por la que el panel admin
+tiene su propio par — el celeste del cliente sobre papel claro no se ve.
+
+Donde la pantalla tenga sitio de sobra, además puede ir **grande y en marca de agua**: el
+pedido grupal lo tiene así en el hueco entre la lista y la cuenta, que es espacio muerto
+porque ahí es donde van entrando los que faltan.
+
+⚠ **Al meter el isotipo dentro de una tarjeta con foto de fondo, ojo con el selector.** La
 regla `card img{width:100%;height:100%}` de la foto también capturaba al logo y lo hacía
-ocupar la tarjeta entera. Se arregló dándole clase propia a la foto.
+ocupar la tarjeta entera. Se arregló dándole clase propia a la foto. Lo mismo pasó con la
+clase `.tx`, compartida sin querer entre el wordmark y el bloque de texto del estado vacío:
+el logo se iba fuera de la pantalla. **Ninguna de las dos lanza error: solo se ven mal.**
+
+## ⚠ EL MENÚ SECRETO NO SE LLAMA "THE VAULT" Y ROTA CADA MES (2026-09-18)
+
+Defecto real cometido en la maqueta de esa pantalla, cazado antes de mostrarla dos veces:
+
+- Escribí **"THE VAULT"** como nombre. Ese nombre **se retiró el 2026-08-10**. El nombre
+  vigente vive en `secret_signature.name` y llega a `SECRET_SIGNATURE_NAME`, porque **el
+  dueño lo publica desde el panel cada vez que cambia el sándwich**. Un literal se
+  desincroniza el primer mes.
+- Escribí **"cambia cada semana"** y **"se va en 4 días"**. La rotación es **MENSUAL**
+  (decisión del dueño, 2026-08-10, en `docs/FUNCIONALIDADES.md`).
+
+Es exactamente la trampa que CLAUDE.md ya describe: un nombre y una cifra escritos a mano en
+un texto que lee el cliente. **Los dos tienen que derivarse**, nunca afirmarse.
 
 ## Sin diseñar todavía
 
