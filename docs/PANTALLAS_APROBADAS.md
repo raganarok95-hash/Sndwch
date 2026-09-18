@@ -22,15 +22,8 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | 06 | **Pedido enviado** — "Ya está en la cocina" | «Pedido ya está en la cocina, esa pantalla bien» | «hay que mejorar la imagen de sando» — hoy su figura tapa las filas de PEDIDO y LLEGA |
 | 23 | **La comanda** (pantalla de cocina) | «La comanda me gusta» | — |
 | 29 | **Tus puntos** — el hermano ES el estado | «Ok listo esa queda» | las tres poses de estado todavía no existen como imagen |
-| 32 | **En camino** | «22, aprobada» *(ver duda abajo)* | — |
-| 35 | **Algo salió mal** (reclamo) | «25 también» *(ver duda abajo)* | — |
-
-**⚠ Duda abierta, sin asumir:** el mensaje decía literalmente «22, aprobada y 25 también»
-y llegó respondiendo al lote de las pantallas 30–35. Las únicas dos de ese lote que no
-recibieron comentario en el mismo mensaje son la **32** y la **35**, así que se
-interpretó que faltó el 3 al tipear. **Las pantallas 22 y 25 originales están
-rechazadas** («la 25 no va es horrible»), así que si de verdad se referían a esas, hay
-que corregir esta tabla.
+| 32 | **En camino** | «22, aprobada» — confirmado por el dueño que se refería a la 32 | — |
+| 35 | **Algo salió mal** (reclamo) | «25 también» — confirmado que se refería a la 35 | — |
 
 ### Mundos y entrada — aprobadas antes, pendientes de re-confirmar
 
@@ -66,10 +59,34 @@ se dan por cerradas hasta que el dueño las vuelva a ver:
 - **Arriba sí**: el último pedido en foto grande + el botón *Pedir lo mismo*.
 - **Abajo no**: «la lista ya no me gusta solo repetiste pantalla».
 
-### 30 · El carrito — en elección
+### 30 · El carrito — mecanismo elegido, falta la piel
 
-La primera versión quedó como «puede ser»; el dueño pidió **más opciones**. Hay tres
-propuestas nuevas sin decidir: *El mostrador*, *El cartel* y *La cuadrícula*.
+De las tres opciones ganó el mecanismo de **30A · El mostrador** («me agrada la idea»):
+lo último que agregaste manda en foto grande y el resto se desliza en carrusel.
+Pendiente: **el color** («se me hacen los colores feos»).
+
+### 31 · El pago — funcionamiento elegido, falta la piel
+
+**31A** quedó bien de funcionamiento («me agrada como pienso que funciona») y mal de
+diseño: «el estilo es el de sando repetido». El **código de Yape es obligatorio** en la
+pantalla («sí es necesario el código de yape»), pero la ejecución de 31B estaba mal
+hecha y se descartó.
+
+---
+
+## ⚠ Las pantallas que no son de un hermano necesitan sistema propio (2026-09-18)
+
+Error de raíz, detectado por el dueño: yo estaba usando **el sistema de SANDO** —crema,
+verde profundo, naranja— como si fuera el sistema neutral de la app. **No lo es: es el
+de SANDO.** Por eso el carrito y el pago le parecían «el estilo de sando repetido», y
+por eso antes había dicho «¿por qué usaste el molde de sando para todo aún en pantallas
+que no le pertenecen?».
+
+Regla: **carrito, pago, pedidos, direcciones, reclamo y cualquier pantalla que no
+pertenezca a un hermano llevan un tratamiento propio, hecho de los dos.** Los hermanos
+entran como acento —dorado `#CBA258` y celeste `#8CC8EC`, siempre los dos juntos, nunca
+uno solo— y el «//» aparece con una barra de cada color. Nunca el crema de SANDO ni el
+celeste de pelaje de WICHO como fondo.
 
 ---
 
