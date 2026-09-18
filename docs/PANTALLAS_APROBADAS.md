@@ -40,6 +40,8 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Mundo SANDO** | «m15 sando» | captura `M15-sando-plato` |
 | — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
+| — | **Entrar** (los dos te abren la puerta) | «entrar 2 aprobada» | corregido: se cortaba la cabeza de SANDO |
+| — | **Bebidas · lado SANDO** (el vaso a sangre) | «Bebidas 3 aprobada» | — |
 | — | **Tus pedidos** (la grilla de sellos) | «Tus pedidos me suena bien» | tercer intento: lista → pincho → sellos |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
@@ -192,16 +194,14 @@ un texto que lee el cliente. **Los dos tienen que derivarse**, nunca afirmarse.
 **Ninguna pantalla del recorrido del cliente quedó sin diseñar.** Lo que falta es
 decidir, no dibujar:
 
-### A rediseñar (rechazadas)
-- **Bebidas · lado SANDO** — van **dos** rechazos: la que iba junto al sándwich con el
-  precio en combo, y la carta tipográfica con el vaso al costado. El lado WICHO sí quedó,
-  así que la de SANDO no puede ser su reflejo — necesita su propia manera de elegir.
-- **Entrar** — el primer intento (un campo de correo, Google y los tres pasos de después)
-  también se cae. Va de nuevo.
+### Nada queda a rediseño
 
-**Tus pedidos SÍ cerró**, al tercer intento: lista → pincho → **sellos**. Lo que siempre
-estuvo bien era el hero de arriba con *Pedir lo mismo*; lo que fallaba era cómo mostrar los
-viejos.
+Con «entrar 2» y «bebidas 3» se cerró la última pantalla pendiente. **Todo el recorrido del
+cliente está diseñado y aprobado.**
+
+Para memoria de cuánto costó cada una: bebidas del lado SANDO necesitó **tres** intentos
+(junto al sándwich → carta tipográfica → el vaso a sangre), tus pedidos **tres** (lista →
+pincho → sellos), entrar **dos**, y el fondo del menú secreto **diez**.
 
 ### Esperan imágenes del dueño
 - Las tres **poses de estado** de la pantalla 29 (lejos / cerca / logrado) por hermano.
