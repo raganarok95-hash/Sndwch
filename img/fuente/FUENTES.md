@@ -50,3 +50,32 @@ el proxy de este entorno — la llamada funciona, el archivo no se puede traer. 
 Los ocho `sig0N.jpg` son anteriores a este archivo y **no tienen procedencia anotada**: se
 consiguieron antes de que existiera esta libreta y no se inventa acá un dato que nadie
 verificó. Si alguna vez hay que volver a licenciar una, hay que buscarla de nuevo.
+
+## SANDO v2 y las manos de los dos (2026-09-18)
+
+**El dueño rediseñó a SANDO.** Su dibujo nuevo es de línea negra limpia y sombreado plano —
+ya no el trazo pintado del anterior. Llegaron por Flow, generados por él, no licenciados:
+no hay stock detrás de ninguno de estos archivos.
+
+| archivo | qué es | de dónde salió | tratamiento aplicado |
+|---|---|---|---|
+| `sando2_frente.png` | busto de frente, neutro | Flow · `persona_studio_batch_2.zip`, shot 1 | fondo plano recortado por relleno desde los bordes, recorte al sujeto |
+| `sando2_sonrie.png` | tres cuartos a la derecha, media sonrisa | ídem, shot 2 | ídem |
+| `sando2_mira.png` | tres cuartos, mirando de lado | ídem, shot 3 | ídem |
+| `sando2_perfil.png` | perfil izquierdo | ídem, shot 4 | ídem |
+| `sando2_ladea.png` | tres cuartos a la izquierda | ídem, shot 5 | ídem |
+| `sando2_asoma.png` | busto vertical, para asomar por el costado | Flow, imagen suelta | ídem |
+| `sando2_pulgar.png` | brazo y mano, pulgar arriba | Flow, imagen suelta | ver la nota de abajo |
+| `wicho_pulgar.png` | brazo y mano de WICHO, pulgar arriba | Flow, imagen suelta | ver la nota de abajo |
+| `wicho_asoma.png` | busto de WICHO mirando a la izquierda | Flow, imagen suelta | fondo blanco recortado |
+
+⚠ **Las manos llegaron en `.jpg`, así que su transparencia ya no existía**: el damero gris de
+fondo venía **dibujado dentro de la imagen**, no como canal alfa. El alfa se reconstruyó
+detectando el fondo neutro claro por relleno desde los bordes. Funciona, pero los bordes
+quedan más duros que en un PNG original. **Están pedidos los PNG con alfa de verdad** —
+cuando lleguen, estos dos archivos se reemplazan.
+
+⚠ **Los `img/sando_*.png` viejos son del SANDO anterior** y no se borraron todavía porque
+el cliente los sigue referenciando. Reemplazarlos es una tarea aparte, y hay que hacerla
+completa: un SANDO nuevo junto a uno viejo en dos pantallas distintas es peor que dejar
+todo viejo.
