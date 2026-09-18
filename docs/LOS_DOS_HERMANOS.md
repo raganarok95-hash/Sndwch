@@ -144,3 +144,21 @@ genera con un bucle —radio creciente sobre el ángulo, ~3.6 vueltas— y sale 
   buena. El que se acerca es SANDO — **sin tocarle figura, ropa, color ni expresión**, solo el
   tratamiento del trazo. Y por ahora SANDO se queda tal cual está.
 - **Elegir un tono "que combine".** Se muestrea del PNG con código, o no va.
+
+
+---
+
+## La altura: SANDO es 1.4 veces WICHO (2026-09-18)
+
+Cuando los dos salen en la misma pantalla, **SANDO es alto y delgado y WICHO bajo y ancho**.
+No basta con pegarlos: hay que fijar la proporción, porque los archivos tienen encuadres
+distintos y a igual altura de caja WICHO se ve MÁS grande —su cabeza ocupa mucho más de su
+cuerpo— y la escena se lee al revés de como es.
+
+**Regla: SANDO ≈ 1.4 × la altura de WICHO.** En la pantalla de entrada son 288 px contra
+208 px. Se escala por `height` con `width:auto`, nunca por `width`: los dos archivos tienen
+proporciones muy distintas (`sando2_cuerpo` es 1:2.66 y `wicho_cuerpo` 1:1.43), así que
+igualar anchos deforma la relación.
+
+⚠ **Y dejarles aire arriba.** Pegar a SANDO al borde superior de su contenedor le corta el
+mechón, y es de lo primero que se nota. Error real, corregido por el dueño.
