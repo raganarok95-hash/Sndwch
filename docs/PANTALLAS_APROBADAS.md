@@ -40,6 +40,7 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Mundo SANDO** | «m15 sando» | captura `M15-sando-plato` |
 | — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
+| — | **Tus pedidos** (la grilla de sellos) | «Tus pedidos me suena bien» | tercer intento: lista → pincho → sellos |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
 
 ### Las tres dudosas quedaron identificadas (2026-09-18)
@@ -192,12 +193,15 @@ un texto que lee el cliente. **Los dos tienen que derivarse**, nunca afirmarse.
 decidir, no dibujar:
 
 ### A rediseñar (rechazadas)
-- **Bebidas · lado SANDO** — «no, ni la primera imagen». El lado WICHO sí quedó, así que
-  la de SANDO no puede ser su reflejo: necesita su propia manera de elegir.
-- **Tus pedidos · el pincho** — el hero de arriba y el botón *Pedir lo mismo* ya gustaban
-  desde antes; lo que se cae es **cómo se muestran los pedidos viejos**, por tercera vez
-  (lista → pincho → ?).
-- **Entrada / acceso con correo y Google** — nunca apareció una captura. Se diseña de cero.
+- **Bebidas · lado SANDO** — van **dos** rechazos: la que iba junto al sándwich con el
+  precio en combo, y la carta tipográfica con el vaso al costado. El lado WICHO sí quedó,
+  así que la de SANDO no puede ser su reflejo — necesita su propia manera de elegir.
+- **Entrar** — el primer intento (un campo de correo, Google y los tres pasos de después)
+  también se cae. Va de nuevo.
+
+**Tus pedidos SÍ cerró**, al tercer intento: lista → pincho → **sellos**. Lo que siempre
+estuvo bien era el hero de arriba con *Pedir lo mismo*; lo que fallaba era cómo mostrar los
+viejos.
 
 ### Esperan imágenes del dueño
 - Las tres **poses de estado** de la pantalla 29 (lejos / cerca / logrado) por hermano.
