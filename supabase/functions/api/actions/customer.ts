@@ -225,6 +225,21 @@ export async function actRemindRecurringOrders(b: any) {
         tag: "sndwch-recurring-" + r.id,
       });
       await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(r.id))}`, { last_notified_at: new Date().toISOString() });
+      // DEJA RASTRO, AUNQUE NO SE FRENE POR ÉL (2026-09-23). Este aviso es el único de los
+      // quince que el cliente PIDIÓ: lo configuró él al guardar su pedido fijo. Por eso NO
+      // consulta `phonesTouchedToday()` — un servicio que alguien pidió no puede quedarse
+      // sin salir porque ese día ya le llegó una promoción.
+      //
+      // Pero hasta hoy tampoco REGISTRABA, y esa mitad sí estaba mal: sin fila en
+      // `marketing_touches`, los ocho crones que sí respetan el tope de uno por día no
+      // sabían que este cliente ya había sido tocado, y el mismo jueves le podía llegar
+      // además "te faltan 30 puntos" o "hace mucho que no pides". El único aviso que el
+      // cliente pidió terminaba compitiendo con los que no pidió.
+      //
+      // Con esta línea el aviso sigue saliendo siempre y son las promociones las que se
+      // corren. Va DESPUÉS del push y es best-effort: que falle el log nunca puede afectar
+      // un aviso que ya salió.
+      await logMarketingTouch(String(r.customer_phone), "pedido-fijo");
       avisados++;
     } catch (e) {
       console.error("remind-recurring-orders failed for", r.id, e);
