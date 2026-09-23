@@ -21,6 +21,9 @@ Plin Negocios con esa técnica). Lo que queda:
 
 Lo de abajo se conserva como registro del análisis, no como recomendación vigente.
 
+**Confirmado por el dueño (2026-09-23): Culqi cobra 3.44% por Yape.** Decisión: no programar
+el código de 3 dígitos; se conserva el Yape manual tal como está hasta encontrar otra vía.
+
 ## Cómo funciona hoy
 
 Yape es el método por defecto desde el 2026-09-03 (`manualPayMethod='yape'`). El cliente
