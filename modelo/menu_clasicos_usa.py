@@ -341,3 +341,42 @@ for n, p15, c15, p30, c30 in nuevo:
 print("""
   Subir S/1.00 un precio que NO cruza de dígito es casi gratis en percepción.
   Subirlo cuando cruza (21.90 -> 22.90) es el salto que el cliente sí siente.""")
+
+print("=" * 93)
+print("  ¿SE PUEDE FIJAR YA EL PRECIO, CON LO QUE FALTA COTIZAR?")
+print("=" * 93)
+print("""
+  Tres números del menú nuevo todavía no están cerrados. La pregunta no es si hay
+  incertidumbre —siempre la hay— sino **hacia qué lado puede moverse cada una**. Un
+  supuesto que solo puede abaratar no bloquea un precio; uno que puede encarecer, sí.
+""")
+peor = []
+# 1 · rendimiento del laminado en frío: supuesto 0.70, piso plausible 0.55
+for rend in (0.70, 0.55):
+    c = costo(0, prot=_por((85/1000)*RES_KG/rend), salsas=0, queso=True,
+              vegetales=[(70, CEBOLLA_KG), (20, PIMIENTO_KG)])
+    peor.append(("Philly 15CM", f"rendimiento {rend:.2f}", 22.90, c))
+# 2 · embutido del Hoagie: hoy se costea con el P05 COTIZADO a S/48/kg; salami+jamón
+#     aparte solo pueden salir MÁS baratos, no más caros
+for kg, et in ((48.0, "P05 cotizado S/48/kg"), (32.0, "salami+jamón hipotético S/32/kg")):
+    c = costo(0, prot=_por((85/1000)*kg), salsas=1, queso=True, vegetales=VEG_ESTANDAR)
+    peor.append(("Hoagie 15CM", et, 23.90, c))
+# 3 · empaque: hoy se costea al techo conservador; lo real solo puede bajar
+for emp, et in ((EMPAQUE, "techo conservador S/1.30"), (0.53, "real estimado S/0.53")):
+    c = nuevo[1][2] - EMPAQUE + emp
+    peor.append(("Turkey 15CM", et, 23.90, c))
+
+print(f"  {'producto':<14}{'supuesto':<38}{'costo':>8}{'costo %':>9}")
+print("  " + "-" * 70)
+for n, et, pr, c in peor:
+    print(f"  {n:<14}{et:<38}{c:>8.2f}{c/pr*100:>8.1f}%")
+
+print(f"""
+  **Los tres se mueven hacia abajo.** El laminado es el único que puede encarecer, y aun
+  en su piso plausible (0.55) el Philly queda en {peor[1][3]/peor[1][2]*100:.1f}% de costo,
+  a {(TECHO - peor[1][3]/peor[1][2])*100:.0f} puntos del techo.
+  El embutido y el empaque están costeados HOY en su peor caso: cerrar esas cotizaciones
+  solo puede mejorar el margen, nunca romper un precio ya publicado.
+
+  CONCLUSIÓN: los seis precios se pueden fijar ya. Lo que falta cotizar no los pone en
+  riesgo — cambia cuánto se gana, no si se pierde.""")
