@@ -6,6 +6,21 @@ Yape y si cobra un porcentaje»*.
 
 **Estado:** análisis. Nada de esto está programado. Se implementa cuando el dueño elija.
 
+## ⚠ Corrección del dueño (2026-09-23): la vía de la notificación NO sirve
+
+El dueño trabaja en Yape y lo aclaró: **Yape no notifica todas las operaciones**, así que
+confirmar leyendo la notificación del celular dejaría pagos sin confirmar en silencio.
+Quedan descartadas por lo mismo las vías A, B y D de abajo (Yape personal, Yape Empresa y
+Plin Negocios con esa técnica). Lo que queda:
+
+- **Yape dentro de Culqi** (automático, con comisión): ya integrado en el código; el dueño no
+  ve la opción en su cuenta, así que hay que pedirle a Culqi que la active.
+- **Yape personal manual** (gratis): usa Yape personal en Android. Se puede abaratar la
+  revisión pidiendo al cliente el código de seguridad de 3 dígitos en vez de la captura, para
+  que el dueño lo busque en sus movimientos.
+
+Lo de abajo se conserva como registro del análisis, no como recomendación vigente.
+
 ## Cómo funciona hoy
 
 Yape es el método por defecto desde el 2026-09-03 (`manualPayMethod='yape'`). El cliente
