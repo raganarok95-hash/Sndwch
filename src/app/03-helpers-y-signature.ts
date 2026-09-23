@@ -1581,9 +1581,32 @@ function sGroupOrder(){
       +'<div style="height:4px;background:var(--sw-bg,#12150F);border-radius:4px;margin-top:10px;overflow:hidden"><div style="height:100%;width:'+pctFree+'%;background:'+GOLD+'"></div></div>'
       +'</div>';
   }
+  // SE ACABÓ EL TIEMPO PERO EL PEDIDO NO SE PERDIÓ (2026-09-23, decisión del dueño).
+  // Antes acá solo decía "ya se cerró" y el organizador se quedaba SIN botón de pagar: todo
+  // lo que los demás habían sumado se perdía. Y se perdía por mirarlo, porque leer el grupo
+  // es lo que lo marca cerrado. Ahora los 15 minutos significan "ya no entra nadie más": se
+  // paga con los que alcanzaron, y se dice en la misma pantalla por qué no hay uno gratis
+  // en vez de que el cliente lo descubra al final.
   if(g.status!=='open'){
-    h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':'Este pedido grupal ya se cerró')+'</div>';
-  }else{
+    if(g.canPay){
+      var faltaron=typeof g.missingForFree==='number'?g.missingForFree:0;
+      h+='<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">Se acabó el tiempo para sumarse</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:3px">'
+        +(g.freeApplies
+          ?'Igual llegaron: el 15CM más barato no se cobra.'
+          :('No llegaron a '+(g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES)+' sándwiches'+(faltaron?(' — faltaron '+faltaron):'')+', así que esta vez ninguno va gratis.'))
+        +' Puedes pagar con lo que hay.</div></div>';
+      // El botón vive acá y no en el bloque de arriba a propósito: ese solo se pinta con el
+      // grupo abierto, y este caso es justamente el grupo ya cerrado. Sin esta línea el
+      // organizador ve el aviso y sigue sin poder hacer nada con él.
+      h+=BTN('Pagar con los que hay //','doCloseGroupOrder()');
+      h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Cancelar pedido grupal</div>';
+    }else{
+      h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':g.status==='paid'?'Este pedido grupal ya se pagó':'Este pedido grupal ya se cerró')+'</div>';
+    }
+  }
+  if(g.status==='open'){
     // Antes esta sección solo se mostraba a quien NO organizaba — quien creó el pedido
     // grupal podía compartir el link y cerrar/cobrar, pero nunca agregar su propio
     // sándwich (hallazgo reportado en vivo). Ahora se muestra siempre que el pedido

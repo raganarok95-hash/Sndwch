@@ -74,30 +74,42 @@ enterar.
 
 ---
 
-## 4 · Ponerle amor: las cuatro cosas, en orden de lo que valen
+## 4 · Ponerle amor: qué se decidió (dueño, 2026-09-23)
 
-### 4.1 · La ventana (lo primero, y no es opinable)
-De 15 minutos a **algo que aguante una coordinación real** — 60 minutos como piso. Y dos
-cosas más que hoy no existen:
-- **Avisarle al organizador** cuando falten pocos minutos, no cerrarle el pedido en silencio.
-- **Dejar extender** desde la pantalla del grupo mientras esté abierto.
+### 4.1 · La ventana se queda en 15 minutos — lo que cambia es qué significa vencer
 
-### 4.2 · El momento en que se ofrece
-Hoy vive en el **home**, como una puerta más entre cuatro, al lado de «Tus favoritos». Un
-pedido que vale 6× no puede estar ahí.
+**La propuesta de subirla a 60 minutos quedó descartada por el dueño**, y con razón: alargar
+la ventana no arregla el problema, solo lo mueve una hora más tarde. El que llega tarde sigue
+llegando tarde.
 
-**Y el home es el momento equivocado**, no solo el lugar. «¿Y si pido para todos?» no se le
-ocurre a nadie antes de elegir nada: se le ocurre **en el carrito**, cuando ya hay un sándwich
-y está viendo el envío. Ahí es donde tiene que aparecer.
+**Lo que estaba mal no era la duración: era que vencer MATABA el pedido.** Y peor: lo mataba
+cuando el organizador lo miraba, porque leer el grupo es lo que lo marca `closed`, y
+`close-group-order` exigía `status=eq.open` para cobrar. Abrir la pantalla a los 16 minutos
+era perder todo lo que los demás habían sumado.
 
-### 4.3 · El incentivo, que hoy es invisible
-Desde 5 sándwiches, **el 15CM más barato va gratis**. Es una razón fuerte para organizar, y
-**no se anuncia en ninguna parte antes de llegar a 5**. Debería decirse:
-- al crear el grupo — «a partir del quinto, uno va gratis»;
-- **mientras se llena** — «van 3; con 2 más, uno es gratis».
+**Cómo queda:** los 15 minutos significan **"ya no entra nadie más"**, no "se perdió todo".
 
-Eso convierte una lista de items en una barra de progreso con premio, que es la diferencia
-entre un grupo que se llena y uno que se queda en tres.
+- El organizador **paga con los que alcanzaron a sumarse**.
+- Si no llegaron a `ORGANIZER_FREE_MIN_SANDWICHES`, **se lo dice la pantalla ahí mismo**:
+  «No llegaron a 5 sándwiches — faltaron 2, así que esta vez ninguno va gratis. Puedes pagar
+  con lo que hay.» El cliente se entera cuando todavía puede decidir, no al final.
+- El estado terminal pasa a ser `paid`, y el guard sigue siendo atómico: entre dos toques
+  simultáneos gana uno solo.
+
+### 4.2 · Se queda en el home, y se suma un empujón en el carrito
+**Decisión del dueño: NO se saca del home.** Lo que se agrega es un empujón **en el carrito**,
+que es donde «¿y si pido para todos?» tiene sentido de verdad: ahí ya hay un sándwich elegido
+y el cliente está viendo el envío. Los dos sitios, no uno en lugar del otro.
+
+### 4.3 · El incentivo — ⚠ acá me equivoqué y hay que dejarlo escrito
+**Dije que el incentivo «no se anuncia en ninguna parte antes de llegar a 5». Es falso.** La
+pantalla del grupo YA tiene la barra de progreso, con su texto («Faltan 2 sándwiches para que
+uno vaya gratis» / «¡Un sándwich va gratis!») y su porcentaje. Está bien hecha desde antes.
+
+Lo revisé por encima y afirmé una ausencia sin comprobarla — el mismo error que este repo
+persigue en los números. **Lo que sí faltaba** es lo que arregla el punto 4.1: que ese texto
+siguiera existiendo cuando el grupo vence, que es justo cuando el cliente necesita entender
+por qué no hubo gratis.
 
 ### 4.4 · Que el enlace se vea como algo que se comparte
 El enlace ya se arma bien (`location.origin + '?group=' + código`). Lo que falta es que

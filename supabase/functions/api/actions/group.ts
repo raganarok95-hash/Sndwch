@@ -85,9 +85,16 @@ export async function actGetGroupOrder(b: any) {
   // en el cliente para que el número que ve el que está juntando al grupo sea el mismo
   // que el servidor va a usar al cobrar.
   const sandwichQty = items.reduce((n: number, it: any) => n + (it.isSandwich ? it.qty : 0), 0);
+  // `canPay` existe para que la pantalla no tenga que deducir de `status` si todavía hay
+  // algo que hacer: un grupo vencido ('closed') SIGUE siendo pagable por su organizador
+  // mientras nadie lo haya pagado. Deducirlo en el cliente fue justo lo que dejó al
+  // organizador sin botón durante meses.
+  const canPay = isOrganizer && (g.status === "open" || g.status === "closed") && items.length > 0;
   return {
     code: g.code, status: g.status, organizerName: g.organizer_name, expiresAt: g.expires_at,
     items, total, isOrganizer, sandwichQty, organizerFreeAt: ORGANIZER_FREE_MIN_SANDWICHES,
+    canPay, freeApplies: sandwichQty >= ORGANIZER_FREE_MIN_SANDWICHES,
+    missingForFree: Math.max(0, ORGANIZER_FREE_MIN_SANDWICHES - sandwichQty),
   };
 }
 
@@ -190,6 +197,7 @@ export async function actCloseGroupOrder(b: any) {
   const g = await fetchGroupOrder(code);
   if (g.organizer_phone !== s.phone) throw new ApiError("Solo quien organizó el pedido puede cerrarlo y pagar.", 403);
   if (g.status === "cancelled") throw new ApiError("Este pedido grupal fue cancelado.", 409);
+  if (g.status === "paid") throw new ApiError("Este pedido grupal ya se pagó.", 409);
   const precheck = await sbGet("group_order_items", `group_order_id=eq.${g.id}&select=id&limit=1`);
   if (!precheck.length) throw new ApiError("Nadie agregó productos todavía.", 400);
   // Cierra con guard status=eq.open ANTES de leer la lista final de items (antes se leía
@@ -198,8 +206,23 @@ export async function actCloseGroupOrder(b: any) {
   // hallazgo de auditoría de arquitectura backend). El guard también evita reprocesar un
   // cierre doble-tap concurrente. Se relee después del UPDATE para cobrar exactamente lo que
   // quedó en la base al momento de cerrar, no la foto de arriba.
-  const updated = await sbUpdate("group_orders", `id=eq.${g.id}&status=eq.open`, { status: "closed" });
-  if (!updated.length) throw new ApiError("Este pedido grupal ya se cerró.", 409);
+  // VENCER NO MATA EL PEDIDO (2026-09-23, decisión del dueño). Hasta hoy este guard era
+  // `status=eq.open`, y `actGetGroupOrder` marca 'closed' en cuanto vence al leerlo. Las dos
+  // cosas juntas daban el peor resultado posible: pasados los 15 minutos el organizador
+  // abría la pantalla del grupo —lo que por sí solo lo cerraba— y al tocar "pagar" recibía
+  // "ya se cerró". **Todo lo que los demás habían sumado se perdía, y se perdía porque el
+  // organizador lo había mirado.** Sobre el pedido que más deja del negocio.
+  //
+  // Ahora 'closed' significa solo "ya no entra nadie más": se puede pagar con los que
+  // alcanzaron a sumarse. Lo que decide si el incentivo aplica sigue siendo el CONTEO
+  // (organizerFreeSandwichApplies), así que un grupo que no llegó a
+  // ORGANIZER_FREE_MIN_SANDWICHES simplemente no regala nada — y el cliente se entera en la
+  // pantalla, no al final.
+  //
+  // El estado terminal pasa a ser 'paid'. El guard sigue siendo atómico: entre dos toques
+  // simultáneos gana uno solo, que es para lo que existía `status=eq.open`.
+  const updated = await sbUpdate("group_orders", `id=eq.${g.id}&status=in.(open,closed)`, { status: "paid" });
+  if (!updated.length) throw new ApiError("Este pedido grupal ya se pagó o fue cancelado.", 409);
   const rows = await sbGet("group_order_items", `group_order_id=eq.${g.id}&order=created_at.asc`);
   // Sin esto, el carrito final perdía por completo quién pidió qué — con dos personas
   // pidiendo el mismo Signature, cocina/admin no podía distinguir un sándwich del otro.
