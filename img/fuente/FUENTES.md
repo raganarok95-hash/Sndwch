@@ -102,3 +102,47 @@ horneada**: esto no abre una limpieza general, era solo este archivo.
 ⚠ Los prompts de `docs/POSES_QUE_TE_TOCAN.md` ya piden «fondo transparente, sin sombra de
 piso» justamente por esto. Si una pose nueva llega con sombra, se le aplica este mismo
 procedimiento antes de usarla.
+
+## Signatures del menú de clásicos de USA (2026-09-23)
+
+Licenciadas en la **categoría gratuita de Adobe Stock** (`pricing:"free"`, sin costo para el
+dueño), igual que las seis de proteínas.
+
+| archivo | producto | Adobe Stock | recorte aplicado al original |
+|---|---|---|---|
+| `sig09.jpg` | **Philly Cheesesteak** (SIG09) | `1877200591` (6720×4480) | (60, 430)-(3700, 4180) — **deja fuera las papas fritas de la derecha** |
+| `sig11.jpg` | **Italian Hoagie** (SIG11) | `580199632` (5133×3666) | (0, 183)-(5133, 3666) — solo se recorta la banda de humo de arriba |
+
+Las dos se guardan reescaladas a 1600 px, como las de proteína, y salen a 1050×708 tratadas
+— **sin el aviso de "le faltan píxeles"** que sí arrastran `sig04`…`sig08`, que son de 640 px
+y se estiran 1.64x en la tarjeta.
+
+### Por qué el Philly costó cuatro intentos
+
+Las cuatro fotos se licenciaron y se miraron; **tres se descartaron por prometer algo que la
+receta no tiene**, que es el mismo criterio que sacó las papas de `prot_p01`:
+
+| descartada | por qué |
+|---|---|
+| `511898883` | ingredientes exactos, pero es un macro: se lee como carne salteada, no como un sándwich. Al lado del Hoagie rompía el set |
+| `469736248` | encuadre perfecto y fondo oscuro, pero **lleva champiñones** y la receta no |
+| `242365153` | el sándwich entero, pero con lechuga y tomate (que el Philly no lleva) y papas al lado |
+
+**La regla que sale de esto: una foto de producto no se elige por lo bonita, se elige por lo
+que promete.** Un ingrediente de más en la foto es la misma clase de defecto que un badge que
+afirma algo que el producto no cumple — ver `docs/PROMESAS_SIN_RESPALDO.md`.
+
+### Las dos que faltan, y por qué no están
+
+**`sig10.jpg` (Turkey) y `sig12.jpg` (Tuna Melt) no se pudieron conseguir.** Los dos productos
+van en **pan sub**, y en la categoría gratuita:
+
+- el «turkey sub» sale siempre en pan redondo con ajonjolí, o con queso encima (nuestro Turkey
+  va **sin queso**: es la opción fit);
+- el «tuna melt» está en **pan de molde tostado** por definición del plato — no existe en pan
+  sub.
+
+Se revisaron ~60 resultados y se licenciaron y miraron las tres mejores candidatas. Ninguna
+sirve. **Poner una foto con otro pan es exactamente el defecto que este archivo existe para
+impedir**, así que quedan pendientes: o el dueño las fotografía, o esos dos productos entran
+a la carta después que los otros cuatro.
