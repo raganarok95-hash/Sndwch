@@ -1,4 +1,4 @@
-# Las 4 poses que faltan — prompts listos para pegar
+# Las 5 poses que faltan — prompts listos para pegar
 
 > Generado el 2026-09-17. Cada bloque va **completo**: no hay que ir a buscar nada a otro
 > archivo, ya trae la ficha del personaje, el gesto y el bloque técnico.
@@ -33,6 +33,7 @@
 | WICHO piensa | `wicho_piensa.png` | tu dirección quedó fuera de cobertura |
 | WICHO serio | `wicho_serio.png` | la tienda está cerrada ahora mismo |
 | SANDO en camino | `sando_en_camino.png` | tu pedido salió, va en camino |
+| SANDO en la plancha | `sando2_plancha.png` | «ya está en la cocina», apenas confirmas el pedido |
 
 ---
 
@@ -221,3 +222,51 @@ asomando por el borde izquierdo. Fondo transparente.»
 
 **Los rostros van en pareja.** Estas pantallas no son de un hermano, son de los dos: uno por
 costado, con el total en el medio. Si llega solo uno, la pantalla queda coja.
+
+---
+
+## 5 · SANDO EN LA PLANCHA — «ya está en la cocina» (pedida 2026-09-23)
+
+Referencia a subir: **`img/sando2_frente.png`** *(el SANDO nuevo, no el viejo)*
+
+> **Por qué se pide:** la pantalla de pedido confirmado dice «ya está en la cocina» y hoy se
+> ilustra con SANDO **parado, sin hacer nada**, porque era la pose que había. La pantalla
+> promete una cosa y la imagen muestra otra. Lo que hace falta es él **trabajando**, que es
+> justamente lo que el cliente acaba de pagar.
+>
+> Es la pose que más se va a ver de todo el recorrido: aparece una vez por pedido, siempre,
+> a todos. Vale la pena que no sea una de relleno.
+>
+> **Sin fuego, sin llamas, sin humo dramático.** Es una plancha de sándwiches, no una
+> parrilla — y una llama en la imagen es una promesa de cocina que el producto no hace.
+
+```
+Same anthropomorphic gorilla character as the reference image, in the exact same
+illustration style.
+Fur: deep green-black with FLAT two-tone shading, clean uniform black outline of
+even weight. Calm, composed, deliberate.
+POSE: standing at a flat griddle, seen three-quarters from the front, both hands
+working — one holding a metal spatula pressing down on a sandwich on the griddle,
+the other steadying the bread. Head tilted down towards his hands, eyes on the
+work, mouth closed and focused. He is concentrating, not performing.
+Wearing his usual clothes from the reference image, sleeves pushed up to the
+forearm, plus a plain dark apron with no printing on it.
+The griddle is a simple flat steel surface at waist height with two sandwiches on
+it. No flames, no fire, no dramatic smoke, no sparks.
+ART STYLE (match the reference image exactly): clean uniform black linework of
+EVEN weight, flat two-tone shading, restrained palette. Deliberate and composed —
+the opposite of loose sketchy energy.
+Do NOT give him varying line weight. Do NOT add texture or cross-hatching. Do NOT
+make him match a loose sketchy character — the cleanliness is the point.
+
+BACKGROUND: flat solid #0F1A14 filling the entire frame, edge to edge.
+No kitchen, no wall, no tiles, no shelves, no props other than the griddle and the
+two sandwiches. No floor, no ground plane, no ellipse or oval under the character,
+no drop shadow, no cast shadow, no reflection, no vignette, no gradient, no border,
+no frame. Nothing behind the character but flat #0F1A14.
+Full body, both feet fully visible, generous margin — nothing touching the canvas edge.
+No text, no letters, no numbers, no logotype, no watermark.
+PNG, 2048 px on the long side.
+```
+
+---

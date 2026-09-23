@@ -19,12 +19,12 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | # | pantalla | con qué palabras quedó | nota pendiente |
 |---|---|---|---|
 | 01 | **Ficha de un Signature** (mundo SANDO) | «La pantalla de la ficha, me agrada para sando» | **falta la versión de WICHO** |
-| 06 | **Pedido enviado** — "Ya está en la cocina" | «Pedido ya está en la cocina, esa pantalla bien» | «hay que mejorar la imagen de sando» — hoy su figura tapa las filas de PEDIDO y LLEGA |
+| 06 | **Pedido enviado** — "Ya está en la cocina" | «Pedido ya está en la cocina, esa pantalla bien» | **rehecha 2026-09-23** en dos versiones (`06A la losa` / `06B la ventana`) — falta que el dueño elija |
 | 23 | **La comanda** (pantalla de cocina) | «La comanda me gusta» | — |
 | 29 | **Tus puntos** — el hermano ES el estado | «Ok listo esa queda» | las tres poses de estado todavía no existen como imagen |
 | 32 | **En camino** | «22, aprobada» — confirmado por el dueño que se refería a la 32 | — |
 | 35 | **Algo salió mal** (reclamo) | «25 también» — confirmado que se refería a la 35 | — |
-| 30 | **El carrito** — papel de estraza | «Me encantó la pantalla 30 G» | falta la franja de los rostros que asoman |
+| 30 | **El carrito** — papel de estraza | «Me encantó la pantalla 30 G» | **franja puesta 2026-09-23** (`30 G2`) — falta el visto bueno |
 | 31 | **El pago con tarjeta** — el traspaso | «las instrucciones de la tarjeta igual, están bien» | resuelta: lleva el pulgar de SANDO |
 | — | **Pedido grupal** | «El pedido grupal, hermoso. Queda» | lleva el logo arriba y en marca de agua |
 | — | **Plan semanal** | «Plan semanal muy bien» | — |
@@ -44,6 +44,40 @@ cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente
 | — | **Bebidas · lado SANDO** (el vaso a sangre) | «Bebidas 3 aprobada» | — |
 | — | **Tus pedidos** (la grilla de sellos) | «Tus pedidos me suena bien» | tercer intento: lista → pincho → sellos |
 | — | **Tarjeta de regalo** | «Regalo C me gusta… y ya estamos» | la tarjeta muestra comida bajo el velo de los dos colores, con el logo arriba a la derecha |
+
+### Las tres correcciones dentro de pantallas ya aprobadas (2026-09-23)
+
+Ninguna de las tres cambia lo que el dueño aprobó: cierran la «nota pendiente» que cada una
+arrastraba.
+
+**06 · Pedido enviado — el problema no era la imagen, era el plano.** La figura y la tabla
+de datos vivían en el MISMO rectángulo, así que SANDO tapaba `#A7F2K9` y la hora de entrega.
+Parcharlo moviéndolo unos píxeles lo habría vuelto a romper en el primer texto más largo.
+Las dos versiones nuevas lo resuelven por estructura, no por posición:
+
+- **06 A · la losa** — SANDO vive en su propia columna a la derecha, con el canto naranja
+  haciendo de borde. Los datos entran en una losa clara que llega a los dos lados. **No hay
+  un solo píxel donde puedan pisarse.**
+- **06 B · la ventana** — el mismo momento contado de otra forma: es la ventana de la cocina,
+  él está adentro y los datos están sobre el mostrador, afuera. La ventana lo recorta.
+
+Y **se retiró «Yo me encargo»**, que el dueño ya había marcado como quemada de tanto
+repetirse. En su lugar va algo que solo sirve acá: «Ya prendí la plancha» / «Lo estoy
+armando yo».
+
+⚠ **Las dos usan una pose de aproximación.** Lo que esta pantalla pide de verdad es SANDO
+**trabajando en la plancha**, y esa imagen no existe. El prompt está pedido en
+`docs/POSES_QUE_TE_TOCAN.md` (bloque 5, `sando2_plancha.png`). Es la pose que más se va a ver
+de todo el recorrido —una vez por pedido, a todos— y hoy se ilustra con él parado sin hacer
+nada, que es justo lo contrario de lo que la pantalla promete.
+
+**30 · G2 — la franja de los rostros.** Estaban sueltos sobre el papel y la barra de pagar
+los cortaba por la mitad, de casualidad. Ahora hay una franja oscura de verdad y los dos
+viven DENTRO: el recorte lo hace el borde de la franja, a propósito. También pasó a
+`sando2_sonrie` (el SANDO nuevo) — antes era el viejo.
+
+**31 · el pulgar.** El recuadro punteado que decía «acá va la mano, imagen pedida, no existe
+todavía» ya no hace falta: `img/sando2_pulgar.png` existe desde el 2026-09-23.
 
 ### Las tres dudosas quedaron identificadas (2026-09-18)
 
