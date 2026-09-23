@@ -270,3 +270,39 @@ for nom, p, d15, d30 in sorted(DOBLE, key=lambda x: x[1][0] / x[2]):
           f"{d30:>10.2f}{p[1]:>9.2f}{p[1]/d30*100:>8.1f}%{d30-p[1]:>8.2f}{m}")
 print("\n  La albóndiga y el atún son los dos únicos con el doble bien debajo del techo:")
 print("  ahí el 'hazlo doble' es plata casi limpia. En la res laminada y el pavo, no.\n")
+
+print("=" * 93)
+print("  EL EMPAQUE — la palanca creció al cotizar el papel (2026-09-23)")
+print("=" * 93)
+
+PAPEL, BOLSA, STICK = _rpp.PAPEL_MANTECA, _rpp.BOLSA_KRAFT, _rpp.STICKER
+print(f"""
+  Lo que había: S/{EMPAQUE:.2f} por sándwich, un literal sin partes, heredado de un estimado
+  que sumaba CAJA DE FIBRA DE CAÑA + bolsa + servilleta + sticker, y que además estaba
+  medido POR PEDIDO. El empaque real que decidió el dueño no lleva caja.
+
+  papel manteca   S/{PAPEL:.3f}  [COTIZADO 2026-09-23] S/150 los 2 millares · POR SÁNDWICH
+  bolsa kraft     S/{BOLSA:.3f}  [COTIZADO Bio Pack Lima, recotizando en Trujillo] · POR PEDIDO
+  sticker         S/{STICK:.3f}  [SIN COTIZAR] rango normal S/0.04-0.15 · POR PEDIDO
+  ----------------------------------------------------
+  total           S/{PAPEL+BOLSA+STICK:.3f} por PEDIDO""")
+
+print(f"\n  {'sánd. por pedido':<20}{'empaque/sánd.':>15}{'ahorro':>10}{'+S/mes (600)':>15}")
+print("  " + "-" * 60)
+for n in (1.0, 1.5, 2.0):
+    e = PAPEL + (BOLSA + STICK) / n
+    print(f"  {n:<20.1f}{e:>15.2f}{EMPAQUE-e:>10.2f}{(EMPAQUE-e)*600:>15.0f}")
+
+e1 = PAPEL + BOLSA + STICK
+print(f"""
+  Aun en el peor caso —un sándwich por pedido, o sea la bolsa entera a cada uno— el
+  empaque real es S/{e1:.2f} contra los S/{EMPAQUE:.2f} costeados: **S/{EMPAQUE-e1:.2f} por sándwich**,
+  +S/{(EMPAQUE-e1)*600:.0f} al mes sin cambiar un ingrediente ni una foto. Pasa a ser la SEGUNDA palanca
+  del negocio, por encima de la mezcla de tamaño (+S/383) y de la bebida (+S/376), y solo
+  detrás de rehacer la carta entera (+S/982) — que cuesta seis fotos y seis recetas.
+
+  ⚠ El modelo sigue costeando S/{EMPAQUE:.2f} a propósito, hasta que cierren las dos cotizaciones
+  que faltan. Equivocarse hacia arriba en un costo es seguro; hacia abajo, no.
+
+  Y sobre los dos millares: S/150 los 2 000 contra S/85 los 1 000 ahorra S/20 por S/65 más
+  de desembolso, con un papel que no caduca. A 600 sándwiches/mes son 3.3 meses de stock.""")

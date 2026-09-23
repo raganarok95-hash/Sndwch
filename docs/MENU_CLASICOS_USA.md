@@ -368,14 +368,22 @@ A 600 sándwiches/mes:
 | # | palanca | +S/ al mes | qué cuesta |
 |---|---|---|---|
 | 1 | **Cambiar el menú entero** (v4 contra hoy) | **+982** | 6 fotos, 6 recetas, 6 textos |
-| 2 | **Mover la mezcla de 80/20 a 70/30** | **+383** | ni un céntimo de insumo |
-| 3 | **Subir el attach de bebida de 25% a 40%** | **+376** | ni un céntimo de insumo |
-| 4 | **Cotizar el embutido del Hoagie aparte** | +189 | una llamada a un proveedor |
-| 5 | **Cotizar el empaque en lote** (1.30 → 1.10) | +120 | una llamada a un proveedor |
+| 2 | **Cerrar la cotización del empaque** (1.30 → ~0.53) | **+465** | dos llamadas a un proveedor |
+| 3 | **Mover la mezcla de 80/20 a 70/30** | **+383** | ni un céntimo de insumo |
+| 4 | **Subir el attach de bebida de 25% a 40%** | **+376** | ni un céntimo de insumo |
+| 5 | **Cotizar el embutido del Hoagie aparte** | +189 | una llamada a un proveedor |
 | 6 | **Upsell "Hazlo Melt" (+S/2)** en Turkey y Hoagie | +77 | una línea en la ficha |
-| | **suma** | **+S/2 126/mes** | |
+| | **suma** | **+S/2 472/mes** | |
 
-**Las dos palancas que siguen al menú no son del menú.** El 30 CM deja S/6.38 más que el
+⚠ **La #2 es nueva del 2026-09-23 y nació del dato más chico de todos.** El dueño cotizó el
+papel manteca —S/150 los 2 millares— y al meterlo en el modelo hubo que partir el S/1.30 en
+partes. Ahí aparecieron los dos errores que el número suelto tapaba: **una caja de fibra de
+caña que el empaque real no lleva**, y que **estaba medido por pedido y se cobraba por
+sándwich**. Es el mejor ejemplo de la regla del repo: un número sin partes no se puede
+auditar, y por eso nadie lo auditó en dos meses.
+
+**Las tres palancas que siguen al menú no son del menú**, y juntas valen S/1 224/mes contra
+los S/982 de rehacer la carta entera. El 30 CM deja S/6.38 más que el
 15 CM; cada diez puntos de mezcla que se muevan hacia el grande valen S/383 al mes sin cambiar
 un solo ingrediente. Y la bebida deja S/4.18 de margen medio — subir el attach quince puntos
 vale casi lo mismo.
@@ -385,8 +393,13 @@ Detalle de las que sí son del menú:
 - **El embutido es el único insumo caro que queda.** El Hoagie usa P05 a S/48/kg porque es lo
   que está cotizado. Salami y jamón por separado deberían salir cerca de S/32/kg: eso baja el
   Hoagie de 31.5% a 26.3% y **es la cotización de mayor valor de todo el menú**.
-- **El empaque es la única palanca que no toca el producto.** Hoy es el punto medio de un
-  rango que nadie cotizó en lote. Veinte céntimos por sándwich, cero riesgo.
+- **El empaque resultó la sorpresa de la revisión, y es la única palanca que no toca el
+  producto.** El dueño cotizó el papel manteca el 2026-09-23: **S/150 los 2 millares**, o sea
+  **S/0.075 la hoja** — el 6% de lo que el modelo costeaba. Al partir el S/1.30 en sus partes
+  aparecieron dos errores heredados: **incluía una caja de fibra de caña que el empaque real no
+  lleva**, y **estaba medido por PEDIDO mientras se cobraba por SÁNDWICH**. El empaque real es
+  ~S/0.53 por pedido (papel + bolsa + sticker), o sea **S/0.78 menos por sándwich** aun en el
+  peor caso. Detalle y estado de cada cotización en `docs/NEGOCIO.md`.
 - **El "Hazlo Melt" ya está probado en el propio menú**: el Tuna Melt cobra +S/2.00 por
   S/0.39 de queso. Lo mismo aplica al Turkey y al Hoagie sin agregar un solo insumo nuevo.
 

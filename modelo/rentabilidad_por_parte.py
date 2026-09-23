@@ -20,7 +20,27 @@ REGLA: [COTIZADO] precio real de proveedor · [ESTIMADO] investigado, sin provee
 TECHO = 0.45   # [DECISIÓN del dueño] insumos+empaque como % del precio
 
 # ── COSTOS DE INSUMO ──────────────────────────────────────────────────────────────────
-EMPAQUE = 1.30           # [COTIZADO] papel manteca brandeado + bolsa, punto medio S/1.10-1.50
+# ── EMPAQUE — dejó de ser un número suelto (2026-09-23) ───────────────────────────────
+#
+# Hasta hoy acá había un literal, S/1.30, descrito como "papel manteca + bolsa, punto medio
+# S/1.10-1.50". Ese 1.10 venía de MENU_FINANCIAL_ANALYSIS.md §1, donde dice textualmente
+# "Empaque/PEDIDO", y sumaba **caja de fibra de caña (S/0.48-0.605) + bolsa + servilleta +
+# sticker**. Dos problemas que el número suelto tapaba:
+#
+#   1. INCLUÍA UNA CAJA QUE NO EXISTE. El empaque real que decidió el dueño es papel manteca
+#      brandeado + bolsa. No hay caja, y la caja era casi la mitad del estimado.
+#   2. ERA POR PEDIDO Y ACÁ SE COBRA POR SÁNDWICH. La bolsa es una por pedido; el papel es
+#      uno por sándwich. Con más de un sándwich por pedido, cobrar la bolsa entera a cada
+#      sándwich sobrecostea.
+#
+# Ahora va por partes, cada una con su estado. Mientras falten dos cotizaciones el TOTAL se
+# mantiene en S/1.30 a propósito: equivocarse hacia arriba en un costo es seguro, hacia abajo
+# no. Pero el número de abajo ya no esconde de qué está hecho.
+PAPEL_MANTECA = 0.075    # [COTIZADO dueño 2026-09-23] S/150 los 2 millares (S/85 el millar)
+BOLSA_KRAFT   = 0.35     # [COTIZADO Bio Pack, Lima] — el dueño la está recotizando en Trujillo
+STICKER       = 0.10     # [SIN COTIZAR] el dueño lo está cotizando; rango normal S/0.04-0.15
+EMPAQUE_REAL  = PAPEL_MANTECA + BOLSA_KRAFT + STICKER     # ~S/0.53 por PEDIDO
+EMPAQUE = 1.30           # [CONSERVADOR] se mantiene hasta que cierren sticker y bolsa
 SALSA   = (0.266, 0.532) # por porción, 15CM / 30CM
 QUESO   = (0.385, 0.770) # [ESTIMADO] proxy S/35/kg; hay un dato de S/22.50/kg para mozzarella
 TOPS_KG = 4.00           # [ESTIMADO] promedio ponderado de los toppings de frasco y frescos
