@@ -38,9 +38,9 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // Sale del modo "pago rápido" (un solo ítem) para poder agregar también una bebida —
   // R05 solo es elegible sobre una línea de bebida/side, nunca sobre un sándwich.
   await page.locator('text=+ CARRITO').click();
-  await page.locator('[onclick*="sndScreen=\'o_sides\'"]').click();
+  await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
   await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
-  await page.getByRole('button', { name: 'VER CARRITO //' }).click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   // Texto exacto de la línea del carrito, no una subcadena — "text=THE BLOOM" también
   // matchea el toast "¡The Bloom agregado! //" que sigue visible unos segundos más
@@ -120,9 +120,9 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await page.locator('text=+ CARRITO').click();
-  await page.locator('[onclick*="sndScreen=\'o_sides\'"]').click();
+  await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
   await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
-  await page.getByRole('button', { name: 'VER CARRITO //' }).click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   await page.locator("[onclick*=\"toggleReward('R06')\"]").click();
 

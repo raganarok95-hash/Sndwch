@@ -184,3 +184,23 @@ export async function entrarConTelefono(page: Page, phone = '900000001', pin = '
   await page.locator('#l-pin').fill(pin);
   await page.getByRole('button', { name: 'INGRESAR //' }).click();
 }
+
+// ── Entrar al armador ─────────────────────────────────────────────────────────────────
+//
+// Hasta el rediseño, el armador se abría tocando el texto «Arma el tuyo» en el home. Ese
+// texto ya no existe: el home es la puerta partida entre los dos hermanos, y el armador es
+// el lado de WICHO. Diez pruebas quedaron buscando el texto viejo y esperando 30 s cada una.
+//
+// Se entra como entra un cliente que ya está del lado de SANDO (donde deja `gotoApp`):
+// «Cambiar de lado» → la mitad de WICHO. El armador abre en el paso del TAMAÑO.
+export async function irAlArmador(page: Page) {
+  await page.locator('[aria-label="Cambiar de lado"]').first().click();
+  await page.locator('button[onclick="elegirLado(\'byo\')"]').click();
+  await page.waitForSelector('text=¿De qué tamaño?');
+}
+
+// El botón de avanzar del armador. Se busca por lo que HACE, no por su rótulo: el rótulo
+// cambia entre «Siguiente», «Listo» y la pista de lo que falta («Elige un pan»).
+export async function siguientePaso(page: Page) {
+  await page.locator('button[onclick="byoStepNext()"]').click();
+}

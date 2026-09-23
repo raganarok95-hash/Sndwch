@@ -21,8 +21,13 @@ function WORDMARK(size,hero?){
 // `sub` deja de ser un subtitulo bajo el logo y pasa a ser el centro del riel: DONDE estas.
 // Cuando no hay `bk` (no hay a donde volver) la izquierda muestra el wordmark en chico, que
 // es todo el espacio que la marca necesita dentro de la app.
+// Cuántas cosas lleva el carrito, en UNIDADES (dos del mismo sándwich son 2). Una sola
+// cuenta para los dos botones de carrito: hasta el 2026-09-23 el de la cabecera contaba
+// unidades y el del riel del armador contaba LÍNEAS, así que con dos iguales uno decía 2 y
+// el otro 1 — el mismo carrito con dos números distintos según la pantalla.
+function unidadesEnCarrito(){return cart.reduce(function(a,it){return a+(it.qty||1);},0);}
 function H(sub?,bk?,showCart?){
-  var total=cart.reduce(function(a,it){return a+it.qty;},0);
+  var total=unidadesEnCarrito();
   var cartIcon=(showCart&&total)
     ?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito ('+total+')" '
      +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;'
@@ -1259,10 +1264,11 @@ function LINEA_ESTADO(){
 // dibujado en cada pantalla es ruido que nunca se toca.
 function RIEL_CARRITO(){
   if(!cart.length)return'';
-  return'<button type="button" onclick="go(\'o_cart\')" aria-label="Ver el carrito ('+cart.length+')" '
+  var n=unidadesEnCarrito();
+  return'<button type="button" onclick="go(\'o_cart\')" aria-label="Ver carrito ('+n+')" '
     +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
     +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+ACC_INK()+';background:'+ACC()+';'
-    +'border-radius:999px">'+cart.length+'</button>';
+    +'border-radius:999px">'+n+'</button>';
 }
 
 // El mundo de SANDO: su carta cerrada.

@@ -158,9 +158,10 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   `medirBarraFija()` (08-router) después de pintar; un número escrito a mano deja contenido
   debajo de una barra opaca en las pantallas cuya barra mide otra cosa.
 - **`BYO_STEP_LABELS` es el ORDEN REAL de los pasos del armador, no una lista de nombres.**
-  Cambiar qué pinta cada `if` sin cambiar ese array (y `byoValor`) hace que el riel anuncie
-  un paso y la pantalla muestre otro. Pasó, y duró doce días. Lo vigila
-  `tests/armador-riel.spec.ts`, que compara el rótulo encendido contra el título pintado.
+  Cambiar qué pinta cada `if` sin cambiar ese array (ni los índices `i:` de
+  `BYO_LOQUELLEVAS`) hace que el riel anuncie un paso y la pantalla muestre otro. Pasó, y
+  duró doce días. Lo vigila `tests/armador-riel.spec.ts`, que compara el rótulo encendido
+  contra la pregunta pintada y que cada parte de «lo que llevas» vuelva a su paso.
 - **Un estado vacío del cliente se pinta con `VACIO()`**, que trae al hermano del lado en el
   que está. Dos pantallas se lo saltaron y quedaron con un rótulo suelto en medio de la nada.
 - **UN SECRET NO SE DA POR AUSENTE MIRANDO EL CÓDIGO.** `GOOGLE_CLIENT_ID`, `META_PIXEL_ID` y

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, irAlArmador, siguientePaso } from './helpers';
 
 // el menú secreto (SIG05) usa, en su semilla actual, POLLO CAJÚN (P03) como su proteína — para que el
 // desbloqueo (ver SIG_GATES en catalog.ts) valga la pena, esa proteína NO debe poder
@@ -11,18 +11,14 @@ import { gotoApp } from './helpers';
 test('POLLO CAJÚN (proteína exclusiva del menú secreto) no aparece en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});
 
-  // El home ahora muestra Signatures/Arma el tuyo como tabs (fase 2 de fidelidad al
-  // mockup) — Signatures es la tab activa por defecto, hay que cambiar a Arma el tuyo
-  // antes de que el panel BYO (y su botón "Ver el paso a paso completo") exista en el DOM.
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
+  // El armador es el lado de WICHO (se entra por la puerta) y arranca en el TAMAÑO; el paso
+  // de proteína, que es el que mira esta prueba, es el tercero: tamaño → pan → proteína.
+  await irAlArmador(page);
   await page.locator('[onclick*="size=\'15\'"]').click();
-  // ARMA EL TUYO es un asistente de 5 pasos. Desde el 2026-09-05 sigue el orden del
-  // mostrador de Subway: tamaño+pan, proteína, QUESO, vegetales, salsas — hay que elegir un
-  // pan y avanzar antes de llegar al paso de proteína, que es el que mira este test.
+  await siguientePaso(page);
   await page.locator('[onclick^="base="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await siguientePaso(page);
+  await expect(page.locator('[aria-label="PROTEÍNA (aquí)"]')).toHaveCount(1);
 
   // Otras proteínas del catálogo siguen disponibles normalmente.
   await expect(page.locator('text=TERIYAKI').first()).toBeVisible();

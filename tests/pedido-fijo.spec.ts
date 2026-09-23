@@ -24,7 +24,7 @@ async function loguearYArmarCarrito(page: any) {
   // Con un solo ítem la app va al "pago rápido" inline, no al carrito. El bloque de pedido
   // fijo vive en el CARRITO, que es donde el cliente ya está mirando el pedido completo —
   // se llega por el ícono del header.
-  await page.locator('[aria-label="Ver carrito"]').click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click();
 }
 
 test('el carrito ofrece dejarlo fijo y deja claro que no se cobra solo', async ({ page }) => {
@@ -77,7 +77,7 @@ test('un invitado no ve la opción — no habría a quién avisarle', async ({ p
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await page.locator('[aria-label="Ver carrito"]').click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click();
   await expect(page.locator('details', { hasText: 'Dejarlo fijo cada semana' })).toHaveCount(0);
 });
 
