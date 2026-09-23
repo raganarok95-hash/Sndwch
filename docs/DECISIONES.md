@@ -868,3 +868,16 @@ una deuda saldada que queda anotada hace que nadie vuelva a leer la lista.
 rendimientos *desde* los costos que ya estaban escritos. Reconciliaron los siete, claro:
 comparar un número contra sí mismo siempre da bien. Los rendimientos tienen que salir de
 `docs/NEGOCIO.md` y de `recetas/`, nunca del número que se quiere auditar.
+
+## La auditoría por clases de error: un cobro que podía repetirse (2026-09-23)
+
+Después de una sesión con varios errores de cálculo, el dueño pidió buscar dónde más estaban
+ocurriendo. Se nombró la forma de cada defecto de esa sesión y se barrió el repo por esa
+forma. El hallazgo más caro: tras cobrar, la reserva de Culqi volvía a `pending` —«todavía no
+pagó»—, así que un reintento cobraba dos veces, y la confirmación podía decirle «vuelve a
+intentar» a quien ya había pagado. Es el mismo defecto que tuvo el pedido grupal ese mismo
+día: un guard atómico escrito para un solo estado. También apareció el libro de crédito
+anotado dos veces por regalo, y tres pruebas propias que pasaban con el defecto puesto.
+
+El detalle completo, clase por clase, con lo que no se tocó y por qué, está en
+`docs/AUDITORIA_CLASES_DE_ERROR.md`.

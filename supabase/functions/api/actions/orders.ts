@@ -919,7 +919,7 @@ export async function actPrepareOrder(b: any) {
     // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
     // MAÑANA en la UI; esto lo hace valer también fuera de ella.
     if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
-      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+      throw new ApiError(`Solo puedes programar pedidos con hasta ${MAX_SCHEDULE_AHEAD_HOURS} horas de anticipación.`, 400);
     }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
@@ -1297,7 +1297,7 @@ export async function actPlaceOrder(b: any) {
     // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
     // MAÑANA en la UI; esto lo hace valer también fuera de ella.
     if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
-      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+      throw new ApiError(`Solo puedes programar pedidos con hasta ${MAX_SCHEDULE_AHEAD_HOURS} horas de anticipación.`, 400);
     }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {

@@ -72,6 +72,15 @@ async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
           url: "./index.html",
           tag: "sndwch-restock-" + sigId,
         });
+        // Deja rastro en marketing_touches (2026-09-23), igual que el pedido fijo: este aviso
+        // sale siempre —es un evento puntual y en parte pedido—, pero sin la fila los crones
+        // de promoción no sabían que este cliente ya recibió algo hoy y le mandaban otro
+        // encima. Best-effort: el push ya salió.
+        try {
+          await sbInsert("marketing_touches", { customer_phone: phone, campaign_type: "restock", channel: "push" });
+        } catch (e) {
+          await debugLog({ stage: "restock-touch", phone, error: String(e) });
+        }
       } catch {
         // un push fallido no debe bloquear el resto de los avisos
       }
@@ -1367,8 +1376,10 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   {
     theme: "PEDIDOS GRUPALES",
     ocasion: { momento: "Cuando son varios y nadie se pone de acuerdo", disparador: "Un grupo decidiendo qué pedir", dow: 5, hora: 18 },
-    whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
-    caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
+    // Las dos líneas que el dueño PEGA en WhatsApp e Instagram tenían el umbral escrito a
+    // mano («Desde 5»), mientras la idea de video de abajo ya lo interpolaba (2026-09-23).
+    whatsapp: `¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches, el 15CM más barato va gratis.`,
+    caption: `Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches invitamos el 15CM más barato del grupo.`,
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
     videoIdea: `E · LA MESA LARGA — 9:16, 16 s. 0-2s manos distintas entrando en cuadro por los dos lados. 2-9s los hermanos reparten sándwiches distintos sin pelearse — cada uno entrega los suyos. 9-13s plano cenital de la mesa llena, el "//" al centro. 13-16s cierre: un link, cada quien arma el suyo, y desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches invitamos el 15CM más barato.`,
   },

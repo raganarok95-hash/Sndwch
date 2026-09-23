@@ -182,6 +182,16 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   sumaba *por sándwich*. **Los doce chequeos anteriores comparan dos copias de un número;
   uno que está solo y mal coincide consigo mismo.**
 
+- **Un guard atómico por estado (`status=eq.X`) tiene que admitir TODOS los estados desde
+  los que el paso es legítimo**, no solo el del camino feliz. Dos veces el mismo defecto: el
+  grupo vencido pasaba a `closed` y pagar exigía `open`; la reserva cobrada quedaba en
+  `charging` y confirmar exigía `pending`. Ver `RESERVA_CONFIRMABLE` en `orders.ts`.
+- **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
+  vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
+- **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23
+  pasaban con el defecto puesto (una miraba otra pantalla; otra quitaba comentarios con
+  `//…` y se comía todo lo que seguía a «SND//WCH»). Inyecta el defecto antes de darla por buena.
+
 - **El modo de fallo que importa es el SILENCIO.** Casi todo lo listado acá no lanza
   ninguna excepción: solo deja de hacer lo que prometía. Por eso hay tantos chequeos en
   `verify` y por eso cada uno se verifica inyectándole el defecto que caza.
@@ -201,9 +211,9 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
    **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
    `jsr:@std/assert`: jsr.io está bloqueado por el proxy, cada archivo trae su propio assert.
-   Hoy son 3 archivos / 23 pruebas: `dinero.test.ts` (`pointsFor`), `carrito.test.ts`
-   (`deriveCart` — combo vs. hora valle, recompensas, sándwich del organizador) y
-   `cancelacion.test.ts` (`cancellationDeltas`, la reversión al cancelar). El patrón para
+   Empezó con `dinero.test.ts` (`pointsFor`), `carrito.test.ts` (`deriveCart`) y
+   `cancelacion.test.ts` (`cancellationDeltas`); hoy son decenas — el conteo está en la
+   salida, no acá (este párrafo dijo «3 archivos / 23 pruebas» cuando ya eran 36). El patrón para
    que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
@@ -254,8 +264,14 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    respuesta válida, ni se pinte con la piel del cliente. La lista sale de
    `adminToolsSections()`, no del test: una herramienta nueva entra sola. Corre dentro de
    `npm test`.
-6. `npm test` (o `npm run verify`, que ahora encadena doce) — deben pasar TODOS (revisa el
-   conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
+5f-ter. `npm run check:doble-escritura` — que ninguna función inserte en una tabla que la RPC
+   que llama ya inserta (lee la última definición de cada RPC de las migraciones). Cada regalo
+   de crédito quedaba anotado dos veces en `credit_ledger`. `-- --probar` le inyecta ese caso.
+6. `npm test` (o `npm run verify`) — deben pasar TODOS (revisa el conteo real en la salida,
+   ej. "19 passed", no un número fijo escrito aquí). **Nunca a través de `| tail` ni `| grep`**:
+   el código de salida pasa a ser el del filtro y la línea de fallos puede quedar cortada. El
+   2026-09-23 se reportó «239 passed» con 42 fallando por eso. Redirige a un archivo y guarda
+   `$?` (`... > log 2>&1; echo EXIT=$? >> log`).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que

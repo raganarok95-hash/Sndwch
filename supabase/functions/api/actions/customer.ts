@@ -716,11 +716,11 @@ export async function actCreditGift(b: any) {
   // gift_credit (migración atomic_balance_functions) debita al emisor y acredita al
   // receptor en UNA sola transacción de Postgres — si algo falla a la mitad, ambas
   // mitades se revierten juntas en vez de que el dinero "desaparezca".
+  // La RPC también escribe las dos filas de credit_ledger, dentro de la misma transacción.
+  // Hasta el 2026-09-23 este archivo las volvía a escribir acá, fuera: cada regalo quedaba
+  // anotado dos veces, y si esta segunda escritura fallaba el cliente veía un error con el
+  // saldo ya movido (migración libro_de_credito_se_escribe_una_sola_vez).
   await rpc("gift_credit", { p_from: s.phone, p_to: toPhone, p_amount: amount });
-  await Promise.all([
-    sbInsert("credit_ledger", { customer_phone: s.phone, delta: -amount, reason: "Regalo enviado", related_phone: toPhone }),
-    sbInsert("credit_ledger", { customer_phone: toPhone, delta: amount, reason: "Regalo recibido", related_phone: s.phone }),
-  ]);
   // Antes este flujo no avisaba al receptor de ninguna forma — a diferencia de la
   // tarjeta de regalo (actGiftCardPurchase, misma acción conceptual: mover saldo a otro
   // cliente), que sí notifica. El saldo regalado podía quedar sin usarse simplemente
@@ -1406,21 +1406,15 @@ export async function actGiftCardPurchase(b: any) {
     }
     throw e;
   }
-  await Promise.all([
-    sbInsert("transactions", {
-      customer_phone: s.phone,
-      type: "redeem",
-      points: -pointsNeeded,
-      description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
-      confirmed: true,
-    }),
-    sbInsert("credit_ledger", {
-      customer_phone: toPhone,
-      delta: amount,
-      reason: "Tarjeta de regalo recibida",
-      related_phone: s.phone,
-    }),
-  ]);
+  // La fila de credit_ledger la escribe la RPC, dentro de la transacción — acá se escribía
+  // otra vez (ver actCreditGift). Los puntos (transactions) sí quedan acá: la RPC no los anota.
+  await sbInsert("transactions", {
+    customer_phone: s.phone,
+    type: "redeem",
+    points: -pointsNeeded,
+    description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
+    confirmed: true,
+  });
   try {
     await sendPushToPhone(toPhone, {
       title: "¡Recibiste una tarjeta de regalo! 🎁",
