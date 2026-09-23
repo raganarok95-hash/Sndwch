@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // Lote E6 — las dos pantallas nuevas del panel: Salud técnica y Cumplimiento.
 //
@@ -34,10 +34,7 @@ const CUMPLIMIENTO_SANO = {
 async function entrarAlPanel(page: any, mocks: Record<string, unknown>) {
   await gotoApp(page, { ...ADMIN, ...mocks });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
 }
 

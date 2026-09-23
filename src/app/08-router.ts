@@ -602,8 +602,12 @@ function renderScreen(){
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
     case'p_recurring': h=sPRecurring();break;
-    case'gift_card':   h=sGiftCard();break;
-    case'weekly_plan': h=sWeeklyPlan();break;
+    // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
+    // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
+    // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
+    // dejó la app abierta en esa pantalla la volvería a ver al recargar.
+    case'gift_card':   h=TARJETA_REGALO_ACTIVA?sGiftCard():(sndScreen='p_home',sPHome());break;
+    case'weekly_plan': h=PLAN_SEMANAL_ACTIVO?sWeeklyPlan():(sndScreen='p_home',sPHome());break;
     case'group_order': h=sGroupOrder();break;
     case'p_addresses': h=sPAddresses();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;

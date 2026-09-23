@@ -2101,7 +2101,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'e0d2f599f2';
+var APP_BUILD = 'c17adc568f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2123,6 +2123,16 @@ var googleMapsKey = '';
 var pushSubscribed = false, pushMsg = '';
 // Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
 var adOptOutMsg = '';
+// ── DOS PRODUCTOS APAGADOS PARA LA APERTURA (dueño, 2026-09-23) ─────────────────────
+// GEMELOS de PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA en supabase/functions/api/env.ts.
+// El servidor ya rechaza las tres acciones; esto es para que la app no OFREZCA algo que va
+// a ser rechazado, que es la clase de promesa rota que este repo persigue.
+// Los dos se retiran por el mismo motivo: piden plata o puntos por adelantado a alguien que
+// todavía no conoce el negocio. Nada se borra — vuelven cuando haya clientes que repitan.
+// ⚠ Si se prenden acá, hay que prenderlos TAMBIÉN en el servidor, o pasa lo contrario: la
+// pantalla deja pedirlo y la acción lo rechaza.
+var PLAN_SEMANAL_ACTIVO = false;
+var TARJETA_REGALO_ACTIVA = false;
 var savedPh = localStorage.getItem('sw_ph') || '';
 var token = localStorage.getItem('sw_tok') || '';
 // Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato
@@ -9153,7 +9163,7 @@ function sPProfile() {
         + badgesHTML(cust)
         + pushHTML
         + sectionLabel('Retos y referidos //') + referralHTML + challengeHTML + discoveryHTML
-        + sectionLabel('Tu saldo //') + balanceCompareHTML + creditHTML + giftCardHTML + weeklyPlanHTML
+        + sectionLabel('Tu saldo //') + balanceCompareHTML + creditHTML + (TARJETA_REGALO_ACTIVA ? giftCardHTML : '') + (PLAN_SEMANAL_ACTIVO ? weeklyPlanHTML : '')
         + sectionLabel('Privacidad //')
         // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
         // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se
@@ -11356,11 +11366,15 @@ function renderScreen() {
         case 'p_recurring':
             h = sPRecurring();
             break;
+        // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
+        // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
+        // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
+        // dejó la app abierta en esa pantalla la volvería a ver al recargar.
         case 'gift_card':
-            h = sGiftCard();
+            h = TARJETA_REGALO_ACTIVA ? sGiftCard() : (sndScreen = 'p_home', sPHome());
             break;
         case 'weekly_plan':
-            h = sWeeklyPlan();
+            h = PLAN_SEMANAL_ACTIVO ? sWeeklyPlan() : (sndScreen = 'p_home', sPHome());
             break;
         case 'group_order':
             h = sGroupOrder();

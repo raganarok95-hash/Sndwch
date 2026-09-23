@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge, pointsFor } from "./orders.ts";
@@ -1359,6 +1359,7 @@ const GIFT_CARD_AMOUNT_MAX = 500;
 export const GIFT_CARD_POINTS_PER_SOL = 40;
 
 export async function actGiftCardPurchase(b: any) {
+  if (!TARJETA_REGALO_ACTIVA) throw new ApiError("La tarjeta de regalo no está disponible por ahora.", 409);
   const active = await verifyActiveSession(b.token);
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
   const s = active.payload;
@@ -1435,6 +1436,7 @@ export const WEEKLY_PLAN_CREDIT = 100;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 export async function actPrepareWeeklyPlan(b: any) {
+  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
   const active = await verifyActiveSession(b.token);
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
 
@@ -1465,6 +1467,10 @@ export async function actPrepareWeeklyPlan(b: any) {
 }
 
 export async function actConfirmWeeklyPlan(b: any) {
+  // El confirm también se corta, y no solo el prepare: un plan que quedó a medio pagar
+  // ANTES del apagado no puede terminar de acreditarse después. Si eso pasara, se resuelve
+  // a mano desde el panel, que es donde debe resolverse un caso de uno.
+  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
   const s = await requireSession(b.token);
   const ref = String(b.ref || "").trim();
   const chargeId = String(b.chargeId || "").trim();

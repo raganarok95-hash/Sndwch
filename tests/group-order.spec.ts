@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono } from './helpers';
 
 // Pedido grupal: quien organiza necesita cuenta (crea/cierra), pero contribuir NO
 // (solo un nombre) — dos flujos separados que valen la pena cubrir por separado.
@@ -42,10 +42,7 @@ test('el organizador también puede agregar su propio sándwich al pedido grupal
   });
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
@@ -90,10 +87,7 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   });
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();

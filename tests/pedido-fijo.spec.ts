@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #60 — Pedido fijo (recurrente). Ingreso predecible, que es justo lo que le falta a un
 // negocio nuevo.
@@ -15,10 +15,7 @@ const CLIENTE = { phone: '900000001', name: 'Cliente Fijo', points: 100, total_o
 
 async function loguearYArmarCarrito(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'Puntos' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill(CLIENTE.phone);
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, CLIENTE.phone, '1234');
   await page.locator('.bottom-nav').getByRole('button', { name: 'Pedido' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -95,10 +92,7 @@ test('la pantalla lista los pedidos fijos y permite quitarlos', async ({ page })
     'recurring-delete': { success: true },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'Puntos' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill(CLIENTE.phone);
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, CLIENTE.phone, '1234');
   await page.locator('[onclick*="goRecurring()"]').click();
 
   await expect(page.locator('text=MI PEDIDO FIJO')).toBeVisible();

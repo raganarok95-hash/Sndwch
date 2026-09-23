@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // D5 — El backend de esto (actions/video.ts, 237 líneas) estaba implementado y registrado
 // desde hace tiempo, pero ninguna pantalla lo llamaba: el dueño no tenía forma de llegar.
@@ -68,10 +68,7 @@ async function abrirGuion(page: any) {
     'admin-video-script': (body: any) => guion(body.sigId, body.angle || 'macro', body.formato || 'pleito'),
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('[onclick*="loadVideoScript()"]').first().click();

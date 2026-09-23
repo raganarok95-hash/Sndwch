@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // Cancelar es la única acción de la cola admin que DESHACE cosas ya hechas: libera el
 // stock reservado, revierte puntos/crédito y avisa al cliente que su comida no va a
@@ -32,10 +32,7 @@ const MOCK_ORDER = {
 
 async function entrarAlPanel(page: any, calls: any[]) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
 }

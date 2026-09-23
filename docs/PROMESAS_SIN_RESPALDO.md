@@ -160,6 +160,33 @@ no esperen a nadie.
 
 ---
 
+## ⚑ TODAS LAS DECISIONES ESTÁN TOMADAS (2026-09-23)
+
+Las veinte tienen resolución. Esta tabla manda sobre cualquier cosa que diga más abajo:
+
+| # | promesa | resolución del dueño | estado |
+|---|---|---|---|
+| A1 | Entrar con correo y código | **construir** | ✅ **hecho y verificado** |
+| A2 | Plan semanal de cinco almuerzos | **retirar para la apertura** — «no es útil aún» | pendiente |
+| A3 | Tarjeta de regalo con dinero | **retirar para la apertura** | pendiente |
+| A4 | El pedido fijo se manda solo | **no es suscripción**: se avisa y el cliente vuelve a pedir | texto pendiente |
+| B1-B3 | Las tres bebidas mal nombradas | corregir nombre y receta | pendiente |
+| B4-B6 | papas · The Chicago · THE VAULT | fuera | pendiente |
+| C1 | «Cómo pagas» | **construir** la pantalla | pendiente |
+| C2 | «Avisos» | **construir** la pantalla | pendiente |
+| C3 | «Arma uno parecido» | **construir** | pendiente |
+| C4 | «Los jueves son 9 de los 14» | pendiente de decidir (es un dato derivado, no una pantalla) | — |
+| C5 | Menú secreto · los de meses pasados | los datos existen; falta exponerlos | pendiente |
+| D1-D5 | Las cinco cifras escritas a mano | interpolarlas, nunca escribirlas | pendiente |
+| E1 | `snd.pe` | **no es del dueño** — el código ya arma bien el enlace | ✅ resuelto |
+
+**Dos productos se retiran para la apertura, y por el mismo motivo:** el Plan Semanal y la
+tarjeta de regalo piden plata o puntos por adelantado a alguien que todavía no conoce el
+negocio. Los dos pueden volver cuando haya clientes que repitan. Ninguno se borra del
+servidor: se apagan.
+
+---
+
 ## FASE 0 · Las cuatro decisiones que solo puede tomar el dueño
 
 Nada de lo caro arranca hasta que estas cuatro estén cerradas. Cada una con lo que cuesta

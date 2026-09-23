@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando } from './helpers';
+import { gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando, entrarConTelefono } from './helpers';
 
 // LAS TRES PALANCAS DEL MODELO — medición y empujones (2026-09-06).
 //
@@ -31,10 +31,7 @@ async function entrarConPedidoEntregado(page: any, ref = 'REF-001') {
     'my-orders': { orders: [pedidoEntregado(ref)] },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
   await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
 }
 

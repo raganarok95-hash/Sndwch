@@ -161,3 +161,26 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   await elegirSando(page);
   return calls;
 }
+
+// ── Entrar por la interfaz ────────────────────────────────────────────────────────────
+//
+// POR QUÉ EXISTE. Hasta el 2026-09-23, 35 specs repetían las mismas tres líneas para entrar:
+// llenar `#l-phone`, llenar `#l-pin`, tocar «INGRESAR //». El día que la pantalla de entrada
+// pasó a correo + código de 6 dígitos —que es lo que las pantallas aprobadas prometen— esas
+// tres líneas dejaron de existir y **46 pruebas se rompieron de golpe por un cambio de una
+// pantalla**. No porque el cambio estuviera mal: porque el detalle de CÓMO se entra estaba
+// copiado 46 veces.
+//
+// Ahora vive acá. El próximo cambio de la pantalla de entrada toca un archivo, no 35.
+//
+// Sigue entrando por teléfono + PIN a propósito: es el camino que el panel admin usa y el
+// que conservan las cuentas creadas antes del correo, así que es el que la mayoría de estas
+// pruebas quiere ejercitar. Para probar el camino de correo está su propio spec.
+export async function entrarConTelefono(page: Page, phone = '900000001', pin = '1234') {
+  await page.getByRole('button', { name: 'INGRESAR' }).click();
+  // La pestaña abre en el flujo de correo; este enlace destapa el de teléfono + PIN.
+  await page.locator('[onclick*="authPinFallback=true"]').click();
+  await page.locator('#l-phone').fill(phone);
+  await page.locator('#l-pin').fill(pin);
+  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+}

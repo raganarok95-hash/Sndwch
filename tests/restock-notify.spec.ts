@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockBackend, stubWindowOpen, APP_FILE, elegirSando } from './helpers';
+import { mockBackend, stubWindowOpen, APP_FILE, elegirSando, entrarConTelefono } from './helpers';
 
 // "Avísame cuando vuelva" — antes la tarjeta AGOTADO de un Signature simplemente no
 // dejaba intentar pedirlo, sin ningún registro de quién lo quería. Este test cubre que
@@ -28,10 +28,7 @@ test('cliente pide que le avisen cuando un Signature agotado vuelva a stock', as
   await elegirSando(page);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();

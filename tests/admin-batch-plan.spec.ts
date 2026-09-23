@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // C6 — Proyecta cuánto cocinar en la próxima tanda a partir del consumo real. Lo aprobó el
 // dueño sabiendo que necesita 3-4 semanas de ventas reales para valer algo, así que lo que
@@ -57,10 +57,7 @@ async function abrirPlan(page: any, handlers: any) {
     ...handlers,
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('[onclick*="loadBatchPlan()"]').first().click();

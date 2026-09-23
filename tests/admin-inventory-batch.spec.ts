@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // C7 — El dueño cocina por tandas 1-2 veces por semana. Al terminar sabe cuánto PRODUJO,
 // no cuánto suma eso con lo que sobró: hacer esa cuenta a mano por cada insumo, recién
@@ -30,10 +30,7 @@ const INVENTARIO = { P01: { inStock: true, qty: 4 } };
 
 async function abrirInventario(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('[onclick*="loadInventory()"]').first().click();

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #55 — La escalera de referidos, del lado del cliente.
 //
@@ -31,10 +31,7 @@ async function entrarComo(page: any, totalReferrals: number) {
     },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000055');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000055', '1234');
   // El login cae en el hub de PUNTOS; la escalera vive en la tarjeta del programa de
   // referidos, dentro de "Mi Perfil".
   await page.locator('[onclick*="p_profile"]').first().click();
@@ -77,10 +74,7 @@ test('si el panel encarece la bebida, el escalón deja de prometerla', async ({ 
     'get-catalog': { proteins: {}, sigs: {}, sides: {}, inventory: {}, rewardPts: { R05: 999 } },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000056');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000056', '1234');
   await page.locator('[onclick*="p_profile"]').first().click();
   await expect(page.locator('text=PREMIOS EXTRA //')).toBeVisible();
 

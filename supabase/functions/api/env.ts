@@ -31,6 +31,28 @@ export const LOCKOUT_MINUTES = 15;
 //   · 5 intentos — 5 de 10^6 es ruido; el sexto mata el código y hay que pedir otro.
 //   · 60 s entre envíos — sin esto el botón es un generador gratuito de correos a cualquiera.
 //   · 15 min de prueba de correo — lo que dura la pantalla de "completa tu cuenta".
+// ── DOS PRODUCTOS APAGADOS PARA LA APERTURA (dueño, 2026-09-23) ─────────────────────
+// Los dos por el MISMO motivo: le piden al cliente plata o puntos POR ADELANTADO antes de
+// que conozca el negocio, y eso convierte pésimo en un local que todavía no abre.
+//
+//   · PLAN SEMANAL — «no es útil aún». Además el 5% de bonificación se paga por un flote de
+//     semanas, y el cron `remind-unused-credit` existe justamente porque ese crédito se
+//     queda durmiendo. Un prepago al que hay que recordarle a la gente que lo gaste no está
+//     reteniendo a nadie.
+//   · TARJETA DE REGALO — cuesta PUNTOS (S/50 = 2 000 puntos, cinco sándwiches gratis de por
+//     medio) y exige que el destinatario YA tenga cuenta. Hoy es inalcanzable para un
+//     cliente nuevo, que es justo a quien la pantalla se la ofrece.
+//
+// NO SE BORRA NADA. Las acciones, las tablas y `create-credit-charge` siguen enteras: los
+// dos vuelven cuando haya clientes que repitan y tengan puntos. Apagar es reversible;
+// borrar, no. El apagado va en el SERVIDOR y no solo en el cliente — una pantalla oculta
+// sigue siendo una acción llamable.
+//
+// ⚠ Si algún día se vuelven a prender, hay que prender TAMBIÉN su gemelo en
+// `src/app/01-catalogo-y-estado.ts`, o la pantalla ofrece algo que el servidor rechaza.
+export const PLAN_SEMANAL_ACTIVO = false;
+export const TARJETA_REGALO_ACTIVA = false;
+
 export const LOGIN_CODE_TTL_MINUTES = 10;
 export const LOGIN_CODE_MAX_ATTEMPTS = 5;
 export const LOGIN_CODE_COOLDOWN_SECONDS = 60;

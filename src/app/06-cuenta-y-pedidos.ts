@@ -464,7 +464,7 @@ function sPProfile(){
     +badgesHTML(cust)
     +pushHTML
     +sectionLabel('Retos y referidos //')+referralHTML+challengeHTML+discoveryHTML
-    +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+giftCardHTML+weeklyPlanHTML
+    +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+(TARJETA_REGALO_ACTIVA?giftCardHTML:'')+(PLAN_SEMANAL_ACTIVO?weeklyPlanHTML:'')
     +sectionLabel('Privacidad //')
     // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
     // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se

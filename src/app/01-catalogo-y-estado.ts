@@ -1535,6 +1535,16 @@ var googleMapsKey='';
 var pushSubscribed=false,pushMsg='';
 // Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
 var adOptOutMsg='';
+// ── DOS PRODUCTOS APAGADOS PARA LA APERTURA (dueño, 2026-09-23) ─────────────────────
+// GEMELOS de PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA en supabase/functions/api/env.ts.
+// El servidor ya rechaza las tres acciones; esto es para que la app no OFREZCA algo que va
+// a ser rechazado, que es la clase de promesa rota que este repo persigue.
+// Los dos se retiran por el mismo motivo: piden plata o puntos por adelantado a alguien que
+// todavía no conoce el negocio. Nada se borra — vuelven cuando haya clientes que repitan.
+// ⚠ Si se prenden acá, hay que prenderlos TAMBIÉN en el servidor, o pasa lo contrario: la
+// pantalla deja pedirlo y la acción lo rechaza.
+var PLAN_SEMANAL_ACTIVO=false;
+var TARJETA_REGALO_ACTIVA=false;
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 // Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato

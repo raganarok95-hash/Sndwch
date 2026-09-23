@@ -44,5 +44,5 @@ test('la app carga y muestra los dos caminos de pedido', async ({ page }) => {
 test('la pestaña de puntos muestra el formulario de login/registro para un invitado', async ({ page }) => {
   await gotoApp(page);
   await page.locator('text=PUNTOS').first().click();
-  await expect(page.locator('input#l-phone, input#r-phone').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('input#l-email, input#r-phone').first()).toBeVisible({ timeout: 10000 });
 });
