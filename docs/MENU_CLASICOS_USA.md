@@ -1,5 +1,12 @@
 # El menú de clásicos de USA — viabilidad, costos y precios
 
+> ⚠ **LA VERSIÓN VIGENTE ES LA v4, AL FINAL DE ESTE ARCHIVO.** Las tablas de las v1, v2 y v3
+> quedaron **desactualizadas el 2026-09-23**: costeaban el empaque a S/1.10 cuando el análisis
+> del repo usa S/1.30, y estimaban el pavo cuando ya estaba cotizado a S/44.20/kg. Se dejan
+> porque muestran cómo se llegó acá, pero **ningún número de antes de la v4 sirve para decidir
+> un precio.** Los de la v4 no están escritos a mano: salen de `modelo/menu_clasicos_usa.py`.
+
+
 Propuesta del dueño (2026-09-23): reemplazar o ampliar la carta con seis clásicos
 estadounidenses. Este documento la costea con el **mismo modelo de componentes** que ya usa
 `MENU_FINANCIAL_ANALYSIS.md`, para que los números sean comparables con el menú de hoy y no
@@ -268,3 +275,185 @@ y ese tiempo no aparece en ninguna tabla de margen porque la mano de obra se cue
 
 ⚠ **Hay que rehacer el costeo de ARMA EL TUYO**: sus proteínas cambian por completo y varias
 de sus combinaciones estaban calibradas contra las que salen.
+
+
+---
+
+# v4 — el Turkey sin tocino, y de dónde sale de verdad la plata (2026-09-23)
+
+**Los números de esta versión ya no se escriben a mano.** Salen de
+`modelo/menu_clasicos_usa.py`, que importa sus constantes de `modelo/rentabilidad_por_parte.py`
+en vez de repetirlas. Se hizo así porque al recostear aparecieron **dos errores de base en las
+v1, v2 y v3** — los dos por copiar un número en lugar de derivarlo, que es exactamente el
+defecto que este repo ya tiene documentado tres veces.
+
+## ⚠ Dos correcciones que mueven todo lo anterior
+
+**1. El empaque cuesta S/1.30, no S/1.10.** El análisis vigente del repo
+(`rentabilidad_por_parte.py`, con el que se mide el menú de hoy) usa el punto medio cotizado
+del rango S/1.10–1.50. Mis tres versiones anteriores usaron el extremo bajo. Son **veinte
+céntimos por sándwich** costeados de menos, en los dos menús a la vez — o sea que la
+comparación no estaba rota, pero los porcentajes de costo sí estaban optimistas.
+
+**2. El pavo YA ESTABA COTIZADO, y yo lo estaba estimando.** Desde el 2026-09-12:
+**S/44.20/kg al por mayor, confirmado por el dueño**, con rendimiento 1.00 porque es fiambre y
+no pasa por la olla. La porción de 85 g cuesta **S/3.76** y no lo que yo supuse. Es P08, ya
+vive en ARMA EL TUYO desde el 2026-09-06. El Turkey no era el producto más frágil del menú
+nuevo: era el único con la proteína **completamente cotizada**.
+
+## 1 · El Turkey sin tocino
+
+Sale el tocino. Era el único insumo de esa receta sin cotizar y contradecía lo que el producto
+dice ser. Queda **pavo, vegetales del set estándar (73 g) y una salsa. Sin queso.**
+
+| | con tocino (v3) | sin tocino (v4) |
+|---|---|---|
+| costo 15 CM | S/8.47 | **S/6.62** |
+| costo 30 CM | S/15.30 | **S/11.93** |
+| % de costo 30 CM | 41.5% ⚠ el peor del menú | **34.2%** |
+| insumos sin cotizar | 1 (el tocino) | **0** |
+
+**El producto que estaba más cerca del techo pasó a ser uno de los sanos, y quitándole algo.**
+Parte de la mejora es el pavo real; el resto es el tocino que se fue.
+
+## 2 · El menú v4 completo
+
+Mismo costeo que el menú de hoy: empaque S/1.30 · pan sub S/1.00/S/2.00 · salsa S/0.266 ·
+queso S/0.385 · vegetales S/4.00/kg · mano de obra S/0.
+
+| producto | 15 CM | costo | % | deja | 30 CM | costo | % | deja |
+|---|---|---|---|---|---|---|---|---|
+| Philly Cheesesteak | **22.90** | 5.41 | 23.6% | 17.49 | **32.90** | 9.53 | 29.0% | 23.37 |
+| Turkey | **23.90** | 6.62 | 27.7% | 17.28 | **34.90** | 11.93 | 34.2% | 22.97 |
+| Italian Hoagie | **23.90** | 7.53 | 31.5% | 16.37 | **33.90** | 13.78 | 40.6% | 20.12 |
+| Meatball Marinara | 21.90 | 4.47 | 20.4% | 17.43 | 28.90 | 7.64 | 26.4% | 21.26 |
+| Classic Tuna | 20.90 | 5.55 | 26.6% | 15.35 | 34.90 | 9.80 | 28.1% | 25.10 |
+| Tuna Melt | **22.90** | 5.93 | 25.9% | 16.96 | **36.90** | 10.57 | 28.6% | 26.33 |
+
+**Ninguno pasa el techo de 45%.** El peor es el Hoagie 30 CM a 40.6%, y es el único que
+depende de un insumo caro (el embutido premium de S/48/kg).
+
+| | hoy | nuevo v4 | |
+|---|---|---|---|
+| margen medio 15 CM | S/15.61 | **S/16.81** | +7.7% |
+| margen medio 30 CM | S/19.82 | **S/23.19** | +17.0% |
+| margen por sándwich (mezcla 80/20) | S/16.45 | **S/18.09** | **+S/1.64** |
+
+A 600 sándwiches/mes: **+S/982 de margen**.
+
+## 3 · El dato incómodo: el menú nuevo cuesta EXACTAMENTE lo mismo
+
+| | hoy | nuevo v4 |
+|---|---|---|
+| costo medio de producir un 15 CM | S/5.89 | S/5.92 |
+| costo medio de producir un 30 CM | S/10.48 | S/10.54 |
+
+**Todo el margen extra es precio, no ahorro.** De cada sol extra que se cobra quedan 98
+céntimos, y eso suena espectacular hasta que se ve por qué: no es que los insumos sean más
+baratos, es que el precio sube y el costo se queda igual.
+
+Lo que obliga a preguntar: **subirle S/1.23 al 15 CM y S/3.43 al 30 CM al menú de HOY daría
+la misma plata**, sin rehacer seis fotos, seis recetas y seis textos.
+
+La diferencia real no está en ninguna tabla: **está en si el precio se sostiene.** Un Philly
+Cheesesteak a S/22.90 no hay que explicarlo — el cliente ya sabe qué es y cuánto vale en otros
+lados. «The Smoke» a S/25.13 sí hay que explicarlo, y explicar un precio es perderlo.
+
+**Ese es el argumento honesto del menú nuevo: no produce más barato, permite cobrar más.**
+
+## 4 · Cómo ganamos más — las seis palancas, ordenadas por plata
+
+A 600 sándwiches/mes:
+
+| # | palanca | +S/ al mes | qué cuesta |
+|---|---|---|---|
+| 1 | **Cambiar el menú entero** (v4 contra hoy) | **+982** | 6 fotos, 6 recetas, 6 textos |
+| 2 | **Mover la mezcla de 80/20 a 70/30** | **+383** | ni un céntimo de insumo |
+| 3 | **Subir el attach de bebida de 25% a 40%** | **+376** | ni un céntimo de insumo |
+| 4 | **Cotizar el embutido del Hoagie aparte** | +189 | una llamada a un proveedor |
+| 5 | **Cotizar el empaque en lote** (1.30 → 1.10) | +120 | una llamada a un proveedor |
+| 6 | **Upsell "Hazlo Melt" (+S/2)** en Turkey y Hoagie | +77 | una línea en la ficha |
+| | **suma** | **+S/2 126/mes** | |
+
+**Las dos palancas que siguen al menú no son del menú.** El 30 CM deja S/6.38 más que el
+15 CM; cada diez puntos de mezcla que se muevan hacia el grande valen S/383 al mes sin cambiar
+un solo ingrediente. Y la bebida deja S/4.18 de margen medio — subir el attach quince puntos
+vale casi lo mismo.
+
+Detalle de las que sí son del menú:
+
+- **El embutido es el único insumo caro que queda.** El Hoagie usa P05 a S/48/kg porque es lo
+  que está cotizado. Salami y jamón por separado deberían salir cerca de S/32/kg: eso baja el
+  Hoagie de 31.5% a 26.3% y **es la cotización de mayor valor de todo el menú**.
+- **El empaque es la única palanca que no toca el producto.** Hoy es el punto medio de un
+  rango que nadie cotizó en lote. Veinte céntimos por sándwich, cero riesgo.
+- **El "Hazlo Melt" ya está probado en el propio menú**: el Tuna Melt cobra +S/2.00 por
+  S/0.39 de queso. Lo mismo aplica al Turkey y al Hoagie sin agregar un solo insumo nuevo.
+
+## 5 · Dónde queda precio sin cobrar
+
+| producto | precio | % de costo |
+|---|---|---|
+| Meatball Marinara | 21.90 | 20.4% |
+| **Philly Cheesesteak** | **22.90** | **23.6%** |
+| Tuna Melt | 22.90 | 25.9% |
+| Classic Tuna | 20.90 | 26.6% |
+| Turkey | 23.90 | 27.7% |
+| Italian Hoagie | 23.90 | 31.5% |
+
+**El Philly es el producto más barato de producir del menú y el de nombre más reconocible.**
+A S/24.90 queda en 21.7% de costo y deja S/19.49 — dos soles más por sándwich, sin tocar la
+receta. Si el Philly va a ser el más vendido (y por nombre lo será), ahí hay más plata que en
+cualquier ajuste de gramaje.
+
+El Meatball está aún más barato (20.4%), pero ahí el precio bajo es **a propósito**: es el
+producto gancho y el que más margen deja en soles absolutos. No se toca.
+
+## 6 · El doble de proteína: solo dos valen la pena
+
+| doble de | cobra 15 | cuesta | % | cobra 30 | cuesta | % |
+|---|---|---|---|---|---|---|
+| **Albóndiga** | 6.00 | 1.34 | **22.3%** | 12.00 | 2.68 | **22.3%** |
+| **Atún** | 10.90 | 3.25 | **29.8%** | 21.90 | 6.50 | **29.7%** |
+| Res laminada | 7.00 | 2.43 | 34.7% | 13.00 | 4.86 | 37.4% |
+| Pavo | 9.00 | 3.76 | 41.8% | 17.00 | 7.51 | 44.2% |
+| Embutido | 9.90 | 4.29 | 43.3% | 19.90 | 8.59 | 43.2% |
+
+En albóndiga y atún el «hazlo doble» es plata casi limpia. En pavo y embutido está a un par de
+puntos del techo: ofrecerlo igual, pero **no empujarlo desde la ficha**.
+
+## 7 · Entonces, ¿el menú nuevo es mucho mejor?
+
+**Mejor sí. Mucho mejor, no — y no por donde parecía.**
+
+Lo que es verdad:
+- Deja **+S/1.64 por sándwich** (+10% de margen) y **ninguno de los seis pasa el techo**.
+- Saca de la carta los dos productos que hoy están al filo: The Original 30 CM (41.2%) y
+  The Smoke 30 CM (40.8%).
+- Es casi todo **plancha y ensamblado**. Se van la cocción lenta de la res mechada y la
+  marinada de una noche del teriyaki. Para una sola persona armando pedidos eso no aparece en
+  ninguna tabla de margen, pero es la diferencia más grande de todas — y además baja la merma
+  por tanda, que tampoco aparece en ninguna tabla.
+- Deja el catálogo con **menos insumos sin cotizar**, no más: el pavo está cotizado, el atún
+  está cotizado, la res está cotizada. Queda la albóndiga (estimada) y el embutido del Hoagie.
+
+Lo que no es verdad:
+- **No produce más barato.** Cuesta lo mismo, al céntimo.
+- **No es la palanca más grande que tiene el negocio.** Sumadas, la mezcla de tamaño y la
+  bebida valen S/759/mes sin cambiar un ingrediente, contra los S/982 de rehacer la carta
+  entera. Si hay que elegir el orden, esas dos van primero porque son gratis.
+
+**Recomendación: sí, cámbialo** — pero por el precio que sostiene y por la operación que
+simplifica, no por un ahorro de insumos que no existe. Y hazlo **después** de mover la mezcla
+y la bebida, que no cuestan nada.
+
+## 8 · Lo que falta antes de escribir una sola línea de esto
+
+1. **Cotizar salami y jamón** (la de mayor valor: S/189/mes).
+2. **Cotizar el empaque en lote** (S/120/mes, cero riesgo).
+3. **Medir el rendimiento real del laminado en frío.** El 0.70 sigue siendo supuesto. Si sale
+   0.55, el Philly 15 CM pasa de 23.6% a 27.9% — soportable, pero conviene saberlo.
+4. **Cotizar la carne molida de la albóndiga**, que es el producto más rentable del menú y el
+   único cuyo costo sigue siendo un estimado sin proveedor.
+5. Y lo de siempre: **esto termina en `catalog_items` y `catalog_prices`, o no existe.**
+   Cambiar el precio en el código no cambia el precio real.
