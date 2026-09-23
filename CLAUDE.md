@@ -172,6 +172,16 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   producción.** Antes de afirmar que falta un secret, verifícalo contra Supabase — nunca por
   inferencia. Error real cometido dos veces el 2026-09-17, la segunda después de que el dueño lo
   corrigiera.
+- **Un costo no es un número: es una ficha con unidad.** Todo insumo que entre a un
+  cálculo de dinero vive en `modelo/insumos.py` con cinco campos obligatorios —valor,
+  **unidad**, **estado** (COTIZADO/ESTIMADO/SIN_COTIZAR), fuente y fecha— y se convierte a
+  costo por sándwich SOLO por `por_sandwich()`, que **se niega** a repartir un costo *por
+  pedido* sin que le digas cuántos sándwiches trae. Lo vigila `npm run check:costos`.
+  El empaque se costeó al doble durante dos meses porque era un `float` con un comentario:
+  el comentario decía COTIZADO y no lo estaba, y el número venía medido *por pedido* y se
+  sumaba *por sándwich*. **Los doce chequeos anteriores comparan dos copias de un número;
+  uno que está solo y mal coincide consigo mismo.**
+
 - **El modo de fallo que importa es el SILENCIO.** Casi todo lo listado acá no lanza
   ninguna excepción: solo deja de hacer lo que prometía. Por eso hay tantos chequeos en
   `verify` y por eso cada uno se verifica inyectándole el defecto que caza.
@@ -226,6 +236,12 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    quién lo llama desde `src/app` o `scripts/`), y reconoce un cron por estructura —que su
    cuerpo llame a `verifyCronSecret`— en vez de por una lista de nombres que se desactualiza.
    **Registrar una acción es un paso APARTE de importarla.**
+5f-bis. `npm run check:costos` — que ningún número de dinero entre al modelo sin unidad,
+   sin origen y sin estado, y que un costo *por pedido* no se pueda sumar *por sándwich*.
+   `npm run check:costos:probar` le inyecta los siete defectos que dice cazar y falla si
+   alguno pasa. Es el único chequeo del repo que no compara dos copias de un número sino que
+   pregunta si un número **puede justificarse** — la clase de error que el empaque tuvo dos
+   meses sin que nada lo notara.
 5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
    Fue el séptimo caso del mismo defecto en este repo; ahora hay algo que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
    normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,

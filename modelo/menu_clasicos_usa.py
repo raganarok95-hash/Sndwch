@@ -306,3 +306,38 @@ print(f"""
 
   Y sobre los dos millares: S/150 los 2 000 contra S/85 los 1 000 ahorra S/20 por S/65 más
   de desembolso, con un papel que no caduca. A 600 sándwiches/mes son 3.3 meses de stock.""")
+
+print("=" * 93)
+print("  ¿CONVIENE REDONDEAR HACIA ABAJO? (pregunta del dueño 2026-09-23)")
+print("=" * 93)
+
+print(f"\n  {'producto':<22}{'v4':>8}{'a entero':>10}{'regala':>9}{'primer dígito':>16}")
+print("  " + "-" * 66)
+regalo15 = regalo30 = 0.0
+for n, p15, c15, p30, c30 in nuevo:
+    abajo = float(int(p15))                      # 22.90 -> 22.00
+    regalo15 += p15 - abajo
+    regalo30 += p30 - float(int(p30))
+    print(f"  {n:<22}{p15:>8.2f}{abajo:>10.2f}{p15-abajo:>9.2f}"
+          f"{'  ' + str(int(p15)) + ' en los dos':>16}")
+
+r = (regalo15 / len(nuevo)) * MIX15 + (regalo30 / len(nuevo)) * (1 - MIX15)
+print(f"""
+  El dígito de la izquierda NO CAMBIA en ninguno: S/22.90 y S/22.00 se leen los dos
+  como "veintidós y algo". El cliente no percibe nada — y son S/{r:.2f} por sándwich
+  regalados, **+S/{r*600:.0f} al mes** a 600 sándwiches. Más que la palanca del empaque.
+
+  El .90 YA ES el redondeo hacia abajo: S/22.90 está a diez céntimos de S/23 y se lee
+  como 22. Redondear otra vez es pagar dos veces por el mismo efecto.
+
+  DONDE SÍ IMPORTA EL REDONDEO: en qué DÍGITO cae el precio, no en los decimales.""")
+
+print(f"\n  {'producto':<22}{'v4':>8}{'lee como':>11}{'+S/1.00':>10}{'lee como':>11}{'cruza?':>9}")
+print("  " + "-" * 73)
+for n, p15, c15, p30, c30 in nuevo:
+    cruza = int(p15 + 1) != int(p15)
+    print(f"  {n:<22}{p15:>8.2f}{int(p15):>11}{p15+1:>10.2f}{int(p15+1):>11}"
+          f"{'  SÍ, cuesta' if cruza else '  no, gratis':>9}")
+print("""
+  Subir S/1.00 un precio que NO cruza de dígito es casi gratis en percepción.
+  Subirlo cuando cruza (21.90 -> 22.90) es el salto que el cliente sí siente.""")

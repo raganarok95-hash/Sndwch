@@ -797,3 +797,74 @@ Signatures distintos... gana 50 puntos extra». Los cuatro números viven en el 
 el servidor rechaza el reclamo y la pantalla sigue prometiendo 3: el cliente cree que la app
 le falló. Es el mismo defecto que este repo ya documentó en grande; ahora se interpolan y
 `parity` compara los cuatro.
+
+
+## El empaque costó el doble dos meses, y ningún chequeo podía verlo (2026-09-23)
+
+El dueño cotizó el papel manteca —S/85 el millar, S/150 los dos millares— y al meterlo en el
+modelo el número no encajaba con nada: **S/0.075 la hoja contra S/1.30 que el modelo costeaba
+como "empaque"**. El papel era el 6% de su propio costo.
+
+Al abrir el literal aparecieron **tres errores dentro del mismo número**:
+
+```python
+EMPAQUE = 1.30   # [COTIZADO] papel manteca brandeado + bolsa, punto medio S/1.10-1.50
+```
+
+1. **Decía COTIZADO y no lo estaba.** El S/1.10 salía de `MENU_FINANCIAL_ANALYSIS.md` §1,
+   que lo lista como estimado heredado de su v2.
+2. **Incluía una caja que el empaque real no lleva.** Ese estimado sumaba *caja de fibra de
+   caña (S/0.48-0.605) + bolsa + servilleta + sticker*. El empaque que decidió el dueño es
+   papel manteca + bolsa. La caja era casi la mitad del número.
+3. **Estaba medido POR PEDIDO y se sumaba POR SÁNDWICH.** El documento original dice
+   literalmente «Empaque/pedido». El papel sí es uno por sándwich; la bolsa es una por pedido.
+
+Efecto: **S/0.78 de sobrecosto por sándwich**, aun en el peor caso. A 600 sándwiches/mes son
+S/465 — la segunda palanca del negocio, escondida en un comentario.
+
+### Lo que hay que aprender no es "revisar mejor"
+
+La pregunta útil es por qué doce chequeos no lo vieron, y la respuesta no es descuido:
+**todos comparan dos copias del mismo número.** `parity` compara cliente contra servidor.
+`check:precios` compara lo mostrado contra lo cobrado. `test:api` compara el cálculo contra
+lo esperado. Los tres son excelentes para lo que hacen y ninguno podía servir acá, porque
+**un número que está solo, y mal, coincide consigo mismo**.
+
+Faltaba una clase entera de verificación: no *¿coinciden las copias?* sino
+**¿este número puede justificarse?**
+
+### Lo que se construyó
+
+`modelo/insumos.py` — un costo deja de ser un `float` y pasa a ser una ficha de cinco campos
+obligatorios. Los dos que faltaban son justo los que causaron el error:
+
+- **unidad** — `por_sandwich()` es el único camino de una ficha a un costo, y **lanza una
+  excepción** si le pasas un costo *por pedido* sin decirle cuántos sándwiches trae. El error
+  del empaque, escrito hoy, revienta en vez de costar S/0.78 en silencio.
+- **estado** — COTIZADO / ESTIMADO / SIN_COTIZAR como campo, no como comentario. Un
+  comentario que dice COTIZADO no obliga a nada; un campo que un chequeo lee, sí.
+
+`scripts/check_costos.py` (`npm run check:costos`, dentro de `verify`) comprueba cinco cosas,
+y **cada una se verificó inyectándole el defecto que caza** — `--probar` rompe el modelo siete
+veces a propósito y falla si alguna pasa.
+
+### Lo que el chequeo encontró al primer intento
+
+Obligar a que **el costo de cada porción se derive** de `precio/kg × gramaje ÷ rendimiento`
+destapó que **cuatro de las siete proteínas no se pueden reproducir**:
+
+| | en uso | derivado del rendimiento documentado | |
+|---|---|---|---|
+| P02 pollo teriyaki | S/2.47 | S/2.17 | sobrecostea S/0.30, sin explicación escrita |
+| P03 pollo cajún | S/2.49 | S/2.17 | ídem |
+| P05 embutido | S/4.29 | — | **nunca se documentó un rendimiento**; es fiambre, debería ser 1.00 → S/4.08 |
+| P06 albóndiga | S/1.34 | — | **ni rendimiento ni cotización**, y es la proteína del producto más rentable del menú |
+
+Las cuatro quedan anotadas en `SIN_RECONCILIAR` con su motivo. El chequeo falla si **aparece
+una quinta**, y también si una de estas se arregla y alguien olvida sacarla de la lista —
+una deuda saldada que queda anotada hace que nadie vuelva a leer la lista.
+
+⚠ **Un detalle de método que casi arruina la auditoría.** El primer intento despejó los
+rendimientos *desde* los costos que ya estaban escritos. Reconciliaron los siete, claro:
+comparar un número contra sí mismo siempre da bien. Los rendimientos tienen que salir de
+`docs/NEGOCIO.md` y de `recetas/`, nunca del número que se quiere auditar.

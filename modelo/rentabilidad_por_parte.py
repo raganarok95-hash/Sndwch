@@ -36,11 +36,20 @@ TECHO = 0.45   # [DECISIÓN del dueño] insumos+empaque como % del precio
 # Ahora va por partes, cada una con su estado. Mientras falten dos cotizaciones el TOTAL se
 # mantiene en S/1.30 a propósito: equivocarse hacia arriba en un costo es seguro, hacia abajo
 # no. Pero el número de abajo ya no esconde de qué está hecho.
-PAPEL_MANTECA = 0.075    # [COTIZADO dueño 2026-09-23] S/150 los 2 millares (S/85 el millar)
-BOLSA_KRAFT   = 0.35     # [COTIZADO Bio Pack, Lima] — el dueño la está recotizando en Trujillo
-STICKER       = 0.10     # [SIN COTIZAR] el dueño lo está cotizando; rango normal S/0.04-0.15
-EMPAQUE_REAL  = PAPEL_MANTECA + BOLSA_KRAFT + STICKER     # ~S/0.53 por PEDIDO
-EMPAQUE = 1.30           # [CONSERVADOR] se mantiene hasta que cierren sticker y bolsa
+# Los valores ya no viven acá: viven en modelo/insumos.py, cada uno con su unidad, su
+# estado y su origen, y `npm run check:costos` falla si a alguno le falta algo. Lo que
+# antes era un float con un comentario ahora es una ficha que un chequeo puede leer.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import insumos as _I
+PAPEL_MANTECA = _I.PAPEL_MANTECA.valor      # por SÁNDWICH
+BOLSA_KRAFT   = _I.BOLSA_KRAFT.valor        # por PEDIDO
+STICKER       = _I.STICKER.valor            # por PEDIDO
+# La suma de abajo es por PEDIDO, no por sándwich. Para pasarla a sándwich hay que ir por
+# _I.por_sandwich(ficha, sand_por_pedido=...), que se NIEGA a hacerlo sin ese dato — que es
+# exactamente el error que tuvo el empaque dos meses.
+EMPAQUE_REAL  = PAPEL_MANTECA + BOLSA_KRAFT + STICKER
+EMPAQUE = _I.EMPAQUE_CONSERVADOR.valor      # [CONSERVADOR] hasta que cierren sticker y bolsa
 SALSA   = (0.266, 0.532) # por porción, 15CM / 30CM
 QUESO   = (0.385, 0.770) # [ESTIMADO] proxy S/35/kg; hay un dato de S/22.50/kg para mozzarella
 TOPS_KG = 4.00           # [ESTIMADO] promedio ponderado de los toppings de frasco y frescos
