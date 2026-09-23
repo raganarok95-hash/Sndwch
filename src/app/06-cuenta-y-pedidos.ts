@@ -101,8 +101,8 @@ async function loadMyOrders(){
 }
 
 function sPOrders(){
-  var act=myOrders.filter(function(o){return o.status!=='ENTREGADO';});
-  var done=myOrders.filter(function(o){return o.status==='ENTREGADO';});
+  var act=myOrders.filter(function(o){return !pedidoTerminado(o.status);});
+  var done=myOrders.filter(function(o){return pedidoTerminado(o.status);});
   function card(o){
     var ci=STEPS.indexOf(o.status);
     return'<div onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
@@ -181,7 +181,9 @@ function sOrdDetail(){
     // una promesa que la app no cumplía por sí sola). Este botón cumple esa promesa
     // directamente mientras el pedido sigue en RECIBIDO.
     +(o.status==='RECIBIDO'?BTN('Cancelar pedido //','doCancelMyOrder(\''+o.id+'\',\''+o.ref+'\')',true):'')
-    +(o.status!=='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px" class="blink">&#8635; Toca Actualizar en Mis Pedidos</div>':'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>')
+    +(!pedidoTerminado(o.status)?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px" class="blink">&#8635; Toca Actualizar en Mis Pedidos</div>'
+      :o.status==='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>'
+      :'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px">Este pedido se canceló.</div>')
     +ratingHTML(o)
     +'</div>'+NAV();
 }
@@ -813,6 +815,11 @@ async function doClaimDiscoveryChallenge(){
 // homólogo admin) resolvía de nuevo (hallazgo de auditoría de código).
 function doLogout(){
   cust=null;isAdmin=false;savedPh='';token='';aErr='';clearGoogleLink();
+  // El login por correo también es estado de sesión. Sin esta línea, quien cerraba sesión
+  // dejaba el formulario en «teléfono y PIN» para la persona siguiente, y —peor— dejaba en
+  // memoria `authProof`, la prueba de que SU correo ya se verificó: el registro la manda, y
+  // la próxima cuenta creada en este mismo equipo se quedaba con un correo ajeno.
+  limpiarLoginPorCorreo();
   pendingGroupCode=null;
   localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');cacheCust(null);
   myOrders=[];myAddresses=[];myFavorites=[];pickedAddrId=null;editingAddrId=null;

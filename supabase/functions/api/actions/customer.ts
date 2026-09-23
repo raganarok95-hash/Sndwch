@@ -5,10 +5,10 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA } from "../env.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, limaFields, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA } from "../env.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
-import { verifyCulqiCharge, pointsFor } from "./orders.ts";
+import { verifyCulqiCharge, pointsFor, RESERVA_CONFIRMABLE } from "./orders.ts";
 
 // Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
 // retención corren en producción desde antes de abrir, sin verificar que el negocio ya
@@ -352,6 +352,20 @@ export function monthlyRecap(orders: any[]): { count: number; points: number; fa
   return { count: orders.length, points: Math.max(0, points), favorite };
 }
 
+// Último día del mes en que corre el cron del resumen (20260830001847_cron_remind_monthly_recap:
+// '20 15 1-5 * *'). tests-api/resumen-mensual.test.ts lee ese horario de la migración y
+// falla si este número y el del cron se separan.
+export const MONTHLY_RECAP_LAST_DAY = 5;
+
+// El resumen CEDE ante otro aviso del mismo día, salvo en su última corrida. Hasta hoy no
+// consultaba el tope de uno por día: el 1 del mes podía llegar junto a "te faltan 30
+// puntos" o al reto sin reclamar. Como corre cinco días seguidos, esperar a mañana no le
+// cuesta nada — pero el último día sale igual, porque perderse el resumen del mes entero
+// por un aviso de otra campaña sería peor que dos avisos en un día.
+export function resumenCedeHoy(diaLima: number, yaTocadoHoy: boolean): boolean {
+  return yaTocadoHoy && diaLima < MONTHLY_RECAP_LAST_DAY;
+}
+
 // Cron del resumen. Corre los primeros días de cada mes (ver la migración del cron): no una
 // sola vez, porque MAX_PUSH_PER_RUN corta en 200 por corrida y una corrida única dejaría al
 // cliente 201 sin su resumen hasta el mes siguiente, cuando la ventana ya se movió. La marca
@@ -389,6 +403,9 @@ export async function actRemindMonthlyRecap(b: any) {
   );
 
   let avisados = 0;
+  let cedidos = 0;
+  const tocadosHoy = await phonesTouchedToday();
+  const diaLima = limaFields(new Date()).day;
   for (const c of pendientes) {
     if (avisados >= MAX_PUSH_PER_RUN) {
       await capReached("resumen-mensual", avisados, pendientes.length - avisados);
@@ -397,6 +414,10 @@ export async function actRemindMonthlyRecap(b: any) {
     const phone = String(c.phone || "");
     const recap = monthlyRecap(porCliente.get(phone) || []);
     if (!recap) continue;
+    if (resumenCedeHoy(diaLima, tocadosHoy.has(phone))) {
+      cedidos++;
+      continue;
+    }
     try {
       await sendPushToPhone(phone, {
         title: `Tu mes en SND//WCH 🥪`,
@@ -416,7 +437,7 @@ export async function actRemindMonthlyRecap(b: any) {
       console.error("remind-monthly-recap failed for", phone, e);
     }
   }
-  return { success: true, avisados, mes: ym };
+  return { success: true, avisados, cedidos, mes: ym };
 }
 
 const MAX_ADDRESSES = 6;
@@ -1479,14 +1500,14 @@ export async function actConfirmWeeklyPlan(b: any) {
   const pp = rows[0];
   if (!pp) throw new ApiError("No encontramos tu Plan Semanal. Vuelve a intentarlo.", 410);
   if (pp.buyer_phone !== s.phone) throw new ApiError("No autorizado.", 403);
-  if (pp.status !== "pending") throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-  if (new Date(pp.expires_at).getTime() < Date.now()) {
-    throw new ApiError("Tu Plan Semanal expiró. Vuelve a intentarlo.", 410);
-  }
-
+  // Mismo orden que actConfirmCulqiOrder: el cargo se verifica ANTES de mirar estado y
+  // vencimiento, para no decirle "vuelve a intentarlo" a alguien a quien ya se le cobró.
+  // 'charging'/'charged' se aceptan por la misma razón (ver RESERVA_CONFIRMABLE en orders.ts
+  // y la migración plan_semanal_acepta_reserva_cobrada, que hace lo mismo en la RPC).
   const amountCents = Math.round(Number(pp.amount_paid) * 100);
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
+  if (!RESERVA_CONFIRMABLE.includes(pp.status)) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
 
   // claim + otorgar crédito + registrar en el ledger van en una sola transacción SQL
   // (confirm_weekly_plan_credit) — si cualquier paso falla, todo se revierte y la fila

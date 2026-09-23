@@ -106,6 +106,10 @@ export async function verifyCulqiCharge(
 // válida para cobrarse — pasado esto, el cron actExpirePendingCharges libera el
 // inventario y el cliente debe volver a intentar.
 const PENDING_CHARGE_TTL_MINUTES = 10;
+// Cuánto se espera a que el propio cliente confirme un pago ya cobrado antes de que el cron
+// cree el pedido por él. La confirmación normal llega en segundos; cinco minutos dejan
+// margen a una red lenta sin que dos caminos compitan por el mismo pedido.
+const ORPHAN_CHARGE_GRACE_MINUTES = 5;
 
 // Límite de pedidos con pago manual (Yape/Plin) sin confirmar por teléfono de contacto —
 // ver el comentario junto a check_rate_limit en actPlaceOrder.
@@ -1062,29 +1066,94 @@ export async function actPrepareOrder(b: any) {
   }
 }
 
+// Estados de una reserva desde los que todavía se puede crear el pedido, UNA VEZ que Culqi
+// certificó el cargo. 'charged' es el camino normal (create-charge lo anota tras cobrar);
+// 'charging' entra porque si ese PATCH falló el cobro igual es real; 'pending' por una
+// reserva cobrada con el código anterior, que la devolvía a ese estado.
+//
+// Antes solo se aceptaba 'pending', el mismo defecto que tuvo el pedido grupal: un guard
+// escrito para UN estado deja afuera a otro camino legítimo que produce un estado distinto.
+export const RESERVA_CONFIRMABLE = ["pending", "charging", "charged"];
+
+// Qué hacer con una reserva cuando Culqi YA certificó el cobro. Puro, para poder probarlo:
+// su modo de fallo es decirle "vuelve a intentar" a alguien a quien ya se le cobró, que es
+// invitarlo a pagar dos veces, y eso no lanza ningún error.
+export function destinoDeReservaCobrada(status: string): "crear" | "ya-existe" | "cobro-sin-pedido" {
+  if (status === "consumed") return "ya-existe";
+  if (RESERVA_CONFIRMABLE.includes(status)) return "crear";
+  return "cobro-sin-pedido"; // expired / cancelled: el inventario ya se liberó
+}
+
+// Aviso al dueño de un cobro real sin pedido. Usa la MISMA llave de "una sola vez" que
+// actReconcileCulqiCharges, así el barrido horario no repite un aviso que ya salió en el
+// momento. Nunca lanza: se llama desde caminos que ya están respondiendo un error.
+async function avisarCobroSinPedido(chargeId: string, ref: string, montoSoles: number, motivo: string) {
+  try {
+    const primeraVez = await rpc("check_rate_limit", { p_key: `orphan-charge:${chargeId}`, p_limit: 1, p_window_minutes: 60 * 24 * 7 });
+    if (!primeraVez) return;
+    await sendPushToAdmins({
+      title: "⚠️ Cobro sin pedido — revisar",
+      body: `Se cobró S/${montoSoles.toFixed(2)} (ref ${ref}) y el pedido no se creó: ${motivo}. Verifica en Culqi y contacta al cliente.`,
+      url: "./index.html",
+      tag: "sndwch-orphan-charge-" + chargeId,
+    });
+  } catch (e) {
+    await debugLog({ stage: "avisar-cobro-sin-pedido", ref, chargeId, error: String(e) });
+  }
+}
+
 // Confirma un cobro de Culqi ya realizado contra la reserva creada por actPrepareOrder —
 // ya no repite horario/inventario/total (eso ya pasó ANTES de cobrar), solo verifica el
 // cargo real contra lo reservado y crea el pedido.
-async function actConfirmCulqiOrder(chargeId: string, ref: string) {
+//
+// `recuperado`: lo llama el cron cuando el cliente pagó y nunca volvió a confirmar (cerró
+// la pestaña, perdió la señal). El pedido se crea igual — es lo que pagó.
+async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recuperado?: boolean } = {}) {
   if (!chargeId || !ref) throw new ApiError("Faltan datos del pedido.");
   const rows = await sbGet("pending_charges", `ref=eq.${encodeURIComponent(ref)}&select=*`);
   const pc = rows[0];
   if (!pc) throw new ApiError("No encontramos tu reserva. Vuelve a intentar tu pedido.", 410);
-  if (pc.status !== "pending") throw new ApiError("Este pedido ya fue procesado.", 409);
-  if (new Date(pc.expires_at).getTime() < Date.now()) {
-    throw new ApiError("Tu reserva expiró. Vuelve a intentar tu pedido — el inventario ya se liberó.", 410);
-  }
 
   const total = Number(pc.expected_total);
   const amountCents = Math.round(total * 100);
+  // El cargo se verifica ANTES de mirar el estado o el vencimiento. Antes era al revés: una
+  // reserva vencida respondía "Tu reserva expiró. Vuelve a intentar tu pedido" a alguien a
+  // quien Culqi ya le había cobrado, y una atascada en 'charging', "ya fue procesado".
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "order_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
-  // Reclamo atómico pending -> consumed: si el cliente reintenta (ej. su navegador
-  // reintentó tras un timeout de red), la segunda llamada encuentra 0 filas y responde
-  // 409 en vez de crear un segundo pedido para el mismo cargo.
-  const claim = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.pending`, { status: "consumed" });
-  if (!claim.length) throw new ApiError("Este pedido ya fue procesado.", 409);
+  // Ya NO se rechaza por vencimiento: con el cargo certificado y la reserva todavía
+  // confirmable, el inventario sigue apartado (el cron de expiración reclama la fila ANTES
+  // de reponer, así que si ganó él, el reclamo de abajo no encuentra nada).
+  let destino = destinoDeReservaCobrada(pc.status);
+  let claim: any[] = [];
+  if (destino === "crear") {
+    // Reclamo atómico -> consumed: si el cliente reintenta (ej. su navegador reintentó tras
+    // un timeout de red), la segunda llamada encuentra 0 filas y no crea un segundo pedido.
+    claim = await sbUpdate(
+      "pending_charges",
+      `id=eq.${pc.id}&status=in.(${RESERVA_CONFIRMABLE.join(",")})`,
+      { status: "consumed", charge_id: chargeId },
+    );
+    if (!claim.length) {
+      const again = await sbGet("pending_charges", `id=eq.${pc.id}&select=status`);
+      destino = destinoDeReservaCobrada(again[0]?.status || "expired");
+      if (destino === "crear") destino = "ya-existe"; // otro reclamo ganó en el medio
+    }
+  }
+  if (destino === "ya-existe") {
+    // Un reintento del MISMO pago: se devuelve el pedido que ya existe, en vez de un error
+    // que el cliente leería como "no se registró" después de haber pagado.
+    const existing = await sbGet("orders", `payment_id=eq.${encodeURIComponent(chargeId)}&select=*`);
+    if (existing[0]) return { success: true, order: existing[0], customer: null };
+    throw new ApiError("Este pedido ya fue procesado.", 409);
+  }
+  if (destino === "cobro-sin-pedido") {
+    await avisarCobroSinPedido(chargeId, ref, total, pc.status === "expired" ? "la reserva ya había vencido" : "un error previo la canceló");
+    // Sin "vuelve a intentar": el cliente ya pagó. El cliente le agrega su referencia y el
+    // "no vuelvas a pagar" (ver chargeAndFinalize en 05-carrito-y-checkout).
+    throw new ApiError("No pudimos registrar el pedido después del pago.", 409);
+  }
 
   const codes: string[] = pc.reserved_codes || [];
   const qtys: number[] = pc.reserved_qtys || [];
@@ -1128,8 +1197,9 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
         // #30 — La restricción va en el TÍTULO, no escondida en el cuerpo: el push se lee
         // de reojo mientras se cocina, y ahí solo se ve la primera línea. Un aviso que hay
         // que abrir para enterarse no sirve para algo que puede enfermar a alguien.
-        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + pc.ref + " 🥪",
+        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : opts.recuperado ? "Pedido recuperado " : "Nuevo pedido ") + pc.ref + " 🥪",
         body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2)
+          + (opts.recuperado ? "\nPagó y no volvió a la app: el pedido se creó solo." : "")
           + (noteNeedsAttention(pc.notes) ? "\nNOTA: " + String(pc.notes || "").slice(0, 180) : ""),
         url: "./index.html",
         tag: "sndwch-new-order-" + pc.ref,
@@ -1154,6 +1224,8 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
     } catch {
       // no debe tumbar la respuesta real
     }
+    // El cobro ya se hizo y el pedido no: el dueño se entera AHORA, no en el barrido horario.
+    if (!orderInserted) await avisarCobroSinPedido(chargeId, ref, total, "falló al crearse");
     throw e;
   }
 }
@@ -2892,6 +2964,11 @@ export async function actExpirePendingCharges(b: any) {
   let expired = 0;
   for (const pc of stale) {
     try {
+      // Reclamar PRIMERO, reponer DESPUÉS. Antes era al revés: si la confirmación reclamaba la
+      // fila entre la reposición y este UPDATE, el pedido se creaba con un inventario que ya
+      // se había devuelto al stock — contado dos veces. Ahora solo repone quien ganó.
+      const claimed = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
+      if (!claimed.length) continue;
       const codes: string[] = pc.reserved_codes || [];
       const qtys: number[] = pc.reserved_qtys || [];
       if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
@@ -2901,14 +2978,33 @@ export async function actExpirePendingCharges(b: any) {
       // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO). Misma
       // identidad usada al reclamar: cuenta si había sesión, si no contactPhone.
       if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.customer_phone || pc.contact_phone, p_order_ref: pc.ref });
-      await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
       expired++;
     } catch (e) {
       console.error("expire-pending-charges failed for", pc.id, e);
       await debugLog({ stage: "expire-pending-charges", pendingChargeId: pc.id, error: String(e) });
     }
   }
-  return { success: true, expired };
+
+  // Reservas COBRADAS cuyo pedido nunca se confirmó: el cliente pagó y cerró la pestaña, o
+  // perdió la señal justo después del cobro. 'charged' no entra en el barrido de arriba —
+  // una reserva pagada no vence— así que sin esto quedaría apartando inventario para siempre
+  // y el cliente sin su pedido. Se crea el pedido, que es exactamente lo que pagó. Si
+  // falla, actConfirmCulqiOrder la marca 'cancelled' y avisa al dueño.
+  const graceIso = new Date(Date.now() - ORPHAN_CHARGE_GRACE_MINUTES * 60000).toISOString();
+  const cobradas = await sbGet(
+    "pending_charges",
+    `status=eq.charged&charge_id=not.is.null&charged_at=lt.${encodeURIComponent(graceIso)}&select=ref,charge_id&limit=50`,
+  );
+  let recuperados = 0;
+  for (const pc of cobradas) {
+    try {
+      await actConfirmCulqiOrder(pc.charge_id, pc.ref, { recuperado: true });
+      recuperados++;
+    } catch (e) {
+      await debugLog({ stage: "recuperar-cobro-sin-confirmar", ref: pc.ref, error: String(e) });
+    }
+  }
+  return { success: true, expired, recuperados };
 }
 
 // Recuerda a cocina un pedido "para más tarde" (ver scheduledFor/actPrepareOrder) antes

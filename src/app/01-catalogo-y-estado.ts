@@ -126,6 +126,12 @@ var STATUSES={
   'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close', label:'Cancelado'}
 };
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
+// Un pedido está TERMINADO cuando su estado no tiene siguiente paso. Se deriva de STATUSES,
+// no de una lista aparte: «Mis Pedidos» preguntaba `!=='ENTREGADO'` para decidir qué seguía
+// activo, así que un pedido CANCELADO quedaba para siempre bajo «● Activos» con un «Toca
+// Actualizar» parpadeando, como si todavía pudiera llegar. Un estado desconocido cuenta como
+// activo: mejor que el cliente lo vea arriba a que desaparezca entre los viejos.
+function pedidoTerminado(st){return !!STATUSES[st]&&!STATUSES[st].next;}
 
 // B02 (HERBS//CHEESE, "Masa con orégano y parmesano") retirado por decisión del dueño —
 // solo lo usaba SIG02 (hoy "The Marinara", antes "The Meatball", movido a B01) y
@@ -1475,6 +1481,10 @@ var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
 // único que autoriza crear una cuenta con ese correo. `authPinFallback` deja volver al
 // login viejo (teléfono + PIN), que siguen usando las cuentas creadas antes y el panel.
 var authPaso='correo',authEmail='',authProof='',authMasked='',authPinFallback=false;
+// Vuelve el login por correo a su estado inicial. Se llama al terminar de entrar, al terminar
+// de registrarse y al cerrar sesión — un solo lugar, porque la prueba de correo que queda
+// viva después de usarse la manda el PRÓXIMO registro hecho en este equipo.
+function limpiarLoginPorCorreo(){authPaso='correo';authEmail='';authProof='';authMasked='';authPinFallback=false;}
 // Credential (JWT) de Google Identity Services en espera de que el cliente complete el
 // registro normal (nombre/teléfono/PIN/DNI) — ver onGoogleCredential()/doReg(). Nunca se
 // usa por sí solo para crear una cuenta: el servidor lo vuelve a verificar en actRegister.

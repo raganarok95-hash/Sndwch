@@ -371,7 +371,7 @@ export function noteNeedsAttention(notes: string | null | undefined): boolean {
 // centraliza la conversión a America/Lima para que cualquier decisión de negocio basada
 // en fecha/hora (horario de atención, mes del reto de recurrencia, etc.) la use en vez
 // de reinventar la conversión — y así no se repita el mismo bug en otro lugar.
-function limaFields(d: Date): { year: number; month: number; day: number; weekday: number; hour: number; minute: number } {
+export function limaFields(d: Date): { year: number; month: number; day: number; weekday: number; hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Lima",
     year: "numeric",

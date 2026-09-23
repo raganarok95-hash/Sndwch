@@ -120,7 +120,9 @@ export async function actRegister(b: any) {
   if (googleId) {
     if (!name) name = googleName || "";
     if (!email && googleEmail) email = googleEmail;
-    if (!pin) pin = String(Math.floor(Math.random() * 900000) + 100000);
+    // Mismo generador que el código de 6 dígitos, no Math.random: este PIN nunca se muestra,
+    // pero sigue abriendo la cuenta por "teléfono y PIN", así que tiene que ser inadivinable.
+    if (!pin) pin = codigoDeSeisDigitos();
   }
 
   // ── Registro tras entrar con correo y código (2026-09-23) ─────────────────────────
@@ -138,7 +140,9 @@ export async function actRegister(b: any) {
     const verificado = await verifyEmailProof(String(b.emailProof));
     if (!verificado) throw new ApiError("El código venció. Pide uno nuevo y vuelve a intentar.", 401);
     email = verificado;
-    if (!pin) pin = String(Math.floor(Math.random() * 900000) + 100000);
+    // Mismo generador que el código de 6 dígitos, no Math.random: este PIN nunca se muestra,
+    // pero sigue abriendo la cuenta por "teléfono y PIN", así que tiene que ser inadivinable.
+    if (!pin) pin = codigoDeSeisDigitos();
   }
   // El correo se guarda SIEMPRE normalizado (minúsculas, sin espacios), que es como está
   // construido el índice único customers_email_unico. Guardarlo tal cual lo escribió el

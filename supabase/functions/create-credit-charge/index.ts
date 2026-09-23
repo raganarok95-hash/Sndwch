@@ -96,9 +96,9 @@ Deno.serve(async (req: Request) => {
     return json({ error: result.error, ...(result.culqi ? { culqi: result.culqi } : {}) }, result.status);
   }
 
-  // Cobro real ya realizado — la reserva quedó liberada de vuelta a 'pending' (no antes)
-  // para que actConfirmWeeklyPlan (función api) pueda hacer su propio reclamo atómico
-  // pending -> consumed al acreditar el saldo, exactamente igual que create-charge.
+  // Cobro real ya realizado — la reserva quedó en 'charged' con el id del cargo (ver
+  // _shared/culqi-claim.ts). actConfirmWeeklyPlan (función api) hace su reclamo atómico
+  // -> consumed al acreditar el saldo; un reintento de esta función devuelve el mismo cargo sin cobrar otra vez.
   return json({
     success: true,
     chargeId: result.chargeId,

@@ -16,10 +16,16 @@ import { gotoApp } from './helpers';
 
 const CUST = { phone: '999888777', name: 'Juan', points: 2000, credit_balance: 0, total_orders: 30 };
 
+// La tarjeta de regalo está RETIRADA para la apertura (TARJETA_REGALO_ACTIVA=false; el router
+// manda al home y la cuenta no la ofrece — eso lo fija gift-card.spec.ts). Estas pruebas la
+// prenden SOLO dentro de la página de prueba: la pantalla sigue en el código para volver el
+// día que se reactive, y lo que protegen —montos que alcanzan, límites que salen de las
+// constantes— tiene que seguir siendo cierto ese día, no descubrirse roto al prenderla.
 async function pantalla(page: any, cust: any = CUST) {
   await gotoApp(page, {});
   await page.evaluate((c: any) => {
     const w = window as any;
+    w.TARJETA_REGALO_ACTIVA = true;
     w.cust = c; w.token = 't'; w.gcAmt = ''; w.gcPhone = ''; w.gcMsg = '';
     w.sndScreen = 'gift_card'; w.render();
   }, cust);

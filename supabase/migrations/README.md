@@ -1,6 +1,6 @@
 # Migraciones
 
-Las **109 migraciones** aplicadas al proyecto Supabase `rjosezuoyngiadunfzyn` están acá,
+**Todas** las migraciones aplicadas al proyecto Supabase `rjosezuoyngiadunfzyn` están acá,
 una por archivo, con el nombre `<version>_<nombre>.sql` — el mismo formato que usa la CLI
 de Supabase. Hasta el 2026-08-19 vivían **solo** dentro de Supabase
 (`supabase_migrations.schema_migrations`) y no había ninguna copia en git: no se podía
@@ -8,7 +8,7 @@ revisar el SQL en un PR, ni reproducir el schema en un proyecto nuevo, ni biseca
 algo se rompía.
 
 El contenido se extrajo de la propia tabla y se verificó **archivo por archivo con md5
-contra la base**: las 109 son idénticas al SQL realmente aplicado, salvo las redacciones
+contra la base**: las 109 que había ese día son idénticas al SQL realmente aplicado, salvo las redacciones
 de abajo. No es una reconstrucción de memoria.
 
 ## Secretos redactados
@@ -57,7 +57,15 @@ con secreto redactado van a diferir a propósito.
 
 ## Índice
 
-`INDEX.txt` lista las 161 con versión y nombre en orden. Regenerarlo con:
+`INDEX.txt` las lista todas con versión y nombre, en orden. **No lleva el conteo escrito en
+ningún lado a propósito**: este README decía "las 161" y el índice se había quedado en 161
+mientras la base seguía sumando migraciones, sin que nada avisara. Regenerarlo desde los archivos:
+
+```sh
+ls supabase/migrations/*.sql | sed -E 's|.*/([0-9]+)_(.*)\.sql|\1  \2|' | sort > supabase/migrations/INDEX.txt
+```
+
+o desde la base (que es contra lo que hay que comparar antes de cerrar una sesión):
 
 ```sql
 select string_agg(version || '  ' || coalesce(name,'(sin nombre)'), E'\n' order by version)
