@@ -85,6 +85,11 @@ anótalo acá.
   con `subway.com`, `subway.com/en-US`, y hasta `web.archive.org` — 403 o "unable to
   fetch"). `WebSearch` sí funciona y debe usarse para cualquier investigación externa,
   citando fuentes.
+- **Todo Culqi y Yape bloqueado por `WebFetch` (2026-09-23)**: `culqi.com`,
+  `ayuda.culqi.com`, `docs.culqi.com` y `www.yape.com.pe` devuelven `EGRESS_BLOCKED`. Para
+  comisiones y condiciones, `WebSearch` con `allowed_domains` en esos dominios devuelve
+  fragmentos de sus propias páginas — sirve, pero no reemplaza al CulqiPanel del dueño para
+  la cifra definitiva de su cuenta. Ver `docs/COBRO_YAPE.md`.
 - **`docs.culqi.com`/`apidocs.culqi.com` bloqueados también por `curl`** (igual que por
   `WebFetch`) — timeout total, sin respuesta HTTP. **`github.com` y `api.github.com`
   también están bloqueados por `curl`/`WebFetch` para repos fuera del scope de esta
