@@ -1,7 +1,7 @@
 // SND//WCH — api / session
 // Firma/verificación de tokens de sesión (HMAC), helpers de sesión activa/admin, y el
 // bloqueo por intentos fallidos de login (tabla login_attempts).
-import { SESSION_SECRET, MAX_LOGIN_ATTEMPTS, LOCKOUT_MINUTES } from "./env.ts";
+import { SESSION_SECRET, MAX_LOGIN_ATTEMPTS, LOCKOUT_MINUTES, EMAIL_PROOF_TTL_SECONDS } from "./env.ts";
 import { sbGet, rpc } from "./db.ts";
 import { ApiError, SessionPayload } from "./types.ts";
 
@@ -55,6 +55,11 @@ export async function verifyToken(token: string | undefined | null): Promise<Ses
   try {
     const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(p))) as SessionPayload;
     if (!payload.exp || payload.exp < Date.now() / 1000) return null;
+    // Una PRUEBA DE CORREO va firmada con este mismo HMAC (ver signEmailProof) y lleva
+    // `k:"email"`. Sin este corte, una prueba de correo se podría presentar como token de
+    // sesión: el payload parsea igual y `phone` simplemente vendría undefined, que es peor
+    // que un rechazo porque no falla — se cuela. Un token de sesión NUNCA lleva `k`.
+    if ((payload as unknown as { k?: string }).k) return null;
     return payload;
   } catch {
     return null;
@@ -139,5 +144,36 @@ export async function verifyCronSecret(provided: unknown): Promise<boolean> {
     // re-auditoría de código). Sigue fallando cerrado (false) en cualquier caso.
     console.error("verifyCronSecret failed:", e);
     return false;
+  }
+}
+
+// ── Prueba de correo verificado ───────────────────────────────────────────────────────
+// Cuando alguien acierta su código de 6 dígitos pero todavía NO tiene cuenta, hace falta
+// llevar "este correo está verificado" hasta actRegister sin confiar en lo que el cliente
+// mande en el cuerpo. Se firma con el mismo HMAC que la sesión y con un `k` distinto, así
+// que ninguno de los dos se puede presentar como el otro (ver el corte en verifyToken).
+type EmailProof = { k: "email"; email: string; exp: number };
+
+export async function signEmailProof(email: string): Promise<string> {
+  const payload: EmailProof = {
+    k: "email",
+    email: email.trim().toLowerCase(),
+    exp: Date.now() / 1000 + EMAIL_PROOF_TTL_SECONDS,
+  };
+  const p = b64url(enc.encode(JSON.stringify(payload)));
+  return `${p}.${await hmac(p)}`;
+}
+
+export async function verifyEmailProof(token: string | undefined | null): Promise<string | null> {
+  if (!token || token.indexOf(".") < 0) return null;
+  const [p, s] = token.split(".");
+  if (!timingSafeEqual(await hmac(p), s)) return null;
+  try {
+    const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(p))) as EmailProof;
+    if (payload.k !== "email" || !payload.email) return null;
+    if (!payload.exp || payload.exp < Date.now() / 1000) return null;
+    return payload.email;
+  } catch {
+    return null;
   }
 }

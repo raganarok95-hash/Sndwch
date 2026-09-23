@@ -1469,6 +1469,12 @@ var manualPayMethod='yape';
 // coincide" (bug real de la sesión anterior, hallazgo de auditoría de código).
 var payMethodChosen=false;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
+// Entrar con correo y código de 6 dígitos (2026-09-23). `authPaso` es en qué mitad del
+// flujo está: 'correo' pide la dirección, 'codigo' pide los 6 dígitos. `authProof` es la
+// prueba FIRMADA por el servidor de que ese correo se verificó — viaja al registro y es lo
+// único que autoriza crear una cuenta con ese correo. `authPinFallback` deja volver al
+// login viejo (teléfono + PIN), que siguen usando las cuentas creadas antes y el panel.
+var authPaso='correo',authEmail='',authProof='',authMasked='',authPinFallback=false;
 // Credential (JWT) de Google Identity Services en espera de que el cliente complete el
 // registro normal (nombre/teléfono/PIN/DNI) — ver onGoogleCredential()/doReg(). Nunca se
 // usa por sí solo para crear una cuenta: el servidor lo vuelve a verificar en actRegister.

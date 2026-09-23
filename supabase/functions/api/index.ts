@@ -16,7 +16,7 @@ import { actPing } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
   actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
-  actGoogleAuth,
+  actGoogleAuth, actRequestLoginCode, actVerifyLoginCode,
 } from "./actions/auth.ts";
 import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actAdminUpdateStatus,
@@ -86,6 +86,10 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   register: actRegister,
   login: actLogin,
   "google-auth": actGoogleAuth,
+  // Entrar con correo y código de 6 dígitos. `login` (teléfono + PIN) NO se retira: lo
+  // siguen usando las cuentas creadas antes de esto y el panel admin.
+  "request-login-code": actRequestLoginCode,
+  "verify-login-code": actVerifyLoginCode,
   "session-check": actSessionCheck,
   recover: actRecover,
   "logout-everywhere": actLogoutEverywhere,

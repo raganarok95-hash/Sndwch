@@ -25,6 +25,16 @@ export const SESSION_SECRET = Deno.env.get("SESSION_SECRET");
 export const TOKEN_TTL_SECONDS = 30 * 24 * 3600;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
+// Entrar con correo y código de 6 dígitos (2026-09-23). Los cuatro números salen de lo que
+// la pantalla promete y de lo que un código de 6 dígitos aguanta:
+//   · 10 min de vida — largo para buscar el correo, corto para que un código viejo no sirva.
+//   · 5 intentos — 5 de 10^6 es ruido; el sexto mata el código y hay que pedir otro.
+//   · 60 s entre envíos — sin esto el botón es un generador gratuito de correos a cualquiera.
+//   · 15 min de prueba de correo — lo que dura la pantalla de "completa tu cuenta".
+export const LOGIN_CODE_TTL_MINUTES = 10;
+export const LOGIN_CODE_MAX_ATTEMPTS = 5;
+export const LOGIN_CODE_COOLDOWN_SECONDS = 60;
+export const EMAIL_PROOF_TTL_SECONDS = 15 * 60;
 // Lo que recibe EL INVITADO al pagar su primer pedido: exactamente lo que cuesta una
 // BEBIDA GRATIS (R05 en catalog.ts), que es la decisión real del dueño del 2026-08-20 —
 // 120 puntos entonces, porque entonces R05 costaba 120. El número es la implementación;
