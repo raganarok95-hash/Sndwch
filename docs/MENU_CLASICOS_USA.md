@@ -183,3 +183,88 @@ Dos condiciones antes de ejecutarlo:
 
 Y una advertencia que ya se cumplió una vez en este repo: **cambiar el precio en el código no
 cambia el precio real.** Todo esto termina en `catalog_items` y `catalog_prices`, o no existe.
+
+
+---
+
+# v3 — la cebolla, el rendimiento real y los precios ajustados (2026-09-23)
+
+Tres correcciones más del dueño, y la consigna: **el menú nuevo tiene que igualar o mejorar
+la ganancia del actual**, apretando los que menos dejan.
+
+## 1 · Faltaba la cebolla, y es la palanca
+
+La receta real del Philly lleva **cebolla blanca salteada**, y yo no la estaba contando.
+Importa más de lo que parece: **70 g de cebolla cruesta S/0.21** y al saltearse quedan ~40 g
+que dan volumen de verdad dentro del pan. Además **reemplaza al set de vegetales** (S/0.26),
+así que el sándwich sale **más lleno y más barato al mismo tiempo** — cinco céntimos menos.
+
+Es el mejor cambio de toda la revisión: volumen percibido por casi nada. Vale mirar dónde más
+aplica el mismo principio.
+
+## 2 · El laminado en frío rinde más
+
+No son láminas finísimas, así que no hay la merma del corte exclusivo. Rendimiento **0.70**
+(limpieza 8% + plancha 24%) contra el 0.567 de P07:
+
+| supuesto | S/kg terminado | porción 85 g |
+|---|---|---|
+| P07, corte exclusivo (0.567) | S/35.27 | S/3.00 |
+| v2, laminado genérico (0.63) | S/31.75 | S/2.70 |
+| **v3, laminado en frío (0.70)** | **S/28.57** | **S/2.43** |
+
+*Sigue siendo un supuesto: hay que medirlo en la primera tanda.*
+
+## 3 · Precios ajustados donde menos dejaba
+
+Los dos peores de la v2 eran **Turkey** y **Classic Tuna**. Se corrigieron así:
+
+- **Turkey** → S/24.90 / S/36.90, y el tocino baja de 20 g a 15 g terminados. Pasa de
+  44.4% a **41.5%** en 30 CM, el único que estaba cerca del techo.
+- **Classic Tuna** → S/21.90, y sin lechuga ni tomate se ahorra el set de vegetales.
+- **Tuna Melt** → S/23.90 / S/36.90.
+
+## Cómo queda
+
+| producto | costo 15 | precio | % | margen | costo 30 | precio | % | margen |
+|---|---|---|---|---|---|---|---|---|
+| Philly Cheesesteak | 6.25 | **21.90** | 28.6% | 15.65 | 11.14 | **31.90** | 34.9% | 20.76 |
+| Turkey | 8.47 | **24.90** | 34.0% | 16.43 | 15.30 | **36.90** | 41.5% | 21.60 |
+| Italian Hoagie | 7.24 | **22.90** | 31.6% | 15.66 | 12.86 | **32.90** | 39.1% | 20.04 |
+| Meatball Marinara | 4.50 | **21.90** | 20.5% | 17.40 | 7.37 | **28.90** | 25.5% | 21.53 |
+| Classic Tuna | 5.39 | **21.90** | 24.6% | 16.51 | 9.68 | **34.90** | 27.7% | 25.22 |
+| Tuna Melt | 5.78 | **23.90** | 24.2% | 18.12 | 10.45 | **36.90** | 28.3% | 26.45 |
+
+**Ninguno cruza el techo de 45%.** El peor es Turkey 30 CM, a 41.5%.
+
+## La ganancia, que era la consigna
+
+| | actual | nuevo v3 | |
+|---|---|---|---|
+| margen medio 15 CM | S/15.74 | **S/16.63** | **+5.7%** |
+| margen medio 30 CM | S/20.45 | **S/22.60** | **+10.5%** |
+
+Ponderado 70/30: **+S/2.01 de ingreso y +S/1.27 de margen por sándwich** — casi el doble del
++S/0.66 de la v2.
+
+| volumen | ingreso extra/mes | margen extra/mes |
+|---|---|---|
+| 300 sándwiches | +S/603 | +S/381 |
+| 600 | +S/1 206 | +S/762 |
+| 1 000 | +S/2 010 | +S/1 270 |
+
+**El menú nuevo ya no solo iguala: mejora la ganancia en los dos tamaños.**
+
+## Lo que se deja de cocinar
+
+Decisión del dueño: las proteínas que salen del menú **ya no se preparan**, ni siquiera para
+ARMA EL TUYO. Salen **P01 res mechada, P02 pollo teriyaki y P05 embutido premium**; P03 pollo
+cajún se queda solo mientras el menú secreto la use.
+
+Eso no es solo menos SKU: **cada una era una cocción distinta**. La res mechada es cocción
+lenta y el teriyaki una marinada de una noche. El menú nuevo es casi todo **plancha y
+ensamblado**, que para una sola persona armando pedidos es una diferencia enorme de tiempo —
+y ese tiempo no aparece en ninguna tabla de margen porque la mano de obra se cuenta como S/0.
+
+⚠ **Hay que rehacer el costeo de ARMA EL TUYO**: sus proteínas cambian por completo y varias
+de sus combinaciones estaban calibradas contra las que salen.
