@@ -79,3 +79,26 @@ cuando lleguen, estos dos archivos se reemplazan.
 el cliente los sigue referenciando. Reemplazarlos es una tarea aparte, y hay que hacerla
 completa: un SANDO nuevo junto a uno viejo en dos pantallas distintas es peor que dejar
 todo viejo.
+
+## WICHO sin la sombra de piso (2026-09-23)
+
+`wicho_cuerpo.png` trae **un óvalo gris azulado bajo los pies pintado dentro del archivo**,
+no un efecto de la pantalla — así que no se puede apagar por CSS. En la pantalla de entrada,
+donde SANDO y WICHO se paran juntos, uno traía su sombra y el otro no, y el desnivel se veía.
+
+`wicho_cuerpo_sinsombra.png` es el mismo dibujo con esa sombra quitada (8 250 píxeles). El
+original **no se tocó**.
+
+**Cómo se detectó, para poder repetirlo:** una sombra de piso es un componente conectado de
+color **neutro** (los tres canales a menos de 26 de diferencia), **claro** (luminancia ≥ 135),
+**ancho** (más del 45% del cuadro) y **bajo** (menos del 12% de alto), en la franja inferior de
+la imagen. Esos cuatro criterios juntos la separan de las zapatillas, que son beige —no
+neutras— y estrechas. Descartar por "no toca el contorno del dibujo" NO funciona: los pies se
+apoyan sobre la sombra y la tocan.
+
+Se corrió el mismo análisis sobre `wicho_rie` y `sando2_cuerpo` y **ninguno tiene sombra
+horneada**: esto no abre una limpieza general, era solo este archivo.
+
+⚠ Los prompts de `docs/POSES_QUE_TE_TOCAN.md` ya piden «fondo transparente, sin sombra de
+piso» justamente por esto. Si una pose nueva llega con sombra, se le aplica este mismo
+procedimiento antes de usarla.
