@@ -2,6 +2,7 @@
 // Todas las variables de entorno y constantes de negocio del backend, centralizadas en
 // un solo lugar en vez de estar dispersas (y a veces repetidas) por todo index.ts.
 import { REGLAS } from "../_shared/dinero.ts";
+import * as R from "../_shared/reglas.ts";
 
 export const SB_URL = Deno.env.get("SUPABASE_URL")!;
 export const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -79,7 +80,7 @@ export const EMAIL_PROOF_TTL_SECONDS = 15 * 60;
 // contribución en 90 días. Subirlo de 120 a 160 NO cuesta más — el premio siempre fue la
 // misma bebida; lo que cambió fue su etiqueta de precio en puntos.
 // DEBE coincidir con REFERRAL_BONUS_POINTS en src/app/01-*.
-export const REFERRAL_BONUS_POINTS = 160;
+export const REFERRAL_BONUS_POINTS = R.REFERRAL_BONUS_POINTS;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido (decisión del dueño
 // 2026-08-15). Antes ambos lados recibían los mismos 50 puntos — unos S/1.25 de valor, el
 // 5% del ticket, muy por debajo del 10-25% que mueve la aguja en esta categoría. Ahora el
@@ -91,7 +92,7 @@ export const REFERRAL_BONUS_POINTS = 160;
 // Costo real: el 15CM más barato del catálogo con 45% de insumos ≈ S/6.7-8 por referido
 // que de verdad llega a comprar, contra un techo pagable estimado de ~S/9.3. Si REWARDS.R06
 // cambia de precio, este número debe seguirlo.
-export const REFERRER_REWARD_POINTS = 400;
+export const REFERRER_REWARD_POINTS = R.REFERRER_REWARD_POINTS;
 
 // #55 — REFERIDOS ESCALONADOS. Premio EXTRA al 3.º, 5.º y 10.º referido convertido, encima
 // de los 400 puntos planos de arriba que se siguen pagando por CADA uno.
@@ -125,11 +126,7 @@ export const REFERRER_REWARD_POINTS = 400;
 // `REFERRAL_BONUS_POINTS` y viene del mismo día: la recalibración del 2026-09-05 subió R05 de
 // 120 a 160 y estos dos números se quedaron atrás. Un chequeo que acepta cualquier múltiplo
 // no verifica la promesa, verifica la aritmética.
-export const REFERRAL_MILESTONES: { count: number; points: number; label: string; covers: string; veces: number }[] = [
-  { count: 3, points: 160, label: "una bebida de la casa gratis", covers: "R05", veces: 1 },
-  { count: 5, points: 400, label: "otro sándwich 15CM gratis", covers: "R06", veces: 1 },
-  { count: 10, points: 800, label: "dos sándwiches 15CM gratis", covers: "R06", veces: 2 },
-];
+export const REFERRAL_MILESTONES: { count: number; points: number; label: string; covers: string; veces: number }[] = R.REFERRAL_MILESTONES;
 // Antes solo un registro CON código de referido recibía puntos al crear cuenta — cualquier
 // otro registro nuevo empezaba en 0 sin ningún incentivo de bienvenida.
 // Subido de 20 a 40 (hallazgo de auditoría, CRÍTICO): 20 pts no alcanzaba para NINGUNA
@@ -137,7 +134,7 @@ export const REFERRAL_MILESTONES: { count: number; points: number; label: string
 // recalibración del 2026-09-05; ver REWARDS en catalog.ts), así que todo
 // cliente nuevo veía su checkout del primer pedido sin nada canjeable, justo el momento
 // de mayor intención de compra. DEBE coincidir con el texto en sPAuth() en src/app.ts.
-export const WELCOME_BONUS_POINTS = 40;
+export const WELCOME_BONUS_POINTS = R.WELCOME_BONUS_POINTS;
 export const STALE_MANUAL_PAYMENT_HOURS = 3;
 
 // Rangos por antigüedad (total_orders) — puramente de reconocimiento/pertenencia, NUNCA
@@ -145,13 +142,7 @@ export const STALE_MANUAL_PAYMENT_HOURS = 3;
 // por eso). DEBE coincidir con RANKS en src/app.ts (ese lado solo lo usa para mostrar el
 // chip en el perfil; este es el que de verdad queda guardado en cada pedido —
 // customer_rank— y el que exige sigGateError/catalog.ts para el menú secreto).
-export const RANKS: { name: string; minOrders: number }[] = [
-  { name: "NUEVO", minOrders: 0 },
-  { name: "REGULAR", minOrders: 1 },
-  { name: "INICIADO", minOrders: 5 },
-  { name: "CÍRCULO INTERNO", minOrders: 15 },
-  { name: "MESA FUNDADORA", minOrders: 30 },
-];
+export const RANKS: { name: string; minOrders: number }[] = R.RANKS;
 export function computeRankName(totalOrders: number): string {
   let name = RANKS[0].name;
   for (const r of RANKS) if (totalOrders >= r.minOrders) name = r.name;
@@ -225,27 +216,20 @@ export const CONTACT_EMAIL = "contacto@sndwch.com";
 // Horario de atención — debe reflejar EXACTAMENTE el mismo horario que STORE_HOURS en
 // index.html (usado ahí solo para el badge visual; aquí se usa para rechazar pedidos
 // programados fuera de horario, que el cliente podría forzar sin este chequeo).
-export const STORE_HOURS: Array<[number, number] | null> = [
-  [11, 22], null, [11, 22], [11, 22], [11, 22], [11, 22], [11, 22],
-];
+export const STORE_HOURS: Array<[number, number] | null> = R.STORE_HOURS;
 // Zonas de Trujillo que hoy NO se cubren con delivery — el checkout las rechaza si el
 // texto de la dirección las menciona (comparación por substring, sin acentos/mayúsculas;
 // ver assertAddressAllowed en orders.ts). No hay geocerca real: depende de que el
 // cliente escriba el nombre del distrito/zona. DEBE coincidir con
 // DELIVERY_EXCLUDED_ZONES en src/app.ts.
-export const DELIVERY_EXCLUDED_ZONES = ["el milagro", "el porvenir"];
+export const DELIVERY_EXCLUDED_ZONES = R.DELIVERY_EXCLUDED_ZONES;
 // El delivery se cobra ahora dentro del mismo pago del pedido (antes se coordinaba aparte,
 // pagado directo al motorizado sin ningún monto fijo) — el cliente elige su zona
 // aproximada en el checkout (por defecto "media", sin exigir GPS) y esto se suma al total
 // que de verdad se cobra (Culqi/Yape/Plin/crédito). El dueño sigue pagando al motorizado
 // por fuera de la app, igual que siempre — esto solo asegura que el cliente vea y pague
 // un monto real, no un rango. DEBE coincidir con DELIVERY_PRICE_ZONES en src/app.ts.
-export const DELIVERY_ZONE_FEES: Record<string, number> = {
-  cerca: 6,
-  media: 8,
-  lejos: 12,
-  muy_lejos: 15,
-};
+export const DELIVERY_ZONE_FEES: Record<string, number> = Object.fromEntries(R.ZONAS_DE_ENVIO.map((z) => [z.id, z.precio]));
 // ── RECARGO POR PAN DE FOCACCIA (2026-09-03) ──────────────────────────────────────────
 //
 // El tipo de pan era una elección GRATUITA del cliente, y la focaccia cuesta más que el pan
@@ -272,25 +256,25 @@ export const BASE_SURCHARGE = REGLAS.recargoPan;
 // AVISABA del desajuste; el cobro seguía saliendo de la zona elegida.
 //
 // El dueño creía que la app ya cobraba por distancia. No lo hacía. Ahora sí.
-export const DELIVERY_KM_RATE = 2;      // [MEDIDO] dueño 2026-09-02: S/2 por km del tercero
+export const DELIVERY_KM_RATE = R.DELIVERY_KM_RATE; // [MEDIDO] dueño 2026-09-02: S/2 por km del tercero
 // La distancia que se puede calcular sin depender de nadie es la de LÍNEA RECTA entre el
 // punto de despacho y el pin del cliente. La ruta real en moto siempre es más larga (calles,
 // sentidos, óvalos). 1.3 es el factor de corrección de ciudad acordado con el dueño
 // [DECISIÓN 2026-09-02] — se prefirió sobre una API de ruteo real porque esa tiene costo por
 // consulta y una cuenta que contratar, y porque un factor editable se calibra contra lo que
 // los motorizados cobran de verdad.
-export const DELIVERY_ROAD_FACTOR = 1.3;
+export const DELIVERY_ROAD_FACTOR = R.DELIVERY_ROAD_FACTOR;
 // Piso de la tarifa. A S/2/km, alguien a 800 m pagaría S/1.60 y ningún motorizado toma ese
 // viaje. [MEDIDO] dueño 2026-09-02: el mínimo que le cobra su grupo por un viaje corto es
 // S/5. Por debajo de 2.5 km, entonces, la tarifa la fija este piso y no los kilómetros.
-export const DELIVERY_MIN_FEE = 5;
+export const DELIVERY_MIN_FEE = R.DELIVERY_MIN_FEE;
 // Punto de despacho — mismas coordenadas que STORE_LAT/STORE_LON en el cliente, que ya se
 // usaban para el banner "estás cerca". `npm run parity` compara los dos lados.
-export const STORE_LAT = -8.139599;
-export const STORE_LON = -79.039458;
+export const STORE_LAT = R.STORE_LAT;
+export const STORE_LON = R.STORE_LON;
 // Techo de cobertura. Más allá de esto no se entrega: sin un tope, un pin mal puesto (o una
 // dirección en otra ciudad) generaría una tarifa absurda que el cliente vería en el checkout.
-export const DELIVERY_MAX_KM = 12;
+export const DELIVERY_MAX_KM = R.DELIVERY_MAX_KM;
 // El delivery es pass-through puro (arriba): el negocio no gana nada con él, solo lo
 // cobra para pagarle exacto al motorizado. Pero cuando se paga con TARJETA, Culqi
 // descuenta su comisión (~4-5.5%, confirmado por el dueño) del cargo COMPLETO, incluido
@@ -302,7 +286,7 @@ export const DELIVERY_MAX_KM = 12;
 // crédito no pagan esta comisión y siguen cobrando el fee real sin ajustar). DEBE
 // coincidir con CULQI_FEE_RATE en src/app.ts (ese lado solo estima el total antes de
 // pagar; este es el que de verdad determina cuánto se cobra).
-export const CULQI_FEE_RATE = 0.055;
+export const CULQI_FEE_RATE = R.CULQI_FEE_RATE;
 
 // Tope de pedidos por hora de entrega. Vivía en actions/orders.ts, pero desde que
 // `get-store-hours` le dice al cliente qué franjas están llenas (#23) hacen falta los dos
@@ -316,7 +300,7 @@ export const CULQI_FEE_RATE = 0.055;
 // El 6 anterior suponía un ciclo cocinar+repartir que no es el de este negocio, y con la
 // meta de ~20 pedidos/día concentrados en dos ventanas habría empezado a rechazar pedidos
 // reales un viernes por la noche.
-export const MAX_ORDERS_PER_HOUR = 10;
+export const MAX_ORDERS_PER_HOUR = R.MAX_ORDERS_PER_HOUR;
 
 // Cuánto suma al estimado de entrega cada pedido que ya está en cola por delante (#16).
 // Sale del mismo dato que el tope de arriba: armar un sándwich con el mise en place hecho
@@ -326,7 +310,7 @@ export const MAX_ORDERS_PER_HOUR = 10;
 // cola: con 8 pedidos por delante prometía lo mismo que con la cocina vacía. Un ETA que
 // miente es la causa directa de una calificación de 1 estrella, y la calificación baja
 // cuesta más que la venta que se pierde por avisar que hoy hay demora.
-export const QUEUE_MINUTES_PER_ORDER = 5;
+export const QUEUE_MINUTES_PER_ORDER = R.QUEUE_MINUTES_PER_ORDER;
 
 // La hora de llegada que se PROMETE al pagar (pantallas 30 G2, 31, 06 y el «prometimos» del
 // detalle). Antes solo existía cuando el pedido salía EN CAMINO: el cliente pagaba sin ver
@@ -337,7 +321,7 @@ export const QUEUE_MINUTES_PER_ORDER = 5;
 // Pedido para ya: ahora + el rango de siempre + lo que suma la cola. Programado: la hora que
 // eligió, con el mismo ancho de ventana. DEBE coincidir con ESTIMATED_DELIVERY_RANGE en
 // src/app/01-* — lo verifica `npm run parity`.
-export const ESTIMATED_DELIVERY_RANGE = [25, 40];
+export const ESTIMATED_DELIVERY_RANGE = R.ESTIMATED_DELIVERY_RANGE;
 
 export function ventanaPrometida(
   ahoraMs: number,
@@ -380,7 +364,7 @@ export function ventanaPrometida(
 // ventanas de elegibilidad son de varios días) y llegar al tope queda en debug_logs.
 export const MAX_PUSH_PER_RUN = 200;
 
-export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
+export const NOTE_ALERT_WORDS = R.NOTE_ALERT_WORDS;
 
 // Compara sin acentos ni mayúsculas: quien escribe "ALERGICO" desde el teclado del celular
 // no debería recibir menos cuidado que quien escribe "alérgico".

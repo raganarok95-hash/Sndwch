@@ -17,6 +17,7 @@ import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge, pointsFor, RESERVA_CONFIRMABLE } from "./orders.ts";
 import { recompensaDeTipo } from "../../_shared/carta.ts";
+import * as R from "../../_shared/reglas.ts";
 
 // Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
 // retención corren en producción desde antes de abrir, sin verificar que el negocio ya
@@ -781,8 +782,8 @@ export async function actSubmitRating(b: any) {
 }
 const LOW_RATING_ALERT_THRESHOLD = 2;
 
-const CHALLENGE_TARGET_ORDERS = 3;
-const CHALLENGE_BONUS_POINTS = 50;
+const CHALLENGE_TARGET_ORDERS = R.CHALLENGE_TARGET_ORDERS;
+const CHALLENGE_BONUS_POINTS = R.CHALLENGE_BONUS_POINTS;
 export async function actClaimChallenge(b: any) {
   const s = await requireSession(b.token);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
@@ -828,8 +829,8 @@ export async function actClaimChallenge(b: any) {
 // sabor. Solo cuenta Signatures (sigId): un Build Your Own no tiene un "sabor" discreto
 // que contar, lo arma el propio cliente. Mismo patrón atómico que claim_monthly_challenge
 // (columna dedicada + RPC que marca el mes reclamado y suma el bono en un solo paso).
-const DISCOVERY_TARGET_FLAVORS = 3;
-const DISCOVERY_BONUS_POINTS = 50;
+const DISCOVERY_TARGET_FLAVORS = R.DISCOVERY_TARGET_FLAVORS;
+const DISCOVERY_BONUS_POINTS = R.DISCOVERY_BONUS_POINTS;
 export async function actClaimDiscoveryChallenge(b: any) {
   const s = await requireSession(b.token);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
@@ -1570,8 +1571,8 @@ export async function actAnniversaryGreeting(b: any) {
 // una sola operación atómica (mismo patrón que gift_credit), sin ningún cobro real,
 // reserva, ni ventana de expiración — el crédito sale directo de los puntos del
 // comprador.
-const GIFT_CARD_AMOUNT_MIN = 10;
-const GIFT_CARD_AMOUNT_MAX = 500;
+const GIFT_CARD_AMOUNT_MIN = R.GIFT_CARD_AMOUNT_MIN;
+const GIFT_CARD_AMOUNT_MAX = R.GIFT_CARD_AMOUNT_MAX;
 // Tasa de canje: mismo criterio que las recompensas (REWARDS en catalog.ts) tras la
 // recalibración contra el costo real de insumos (~45% del valor, no ~20-30% asumido
 // originalmente) — 40 pts por sol de crédito regalado. DEBE coincidir con
@@ -1584,7 +1585,7 @@ const GIFT_CARD_AMOUNT_MAX = 500;
 // se regala por punto, y eso es plata real que no se aprobó. El orden actual (canjear
 // recompensas rinde más que regalar crédito) no es incoherente — solo dejó de ser el
 // mismo número, y conviene decidirlo explícitamente en vez de que se desincronice solo.
-export const GIFT_CARD_POINTS_PER_SOL = 40;
+export const GIFT_CARD_POINTS_PER_SOL = R.GIFT_CARD_POINTS_PER_SOL;
 
 export async function actGiftCardPurchase(b: any) {
   if (!TARJETA_REGALO_ACTIVA) throw new ApiError("La tarjeta de regalo no está disponible por ahora.", 409);
@@ -1653,8 +1654,8 @@ export async function actGiftCardPurchase(b: any) {
 // peor caso de comisión, solo no llega a cubrir el piso exacto de S/90 en ese extremo).
 // Exportados desde #50: el contenido de marketing los interpola en vez de repetir "S/95"
 // y "S/100" escritos a mano en un texto que el dueño copia y pega a Instagram.
-export const WEEKLY_PLAN_PRICE = 95;
-export const WEEKLY_PLAN_CREDIT = 100;
+export const WEEKLY_PLAN_PRICE = R.WEEKLY_PLAN_PRICE;
+export const WEEKLY_PLAN_CREDIT = R.WEEKLY_PLAN_CREDIT;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 export async function actPrepareWeeklyPlan(b: any) {

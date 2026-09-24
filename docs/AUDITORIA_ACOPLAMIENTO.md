@@ -140,6 +140,16 @@ permisos, validación y código muerto.
   120 puntos «para canjear una bebida» que cuesta 160 desde el 2026-09-05. Ahora sus puntos son
   el precio vigente de la bebida. `tests-api/regalo-de-vuelta.test.ts`, vista fallar con el
   valor anterior.
+- **Paso 3 · reglas compartidas** — hecho: `_shared/reglas.ts` con envío, tienda, horario, rangos,
+  referidos, retos, tarjeta de regalo, Plan Semanal, cola, ventana de entrega y los plazos de «Algo
+  salió mal». Los puntos del referido y de la escalera se DERIVAN de las recompensas (el invariante
+  que `parity` comparaba ahora se cumple por construcción). `parity` pasó de comparar dos copias a
+  vigilar que ninguna regla vuelva a escribirse en un lado (visto fallar con una copia en cada
+  lado). «+50 pts» y el costo del referido del panel se interpolan; S/5.50, S/0.48 y S/17.87 del
+  panel son cifras del modelo en Python que el servidor no conoce: quedan para el rediseño del
+  panel (#86), en vez de copiarlas.
+  De paso: `como-pagas-y-avisos.spec.ts` fallaba 2 de cada 30 corridas (forzaba la pantalla desde
+  fuera y leía la llamada antes de que saliera); ahora pasa 45 de 45.
 
 ## Problemas futuros (no rompen hoy)
 

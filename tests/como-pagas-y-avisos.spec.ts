@@ -22,12 +22,15 @@ test('apagar «Novedades» manda promo:false y deja el pedido encendido', async 
   await entrar(page, CLIENTE, {
     'set-preferences': (b: any) => { enviado = b; return { success: true, customer: { ...CLIENTE, notif_prefs: b.notifPrefs } }; },
   });
-  await page.evaluate(() => { (window as any).sndScreen = 'p_profile'; (window as any).render(); });
+  // Por el botón real, como el cliente: forzar la pantalla con evaluate competía con los
+  // render() que llegan después del login y a veces la pisaban (falla intermitente, 2 de 30).
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').first().click();
   await page.locator('[role=button]', { hasText: 'Avisos' }).first().click();
   await page.getByRole('switch', { name: /Novedades y recordatorios/ }).click();
   await expect(page.getByRole('switch', { name: /Novedades y recordatorios/ })).toHaveAttribute('aria-checked', 'false');
   await expect(page.getByRole('switch', { name: /Tu pedido/ })).toHaveAttribute('aria-checked', 'true');
-  expect(enviado.notifPrefs).toEqual({ pedido: true, promo: false });
+  // El interruptor cambia al instante y la llamada sale después: se espera la llamada, no se lee al vuelo.
+  await expect.poll(() => enviado && enviado.notifPrefs).toEqual({ pedido: true, promo: false });
 });
 
 test('elegir Tarjeta se guarda, y el checkout abre en tarjeta', async ({ page }) => {
@@ -35,11 +38,13 @@ test('elegir Tarjeta se guarda, y el checkout abre en tarjeta', async ({ page })
   await entrar(page, CLIENTE, {
     'set-preferences': (b: any) => { enviado = b; return { success: true, customer: { ...CLIENTE, preferred_payment: b.preferredPayment } }; },
   });
-  await page.evaluate(() => { (window as any).sndScreen = 'p_profile'; (window as any).render(); });
+  // Por el botón real, como el cliente: forzar la pantalla con evaluate competía con los
+  // render() que llegan después del login y a veces la pisaban (falla intermitente, 2 de 30).
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').first().click();
   await page.locator('[role=button]', { hasText: 'Cómo pagas' }).first().click();
   await page.getByRole('radio', { name: /Tarjeta/ }).click();
   await expect(page.getByRole('radio', { name: /Tarjeta/ })).toHaveAttribute('aria-checked', 'true');
-  expect(enviado.preferredPayment).toBe('culqi');
+  await expect.poll(() => enviado && enviado.preferredPayment).toBe('culqi');
   const metodo = await page.evaluate(() => { (window as any).aplicarMetodoPreferido(); return (window as any).manualPayMethod; });
   expect(metodo).toBeNull();
 });

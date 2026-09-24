@@ -2512,7 +2512,7 @@ function sAdminPalancas(){
 
   h+=palancaCard('REFERIDOS — por cada 100 pedidos', p.referralsPer100, m.referralsPer100, '', false,
     'Clientes captados por referido, por cada 100 pedidos servidos. '
-    +'Es la palanca que en el modelo convierte "no llega nunca" en "sostiene desde feb-27": un referido cuesta S/7.65 contra ~S/17.87 de comprarlo en Meta. '
+    +'Es la palanca que en el modelo convierte "no llega nunca" en "sostiene desde feb-27": un referido cuesta S/'+pz((palancasData.cifras&&palancasData.cifras.costoReferido)||0)+' contra ~S/17.87 de comprarlo en Meta. '
     +(p.referredCustomers!==undefined?('Van '+p.referredCustomers+' clientes por referido en 90 días.'):''), o.referralsPer100);
 
   h+='<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;margin-top:16px">'

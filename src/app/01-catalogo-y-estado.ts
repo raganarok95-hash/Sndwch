@@ -144,6 +144,8 @@ function pedidoTerminado(st){return !!STATUSES[st]&&!STATUSES[st].next;}
 // abajo solo le pone nombre a cada parte. Antes cada lista estaba escrita aquí y en
 // catalog.ts, y `parity` las comparaba con regex. Un cambio de carta se hace allá, una vez.
 var CARTA_VIEJA=(window as any).__sndNuevo.carta;
+// Y las reglas del negocio salen de `_shared/reglas.ts`, las mismas del servidor.
+var REGLAS_N=(window as any).__sndNuevo.reglas;
 var BASES=CARTA_VIEJA.BASES;
 // `sigOnly` se declara en el tipo aunque HOY ningún ítem lo use (se fue con THE CHICAGO,
 // ver abajo). Sin la declaración TypeScript infiere el tipo desde los literales y los
@@ -306,7 +308,7 @@ var SIDES=CARTA_VIEJA.SIDES;
 // loadStoreHoursBackground más abajo, que lo sobreescribe con lo que el dueño configuró
 // en el panel admin). [hora_apertura, hora_cierre] en formato 24h, índice 0=domingo.
 // índice 1 (lunes) en null = día de descanso, coincide con store_hours en la base.
-var STORE_HOURS=[[11,22],null,[11,22],[11,22],[11,22],[11,22],[11,22]];
+var STORE_HOURS=REGLAS_N.STORE_HOURS;
 // El horario SIEMPRE se evalúa en hora de Lima, nunca en la del aparato (2026-08-28).
 // Antes se usaban getDay()/getHours(), que devuelven la zona del dispositivo. Perú tiene
 // una sola zona y sin horario de verano, así que un celular bien configurado dentro del
@@ -453,7 +455,7 @@ function scheduleTimePickerHTML(){
 // incertidumbre justo en el momento de decidir) — no es el ETA real del pedido, que
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
 // real de tu zona de reparto.
-var ESTIMATED_DELIVERY_RANGE=[25,40];
+var ESTIMATED_DELIVERY_RANGE=REGLAS_N.ESTIMATED_DELIVERY_RANGE;
 // #16 — El rango de arriba es el de la cocina VACÍA. Con pedidos por delante, prometer lo
 // mismo es mentir, y un ETA que miente es la causa directa de una calificación de 1
 // estrella: el cliente no reclama por esperar 50 minutos, reclama por esperar 50 cuando le
@@ -498,7 +500,7 @@ function llegoDentro(o:any):boolean|null{
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
-var STORE_LAT=-8.139599,STORE_LON=-79.039458;
+var STORE_LAT=REGLAS_N.STORE_LAT,STORE_LON=REGLAS_N.STORE_LON;
 var NEARBY_RADIUS_KM=3;
 // Zonas de Trujillo que hoy NO se cubren con delivery — el checkout las rechaza si el
 // texto de la dirección las menciona (comparación por substring, sin acentos/mayúsculas).
@@ -506,7 +508,7 @@ var NEARBY_RADIUS_KM=3;
 // El servidor vuelve a validar esto mismo (ver assertAddressAllowed en orders.ts) —
 // este chequeo de acá es solo para dar el aviso al toque, sin esperar la respuesta del
 // servidor. DEBE coincidir con DELIVERY_EXCLUDED_ZONES en supabase/functions/api/env.ts.
-var DELIVERY_EXCLUDED_ZONES=['el milagro','el porvenir'];
+var DELIVERY_EXCLUDED_ZONES=REGLAS_N.DELIVERY_EXCLUDED_ZONES;
 // #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
 // preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
 // dirección ("portón azul", "3er piso"): una alergia escrita ahí se pintaba igual que el
@@ -517,7 +519,7 @@ var DELIVERY_EXCLUDED_ZONES=['el milagro','el porvenir'];
 // nombre, y una alarma que salta siempre deja de mirarse. Un "sin cebolla" se sigue viendo
 // como nota normal: es una preferencia, no un riesgo.
 // DEBE coincidir con NOTE_ALERT_WORDS en supabase/functions/api/env.ts.
-var NOTE_ALERT_WORDS=['alergi','alérgi','intoleran','celiac','celíac','gluten','lactosa','diabet'];
+var NOTE_ALERT_WORDS=REGLAS_N.NOTE_ALERT_WORDS;
 function noteNeedsAttention(notes){
   var n=(notes||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return NOTE_ALERT_WORDS.some(function(w){return n.indexOf(w.normalize('NFD').replace(/[\u0300-\u036f]/g,''))>=0;});
@@ -584,12 +586,7 @@ function districtFromAddress(addr){
 // El dueño le sigue pagando al motorizado por fuera de la app, igual que siempre — esto
 // solo asegura que el cliente vea y pague un número real, no un rango. DEBE coincidir
 // con DELIVERY_ZONE_FEES en supabase/functions/api/env.ts.
-var DELIVERY_PRICE_ZONES=[
-  {id:'cerca',l:'Cerca del local',fee:6},
-  {id:'media',l:'Distancia media',fee:8},
-  {id:'lejos',l:'Lejos',fee:12},
-  {id:'muy_lejos',l:'Muy lejos',fee:15}
-];
+var DELIVERY_PRICE_ZONES=REGLAS_N.DELIVERY_PRICE_ZONES;
 // 'media' por defecto — así nadie tiene que pensar en su zona para completar el pedido;
 // solo toca si sabe que está más cerca o más lejos de lo normal.
 var deliveryZone='media';
@@ -598,7 +595,7 @@ var deliveryZone='media';
 // pass-through puro sin margen — hallazgo de auditoría financiera). DEBE coincidir con
 // CULQI_FEE_RATE en supabase/functions/api/env.ts, ese lado es el que de verdad cobra;
 // este solo estima el total antes de pagar.
-var CULQI_FEE_RATE=0.055;
+var CULQI_FEE_RATE=REGLAS_N.CULQI_FEE_RATE;
 // Réplica de la decisión de doOrder() sobre qué método de pago se va a usar, calculada
 // SOLO con el fee de delivery real (sin engordar) para no crear una dependencia circular
 // con deliveryFeeAmount() de abajo — si el crédito alcanza para cubrir el total real, o
@@ -655,10 +652,10 @@ function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='1
 // Estas cuatro constantes DEBEN coincidir con las de supabase/functions/api/env.ts — el
 // servidor es el que de verdad cobra y recalcula todo desde las coordenadas; acá solo se
 // muestra. `npm run parity` compara los dos lados.
-var DELIVERY_KM_RATE=2;          // S/ por kilómetro
-var DELIVERY_ROAD_FACTOR=1.3;    // línea recta → ruta real en moto
-var DELIVERY_MIN_FEE=5;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
-var DELIVERY_MAX_KM=12;          // techo de cobertura
+var DELIVERY_KM_RATE=REGLAS_N.DELIVERY_KM_RATE;          // S/ por kilómetro
+var DELIVERY_ROAD_FACTOR=REGLAS_N.DELIVERY_ROAD_FACTOR;    // línea recta → ruta real en moto
+var DELIVERY_MIN_FEE=REGLAS_N.DELIVERY_MIN_FEE;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
+var DELIVERY_MAX_KM=REGLAS_N.DELIVERY_MAX_KM;          // techo de cobertura
 // Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
 // 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
 function deliveryKmNow(){
@@ -762,27 +759,27 @@ function isOffPeakDrinkPromoActiveNow(){
 // DEBE coincidir con WEEKLY_PLAN_PRICE/WEEKLY_PLAN_CREDIT en
 // supabase/functions/api/actions/customer.ts, el servidor es quien de verdad cobra y acredita.
 // Precio subido de S/90 a S/95 para cubrir la comisión de Culqi (~4%) sobre el cobro.
-var WEEKLY_PLAN_PRICE=95;
-var WEEKLY_PLAN_CREDIT=100;
+var WEEKLY_PLAN_PRICE=REGLAS_N.WEEKLY_PLAN_PRICE;
+var WEEKLY_PLAN_CREDIT=REGLAS_N.WEEKLY_PLAN_CREDIT;
 // Tarjeta de regalo: se paga con puntos propios, sin ningún cobro real (rediseño de esta
 // sesión — antes cobraba por Culqi). DEBE coincidir con GIFT_CARD_POINTS_PER_SOL en
 // supabase/functions/api/actions/customer.ts, el servidor es quien de verdad debita los
 // puntos y acredita el saldo.
-var GIFT_CARD_POINTS_PER_SOL=40;
+var GIFT_CARD_POINTS_PER_SOL=REGLAS_N.GIFT_CARD_POINTS_PER_SOL;
 // Los límites del monto estaban ESCRITOS A MANO en dos sitios del cliente: en el texto que
 // lee el cliente ("Monto entre S/10 y S/500") y en la validación de doGiftCardBuy(). El
 // servidor los tiene como constantes desde siempre, así que eran dos números sueltos que
 // nadie iba a sincronizar el día que el dueño moviera el tope — la misma clase de promesa
 // rota que ya costó tres textos de marketing desactualizados. `npm run parity` compara
 // estos dos contra GIFT_CARD_AMOUNT_MIN/MAX del servidor.
-var GIFT_CARD_AMOUNT_MIN=10;
-var GIFT_CARD_AMOUNT_MAX=500;
+var GIFT_CARD_AMOUNT_MIN=REGLAS_N.GIFT_CARD_AMOUNT_MIN;
+var GIFT_CARD_AMOUNT_MAX=REGLAS_N.GIFT_CARD_AMOUNT_MAX;
 // Lo que recibe quien CREA su cuenta. Estaba escrito a mano dentro del texto de la pantalla
 // de registro ("Bono de bienvenida: +40 pts"), con un comentario que decía "DEBE coincidir" y
 // NADA que lo verificara — la clase exacta de promesa pública que este repo ya vio romperse
 // tres veces. Ahora se interpola desde acá y `npm run parity` lo compara contra el servidor.
 // Solo se usa para el copy: quien otorga los puntos es el servidor.
-var WELCOME_BONUS_POINTS=40;
+var WELCOME_BONUS_POINTS=REGLAS_N.WELCOME_BONUS_POINTS;
 // Lo que recibe EL INVITADO al pagar su primer pedido — tiene que valer exactamente lo
 // mismo que R05 (BEBIDA // GRATIS), porque eso es lo que la app le promete en tres sitios
 // y lo que el dueño copia a WhatsApp. Estuvo en 120 desde el 2026-08-20 y se quedó ahí
@@ -790,7 +787,7 @@ var WELCOME_BONUS_POINTS=40;
 // alcanzaba a pagar. `npm run parity` compara las dos cosas ahora. Solo se usa para el
 // copy — quien otorga los puntos de verdad es el servidor. DEBE coincidir con
 // REFERRAL_BONUS_POINTS en supabase/functions/api/env.ts.
-var REFERRAL_BONUS_POINTS=160;
+var REFERRAL_BONUS_POINTS=REGLAS_N.REFERRAL_BONUS_POINTS;
 // Lo que recibe QUIEN INVITA cuando su referido paga su primer pedido — 400 pts = un
 // sándwich 15CM gratis. Solo se usa para el copy; quien otorga los puntos es el servidor.
 // DEBE coincidir con REFERRER_REWARD_POINTS en supabase/functions/api/env.ts, que a su vez
@@ -807,11 +804,11 @@ var REFERRAL_BONUS_POINTS=160;
 // día que se rompa nadie se entera, porque es texto y no cálculo.
 //
 // Ahora se interpolan, y `npm run parity` compara los cuatro contra el servidor.
-var CHALLENGE_TARGET_ORDERS=3;
-var CHALLENGE_BONUS_POINTS=50;
-var DISCOVERY_TARGET_FLAVORS=3;
-var DISCOVERY_BONUS_POINTS=50;
-var REFERRER_REWARD_POINTS=400;
+var CHALLENGE_TARGET_ORDERS=REGLAS_N.CHALLENGE_TARGET_ORDERS;
+var CHALLENGE_BONUS_POINTS=REGLAS_N.CHALLENGE_BONUS_POINTS;
+var DISCOVERY_TARGET_FLAVORS=REGLAS_N.DISCOVERY_TARGET_FLAVORS;
+var DISCOVERY_BONUS_POINTS=REGLAS_N.DISCOVERY_BONUS_POINTS;
+var REFERRER_REWARD_POINTS=REGLAS_N.REFERRER_REWARD_POINTS;
 // #55 — La escalera de referidos, solo para pintarla. Los puntos los otorga el servidor
 // (grant_referral_milestone); acá nunca se suma nada. DEBE coincidir con
 // REFERRAL_MILESTONES en supabase/functions/api/env.ts — lo verifica `npm run parity`.
@@ -824,11 +821,7 @@ var REFERRER_REWARD_POINTS=400;
 // `referralLadderHTML` deja de nombrarla si el dueño la repricea desde el panel por encima
 // del escalón. El primer escalón decía 120 con la bebida en 160 — pasaba el chequeo viejo
 // porque 120 es múltiplo de la salsa extra (20).
-var REFERRAL_MILESTONES=[
-  {count:3,points:160,label:'Una bebida de la casa gratis',covers:'R05',veces:1},
-  {count:5,points:400,label:'Otro sándwich 15CM gratis',covers:'R06',veces:1},
-  {count:10,points:800,label:'Dos sándwiches 15CM gratis',covers:'R06',veces:2}
-];
+var REFERRAL_MILESTONES=REGLAS_N.REFERRAL_MILESTONES;
 // Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
 // ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".
 function nextReferralMilestone(n){
@@ -850,7 +843,7 @@ var storePausedUntil=null;
 // ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se
 // deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
 // que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
-var fullHours=[],queueAhead=0,queueMinutesPerOrder=5,maxPerHour=10;
+var fullHours=[],queueAhead=0,queueMinutesPerOrder=REGLAS_N.QUEUE_MINUTES_PER_ORDER,maxPerHour=REGLAS_N.MAX_ORDERS_PER_HOUR;
 // Carga de cada hora (pedidos + lugares apartados por pedidos fijos), la misma cuenta con la
 // que el servidor rechaza. Hace falta además de `fullHours` por un solo caso: la hora que le
 // estamos GUARDANDO a este cliente. El servidor no le cuenta su propio lugar, así que para él
@@ -911,13 +904,7 @@ function metaAttribution(){
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
 // DEBE coincidir con RANKS en supabase/functions/api/env.ts.
-var RANKS=[
-  {name:'NUEVO',minOrders:0},
-  {name:'REGULAR',minOrders:1},
-  {name:'INICIADO',minOrders:5},
-  {name:'CÍRCULO INTERNO',minOrders:15},
-  {name:'MESA FUNDADORA',minOrders:30}
-];
+var RANKS=REGLAS_N.RANKS;
 function rankName(totalOrders){
   var name=RANKS[0].name;
   RANKS.forEach(function(r){if((totalOrders||0)>=r.minOrders)name=r.name;});

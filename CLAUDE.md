@@ -240,15 +240,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
-4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el
-   cliente mostraría un número y el servidor cobraría otro. La carta ya no pasa por acá (es una
-   sola, `_shared/carta.ts`). Cubre topes de
-   recompensa, umbrales, zonas de delivery (con precio y excluidas), tarifa por distancia
-   (`DELIVERY_KM_RATE`/`ROAD_FACTOR`/`MIN_FEE`/`MAX_KM` + `STORE_LAT`/`STORE_LON`), nombres, y
-   los DOS precios del catálogo que NO viven en `catalog_prices` —`EXTRA_SAUCE_PRICE` y
-   `BASE_SURCHARGE` (el recargo del pan de focaccia)—, para los que esta comparación es la
-   única defensa.
+4. `npm run parity` — que ninguna regla compartida vuelva a escribirse como valor propio en un
+   lado. La carta (`_shared/carta.ts`), el dinero (`_shared/dinero.ts`) y las reglas del negocio
+   (`_shared/reglas.ts`: envío, tienda, horario, rangos, referidos, retos, cola, plazos) viven
+   UNA sola vez y las importan cliente y servidor; una regla nueva va ahí, nunca como segunda
+   copia. Además cruza los supuestos del modelo en Python contra el servidor.
 5. `npm run build` — regenera `index.html` desde `src/`.
 5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
    Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
