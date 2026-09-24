@@ -999,3 +999,40 @@ va a correr y verifica solo si es un `git commit`.
 «¿son las mismas de antes?» se comprobaba a mano con `diff` en cada cambio. `npm run test:estado`
 lo hace siempre: compara contra `tests/ROJAS_CONOCIDAS.txt` y falla si aparece una roja nueva o
 si una conocida ya pasa. Se verificó inyectándole un defecto en el total del carrito.
+
+## 2026-09-24 · Paso 4: crear un pedido es una sola operación en la base
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.5): `finalizeAndInsertOrder` hacía hasta cinco
+escrituras sueltas, cada una en su propia petición: primero el saldo del cliente
+(`finalize_order_customer_update`), después el pedido, después el historial (`transactions`,
+`credit_ledger`). Si el insert del pedido fallaba, el cliente quedaba con los puntos o el crédito
+descontados y sin pedido; el código devolvía el stock y liberaba el código promocional, pero el
+saldo no tenía vuelta atrás.
+
+**Un segundo defecto, de carrera**: el historial del bono de referido se decidía con una lectura
+de la fila hecha ANTES del lock de la función de la base. Con dos pedidos simultáneos del mismo
+cliente, la base otorgaba el bono una vez y el historial lo anotaba dos.
+
+**Lo que se hizo**: la función `crear_pedido` (migración 20260924173551) hace saldo + pedido +
+historial en una transacción. El bono se anota solo si ESA llamada lo otorgó, comparando la fila
+antes y después bajo el mismo lock. El rango del cliente se calcula adentro con el conteo ya
+actualizado; los rangos se le pasan desde env.ts en vez de copiarse al SQL. El servidor arma la
+fila y el movimiento de la cuenta como datos puros (`filaDelPedido`, `movimientoDeLaCuenta`).
+
+**Cómo se probó contra la base real sin dejar rastro**: un bloque `do $$ … $$` que termina con una
+excepción a propósito. Todo lo que hizo se deshace, y el resultado vuelve en el mensaje de la
+excepción. Cinco casos: invitado; pago con recompensa + crédito + bono de referido (puntos 490,
+crédito 20, 4 movimientos, 1 línea en el libro, quien invita +400); segundo pedido sin repetir el
+bono; una falla DESPUÉS de mover el saldo (+999) que no deja ni el saldo cambiado, ni el pedido, ni
+el historial; y saldo insuficiente. Después se confirmó que no quedó nada y que la clave pública no
+puede ejecutarla. Es la técnica para probar cualquier función de la base hasta que exista el
+Postgres de pruebas del paso 5.
+
+**Un punto ciego que apareció en `check:doble-escritura`**: tomaba como cuerpo de una función la
+primera llave después del primer paréntesis. En una función con tipo de retorno de objeto
+(`Promise<{ order: any }>`) eso es el TIPO, y la función entera quedaba fuera del chequeo:
+justamente `finalizeAndInsertOrder`. Se vio al inyectarle una doble escritura y comprobar que el
+chequeo seguía en verde. Ahora empareja los paréntesis y salta el tipo de retorno.
+
+**Despliegue**: la función ya está en la base, pero el `api` desplegado no la llama hasta que esta
+rama llegue a `main`. No cambia nada de lo que corre hoy.

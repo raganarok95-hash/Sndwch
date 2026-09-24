@@ -7,7 +7,7 @@ import {
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
   DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
   CULQI_FEE_RATE, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
-  ventanaPrometida,
+  ventanaPrometida, RANKS,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -475,12 +475,67 @@ function reportPurchaseToMeta(p: FinalizeOrderParams, cliente?: { ad_tracking_op
   });
 }
 
+// ── LA FILA DEL PEDIDO Y LO QUE LE PASA A LA CUENTA, COMO DATOS (2026-09-24) ─────────────────
+// Lo que `crear_pedido` escribe, armado acá como datos puros para poder probarlo sin base
+// (tests-api/crear-pedido.test.ts). La escritura es UNA: la función de la base hace el saldo,
+// el pedido y el historial en la misma transacción.
+export function filaDelPedido(p: FinalizeOrderParams, promesa: { desde: string | null; hasta: string | null }) {
+  return {
+    promised_from: promesa.desde,
+    promised_to: promesa.hasta,
+    ref: p.ref,
+    customer_phone: p.phone,
+    contact_phone: p.contactPhone,
+    customer_name: p.name,
+    customer_email: p.email || null,
+    customer_address: p.address,
+    lat: p.lat,
+    lon: p.lon,
+    group_code: p.groupCode || null,
+    recurring_id: p.recurringId || null,
+    summary: p.summary || "",
+    notes: p.notes,
+    total: p.total,
+    delivery_fee: p.deliveryFee,
+    // Los km que se COBRARON, guardados con el pedido: inmunes a un cambio futuro del factor
+    // de ruta, para comparar contra lo que cobró el motorizado ese día.
+    delivery_km: p.deliveryKm ?? null,
+    delivery_zone: p.deliveryZone,
+    payment_status: p.paymentStatus,
+    payment_id: p.paymentId,
+    payment_method: p.paymentMethod,
+    items: p.items,
+    delivery_time: p.scheduledFor,
+    redeemed_reward: p.reward ? p.reward.label : null,
+    // Los puntos exactos que costó la recompensa: la cancelación los devuelve sin volver a
+    // buscar el precio actual, que puede haber cambiado.
+    redeemed_reward_pts: p.reward ? p.reward.pts : null,
+  };
+}
+
+/** Lo que el pedido le hace a la cuenta de quien paga. `referidoPor` es a quién se le
+ *  atribuiría el bono si todavía no se dio; la base decide bajo lock si de verdad se da. */
+export function movimientoDeLaCuenta(p: FinalizeOrderParams & { phone: string }, referidoPor: string | null) {
+  // Puntos solo sobre la comida, nunca sobre el delivery (es un pase directo al motorizado).
+  const basePoints = pointsFor(p.total, p.deliveryFee);
+  return {
+    phone: p.phone,
+    points_delta: basePoints - (p.reward ? p.reward.pts : 0),
+    credit_delta: p.useCredit ? -p.total : 0,
+    redeemed_delta: p.reward ? 1 : 0,
+    last_address: p.address,
+    referrer_phone: referidoPor,
+    referral_bonus: referidoPor ? REFERRAL_BONUS_POINTS : 0,
+    referrer_bonus: referidoPor ? REFERRER_REWARD_POINTS : 0,
+    base_points: basePoints,
+    descripcion: p.useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
+    reward_label: p.reward ? p.reward.label : null,
+    reward_pts: p.reward ? p.reward.pts : null,
+    nombre: p.name,
+  };
+}
+
 export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
-  // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
-  // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
-  // relevante es "quién es este cliente ahora", no una consulta aparte cada vez que se
-  // reimprime. null para invitados (sin cuenta no hay rango que mostrar).
-  let customerRank: string | null = null;
   // La hora que se le promete al cliente queda escrita en el pedido al crearlo (ver
   // `ventanaPrometida` en env.ts). La cola se cuenta ahora, no la que vio el cliente al
   // armar el carrito: es la que de verdad tiene delante este pedido.
@@ -495,174 +550,56 @@ export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ 
     }
   }
   const promesa = ventanaPrometida(Date.now(), colaDelante, p.scheduledFor);
-  async function insertOrder() {
-    return sbInsert("orders", {
-      promised_from: promesa.desde,
-      promised_to: promesa.hasta,
-      ref: p.ref,
-      customer_phone: p.phone,
-      contact_phone: p.contactPhone,
-      customer_name: p.name,
-      customer_email: p.email || null,
-      customer_address: p.address,
-      lat: p.lat,
-      lon: p.lon,
-      group_code: p.groupCode || null,
-      recurring_id: p.recurringId || null,
-      summary: p.summary || "",
-      notes: p.notes,
-      total: p.total,
-      delivery_fee: p.deliveryFee,
-      // Los km que se COBRARON, guardados con el pedido. Se podrían recalcular desde
-      // lat/lon, pero guardarlos deja el número inmune a un cambio futuro del factor de
-      // ruta — y todo el sentido de esto es poder comparar contra lo que cobró el
-      // motorizado ese día, no contra lo que hoy diría la fórmula.
-      delivery_km: p.deliveryKm ?? null,
-      delivery_zone: p.deliveryZone,
-      status: "RECIBIDO",
-      payment_status: p.paymentStatus,
-      payment_id: p.paymentId,
-      payment_method: p.paymentMethod,
-      mode: null,
-      product_key: null,
-      size: null,
-      build: null,
-      items: p.items,
-      delivery_time: p.scheduledFor,
-      redeemed_reward: p.reward ? p.reward.label : null,
-      // Puntos exactos que costó la recompensa canjeada (si hubo una) — guardado aparte
-      // de la etiqueta para que actCancelMyOrder pueda devolverlos con exactitud sin
-      // depender de volver a buscar el precio en puntos actual de esa recompensa (que
-      // puede repreciarse con el tiempo, como ya pasó esta sesión con R02/R03/R05).
-      redeemed_reward_pts: p.reward ? p.reward.pts : null,
-      customer_rank: customerRank,
-    });
-  }
+  const rangos = RANKS.map((r) => ({ min: r.minOrders, name: r.name }));
 
+  // ── UNA SOLA ESCRITURA: saldo + pedido + historial, en la misma transacción ──────────────
+  // Antes eran hasta cinco peticiones sueltas y el saldo se tocaba ANTES de insertar el
+  // pedido: si el insert fallaba, el cliente quedaba con los puntos o el crédito descontados
+  // y sin pedido. Ahora `crear_pedido` (migración 20260924173551) hace todo o nada.
   if (p.phone && p.paymentStatus === "paid") {
+    // Estas comprobaciones dan un mensaje claro ANTES de intentar nada. La garantía real está
+    // en la base: finalize_order_customer_update rechaza un saldo que quedaría negativo, bajo
+    // lock, aunque dos pedidos lleguen a la vez.
     const custRows = await sbGet("customers", `phone=eq.${encodeURIComponent(p.phone)}`);
     const c = custRows[0];
     if (!c) throw new ApiError("Cliente no encontrado.", 404);
     if (p.reward && (c.points || 0) < p.reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
     if (p.useCredit && (c.credit_balance || 0) < p.total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
 
-    // El gate real vive en la RPC (referral_bonus_granted, con lock de fila) — este check
-    // acá es solo para decidir si insertar las transacciones de auditoría "Bono por
-    // referido" más abajo. Antes usaba total_orders===0 como proxy de "primer pedido",
-    // pero total_orders puede volver a 0 tras una autocancelación (actCancelMyOrder resta
-    // 1) sin que referred_by se limpie nunca, así que el bono se podía volver a otorgar
-    // indefinidamente con "pedir con crédito → cancelar → repetir" (hallazgo de auditoría
-    // de código, CRÍTICO). referral_bonus_granted es monotónico: se otorga una sola vez en
-    // la vida del cliente sin importar cuántas veces total_orders suba o baje después.
-    const isReferral = !!c.referred_by && !c.referral_bonus_granted;
-    // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
-    // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
-    // Los puntos se ganan solo sobre la comida, nunca sobre el delivery — el delivery es
-    // un pass-through al motorizado (el negocio no se queda con ese margen), así que
-    // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
-    // que haya ingreso real detrás.
-    const basePoints = pointsFor(p.total, p.deliveryFee);
-    let pointsDelta = basePoints;
-    if (p.reward) pointsDelta -= p.reward.pts;
+    const cuenta = movimientoDeLaCuenta({ ...p, phone: p.phone }, c.referred_by || null);
+    const r = await rpc("crear_pedido", { p_pedido: filaDelPedido(p, promesa), p_cuenta: cuenta, p_rangos: rangos });
+    const customer = safeCustomer(r.customer);
 
-    // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
-    // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
-    // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
-    // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
-    // marcado "pagado" sin el débito real detrás.
-    const updated = await rpc("finalize_order_customer_update", {
-      p_phone: p.phone,
-      p_points_delta: pointsDelta,
-      p_credit_delta: p.useCredit ? -p.total : 0,
-      p_total_orders_delta: 1,
-      p_last_address: p.address,
-      p_total_redeemed_delta: p.reward ? 1 : 0,
-      p_referrer_phone: isReferral ? c.referred_by : null,
-      p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
-      p_referrer_bonus: isReferral ? REFERRER_REWARD_POINTS : 0,
-    });
-    const customer = safeCustomer(updated);
-    customerRank = computeRankName(updated.total_orders || 0);
-    // Aviso de "subiste de rango" — compara el rango ANTES de este pedido (con `c`, la fila
-    // leída antes del incremento) contra el de después; si cruzó un umbral, se lo dice de
-    // inmediato en vez de dejar que se entere la próxima vez que abra su perfil.
-    const previousRank = computeRankName(c.total_orders || 0);
-    if (previousRank !== customerRank) {
-      // El rango exacto que desbloquea el menú secreto se deriva de SIG_GATES (hoy 5 pedidos,
-      // antes 15) en vez de estar escrito a mano acá — así este aviso no se desincroniza
-      // si el umbral de negocio vuelve a cambiar.
+    // Lo de abajo es de apoyo: nada de esto puede deshacer un pedido ya creado y pagado.
+    const rangoAntes = computeRankName(r.pedidos_antes || 0);
+    const rangoAhora = computeRankName(r.customer?.total_orders || 0);
+    if (rangoAntes !== rangoAhora) {
+      // El rango que desbloquea el menú secreto se deriva de SIG_GATES, no se escribe.
       const vaultRank = computeRankName(SIG_GATES.SIG05.minOrders);
       try {
         await sendPushToPhone(p.phone, {
           title: "🎖️ ¡Subiste de rango!",
-          body: `Ahora eres ${customerRank} en SND//WCH.` + (customerRank === vaultRank ? " Ya puedes ver el menú secreto 👀" : ""),
+          body: `Ahora eres ${rangoAhora} en SND//WCH.` + (rangoAhora === vaultRank ? " Ya puedes ver el menú secreto 👀" : ""),
           url: "./index.html",
-          tag: "sndwch-rank-up-" + customerRank,
+          tag: "sndwch-rank-up-" + rangoAhora,
         });
       } catch {
         // un push fallido no debe bloquear la creación del pedido
       }
     }
-    const orderRows = await insertOrder();
-
-    // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
-    // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
-    // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
-    const auditInserts: Promise<unknown>[] = [
-      sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "earn_confirmed",
-        points: basePoints,
-        description: p.useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
-        order_ref: p.ref,
-        confirmed: true,
-      }),
-    ];
-    if (p.useCredit) {
-      auditInserts.push(sbInsert("credit_ledger", {
-        customer_phone: p.phone,
-        delta: -p.total,
-        reason: "Pedido pagado con crédito (" + p.ref + ")",
-      }));
-    }
-    if (p.reward) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "redeem",
-        points: -p.reward.pts,
-        description: p.reward.label + " canjeado en pedido " + p.ref,
-        order_ref: p.ref,
-        confirmed: true,
-      }));
-    }
-    if (isReferral) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "earn_confirmed",
-        points: REFERRAL_BONUS_POINTS,
-        description: "Bono por referido",
-        confirmed: true,
-      }));
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: c.referred_by,
-        type: "earn_confirmed",
-        points: REFERRER_REWARD_POINTS,
-        description: "Sándwich gratis por invitar a " + p.name,
-        confirmed: true,
-      }));
-    }
-    await Promise.all(auditInserts);
-    if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
+    // Solo si ESTA llamada otorgó el bono (la base lo decidió bajo lock): antes se decidía con
+    // una lectura previa y dos pedidos simultáneos lo anotaban dos veces.
+    if (r.bono_referido && c.referred_by) await rewardReferrer(c.referred_by, p.name);
     await alertLowMarginOrder(p);
     reportPurchaseToMeta(p, c);
     await sendConfirmationEmailSafely(p);
-    return { order: orderRows[0], customer };
+    return { order: r.order, customer };
   }
 
-  const orderRows = await insertOrder();
+  const r = await rpc("crear_pedido", { p_pedido: filaDelPedido(p, promesa), p_cuenta: null, p_rangos: rangos });
   reportPurchaseToMeta(p);
   await sendConfirmationEmailSafely(p);
-  return { order: orderRows[0], customer: null };
+  return { order: r.order, customer: null };
 }
 
 // El cliente valida esto mismo primero (mejor experiencia, feedback inmediato), pero un

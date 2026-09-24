@@ -71,13 +71,43 @@ function archivosTs(dir) {
 // de strings y comentarios de línea — suficiente para este código, y lo que importa es no
 // mezclar dos funciones vecinas (el extractor aproximado de la auditoría daba falsos positivos
 // justamente por eso).
+// Posición de la `{` que abre el cuerpo, dado el `(` de los parámetros. Una `{` es parte del
+// TIPO de retorno si viene dentro de `<…>`/`(…)`/`[…]`, o si abre un tipo literal (justo
+// después de `:`, `|`, `&` o `=>`); si no, es el cuerpo.
+function cuerpoDesde(src, abreParen) {
+  let i = abreParen;
+  for (let prof = 0; i < src.length; i++) {
+    if (src[i] === '(') prof++;
+    else if (src[i] === ')' && --prof === 0) break;
+  }
+  let prof = 0;
+  let ultimo = '';
+  for (i++; i < src.length; i++) {
+    const c = src[i];
+    if (/\s/.test(c)) continue;
+    if (c === '{') {
+      const abreTipo = ultimo === ':' || ultimo === '|' || ultimo === '&' || /=>\s*$/.test(src.slice(Math.max(0, i - 6), i));
+      if (prof === 0 && !abreTipo) return i;
+      prof++;
+    } else if (c === '(' || c === '<' || c === '[') prof++;
+    else if ((c === '}' || c === ')' || c === '>' || c === ']') && prof > 0) prof--;
+    ultimo = c;
+  }
+  return -1;
+}
+
 function funciones(src) {
   const out = [];
   const re = /(?:^|\n)(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
   let m;
   while ((m = re.exec(src))) {
-    let i = src.indexOf('{', src.indexOf(')', m.index));
-    // saltar el tipo de retorno: la primera llave después del paréntesis de la firma
+    // ⚠ EL CUERPO NO ES «LA PRIMERA LLAVE DESPUÉS DEL PRIMER PARÉNTESIS» (2026-09-24). Así se
+    // hacía, y en una función con tipo de retorno de objeto —`): Promise<{ order: any }> {`— lo
+    // que se tomaba como cuerpo era el TIPO: la función entera quedaba fuera del chequeo sin que
+    // nada avisara. Pasaba con finalizeAndInsertOrder, la que crea los pedidos. Ahora se
+    // emparejan los paréntesis de los parámetros y se salta el tipo de retorno.
+    let i = cuerpoDesde(src, m.index + m[0].length - 1);
+    if (i < 0) continue;
     let prof = 0;
     let ini = -1;
     let enStr = null;

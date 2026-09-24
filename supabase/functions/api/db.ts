@@ -134,6 +134,9 @@ export async function rpc(name: string, args: unknown) {
     if (text.includes("insufficient_balance")) throw new ApiError("Saldo insuficiente para este pedido.", 402);
     if (text.includes("already_claimed")) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
     if (text.includes("customer_not_found")) throw new ApiError("Cliente no encontrado.", 404);
+    // El mismo cobro de Culqi no puede crear dos pedidos. Antes lo traducía el insert directo
+    // (sbInsert); desde que el pedido se crea dentro de crear_pedido, llega por acá.
+    if (text.includes("23505") && text.includes("payment_id")) throw new ApiError("Este pago ya fue usado en otro pedido.", 409);
     throw new Error(`rpc ${name} failed`);
   }
   // Las funciones que declaran `returns void` (ej. gift_credit) responden sin cuerpo —

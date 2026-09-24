@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924112331
+// generado-contra-migracion: 20260924173551
 export type Json =
   | string
   | number
@@ -1930,6 +1930,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      crear_pedido: {
+        Args: { p_cuenta?: Json; p_pedido: Json; p_rangos?: Json }
+        Returns: Json
       }
       dashboard_aggregates: {
         Args: { p_month_start: string; p_week_start: string }
