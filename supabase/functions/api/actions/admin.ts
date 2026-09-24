@@ -374,27 +374,16 @@ export async function actAdminInventoryRestock(b: any) {
     return { code, name: String(it?.name || "").trim(), add };
   });
 
-  const applied: { code: string; from: number; to: number }[] = [];
-  for (const it of items) {
-    const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(it.code)}&select=stock_qty`);
-    const from = existing.length && existing[0].stock_qty != null ? Number(existing[0].stock_qty) : 0;
-    const to = from + it.add;
-    // Reponer es EXACTAMENTE el momento en que se cocinó una tanda, y es el único momento
-    // en que el sistema puede saberlo. De acá cuelga toda la alerta de caducidad (#5): sin
-    // esta fecha, una tanda de hace cinco días y una de hoy son el mismo número de stock.
-    // La edición normal de stock NO la toca a propósito — corregir un número a mano es una
-    // corrección, no cocinar de nuevo, y refrescar la fecha ahí borraría la caducidad real.
-    const cookedAt = new Date().toISOString();
-    if (existing.length) {
-      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
-    } else {
-      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
-    }
-    // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
-    // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
-    await notifyRestockedSignatures(it.code);
-    applied.push({ code: it.code, from, to });
-  }
+  // Toda la tanda en una sola llamada a la base, que suma sobre lo que HAY en ese momento (A1).
+  // Antes se leía el stock, se sumaba acá y se escribía el total: un pedido que reservaba
+  // entre las dos llamadas quedaba borrado del stock y se vendía lo que ya no había. La base
+  // también anota la fecha de la tanda —de ella cuelga la alerta de caducidad (#5)— y crea el
+  // insumo que todavía no tenía fila. La edición normal de stock NO toca esa fecha: corregir un
+  // número a mano es una corrección, no cocinar de nuevo.
+  const applied = (await rpc("reponer_tanda", { p_items: items })) as { code: string; from: number; to: number }[];
+  // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
+  // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
+  for (const it of applied) await notifyRestockedSignatures(it.code);
   // Una sola entrada de auditoría por tanda, no una por insumo: el log se lee para
   // reconstruir qué pasó, y 20 líneas idénticas del mismo minuto lo entierran.
   await logAdminAction(s.phone, "inventory-restock", undefined, { items: applied });

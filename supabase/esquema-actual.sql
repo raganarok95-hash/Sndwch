@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924185004
+-- foto-tomada-tras-migracion: 20260924211810
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -1642,6 +1642,42 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.reponer_tanda(p_items jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  it jsonb;
+  v_code text;
+  v_add int;
+  v_to int;
+  out jsonb := '[]'::jsonb;
+begin
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'reponer_tanda: no hay insumos';
+  end if;
+  for it in select * from jsonb_array_elements(p_items) loop
+    v_code := nullif(trim(it->>'code'), '');
+    v_add := (it->>'add')::int;
+    if v_code is null then raise exception 'reponer_tanda: falta el código de un insumo'; end if;
+    -- Solo suma: bajar un número es la edición normal de stock, que fija el valor exacto.
+    if v_add is null or v_add <= 0 then raise exception 'reponer_tanda: la cantidad de % debe ser mayor a 0', v_code; end if;
+    insert into public.inventory as inv (product_code, product_name, stock_qty, in_stock, batch_cooked_at)
+    values (v_code, nullif(trim(it->>'name'), ''), v_add, true, now())
+    on conflict (product_code) do update
+      set stock_qty = coalesce(inv.stock_qty, 0) + v_add,
+          in_stock = true,
+          batch_cooked_at = now()
+    returning inv.stock_qty into v_to;
+    out := out || jsonb_build_array(jsonb_build_object('code', v_code, 'from', v_to - v_add, 'to', v_to));
+  end loop;
+  return out;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.reserve_inventory(p_codes text[], p_qtys integer[])
  RETURNS void
  LANGUAGE plpgsql
@@ -2092,6 +2128,8 @@ revoke all on function public.redeem_promo_code(p_promo_id uuid, p_phone text, p
 revoke all on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) from public; grant execute on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) to postgres; grant execute on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) to service_role;
 
 revoke all on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) from public; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to postgres; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to service_role;
+
+revoke all on function public.reponer_tanda(p_items jsonb) from public; grant execute on function public.reponer_tanda(p_items jsonb) to postgres; grant execute on function public.reponer_tanda(p_items jsonb) to service_role;
 
 revoke all on function public.reserve_inventory(p_codes text[], p_qtys integer[]) from public; grant execute on function public.reserve_inventory(p_codes text[], p_qtys integer[]) to postgres; grant execute on function public.reserve_inventory(p_codes text[], p_qtys integer[]) to service_role;
 

@@ -182,3 +182,4 @@
 20260924182608  confirmar_pago_manual_transaccional
 20260924183412  esquema_de_pedidos
 20260924185004  quitar_columnas_viejas_de_orders
+20260924211810  reponer_tanda_atomica

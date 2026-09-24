@@ -105,6 +105,14 @@ permisos, validación y código muerto.
   ahora arma sus horas en Lima. De paso, las 16 fechas y horas mostradas con `toLocale…` sin
   zona (pausa de la tienda, vencimiento de pago, tandas) se muestran en hora de Lima.
 
+- **A1** (2026-09-24): `reponer_tanda(jsonb)` (migración `20260924211810`) suma en un solo
+  `insert … on conflict do update`, anota la fecha de la tanda, crea el insumo que faltaba y
+  aplica la tanda entera o nada. `tests-db/reponer-tanda.sql` reserva entre «lo que vio el panel»
+  y la tanda; vista fallar sin la función y con los dos defectos inyectados (escribir el total,
+  no anotar la fecha). Flujo nuevo en `check:e2e`. La foto del esquema se actualizó aplicando
+  solo la diferencia sacada del Postgres local, y la definición se comparó por hash contra
+  producción: idéntica.
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

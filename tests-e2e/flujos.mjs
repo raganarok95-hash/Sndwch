@@ -177,4 +177,19 @@ export const FLUJOS = {
     const k = new Date(Date.parse(cuando)).toISOString();
     afirmar(h.cargaPorHora && Number(h.cargaPorHora[k] || 0) >= 1, `la hora programada no ocupa su lugar en la capacidad: ${JSON.stringify(h.cargaPorHora || {}).slice(0, 200)}`);
   },
+
+  async 'registrar una tanda suma sobre el stock, anota la fecha y crea el insumo que faltaba'(s, precios, carta) {
+    const dueno = await registrarYEntrar(s);
+    s.sql(`insert into admin_accounts (phone, name) values ('${dueno.phone}', 'Dueño')`);
+    const admin = await s.llamar('login', { phone: dueno.phone, pin: '4321' });
+    const cod = carta.bebida(2);
+    s.sql(`insert into inventory (product_code, product_name, stock_qty, in_stock) values ('${cod}', 'x', 4, true)
+           on conflict (product_code) do update set stock_qty = 4, in_stock = true, batch_cooked_at = null`);
+    const r = await s.llamar('admin-inventory-restock', { token: admin.token, items: [{ code: cod, add: 10 }, { code: 'E2E-NUEVO', name: 'Nuevo', add: 5 }] });
+    afirmar(r.status === 200, `admin-inventory-restock: ${r.status} ${r.error || ''}`);
+    afirmar(valor(s, `select stock_qty from inventory where product_code = '${cod}'`) === '14', 'la tanda no sumó sobre el stock');
+    afirmar(valor(s, `select stock_qty from inventory where product_code = 'E2E-NUEVO'`) === '5', 'no se creó el insumo nuevo');
+    afirmar(valor(s, `select count(*) from inventory where product_code in ('${cod}', 'E2E-NUEVO') and batch_cooked_at is not null`) === '2', 'no se anotó la fecha de la tanda');
+    afirmar(JSON.stringify(r.applied || []).includes('"from":4'), 'la respuesta no dice desde cuánto subió: ' + JSON.stringify(r).slice(0, 200));
+  },
 };
