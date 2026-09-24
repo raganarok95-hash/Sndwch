@@ -133,7 +133,7 @@ permisos, validación y código muerto.
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida
   no tiene tipo. Se cierran a medida que cada pantalla migra a la base nueva.
-- **Tres exportaciones sin uso** (`BUSINESS_CITY`, `Constants`, `sbRpc`).
+- **Exportaciones sin uso**: `sbRpc` borrada (2026-09-24). `BUSINESS_CITY` se queda con el resto de la identidad legal y `Constants` es parte de los tipos generados.
 
 ## Lo que se revisó y está bien
 
