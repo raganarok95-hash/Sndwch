@@ -1884,7 +1884,9 @@ function openMap(lat,lon,approx){
       if(!_lmap){
       _lmap=L.map('lmap',{zoomControl:true,attributionControl:false});
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(_lmap);
-      _lmap.on('move',function(){var e=(document.getElementById('maddr') as HTMLInputElement | null);if(e)e.textContent='Buscando...';if(_mTimer)clearTimeout(_mTimer);});
+      // Escribía en `maddr`, un elemento que el mapa rehecho del 2026-09-17 ya no tiene: el
+      // «Buscando…» nunca aparecía y la referencia vieja quedaba debajo de un pin ya movido.
+      _lmap.on('move',function(){var h=(document.getElementById('maddr') as HTMLElement | null);if(h)h.textContent='Buscando…';if(_mTimer)clearTimeout(_mTimer);});
       _lmap.on('moveend',function(){var c=_lmap.getCenter();if(_mTimer)clearTimeout(_mTimer);_mTimer=setTimeout(function(){revGeo(c.lat,c.lng);},700);});
     }
     _lmap.setView([lat,lon],17);

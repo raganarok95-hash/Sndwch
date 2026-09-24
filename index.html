@@ -2372,7 +2372,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '80ab4144fa';
+var APP_BUILD = '6810c385ed';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2791,6 +2791,23 @@ async function api(action, payload) {
         throw new Error(data.error || 'Error de conexión.');
     return data;
 }
+// UN ERROR DE CÓDIGO EN EL TELÉFONO DE UN CLIENTE TIENE QUE LLEGAR AL DUEÑO (2026-09-24).
+// Antes no había forma: lo que se rompía en un celular quedaba en una consola que nadie mira.
+// Llega a `debug_logs` y el resumen diario lo cuenta como «error técnico · cliente». Nunca lanza
+// (reportar no puede romper más cosas), y el mismo error se manda una sola vez por visita.
+var _erroresReportados = {};
+function reportarError(donde, e) {
+    try {
+        var mensaje = String((e && e.message) || e || '').slice(0, 300);
+        console.error('[' + donde + ']', e);
+        var clave = donde + '|' + mensaje;
+        if (_erroresReportados[clave])
+            return;
+        _erroresReportados[clave] = true;
+        api('report-client-error', { donde: donde, mensaje: mensaje, pila: String((e && e.stack) || '').slice(0, 800), pantalla: String(sndScreen || ''), version: APP_BUILD }).catch(function () { });
+    }
+    catch (_) { }
+}
 // SOUND
 function playNotif() {
     try {
@@ -2966,8 +2983,18 @@ async function loadInvBackground() {
 // Muta PROTS/SIGS/SIDES/RWDS en el sitio en vez de cambiar cómo se leen en el resto del
 // archivo, así el resto del pricing/checkout sigue funcionando igual.
 async function loadCatalogBackground() {
+    // DOS FALLAS DISTINTAS, DOS TRATOS (2026-09-24). Antes las 99 líneas iban en un solo try con
+    // el catch vacío: un corte de señal y un error de CÓDIGO al aplicar la carta se callaban
+    // igual. El primero es normal —se sigue con la carta semilla y el servidor cobra—; el segundo
+    // deja al cliente viendo precios que el servidor rechaza al pagar, y tiene que llegar al dueño.
+    var r;
     try {
-        var r = await api('get-catalog', {});
+        r = await api('get-catalog', {});
+    }
+    catch (e) {
+        return;
+    }
+    try {
         // El inventario viaja en la misma respuesta, así que el arranque no necesita una
         // segunda llamada para saber qué está agotado.
         applyInventory(r.inventory);
@@ -3100,7 +3127,9 @@ async function loadCatalogBackground() {
             SAUCES.forEach(function (sauce) { sauce.vaultOnly = (secret.vaultOnlySauces || []).indexOf(sauce.id) >= 0; });
         }
     }
-    catch (e) { }
+    catch (e) {
+        reportarError('cargar-catalogo', e);
+    }
 }
 // Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
 // STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
@@ -3108,8 +3137,15 @@ async function loadCatalogBackground() {
 // validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
 // el horario real ya hubiera cambiado en la base de datos.
 async function loadStoreHoursBackground() {
+    // Igual que la carta: la falla de red se tolera, el error de código se reporta.
+    var r;
     try {
-        var r = await api('get-store-hours', {});
+        r = await api('get-store-hours', {});
+    }
+    catch (e) {
+        return;
+    }
+    try {
         if (Array.isArray(r.hours) && r.hours.length === 7) {
             STORE_HOURS = r.hours.map(function (d) { return d.closed ? null : [d.open, d.close]; });
         }
@@ -3156,7 +3192,9 @@ async function loadStoreHoursBackground() {
         if (typeof r.maxPerHour === 'number')
             maxPerHour = r.maxPerHour;
     }
-    catch (e) { }
+    catch (e) {
+        reportarError('cargar-horario', e);
+    }
 }
 // ── ICONOS, DISTANCIA E INVENTARIO: COMPARTIDOS, NO DEL PANEL (2026-09-10) ────────────
 // Estas cinco cosas vivían dentro de los archivos del panel, y el 2026-09-10 —al partir el
@@ -8897,8 +8935,10 @@ function openMap(lat, lon, approx) {
             if (!_lmap) {
                 _lmap = L.map('lmap', { zoomControl: true, attributionControl: false });
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_lmap);
-                _lmap.on('move', function () { var e = document.getElementById('maddr'); if (e)
-                    e.textContent = 'Buscando...'; if (_mTimer)
+                // Escribía en `maddr`, un elemento que el mapa rehecho del 2026-09-17 ya no tiene: el
+                // «Buscando…» nunca aparecía y la referencia vieja quedaba debajo de un pin ya movido.
+                _lmap.on('move', function () { var h = document.getElementById('maddr'); if (h)
+                    h.textContent = 'Buscando…'; if (_mTimer)
                     clearTimeout(_mTimer); });
                 _lmap.on('moveend', function () { var c = _lmap.getCenter(); if (_mTimer)
                     clearTimeout(_mTimer); _mTimer = setTimeout(function () { revGeo(c.lat, c.lng); }, 700); });
@@ -12322,6 +12362,8 @@ function render() {
     catch (e) {
         try {
             console.error('render() falló en la pantalla "' + sndScreen + '":', e);
+            // El cliente ve «Algo se rompió»; sin esto el dueño nunca se enteraba de que pasó.
+            reportarError('pantalla:' + String(sndScreen), e);
             var appEl = document.getElementById('app');
             if (appEl) {
                 appEl.innerHTML = '<div style="min-height:100vh;background:#12150F;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'

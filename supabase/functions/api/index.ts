@@ -58,6 +58,7 @@ import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched, a
 import {
   actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
 } from "./actions/complaints.ts";
+import { actReportClientError } from "./actions/errores.ts";
 import {
   actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
 } from "./actions/problems.ts";
@@ -237,6 +238,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,
   "alert-complaint-deadlines": actAlertComplaintDeadlines,
+  "report-client-error": actReportClientError,
   "report-order-problem": actReportOrderProblem,
   "my-order-problems": actMyOrderProblems,
   "admin-order-problems": actAdminOrderProblems,

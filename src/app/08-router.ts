@@ -507,6 +507,8 @@ function render(){
   }catch(e){
     try{
       console.error('render() falló en la pantalla "'+sndScreen+'":',e);
+      // El cliente ve «Algo se rompió»; sin esto el dueño nunca se enteraba de que pasó.
+      reportarError('pantalla:'+String(sndScreen),e);
       var appEl=(document.getElementById('app') as HTMLElement | null);
       if(appEl){
         appEl.innerHTML='<div style="min-height:100vh;background:#12150F;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'

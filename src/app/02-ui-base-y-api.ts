@@ -161,6 +161,21 @@ async function api(action,payload){
   if(!r.ok)throw new Error(data.error||'Error de conexión.');
   return data;
 }
+// UN ERROR DE CÓDIGO EN EL TELÉFONO DE UN CLIENTE TIENE QUE LLEGAR AL DUEÑO (2026-09-24).
+// Antes no había forma: lo que se rompía en un celular quedaba en una consola que nadie mira.
+// Llega a `debug_logs` y el resumen diario lo cuenta como «error técnico · cliente». Nunca lanza
+// (reportar no puede romper más cosas), y el mismo error se manda una sola vez por visita.
+var _erroresReportados:Record<string,boolean>={};
+function reportarError(donde:string,e:any){
+  try{
+    var mensaje=String((e&&e.message)||e||'').slice(0,300);
+    console.error('['+donde+']',e);
+    var clave=donde+'|'+mensaje;
+    if(_erroresReportados[clave])return;
+    _erroresReportados[clave]=true;
+    api('report-client-error',{donde:donde,mensaje:mensaje,pila:String((e&&e.stack)||'').slice(0,800),pantalla:String(sndScreen||''),version:APP_BUILD}).catch(function(){});
+  }catch(_){}
+}
 
 // SOUND
 function playNotif(){
@@ -308,8 +323,13 @@ async function loadInvBackground(){
 // Muta PROTS/SIGS/SIDES/RWDS en el sitio en vez de cambiar cómo se leen en el resto del
 // archivo, así el resto del pricing/checkout sigue funcionando igual.
 async function loadCatalogBackground(){
+  // DOS FALLAS DISTINTAS, DOS TRATOS (2026-09-24). Antes las 99 líneas iban en un solo try con
+  // el catch vacío: un corte de señal y un error de CÓDIGO al aplicar la carta se callaban
+  // igual. El primero es normal —se sigue con la carta semilla y el servidor cobra—; el segundo
+  // deja al cliente viendo precios que el servidor rechaza al pagar, y tiene que llegar al dueño.
+  var r;
+  try{r=await api('get-catalog',{});}catch(e){return;}
   try{
-    var r=await api('get-catalog',{});
     // El inventario viaja en la misma respuesta, así que el arranque no necesita una
     // segunda llamada para saber qué está agotado.
     applyInventory(r.inventory);
@@ -406,7 +426,7 @@ async function loadCatalogBackground(){
       TOPS.forEach(function(t){t.vaultOnly=(secret.vaultOnlyTops||[]).indexOf(t.id)>=0;});
       SAUCES.forEach(function(sauce){sauce.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sauce.id)>=0;});
     }
-  }catch(e){}
+  }catch(e){reportarError('cargar-catalogo',e);}
 }
 // Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
 // STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
@@ -414,8 +434,10 @@ async function loadCatalogBackground(){
 // validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
 // el horario real ya hubiera cambiado en la base de datos.
 async function loadStoreHoursBackground(){
+  // Igual que la carta: la falla de red se tolera, el error de código se reporta.
+  var r;
+  try{r=await api('get-store-hours',{});}catch(e){return;}
   try{
-    var r=await api('get-store-hours',{});
     if(Array.isArray(r.hours)&&r.hours.length===7){
       STORE_HOURS=r.hours.map(function(d){return d.closed?null:[d.open,d.close];});
     }
@@ -451,7 +473,7 @@ async function loadStoreHoursBackground(){
     queueAhead=typeof r.queueAhead==='number'?r.queueAhead:0;
     if(typeof r.queueMinutesPerOrder==='number')queueMinutesPerOrder=r.queueMinutesPerOrder;
     if(typeof r.maxPerHour==='number')maxPerHour=r.maxPerHour;
-  }catch(e){}
+  }catch(e){reportarError('cargar-horario',e);}
 }
 
 
