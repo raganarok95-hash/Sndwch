@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva, loQueGanaElInvitado } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva, loQueGanaElInvitado, pistasValidas } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, MODELO_OBJETIVOS, CAC_TECHO, cacTechoPrimerPedido, cacTechoValorVida, pedidosPorCliente } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
@@ -72,6 +72,15 @@ async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
           url: "./index.html",
           tag: "sndwch-restock-" + sigId,
         });
+        // Deja rastro en marketing_touches (2026-09-23), igual que el pedido fijo: este aviso
+        // sale siempre —es un evento puntual y en parte pedido—, pero sin la fila los crones
+        // de promoción no sabían que este cliente ya recibió algo hoy y le mandaban otro
+        // encima. Best-effort: el push ya salió.
+        try {
+          await sbInsert("marketing_touches", { customer_phone: phone, campaign_type: "restock", channel: "push" });
+        } catch (e) {
+          await debugLog({ stage: "restock-touch", phone, error: String(e) });
+        }
       } catch {
         // un push fallido no debe bloquear el resto de los avisos
       }
@@ -397,7 +406,7 @@ export async function actAdminExportOrders(b: any) {
   const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "orders",
-    `select=ref,date,customer_name,customer_phone,contact_phone,customer_address,customer_email,summary,total,status,payment_status,payment_method,mode,size,eta_minutes,redeemed_reward,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
+    `select=ref,date,customer_name,customer_phone,contact_phone,customer_address,customer_email,summary,total,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
   );
   // Exporta teléfono/dirección/correo de TODOS los pedidos — tan sensible como cualquier
   // otra acción admin que ya se audita, y no quedaba ningún rastro de quién lo descargó
@@ -465,7 +474,7 @@ export async function actDashboardStats(b: any) {
       // customer_phone se agregó para poder atribuir ingresos de esta misma ventana a
       // acquisition_source más abajo (bySource) — antes bySource solo contaba
       // registros/conversión, nunca cuánto dinero trajo cada canal.
-      `select=total,payment_status,created_at,items,product_key,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
+      `select=total,payment_status,created_at,items,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=500"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=500"),
@@ -893,7 +902,7 @@ export async function actAdminRangeReport(b: any) {
   const rows = await sbGet(
     "orders",
     `created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lte.${encodeURIComponent(to.toISOString())}` +
-      `&select=total,payment_status,payment_method,created_at,items,product_key,summary,status&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
+      `&select=total,payment_status,payment_method,created_at,items,summary,status&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
   );
   const truncated = rows.length > RANGE_REPORT_ORDER_LIMIT;
   const orders = rows.slice(0, RANGE_REPORT_ORDER_LIMIT);
@@ -1367,8 +1376,10 @@ export function marketingContent(): { theme: string; whatsapp: string; caption: 
   {
     theme: "PEDIDOS GRUPALES",
     ocasion: { momento: "Cuando son varios y nadie se pone de acuerdo", disparador: "Un grupo decidiendo qué pedir", dow: 5, hora: 18 },
-    whatsapp: "¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde 5 sándwiches, el 15CM más barato va gratis.",
-    caption: "Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde 5 sándwiches invitamos el 15CM más barato del grupo.",
+    // Las dos líneas que el dueño PEGA en WhatsApp e Instagram tenían el umbral escrito a
+    // mano («Desde 5»), mientras la idea de video de abajo ya lo interpolaba (2026-09-23).
+    whatsapp: `¿Almuerzo con la oficina, los amigos o la familia? Organiza un pedido grupal en SND//WCH — cada quien agrega el suyo desde tu link, se paga todo junto. Desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches, el 15CM más barato va gratis.`,
+    caption: `Para el grupo // Comparte un link, cada quien arma su sándwich, se paga todo en un solo pedido. Desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches invitamos el 15CM más barato del grupo.`,
     photoIdea: "Varios sandwiches distintos en fila, sugiriendo variedad para un grupo.",
     videoIdea: `E · LA MESA LARGA — 9:16, 16 s. 0-2s manos distintas entrando en cuadro por los dos lados. 2-9s los hermanos reparten sándwiches distintos sin pelearse — cada uno entrega los suyos. 9-13s plano cenital de la mesa llena, el "//" al centro. 13-16s cierre: un link, cada quien arma el suyo, y desde ${ORGANIZER_FREE_MIN_SANDWICHES} sándwiches invitamos el 15CM más barato.`,
   },
@@ -1714,7 +1725,16 @@ export async function actAdminSecretSignatureSet(b: any) {
     );
   }
   const imagePath = b.imagePath ? String(b.imagePath).trim().slice(0, 300) : null;
+  // Lo que la pantalla del secreto cuenta además de la receta. Las pistas NO pueden nombrar
+  // ingredientes (el mecanismo es no revelarlos): el panel lo recuerda, acá solo se acotan.
+  const endsAt = b.endsAt && Number.isFinite(Date.parse(String(b.endsAt))) ? new Date(Date.parse(String(b.endsAt))).toISOString() : null;
+  if (endsAt && Date.parse(endsAt) < Date.now()) throw new ApiError("La fecha de fin ya pasó.", 400);
+  const hints = pistasValidas(b.hints);
+  const blurb = b.blurb ? String(b.blurb).trim().slice(0, 80) : null;
   await sbInsert("secret_signature", {
+    ends_at: endsAt,
+    hints,
+    blurb,
     name,
     base,
     protein_id: proteinId,

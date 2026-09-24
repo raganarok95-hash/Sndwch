@@ -1,0 +1,202 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q,b{text-decoration:none;font-style:normal;display:block}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:1636px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:90;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:60;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+
+/* ═════ 06 · A · LA LOSA ═════ El defecto no era la imagen: era que la figura y la tabla
+   vivían en el MISMO rectángulo. Acá SANDO está DETRÁS de una losa que lo corta a la
+   altura del hombro, así que no hay forma de que tape un dato — el recorte es el diseño. */
+#A{background:#1E2B22}
+#A .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
+#A .arriba{position:absolute;left:30px;width:172px;top:78px;z-index:6}
+#A .ok{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#D8823C;text-transform:uppercase}
+#A h1{font-family:Anton,sans-serif;font-size:42px;line-height:.86;color:#EFE6D4;margin-top:18px;letter-spacing:-.015em}
+#A .sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#A6B79A;margin-top:20px;line-height:1.25}
+#A .sub u{font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;margin-top:11px;text-transform:uppercase}
+#A .col{position:absolute;right:0;top:0;width:200px;bottom:340px;z-index:3;overflow:hidden}
+#A .col img{position:absolute;right:-22px;bottom:-30px;height:400px}
+#A .losa{position:absolute;left:0;right:0;bottom:74px;top:472px;background:#EFE6D4;z-index:10;padding:22px 26px 0 30px}
+#A .losa .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1E2B22;padding-bottom:12px}
+#A .losa .ca em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+#A .losa .ca u{font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;letter-spacing:.01em}
+#A .dr{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid rgba(30,43,34,.16);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase}
+#A .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#1E2B22}
+#A .dr b.pt{color:#B3651A}
+#A .go .oro{background:#D8823C;color:#231204}#A .go .cel{background:#EFE6D4;color:#1E2B22}
+
+/* ═════ 06 · B · LA VENTANA ═════ Otra lectura del mismo momento: no es un comprobante
+   con un mono al lado, es la ventana de la cocina. Él está ADENTRO y los datos están
+   sobre el mostrador, afuera. La ventana lo recorta, así que tampoco puede tapar nada. */
+#B{background:#16201A;background-image:radial-gradient(120% 60% at 50% 34%,rgba(216,130,60,.13),transparent 62%)}
+#B .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
+#B .arriba{position:absolute;left:28px;right:24px;top:76px;z-index:6}
+#B .ok{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#D8823C;text-transform:uppercase}
+#B h1{font-family:Anton,sans-serif;font-size:46px;line-height:.88;color:#EFE6D4;margin-top:14px;letter-spacing:-.015em}
+#B .vent{position:absolute;left:24px;right:24px;top:236px;height:252px;z-index:6;overflow:hidden;
+  background:#E8DCC2;background-image:linear-gradient(180deg,#F6EEDC 0%,#E2D2B2 74%,#CDBB97 100%);
+  box-shadow:inset 0 0 0 5px #0E1712, inset 0 22px 34px rgba(20,12,4,.22)}
+#B .vent img{position:absolute;left:50%;transform:translateX(-47%);top:8px;height:436px}
+#B .vent .luz{position:absolute;left:0;right:0;top:0;height:58px;background:linear-gradient(180deg,rgba(255,236,196,.9),transparent)}
+#B .rot{position:absolute;left:0;right:0;bottom:0;background:#0E1712;padding:9px 14px;display:flex;justify-content:space-between}
+#B .rot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#D8823C;text-transform:uppercase}
+#B .rot u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7D8C76;text-transform:uppercase}
+#B .most{position:absolute;left:24px;right:24px;top:488px;height:13px;z-index:7;
+  background:linear-gradient(180deg,#5C6A55,#2C382B)}
+#B .sub{position:absolute;left:28px;right:24px;top:520px;z-index:6;
+  font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;color:#A6B79A}
+#B .datos{position:absolute;left:28px;right:24px;top:566px;z-index:6}
+#B .dr{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;border-bottom:1px solid #2B382A;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#7D8C76;text-transform:uppercase}
+#B .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#EFE6D4}
+#B .dr b.pt{color:#D8823C}
+#B .go .oro{background:#D8823C;color:#231204}#B .go .cel{background:#EFE6D4;color:#1E2B22}
+
+/* ═════ 30 · G2 ═════ Igual a la que aprobaste, con la franja que faltaba. Antes los dos
+   estaban sueltos sobre el papel y la barra de pagar los cortaba a la mitad por accidente.
+   Ahora hay una franja oscura y ellos asoman POR DETRÁS: el corte lo hace el borde. */
+#G{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+#G .tit{position:absolute;left:26px;top:80px;z-index:6}
+#G .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#G .tit b{font-family:Anton,sans-serif;font-size:58px;line-height:.82;color:#3A2710;margin-top:11px;letter-spacing:-.025em}
+#G .cinta{position:absolute;z-index:8;background:rgba(255,252,240,.5);width:96px;height:28px;
+  border-left:1px solid rgba(255,255,255,.55);border-right:1px solid rgba(255,255,255,.55)}
+#G .c1{top:216px;left:10px;transform:rotate(-23deg)}
+#G .c2{top:216px;right:10px;transform:rotate(25deg)}
+#G .sello{position:absolute;left:26px;right:26px;top:212px;z-index:6;border:2px solid #4A3218;
+  padding:16px 16px 14px;transform:rotate(-1deg);background:rgba(242,228,202,.34)}
+#G .sello .hd{display:flex;justify-content:space-between;border-bottom:1.5px solid #4A3218;padding-bottom:10px;
+  font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218}
+#G .sello .li{display:flex;align-items:baseline;gap:9px;padding:10px 0;border-bottom:1px dashed rgba(74,50,24,.42)}
+#G .sello .li i{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;width:17px}
+#G .sello .li b{font:800 14px/1.2 Archivo,sans-serif;color:#33230F;text-transform:uppercase;letter-spacing:-.01em}
+#G .sello .li s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7A5B33;margin-top:4px}
+#G .sello .li p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
+#G .sello .ex{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A}
+#G .sello .en{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-top:1px dashed rgba(74,50,24,.42)}
+#G .sello .en em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33;width:52px;text-transform:uppercase}
+#G .sello .en n{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#33230F}
+#G .sello .en u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+#G .sello .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px;border-top:2px solid #4A3218;padding-top:11px}
+#G .sello .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px}
+#G .sello .tt b{font-family:Anton,sans-serif;font-size:46px;line-height:.82;color:#33230F;letter-spacing:-.02em}
+/* la franja: 86 px de alto, encima de la barra de pagar, y ellos viven DETRÁS */
+#G .franja{position:absolute;left:0;right:0;bottom:74px;height:112px;z-index:30;background:#3A2710;
+  overflow:hidden;display:flex;align-items:center;justify-content:center}
+#G .franja img{position:absolute;bottom:2px;height:96px}
+#G .franja .s{left:16px}#G .franja .w{right:16px}
+#G .franja em{position:relative;z-index:3;text-align:center;font:700 9px/1.8 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#C6A579;text-transform:uppercase}
+
+
+/* ═════ 31 ═════ Igual que la aprobada, con el pulgar de SANDO que ya existe en el repo
+   en vez del recuadro punteado que decía "acá va". */
+#P{background:#191C21;background-image:linear-gradient(160deg,#252A33 0%,#14171B 58%,#1F232A 100%)}
+#P .cab{position:absolute;left:24px;right:24px;top:80px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#P .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#9BA3AE;text-transform:uppercase}
+#P .cab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B7280}
+#P .mt{position:absolute;left:24px;right:24px;top:112px;z-index:6}
+#P .mt b{font-family:Anton,sans-serif;font-size:74px;line-height:.82;color:#fff;letter-spacing:-.03em}
+#P .mt b i{font-size:32px;display:inline}
+#P .mt .av{margin-top:15px}
+#P .mt .av k{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B7280;text-decoration:line-through}
+#P .mt .av s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.1em;margin-top:6px}
+#P .paso{position:absolute;left:24px;right:24px;top:264px;z-index:6}
+#P .paso .p{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid #2A313A}
+#P .paso .p k{font-family:Anton,sans-serif;font-size:22px;color:#39414C;width:26px;line-height:1}
+#P .paso .p .t b{font:800 14px/1.2 Archivo,sans-serif;color:#E9EDF2}
+#P .paso .p .t s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7B8390;margin-top:6px;line-height:1.7}
+#P .seg{position:absolute;left:24px;right:24px;top:478px;z-index:6;border:1px solid #2F3945;padding:14px 16px}
+#P .seg em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#8CC8EC;text-transform:uppercase}
+#P .seg s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9BA3AE;margin-top:8px;line-height:1.75}
+#P .vol{position:absolute;left:24px;right:24px;top:562px;z-index:6;border-top:1px solid #2A313A;border-bottom:1px solid #2A313A;
+  padding:16px 0;display:flex;justify-content:space-between;align-items:center}
+#P .vol n{font:800 15px/1 Archivo,sans-serif;color:#C9CFD8}
+#P .vol s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.08em}
+#P .mano{position:absolute;right:-22px;bottom:96px;width:182px;z-index:6;transform:rotate(-9deg)}
+#P .fr{position:absolute;left:24px;bottom:120px;width:150px;z-index:7;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6B7280;line-height:1.8}
+</style></head><body>
+
+<div class="f" id="A"><div class="tag">06 · A · LA LOSA</div><div class="forro"></div>
+  <div class="col"><img src="../../../img/sando2_asoma.png"></div>
+  <div class="arriba"><div class="ok">Pedido recibido</div>
+    <h1>YA ESTÁ<br>EN LA<br>COCINA</h1>
+    <div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div>
+  <div class="losa">
+    <div class="ca"><em>Tu pedido</em><u>#A7F2K9</u></div>
+    <div class="dr"><span>Llega</span><b>7:40 – 8:05 p.m.</b></div>
+    <div class="dr"><span>Pagaste</span><b>S/50.80</b></div>
+    <div class="dr"><span>Ganaste</span><b class="pt">+51 puntos</b></div>
+  </div>
+  <div class="go"><div class="mi oro">Seguir el pedido</div><div class="mi cel">→</div></div></div>
+
+<div class="f" id="B"><div class="tag">06 · B · LA VENTANA</div><div class="forro"></div>
+  <div class="arriba"><div class="ok">Pedido recibido</div>
+    <h1>YA ESTÁ EN<br>LA COCINA</h1></div>
+  <div class="vent">
+    <img src="../../../img/sando2_cuerpo_forro.png">
+    <div class="luz"></div>
+    <div class="rot"><em>Pedido #A7F2K9</em><u>En la plancha</u></div>
+  </div>
+  <div class="most"></div>
+  <div class="sub">“Lo estoy armando yo.”</div>
+  <div class="datos">
+    <div class="dr"><span>Llega</span><b>7:40 – 8:05 p.m.</b></div>
+    <div class="dr"><span>Pagaste</span><b>S/50.80</b></div>
+    <div class="dr"><span>Ganaste</span><b class="pt">+51 puntos</b></div>
+  </div>
+  <div class="go"><div class="mi oro">Seguir el pedido</div><div class="mi cel">→</div></div></div>
+
+<div class="f" id="G">
+  <div class="tag">30 · G2 · CON LA FRANJA</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="tit"><em>Va saliendo</em><b>TRES<br>COSAS</b></div>
+  <div class="cinta c1"></div><div class="cinta c2"></div>
+  <div class="sello">
+    <div class="hd"><span>SND//WCH · TRUJILLO</span><span>#1042</span></div>
+    <div class="li"><i>01</i><div style="flex:1"><b>The Marinara 30CM</b><s>SIN QUESO · SALSA APARTE</s></div><p>21.90</p></div>
+    <div class="li"><i>02</i><div style="flex:1"><b>Arma el tuyo 15CM</b><s>POLLO TERIYAKI</s></div><p>13.90</p></div>
+    <div class="li"><i>03</i><div style="flex:1"><b>The Midnight ×2</b><s>HELADA</s></div><p>10.00</p></div>
+    <div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="ex"><span>ENVIO 3.4 KM</span><span>7.00</span></div>
+    <div class="en"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div>
+    <div class="en"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div>
+    <div class="tt"><em>Total</em><b>S/50.80</b></div>
+  </div>
+  <div class="franja">
+    <img class="s" src="../../../img/sando2_sonrie.png">
+    <em>Nosotros ya estamos.<br>Falta tu sí</em>
+    <img class="w" src="../../../img/wicho_rie.png">
+  </div>
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="P">
+  <div class="tag">31 · CON EL PULGAR DE VERDAD</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="cab"><em>Pagas con tarjeta</em><u>#1042</u></div>
+  <div class="mt"><b>S/51<i>.21</i></b>
+    <div class="av"><k>S/50.80 con Yape</k><s>+S/0.41 DE COMISION, SOBRE EL ENVIO</s></div></div>
+  <div class="paso">
+    <div class="p"><k>1</k><div class="t"><b>Se abre la ventana de Culqi</b><s>LA PASARELA, NO NOSOTROS</s></div></div>
+    <div class="p"><k>2</k><div class="t"><b>Escribes tu tarjeta ahí</b><s>NUNCA EN ESTA APP</s></div></div>
+    <div class="p"><k>3</k><div class="t"><b>Vuelves y entra a la cocina</b><s>TE AVISAMOS APENAS SALGA</s></div></div>
+  </div>
+  <div class="seg"><em>Qué vemos nosotros</em><s>SI EL PAGO SALIO BIEN Y LOS 4 ULTIMOS DIGITOS.<br>NI EL NUMERO COMPLETO NI EL CVV PASAN POR ACA.</s></div>
+  <div class="vol"><n>Mejor con Yape</n><s>NO SE SUMA NADA</s></div>
+  <img class="mano" src="../../../img/sando2_pulgar.png">
+  <div class="fr">SI LA VENTANA NO ABRE,<br>VUELVE Y ELIGE YAPE.</div>
+  <div class="go"><div class="mi oro">Ir a pagar</div><div class="mi cel">S/51.21</div></div>
+</div>
+</body></html>

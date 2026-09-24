@@ -6,40 +6,48 @@
 function WORDMARK(size,hero?){
   return'<span style="font-family:\'Fraunces\',serif;font-optical-sizing:auto;font-size:'+size+'px;font-weight:620;color:var(--sw-text,#FFFFFF);letter-spacing:.02em;line-height:1">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>';
 }
+// ── LA CABECERA VIEJA AHORA ES EL RIEL (2026-09-17) ──────────────────────────────────
+//
+// H() era el sello de la app anterior en las ~25 pantallas que no se habian rehecho: 96px
+// de alto que repetian el wordmark a 26-40px en CADA pantalla, con el sitio donde estabas
+// escrito chiquito debajo. O sea que la pantalla mas grande de toda la app decia el nombre
+// de la marca, que es el unico dato que el cliente ya sabe.
+//
+// No se reescribieron 25 pantallas a mano: se reescribio la PIEZA. Mismos parametros, misma
+// llamada, y las 25 pasan a tener la anatomia nueva de una vez. Eso es justamente lo que
+// distingue rehacer el sistema de repintar pantalla por pantalla — si esto viviera copiado
+// en cada pantalla, cambiarlo seria 25 ediciones y la numero 26 volveria a inventarse otra.
+//
+// `sub` deja de ser un subtitulo bajo el logo y pasa a ser el centro del riel: DONDE estas.
+// Cuando no hay `bk` (no hay a donde volver) la izquierda muestra el wordmark en chico, que
+// es todo el espacio que la marca necesita dentro de la app.
+// Cuántas cosas lleva el carrito, en UNIDADES (dos del mismo sándwich son 2). Una sola
+// cuenta para los dos botones de carrito: hasta el 2026-09-23 el de la cabecera contaba
+// unidades y el del riel del armador contaba LÍNEAS, así que con dos iguales uno decía 2 y
+// el otro 1 — el mismo carrito con dos números distintos según la pantalla.
+function unidadesEnCarrito(){return cart.reduce(function(a,it){return a+(it.qty||1);},0);}
 function H(sub?,bk?,showCart?){
-  var b=bk?'<button onclick="'+bk+'" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-family:\'EB Garamond\',serif;font-size:22px;padding:0 14px 0 0;flex-shrink:0">←</button>':'';
-  var sz=sub?26:40;
-  // El subtítulo de la cabecera es un RÓTULO, no un precio, así que lleva el acento del
-  // lado: dorado con SANDO, celeste con WICHO. Ver la regla en `ACC()` (02-*).
-  // ⚠ SIN LEMA BAJO EL WORDMARK (decisión del dueño, 2026-09-17). Decía "Sándwiches hechos
-  // acá", que incumplía la regla escrita en 01-catalogo-y-estado.ts: la marca NO usa
-  // "Casero"/"Tradicional" ni sinónimos, porque se posiciona como compañía consolidada.
-  //
-  // Y no se reemplaza por otro. Tres motivos: competía con la línea de estado que va justo
-  // debajo (abierto/cerrado, ETA, costo de envío), que cambia y que el cliente sí necesita;
-  // un lema es material de anuncio o de bio, no cromo de una app; y el posicionamiento ya
-  // lo dicen los dos hermanos en la pantalla siguiente —"Ya está resuelto" / "Tú decides"—
-  // que además es interactivo en vez de decorativo. Repetirlo arriba lo debilitaba.
-  //
-  // El subtítulo `sub` sigue existiendo: lo usan las pantallas internas para decir DÓNDE
-  // estás (SIGNATURES, CONFIRMAR SÁNDWICH). Eso es navegación, no un lema.
-  var s2=sub?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.18em;text-transform:uppercase;margin-top:3px">'+sub+'</div>':'';
-  // Ícono de carrito persistente mientras se navega el menú (armar un build, agregar
-  // sides) — antes solo se veía cuántos items tenías en el carrito volviendo al home.
-  var cartIcon=(showCart&&cart.length)?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito" style="all:unset;cursor:pointer;position:relative;flex-shrink:0;padding:6px 10px;background:var(--sw-card,#1B1F18);border-radius:8px;display:flex">'+icon('cart',18,'#EFEDE4')+'<span style="position:absolute;top:-4px;right:2px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;min-width:14px;text-align:center">'+cart.reduce(function(s,it){return s+it.qty;},0)+'</span></button>':'';
-  // Toggle claro/oscuro — antes SOLO existía en sAdminHome, así que un operador en
-  // cualquiera de las 14 pantallas secundarias del admin (Inventario, Catálogo, Ficha de
-  // cliente, etc.) tenía que volver a la cola primero para cambiar de tema (hallazgo de
-  // auditoría visual, ALTO). H() es el header compartido de esas 14 pantallas — agregarlo
-  // acá, condicionado a estar en una pantalla admin, lo hace alcanzable desde cualquiera.
-  var lightToggle=sndScreen.indexOf('admin')===0?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
-  // Mismo criterio que lightToggle arriba: antes saltar de una herramienta admin a otra
-  // (ej. Inventario → Reportes) exigía volver primero a admin_home. No se muestra en
-  // admin_home mismo porque esa pantalla ya tiene el grid completo visible arriba de la
-  // cola (ver adminToolsGridHTML/reordenamiento en sAdminHome) — hallazgo de auditoría
-  // UX, confirmado por el dueño.
-  var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
-  return'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;flex-shrink:0">'+b+'<div style="flex:1"><div style="line-height:1">'+WORDMARK(sz)+'</div>'+s2+'</div>'+cartIcon+toolsNav+lightToggle+'</div>';
+  var total=unidadesEnCarrito();
+  var cartIcon=(showCart&&total)
+    ?'<button onclick="go(\'o_cart\')" aria-label="Ver carrito ('+total+')" '
+     +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;'
+     +'justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;'
+     +'color:'+ACC_INK()+';background:'+ACC()+';border-radius:999px">'+total+'</button>'
+    :'';
+  // Estos dos son del panel del dueño y no del cliente. Se quedan por la misma razon de
+  // siempre: sin ellos, un operador en cualquiera de las 14 pantallas internas del admin
+  // tiene que volver a la cola para cambiar de tema o saltar a otra herramienta.
+  var lightToggle=sndScreen.indexOf('admin')===0
+    ?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" '
+     +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
+     +'justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
+  var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')
+    ?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" '
+     +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
+     +'justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
+  var der=cartIcon+toolsNav+lightToggle;
+  return RIEL({volver:bk||'',titulo:sub||'',
+               derecha:der?'<div style="display:flex;align-items:center;gap:2px">'+der+'</div>':''});
 }
 function NAV(){
   var oa=sndTab==='order';
@@ -333,15 +341,6 @@ function loadBuild(bld){
   byoStep=4;
   enterConfirm();
 }
-// Convierte el "build" legado (un pedido/favorito de antes del carrito) al formato
-// de línea de carrito actual.
-function buildToCartItem(bld){
-  var item=Object.assign({},bld);
-  item.type=bld.mode;
-  delete item.mode;
-  item.qty=1;
-  return item;
-}
 // Limpia el estado del builder antes de empezar un pedido nuevo — evita que un
 // build abandonado (o de un pedido anterior en la misma sesión) reaparezca
 // precargado en un pedido sin relación.
@@ -358,6 +357,41 @@ function startOrder(m){
 // Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
 // ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
 // completa cuando el cliente ya sabe justo cuál quiere.
+// «Arma uno parecido» (ficha versión WICHO): el armador arranca con la receta de un
+// Signature ya puesta, para cambiarle lo que el cliente quiera. Solo entra lo que ARMA EL
+// TUYO ofrece: una proteína, un vegetal o una salsa exclusiva del Signature (sigOnly) o del
+// menú secreto (vaultOnly) se deja fuera y SE DICE, en vez de colarla por la puerta de
+// atrás a un precio que el armador no cobra.
+function piezasDelParecido(s:any){
+  var libre=function(lista:any[],id:string){var x=lista.find(function(y){return y.id===id;});return !!x&&!x.sigOnly&&!x.vaultOnly;};
+  var fuera:string[]=[];
+  var p=libre(PROTS,s.prot)?s.prot:null;
+  if(!p){var px=PROTS.find(function(y){return y.id===s.prot;});if(px)fuera.push(px.l+' '+px.s.toLowerCase());}
+  var t=(s.tops||[]).filter(function(id:string){var ok=libre(TOPS,id);if(!ok){var tx=TOPS.find(function(y){return y.id===id;});if(tx)fuera.push(tx.l.toLowerCase());}return ok;});
+  var sa=(s.sauces||[]).filter(function(id:string){var ok=libre(SAUCES,id);if(!ok){var sx=SAUCES.find(function(y){return y.id===id;});if(sx)fuera.push(sx.l.toLowerCase());}return ok;});
+  return{base:s.base||null,prot:p,tops:t,sauces:sa,cheese:s.fixedCheese||null,fuera:fuera};
+}
+function parecidoPrecargable(s:any):boolean{
+  if(!s||s.secret)return false;
+  var pz=piezasDelParecido(s);
+  return !!(pz.base||pz.prot||pz.tops.length||pz.sauces.length);
+}
+function armaParecido(id:string){
+  var s=SIGS.find(function(x){return x.id===id;});
+  if(!s)return;
+  var pz=piezasDelParecido(s);
+  var tam=size;
+  resetBuilder();
+  mode='byo';size=tam;base=pz.base;prot=pz.prot;tops=pz.tops;sauces=pz.sauces;cheese=pz.cheese;
+  // Arranca en el primer paso que falta: sin tamaño, el tamaño; sin proteína libre, la
+  // proteína. Con todo puesto, en el tamaño, para que vea desde el principio qué lleva.
+  byoStep=!size?0:!prot?2:0;
+  homeTab='byo';sndScreen='o_build';
+  render();
+  showToast(pz.fuera.length
+    ?'Te lo dejé como '+s.n+'. '+pz.fuera.join(', ')+' es solo del Signature: elige qué va en su lugar.'
+    :'Te lo dejé como '+s.n+'. Cámbiale lo que quieras.','success');
+}
 function startOrderWithSig(id){
   resetBuilder();
   mode='sig';
@@ -484,30 +518,12 @@ function sigsEnOrden(lista){
   });
 }
 function lastPaidOrder(){
-  return myOrders.find(function(o){return o.payment_status==='paid'&&((o.items&&o.items.length)||o.build);});
+  // Un pedido siempre trae `items` desde que `orders.build` se retiró de la base (2026-09-24).
+  return myOrders.find(function(o){return o.payment_status==='paid'&&o.items&&o.items.length;});
 }
-// Precio de una línea del carrito (una unidad, sin multiplicar por qty) — usado
-// tanto para mostrar el carrito como para armar el pedido a enviar.
-function itemUnitPrice(item){
-  if(item.type==='side'){var d=SIDES.find(function(x){return x.id===item.code;});return d?d.p:0;}
-  if(item.type==='sig'){
-    var sig=SIGS.find(function(x){return x.id===item.sigId;});
-    if(!sig)return 0;
-    var pr=PROTS.find(function(x){return x.id===sig.prot;});
-    var bp=item.size==='15'?sig.p15:sig.p30;
-    var dbl=item.doubleProt?dblFee(pr,item.size):0;
-    var extraSauceFee=item.extraSauce?EXTRA_SAUCE_PRICE:0;
-    return bp+dbl+extraSauceFee;
-  }
-  var pr2=PROTS.find(function(x){return x.id===item.prot;});
-  if(!pr2)return 0;
-  // El recargo del pan solo existe en ARMA EL TUYO: en un Signature la receta fija el pan y
-  // el cliente no lo elige, así que no hay nada que recargar.
-  var bp2=(item.size==='15'?pr2.p15:pr2.p30)+baseSurcharge(item.base,item.size);
-  var dbl2=item.doubleProt?dblFee(pr2,item.size):0;
-  var sc2=item.extraSauce?EXTRA_SAUCE_PRICE:0;
-  return bp2+dbl2+sc2;
-}
+// Precio de una línea del carrito (una unidad, sin multiplicar por qty). Lo calcula el módulo
+// de dinero compartido con el servidor (ver DINERO en 01-*): 0 si la línea ya no está en la carta.
+function itemUnitPrice(item){return DINERO.unitario(item);}
 // money() acá y pz() en los dos displays: sin esto, 3 x The Original 15CM daba
 // 20.9*3 = 62.699999999999996 y ESE número se le mostraba al cliente en el carrito y en
 // el mensaje de WhatsApp. Es exactamente el defecto que money()/pz() existen para evitar.
@@ -609,139 +625,51 @@ function itemExtrasLabel(item){
   if(item.note)parts.push('nota: '+item.note);
   return parts.join(' · ');
 }
-function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
-// Un combo = 1 sándwich + 1 bebida en el carrito — si hay más sándwiches que bebidas (o
-// viceversa), solo se descuenta por la cantidad de pares completos, no por cada unidad.
-// R05/R06 regalan una unidad COMPLETA (bebida o sándwich 15CM entero) — esa unidad no
-// debe contar para el combo, o el combo termina regalando TAMBIÉN la otra mitad del par
-// sobre algo que ya es gratis (espejo exacto del fix de deriveCart en el servidor, ver
-// ese comentario para el caso concreto que esto corrige).
-function cartComboCount(){
-  var sw=0,sd=0;
-  cart.forEach(function(it){if(it.type==='side')sd+=it.qty;else sw+=it.qty;});
-  if(appliedReward){
-    var idx=findRewardTargetIndex(appliedReward);
-    if(idx>=0){
-      var target=cart[idx];
-      if(appliedReward==='R06'&&target.type!=='side')sw-=1;
-      if(appliedReward==='R05'&&target.type==='side')sd-=1;
-    }
-  }
-  // El sándwich gratis del organizador tampoco cuenta: si contara, el combo terminaría
-  // regalando también la bebida emparejada con un sándwich que ya no se está cobrando —
-  // exactamente el bug que ya se corrigió una vez para R06.
-  if(organizerFreeIdx()>=0)sw-=1;
-  return Math.min(sw,sd);
+// ── EL TOTAL DEL CARRITO: UN SOLO CÁLCULO, EL DEL SERVIDOR (2026-09-24) ──────────────────
+// Todo lo de abajo lee de `cartDesglose()`, que le pide el desglose al módulo de dinero
+// compartido con el servidor (supabase/functions/_shared/dinero.ts): combo, sándwich del
+// organizador, recompensa y el orden en que se aplican. Antes esto era una segunda copia del
+// cálculo, y con el pan focaccia daba S/0.50 más que el servidor en R06 y en el sándwich del
+// organizador — el cliente veía un total y el pago se rechazaba por «el total no coincide».
+// Lo vigila tests/dinero-cliente.spec.ts. Las funciones conservan su nombre porque las usan
+// el carrito y el checkout; ninguna calcula nada propio.
+function cartDesglose(){
+  return DINERO.desglose(cart,{recompensa:appliedReward||null,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
 }
-function cartComboDiscount(){return cartComboCount()*COMBO_DISCOUNT_PER_PAIR;}
-function cartOffPeakDrinkDiscount(){
-  if(!isOffPeakDrinkPromoActiveNow())return 0;
-  var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
-  var sidePrices=[];
-  cart.forEach(function(it,idx){
-    if(it.type==='side'){
-      var qty=(appliedReward==='R05'&&idx===rewardIdx)?it.qty-1:it.qty;
-      for(var i=0;i<qty;i++)sidePrices.push(itemUnitPrice(it));
-    }
-  });
-  if(!sidePrices.length)return 0;
-  return Math.min(Math.min.apply(null,sidePrices),OFFPEAK_DRINK_PROMO_CAP);
-}
-// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM — 0 si ya es 30CM o si el
-// producto cobra lo mismo en ambos tamaños. Hoy ningún ítem del catálogo está en ese
-// caso, pero la guarda se queda: es lo que evita regalar un canje que no vale nada si
-// alguna vez vuelve a haber uno. Usado por R03.
-function itemSizeUpgradeDiff(it){
-  if(it.type==='side'||it.size!=='15')return 0;
-  if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?Math.max(0,sig.p30-sig.p15):0;}
-  var pr=PROTS.find(function(x){return x.id===it.prot;});
-  return pr?Math.max(0,pr.p30-pr.p15):0;
-}
-// Busca el primer producto del carrito elegible para una recompensa — R02 necesita una
-// línea con SALSA EXTRA activada, R03 una línea 15CM cuya versión 30CM cueste más, R04
-// una línea con doble proteína activada, R05 una línea de bebida/side, R06 una línea
-// 15CM. El resto de recompensas no tiene requisito propio (basta con que el carrito no
-// esté vacío).
-// 15CM y no RESERVE — la misma regla que usan R06 ("SÁNDWICH GRATIS") y el sándwich
-// gratis del organizador. Excluir los RESERVE evita que cualquiera de los dos se gamee
-// eligiendo el menú secreto, que es el ítem más caro del catálogo.
-function isFreeSandwichEligible(it){
-  return it.type!=='side'&&it.size==='15'&&!(it.type==='sig'&&RESERVE_SIGS.has(it.sigId));
-}
+function cartComboCount(){return Math.round(cartDesglose().combo/COMBO_DISCOUNT_PER_PAIR);}
+function cartComboDiscount(){return cartDesglose().combo;}
+function cartOffPeakDrinkDiscount(){return cartDesglose().valle;}
+// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
+function itemSizeUpgradeDiff(it){var t=DINERO.tasar(it);return t?t.subir30/100:0;}
+// 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
+function isFreeSandwichEligible(it){var t=DINERO.tasar(it);return !!t&&t.elegible.R06;}
 // Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
 function cartSandwichQty(){
   var n=0;cart.forEach(function(it){if(it.type!=='side')n+=it.qty;});return n;
 }
-// Índice del 15CM más barato que se regala al organizador, o -1 si no corresponde.
-// Espejo exacto de deriveCart en el servidor: solo si el carrito viene de un pedido
-// grupal (pendingGroupCode) y llega al mínimo de sándwiches; nunca sobre la misma línea
-// que ya está regalando una recompensa.
-function organizerFreeIdx(){
-  if(!pendingGroupCode)return -1;
-  if(cartSandwichQty()<ORGANIZER_FREE_MIN_SANDWICHES)return -1;
-  var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
-  var best=Infinity,bi=-1;
-  cart.forEach(function(it,idx){
-    if(idx===rewardIdx)return;
-    if(!isFreeSandwichEligible(it))return;
-    var pr=itemBasePrice(it);
-    if(pr<best){best=pr;bi=idx;}
-  });
-  return bi;
-}
-function itemBasePrice(it){
-  if(it.type==='side')return itemUnitPrice(it);
-  if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?(it.size==='15'?sig.p15:sig.p30):0;}
-  var pr=PROTS.find(function(x){return x.id===it.prot;});
-  return pr?(it.size==='15'?pr.p15:pr.p30):0;
-}
-function organizerFreeAmount(){
-  var i=organizerFreeIdx();
-  return i<0?0:itemBasePrice(cart[i]);
-}
-function findRewardTargetIndex(rewardId){
-  // En BUILD YOUR OWN, R02 ("4TA SALSA GRATIS") solo aplica si ya llegó al tope de 3
-  // salsas base antes de pagar por la extra — un Signature no tiene ese tope (sus salsas
-  // son fijas de receta), así que ahí basta con extraSauce activado. DEBE coincidir con
-  // eligibleR02 en supabase/functions/api/catalog.ts.
-  if(rewardId==='R02'){for(var i=0;i<cart.length;i++){if(cart[i].type!=='side'&&cart[i].extraSauce&&(cart[i].type==='sig'||cart[i].sauces.length===3))return i;}return -1;}
-  if(rewardId==='R03'){for(var j=0;j<cart.length;j++){if(itemSizeUpgradeDiff(cart[j])>0)return j;}return -1;}
-  if(rewardId==='R04'){for(var k=0;k<cart.length;k++){if(cart[k].type!=='side'&&cart[k].doubleProt)return k;}return -1;}
-  if(rewardId==='R05'){for(var m=0;m<cart.length;m++){if(cart[m].type==='side')return m;}return -1;}
-  if(rewardId==='R06'){for(var n=0;n<cart.length;n++){if(isFreeSandwichEligible(cart[n]))return n;}return -1;}
-  return cart.length?0:-1;
-}
+// Índice del 15CM que se regala al organizador (-1 si no corresponde) y cuánto vale.
+function organizerFreeIdx(){return cartDesglose().organizador.indice;}
+function organizerFreeAmount(){return cartDesglose().organizador.monto;}
+// Precio del sándwich (pan incluido) o de la bebida, sin extras.
+function itemBasePrice(it){var t=DINERO.tasar(it);return t?t.base/100:0;}
+// La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
+function findRewardTargetIndex(rewardId){return DINERO.lineaDeLaRecompensa(cart,rewardId);}
+// Cuánto perdona la recompensa sobre la línea `targetIdx`. Se pide el desglose con esa
+// recompensa: el monto sale del mismo cálculo que cobra el servidor.
 function rewardWaiverAmount(rewardId,targetIdx){
   if(targetIdx<0)return 0;
-  var it=cart[targetIdx];
-  if(rewardId==='R02')return it.extraSauce?EXTRA_SAUCE_PRICE:0;
-  if(rewardId==='R03')return Math.min(itemSizeUpgradeDiff(it),R03_FLAT_WAIVER);
-  if(rewardId==='R04'){
-    var protCode=it.type==='sig'?(SIGS.find(function(x){return x.id===it.sigId;})||{}).prot:it.prot;
-    var pr=PROTS.find(function(x){return x.id===protCode;});
-    return pr?Math.min(dblFee(pr,it.size),R04_FLAT_WAIVER):0;
-  }
-  if(rewardId==='R05')return it.type==='side'?Math.min(itemUnitPrice(it),R05_FLAT_WAIVER):0;
-  if(rewardId==='R06'){
-    if(it.type==='sig'){var sig=SIGS.find(function(x){return x.id===it.sigId;});return sig?(it.size==='15'?sig.p15:sig.p30):0;}
-    var pr2=PROTS.find(function(x){return x.id===it.prot;});
-    return pr2?(it.size==='15'?pr2.p15:pr2.p30):0;
-  }
-  return 0;
+  var d=DINERO.desglose(cart,{recompensa:rewardId,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
+  return d.recompensa&&d.recompensa.indice===targetIdx?d.recompensa.monto:0;
 }
-// Combo y hora valle ya no se suman — antes sándwich+bebida en la ventana de hora valle
-// perdía S/3+S/4=S/7 sin usar ningún punto. Solo se aplica el mayor de los dos (espejo
-// exacto del fix en deriveCart, supabase/functions/api/catalog.ts).
-function cartStackedDiscount(){return Math.max(cartComboDiscount(),cartOffPeakDrinkDiscount());}
+// Combo y hora valle no se suman: se aplica el mayor.
+function cartStackedDiscount(){var d=cartDesglose();return Math.max(d.combo,d.valle);}
+function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
+// El código promocional lo valida y lo descuenta el servidor aparte; acá se resta el mismo
+// monto que él confirmó.
 function cartFinalTotal(){
-  var base=cartBaseTotal()-cartStackedDiscount();
-  base-=organizerFreeAmount();
-  if(appliedReward){
-    var idx=findRewardTargetIndex(appliedReward);
-    base-=rewardWaiverAmount(appliedReward,idx);
-  }
-  if(appliedPromo)base-=appliedPromo.discount;
-  return money(Math.max(0,base));
+  var total=cartDesglose().total;
+  if(appliedPromo)total-=appliedPromo.discount;
+  return money(Math.max(0,total));
 }
 // El carrito se guarda en localStorage en cada cambio y se restaura al abrir la app
 // (ver restoreCart() en INIT) — sin esto, refrescar la página, cerrar la pestaña por
@@ -905,7 +833,7 @@ function cartRemove(idx){
 // groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
 // cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
 // regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
-function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;saveCart();go('o_home');}
+function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 //
@@ -999,6 +927,426 @@ function waitlistCardHTML(){
 // ellas o un lado mas grande parte la cabeza por la costura, y se nota en el ojo, la
 // oreja y el sandwich. La diferencia entre los lados la da el color del plano, nunca la
 // escala del personaje.
+// == EL SISTEMA DE PANTALLAS (escrito de cero, 2026-09-17) ==============================
+//
+// POR QUE EXISTE. El front se rehizo pantalla por pantalla y el dueno lo resumio mejor que
+// nadie: "hiciste lo que queremos evitar, que la web se vea amateur arreglando una cosa y
+// otra". Tenia razon, y la causa no era ninguna pantalla en particular: era que CADA UNA
+// inventaba su propio encabezado, su propio margen y su propia tarjeta. Cuando la coherencia
+// depende de que alguien se acuerde, se pierde en la tercera pantalla.
+//
+// Estas piezas son la anatomia. Toda pantalla del cliente se arma con ellas y ninguna vuelve
+// a escribir un padding a mano. Si algo no se puede expresar con estas piezas, la discusion
+// es si falta una pieza, no si esta pantalla merece una excepcion.
+//
+// NO SON UN REFACTOR DE LO ANTERIOR. Estan escritas mirando que necesita una pantalla de
+// esta app, no que hacia H(). La cabecera vieja gastaba 96px en repetir el logotipo en cada
+// pantalla; el riel gasta 52 y los usa para decir donde estas y como salir.
+
+// El RIEL - la franja de arriba. Tres zonas y nada mas: como salgo, donde estoy, que tengo
+// pendiente. Pegada al borde superior porque en un telefono el pulgar llega antes al borde
+// que al centro.
+function RIEL(o?){
+  o=o||{};
+  var izq=o.volver
+    ?'<button onclick="'+o.volver+'" aria-label="Volver" style="all:unset;cursor:pointer;width:44px;height:44px;'
+     +'display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096);font-size:22px">&#8592;</button>'
+    :'<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center">'+WORDMARK(15)+'</div>';
+  var centro=o.titulo
+    ?'<div style="flex:1;min-width:0;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
+     +'letter-spacing:.24em;text-transform:uppercase;color:'+ACC()+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>'
+    :'<div style="flex:1"></div>';
+  var der=o.derecha||'<div style="width:44px"></div>';
+  return'<div style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;'
+    +'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">'+izq+centro+der+'</div>';
+}
+
+// El boton de volver a la puerta. Es el UNICO camino para cambiar de hermano, y es a
+// proposito que no sea un interruptor siempre visible: dos pestanas convertirian otra vez
+// los dos mundos en una sola pantalla con un filtro.
+function BOTON_PUERTA(){
+  return'<button onclick="volverALaPuerta()" aria-label="Cambiar de lado" style="all:unset;cursor:pointer;width:44px;height:44px;'
+    +'display:flex;align-items:center;justify-content:center;gap:3px">'
+    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:'+GOLD+'"></span>'
+    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:var(--sw-sky,#8CC8EC)"></span>'
+    +'</button>';
+}
+
+// La PANTALLA - el contenedor. El cuerpo NO trae margen lateral a proposito: la imagen va a
+// sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
+// natural de una foto y no algo que haya que pelear con margenes negativos.
+function PANTALLA(riel,cuerpo,accion?){
+  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0F1A14)">'
+    +(riel||'')
+    +'<div style="flex:1;min-width:0" class="fi">'+cuerpo+'</div>'
+    +(accion||'')+'</div>';
+}
+
+// El BLOQUE - cualquier cosa que lleve texto vive dentro de uno. Un solo sitio decide el
+// margen lateral de toda la app.
+function BLOQUE(contenido,extra?){
+  return'<div style="padding:0 18px'+(extra?';'+extra:'')+'">'+contenido+'</div>';
+}
+
+// La SECCION - abre un tramo.
+function SECCION(titulo,bajada?,numero?){
+  return BLOQUE(
+    '<div style="padding:26px 0 14px">'
+    +(numero?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
+      +'color:'+ACC()+';margin-bottom:7px">'+esc(numero)+'</div>':'')
+    +'<h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
+    +'color:var(--sw-text,#fff);letter-spacing:.01em;line-height:1.06;text-wrap:balance">'+titulo+'</h2>'
+    +(bajada?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:7px;max-width:34ch">'+bajada+'</p>':'')
+    +'</div>');
+}
+
+// ── LLEVAR A OTRA PANTALLA, SIN CAJA (reescrito 2026-09-17) ───────────────────────────
+//
+// La versión anterior era un rectángulo redondeado con borde, título y subtítulo, y el
+// comentario decía orgullosamente que reemplazaba «la fila con Elegir → de la app anterior,
+// el patrón que hacía que todo se viera igual». Era el mismo patrón con la flecha borrada.
+// El dueño lo cazó a la primera: «también es un recolor».
+//
+// La caja no aporta NADA acá. No agrupa nada que no esté ya junto, no separa de nada que
+// esté al lado, y no hay contenido dentro que necesite un contenedor. Lo único que hacía era
+// dar el aspecto de app genérica: tres rectángulos apilados con borde de 1px.
+//
+// Esto es una carta de restaurante, no un panel de control. Así que se lee como una carta:
+// el nombre grande, el dato que decide alineado a la derecha, una línea fina entre uno y
+// otro. Sin relleno, sin borde, sin marco. La fila entera sigue siendo el botón.
+function PUERTA(o){
+  return'<button onclick="'+o.fn+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;'
+    +'width:100%;padding:17px 0;border-top:1px solid var(--sw-border-soft,#16241C)">'
+    +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px">'
+    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
+    +'color:var(--sw-text,#fff);line-height:1.1">'+o.titulo+'</span>'
+    +(o.dato?'<span style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;'
+      +'color:'+ACC()+'">'+o.dato+'</span>':'')
+    +'</div>'
+    +(o.bajada?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
+      +'color:var(--sw-text-muted,#9DA096);margin-top:5px;max-width:40ch">'+o.bajada+'</div>':'')
+    +'</button>';
+}
+
+// La tarjeta del menu secreto, ahora una pieza propia. Vivia como una closure dentro del
+// home viejo, asi que era inalcanzable desde cualquier otra pantalla y se perdia con el.
+// El contenido es el mismo que el dueno aprobo el 2026-09-17 (variantes A/B/D), palabra por
+// palabra: lo que cambia es que ahora tiene nombre y se puede colocar donde haga falta.
+// ── EL MENÚ SECRETO, PANTALLA PROPIA ────────────────────────────────────────────────────
+// Maquetas aprobadas: menu-secreto-estructura (qué va y en qué orden) y menu-secreto-fondo
+// (el bocado de cerca detrás). Solo se llega desbloqueado: la tarjeta bloqueada no trae acá.
+// Todo lo que dice sale de la base: el nombre, los días que le quedan (catalog.ts ·
+// finDelSecreto), las pistas que cargó el dueño y los que ya no vuelven.
+var MESES_LARGO=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function diasDelSecreto(endsAt:string|null,ahora?:number):string{
+  var fin=endsAt?Date.parse(endsAt):NaN;
+  if(!isFinite(fin))return'';
+  var d=Math.ceil((fin-(ahora||Date.now()))/86400000);
+  return d<=0?'':d===1?'Último día':d+' días';
+}
+function mesDeLima(ms:number,delta?:number):string{
+  var d=new Date(ms-5*3600000);
+  return MESES_LARGO[(d.getUTCMonth()+(delta||0)+12)%12];
+}
+function sMenuSecreto(){
+  var sig=SIGS.find(function(s){return s.secret;});
+  var desbloqueado=!!sig&&!!cust&&(cust.total_orders||0)>=sig.minOrders;
+  if(!sig||!desbloqueado){sndScreen='o_home';return sOHome();}
+  var fin=SECRET_EXTRA.endsAt?Date.parse(SECRET_EXTRA.endsAt):NaN;
+  var mes=isFinite(fin)?mesDeLima(fin):'';
+  var dias=diasDelSecreto(SECRET_EXTRA.endsAt);
+  var precio=SOLES_TXT+pz(sig.p15);
+  var foto=SIG_IMG[sig.id]||'';
+  return'<div class="msec fi">'
+    +(foto?'<div class="fo" aria-hidden="true"><img src="'+foto+'" alt=""></div>':'')+'<div class="velo"></div>'
+    +'<button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
+    +'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
+    +'<div class="cuerpo">'
+    +'<div class="cab">Lo desbloqueaste</div>'
+    +'<div class="nom"><b>'+esc(String(sig.n||'').toUpperCase())+'</b>'
+    +((mes||dias)?'<div class="mes"><s>'+(mes?'El secreto de '+esc(mes):'')+'</s><k>'+esc(dias)+'</k></div>':'')+'</div>'
+    +(SECRET_EXTRA.hints.length?'<div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>'
+      +SECRET_EXTRA.hints.map(function(h,i){return'<div class="p"><k>0'+(i+1)+'</k><div class="t"><b>'+esc(h.t)+'</b>'+(h.s?'<s>'+esc(h.s)+'</s>':'')+'</div></div>';}).join('')
+      +'</div>':'')
+    +(SECRET_EXTRA.past.length?'<div class="ant"><em>Los que ya no vuelven</em>'
+      +SECRET_EXTRA.past.slice(0,3).map(function(p){return'<div class="a"><i>'+esc(p.mes)+'</i><div class="t"><b>'+esc(p.name)+'</b>'+(p.blurb?'<s>'+esc(p.blurb)+'</s>':'')+'</div><p>SE FUE</p></div>';}).join('')
+      +'</div>'
+      +'<div class="adv">Cada uno duró un mes y no volvió.'+(isFinite(fin)?'<br>El de '+esc(mesDeLima(fin,1))+' será otro y no avisa.':'')+'</div>':'')
+    +'</div>'
+    +'<div class="pre"><em>15 cm</em><b>'+precio+'</b></div>'
+    +'<div class="go sw-barra"><button class="oro" onclick="startOrderWithSig(\''+sig.id+'\')">Pedirlo a ciegas</button><button class="cel" onclick="startOrderWithSig(\''+sig.id+'\')">'+precio+'</button></div>'
+    +'</div>';
+}
+function vaultSection(){
+  var secretSig=SIGS.find(function(s){return s.secret;});
+  if(!secretSig)return'';
+  // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
+  //
+  // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
+  // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
+  // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
+  //
+  // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
+  // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
+  // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
+  // jamas antes de pedirlo, y una foto nitida la revelaria.
+  //
+  // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
+  // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
+  // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
+  var vaultCard=secretSig?(function(){
+    var myTotal=cust?(cust.total_orders||0):0;
+    var missing=Math.max(0,secretSig.minOrders-myTotal);
+    var unlocked=!!cust&&missing===0;
+    var hechos=Math.min(myTotal,secretSig.minOrders);
+    var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
+    var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
+      +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
+      +'margin-bottom:10px">Menú secreto</div>';
+
+    if(unlocked){
+      // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
+      // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
+      return'<div style="margin:20px 0 16px">'+rot
+        +'<div onclick="sndScreen=\'o_secreto\';render()" class="sw-revelar" '
+        +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
+        +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
+          +'" style="width:100%;height:100%;object-fit:cover">':'')
+        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
+        +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
+        +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
+        +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
+        +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
+        +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
+        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+        +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
+        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+        +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
+        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
+        +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
+        +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
+        +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
+        +'</div></div></div>';
+    }
+
+    // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
+    // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
+    var seg='';
+    for(var i=0;i<secretSig.minOrders;i++){
+      seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
+        +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
+    }
+    return'<div style="margin:20px 0 16px">'+rot
+      +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
+      +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
+        +'style="width:100%;height:100%;object-fit:cover">':'')
+      +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
+      +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
+      +'justify-content:center;padding:26px;text-align:center">'
+      +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
+      +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
+      +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
+      +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
+      +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
+      +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
+      +'</div></div></div>';
+  })():'';
+  return vaultCard?BLOQUE(vaultCard):'';
+}
+
+// == LOS DOS MUNDOS (escritos de cero, 2026-09-17) ======================================
+//
+// Hasta hoy elegir un hermano solo cambiaba una pestana dentro de UNA sola pagina: el
+// wordmark grande, la linea de estado, la cara partida como interruptor, una fila
+// "Bebidas", y debajo la lista del lado elegido. Esa pagina era la de la app anterior con
+// pintura nueva, y por eso daba igual donde se tocara.
+//
+// Ahora cada lado ES una pantalla, con su color y su forma:
+//   SANDO   - su carta cerrada. Se mira, se elige una y se acabo.
+//   WICHO   - no tiene pantalla propia: su lado ES armar, asi que entrar por el lo mete
+//             directo en el armador (ver elegirLado en 01-*).
+//   BEBIDAS - pantalla propia alcanzable desde los dos lados, que CONSERVA el color del
+//             lado desde el que se entro. No es un tercer hermano: es el mismo producto
+//             visto desde cualquiera de los dos.
+
+// Una carta de la carta. La foto ES la tarjeta: es lo unico que de verdad vende un
+// sandwich, y en la app anterior competia con un parrafo por el mismo espacio.
+function TILE_SIGNATURE(sig,ancho){
+  var av=sigInStock(sig);
+  var img=SIG_IMG[sig.id];
+  var alto=ancho?232:196;
+  var foto=img
+    ?'<img src="'+img+'" alt="'+esc(sig.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
+    :'<div style="width:100%;height:100%;background:var(--sw-card2,#122019)"></div>';
+  // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo manda
+  // al cliente a buscar a otro lado.
+  var sello=av
+    ?(sig.recommended
+      ?'<span style="position:absolute;top:11px;left:11px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
+       +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
+       +'text-transform:uppercase;border-radius:999px;padding:4px 10px">La estrella</span>'
+      :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
+       +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">'+esc(sigBadge(sig))+'</span>')
+    :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.65);color:var(--sw-danger,#ff8888);'
+     +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">Agotado</span>';
+  var cuerpo='<div style="position:absolute;left:0;right:0;bottom:0;padding:13px;'
+    +'background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.9) 100%)">'
+    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(ancho?'22':'18')+'px;'
+    +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02;text-shadow:0 1px 8px rgba(0,0,0,.8)">'+esc(sig.n)+'</div>'
+    +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD+';margin-top:4px;'
+        +'text-shadow:0 1px 8px rgba(0,0,0,.8)">'+SOLES+pz(sig.p15)
+        +'<span style="color:rgba(255,255,255,.72);font-size:9px;margin-left:7px">30CM '+SOLES+pz(sig.p30)+'</span></div>':'')
+    +'</div>';
+  if(!av)return'<div style="grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
+    +'border-radius:10px;background:var(--sw-card2,#122019);opacity:.5">'+foto+sello+cuerpo+'</div>';
+  return'<button type="button" onclick="startOrderWithSig(\''+sig.id+'\')" aria-label="'+esc(sig.n)+'" '
+    +'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;grid-column:span '+(ancho?2:1)+';'
+    +'position:relative;width:100%;height:'+alto+'px;overflow:hidden;border-radius:10px;background:var(--sw-card2,#122019)">'
+    +foto+sello+cuerpo+'</button>';
+}
+
+// El estado del local, en UNA linea. En la app anterior eran tres renglones sueltos arriba
+// del todo; es informacion util pero no es la portada.
+function LINEA_ESTADO(){
+  var ss=storeStatus();
+  var abierto=businessLaunched&&ss.open;
+  var texto=!businessLaunched?'Aún no abrimos':ss.label;
+  var color=!businessLaunched?ACC():(abierto?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
+  return BLOQUE('<div style="display:flex;align-items:center;gap:8px;padding:12px 0 2px;flex-wrap:wrap">'
+    +'<span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:'+color+'"></span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
+    +'text-transform:uppercase;color:'+color+'">'+esc(texto)+'</span>'
+    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'
+    +'Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia</span></div>');
+}
+
+// El carrito, como zona derecha del riel. Solo aparece cuando hay algo: un carrito vacio
+// dibujado en cada pantalla es ruido que nunca se toca.
+function RIEL_CARRITO(){
+  if(!cart.length)return'';
+  var n=unidadesEnCarrito();
+  return'<button type="button" onclick="go(\'o_cart\')" aria-label="Ver carrito ('+n+')" '
+    +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
+    +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+ACC_INK()+';background:'+ACC()+';'
+    +'border-radius:999px">'+n+'</button>';
+}
+
+// El mundo de SANDO: su carta cerrada.
+function sMundoSando(){
+  var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
+  var cuerpo=LINEA_ESTADO()
+    +SECCION('Ya está resuelto','Recetas cerradas. Eliges una y no hay nada más que decidir.')
+    +BLOQUE('<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">'
+      +visibles.map(function(x,i){return TILE_SIGNATURE(x,i===0);}).join('')+'</div>')
+    +vaultSection()
+    +SECCION('Y además')
+    +BLOQUE('<div style="border-bottom:1px solid var(--sw-border-soft,#16241C)">'
+      +PUERTA({titulo:'Bebidas',dato:'desde '+SOLES_TXT+pz(precioBebidaMin()),
+               bajada:'Medio litro, hechas acá. Se piden solas o con tu sándwich.',
+               fn:"irABebidas('o_home')"})
+      +PUERTA({titulo:'Pedido en grupo',
+               bajada:'Mandas un link, cada quien arma el suyo y el delivery se divide entre todos.',
+               fn:"doCreateGroupOrder()"})
+      +(cust&&myFavorites.length
+        ?PUERTA({titulo:'Tus favoritos',dato:String(myFavorites.length),
+                 bajada:'Los armados que guardaste. Se piden en un toque.',
+                 fn:"sndScreen='p_favorites';render()"}):'')
+      +PUERTA({titulo:'Tus puntos',dato:cust?String(cust.points||0)+' pts':'',
+               bajada:cust?'Canjéalos por salsas, upgrades y sándwiches gratis.':'Gana puntos con cada pedido. El primero ya suma.',
+               fn:"swTab('points')"})
+      +'</div>')
+    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
+  return PANTALLA(RIEL({derecha:RIEL_CARRITO()||BOTON_PUERTA()}),cuerpo)+NAV();
+}
+
+// La bebida mas barata, derivada. Un "desde S/5" escrito a mano se vuelve mentira el dia
+// que el dueno repricie una bebida desde el panel, sin tocar una linea de codigo.
+function precioBebidaMin(){
+  var ps=SIDES.filter(function(d){return isAvail(d.id);}).map(function(d){return d.p;});
+  if(!ps.length)ps=SIDES.map(function(d){return d.p;});
+  return ps.length?Math.min.apply(null,ps):0;
+}
+
+// BEBIDAS - pantalla propia, no una fila. Es el producto de mejor margen del catalogo y la
+// palanca de attach que el modelo mide; en la app anterior era una lista de filas de 48px
+// con una miniatura, o sea el mismo componente que un item de carrito.
+function sMundoBebidas(){
+  // ⚠ EL PANEL NO ES UN BOTON GIGANTE. La primera version lo era, y quedaba una pantalla
+  // preciosa donde nada decia que se pudiera agregar algo: el producto de mejor margen del
+  // catalogo sin una sola llamada a la accion. Ademas un <button> no puede llevar botones
+  // dentro, asi que el contador de cantidad no cabia. Ahora la foto es el escenario y la
+  // accion vive en su esquina, que ademas es donde llega el pulgar.
+  var panel=function(d){
+    var av=isAvail(d.id);
+    var enCarrito=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
+    var qty=enCarrito?enCarrito.qty:0;
+    var img=DRINK_IMG[d.id];
+    var foto=img
+      ?'<img src="'+img+'" alt="'+esc(d.l)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;'
+       +'object-fit:cover'+(av?'':';filter:grayscale(1)')+'">'
+      :'';
+    // El velo arranca opaco a la izquierda, donde va el texto, y se abre hacia la derecha
+    // para que la bebida se vea. Sin foto el velo sobra: seria oscurecer un fondo liso.
+    var velo=foto
+      ?'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.62) 46%,rgba(0,0,0,.08) 100%)"></div>'
+      :'';
+    var accion=!av
+      ?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-danger,#ff8888)">Agotado</span>'
+      :(qty>0
+        ?'<div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);border-radius:999px;padding:5px">'
+         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',-1)" aria-label="Quitar uno de '+esc(d.l)+'" '
+         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
+         +'justify-content:center;background:rgba(255,255,255,.14);color:var(--sw-text,#fff);font-size:15px">−</button>'
+         +'<span class="bump" style="min-width:14px;text-align:center;font-family:\'Bodoni Moda\',serif;'
+         +'font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#fff)">'+qty+'</span>'
+         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',1)" aria-label="Agregar otro '+esc(d.l)+'" '
+         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
+         +'justify-content:center;background:'+ACC()+';color:'+ACC_INK()+';font-size:15px">+</button></div>'
+        :'<button type="button" onclick="addSideToCart(\''+d.id+'\')" aria-label="Agregar '+esc(d.l)+' al carrito" '
+         +'style="all:unset;cursor:pointer;background:'+ACC()+';color:'+ACC_INK()+';border-radius:999px;'
+         +'padding:11px 20px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;'
+         +'font-weight:640;letter-spacing:.03em">Agregar</button>');
+    return'<article style="position:relative;display:flex;align-items:center;min-height:186px;overflow:hidden;'
+      +'border-radius:12px;background:var(--sw-card2,#122019)'+(av?'':';opacity:.55')+'">'
+      +foto+velo
+      +'<div style="position:relative;padding:18px;max-width:24ch">'
+      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
+      +'color:var(--sw-text,#fff);line-height:1.04;text-shadow:0 1px 8px rgba(0,0,0,.85)">'+esc(d.l)+'</div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.22em;'
+      +'text-transform:uppercase;color:rgba(255,255,255,.75);margin-top:4px">'+esc(d.s)+'</div>'
+      +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;color:rgba(255,255,255,.88);'
+      +'margin-top:9px;text-shadow:0 1px 6px rgba(0,0,0,.8)">'+esc(d.d)+'</p>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:18px;color:'+ACC()+';margin-top:11px;'
+      +'text-shadow:0 1px 8px rgba(0,0,0,.85)">'+SOLES+pz(d.p)+'</div>'
+      +'</div>'
+      +'<div style="position:absolute;right:14px;bottom:14px;display:flex;align-items:center">'+accion+'</div>'
+      +'</article>';
+  };
+  var cuerpo=SECCION('Bebidas','Medio litro, hechas acá. No son gaseosa de reventa: son infusiones de la casa.')
+    +BLOQUE('<div style="display:flex;flex-direction:column;gap:10px">'+SIDES.map(panel).join('')+'</div>')
+    // El combo se nombra con la constante, nunca con un numero escrito: es exactamente el
+    // defecto que ya rompio tres promesas publicas (ver CLAUDE.md).
+    +BLOQUE('<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;line-height:1.6;'
+      +'color:var(--sw-text-muted,#9DA096);padding:16px 0 4px">Con un sándwich en el mismo pedido, el combo te descuenta '
+      +SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.</p>')
+    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
+  return PANTALLA(RIEL({volver:"go('"+bebidasVolverA+"')",titulo:'Bebidas',derecha:RIEL_CARRITO()}),cuerpo)+NAV();
+}
+
+// Cuantos Signatures hay HOY, en palabras. Se cuenta sobre la misma lista que pinta el
+// mosaico, asi que la puerta y la carta no pueden decir cosas distintas.
+function cuantosSignatures(){
+  var n=SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}).length;
+  var palabras=['','Un','Dos','Tres','Cuatro','Cinco','Seis','Siete','Ocho','Nueve','Diez'];
+  if(!n)return'La carta de la casa.';
+  if(n===1)return'Un sándwich de autor.';
+  return(palabras[n]||String(n))+' sándwiches de autor.';
+}
 function sOEleccion(){
   var ss=storeStatus();
   var estado=!businessLaunched?'AÚN NO ABRIMOS':ss.label;
@@ -1040,7 +1388,11 @@ function sOEleccion(){
     +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;'
     +'color:'+colorEstado+'">'+esc(estado)+'</span></div>'
     +'<div style="flex:1;display:flex;align-items:stretch;min-height:0">'
-    +mitad('sig','SND','Ya está resuelto','Cinco sándwiches de autor.',GOLD,
+    // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE. Decia "Cinco sándwiches de autor" con el
+    // cinco a mano; el dia que el dueño publique o retire un Signature desde el panel —que
+    // es como se edita la carta— la puerta seguiria diciendo cinco. Es el mismo defecto que
+    // ya rompio tres promesas publicas en el brief semanal (ver CLAUDE.md).
+    +mitad('sig','SND','Ya está resuelto',cuantosSignatures(),GOLD,
            'linear-gradient(160deg,rgba(47,107,84,.30),rgba(30,70,54,.08))')
     +mitad('byo','WCH','Tú decides','Pan, proteína, lo que quieras.','var(--sw-sky,#8CC8EC)',
            'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
@@ -1056,356 +1408,18 @@ function primeraFrase(t){
   return m?m[1]:t;
 }
 
+// El home ya no PINTA nada: reparte. Antes eran 351 lineas que armaban la barra de
+// pestanas, los tres paneles (sig / byo / drink), la tarjeta del secreto, la de oficina, la
+// de puntos y la de favoritos, todo en una sola funcion con closures adentro — que es
+// exactamente por que cada lado se veia igual que el otro: eran el mismo render con un
+// filtro. Ahora cada destino es su propia pantalla y esto solo decide cual.
 function sOHome(){
-  // ── LA ELECCION ES UNA PANTALLA, NO UNA PESTANA (concepto 1, elegido por el dueno) ──
-  //
-  // Hasta hoy `homeTab` arrancaba en 'sig', asi que la eleccion entre los dos hermanos
-  // NUNCA se mostraba: el cliente caia directo en la lista de Signatures y los hermanos
-  // eran una barra de pestanas de 212px arriba del catalogo. O sea que la decision que
-  // estructura toda la marca —ya esta resuelto / lo decides tu— se presentaba como un
-  // control secundario.
-  //
-  // Ahora `homeTab` arranca en null y eso pinta la cara COMPLETA a pantalla entera: cada
-  // mitad es el boton de su lado. El logo del dueno ES la navegacion, que es lo unico que
-  // justifica que el negocio tenga dos personajes en vez de uno.
-  //
-  // Se elige una sola vez por sesion: al tocar un lado, `homeTab` queda fijado y el resto
-  // de la visita usa el catalogo normal. Volver a elegir es el boton del pie.
   if(homeTab===null)return sOEleccion();
-  var pc=cust
-    ?'<div onclick="swTab(\'points\')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:2px">Tus puntos //</div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+(cust.points||0)+'</div></div><span style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>'
-    :'<div onclick="swTab(\'points\')" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:4px"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Acumula<span class="cut-sep" style="color:'+GOLD+'"> // </span>puntos</div><p style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Gana puntos con cada pedido.</p></div><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Unirse \u2192</span></div>';
-  var ss=storeStatus();
-  // storeStatus() solo mira el horario del día (11-22) — antes eso bastaba para decidir
-  // "abierto/cerrado", pero desde que existe businessLaunched (el negocio real aún no
-  // abrió) mostrar "ABIERTO AHORA" en verde junto a la tarjeta "Avísame cuando abramos"
-  // era una contradicción visible en la misma pantalla (auditoría UX, P1). El badge de
-  // Home ahora respeta businessLaunched sin tocar ss.open en sí — eso sigue gobernando
-  // si se puede pedir "ahora" vs. solo "programar" (isWithinStoreHours), una decisión de
-  // horario real, no de si el negocio ya abrió, y no se toca acá.
-  var showOpenBadge=ss.open&&businessLaunched;
-  // El rango de entrega antes solo aparecía ya adentro del checkout — mostrarlo aquí
-  // fija la expectativa de tiempo antes de que el cliente arme un pedido, sin costo.
-  var hoursBadge='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap"><span style="width:6px;height:6px;border-radius:50%;background:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+'"></span><span style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+(!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)'))+';letter-spacing:.1em">'+(!businessLaunched?'AÚN NO ABRIMOS':ss.label)+'</span>'+(showOpenBadge?'<span style="color:var(--sw-text-muted,#9DA096);font-family:EB Garamond,serif;font-weight:600;font-size:9px">· '+estimatedRangeText()+'</span>':'')+'</div>'
-  // El costo de envío ya se mostraba en el checkout, pero recién ahí: el cliente armaba
-  // todo el pedido y se enteraba del delivery al final. Esa sorpresa al final es la causa
-  // más citada de abandono de carrito en Perú (70-80% de los carritos). Decirlo desde la
-  // primera pantalla, con el rango real y de dónde sale, convierte un cargo inesperado en
-  // un precio entendido: los motorizados de Trujillo cobran ~S/2 por kilómetro.
-  +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:-10px;margin-bottom:16px">Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia — lo cobra el motorizado, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por km.</div>';
-  var lastOrd=cust?lastPaidOrder():null;
-  var recoItems=lastOrd?(lastOrd.items&&lastOrd.items.length?lastOrd.items:(lastOrd.build?[buildToCartItem(lastOrd.build)]:null)):null;
-  var recoCard=recoItems?'<div onclick="loadCart('+JSON.stringify(recoItems).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:16px 18px;cursor:pointer;margin-bottom:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Repetir pedido //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrd.summary||'')+'</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">Pedir lo mismo \u2192</div></div>':'';
-  var cartCard=cart.length?'<div onclick="go(\'o_cart\')" style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('cart',16,'#FFFFFF')+'Carrito<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+cart.reduce(function(s,it){return s+it.qty;},0)+' items</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'';
-  var pwaCard=(deferredInstallPrompt&&!pwaDismissed)?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div onclick="installPwa()" style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('device',15,GOLD)+'Instalar<span class="cut-sep" style="color:'+GOLD+'"> // </span>app</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide m\u00e1s r\u00e1pido desde tu pantalla de inicio</div></div><button onclick="event.stopPropagation();dismissPwaBanner()" aria-label="Cerrar aviso de instalación" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  var nearbyCard=(nearStore&&ss.open&&businessLaunched)?'<div onclick="startOrder(\'sig\')" style="background:linear-gradient(135deg,var(--sw-forest-deep,#1E4636),var(--sw-card2,#171A14));border:1px solid '+GOLD+';border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><div style="flex:1"><div style="display:inline-flex;align-items:center;gap:8px;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+icon('direccion',15,GOLD)+'¡Estás cerca<span class="cut-sep" style="color:'+GOLD+'"> // </span>del local!</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">Pide ahora y recíbelo en '+estimatedDeliveryRange()[0]+' min aprox.</div></div><button onclick="event.stopPropagation();dismissNearbyBanner()" aria-label="Cerrar aviso de cercanía" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#A8C8B0);font-size:15px;padding:0 4px">&#10005;</button></div>':'';
-  return H()
-    +'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-    +hoursBadge
-    +waitlistCardHTML()
-    +nearbyCard
-    +pwaCard
-    +cartCard
-    +recoCard
-    +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-body,#EFEDE4);opacity:.8;letter-spacing:.15em;margin-bottom:16px">¿Cómo quieres pedir? //</div>'
-    // Rediseño de esta sesión (fase 2 de fidelidad al mockup Prada Caffè): las 2 tarjetas
-    // hero (una por modo) se reemplazan por tabs + lista plana de filas, como en el
-    // mockup — un cliente puede ver los 6-7 Signatures reales (nombre, badge, precio) sin
-    // tener que entrar a otra pantalla primero. sOSig() sigue existiendo tal cual (con
-    // toda su lógica de stock/secreto/preview) — estas filas solo son la "vista previa"
-    // del home; tocar cualquiera navega ahí. El filtro s.secret se mantiene (hallazgo
-    // CRÍTICO de auditoría de una sesión anterior: el menú secreto no debe filtrarse acá).
-    +(function(){
-      // el menú secreto nunca aparece en esta lista, ni siquiera ya desbloqueado — vive solo en
-      // vaultCard más abajo (mismo criterio que el mockup: el menú secreto es su propia
-      // sección separada, no una fila más entre los Signatures normales). Evita el
-      // hallazgo de la auditoría de esta ronda: mostrarlo en ambos lugares a la vez.
-      // Orden de exhibición: ver `SIG_DISPLAY_ORDER` / `sigsEnOrden()` más arriba en este
-      // archivo, que es el mismo que usa la pantalla de elección (sOSig).
-
-      var visibleSigs=sigsEnOrden(SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}));
-      var secretSig=SIGS.find(function(s){return s.secret;});
-      // ── LOS DOS LADOS: LOS HERMANOS SON LA DIVISIÓN (2026-09-10) ──
-      //
-      // Tercer intento, y el que corrige los dos anteriores con la crítica del dueño:
-      //   · Primero fueron tres pestañas iguales, que borraban lo que la marca ya explica.
-      //   · Después dos paneles con un "//" dorado grueso entre medio. El dueño lo rechazó:
-      //     el wordmark YA tiene su "//" arriba en la misma pantalla, así que repetirlo
-      //     grande era ruido, no marca. "Sinceramente está sobrando y solo es ruido allí."
-      //
-      // Ahora NO hay divisor dibujado. Con los personajes de cuerpo entero, los hermanos
-      // SON la división: SANDO parado en su lado verde, WICHO en el celeste. La marca la
-      // pone quien la habita, no una franja.
-      //
-      // Siguen siendo <button> con los mismos nombres accesibles: un panel que cambia la
-      // pantalla tiene que ser alcanzable con teclado y anunciable por un lector de
-      // pantalla, y es lo que permite que el resto de la suite los localice por rol.
-      var lado=function(id,titulo,bajada,activo){
-        var esByo=id==='byo';
-        // ⚠ LOS DOS LADOS LLEVAN TEXTO CLARO. El de WICHO era `--sw-sky-ink` (casi negro),
-        // que era correcto cuando su panel era un bloque de celeste solido — pero desde que
-        // el fondo es casi negro y el panel un plano tenue, texto casi negro sobre fondo
-        // casi negro es texto invisible. El fallo no lanza nada: solo deja de leerse.
-        var fg='#fff';
-        var sub='var(--sw-text-muted,#9DA096)';
-        var fondo=esByo
-          // Sobre el fondo casi negro, cada mitad lleva un plano TENUE de su color en vez
-          // del bloque saturado de antes: el personaje y la foto tienen que ser lo mas
-          // luminoso del cuadro, no el panel que los contiene.
-          ?'linear-gradient(200deg,rgba(140,200,236,.16),rgba(63,134,180,.06))'
-          :'linear-gradient(155deg,rgba(47,107,84,.22),rgba(30,70,54,.07))';
-        // WICHO tiene varias poses; SANDO por ahora solo una. Al tocarlo, WICHO saluda —
-        // es lo que hace el que se lanza. Cuando el dueño genere más poses de SANDO, acá
-        // se le agrega la suya y nada más cambia.
-        // ⚠ LOS DOS HERMANOS SON UNA SOLA CARA PARTIDA, y hasta hoy esta pantalla no lo
-        // mostraba. `sando.png` y `wicho.png` son las DOS MITADES del logo, cortadas por su
-        // costura central (lo dice shell.html): puestas a tocarse forman una cabeza entera
-        // mordiendo el sub. Esta pantalla usaba `sando_cuerpo`/`wicho_cuerpo`, que son otra
-        // ilustracion —de cuerpo entero, con chaqueta— asi que el activo de marca mas fuerte
-        // del negocio no aparecia en la pantalla donde se elige como pedir.
-        //
-        // Ahora cada mitad se ancla a la COSTURA (SANDO por su derecha, WICHO por su
-        // izquierda) y la cara se lee completa. Separarlas con un hueco la parte al medio, y
-        // es lo que hacia la primera version de esto.
-        var mitad = esByo ? 'wicho' : 'sando';
-        return'<button onclick="elegirLado(\''+id+'\')" aria-pressed="'+(activo?'true':'false')
-          +'" style="all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;'
-          +'position:relative;overflow:hidden;background:'+fondo
-          +';display:flex;flex-direction:column;justify-content:flex-end;transition:background .3s ease">'
-          // La figura vive en SU caja y el rotulo en la suya. Sin eso el titulo cae encima
-          // del personaje, que es el defecto que este archivo ya documenta mas arriba y que
-          // el dueno reporto como "mal recortada, eso no es su diseno".
-          +'<div style="height:212px;display:flex;align-items:flex-end;'
-          +'justify-content:'+(esByo?'flex-start':'flex-end')+';overflow:hidden">'
-          // ⚠ LAS DOS MITADES MIDEN SIEMPRE LO MISMO. La version anterior agrandaba la
-          // activa (100% contra 88%) para senalar cual estaba elegida — y eso PARTE la cara:
-          // son dos mitades de UNA cabeza, asi que un lado mas grande que el otro deja el
-          // ojo, la oreja y el sandwich desalineados en la costura. La senal de activo la
-          // dan el plano de color y el rotulo, nunca la escala del personaje.
-          // .webp y no .png: la mitad limpia a 846x1560 pesa 61 KB en webp contra 700 en
-          // png, o sea MENOS que el png de 282x520 que reemplaza (138 KB) con el triple de
-          // resolucion. Verificado que la compresion no ensucia el arte: dentro del dibujo
-          // la diferencia media es 0.95/255 y el canal alfa queda identico bit a bit.
-          +'<img class="sw-bro-'+mitad+(activo?' sw-on':'')+'" src="img/'+mitad+'.webp" alt="'
-          +(esByo?'WICHO':'SANDO')+'" loading="lazy" style="height:100%'
-          +';width:auto;max-width:none;display:block;opacity:'+(activo?'1':'.52')
-          +';transition:opacity .3s ease"></div>'
-          +'<div style="position:relative;padding:11px 13px 13px;text-align:'+(esByo?'left':'right')+'">'
-          // El rotulo dice SND y WCH, no los nombres (decision del dueno 2026-09-12): en la
-          // pantalla donde se elige como pedir, lo que tiene que leerse es la MARCA partida
-          // en dos por su propio "//" — cada hermano es una mitad del nombre. Los nombres
-          // propios siguen vivos en el `alt` y en el resto del universo de la marca.
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
-          +'text-transform:uppercase;color:'+(esByo?'var(--sw-sky,#8CC8EC)':GOLD)+'">'+esc(esByo?'WCH':'SND')+'</div>'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(activo?'20':'18')+'px;font-weight:640;color:'+fg+';line-height:1.05;margin-top:3px">'+esc(titulo)+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+sub
-          +';margin-top:3px;line-height:1.35">'+esc(bajada)+'</div></div></button>';
-      };
-      var tabBar='<div style="display:flex;border-radius:12px;overflow:hidden;'
-        +'margin-bottom:10px;box-shadow:'+SHADOW_SM+'">'
-        +lado('sig','Signatures','Ya está resuelto.',homeTab==='sig')
-        +lado('byo','Arma el tuyo','Tú decides.',homeTab==='byo')
-        +'</div>'
-        // Las bebidas no son un tercer hermano: no son una forma de pedir un sándwich, son
-        // otra cosa que se compra. Por eso van debajo y no dentro de la división.
-        +'<button onclick="elegirLado(\'drink\')" aria-pressed="'+(homeTab==='drink'?'true':'false')
-        +'" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;align-items:center;gap:9px;'
-        +'width:100%;min-height:44px;padding:10px 13px;margin-bottom:10px;border-radius:10px;'
-        +'background:'+(homeTab==='drink'?'rgba(140,200,236,.14)':'var(--sw-card,#1B1F18)')
-        +';border:1px solid '+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-border,#2C3228)')+'">'
-        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;'
-        +'color:'+(homeTab==='drink'?'var(--sw-sky,#8CC8EC)':'var(--sw-text,#FFFFFF)')+'">Bebidas</span>'
-        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
-        +'color:var(--sw-text-muted,#9DA096)">Medio litro, hechas acá — se piden solas</span></button>';
-      // ── MOSAICO DE SIGNATURES (concepto 10, elegido por el dueno) ────────────────
-      //
-      // Antes esto era una fila por producto con una MINIATURA DE 48px. A ese tamano una
-      // foto tratada y una sin tratar se ven igual, asi que el home tiraba a la basura el
-      // trabajo de scripts/tratar_fotos.py -- y el home es la primera impresion. Peor: el
-      // mismo Signature se dibujaba de tres formas distintas en la app (fila de 48px aca,
-      // tarjeta a sangre de 220px en el selector, pildora en bebidas). Eso es lo que el
-      // dueno reporto como "armada una cosa sobre otra".
-      //
-      // El mosaico pone los cinco en una sola pantalla, sin paginar, con la foto a sangre.
-      // El recomendado ocupa el ancho entero: la jerarquia la da el TAMANO, no un badge
-      // mas. El resto va en dos columnas.
-      var sigTile=function(s,ancho){
-        var av=sigInStock(s);
-        var img=SIG_IMG[s.id];
-        var alto=ancho?204:190;
-        var foto=img
-          ?'<img src="'+img+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
-          :'<div style="width:100%;height:100%;background:var(--sw-card2,#171A14)"></div>';
-        // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo
-        // manda al cliente a buscar en otro lado. Se muestra apagado y sin onclick.
-        var etiqueta=av
-          ?(s.recommended
-            ?'<span style="position:absolute;top:10px;left:10px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
-             +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
-             +'text-transform:uppercase;border-radius:999px;padding:4px 9px">Recomendado</span>'
-            :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:var(--sw-text,#fff);'
-             +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;letter-spacing:.06em;'
-             +'border-radius:999px;padding:4px 9px">'+sigBadge(s)+'</span>')
-          :'<span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);'
-           +'color:var(--sw-danger,#ff8888);font-family:\'EB Garamond\',serif;font-style:italic;'
-           +'font-size:9px;border-radius:999px;padding:4px 9px">Agotado</span>';
-        return'<div '+(av?'onclick="startOrderWithSig(\''+s.id+'\')" style="cursor:pointer;':'style="')
-          +'grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
-          +'border-radius:10px;background:var(--sw-card2,#171A14)'+(av?'':';opacity:.5')+'">'
-          +foto+etiqueta
-          +'<div style="position:absolute;left:0;right:0;bottom:0;padding:12px;'
-          +'background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.88) 100%)">'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'
-          +(ancho?'22':'18')+'px;font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(s.n)+'</div>'
-          +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD
-              +';margin-top:4px">'+SOLES+pz(s.p15)
-              +'<span style="color:var(--sw-text-muted,#9DA096);font-size:9px;margin-left:6px">30CM '
-              +SOLES+pz(s.p30)+'</span></div>':'')
-          +'</div></div>';
-      };
-      var sigPanel='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
-        +visibleSigs.map(function(s,i){return sigTile(s,i===0);}).join('')+'</div>';
-      var byoPanel='<div style="margin-bottom:8px">'
-        +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5;padding:10px 4px 4px">Elige pan, proteína, queso, vegetales y salsas — a tu manera.</p>'
-        +BASES.map(function(b){
-          var av=isAvail(b.id);
-          return'<div '+(av?'onclick="startOrderWithBase(\''+b.id+'\')" style="cursor:pointer;':'style="opacity:.4;')+'display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--sw-border,#2C3228)"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+b.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+b.s+'</span>'+(av?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+'">Elegir →</span>':'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span>')+'</div>';
-        }).join('')
-        +'<div style="margin-top:14px">'+BTN('Ver el paso a paso completo →',"startOrder('byo')",true)+'</div>'
-        // ── EL PUENTE DE VUELTA A LOS SIGNATURES (2026-09-06) ──────────────────────────
-        //
-        // POR QUÉ. `PREDICCION_V12.md` mide la mezcla Signature / ARMA EL TUYO como una de
-        // las tres palancas de la meta: un Signature deja ~S/5.50 más que un armado, y mover
-        // la mezcla de 50/50 a 65/35 vale ~S/0.82 por pedido. El modelo asume mitad y mitad,
-        // y a partir de hoy se MIDE (pantalla "Las tres palancas"), así que este puente se
-        // puede evaluar en vez de suponer que sirvió.
-        //
-        // ⚠ NO SE DEGRADA ARMA EL TUYO PARA CONSEGUIRLO, y eso no es escrúpulo: el armador es
-        // la mitad de la identidad de la marca (los dos hermanos — el calmado son las recetas
-        // cerradas, el alocado es donde elige el cliente). Esconderlo o encarecerlo para
-        // empujar la mezcla rompería el producto para ganar céntimos.
-        //
-        // Va DEBAJO de la lista de panes y no arriba: quien tocó esta pestaña ya eligió armar
-        // el suyo, y cortarle el paso al entrar sería ponerle un obstáculo, no una opción. Lo
-        // ve quien bajó hasta el final sin decidirse, que es justo a quien le sirve.
-        //
-        // El nombre sale del catálogo (que el servidor refresca), nunca escrito a mano: si el
-        // dueño renombra o retira ese Signature desde el panel, este texto lo sigue solo.
-        +(function(){
-          var rec=visibleSigs.filter(function(x){return x.recommended&&sigInStock(x);})[0]||visibleSigs.filter(sigInStock)[0];
-          if(!rec)return'';
-          return'<div onclick="startOrderWithSig(\''+rec.id+'\')" style="margin-top:12px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px;cursor:pointer">'
-            +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5">¿Prefieres que ya esté resuelto? <b style="color:'+GOLD+'">'+esc(rec.n)+'</b> es una receta armada y probada — '+SOLES+pz(rec.p15)+' en 15CM.</div></div>';
-        })()
-        +'</div>';
-      // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
-      //
-      // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
-      // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
-      // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
-      //
-      // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
-      // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
-      // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
-      // jamas antes de pedirlo, y una foto nitida la revelaria.
-      //
-      // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
-      // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
-      // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
-      var vaultCard=secretSig?(function(){
-        var myTotal=cust?(cust.total_orders||0):0;
-        var missing=Math.max(0,secretSig.minOrders-myTotal);
-        var unlocked=!!cust&&missing===0;
-        var hechos=Math.min(myTotal,secretSig.minOrders);
-        var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
-        var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
-          +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
-          +'margin-bottom:10px">Menú secreto</div>';
-
-        if(unlocked){
-          // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
-          // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
-          return'<div style="margin:20px 0 16px">'+rot
-            +'<div onclick="startOrderWithSig(\''+secretSig.id+'\')" class="sw-revelar" '
-            +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
-            +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
-              +'" style="width:100%;height:100%;object-fit:cover">':'')
-            +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
-            +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
-            +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
-            +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
-            +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
-            +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
-            +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-            +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
-            +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-            +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
-            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
-            +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
-            +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
-            +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
-            +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
-            +'</div></div></div>';
-        }
-
-        // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
-        // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
-        var seg='';
-        for(var i=0;i<secretSig.minOrders;i++){
-          seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
-            +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
-        }
-        return'<div style="margin:20px 0 16px">'+rot
-          +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
-          +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
-            +'style="width:100%;height:100%;object-fit:cover">':'')
-          +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
-          +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
-          +'justify-content:center;padding:26px;text-align:center">'
-          +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
-          +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-          +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-          +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
-          +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
-          +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
-          +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
-          +'</div></div></div>';
-      })():'';
-      // Pedido de oficina — el canal con mejor economía del negocio: una sola entrega para
-      // 4-8 sándwiches, así que el delivery por persona baja a una fracción. Antes solo
-      // aparecía DENTRO del carrito y solo para quien ya tenía sesión iniciada: quien
-      // llegaba por primera vez no se enteraba nunca de que existía. Acá lo ve todo el
-      // mundo; si no tiene cuenta, doCreateGroupOrder lo manda a crearla.
-      var officeCard='<div onclick="doCreateGroupOrder()" style="margin-top:14px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">'
-        +icon('clientes',18,GOLD)
-        +'<div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">¿Piden en grupo<span class="cut-sep" style="color:'+GOLD+'"> // </span>en la oficina?</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;line-height:1.4">Mandas un link, cada quien arma el suyo sin crear cuenta, y el delivery se divide entre todos.</div>'
-        // El sándwich gratis solo se anunciaba DENTRO del pedido grupal, o sea después de
-        // que la persona ya decidió organizarlo. La decisión se toma acá, en la puerta.
-        +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:5px">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, uno va gratis.</div></div>'
-        +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';flex-shrink:0">Armar →</span></div>';
-      // El panel de bebidas reutiliza `drinkRowHTML`, la MISMA fila que pinta la pantalla
-      // BEBIDAS Y SIDES: si fueran dos plantillas, el día que cambie el precio o la foto
-      // una de las dos se queda atrás y nadie se entera.
-      var drinkPanel='<div style="margin-bottom:8px">'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin:2px 0 12px">'
-        +'Infusiones hechas acá, medio litro. Puedes pedirlas solas — no hace falta armar un sándwich.</div>'
-        +SIDES.map(drinkRowHTML).join('')+'</div>';
-      return tabBar+(homeTab==='byo'?byoPanel:homeTab==='drink'?drinkPanel:sigPanel)+(homeTab==='sig'?vaultCard:'')+officeCard;
-    })()
-    // Acá había una SEGUNDA tarjeta de pedido grupal ("Pedido // grupal · Organizar →"),
-    // con el mismo onclick y el mismo destino que officeCard de arriba. Era la versión
-    // vieja, de cuando el canal solo se ofrecía a quien ya tenía sesión; al agregar
-    // officeCard (visible también para invitados) nadie borró esta, así que un cliente
-    // logueado veía dos puertas al mismo sitio, una encima de la otra — reportado por el
-    // dueño con captura. Queda solo officeCard.
-    +(cust&&myFavorites.length?'<div onclick="sndScreen=\'p_favorites\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:16px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);display:inline-flex;align-items:center;gap:6px">'+icon('estrella',15,'#FFFFFF')+'<span>Mis<span class="cut-sep" style="color:'+GOLD+'"> // </span>favoritos</span></span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">Ver \u2192</span></div>':'')
-    +pc
-    +contactFooterHTML()
-    +'</div>'+NAV();
+  // Quien entro por WICHO no tiene un "home": su lado es armar. Puede caer aca al volver
+  // con el lado guardado en localStorage, y se lo devuelve al armador en vez de mostrarle
+  // la carta cerrada de su hermano con los colores cambiados.
+  if(homeTab==='byo'){ mode='byo'; sndScreen='o_build'; return sOBuild(); }
+  return sMundoSando();
 }
 
 // PEDIDO GRUPAL / DE OFICINA
@@ -1440,11 +1454,17 @@ async function doCreateGroupOrder(){
   loadGroupOrder();
   startGroupPoll();
 }
+var _grpDirPedidas=false;
 async function loadGroupOrder(){
   if(!groupCode)return;
   try{
     var res=await api('get-group-order',{token:token,code:groupCode});
     groupData=res;
+    // El envío estimado del organizador sale de su dirección con pin (envioEstimadoGrupo).
+    if(res&&res.isOrganizer&&token&&!myAddresses.length&&!_grpDirPedidas){
+      _grpDirPedidas=true;
+      try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
+    }
     render();
   }catch(e){stopGroupPoll();showToast(e.message);sndScreen='o_home';render();}
 }
@@ -1498,76 +1518,188 @@ async function doCancelGroupOrder(){
   stopGroupPoll();
   sndScreen='o_home';render();
 }
+// ══ PEDIDO GRUPAL (maqueta docs/maquetas/aprobadas/pedido-grupal.png · k1.html #GR) ══════
+// Papel kraft, «QUIÉNES COMEN», una fila por persona con lo que eligió, y la barra partida:
+// «Cerrar y pagar» (cada uno paga lo suyo) a la izquierda, «Yo invito» a la derecha.
+function wmClaro():string{
+  return'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
+}
+function linkDelGrupo():string{return location.origin+location.pathname+'?group='+encodeURIComponent(groupCode||'');}
+async function copiarEnlaceGrupo(){
+  var link=linkDelGrupo();
+  try{await navigator.clipboard.writeText(link);showToast('Enlace copiado. Pásalo por WhatsApp.');}
+  catch(e){shareGroupOrder();}
+}
+// Las personas del grupo, en el orden en que llegaron, con lo suyo sumado.
+function gentePorPersona(g:any):{name:string,labels:string[],suma:number}[]{
+  var orden:string[]=[],por:any={};
+  (g.items||[]).forEach(function(it:any){
+    var n=it.contributorName||'';
+    if(!por[n]){por[n]={name:n,labels:[],suma:0};orden.push(n);}
+    por[n].labels.push(it.label+(it.qty>1?' ×'+it.qty:''));
+    por[n].suma+=it.unitPrice*it.qty;
+  });
+  return orden.map(function(n){return por[n];});
+}
+// El envío todavía no está elegido (sale de la dirección al cerrar). Al organizador se le
+// estima con su primera dirección marcada en el mapa, con la MISMA fórmula que cobra el
+// servidor; quien entra por el link no la conoce, y se le dice que se sabe al cerrar.
+function envioEstimadoGrupo(g:any):{km:number,fee:number}|null{
+  if(!g.isOrganizer)return null;
+  var a=myAddresses.find(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';});
+  var km=kmADireccion(a);
+  return km==null?null:{km:km,fee:deliveryFeeForKm(km)};
+}
+// Las cifras de esta pantalla van con dos decimales y en columna, como en la maqueta (7.00).
+function d2(n:number):string{return(Math.round(n*100)/100).toFixed(2);}
+function quienSoyEnElGrupo(g:any):string{
+  return groupJoinName||(g.isOrganizer?(cust&&cust.name?cust.name:g.organizerName):'');
+}
 function sGroupOrder(){
   var g=groupData;
   var bk="stopGroupPoll();sndScreen='o_home';render()";
   if(!g){
-    return H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px" class="fi">'+skeletonCards(3,64)+'</div>'+NAV();
+    return'<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
+      +'<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div></div>';
   }
-  var h=H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  h+='<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Pedido<span class="cut-sep" style="color:'+GOLD+'"> // </span>grupal</div>';
-  h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Organiza '+esc(g.organizerName)+' · código '+esc(g.code)+'</div>';
-  if(g.status==='open'){
-    var msLeft=new Date(g.expiresAt).getTime()-Date.now();
-    if(msLeft>0){
-      var minsLeft=Math.floor(msLeft/60000),secsLeft=Math.floor((msLeft%60000)/1000);
-      var urgent=msLeft<120000;
-      h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+(urgent?'var(--sw-danger,#ff8888)':'#9DA096')+';letter-spacing:.1em;margin-bottom:14px">Cierra en '+minsLeft+':'+String(secsLeft).padStart(2,'0')+'</div>';
-    }
-  }
-  if(g.isOrganizer&&g.status==='open'){
-    h+=BTN('Compartir link //','shareGroupOrder()');
-  }
-  h+=(g.items.length?g.items.map(function(it){
-    return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(it.label)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+esc(it.contributorName)+'</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(it.unitPrice)+'</div></div>';
-  }).join(''):'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Nadie agregó su pedido todavía.</div>');
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-body,#EFEDE4)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(g.total)+'</span></div>';
-  // Avance del sándwich gratis del organizador. Es el motor del canal de oficinas: le
-  // da a quien está juntando al grupo una razón concreta para insistirle a un compañero
-  // más, y esa insistencia es la venta que el dueño no puede hacer él mismo.
-  var freeAt=g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES;
-  var swQty=typeof g.sandwichQty==='number'?g.sandwichQty:0;
-  if(g.status==='open'){
-    var falta=Math.max(0,freeAt-swQty);
-    var pctFree=Math.min(100,Math.round(swQty/freeAt*100));
-    h+='<div style="background:var(--sw-card2,#171A14);border:1px solid '+(falta?'var(--sw-border,#2C3228)':GOLD)+';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(falta?'var(--sw-text,#FFFFFF)':GOLD)+'">'
-      +(falta?('Faltan '+falta+' sándwich'+(falta===1?'':'es')+' para que uno vaya gratis'):'¡Un sándwich va gratis!')+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:3px">'
-      +(falta?('Con '+freeAt+' o más, el 15CM más barato del grupo no se cobra.'):'Se descuenta el 15CM más barato al cerrar y pagar.')+'</div>'
-      +'<div style="height:4px;background:var(--sw-bg,#12150F);border-radius:4px;margin-top:10px;overflow:hidden"><div style="height:100%;width:'+pctFree+'%;background:'+GOLD+'"></div></div>'
-      +'</div>';
-  }
-  if(g.status!=='open'){
-    h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':'Este pedido grupal ya se cerró')+'</div>';
+  var abierto=g.status==='open';
+  var repartido=g.status==='splitting'||(g.status==='paid'&&g.partes&&g.partes.length);
+  var puedeCerrar=g.isOrganizer&&(abierto||g.canPay);
+  var h='<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
+    +'<div class="tit"><em>Pedido grupal · #'+esc(g.code)+'</em><b>QUIÉNES<br>COMEN</b></div>';
+  if(abierto)h+='<button class="link" onclick="copiarEnlaceGrupo()"><s>'+esc(linkDelGrupo().replace(/^https?:\/\//,''))+'</s><u>Copiar enlace</u></button>';
+  if(repartido){
+    h+=partesDelGrupoHTML(g);
   }else{
-    // Antes esta sección solo se mostraba a quien NO organizaba — quien creó el pedido
-    // grupal podía compartir el link y cerrar/cobrar, pero nunca agregar su propio
-    // sándwich (hallazgo reportado en vivo). Ahora se muestra siempre que el pedido
-    // siga abierto, sin importar quién sea.
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
-    h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:12px">Agregar mi pedido //</div>';
-    h+=INP('grp-name','Tu nombre','text',groupJoinName||(g.isOrganizer&&cust?cust.name:''),'clientes');
-    h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#171A14')+';color:'+(groupSize==='15'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#171A14')+';color:'+(groupSize==='30'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
-    h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
-      var price=groupSize==='15'?s.p15:s.p30;
-      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(price)+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+    var gente=gentePorPersona(g);
+    h+='<div class="gente">'+gente.map(function(p){
+      return'<div class="g"><k>'+esc((p.name.trim()[0]||'?').toUpperCase())+'</k><div class="t"><b>'+esc(p.name)+'</b><s>'+esc(p.labels.join(' + '))+'</s></div><p>'+d2(p.suma)+'</p></div>';
     }).join('');
-    // Antes solo se podían agregar Signatures — quien solo quería sumar una bebida sin
-    // sándwich (o completar la suya) no tenía forma de hacerlo (hallazgo de auditoría UX).
-    h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin:14px 0 12px">Bebidas y sides //</div>';
-    h+=SIDES.map(function(s){
-      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p)+'</div></div><button onclick="doAddGroupSide(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
-    }).join('');
-    h+='<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px;min-height:14px">'+esc(groupMsg)+'</div>';
-    if(g.isOrganizer){
-      h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
-      h+=BTN('Cerrar y pagar //','doCloseGroupOrder()');
-      h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Cancelar pedido grupal</div>';
+    if(abierto){
+      var ms=new Date(g.expiresAt).getTime()-Date.now();
+      var min=Math.max(0,Math.ceil(ms/60000));
+      // El sándwich gratis del organizador va en esta misma fila: es la razón concreta para
+      // insistirle a uno más, y la maqueta no tiene otra fila donde ponerlo sin empujar el total.
+      var freeAt=g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES;
+      var swQty=typeof g.sandwichQty==='number'?g.sandwichQty:0;
+      var falta=Math.max(0,freeAt-swQty);
+      h+='<div class="g esp'+(ms<120000?' urge':'')+'"><k>?</k><div class="t"><b>'+(gente.length?'¿Falta alguien?':'Nadie eligió todavía')+'</b><s>'+(min===1?'Les queda 1 minuto':'Les quedan '+min+' minutos')+'</s>'
+        +'<s class="oro">'+(falta?('Faltan '+falta+' para que uno vaya gratis'):'¡Un sándwich va gratis!')+'</s></div><p>'+swQty+'/'+freeAt+'</p></div>';
     }
+    h+='</div>';
   }
-  h+='</div>'+NAV();
-  return h;
+  h+='<div class="sello" aria-hidden="true"><img class="av" src="img/marca/avatar-1024-transparente.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
+  // Se acabó el tiempo pero el pedido no se perdió (2026-09-23): los 15 minutos significan
+  // «ya no entra nadie más», se paga con los que alcanzaron y se dice por qué no hubo gratis.
+  if(!abierto&&g.canPay&&!repartido){
+    var faltaron=typeof g.missingForFree==='number'?g.missingForFree:0;
+    h+='<div class="aviso"><b>Se acabó el tiempo para sumarse</b><s>'
+      +(g.freeApplies?'Igual llegaron: el 15CM más barato no se cobra.'
+        :('No llegaron a '+(g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES)+' sándwiches'+(faltaron?(' — faltaron '+faltaron):'')+', así que esta vez ninguno va gratis.'))
+      +' Puedes pagar con lo que hay.</s></div>';
+  }
+  if(!repartido&&(abierto||g.canPay)){
+    var gente2=gentePorPersona(g);
+    var env=envioEstimadoGrupo(g);
+    var n=Math.max(1,gente2.length);
+    var yo=quienSoyEnElGrupo(g);
+    var mia=gente2.find(function(p){return p.name===yo;});
+    h+='<div class="cta">';
+    h+='<div class="l"><span>'+(env?'Envío '+env.km.toFixed(1)+' km · se parte entre todos':'Envío · se parte entre todos')+'</span><span>'+(env?d2(env.fee):'al cerrar')+'</span></div>';
+    if(mia)h+='<div class="l"><span>Tu parte por ahora</span><span>'+d2(mia.suma+(env?Math.floor(env.fee*100/n)/100:0))+'</span></div>';
+    h+='<div class="tt"><em>Van</em><b>'+SOLES_TXT+pz((g.total||0)+(env?env.fee:0))+'</b></div></div>';
+  }
+  if(abierto)h+=sumarAlGrupoHTML(g);
+  else if(!g.canPay&&!repartido){
+    h+='<div class="aviso"><b>'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':g.status==='paid'?'Este pedido grupal ya se pagó':'Este pedido grupal ya se cerró')+'</b></div>';
+  }
+  if(puedeCerrar&&!repartido){
+    h+='<button class="cancelar" onclick="doCancelGroupOrder()">Cancelar pedido grupal</button>';
+    h+=botonesCierreGrupo();
+  }
+  return h+'</div>';
+}
+// Lo que cada uno suma: nombre, tamaño y la carta. Mismo action de siempre (add-group-item).
+function sumarAlGrupoHTML(g:any):string{
+  var h='<div class="sumar"><em>Suma lo tuyo</em>'
+    +'<input id="grp-name" aria-label="Tu nombre" placeholder="Tu nombre" autocomplete="given-name" value="'+esc(groupJoinName||(g.isOrganizer&&cust?cust.name:''))+'">'
+    +'<div class="tam" role="radiogroup" aria-label="Tamaño">'
+    +['15','30'].map(function(sz){return'<button role="radio" aria-checked="'+(groupSize===sz)+'" class="'+(groupSize===sz?'on':'')+'" onclick="groupSize=\''+sz+'\';render()">'+sz+'CM</button>';}).join('')+'</div>';
+  h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
+    return'<div class="it"><div class="t"><b>'+esc(s.n)+'</b><s>'+esc(s.s)+' · '+d2(groupSize==='15'?s.p15:s.p30)+'</s></div><button onclick="doAddGroupItem(\''+s.id+'\')">Agregar</button></div>';
+  }).join('');
+  h+=SIDES.map(function(s){
+    return'<div class="it"><div class="t"><b>'+esc(s.l)+'</b><s>'+esc(s.s)+' · '+d2(s.p)+'</s></div><button onclick="doAddGroupSide(\''+s.id+'\')">Agregar</button></div>';
+  }).join('');
+  return h+'<div class="msg" role="status">'+esc(groupMsg)+'</div></div>';
+}
+// Los dos cierres del grupo. «Cerrar y pagar»: cada uno paga lo suyo (decisión del dueño,
+// 2026-09-24) — el servidor crea un pedido Yape por persona con su parte del envío
+// (actions/group.ts · repartirGrupo). «Yo invito»: el organizador paga todo en un pedido.
+function botonesCierreGrupo():string{
+  return'<div class="go sw-barra"><button class="oro" onclick="abrirRepartoGrupo()">Cerrar y pagar</button><button class="cel" onclick="doCloseGroupOrder()">Yo invito</button></div>';
+}
+var repartoAddrId:any=null,repartoPhone='';
+async function abrirRepartoGrupo(){
+  // Quien entra por el link del grupo no pasó por el perfil: sin esto vería «guarda la
+  // dirección» teniendo direcciones guardadas.
+  if(!myAddresses.length){
+    try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
+  }
+  var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
+  repartoAddrId=conPin.length?conPin[0].id:null;
+  repartoPhone=cust&&cust.phone?String(cust.phone):'';
+  sndScreen='group_split';render();
+}
+function sGroupSplit(){
+  var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
+  var h='<div class="mgr fi"><button class="sal" onclick="sndScreen=\'group_order\';render()" aria-label="Volver">←</button>'+wmClaro()
+    +'<div class="tit"><em>Cerrar y pagar · #'+esc(groupCode||'')+'</em><b>¿DÓNDE LO<br>DEJAMOS?</b></div>'
+    +'<div class="aviso"><s>El envío sale de esta dirección y se parte entre todos. A cada uno le llega su parte para pagarla con Yape; tienen '+GROUP_SPLIT_MINUTES_CLIENT+' minutos. Lo que no se pague se cancela y el resto sale igual.</s></div>';
+  if(!conPin.length){
+    return h+'<div class="aviso"><b>Primero guarda la dirección marcándola en el mapa.</b></div>'
+      +'<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
+  }
+  h+='<div class="gente" role="radiogroup" aria-label="Dirección">'+conPin.map(function(a:any){
+    var on=mismoId(repartoAddrId,a.id);
+    return'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>';
+  }).join('')+'</div>';
+  h+='<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="'+esc(repartoPhone)+'"></div>';
+  return h+'<div class="go sw-barra"><button class="oro solo" onclick="doSplitGroupOrder()">Repartir y cobrar a cada uno</button></div></div>';
+}
+var GROUP_SPLIT_MINUTES_CLIENT=20;
+async function doSplitGroupOrder(){
+  var a=myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
+  if(!a){showToast('Elige la dirección.');return;}
+  var tel=gv('grp-phone').trim()||repartoPhone;
+  busy=true;busyMsg='Repartiendo...';render();
+  try{
+    await api('split-group-order',{token:token,code:groupCode,address:a.address+(a.reference?' — '+a.reference:''),lat:a.lat,lon:a.lon,contactPhone:tel});
+    busy=false;sndScreen='group_order';render();
+    loadGroupOrder();startGroupPoll();
+  }catch(e:any){busy=false;render();showToast(e.message);}
+}
+// Las partes, una por persona. Cada una se paga con el mismo Yape de siempre: se abre la
+// pantalla de pedido enviado para ESA referencia, con su monto y su comprobante.
+function partesDelGrupoHTML(g:any):string{
+  var partes=g.partes||[];
+  var pagadas=partes.filter(function(p:any){return p.paid;}).length;
+  var vivas=partes.filter(function(p:any){return!p.cancelled;}).length;
+  var msLeft=g.splitDeadline?Date.parse(g.splitDeadline)-Date.now():0;
+  var h='<div class="gente"><div class="g esp"><k>'+pagadas+'</k><div class="t"><b>'+pagadas+' de '+vivas+' pagaron</b><s>'
+    +(g.status==='splitting'&&msLeft>0?('Quedan '+Math.ceil(msLeft/60000)+' min · lo que no se pague se cancela'):'Cada uno paga lo suyo')+'</s></div><p>—</p></div>';
+  h+=partes.map(function(p:any){
+    var der=p.cancelled?'<span class="est no">No pagó a tiempo</span>':p.paid?'<span class="est">Pagado</span>'
+      :(g.status==='splitting'?'<button class="pagar" onclick="pagarParteGrupo(\''+esc(p.ref)+'\','+p.total+')">Pagar</button>':'');
+    return'<div class="g"><k>'+esc((String(p.name||'').trim()[0]||'?').toUpperCase())+'</k><div class="t"><b>'+esc(p.name)+'</b><s>'+SOLES_TXT+pz(p.total)+' · envío '+d2(p.envio)+'</s></div>'+der+'</div>';
+  }).join('');
+  return h+'</div>';
+}
+function pagarParteGrupo(ref:string,total:number){
+  window._lRef=ref;window._lTot=total;window._lPayMethod='yape';window._lPendingPayment=true;
+  window._lOrderCreatedAt=Date.now();window._lPoints=0;window._lVentana='';
+  receiptUploadState=null;
+  stopGroupPoll();sndScreen='o_sent';render();
 }
 
 function sOSig(){
@@ -1575,7 +1707,7 @@ function sOSig(){
   // visible también aquí (donde el cliente ya está decidiendo qué pedir) para el que
   // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
   var lastOrdSig=cust?lastPaidOrder():null;
-  var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
+  var recoItemsSig=lastOrdSig?lastOrdSig.items:null;
   var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
   // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
   // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
@@ -1787,6 +1919,9 @@ function sigPreviewOverlayHTML(){
       +'</div></div>')
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
     +'<button onclick="closeSigPreview();sigId=\''+s.id+'\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">Pedir este Signature //</button>'
+    // «¿Lo quieres a tu manera? Arma uno parecido →» (ficha versión WICHO, aprobada): lleva
+    // al armador con esta receta ya puesta. Solo si hay algo que precargar.
+    +(parecidoPrecargable(s)?'<button onclick="closeSigPreview();armaParecido(\''+s.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-sky,#8CC8EC);letter-spacing:.12em;text-transform:uppercase;padding:10px 4px">¿Lo quieres a tu manera? Arma uno parecido →</button>':'')
     +'<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;padding:4px">Cerrar</div>'
     +'</div></div></div>';
 }

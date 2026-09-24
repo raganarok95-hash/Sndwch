@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, APP_FILE, mockBackend } from './helpers';
+import { gotoApp, APP_FILE, mockBackend, entrarConTelefono } from './helpers';
 
 // #19 (confirmación de entrega por link), #40 (cierre de caja) y #20 (auto-cierre de la
 // calificación), del lado del cliente.
@@ -82,10 +82,7 @@ const CAJA = {
 async function entrarAlCierre(page: any, datos: unknown) {
   await gotoApp(page, { ...ADMIN, 'admin-cash-close': datos });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
   await page.locator('[onclick*="loadCashClose()"]').first().click();
 }
@@ -138,10 +135,7 @@ async function verMisPedidos(page: any, pedidos: unknown[]) {
     'my-orders': { orders: pedidos },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
   await page.locator('[onclick*="p_orders"]').first().click();
 }
 

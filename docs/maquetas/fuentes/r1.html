@@ -1,0 +1,152 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px}
+.f{width:372px;height:812px;position:relative;overflow:hidden;background:#0A0B0C}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#8C8880}
+.wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.wm img{width:29px;height:29px;display:block}
+.wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em;color:#F2F0EA}
+.wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm .mk i:first-child{background:#CBA258}.wm .mk i:last-child{background:#8CC8EC}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+
+/* ═════ EL MENÚ SECRETO ═════ Sin brillo de fondo: negro plano. Arriba, cómo PEGA el de
+   este mes —nunca qué lleva—; abajo, los que ya se fueron y no vuelven, que es lo que
+   de verdad empuja a pedirlo antes de que se acabe el mes.                        */
+.cab{position:absolute;left:24px;right:24px;top:78px;z-index:6}
+.cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:#C3A6D2;text-transform:uppercase}
+.nom{position:absolute;left:24px;right:24px;top:104px;z-index:6}
+.nom b{font-family:Anton,sans-serif;font-size:50px;line-height:.9;color:#F2F0EA;letter-spacing:-.03em}
+.nom .mes{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;
+  border-bottom:1px solid #1E1F21;padding-bottom:13px}
+.nom .mes s{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E6A60;text-transform:uppercase}
+.nom .mes k{font-family:Anton,sans-serif;font-size:19px;color:#C3A6D2}
+
+.pistas{position:absolute;left:24px;right:24px;top:220px;z-index:6}
+.pistas em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase}
+.p{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid #17181A}
+.p k{width:27px;height:27px;border-radius:999px;border:1px solid #4A3D62;color:#C3A6D2;
+  font:700 10px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+.p .t b{font:800 14px/1.15 Archivo,sans-serif;color:#EDEAE2}
+.p .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#5E5B54;margin-top:4px}
+
+.ant{position:absolute;left:24px;right:24px;top:432px;z-index:6}
+.ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase}
+.a{display:flex;align-items:baseline;gap:11px;padding:11px 0;border-bottom:1px solid #17181A}
+.a i{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4A4842;width:30px}
+.a .t{flex:1}
+.a .t b{font:700 13px/1.15 Archivo,sans-serif;color:#8C8880}
+.a .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;margin-top:4px}
+.a p{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;letter-spacing:.14em}
+
+.adv{position:absolute;left:24px;right:24px;top:624px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4A4842;line-height:1.9}
+.pre{position:absolute;left:24px;right:24px;bottom:98px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+.pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+.pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#F2F0EA}
+
+/* ── A · EL COLOR VIVE EN LAS LÍNEAS ── El fondo se queda negro. Lo que toma color son
+   las REGLAS y los círculos: cada pista su tono, cada mes que pasó el suyo. El color
+   deja de ser decorado y pasa a separar cosas distintas.                          */
+#A .p:nth-of-type(1) k{border-color:#8E3A2E;color:#E2705C}
+#A .p:nth-of-type(2) k{border-color:#6B5527;color:#CBA258}
+#A .p:nth-of-type(3) k{border-color:#2F5F6E;color:#8CC8EC}
+#A .p:nth-of-type(1){border-bottom-color:#3A1E18}
+#A .p:nth-of-type(2){border-bottom-color:#33290F}
+#A .p:nth-of-type(3){border-bottom-color:#16333C}
+#A .a:nth-of-type(1) .t b{color:#C08A3E}
+#A .a:nth-of-type(2) .t b{color:#4E9A8E}
+#A .a:nth-of-type(3) .t b{color:#9C7BB8}
+#A .a:nth-of-type(1){border-bottom-color:#2A2010}
+#A .a:nth-of-type(2){border-bottom-color:#122A26}
+#A .a:nth-of-type(3){border-bottom-color:#211A2C}
+#A .nom .mes{border-bottom-color:#3A2C4A}
+
+/* ── B · EL DEGRADADO QUE NO SE VE VENIR ── Ni bloques ni diagonal: un solo degradado
+   vertical, de negro arriba a tinto profundo abajo. No hay línea que separe nada.  */
+#B{background:linear-gradient(180deg,#08090A 0%,#0E0B10 42%,#1C1018 78%,#2A1620 100%)}
+#B .nom .mes{border-bottom-color:#33202C}
+#B .p{border-bottom-color:#1C1520}
+#B .a{border-bottom-color:#241826}
+
+/* ── C · LA TEXTURA DE LOS DOS ── Sigue negro, pero no vacío: el acanalado de SANDO por
+   la izquierda y las curvas de nivel de WICHO por la derecha, casi invisibles.     */
+#C{background:#0A0B0C}
+#C .tex{position:absolute;inset:0;z-index:0}
+#C .tex .iz{position:absolute;left:0;top:0;bottom:0;width:56%;
+  background:repeating-linear-gradient(94deg,rgba(203,162,88,.07) 0 1px,transparent 1px 16px)}
+#C .tex .de{position:absolute;right:0;top:0;bottom:0;width:60%;
+  background:repeating-radial-gradient(circle at 132% 18%,rgba(140,200,236,.08) 0 1px,transparent 1px 26px)}
+</style></head><body style="width:1240px">
+<div class="f" id="A">
+  <div class="tag">SECRETO · A · el color en las líneas</div>
+  <div class="sal">←</div>
+  <div class="wm"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b>
+    <div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a"><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+<div class="f" id="B">
+  <div class="tag">SECRETO · B · degradado profundo</div>
+  <div class="sal">←</div>
+  <div class="wm"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b>
+    <div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a"><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+<div class="f" id="C">
+  <div class="tag">SECRETO · C · la textura de los dos</div>
+  <div class="tex"><div class="iz"></div><div class="de"></div></div>
+  <div class="sal">←</div>
+  <div class="wm"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b>
+    <div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a"><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+</body></html>

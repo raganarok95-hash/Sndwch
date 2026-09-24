@@ -1,0 +1,80 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:24px;padding:24px;font-family:'EB Garamond',serif}
+.f{width:390px;height:844px;position:relative;overflow:hidden;background:#101B15;flex:0 0 auto}
+.forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:#D8823C;z-index:8}
+.foto{position:absolute;left:0;right:0;top:0;height:50%;overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto .baja{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 26%,transparent 55%,#101B15 100%)}
+.riel{position:absolute;top:0;left:0;right:0;z-index:9;display:flex;align-items:center;
+  justify-content:space-between;padding:15px 18px 0 22px}
+.riel .x{font-size:21px;color:#F7F4EA;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.riel .wm{font-family:'Fraunces',serif;font-weight:620;font-size:14px;color:#F7F4EA;
+  display:inline-flex;align-items:baseline;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.riel .wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.riel .mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+.riel .c{width:30px;height:30px;border-radius:50%;background:#CBA258;color:#101B15;display:flex;
+  align-items:center;justify-content:center;font-weight:600;font-size:13px}
+/* ── ÉL Y SU FRASE VUELVEN. Es lo único que hacía que la carta fuera de alguien. ──
+   Van sobre el plato, no en un bloque aparte: él te lo está sirviendo y te dice por qué. */
+.sirve{position:absolute;left:14px;top:calc(50% - 132px);width:96px;z-index:6;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,.6))}
+.dice{position:absolute;left:112px;right:20px;top:calc(50% - 124px);z-index:6}
+.dice p{font-family:'Bodoni Moda',serif;font-style:italic;font-weight:500;font-size:17px;
+  color:#F7F4EA;line-height:1.3;text-shadow:0 2px 14px rgba(0,0,0,.9)}
+.dice span{display:block;font-size:9px;letter-spacing:.34em;font-weight:600;color:#CBA258;margin-top:8px}
+/* LÍNEA GRUESA: su contorno es grueso, así que sus reglas también. 4px, no un pelo de 1px. */
+.gruesa{height:4px;background:#C9A87C}
+.rib{height:11px;background:#26362C;
+  background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 2px,transparent 2px 6px)}
+.ficha{position:absolute;left:22px;right:20px;top:47%;z-index:5}
+.num{font-size:10px;letter-spacing:.34em;font-weight:600;color:#C9A87C;text-transform:uppercase}
+.num b{color:#D8823C;font-weight:600;margin-left:10px;letter-spacing:.2em}
+h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:40px;color:#F7F4EA;line-height:.96;margin-top:10px}
+/* LO QUE LE FALTABA: la receta. Un Signature es una receta CERRADA — no verla es no ver
+   el producto. Y además es lo que separa su lado del de WICHO: acá ya está decidida. */
+.receta{margin-top:14px}
+.receta .t{font-size:9px;letter-spacing:.3em;font-weight:600;color:#7E8C76;text-transform:uppercase}
+.receta .l{font-size:14px;color:#C9A87C;line-height:1.5;margin-top:6px}
+.receta .l em{font-style:normal;color:#7E8C76}
+.pitch{font-size:13px;color:#9BA890;line-height:1.5;margin-top:12px;max-width:33ch}
+.pie{position:absolute;left:0;right:0;bottom:64px;z-index:5;padding:0 20px 0 22px}
+.tam{display:flex;gap:8px;margin-bottom:14px}
+.tam div{flex:1;padding:11px 0;text-align:center;font-family:'Bodoni Moda',serif;font-weight:640;
+  font-size:14px;color:#9BA890;border:2px solid #26362C}
+.tam div.on{color:#101B15;background:#C9A87C;border-color:#C9A87C}
+.cuenta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.cuenta .p{font-family:'Bodoni Moda',serif;font-weight:640;font-size:36px;color:#CBA258;line-height:.9}
+.cuenta .b{background:#CBA258;color:#101B15;padding:16px 28px;font-family:'Bodoni Moda',serif;
+  font-weight:640;font-size:15px;flex:0 0 auto}
+.pasar{position:absolute;left:22px;right:20px;bottom:28px;display:flex;align-items:center;gap:7px;z-index:5}
+.pasar i{height:4px;flex:1;background:#2B3B31;display:block}
+.pasar i.on{background:#F7F4EA}
+.pasar i.v{background:#4A3D62}
+.pasar em{font-style:normal;font-size:9px;letter-spacing:.26em;color:#7E8C76;margin-left:9px}
+</style></head><body>
+<div class="f">
+  <div class="forro"></div>
+  <div class="foto"><img src="../../../img/sig02.jpg"><div class="baja"></div></div>
+  <div class="riel"><span class="x">&#10005;</span>
+    <span class="wm">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</span>
+    <span class="c">2</span></div>
+  <img class="sirve" src="../../../img/sando2_cuerpo_forro.png">
+  <div class="dice"><p>&ldquo;Estas cinco las arm&eacute; yo.<br>Respondo por cada una.&rdquo;</p><span>SANDO</span></div>
+  <div class="ficha">
+    <div class="num">I de V<b>LA ESTRELLA</b></div>
+    <h1>The Marinara</h1>
+    <div class="receta"><div class="t">Lleva</div>
+      <div class="l">Alb&oacute;ndiga en marinara <em>&middot;</em> mozzarella <em>&middot;</em> tomate <em>&middot;</em> cebolla morada <em>&middot;</em> vinagreta italiana</div></div>
+    <div class="pitch">Para la noche en que ya decidiste que no vas a cocinar.</div>
+  </div>
+  <div class="pie">
+    <div class="rib" style="margin-bottom:14px"></div>
+    <div class="tam"><div class="on">15CM</div><div>30CM &middot; S/28.90</div></div>
+    <div class="cuenta"><div class="p">S/21.90</div><div class="b">Lo quiero</div></div>
+  </div>
+  <div class="pasar"><i class="on"></i><i></i><i></i><i></i><i></i><i class="v"></i><em>DESLIZA</em></div>
+</div>
+</body></html>

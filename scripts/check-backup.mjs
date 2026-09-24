@@ -21,6 +21,7 @@ import { globSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { levantarPostgres } from './pg-local/postgres.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TAM_PAGINA = 3; // chico a propósito: obliga a la paginación a dar varias vueltas
@@ -136,44 +137,6 @@ function correr(args, env) {
 // parte de `npm run verify` en cualquier máquina: si dependiera de una variable de entorno,
 // la comprobación se saltaría en silencio justo donde nadie la está mirando, que es la
 // única forma en que un respaldo se pudre sin que nadie se entere.
-function levantarPostgres() {
-  if (process.env.CHECK_BACKUP_PG) return { url: process.env.CHECK_BACKUP_PG, parar() {} };
-
-  const bin = [...globSync('/usr/lib/postgresql/*/bin'), ...globSync('/usr/local/pgsql/bin'), ''].find(
-    (d) => existsSync(join(d, 'initdb')),
-  );
-  if (bin === undefined) return null;
-
-  const base = mkdtempSync(join('/var/tmp', 'sndwch-pgtest-'));
-  const datos = join(base, 'datos');
-  const puerto = 5000 + (process.pid % 20000);
-  // initdb se niega a correr como root. En este contenedor la sesión ES root, en un runner
-  // de GitHub no — así que se resuelven los dos casos en vez de asumir uno.
-  const comoRoot = typeof process.getuid === 'function' && process.getuid() === 0;
-  const correrPg = (cmd) =>
-    comoRoot
-      ? execFileSync('su', ['postgres', '-c', cmd], { stdio: 'pipe' })
-      : execFileSync('sh', ['-c', cmd], { stdio: 'pipe' });
-  if (comoRoot) {
-    chmodSync(base, 0o777);
-    execFileSync('chown', ['postgres:postgres', base], { stdio: 'pipe' });
-  }
-  correrPg(`${join(bin, 'initdb')} -D ${datos} -U postgres --auth=trust -E UTF8`);
-  // El `-l` no es cosmético: sin él el servidor hereda la salida de pg_ctl, ese pipe nunca
-  // se cierra mientras Postgres siga vivo, y execFileSync se queda esperando para siempre a
-  // un proceso que ya terminó.
-  correrPg(`${join(bin, 'pg_ctl')} -D ${datos} -o '-p ${puerto} -k ${base}' -l ${join(base, 'servidor.log')} -w start`);
-  const url = `postgresql://postgres@/postgres?host=${base}&port=${puerto}`;
-  return {
-    url,
-    parar() {
-      try {
-        correrPg(`${join(bin, 'pg_ctl')} -D ${datos} -m immediate stop`);
-      } catch {}
-      rmSync(base, { recursive: true, force: true });
-    },
-  };
-}
 
 // El servidor de prueba vive en ESTE proceso, así que el hijo tiene que correr de forma
 const problemas = [];

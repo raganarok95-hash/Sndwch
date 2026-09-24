@@ -1,0 +1,150 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:26px;padding:26px;align-items:flex-start;font-family:'EB Garamond',serif}
+.f{width:390px;position:relative;overflow:hidden;flex:0 0 auto}
+.wm{font-family:'Fraunces',serif;font-weight:620;font-size:15px;line-height:1;display:inline-flex;align-items:baseline}
+.wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+/* ═══ SANDO · sacado de él: pelaje #183024, casaca #6C7860 ═══ */
+#s{background:#14211A;min-height:844px}
+#s .riel{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #22332A}
+#s .dots{display:flex;gap:4px}#s .dots i{width:9px;height:9px;border-radius:50%;display:block}
+/* LA CASACA. El campo verde salvia es su tela; la cremallera naranja de su casaca es
+   la línea que separa. Su ropa es el material de su mundo. */
+#s .casaca{background:linear-gradient(180deg,#6C7860 0%,#5C6853 100%);position:relative;padding:18px 20px 0;display:flex;gap:12px;align-items:flex-end}
+#s .casaca:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+  background:repeating-linear-gradient(90deg,#D8823C 0 13px,#F2E3CE 13px 26px)}
+#s .casaca img{width:92px;flex:0 0 auto;display:block;margin-bottom:-2px}
+#s .casaca .q p{font-family:'Bodoni Moda',serif;font-style:italic;font-weight:500;font-size:19px;color:#F7F4EA;line-height:1.3}
+#s .casaca .q span{display:block;font-size:9px;letter-spacing:.3em;font-weight:600;color:#1E2A20;margin:9px 0 16px;text-transform:uppercase}
+#s .enc{padding:22px 20px 5px;display:flex;align-items:baseline;justify-content:space-between}
+#s .enc h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:30px;color:#F7F4EA;line-height:1}
+#s .enc em{font-size:10px;letter-spacing:.22em;font-weight:600;color:#93A088;text-transform:uppercase;font-style:normal}
+#s .h1s{font-size:13px;color:#93A088;padding:0 20px 18px;line-height:1.5}
+.bd .foto{position:relative;height:258px;overflow:hidden}
+.bd .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.bd .velo{position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(10,17,13,.92) 100%)}
+.bd .sobre{position:absolute;left:20px;right:20px;bottom:15px}
+.bd .num{font-size:9px;letter-spacing:.3em;font-weight:600;color:#CBA258;text-transform:uppercase;margin-bottom:5px}
+.bd .fila{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.bd .nom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;color:#fff;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.bd .pre{font-style:italic;font-size:17px;color:#E8CF9B;flex:0 0 auto;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.bd .pre s{text-decoration:none;font-size:11px;color:rgba(255,255,255,.62);margin-left:7px}
+/* la cremallera vuelve como separador entre platos */
+.bd .pitch{font-size:13px;color:#93A088;line-height:1.55;padding:13px 20px 16px;position:relative}
+.bd .pitch:after{content:"";position:absolute;left:20px;right:20px;bottom:0;height:2px;
+  background:repeating-linear-gradient(90deg,#6C7860 0 9px,transparent 9px 18px)}
+.vlt .foto img{filter:blur(17px) saturate(.5) brightness(.42);transform:scale(1.12)}
+.vlt .centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.ojo{width:50px;height:50px;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%,#C3A6D2 0 3px,#4A3D62 3px 6px)}
+.vlt .vn{font-family:'Bodoni Moda',serif;font-weight:640;font-size:23px;color:#fff}
+.vlt .barra{width:148px;height:2px;background:rgba(195,166,210,.25);position:relative}
+.vlt .barra b{position:absolute;left:0;top:0;bottom:0;width:33%;background:#C3A6D2}
+.vlt .vm{font-size:11px;color:#C3A6D2;letter-spacing:.07em}
+
+/* ═══ WICHO · su pelaje #90CCF0 es el campo. Su tinta es el texto. ═══ */
+#w{background:#8CC8EC;min-height:844px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#w:before{content:"";position:absolute;inset:0;background:radial-gradient(85% 45% at 100% 0%,rgba(255,255,255,.5) 0%,transparent 65%)}
+#w>*{position:relative}
+#w .linea{display:flex;gap:4px;padding:12px 18px 0}
+#w .linea i{flex:1;height:4px;border-radius:999px;background:rgba(26,42,52,.2);display:block}
+#w .linea i.ok{background:#1E2F3A}#w .linea i.now{background:#7B5EA0}
+#w .cab{height:46px;display:flex;align-items:center;padding:0 12px}
+#w .cab .fl{width:36px;font-size:21px;color:#1E2F3A}
+#w .cab .t{flex:1;text-align:center;font-size:9px;letter-spacing:.24em;font-weight:600;text-transform:uppercase;color:#4A3D62}
+#w .cab .t s{text-decoration:none;color:#40596B;margin-left:9px}
+#w .wicho{position:absolute;right:-34px;top:62px;width:176px;z-index:0}
+#w h2{font-family:'Bodoni Moda',serif;font-weight:640;font-size:34px;color:#15242D;line-height:1;padding:14px 20px 6px;max-width:62%}
+#w .ay{font-size:13px;color:#3C5666;padding:0 20px 16px;line-height:1.5;max-width:60%}
+.wb{display:block;position:relative}
+.wb .foto{position:relative;height:140px;overflow:hidden}
+.wb .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.wb .velo{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,16,22,.84) 0%,rgba(8,16,22,.52) 46%,rgba(8,16,22,0) 88%)}
+.wb .txt{position:absolute;left:20px;top:50%;transform:translateY(-50%);max-width:60%}
+.wb .n{font-family:'Bodoni Moda',serif;font-weight:640;font-size:22px;color:#FFFFFF;line-height:1.1;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.wb .n s{text-decoration:none;font-family:'EB Garamond',serif;font-size:9px;letter-spacing:.2em;font-weight:600;text-transform:uppercase;color:#8CC8EC;margin-left:8px}
+.wb .d{font-size:11px;color:rgba(255,255,255,.86);line-height:1.45;margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.wb .p{font-style:italic;font-size:15px;color:#F0D9A6;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.wb .sep{height:2px;background:repeating-linear-gradient(90deg,rgba(30,47,58,.3) 0 9px,transparent 9px 18px);margin:0 20px}
+.wb.sel .velo{background:linear-gradient(90deg,rgba(28,18,46,.9) 0%,rgba(28,18,46,.6) 46%,rgba(28,18,46,0) 88%)}
+.wb.sel .n{color:#E4D2F2}.wb.sel .n s{color:#C3A6D2}
+.wb.sel:before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:7px;background:#4A3D62;z-index:3;
+  border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+/* el secreto de WICHO: LLEVA al mismo sándwich secreto. No vende ingredientes. */
+#w .secreto{margin:18px 20px 0;padding:15px 0 0;border-top:2px dashed rgba(74,61,98,.4);display:flex;align-items:center;gap:13px}
+#w .secreto .o{width:38px;height:38px;border-radius:50%;flex:0 0 auto;
+  background:repeating-radial-gradient(circle at 50% 50%,#C3A6D2 0 3px,#4A3D62 3px 6px)}
+#w .secreto b{display:block;font-family:'Bodoni Moda',serif;font-weight:640;font-size:19px;color:#2A2140;line-height:1.1}
+#w .secreto span{display:block;font-size:11px;color:#4A3D62;margin-top:3px;font-style:italic}
+#w .secreto .fl{margin-left:auto;font-size:20px;color:#4A3D62}
+#w .pie{margin-top:auto;border-top:2px solid rgba(30,47,58,.18);background:#7FBEE4;
+        padding:13px 18px 20px;display:flex;align-items:center;gap:14px}
+#w .pie .pr{font-family:'Bodoni Moda',serif;font-weight:640;font-size:23px;color:#5C400E;line-height:1}
+#w .pie .llevas{font-style:italic;font-size:13px;color:#2B4453;margin-top:3px}
+#w .pie .bt{background:#4A3D62;color:#F0E9F7;padding:14px 26px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px;
+            border-radius:56% 44% 52% 48%/48% 56% 44% 52%}
+/* PROPUESTA 2026-09-24 · el puente: gemelo del secreto, en el color de SANDO. Lleva a su lado. */
+#w .puente{margin:18px 20px 0;padding:15px 0 0;border-top:2px dashed rgba(92,64,14,.35);display:flex;align-items:center;gap:13px}
+#w .puente .o{width:42px;height:42px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+#w .puente .o img{width:42px;height:42px;object-fit:contain;display:block}
+#w .puente .o i{display:block;width:3px;height:17px;transform:skewX(-16deg);border-radius:1px;background:#CBA258}
+#w .puente .o i+i{background:#8CC8EC}
+#w .puente b{display:block;font-family:'Bodoni Moda',serif;font-weight:640;font-size:19px;color:#3B2A0C;line-height:1.1}
+#w .puente span{display:block;font-size:11px;color:#5C400E;margin-top:3px;font-style:italic}
+#w .puente .fl{margin-left:auto;font-size:20px;color:#5C400E}
+#w .secreto{margin-top:12px}
+</style></head><body>
+
+<div class="f" id="s">
+  <div class="riel">
+    <div class="dots"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm"><span style="color:#F7F4EA">SND</span><span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span><span style="color:#F7F4EA">WCH</span></div>
+    <div style="width:32px;height:32px;border-radius:50%;background:#CBA258;color:#241a08;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">2</div>
+  </div>
+  <div class="casaca"><img src="../../../img/sando2_cuerpo_forro.png">
+    <div class="q"><p>“Estas cinco las armé yo.<br>Respondo por cada una.”</p><span>Sando</span></div></div>
+  <div class="enc"><h1>La carta</h1><em>Abierto · cierra 10 p.m.</em></div>
+  <div class="h1s">Recetas cerradas. Eliges una y no hay nada más que decidir.</div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig02.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="num">I · la estrella</div>
+      <div class="fila"><div class="nom">The Marinara</div><div class="pre">S/21.90<s>30CM 28.90</s></div></div></div></div>
+    <div class="pitch">Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara.</div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig01.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="num">II</div>
+      <div class="fila"><div class="nom">The Original</div><div class="pre">S/20.90<s>30CM 26.90</s></div></div></div></div>
+    <div class="pitch">El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola.</div></div>
+  <div class="bd vlt"><div class="foto"><img src="../../../img/sig05.jpg">
+    <div class="centro"><div class="ojo"></div><div class="vn">El sándwich secreto</div>
+      <div class="barra"><b></b></div><div class="vm">1 de 3 pedidos</div></div></div>
+    <div class="pitch">No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div></div>
+</div>
+
+<div class="f" id="w"><div class="tag" style="position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 sans-serif;letter-spacing:.14em;padding:6px 10px">MUNDO WICHO · M22 + EL PUENTE</div>
+  <img class="wicho" src="../../../img/wicho_cuerpo.png" onerror="this.src='../../../img/wicho.png'">
+  <div class="linea"><i class="ok"></i><i class="ok"></i><i class="now"></i><i></i><i></i><i></i></div>
+  <div class="cab"><div class="fl">&#8592;</div><div class="t">Proteína<s>3/6</s></div><div style="width:36px"></div></div>
+  <h2>¿Qué va adentro?</h2>
+  <div class="ay">Lo que elijas acá es el sándwich.</div>
+  <div class="wb sel"><div class="foto"><img src="../../../img/prot_p02.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Pollo<s>Teriyaki</s></div>
+      <div class="d">Muslo marinado toda la noche en sillao y jengibre.</div><div class="p">S/13.90</div></div></div></div>
+  <div class="sep"></div>
+  <div class="wb"><div class="foto"><img src="../../../img/prot_p06.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Albóndiga<s>Marinara</s></div>
+      <div class="d">Chicas, hechas acá, cocidas en su marinara.</div><div class="p">S/14.90</div></div></div></div>
+  <div class="sep"></div>
+  <div class="wb"><div class="foto"><img src="../../../img/prot_p08.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Pavo<s>Horneado</s></div>
+      <div class="d">Lonjas de un milímetro puestas en pliegues.</div><div class="p">S/15.90</div></div></div></div>
+  <div class="puente"><div class="o"><img src="../../../img/marca/avatar-1024-transparente.png" alt="SND//WCH"></div>
+    <div><b>¿Prefieres que ya esté resuelto?</b><span>The Marinara, la estrella de SANDO. Te llevo a su lado.</span></div>
+    <div class="fl">&#8594;</div></div>
+  <div class="secreto"><div class="o"></div>
+    <div><b>El sándwich secreto</b><span>Ya se te abrió. No preguntes qué lleva.</span></div>
+    <div class="fl">&#8594;</div></div>
+  <div class="pie"><div style="flex:1;min-width:0"><div class="pr">S/13.90</div>
+    <div class="llevas">15CM · Classic · Pollo</div></div><div class="bt">Siguiente</div></div>
+</div>
+</body></html>

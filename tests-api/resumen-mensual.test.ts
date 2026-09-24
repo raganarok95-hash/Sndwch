@@ -11,12 +11,15 @@
 // mes, que es exactamente cuando este cron corre.
 //
 // Correr con: npm run test:api
+function assert(cond: unknown, msg: string) {
+  if (!cond) throw new Error(msg);
+}
 function assertEquals<T>(actual: T, expected: T, msg?: string) {
   if (!Object.is(actual, expected)) {
     throw new Error(msg ?? `esperaba ${JSON.stringify(expected)}, recibí ${JSON.stringify(actual)}`);
   }
 }
-import { monthlyRecap } from "../supabase/functions/api/actions/customer.ts";
+import { monthlyRecap, resumenCedeHoy, MONTHLY_RECAP_LAST_DAY } from "../supabase/functions/api/actions/customer.ts";
 import { limaPrevMonthRange } from "../supabase/functions/api/env.ts";
 
 // Un pedido tal como sale de la consulta del cron. `delivery_fee` va aparte a propósito: los
@@ -119,4 +122,35 @@ Deno.test("la primera hora del mes en UTC todavía es el mes anterior en Lima", 
   const r = limaPrevMonthRange(new Date("2026-03-01T02:00:00Z"));
   assertEquals(r.ym, 202601, "en Lima todavía es 28 de febrero, así que el mes cerrado es enero");
   assertEquals(r.endIso, "2026-02-01T05:00:00.000Z");
+});
+
+// ── Ceder ante otro aviso del mismo día ─────────────────────────────────────────────────
+
+Deno.test("el resumen cede ante otro aviso del día mientras le quedan corridas", () => {
+  for (let d = 1; d < MONTHLY_RECAP_LAST_DAY; d++) {
+    assertEquals(resumenCedeHoy(d, true), true, `el día ${d} todavía puede esperar a mañana`);
+    assertEquals(resumenCedeHoy(d, false), false, `el día ${d}, sin otro aviso, sale`);
+  }
+});
+
+Deno.test("en la última corrida el resumen sale igual: perder el mes entero es peor que dos avisos", () => {
+  assertEquals(resumenCedeHoy(MONTHLY_RECAP_LAST_DAY, true), false);
+});
+
+Deno.test("el último día del resumen es el último día del cron, leído de su migración", () => {
+  const dir = new URL("../supabase/migrations/", import.meta.url);
+  let horario: string | null = null;
+  for (const e of [...Deno.readDirSync(dir)].map((x) => x.name).sort()) {
+    const sql = Deno.readTextFileSync(new URL(e, dir));
+    if (!sql.includes("remind-monthly-recap")) continue;
+    const m = sql.match(/'(\S+ \S+ (\S+) \S+ \S+)'/);
+    if (m) horario = m[2]; // la última migración que lo toca es la vigente
+  }
+  assert(horario, "no encontré el horario del cron del resumen en supabase/migrations");
+  const ultimo = Number(String(horario).split("-").pop());
+  assertEquals(
+    ultimo,
+    MONTHLY_RECAP_LAST_DAY,
+    `el cron corre hasta el día ${ultimo} y el código cree que hasta el ${MONTHLY_RECAP_LAST_DAY}: el resumen cedería en su última corrida y se perdería`,
+  );
 });

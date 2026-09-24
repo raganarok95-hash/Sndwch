@@ -1,14 +1,18 @@
 // SND//WCH — api / actions/auth
 // Registro, login, verificación de sesión, cierre de sesión en todos los dispositivos,
 // borrado de cuenta y recuperación de PIN.
-import { REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID } from "../env.ts";
+import {
+  REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID,
+  LOGIN_CODE_TTL_MINUTES, LOGIN_CODE_MAX_ATTEMPTS, LOGIN_CODE_COOLDOWN_SECONDS,
+} from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
   signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession, fetchIsAdmin,
   loginLockoutRemainingMinutes, registerLoginFailure, resetLoginAttempts,
+  signEmailProof, verifyEmailProof,
 } from "../session.ts";
-import { sendRecoveryEmail, maskEmail } from "../email.ts";
+import { sendRecoveryEmail, sendLoginCodeEmail, maskEmail } from "../email.ts";
 import { debugLog } from "../logging.ts";
 import { pointsFor, rewardReferrer } from "./orders.ts";
 
@@ -116,8 +120,34 @@ export async function actRegister(b: any) {
   if (googleId) {
     if (!name) name = googleName || "";
     if (!email && googleEmail) email = googleEmail;
-    if (!pin) pin = String(Math.floor(Math.random() * 900000) + 100000);
+    // Mismo generador que el código de 6 dígitos, no Math.random: este PIN nunca se muestra,
+    // pero sigue abriendo la cuenta por "teléfono y PIN", así que tiene que ser inadivinable.
+    if (!pin) pin = codigoDeSeisDigitos();
   }
+
+  // ── Registro tras entrar con correo y código (2026-09-23) ─────────────────────────
+  // El correo NO se lee del cuerpo: se lee de la prueba que FIRMÓ el servidor cuando el
+  // código de 6 dígitos resultó correcto. Mismo criterio que Google — aceptar el correo
+  // que manda el cliente dejaría registrar una cuenta a nombre de un correo ajeno, que es
+  // justo lo que el código de 6 dígitos vino a impedir.
+  // El PIN se genera acá y nunca se le muestra: la pantalla promete "no hay contraseña".
+  // Sigue existiendo por debajo porque lo usan actLogin y actDeleteAccount, y porque
+  // "recuperar PIN" es la salida si algún día pierde el acceso al correo.
+  // DNI y fecha de nacimiento SIGUEN SIENDO OBLIGATORIOS por este camino: la excepción
+  // autorizada es solo la de Google (regla permanente del proyecto, y la base lo vuelve a
+  // exigir con customers_dni_o_google).
+  if (b.emailProof) {
+    const verificado = await verifyEmailProof(String(b.emailProof));
+    if (!verificado) throw new ApiError("El código venció. Pide uno nuevo y vuelve a intentar.", 401);
+    email = verificado;
+    // Mismo generador que el código de 6 dígitos, no Math.random: este PIN nunca se muestra,
+    // pero sigue abriendo la cuenta por "teléfono y PIN", así que tiene que ser inadivinable.
+    if (!pin) pin = codigoDeSeisDigitos();
+  }
+  // El correo se guarda SIEMPRE normalizado (minúsculas, sin espacios), que es como está
+  // construido el índice único customers_email_unico. Guardarlo tal cual lo escribió el
+  // cliente dejaría "Ana@x.com" y "ana@x.com" como dos cuentas distintas.
+  if (email) email = email.trim().toLowerCase();
   if (!name || !phone || pin.length < 4) throw new ApiError("Completa nombre, teléfono y PIN (mínimo 4 dígitos).");
   // Mismo mínimo que ya exige el teléfono de CONTACTO en el checkout del lado cliente
   // (src/app.ts, doOrder) — el teléfono de CUENTA (login + código de referido) no
@@ -368,6 +398,97 @@ export async function actLogin(b: any) {
   }
   const token = await signToken({ phone, isAdmin: isAdminEarly, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
   return { customer: safeCustomer(row), isAdmin: isAdminEarly, token };
+}
+
+// ══ ENTRAR CON CORREO Y CÓDIGO DE 6 DÍGITOS (2026-09-23) ══════════════════════════════
+//
+// Las tres pantallas ENTRAR aprobadas prometen "te mandamos un código de 6 dígitos, no hay
+// contraseña". Hasta hoy el login real era teléfono + PIN: la pantalla describía un producto
+// que no existía. Esto es ese producto.
+//
+// DOS COSAS QUE NO SON OBVIAS Y SOSTIENEN TODO LO DEMÁS:
+//
+// 1. LA RESPUESTA ES LA MISMA EXISTA O NO LA CUENTA. `request-login-code` contesta idéntico
+//    para un correo registrado y para uno que nunca vimos, y manda el código en los dos
+//    casos. Si contestara distinto, el formulario de entrada se vuelve un verificador de
+//    "¿esta persona es cliente de SND//WCH?" para cualquiera que tipee correos. Es el mismo
+//    criterio que ya rige el bloqueo por teléfono (ver loginLockoutRemainingMinutes).
+//
+// 2. EL CORREO SIGUE SIENDO UNA IDENTIDAD, ASÍ QUE ES ÚNICO EN LA BASE. Hasta esta migración
+//    `customers.email` tenía un índice normal, no único: dos cuentas podían compartir correo
+//    y "entrar con tu correo" no habría tenido respuesta. Ver customers_email_unico.
+
+// Normaliza igual que la base (lower + trim), que es como está construido el índice único.
+// Si el cliente y el servidor normalizaran distinto, "ana@x.com" y "Ana@x.com" serían dos
+// cuentas — el defecto clásico del correo como identidad.
+function normalizarCorreo(v: unknown): string {
+  return String(v || "").trim().toLowerCase();
+}
+
+function codigoDeSeisDigitos(): string {
+  // crypto.getRandomValues y no Math.random: un código adivinable no protege nada. El
+  // módulo se toma sobre un rango múltiplo de 10^6 para no sesgar los primeros dígitos.
+  const buf = new Uint32Array(1);
+  do { crypto.getRandomValues(buf); } while (buf[0] >= 4_294_000_000);
+  return String(buf[0] % 1_000_000).padStart(6, "0");
+}
+
+export async function actRequestLoginCode(b: any) {
+  const email = normalizarCorreo(b.email);
+  if (!isValidEmail(email)) throw new ApiError("Escribe un correo válido.");
+
+  // Tope por conexión ADEMÁS del enfriamiento por correo de issue_login_code: el
+  // enfriamiento frena insistir sobre UN correo, esto frena recorrer muchos.
+  const ip = String(b._ip || "unknown");
+  const withinLimit = await rpc("check_rate_limit", { p_key: `login-code-ip:${ip}`, p_limit: 10, p_window_minutes: 60 });
+  if (!withinLimit) throw new ApiError("Demasiados códigos pedidos desde tu conexión. Espera un momento.", 429);
+
+  const code = codigoDeSeisDigitos();
+  const issued = await rpc("issue_login_code", {
+    p_email: email,
+    p_code: code,
+    p_ttl_minutes: LOGIN_CODE_TTL_MINUTES,
+    p_cooldown_seconds: LOGIN_CODE_COOLDOWN_SECONDS,
+  });
+  if (!issued) {
+    throw new ApiError(`Ya te mandamos un código hace menos de ${LOGIN_CODE_COOLDOWN_SECONDS} segundos. Revisa tu correo.`, 429);
+  }
+
+  // Que el correo no salga NO invalida el código ni se le cuenta al cliente como error suyo:
+  // se avisa y se deja pedir otro. Devolver éxito cuando Resend falló dejaría a alguien
+  // esperando para siempre un correo que nunca salió.
+  const sent = await sendLoginCodeEmail(email, code, LOGIN_CODE_TTL_MINUTES);
+  if (!sent) throw new ApiError("No pudimos mandar el correo en este momento. Intenta de nuevo en un minuto.", 502);
+
+  return { success: true, masked: maskEmail(email), ttlMinutes: LOGIN_CODE_TTL_MINUTES };
+}
+
+export async function actVerifyLoginCode(b: any) {
+  const email = normalizarCorreo(b.email);
+  const code = String(b.code || "").replace(/\D/g, "");
+  if (!isValidEmail(email) || code.length !== 6) throw new ApiError("Escribe el código de 6 dígitos.");
+
+  const ok = await rpc("verify_login_code", { p_email: email, p_code: code, p_max_attempts: LOGIN_CODE_MAX_ATTEMPTS });
+  if (!ok) throw new ApiError("Ese código no es válido o ya venció. Pide uno nuevo.", 401);
+
+  const rows = await sbGet("customers", `email=eq.${encodeURIComponent(email)}`);
+  if (!rows.length) {
+    // Correo verificado pero sin cuenta: la app pasa a "completa tu cuenta". La prueba va
+    // FIRMADA por el servidor — actRegister lee el correo de ahí y nunca del cuerpo, igual
+    // que ya hace con el nombre y el correo que vienen del token de Google.
+    return { success: true, needsRegistration: true, email, emailProof: await signEmailProof(email) };
+  }
+
+  const row = rows[0];
+  const isAdmin = await fetchIsAdmin(row.phone);
+  if (isAdmin) {
+    sbUpdate("admin_accounts", `phone=eq.${encodeURIComponent(row.phone)}`, { last_login_at: new Date().toISOString() }).catch(() => {});
+  }
+  // El bloqueo por intentos se limpia igual que en actLogin: quien acaba de probar que tiene
+  // el correo no puede quedar arrastrando un castigo de intentos de PIN fallidos.
+  await resetLoginAttempts(row.phone);
+  const token = await signToken({ phone: row.phone, isAdmin, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
+  return { success: true, needsRegistration: false, customer: safeCustomer(row), isAdmin, token };
 }
 
 export async function actSessionCheck(b: any) {

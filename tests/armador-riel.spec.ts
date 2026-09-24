@@ -16,78 +16,88 @@ import { mockBackend, APP_FILE } from './helpers';
 // afirma contra una lista escrita acá (eso sería copiar el mismo error), sino que COMPARA
 // las dos fuentes entre sí: el rótulo que el riel enciende y el título que se pintó.
 
-const TITULO_POR_ROTULO: Record<string, RegExp> = {
-  'PAN': /^Pan$/i,
-  'PROTEÍNA': /^Proteína$/i,
-  'QUESO': /^Queso$/i,
-  'VEGETALES': /^Vegetales$/i,
-  'SALSAS': /^Salsas$/i,
+// ⚠ REESCRITA EL 2026-09-23 para el armador rehecho. El riel dejó de ser una lista con el
+// valor al lado de cada paso: ahora son seis segmentos (el TAMAÑO pasó a ser su propio paso)
+// que se nombran por `aria-label` («QUESO (aquí)»), y los títulos pasaron a ser preguntas
+// («¿Con queso?»). El defecto que esta prueba caza sigue siendo el mismo —que el orden de
+// BYO_STEP_LABELS y el de los `if` que pintan cada paso se separen— y se sigue comparando
+// una fuente contra la otra, nunca contra una lista escrita acá.
+//
+// Cada rótulo del riel se reconoce por la pregunta que le corresponde. Una palabra clave por
+// paso, que no aparece en la pregunta de ningún otro.
+const PREGUNTA_POR_ROTULO: Record<string, RegExp> = {
+  'TAMAÑO': /tamaño/i,
+  'PAN': /\bpan\b/i,
+  'PROTEÍNA': /adentro/i,
+  'QUESO': /queso/i,
+  'VEGETALES': /encima/i,
+  'SALSAS': /salsa/i,
+};
+
+async function entrarAlArmador(page: any) {
+  await mockBackend(page);
+  await page.goto(APP_FILE);
+  await page.getByRole('button', { name: /Tú decides/ }).click();
+  await page.waitForSelector('text=¿De qué tamaño?');
+}
+const siguiente = (page: any) => page.locator('button[onclick="byoStepNext()"]').click();
+const rotuloActual = async (page: any) => {
+  const aqui = page.locator('[aria-label$=" (aquí)"]');
+  await expect(aqui, 'el riel debe tener exactamente un paso encendido').toHaveCount(1);
+  return String(await aqui.getAttribute('aria-label')).replace(' (aquí)', '');
 };
 
 test('el paso encendido en el riel es el que la pantalla está pintando', async ({ page }) => {
-  await mockBackend(page);
-  await page.goto(APP_FILE);
-  await page.getByRole('button', { name: /Tú decides/ }).click();
-  await page.locator('text=/Elegir/i').first().click();
-  await page.waitForSelector('[data-paso]');
-
-  // Se recorren los cinco pasos eligiendo lo mínimo para poder avanzar.
-  for (let paso = 0; paso < 5; paso++) {
-    const activo = page.locator('[data-actual="1"]');
-    await expect(activo, `en el paso ${paso} el riel debe tener exactamente un paso encendido`).toHaveCount(1);
-
-    // La fila lleva el número, el rótulo y el valor elegido. Se busca el rótulo entre las
-    // líneas en vez de asumir que es la primera: el número va antes.
-    const lineas = (await activo.innerText()).split('\n').map((x) => x.trim().toUpperCase());
-    const rotulo = lineas.find((x) => x in TITULO_POR_ROTULO) || lineas.join(' | ');
-    const esperado = TITULO_POR_ROTULO[rotulo];
-    expect(esperado, `el riel encendió "${rotulo}", que no es ninguno de los cinco pasos conocidos`).toBeTruthy();
-
-    // El título de la sección que de verdad se pintó (el <h2> de ST()).
-    const titulos = await page.locator('h2').allInnerTexts();
-    const coincide = titulos.some((t) => esperado.test(t.trim()));
+  await entrarAlArmador(page);
+  const vistos: string[] = [];
+  for (let paso = 0; paso < 6; paso++) {
+    const rotulo = await rotuloActual(page);
+    const esperado = PREGUNTA_POR_ROTULO[rotulo];
+    expect(esperado, `el riel encendió "${rotulo}", que no es ninguno de los seis pasos conocidos`).toBeTruthy();
+    const titulo = (await page.locator('h2').first().innerText()).trim();
     expect(
-      coincide,
-      `el riel dice "${rotulo}" pero la pantalla pintó ${JSON.stringify(titulos)} — ` +
-      'el orden de BYO_STEP_LABELS dejó de coincidir con el de los `if` que eligen qué pintar',
+      esperado.test(titulo),
+      `el riel dice "${rotulo}" pero la pantalla pregunta "${titulo}" — ` +
+        'el orden de BYO_STEP_LABELS dejó de coincidir con el de los `if` que eligen qué pintar',
     ).toBe(true);
+    vistos.push(rotulo);
 
-    if (paso === 0) {
-      await page.locator('text=15CM').first().click();
-      await page.locator('text=/Classic/').first().click();
-    }
-    if (paso === 1) await page.locator('text=/Pollo/').first().click();
-    if (paso < 4) {
-      await page.locator('button:has-text("Siguiente")').first().click();
-      await page.waitForTimeout(250);
-    }
+    if (paso === 0) await page.locator('[onclick*="size=\'15\'"]').click();
+    if (paso === 1) await page.locator('[onclick^="base="]').first().click();
+    if (paso === 2) await page.locator('[onclick^="prot="]').first().click();
+    if (paso < 5) await siguiente(page);
   }
+  expect(new Set(vistos).size, `el riel repitió un paso: ${JSON.stringify(vistos)}`).toBe(6);
 });
 
-test('el valor que el riel muestra al lado de cada paso es el de ESE paso', async ({ page }) => {
-  // El segundo defecto del mismo cambio, que el test de arriba no ve: los rótulos pueden
-  // estar bien y `byoValor` seguir devolviendo el queso en la fila de los vegetales.
-  await mockBackend(page);
-  await page.goto(APP_FILE);
-  await page.getByRole('button', { name: /Tú decides/ }).click();
-  await page.locator('text=/Elegir/i').first().click();
-  await page.locator('text=15CM').first().click();
-  await page.locator('text=/Classic/').first().click();
-  await page.locator('button:has-text("Siguiente")').first().click();
-  await page.locator('text=/Pollo/').first().click();
-  await page.locator('button:has-text("Siguiente")').first().click();
-  // Paso QUESO: se elige uno real y tiene que aparecer en la fila del queso, no en otra.
-  await page.locator('text=Cheddar').first().click();
-  await page.waitForTimeout(200);
+// El segundo defecto del mismo cambio de orden: los rótulos pueden estar bien y el ATAJO al
+// paso estar mal. Cada parte de «lo que llevas» (el resumen del pie) es un botón que vuelve
+// a su paso, y el paso va escrito como número en BYO_LOQUELLEVAS (`i:3` el queso, `i:4` los
+// vegetales). Si el orden cambia y ese número no, tocar «Cheddar» te lleva a los vegetales.
+test('cada parte de «lo que llevas» vuelve a SU paso, no al de al lado', async ({ page }) => {
+  await entrarAlArmador(page);
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await siguiente(page);
+  await page.locator('[onclick^="base="]').first().click();
+  await siguiente(page);
+  await page.locator('[onclick^="prot="]').first().click();
+  await siguiente(page);
+  await page.locator('button', { hasText: /Cheddar/ }).first().click(); // queso
+  await siguiente(page);
+  await page.locator('[onclick*="\'T01\'"]').first().click(); // un vegetal
+  await siguiente(page); // salsas: desde acá se ve el resumen completo
 
-  const filaQueso = await page.locator('[data-paso="2"]').innerText();
-  expect(filaQueso, 'el queso elegido debe salir en la fila QUESO del riel').toMatch(/QUESO/i);
-  expect(filaQueso).toMatch(/Cheddar/i);
-
-  await page.locator('button:has-text("Siguiente")').first().click();
-  await page.locator('text=Tomate').first().click();
-  await page.waitForTimeout(200);
-  const filaVeg = await page.locator('[data-paso="3"]').innerText();
-  expect(filaVeg, 'el vegetal elegido debe salir en la fila VEGETALES, no en la del queso').toMatch(/VEGETALES/i);
-  expect(filaVeg).toMatch(/1 vegetal/i);
+  const partes: [RegExp, string][] = [
+    [/^15CM$/, 'TAMAÑO'],
+    [/^Cheddar/, 'QUESO'],
+    // El armador trae vegetales puestos por defecto: se busca la parte por la palabra, no
+    // por la cuenta («5 vegetales»), que depende de esos defaults.
+    [/vegetal/, 'VEGETALES'],
+  ];
+  for (const [texto, paso] of partes) {
+    await page.locator('button[onclick^="byoIrAPaso("]', { hasText: texto }).first().click();
+    expect(await rotuloActual(page), `tocar «${texto.source}» en lo que llevas tiene que volver a ${paso}`).toBe(paso);
+    // Volver hasta las salsas para tocar la siguiente parte desde el mismo lugar.
+    while ((await rotuloActual(page)) !== 'SALSAS') await siguiente(page);
+  }
 });

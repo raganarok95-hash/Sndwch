@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #60 — Pedido fijo (recurrente). Ingreso predecible, que es justo lo que le falta a un
 // negocio nuevo.
@@ -15,10 +15,7 @@ const CLIENTE = { phone: '900000001', name: 'Cliente Fijo', points: 100, total_o
 
 async function loguearYArmarCarrito(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'Puntos' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill(CLIENTE.phone);
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, CLIENTE.phone, '1234');
   await page.locator('.bottom-nav').getByRole('button', { name: 'Pedido' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -27,7 +24,7 @@ async function loguearYArmarCarrito(page: any) {
   // Con un solo ítem la app va al "pago rápido" inline, no al carrito. El bloque de pedido
   // fijo vive en el CARRITO, que es donde el cliente ya está mirando el pedido completo —
   // se llega por el ícono del header.
-  await page.locator('[aria-label="Ver carrito"]').click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click();
 }
 
 test('el carrito ofrece dejarlo fijo y deja claro que no se cobra solo', async ({ page }) => {
@@ -80,7 +77,7 @@ test('un invitado no ve la opción — no habría a quién avisarle', async ({ p
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await page.locator('[aria-label="Ver carrito"]').click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click();
   await expect(page.locator('details', { hasText: 'Dejarlo fijo cada semana' })).toHaveCount(0);
 });
 
@@ -95,20 +92,19 @@ test('la pantalla lista los pedidos fijos y permite quitarlos', async ({ page })
     'recurring-delete': { success: true },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'Puntos' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill(CLIENTE.phone);
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, CLIENTE.phone, '1234');
   await page.locator('[onclick*="goRecurring()"]').click();
 
-  await expect(page.locator('text=MI PEDIDO FIJO')).toBeVisible();
-  await expect(page.locator('text=/Viernes · 19:30/')).toBeVisible();
+  await expect(page.getByText('Tu pedido fijo', { exact: true })).toBeVisible();
+  await expect(page.locator('.mfj .tx')).toContainText(/fijo los viernes · 7:30 p\.m\./i);
   // La misma promesa, también acá: es la pantalla donde el cliente vuelve a mirar qué dejó
   // configurado, y es donde más fácil sería creer que se cobra solo.
-  await expect(page.locator('text=/nunca te cobramos sin que confirmes/i')).toBeVisible();
+  await expect(page.locator('text=/No te cobramos sin que confirmes/i')).toBeVisible();
+  // Y lo que la maqueta aprobada decía y el dueño descartó: el fijo no se manda solo.
+  await expect(page.getByText(/lo mandamos solo/i)).toHaveCount(0);
 
   // La app usa su propio modal (showConfirm), no el diálogo nativo del navegador.
-  await page.locator('[onclick*="doDeleteRecurring"]').click();
+  await page.getByRole('button', { name: 'Quitar el fijo' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
   await expect.poll(() => calls.filter((c) => c.action === 'recurring-delete').length).toBeGreaterThan(0);
   expect(calls.find((c) => c.action === 'recurring-delete')!.body.id).toBe('rec-1');

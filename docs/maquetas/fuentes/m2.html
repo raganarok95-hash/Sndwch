@@ -1,0 +1,146 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:26px;padding:26px;align-items:flex-start;font-family:'EB Garamond',serif}
+.f{width:390px;position:relative;overflow:hidden;flex:0 0 auto}
+.wm{font-family:'Fraunces',serif;font-weight:620;font-size:15px;line-height:1;display:inline-flex;align-items:baseline;color:#F6F2E8}
+.wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+
+/* ══ 3 · LA CARTA DE SANDO — mundo tinta + dorado ══ */
+#c{background:#110F0C;min-height:844px}
+#c .riel{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;
+         border-bottom:1px solid #1E1B15;position:sticky;top:0;background:#110F0C}
+#c .dots{display:flex;gap:4px}#c .dots i{width:9px;height:9px;border-radius:50%;display:block}
+#c .cart{width:32px;height:32px;border-radius:50%;background:#CBA258;color:#241a08;display:flex;
+         align-items:center;justify-content:center;font-weight:600;font-size:13px}
+#c .estado{padding:13px 20px 0;font-size:11px;color:#8E8A80;font-style:italic}
+#c .estado b{font-style:normal;font-weight:600;font-size:9px;letter-spacing:.2em;color:#57B87E;margin-right:9px;text-transform:uppercase}
+#c h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:30px;color:#F6F2E8;line-height:1.04;padding:18px 20px 4px}
+#c .h1s{font-size:13px;color:#8E8A80;padding:0 20px 20px;line-height:1.5}
+.banda{display:block}
+.banda .foto{position:relative;height:270px;overflow:hidden}
+.banda .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.banda .velo{position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.88) 100%)}
+.banda .sobre{position:absolute;left:20px;right:20px;bottom:15px}
+.banda .estrella{font-size:9px;letter-spacing:.3em;font-weight:600;color:#CBA258;text-transform:uppercase;margin-bottom:5px}
+.banda .fila{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.banda .nom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;color:#fff;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.banda .pre{font-style:italic;font-size:17px;color:#E8CF9B;flex:0 0 auto;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.banda .pre s{text-decoration:none;font-size:11px;color:rgba(255,255,255,.6);margin-left:7px}
+.banda .pitch{font-size:13px;color:#8E8A80;line-height:1.55;padding:13px 20px 17px;border-bottom:1px solid #1E1B15}
+.banda.off .foto img{filter:grayscale(1) brightness(.6)}
+.banda.off .pre{color:#C98B8B;font-size:15px}
+/* menu secreto: misma banda, desenfocada */
+.vault .foto img{filter:blur(16px) saturate(.6) brightness(.5);transform:scale(1.1)}
+.vault .centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px}
+.vault .ojo{width:52px;height:52px;border-radius:50%;background:
+  repeating-radial-gradient(circle at 50% 50%,#C3A6D2 0 3px,#4A3D62 3px 6px)}
+.vault .vn{font-family:'Bodoni Moda',serif;font-weight:640;font-size:24px;color:#fff}
+.vault .barra{width:150px;height:2px;background:rgba(195,166,210,.25);position:relative}
+.vault .barra b{position:absolute;left:0;top:0;bottom:0;width:33%;background:#C3A6D2}
+.vault .vm{font-size:11px;color:#C3A6D2;letter-spacing:.08em}
+#c .puertas{padding:14px 20px 0}
+#c .pt{padding:18px 0;border-top:1px solid #1E1B15;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+#c .pt b{font-family:'Bodoni Moda',serif;font-weight:640;font-size:22px;color:#F6F2E8}
+#c .pt s{text-decoration:none;font-style:italic;font-size:15px;color:#CBA258}
+#c .pt p{font-size:11px;color:#8E8A80;margin-top:4px;line-height:1.5}
+#c .fin{border-top:1px solid #1E1B15;margin-top:18px}
+
+/* ══ 4 · ARMADOR — mundo de WICHO, CLARO ══ */
+#a{background:#E9F3FA;min-height:844px;display:flex;flex-direction:column}
+#a .linea{display:flex;gap:3px;padding:12px 18px 0}
+#a .linea i{flex:1;height:3px;border-radius:999px;background:#C6DCEC;display:block}
+#a .linea i.ok{background:#6F4FA0}#a .linea i.now{background:#B79BD4}
+#a .cab{height:46px;display:flex;align-items:center;padding:0 12px}
+#a .cab .fl{width:36px;font-size:21px;color:#5E5677}
+#a .cab .t{flex:1;text-align:center;font-size:9px;letter-spacing:.24em;font-weight:600;text-transform:uppercase;color:#6F4FA0}
+#a .cab .t s{text-decoration:none;color:#8C86A3;margin-left:9px}
+#a h2{font-family:'Bodoni Moda',serif;font-weight:640;font-size:29px;color:#1C1830;line-height:1.05;padding:18px 20px 5px}
+#a .ay{font-size:13px;color:#5E5677;padding:0 20px 16px;line-height:1.5}
+.pb{display:block;position:relative}
+.pb .foto{position:relative;height:150px;overflow:hidden}
+.pb .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.pb .velo{position:absolute;inset:0;background:linear-gradient(90deg,rgba(233,243,250,.96) 0%,rgba(233,243,250,.72) 44%,rgba(233,243,250,0) 86%)}
+.pb .txt{position:absolute;left:20px;top:50%;transform:translateY(-50%);max-width:58%}
+.pb .n{font-family:'Bodoni Moda',serif;font-weight:640;font-size:21px;color:#1C1830;line-height:1.1}
+.pb .n s{text-decoration:none;font-family:'EB Garamond',serif;font-size:9px;letter-spacing:.2em;font-weight:600;text-transform:uppercase;color:#6F4FA0;margin-left:8px}
+.pb .d{font-size:11px;color:#5E5677;line-height:1.45;margin-top:5px}
+.pb .p{font-style:italic;font-size:15px;color:#8C6A2B;margin-top:7px}
+.pb .sep{height:1px;background:#CFE0EE;margin:0 20px}
+.pb.sel .velo{background:linear-gradient(90deg,rgba(214,200,238,.97) 0%,rgba(219,206,240,.75) 44%,rgba(233,243,250,0) 86%)}
+.pb.sel:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#6F4FA0;z-index:2}
+.pb.sel .n{color:#241D38}
+#a .pie{margin-top:auto;border-top:1px solid #CFE0EE;background:#DFEDF7;
+        padding:13px 18px 20px;display:flex;align-items:center;gap:14px}
+#a .pie .izq{flex:1;min-width:0}
+#a .pie .pr{font-family:'Bodoni Moda',serif;font-weight:640;font-size:23px;color:#8C6A2B;line-height:1}
+#a .pie .llevas{font-style:italic;font-size:13px;color:#5E5677;margin-top:3px}
+#a .pie .bt{background:#6F4FA0;color:#fff;border-radius:999px;padding:14px 26px;
+            font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px}
+</style></head><body>
+
+<div class="f" id="c">
+  <div class="riel">
+    <div class="dots"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div class="cart">2</div>
+  </div>
+  <div class="estado"><b>Abierto ahora</b>cierra 10:00 p.m. · delivery desde S/5</div>
+  <h1>Ya está resuelto</h1>
+  <div class="h1s">Cinco recetas cerradas. Eliges una y no hay nada más que decidir.</div>
+
+  <div class="banda"><div class="foto"><img src="../../../img/sig02.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="estrella">La estrella</div>
+      <div class="fila"><div class="nom">The Marinara</div><div class="pre">S/21.90<s>30CM 28.90</s></div></div></div></div>
+    <div class="pitch">Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara.</div></div>
+
+  <div class="banda"><div class="foto"><img src="../../../img/sig01.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="fila"><div class="nom">The Original</div><div class="pre">S/20.90<s>30CM 26.90</s></div></div></div></div>
+    <div class="pitch">El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola.</div></div>
+
+  <div class="banda off"><div class="foto"><img src="../../../img/sig03.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="fila"><div class="nom">The Smoke</div><div class="pre">Agotado</div></div></div></div>
+    <div class="pitch">Embutido italiano ahumado con BBQ de la casa. Vuelve mañana.</div></div>
+
+  <div class="banda vault"><div class="foto"><img src="../../../img/sig05.jpg">
+    <div class="centro"><div class="ojo"></div><div class="vn">Menú secreto</div>
+      <div class="barra"><b></b></div><div class="vm">1 de 3 pedidos</div></div></div>
+    <div class="pitch">No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div></div>
+
+  <div class="puertas">
+    <div class="pt"><div><b>Bebidas</b><p>Medio litro, hechas acá.</p></div><s>desde S/5</s></div>
+    <div class="pt"><div><b>Pedido en grupo</b><p>Cada quien arma el suyo, el delivery se divide.</p></div><s></s></div>
+    <div class="pt"><div><b>Tus puntos</b><p>Canjéalos por salsas, upgrades y sándwiches.</p></div><s>240 pts</s></div>
+  </div>
+  <div class="fin"></div>
+</div>
+
+<div class="f" id="a">
+  <div class="linea"><i class="ok"></i><i class="ok"></i><i class="now"></i><i></i><i></i><i></i></div>
+  <div class="cab"><div class="fl">&#8592;</div><div class="t">Proteína<s>3/6</s></div><div style="width:36px"></div></div>
+  <h2>¿Qué va adentro?</h2>
+  <div class="ay">Lo que elijas acá es el sándwich. Todo lo demás lo acompaña.</div>
+
+  <div class="pb sel"><div class="foto"><img src="../../../img/prot_p02.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Pollo<s>Teriyaki</s></div>
+      <div class="d">Muslo marinado toda la noche en sillao, jengibre y ajo.</div><div class="p">S/13.90</div></div></div></div>
+  <div class="sep"></div>
+  <div class="pb"><div class="foto"><img src="../../../img/prot_p04.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Atún<s>House</s></div>
+      <div class="d">En lascas gruesas, nunca hecho pasta.</div><div class="p">S/16.90</div></div></div></div>
+  <div class="sep"></div>
+  <div class="pb"><div class="foto"><img src="../../../img/prot_p06.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Albóndiga<s>Marinara</s></div>
+      <div class="d">Chicas, hechas acá, cocidas en su marinara.</div><div class="p">S/14.90</div></div></div></div>
+  <div class="sep"></div>
+  <div class="pb"><div class="foto"><img src="../../../img/prot_p08.webp"><div class="velo"></div>
+    <div class="txt"><div class="n">Pavo<s>Horneado</s></div>
+      <div class="d">Lonjas de un milímetro puestas en pliegues.</div><div class="p">S/15.90</div></div></div></div>
+
+  <div class="pie"><div class="izq"><div class="pr">S/13.90</div>
+    <div class="llevas">15CM · Classic · Pollo</div></div><div class="bt">Siguiente</div></div>
+</div>
+
+</body></html>

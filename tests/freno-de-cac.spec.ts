@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // EL FRENO DE CAC — que la pantalla no deje creerle a un número que no se lo merece.
 //
@@ -47,10 +47,7 @@ async function abrirFreno(page: any, freno: any) {
     'my-orders': { orders: [] },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await page.getByText('Freno de CAC').click();
   await expect(page.locator('text=FRENO DE CAC')).toBeVisible({ timeout: 10000 });

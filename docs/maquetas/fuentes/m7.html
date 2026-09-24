@@ -1,0 +1,77 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:26px;font-family:'EB Garamond',serif}
+.f{width:390px;position:relative;overflow:hidden;background:#122019}
+/* CERO CAJAS. Nada de paneles, recuadros ni campos de color. Solo el fondo, la foto,
+   la tipografía y dos texturas suyas: el acanalado y la franja del forro. */
+.riel{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.dots{display:flex;gap:4px}.dots i{width:9px;height:9px;border-radius:50%;display:block}
+.wm{font-family:'Fraunces',serif;font-weight:620;font-size:15px;color:#F7F4EA;display:inline-flex;align-items:baseline}
+.wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+/* ÉL, DE PIE SOBRE EL FONDO. Sin panel debajo. La cita al lado, y el forro naranja
+   de su casaca convertido en la raya vertical que marca la cita — tipografía, no caja. */
+.abre{display:flex;gap:16px;align-items:flex-end;padding:6px 20px 0}
+.abre img{width:112px;flex:0 0 auto;display:block}
+.cita{flex:1;border-left:3px solid #D8823C;padding:0 0 14px 14px}
+.cita p{font-family:'Bodoni Moda',serif;font-style:italic;font-weight:500;font-size:20px;
+  color:#F7F4EA;line-height:1.28}
+.cita span{display:block;font-size:9px;letter-spacing:.34em;font-weight:600;color:#C9A87C;
+  margin-top:11px;text-transform:uppercase}
+/* el acanalado de su puño: una franja fina, a todo el ancho, como textura — no como marco */
+.puno{height:10px;background:#2A3A2E;
+  background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.4) 0 2px,transparent 2px 6px)}
+.enc{padding:22px 20px 0}
+.enc h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:34px;color:#F7F4EA;line-height:1}
+.enc em{display:block;font-size:10px;letter-spacing:.24em;font-weight:600;color:#C9A87C;
+  text-transform:uppercase;font-style:normal;margin-top:9px}
+.enc p{font-size:13px;color:#93A088;line-height:1.5;margin-top:9px;padding-bottom:20px}
+.bd{position:relative}
+.bd .foto{position:relative;height:252px;overflow:hidden}
+.bd .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.bd .velo{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(7,13,10,.94) 100%)}
+.bd .sobre{position:absolute;left:20px;right:20px;bottom:14px}
+.bd .num{font-size:10px;letter-spacing:.32em;font-weight:600;color:#C9A87C;text-transform:uppercase;margin-bottom:5px}
+.bd .fila{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.bd .nom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:28px;color:#fff;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+.bd .pre{font-style:italic;font-size:17px;color:#E8CF9B;flex:0 0 auto;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+.bd .pre s{text-decoration:none;font-size:11px;color:rgba(255,255,255,.62);margin-left:7px}
+.bd .pitch{font-size:13px;color:#93A088;line-height:1.55;padding:13px 20px 16px}
+/* lo importante se marca con la franja del forro, vertical. Un solo elemento. */
+.bd.star:before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:3}
+.vlt .foto img{filter:blur(17px) saturate(.5) brightness(.42);transform:scale(1.12)}
+.vlt .centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px}
+.vlt .vn{font-family:'Bodoni Moda',serif;font-weight:640;font-size:24px;color:#fff}
+.vlt .barra{width:150px;height:3px;background:rgba(195,166,210,.25);position:relative}
+.vlt .barra b{position:absolute;left:0;top:0;bottom:0;width:33%;background:#C3A6D2}
+.vlt .vm{font-size:11px;color:#C3A6D2;letter-spacing:.07em}
+</style></head><body>
+<div class="f" id="s">
+  <div class="riel">
+    <div class="dots"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div style="width:30px;height:30px;border-radius:50%;background:#CBA258;color:#183024;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px">2</div>
+  </div>
+  <div class="abre"><img src="../../../img/sando2_cuerpo_forro.png">
+    <div class="cita"><p>&ldquo;Estas cinco las arm&eacute; yo. Respondo por cada una.&rdquo;</p><span>Sando</span></div></div>
+  <div class="puno"></div>
+  <div class="enc"><h1>La carta</h1><em>Abierto &middot; cierra 10 p.m. &middot; delivery desde S/5</em>
+    <p>Recetas cerradas. Eliges una y no hay nada m&aacute;s que decidir.</p></div>
+  <div class="bd star"><div class="foto"><img src="../../../img/sig02.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="num">I &middot; la estrella</div>
+      <div class="fila"><div class="nom">The Marinara</div><div class="pre">S/21.90<s>30CM 28.90</s></div></div></div></div>
+    <div class="pitch">Para la noche en que ya decidiste que no vas a cocinar. Alb&oacute;ndigas hechas ac&aacute;, cocidas dentro de su propia marinara.</div>
+    <div class="puno"></div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig01.jpg"><div class="velo"></div>
+    <div class="sobre"><div class="num">II</div>
+      <div class="fila"><div class="nom">The Original</div><div class="pre">S/20.90<s>30CM 26.90</s></div></div></div></div>
+    <div class="pitch">El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola.</div>
+    <div class="puno"></div></div>
+  <div class="bd vlt"><div class="foto"><img src="../../../img/sig05.jpg">
+    <div class="centro"><svg width="54" height="54" viewBox="0 0 40 40"><path d="M20,17 a3,3 0 1,1 -3,3 a6,6 0 1,1 6,-6 a9,9 0 1,1 -9,9 a12,12 0 1,1 12,-12 a15,15 0 1,1 -15,15" fill="none" stroke="#C3A6D2" stroke-width="3" stroke-linecap="round"/></svg>
+      <div class="vn">El s&aacute;ndwich secreto</div>
+      <div class="barra"><b></b></div><div class="vm">1 de 3 pedidos</div></div></div>
+    <div class="pitch">No est&aacute; en la carta. Cambia cada mes. Se revela cuando lo pides.</div></div>
+</div></body></html>

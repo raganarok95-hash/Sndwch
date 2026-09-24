@@ -3,16 +3,17 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.nuevo.json --noEmit",
     "parity": "node scripts/parity.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:precios": "node scripts/check-precios-visibles.mjs",
     "check:colores": "node scripts/check-colores.mjs",
     "test": "playwright test",
-    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:acciones && npm run check:rpc && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:legal && npm run check:poses && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
-    "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:acciones && npm run check:rpc && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:legal && npm run build && npm run check:shell",
+    "verify": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:acciones && npm run check:tipos-base && npm run check:columnas && npm run check:pg && npm run check:e2e && npm run check:rpc && npm run check:doble-escritura && npm run check:maquetas && npm run check:costos && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:legal && npm run check:poses && npm run check:backup && npm run check:smoke && npm run build && npm run check:shell && npm test",
+    "verify:rapido": "npm run typecheck && npm run typecheck:api && npm run test:api && npm run parity && npm run check:bundle && npm run check:precios && npm run check:colores && npm run check:crons && npm run check:acciones && npm run check:tipos-base && npm run check:columnas && npm run check:pg && npm run check:e2e && npm run check:rpc && npm run check:doble-escritura && npm run check:maquetas && npm run check:costos && npm run check:cliente && npm run check:fotos && npm run check:sistema && npm run check:legal && npm run build && npm run check:shell",
     "typecheck:api": "node scripts/check-backend.mjs",
     "test:api": "node scripts/check-money.mjs",
+    "test:estado": "node scripts/suite-contra-conocidas.mjs",
     "check:backup": "node scripts/check-backup.mjs",
     "backup": "node scripts/backup-db.mjs",
     "check:smoke": "node scripts/check-smoke.mjs",
@@ -27,11 +28,24 @@
     "gen:legal": "node scripts/gen-legal-estatico.mjs",
     "check:legal": "node scripts/gen-legal-estatico.mjs --check",
     "check:acciones": "node scripts/check-acciones.mjs",
-    "check:rpc": "node scripts/check-rpc.mjs"
+    "check:tipos-base": "node scripts/check-tipos-base.mjs",
+    "check:columnas": "node scripts/check-columnas.mjs",
+    "check:pg": "node scripts/check-pg.mjs",
+    "check:e2e": "node --experimental-strip-types --no-warnings scripts/check-e2e.mjs",
+    "check:rpc": "node scripts/check-rpc.mjs",
+    "check:maquetas": "node scripts/check-maquetas.mjs",
+    "check:doble-escritura": "node scripts/check-doble-escritura.mjs",
+    "check:doble-escritura:probar": "node scripts/check-doble-escritura.mjs --probar",
+    "check:costos": "python3 scripts/check_costos.py",
+    "check:costos:probar": "python3 scripts/check_costos.py --probar"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
-    "typescript": "^7.0.2",
-    "deno": "^2.9.5"
+    "deno": "^2.9.5",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "lit-html": "^3.3.3"
   }
 }

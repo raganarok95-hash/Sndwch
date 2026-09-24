@@ -21,8 +21,11 @@ type Fallo = { pantalla: string; texto: string; px: number; ratio: number; color
 const PANTALLAS: [string, string][] = [
   ['entrada', "window.homeTab=null;window.sndScreen='o_home';"],
   ['home-sando', "window.homeTab='sig';window.sndScreen='o_home';"],
-  ['home-wicho', "window.homeTab='byo';window.sndScreen='o_home';"],
-  ['bebidas', "window.homeTab='drink';window.sndScreen='o_home';"],
+  // Ya no hay un "home de WICHO": su lado ES el armador, y o_home con homeTab='byo' lo
+  // redirige ahí (ver sOHome). Lo que sí hay que medir dos veces es BEBIDAS, porque es la
+  // única pantalla que cambia de paleta según el lado por el que se entró.
+  ['bebidas-sando', "window.homeTab='sig';window.sndScreen='o_sides';"],
+  ['bebidas-wicho', "window.homeTab='byo';window.sndScreen='o_sides';"],
   ['ficha-signature', "window.selSig='SIG01';window.sndScreen='o_sig';"],
   ['armador-pan', "window.byoStep=0;window.size=null;window.base=null;window.sndScreen='o_build';"],
   ['armador-proteina', "window.size='15';window.base='B01';window.byoStep=1;window.sndScreen='o_build';"],

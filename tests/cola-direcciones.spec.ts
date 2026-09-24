@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #22 / #21 / #17 — Las tres señales de dirección, en la cola donde se despacha.
 //
@@ -31,10 +31,7 @@ const PEDIDO = (ref: string, extra: Record<string, unknown> = {}) => ({
 async function entrarALaCola(page: any, respuesta: Record<string, unknown>) {
   await gotoApp(page, { ...ADMIN, 'admin-orders': respuesta });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
 }
 

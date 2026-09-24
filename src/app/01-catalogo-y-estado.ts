@@ -126,6 +126,12 @@ var STATUSES={
   'CANCELADO': {c:'#A5A5A5',next:null,          icon:'close', label:'Cancelado'}
 };
 var STEPS=['RECIBIDO','PREPARANDO','EN CAMINO','ENTREGADO'];
+// Un pedido está TERMINADO cuando su estado no tiene siguiente paso. Se deriva de STATUSES,
+// no de una lista aparte: «Mis Pedidos» preguntaba `!=='ENTREGADO'` para decidir qué seguía
+// activo, así que un pedido CANCELADO quedaba para siempre bajo «● Activos» con un «Toca
+// Actualizar» parpadeando, como si todavía pudiera llegar. Un estado desconocido cuenta como
+// activo: mejor que el cliente lo vea arriba a que desaparezca entre los viejos.
+function pedidoTerminado(st){return !!STATUSES[st]&&!STATUSES[st].next;}
 
 // B02 (HERBS//CHEESE, "Masa con orégano y parmesano") retirado por decisión del dueño —
 // solo lo usaba SIG02 (hoy "The Marinara", antes "The Meatball", movido a B01) y
@@ -834,6 +840,34 @@ function estimatedDeliveryRange(){
   return[ESTIMATED_DELIVERY_RANGE[0]+extra,ESTIMATED_DELIVERY_RANGE[1]+extra];
 }
 function estimatedRangeText(){var r=estimatedDeliveryRange();return r[0]+'-'+r[1]+' min';}
+// La ventana como HORA, que es como la dibujan las maquetas («Llega 7:40 – 8:05 p.m.»).
+// Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
+// la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
+function horaLima(ms:number):string{
+  // «9 p.m.», no «9:00 p.m.»: la hora en punto se dice sin los ceros, como en las maquetas.
+  return new Date(ms).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s?a\.?\s?m\.?/i,' a.m.').replace(/\s?p\.?\s?m\.?/i,' p.m.').replace(':00 ',' ');
+}
+function textoVentana(desde:number,hasta:number):string{
+  var a=horaLima(desde),b=horaLima(hasta),sufA=a.slice(-5),sufB=b.slice(-5);
+  return(sufA===sufB?a.slice(0,-5):a)+' – '+b;
+}
+function ventanaEstimadaTexto(programadoPara?:string|null):string{
+  var ancho=(ESTIMATED_DELIVERY_RANGE[1]-ESTIMATED_DELIVERY_RANGE[0])*60000;
+  var prog=programadoPara?Date.parse(programadoPara):NaN;
+  if(isFinite(prog))return textoVentana(prog,prog+ancho);
+  var r=estimatedDeliveryRange(),ahora=Date.now();
+  return textoVentana(ahora+r[0]*60000,ahora+r[1]*60000);
+}
+function ventanaDelPedido(o:any):string{
+  var d=Date.parse(o&&o.promised_from),h=Date.parse(o&&o.promised_to);
+  return isFinite(d)&&isFinite(h)?textoVentana(d,h):'';
+}
+// «dentro» / «tarde» del detalle de un pedido: se compara la entrega contra lo prometido,
+// nunca contra la ventana de hoy.
+function llegoDentro(o:any):boolean|null{
+  var h=Date.parse(o&&o.promised_to),e=Date.parse(o&&o.delivered_at);
+  return isFinite(h)&&isFinite(e)?e<=h:null;
+}
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
@@ -972,9 +1006,16 @@ function willPayWithCard(){
 // de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
 // del pan sub. Se cobra S/0.50 y S/1.00.
 //
-// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
-// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
-var BASE_SURCHARGE={B03:{p15:0.5,p30:1}};
+// Solo B03 (Focaccia) lleva recargo.
+//
+// ⚠ EL DINERO SE CALCULA CON EL MISMO MÓDULO QUE EL SERVIDOR (2026-09-24). Las reglas —recargo
+// del pan, combo, topes de las recompensas, salsa extra, organizador— y el cálculo del total
+// viven en supabase/functions/_shared/dinero.ts, que el servidor usa para cobrar y la base nueva
+// (src/nuevo/dinero.ts) le presta a este código. Acá ya no se escribe ningún número de dinero:
+// se lee de ahí. Antes eran dos copias y con la focaccia daban totales distintos.
+var DINERO=(window as any).__sndNuevo.dinero;
+var REGLAS_DINERO=DINERO.reglas;
+var BASE_SURCHARGE=REGLAS_DINERO.recargoPan;
 function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='15'?b.p15:b.p30):0;}
 
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
@@ -1012,6 +1053,19 @@ function deliveryKmNow(){
 function deliveryFeeForKm(km){
   return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
 }
+// Los km cobrables y el envío a una dirección GUARDADA (con pin), con la misma fórmula que el
+// checkout y sin la comisión de tarjeta (Yape es el método por defecto). null si no tiene pin
+// o queda fuera de cobertura. Lo usan el grupal («envío 4.3 km») y el pedido fijo («te sale»):
+// antes de existir, cada pantalla habría tenido su propia copia de la cuenta.
+function kmADireccion(a:any):number|null{
+  if(!a||typeof a.lat!=='number'||typeof a.lon!=='number')return null;
+  var km=Math.round(haversineKm(a.lat,a.lon,STORE_LAT,STORE_LON)*DELIVERY_ROAD_FACTOR*100)/100;
+  return isFinite(km)&&km<=DELIVERY_MAX_KM?km:null;
+}
+function envioADireccion(a:any):number|null{
+  var km=kmADireccion(a);
+  return km==null?null:deliveryFeeForKm(km);
+}
 function deliveryFeeBase(){
   var km=deliveryKmNow();
   if(km===null){
@@ -1047,66 +1101,19 @@ function payableTotal(){return money(cartFinalTotal()+deliveryFeeAmount());}
 // bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle
 // (que sí puede crear un pedido que no existía), este descuento se le aplica a alguien
 // que YA decidió comprar la bebida: es margen regalado, no adquisición.
-var COMBO_DISCOUNT_PER_PAIR=1;
-// Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
-// que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
-var R03_FLAT_WAIVER=8;
-// Topes planos de R04/R05 — mismo criterio que R03: evitan que el valor mostrado al
-// cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
-// más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
-var R04_FLAT_WAIVER=6;
-// Subido de 4 a 6 el 2026-08-22, junto con la subida de precio de las bebidas. NO es
-// generosidad nueva: es lo que mantiene cierto el nombre de la recompensa. Con las
-// bebidas a S/5-9 y el tope en S/4, "BEBIDA // GRATIS" habría dejado de cubrir una sola
-// bebida del catálogo — la misma clase de promesa falsa que ya obligó a retirar los
-// badges MÁS PEDIDO y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE
-// COOL y deja THE SPICE parcial, exactamente la misma relación que había antes con el
-// tope en S/4. Los puntos de R05 NO cambian (120): a S/6 de tope quedan en 20 pts/sol,
-// que es justo donde ya está R06, así que el programa sigue internamente coherente.
-var R05_FLAT_WAIVER=6;
-// Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
-// se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
-// en catalog.ts.
-var RESERVE_SIGS=new Set(['SIG05']);
-// Bebida gratis (hasta S/4) de 3pm a 6pm hora Lima — DEBE coincidir con
-// OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
-// quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
-// antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
-// Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
-// hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
-// entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
-// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
-// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
-//
-// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
-// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
-// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
-// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
-// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
-// entrar. Ver RENTABILIDAD_POR_PARTE.md.
-//
-// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
-// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
-// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=[];
-// Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
-// a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
-var OFFPEAK_DRINK_PROMO_CAP=6;
-// INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22). Quien junta al grupo se lleva
-// un sándwich gratis a partir de este número de sándwiches. Convierte al cliente en el
-// vendedor del canal de oficinas — el de mejor economía del negocio y el único que el
-// dueño no puede trabajar él mismo, porque sus mañanas están cocinando.
-// DEBE coincidir con ORGANIZER_FREE_MIN_SANDWICHES en supabase/functions/api/catalog.ts.
-// Ojo: esto es solo el espejo para que el cliente muestre el mismo número; quien de
-// verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
-// base (organizerFreeSandwichApplies en actions/group.ts).
-var ORGANIZER_FREE_MIN_SANDWICHES=5;
-// Recargo por salsa extra. DEBE coincidir con EXTRA_SAUCE_PRICE en
-// supabase/functions/api/catalog.ts — lo verifica `npm run parity`. Antes era un literal
-// `2` repetido 5 veces acá y 4 en el servidor, y es el único precio del catálogo que no se
-// puede editar desde el panel, así que la única defensa posible es esta comparación.
-var EXTRA_SAUCE_PRICE=2;
+// Las reglas del dinero, leídas del módulo compartido (ver DINERO arriba). Quedan con su nombre
+// de siempre porque los textos de la app las interpolan («el combo te descuenta S/1»). El porqué
+// de cada valor está en supabase/functions/api/catalog.ts, junto a donde se cobra.
+var COMBO_DISCOUNT_PER_PAIR=REGLAS_DINERO.comboPorPar;
+var R03_FLAT_WAIVER=REGLAS_DINERO.topeR03;
+var R04_FLAT_WAIVER=REGLAS_DINERO.topeR04;
+var R05_FLAT_WAIVER=REGLAS_DINERO.topeR05;
+var RESERVE_SIGS=new Set(REGLAS_DINERO.reservas);
+// La bebida gratis de hora valle está RETIRADA (2026-09-05): su ventana es una lista vacía.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=REGLAS_DINERO.valleHorasLima;
+var OFFPEAK_DRINK_PROMO_CAP=REGLAS_DINERO.valleTope;
+var ORGANIZER_FREE_MIN_SANDWICHES=REGLAS_DINERO.organizadorDesde;
+var EXTRA_SAUCE_PRICE=REGLAS_DINERO.salsaExtra;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -1220,12 +1227,22 @@ var storePausedUntil=null;
 // deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
 // que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
 var fullHours=[],queueAhead=0,queueMinutesPerOrder=5,maxPerHour=10;
+// Carga de cada hora (pedidos + lugares apartados por pedidos fijos), la misma cuenta con la
+// que el servidor rechaza. Hace falta además de `fullHours` por un solo caso: la hora que le
+// estamos GUARDANDO a este cliente. El servidor no le cuenta su propio lugar, así que para él
+// esa hora solo está llena si lo está sin su lugar.
+var cargaPorHora:Record<string,number>={};
+// El pedido fijo del que sale el carrito actual, y la hora (ISO, inicio de hora) que ese fijo
+// tiene apartada. Los pone pedirFijoAhora(); se limpian con el carrito.
+var pendingRecurringId:string|null=null,miHoraApartada:string|null=null;
 // ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
 // como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
 function hourIsFull(d){
-  if(!fullHours.length)return false;
   var h=new Date(d);h.setMinutes(0,0,0);
-  return fullHours.indexOf(h.toISOString())>=0;
+  var k=h.toISOString();
+  if(miHoraApartada&&k===miHoraApartada&&typeof cargaPorHora[k]==='number')return cargaPorHora[k]-1>=maxPerHour;
+  if(!fullHours.length)return false;
+  return fullHours.indexOf(k)>=0;
 }
 function initMetaPixel(id){
   if(_metaPixelLoaded||!id)return;
@@ -1260,7 +1277,10 @@ function fbTrack(event,params?,eventId?){
 // sin origen y no puede optimizar).
 function metaAttribution(){
   var get=function(n){var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():'';};
-  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||''};
+  // `recurringId`: el pedido fijo del que sale este carrito. Viaja por acá porque este objeto
+  // ya llega a los TRES caminos de cobro (Yape/crédito, reserva con tarjeta y su confirmación);
+  // un campo suelto en uno solo dejaría al otro sin gastar el lugar apartado.
+  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||'',recurringId:pendingRecurringId||''};
 }
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
@@ -1359,15 +1379,54 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 var homeTab: string|null = (function(){
   try{
     var v = localStorage.getItem('sw_lado');
-    return (v === 'sig' || v === 'byo' || v === 'drink') ? v : null;
+    return (v === 'sig' || v === 'byo') ? v : null;   // 'drink' fue un lado un dia; ya no
   }catch(e){ return null; }   // navegacion privada, cookies bloqueadas: se pregunta igual
 })();
 // Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
 // arriba del catalogo— para que no haya uno que recuerde y otro que no.
+// ── ELEGIR UN LADO ES ENTRAR A ESE LADO, NO CAMBIAR UNA PESTAÑA (2026-09-17) ──────────
+//
+// Hasta hoy tocar un hermano solo fijaba `homeTab` y volvía a pintar LA MISMA página con
+// otra lista debajo. El dueño lo dijo así: «no importa dónde pulse me manda otra vez a una
+// web reskineada de la anterior. ¿Si selecciono derecha o izquierda no debería ir
+// directamente a la opción respectiva?». Tenía razón: la elección era un interruptor
+// decorativo encima del home de siempre.
+//
+// Ahora cada lado ES una pantalla:
+//   · SANDO  → su mosaico de Signatures, que es su carta cerrada.
+//   · WICHO  → el armador, directo desde el pan. No hay lista intermedia que elegir antes
+//     de elegir: su lado ES armar, así que entrar a su lado es empezar a armar.
+//   · Bebidas → su propia pantalla, que ya existía y era una fila perdida en el home.
+// El lado queda guardado, así que quien vuelve entra directo al suyo sin pasar otra vez por
+// la puerta; cambiarlo es un gesto explícito (`volverALaPuerta`).
 function elegirLado(id){
   homeTab = id;
   try{ localStorage.setItem('sw_lado', id); }catch(e){}
-  render();
+  if(id==='byo'){
+    // Se entra al armador LIMPIO. Sin esto, quien vuelve a entrar por WICHO se encuentra a
+    // medio armar el sándwich de la vez pasada, sin haber pedido nada.
+    if(typeof resetBuilder==='function')resetBuilder();
+    mode='byo';byoStep=0;sndScreen='o_build';render();return;
+  }
+  sndScreen='o_home';render();
+}
+// BEBIDAS NO ES UN TERCER HERMANO. Llego a serlo por un rato y estaba mal: entrar a bebidas
+// desde la carta de SANDO teñia toda la pantalla de azul, o sea que el producto cambiaba de
+// dueño por haber tocado una fila. Ahora es una pantalla alcanzable desde los dos lados que
+// conserva el color del lado desde el que se entro, y recuerda por donde volver — se llega
+// desde la carta, desde el armador y desde el checkout, y las tres vueltas son distintas.
+var bebidasVolverA='o_home';
+function irABebidas(desde){
+  bebidasVolverA=desde||'o_home';
+  sndScreen='o_sides';render();
+}
+// Volver a la puerta: olvida el lado guardado y vuelve a mostrar la cara partida. Es la
+// ÚNICA forma de cambiar de hermano, y es a propósito que sea explícita — un interruptor
+// siempre visible convertiría los dos mundos en dos pestañas otra vez.
+function volverALaPuerta(){
+  homeTab=null;
+  try{ localStorage.removeItem('sw_lado'); }catch(e){}
+  sndScreen='o_home';render();
 }
 // De quién es la pantalla ahora mismo. Lo lee el CSS por `[data-lado]` en <html> y reasigna
 // las superficies de toda la app: el lado de SANDO es verde, el de WICHO azul. No es un
@@ -1395,6 +1454,9 @@ var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
 // equivocado por ese mismo descuido, así que acá no se repite la lista: se nombra dónde
 // vive. Ver sOBuild/byoStepBack/byoStepNext.
 var byoStep=0;
+// Lo que cuenta la pantalla del menú secreto además de la receta: llega en get-catalog
+// (catalog.ts · SECRET_EXTRA). Vacío hasta que el catálogo responda.
+var SECRET_EXTRA:{endsAt:string|null,hints:{t:string,s:string}[],past:{name:string,blurb:string,mes:string}[]}={endsAt:null,hints:[],past:[]};
 var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
 // el cliente dice que tiene uno.
@@ -1430,6 +1492,16 @@ var manualPayMethod='yape';
 // coincide" (bug real de la sesión anterior, hallazgo de auditoría de código).
 var payMethodChosen=false;
 var cust=null,isAdmin=false,atab='reg',aErr='',refCode='';
+// Entrar con correo y código de 6 dígitos (2026-09-23). `authPaso` es en qué mitad del
+// flujo está: 'correo' pide la dirección, 'codigo' pide los 6 dígitos. `authProof` es la
+// prueba FIRMADA por el servidor de que ese correo se verificó — viaja al registro y es lo
+// único que autoriza crear una cuenta con ese correo. `authPinFallback` deja volver al
+// login viejo (teléfono + PIN), que siguen usando las cuentas creadas antes y el panel.
+var authPaso='correo',authEmail='',authProof='',authMasked='',authPinFallback=false;
+// Vuelve el login por correo a su estado inicial. Se llama al terminar de entrar, al terminar
+// de registrarse y al cerrar sesión — un solo lugar, porque la prueba de correo que queda
+// viva después de usarse la manda el PRÓXIMO registro hecho en este equipo.
+function limpiarLoginPorCorreo(){authPaso='correo';authEmail='';authProof='';authMasked='';authPinFallback=false;}
 // Credential (JWT) de Google Identity Services en espera de que el cliente complete el
 // registro normal (nombre/teléfono/PIN/DNI) — ver onGoogleCredential()/doReg(). Nunca se
 // usa por sí solo para crear una cuenta: el servidor lo vuelve a verificar en actRegister.
@@ -1490,6 +1562,16 @@ var googleMapsKey='';
 var pushSubscribed=false,pushMsg='';
 // Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
 var adOptOutMsg='';
+// ── DOS PRODUCTOS APAGADOS PARA LA APERTURA (dueño, 2026-09-23) ─────────────────────
+// GEMELOS de PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA en supabase/functions/api/env.ts.
+// El servidor ya rechaza las tres acciones; esto es para que la app no OFREZCA algo que va
+// a ser rechazado, que es la clase de promesa rota que este repo persigue.
+// Los dos se retiran por el mismo motivo: piden plata o puntos por adelantado a alguien que
+// todavía no conoce el negocio. Nada se borra — vuelven cuando haya clientes que repitan.
+// ⚠ Si se prenden acá, hay que prenderlos TAMBIÉN en el servidor, o pasa lo contrario: la
+// pantalla deja pedirlo y la acción lo rechaza.
+var PLAN_SEMANAL_ACTIVO=false;
+var TARJETA_REGALO_ACTIVA=false;
 var savedPh=localStorage.getItem('sw_ph')||'';
 var token=localStorage.getItem('sw_tok')||'';
 // Copia local del cliente + rol admin — deja pintar la pantalla de inicio de inmediato
@@ -1565,6 +1647,11 @@ var recPhone='',recDni='',recBday='';
 var recPinRevealed=false;
 function togglePinReveal(){recPinRevealed=!recPinRevealed;render();}
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
+// LOS IDS DE DIRECCIÓN SON NÚMEROS (bigint en `saved_addresses`), pero viajan como TEXTO en
+// cada onclick (`pickAddr('5')`). Comparados con === nunca coinciden: elegir una dirección
+// guardada no hacía nada, y ninguna prueba lo veía porque todas simulaban ids de texto.
+// Toda comparación de un id que pasó por el HTML va por acá.
+function mismoId(a:any,b:any):boolean{return a!=null&&b!=null&&String(a)===String(b);}
 var wPhone='',wAmt='',wMsg='';
 var gcPhone='',gcAmt='',gcMsg='';
 // Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
@@ -1596,7 +1683,12 @@ var legalFromUrl=null;
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
 // entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
 var wantsNewGroup=false;
+// ?fijo=ID[&franja=HH:MM] — el aviso del pedido fijo lleva acá. `franja` es la hora que el
+// aviso ofreció cuando la de siempre se llenó: se respeta, para que el toque haga lo que el
+// aviso dijo.
+var fijoFromUrl:string|null=null,franjaFromUrl:string|null=null;
 (function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();
+  var fj=qp.get('fijo');if(fj)fijoFromUrl=fj.trim();var fr=qp.get('franja');if(fr&&/^[0-2][0-9]:[0-5][0-9]$/.test(fr))franjaFromUrl=fr;
   // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.

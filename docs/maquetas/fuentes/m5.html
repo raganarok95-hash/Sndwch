@@ -1,0 +1,126 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:26px;padding:26px;align-items:flex-start;font-family:'EB Garamond',serif}
+.f{width:390px;height:844px;position:relative;overflow:hidden;flex:0 0 auto}
+
+/* ════ SANDO · UN PLATO A LA VEZ. Se sirve, no se lista. ════
+   Su dibujo es línea cerrada y sombreado PLANO de dos tonos: acá no hay ni un degradado,
+   ni una esquina redondeada. Dos tonos duros y basta. */
+#s{background:#183024}
+#s .plato{position:absolute;inset:0}
+#s .plato>img{width:100%;height:56%;object-fit:cover;display:block}
+/* el corte entre foto y ficha es RECTO Y DIAGONAL — el corte del pan, sin dibujar un "//" */
+#s .ficha{position:absolute;left:0;right:0;top:50%;bottom:0;background:#183024;
+  clip-path:polygon(0 10%,100% 0,100% 100%,0 100%);padding:56px 26px 0}
+#s .romano{font-family:'Bodoni Moda',serif;font-size:11px;letter-spacing:.34em;color:#6C7860;font-weight:600}
+#s .estrella{display:inline-block;margin-left:12px;background:#CBA258;color:#183024;padding:3px 9px;
+  font-size:9px;letter-spacing:.2em;font-weight:600;text-transform:uppercase}
+#s h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:42px;color:#F7F4EA;line-height:.98;margin-top:14px}
+#s .pitch{font-size:14px;color:#9FAE95;line-height:1.55;margin-top:14px;max-width:30ch}
+#s .precio{position:absolute;left:26px;right:26px;bottom:104px;display:flex;align-items:flex-end;
+  justify-content:space-between;border-top:2px solid #6C7860;padding-top:13px}
+#s .precio .p{font-family:'Bodoni Moda',serif;font-size:34px;font-weight:640;color:#CBA258;line-height:1}
+#s .precio .p s{text-decoration:none;font-size:13px;color:#6C7860;margin-left:10px;font-family:'EB Garamond',serif}
+#s .precio .b{background:#CBA258;color:#183024;padding:15px 26px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px}
+/* pasar de plato: cinco marcas rectas, no puntos redondos */
+#s .pasar{position:absolute;left:26px;right:26px;bottom:44px;display:flex;gap:6px;align-items:center}
+#s .pasar i{height:2px;flex:1;background:#2E4334;display:block}
+#s .pasar i.on{background:#F7F4EA;height:4px}
+#s .pasar em{font-style:normal;font-size:10px;letter-spacing:.24em;color:#6C7860;margin-left:8px}
+#s .top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;
+  justify-content:space-between;padding:16px 20px;color:#F7F4EA}
+#s .top .x{font-size:22px;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+#s .firma{position:absolute;right:20px;top:calc(56% - 108px);width:96px;z-index:4;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.5))}
+
+/* ════ WICHO · SU MESA DE TRABAJO. Collage, no lista. ════
+   Su color vive en la MESA, nunca encima de la comida. Lo elegido se marca con un círculo
+   de tinta hecho a mano, como si lo hubiera encerrado con plumón. Y el avance es su ojo:
+   una espiral que se va cerrando paso a paso. */
+#w{background:#8CC8EC;overflow:hidden}
+#w .grano{position:absolute;inset:0;opacity:.5;
+  background:radial-gradient(circle at 18% 12%,rgba(255,255,255,.55) 0,transparent 42%),
+             radial-gradient(circle at 88% 82%,rgba(195,166,210,.5) 0,transparent 46%)}
+#w>*{position:relative}
+#w .top{display:flex;align-items:center;gap:12px;padding:14px 18px 0}
+#w .top .fl{font-size:21px;color:#15242D}
+#w .top .paso{flex:1;font-size:10px;letter-spacing:.26em;font-weight:600;text-transform:uppercase;color:#4A3D62}
+#w h2{font-family:'Bodoni Moda',serif;font-weight:640;font-size:36px;color:#15242D;line-height:.98;
+  padding:8px 18px 0;max-width:70%}
+#w .ay{font-size:13px;color:#2E4A5A;padding:6px 18px 0;max-width:62%;line-height:1.45}
+#w .wicho{position:absolute;right:-26px;top:8px;width:150px;z-index:3}
+/* la mesa: las proteínas puestas encima, rotadas, superpuestas. NADA tiñe la foto. */
+#w .mesa{position:relative;height:392px;margin-top:8px}
+#w .it{position:absolute;width:158px}
+#w .it img{width:100%;height:118px;object-fit:cover;display:block;border:5px solid #FBF7F0;
+  box-shadow:0 8px 20px rgba(21,36,45,.3)}
+#w .it b{display:block;font-family:'Bodoni Moda',serif;font-weight:640;font-size:17px;color:#15242D;margin-top:7px;line-height:1.05}
+#w .it s{text-decoration:none;display:block;font-size:9px;letter-spacing:.18em;font-weight:600;
+  text-transform:uppercase;color:#4A3D62;margin-top:2px}
+#w .it u{text-decoration:none;display:block;font-style:italic;font-size:14px;color:#5C400E;margin-top:3px}
+#w .ring{position:absolute;left:-14px;top:-14px;width:186px;height:176px;pointer-events:none}
+#w .secreto{position:absolute;left:18px;right:18px;bottom:96px;display:flex;align-items:center;gap:12px;
+  border-top:2px dashed rgba(74,61,98,.45);padding-top:13px}
+#w .secreto b{display:block;font-family:'Bodoni Moda',serif;font-weight:640;font-size:18px;color:#2A2140;line-height:1.1}
+#w .secreto span{display:block;font-size:11px;color:#4A3D62;font-style:italic;margin-top:2px}
+#w .pie{position:absolute;left:0;right:0;bottom:0;background:#FBF7F0;padding:13px 18px 20px;
+  display:flex;align-items:center;gap:14px;border-top:3px solid #15242D}
+#w .pie .pr{font-family:'Bodoni Moda',serif;font-weight:640;font-size:24px;color:#5C400E;line-height:1}
+#w .pie .ll{font-style:italic;font-size:13px;color:#2E4A5A;margin-top:2px}
+#w .pie .bt{background:#4A3D62;color:#FBF7F0;padding:14px 26px;font-family:'Bodoni Moda',serif;
+  font-weight:640;font-size:15px;border-radius:58% 42% 50% 50%/52% 54% 46% 48%}
+</style></head><body>
+
+<div class="f" id="s">
+  <div class="plato">
+    <img src="../../../img/sig02.jpg">
+    <div class="top"><span class="x">&#10005;</span><span style="font-size:10px;letter-spacing:.24em">LA CARTA DE SANDO</span><span style="width:22px"></span></div>
+    <img class="firma" src="../../../img/sando2_cuerpo_forro.png">
+    <div class="ficha">
+      <div><span class="romano">I DE V</span><span class="estrella">La estrella</span></div>
+      <h1>The<br>Marinara</h1>
+      <div class="pitch">Albóndigas hechas acá, cocidas dentro de su propia marinara. Para la noche en que ya decidiste que no vas a cocinar.</div>
+    </div>
+    <div class="precio"><div class="p">S/21.90<s>30CM 28.90</s></div><div class="b">Lo quiero</div></div>
+    <div class="pasar"><i class="on"></i><i></i><i></i><i></i><i></i><em>DESLIZA</em></div>
+  </div>
+</div>
+
+<div class="f" id="w">
+  <div class="grano"></div>
+  <img class="wicho" src="../../../img/wicho_cuerpo.png" onerror="this.src='../../../img/wicho.png'">
+  <div class="top">
+    <span class="fl">&#8592;</span>
+    <svg width="34" height="34" viewBox="0 0 40 40"><path d="M20 20 m0,-2 a2,2 0 1,1 -2,2 a4,4 0 1,1 4,-4 a6,6 0 1,1 -6,6 a8,8 0 1,1 8,-8 a10,10 0 1,1 -10,10 a12,12 0 1,1 12,-12 a14,14 0 1,1 -14,14 a16,16 0 1,1 16,-16" fill="none" stroke="#4A3D62" stroke-width="3" stroke-linecap="round" stroke-dasharray="210" stroke-dashoffset="105"/></svg>
+    <span class="paso">Proteína &nbsp;3/6</span>
+  </div>
+  <h2>¿Qué va adentro?</h2>
+  <div class="ay">Lo que elijas acá es el sándwich.</div>
+
+  <div class="mesa">
+    <div class="it" style="left:16px;top:8px;transform:rotate(-2.5deg)">
+      <img src="../../../img/prot_p02.webp">
+      <b>Pollo</b><s>Teriyaki</s><u>S/13.90</u>
+      <svg class="ring" viewBox="0 0 186 176"><path d="M20,96 C6,44 54,10 100,14 C150,18 178,50 172,96 C166,140 120,164 86,160 C46,155 22,136 20,96 M24,88 C14,40 58,16 102,20" fill="none" stroke="#4A3D62" stroke-width="4" stroke-linecap="round"/></svg>
+    </div>
+    <div class="it" style="right:14px;top:96px;transform:rotate(3deg)">
+      <img src="../../../img/prot_p06.webp">
+      <b>Albóndiga</b><s>Marinara</s><u>S/14.90</u>
+    </div>
+    <div class="it" style="left:26px;top:212px;transform:rotate(1.5deg)">
+      <img src="../../../img/prot_p08.webp">
+      <b>Pavo</b><s>Horneado</s><u>S/15.90</u>
+    </div>
+  </div>
+
+  <div class="secreto">
+    <svg width="34" height="34" viewBox="0 0 40 40"><path d="M20 20 m0,-2 a2,2 0 1,1 -2,2 a4,4 0 1,1 4,-4 a6,6 0 1,1 -6,6 a8,8 0 1,1 8,-8 a10,10 0 1,1 -10,10 a12,12 0 1,1 12,-12" fill="none" stroke="#4A3D62" stroke-width="3" stroke-linecap="round"/></svg>
+    <div><b>El sándwich secreto</b><span>Ya se te abrió. No preguntes qué lleva.</span></div>
+    <span style="margin-left:auto;font-size:20px;color:#4A3D62">&#8594;</span>
+  </div>
+  <div class="pie"><div style="flex:1"><div class="pr">S/13.90</div><div class="ll">15CM · Classic · Pollo</div></div>
+    <div class="bt">Siguiente</div></div>
+</div>
+</body></html>

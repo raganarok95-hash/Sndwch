@@ -15,6 +15,34 @@ anótalo acá.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
+- **Las descargas de GitHub Releases SÍ pasan el proxy** (comprobado el 2026-09-24): así se baja
+  PostgREST para `npm run check:e2e` (`scripts/e2e/servidor-local.mjs` lo guarda en `.cache/`,
+  fuera de git). Si algún día deja de pasar, el chequeo lo DICE en vez de saltarse.
+- **Postgres 16 está instalado** (`/usr/lib/postgresql/16/bin`) y las pruebas levantan uno propio
+  (`scripts/pg-local/postgres.mjs`). La base real es Postgres 17: el cargador local quita el
+  permiso `MAINTAIN`, que el 16 no conoce.
+- **Node 22 corre TypeScript sin compilar** con `--experimental-strip-types`: así los flujos de
+  punta a punta usan el mismo `_shared/dinero.ts` que el servidor.
+
+- **HuggingFace (`huggingface.co`) está BLOQUEADO por el proxy: responde 403** (comprobado
+  el 2026-09-24). Toda librería que baje modelos de ahí por defecto (fastembed,
+  sentence-transformers, `knowledge-rag`) falla al arrancar. No se reintenta: se baja el
+  modelo de otro origen y se le impide a la librería llamar a HuggingFace.
+  - **Google Cloud Storage sí responde.** fastembed publica ahí sus modelos:
+    `https://storage.googleapis.com/qdrant-fastembed/fast-multilingual-e5-large.tar.gz`
+    (el que usa `knowledge-rag`). Se descarga con `curl` y se extrae en
+    `.knowledge-rag/models_cache/` (ignorado por git).
+  - **Se corre con `HF_HUB_OFFLINE=1`** (más `KNOWLEDGE_RAG_DIR=/home/user/Sndwch/.knowledge-rag`).
+    "Sin conexión" significa **sin conexión a HuggingFace**, no sin red: obliga a la librería a
+    usar el modelo ya bajado en vez de intentar llegar a un host que el proxy rechaza.
+  - **`knowledge-rag` se instala con `pip install --ignore-installed PyYAML knowledge-rag`**:
+    el PyYAML del sistema (paquete de Debian) no se deja desinstalar.
+  - **No hay GPU**: el indexado corre en CPU con un modelo de 1024 dimensiones sobre ~456
+    archivos, y tarda: el 2026-09-24 llevaba **más de 19 minutos sin terminar** y se detuvo a
+    pedido del dueño. **No lanzarlo dentro de una sesión** sin preguntar antes: ocupa la CPU del
+    contenedor (las pruebas corren más lentas mientras tanto) y la tarea queda a la vista como
+    «en ejecución». Si hace falta, con un modelo más chico o solo sobre `docs/`.
+
 - **El service worker sirve el shell desde caché (stale-while-revalidate) desde
   2026-08-19** — `sw.js`. Dos trampas que lo hacían fallar en silencio y que ya están
   resueltas, pero conviene no reintroducir: sin `event.waitUntil()` el navegador apaga el
@@ -47,6 +75,13 @@ anótalo acá.
   No invalida el valor real de las partes de WebSearch puro de esos mismos reportes, que
   sí fueron precisas — el punto débil específico es la lectura de código dentro de una
   tarea mayormente orientada a búsqueda externa.
+- ⚠ **LAS IMÁGENES NO SON UN LÍMITE: el dueño las genera en Flow, sin tope** (confirmado por
+  él, 2026-09-17, con estas palabras: «LAS IMÁGENES SON ILIMITADAS EN FLOW, PUEDO GENERAR LAS
+  QUE SEA, QUE NADA LIMITE TU CREATIVIDAD POR LO QUE TENEMOS»). **Nunca recortes un pedazo de
+  una pose existente para fabricar otra** —se intentó sacar el brazo de `wicho_saluda.png` para
+  simular una mano que agarra y salió un parche— ni descartes una idea de diseño porque el asset
+  no existe todavía. Lo que se hace es **escribir el prompt** siguiendo `docs/PROMPTS_PERSONAJES.md`
+  y pedírselo. Si hay una vía mejor y más fácil sin perder calidad, se usa esa.
 - **Generación de imágenes AI**: no hay una herramienta directa de texto-a-imagen
   disponible. La única vía encontrada es a través de `mcp__Gamma__generate` (genera un
   documento/presentación completo, no solo una foto) — y en el plan actual de la cuenta,
@@ -78,6 +113,11 @@ anótalo acá.
   con `subway.com`, `subway.com/en-US`, y hasta `web.archive.org` — 403 o "unable to
   fetch"). `WebSearch` sí funciona y debe usarse para cualquier investigación externa,
   citando fuentes.
+- **Todo Culqi y Yape bloqueado por `WebFetch` (2026-09-23)**: `culqi.com`,
+  `ayuda.culqi.com`, `docs.culqi.com` y `www.yape.com.pe` devuelven `EGRESS_BLOCKED`. Para
+  comisiones y condiciones, `WebSearch` con `allowed_domains` en esos dominios devuelve
+  fragmentos de sus propias páginas — sirve, pero no reemplaza al CulqiPanel del dueño para
+  la cifra definitiva de su cuenta. Ver `docs/COBRO_YAPE.md`.
 - **`docs.culqi.com`/`apidocs.culqi.com` bloqueados también por `curl`** (igual que por
   `WebFetch`) — timeout total, sin respuesta HTTP. **`github.com` y `api.github.com`
   también están bloqueados por `curl`/`WebFetch` para repos fuera del scope de esta

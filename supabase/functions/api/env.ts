@@ -1,6 +1,7 @@
 // SND//WCH — api / env
 // Todas las variables de entorno y constantes de negocio del backend, centralizadas en
 // un solo lugar en vez de estar dispersas (y a veces repetidas) por todo index.ts.
+import { REGLAS } from "../_shared/dinero.ts";
 
 export const SB_URL = Deno.env.get("SUPABASE_URL")!;
 export const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -25,6 +26,38 @@ export const SESSION_SECRET = Deno.env.get("SESSION_SECRET");
 export const TOKEN_TTL_SECONDS = 30 * 24 * 3600;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
+// Entrar con correo y código de 6 dígitos (2026-09-23). Los cuatro números salen de lo que
+// la pantalla promete y de lo que un código de 6 dígitos aguanta:
+//   · 10 min de vida — largo para buscar el correo, corto para que un código viejo no sirva.
+//   · 5 intentos — 5 de 10^6 es ruido; el sexto mata el código y hay que pedir otro.
+//   · 60 s entre envíos — sin esto el botón es un generador gratuito de correos a cualquiera.
+//   · 15 min de prueba de correo — lo que dura la pantalla de "completa tu cuenta".
+// ── DOS PRODUCTOS APAGADOS PARA LA APERTURA (dueño, 2026-09-23) ─────────────────────
+// Los dos por el MISMO motivo: le piden al cliente plata o puntos POR ADELANTADO antes de
+// que conozca el negocio, y eso convierte pésimo en un local que todavía no abre.
+//
+//   · PLAN SEMANAL — «no es útil aún». Además el 5% de bonificación se paga por un flote de
+//     semanas, y el cron `remind-unused-credit` existe justamente porque ese crédito se
+//     queda durmiendo. Un prepago al que hay que recordarle a la gente que lo gaste no está
+//     reteniendo a nadie.
+//   · TARJETA DE REGALO — cuesta PUNTOS (S/50 = 2 000 puntos, cinco sándwiches gratis de por
+//     medio) y exige que el destinatario YA tenga cuenta. Hoy es inalcanzable para un
+//     cliente nuevo, que es justo a quien la pantalla se la ofrece.
+//
+// NO SE BORRA NADA. Las acciones, las tablas y `create-credit-charge` siguen enteras: los
+// dos vuelven cuando haya clientes que repitan y tengan puntos. Apagar es reversible;
+// borrar, no. El apagado va en el SERVIDOR y no solo en el cliente — una pantalla oculta
+// sigue siendo una acción llamable.
+//
+// ⚠ Si algún día se vuelven a prender, hay que prender TAMBIÉN su gemelo en
+// `src/app/01-catalogo-y-estado.ts`, o la pantalla ofrece algo que el servidor rechaza.
+export const PLAN_SEMANAL_ACTIVO = false;
+export const TARJETA_REGALO_ACTIVA = false;
+
+export const LOGIN_CODE_TTL_MINUTES = 10;
+export const LOGIN_CODE_MAX_ATTEMPTS = 5;
+export const LOGIN_CODE_COOLDOWN_SECONDS = 60;
+export const EMAIL_PROOF_TTL_SECONDS = 15 * 60;
 // Lo que recibe EL INVITADO al pagar su primer pedido: exactamente lo que cuesta una
 // BEBIDA GRATIS (R05 en catalog.ts), que es la decisión real del dueño del 2026-08-20 —
 // 120 puntos entonces, porque entonces R05 costaba 120. El número es la implementación;
@@ -226,15 +259,9 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
 // [DECISIÓN] dueño 2026-09-03: se cobra S/0.50 y S/1.00. Cubre el sobrecosto con holgura y
 // deja la focaccia como lo que es —una opción premium— en vez de una fuga silenciosa.
 //
-// Solo B03 lleva recargo; B01 (Classic) es el pan sub y no cambia. DEBE coincidir con
-// BASE_SURCHARGE en src/app/ — lo verifica `npm run parity`.
-export const BASE_SURCHARGE: Record<string, { p15: number; p30: number }> = {
-  B03: { p15: 0.5, p30: 1 },
-};
-export function baseSurcharge(base: string, size: "15" | "30"): number {
-  const s = BASE_SURCHARGE[base];
-  return s ? (size === "15" ? s.p15 : s.p30) : 0;
-}
+// Solo B03 lleva recargo; B01 (Classic) es el pan sub y no cambia. El valor vive en UN solo
+// sitio, el módulo de dinero que comparten el cliente y el servidor (_shared/dinero.ts).
+export const BASE_SURCHARGE = REGLAS.recargoPan;
 
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
 //
@@ -301,6 +328,35 @@ export const MAX_ORDERS_PER_HOUR = 10;
 // cuesta más que la venta que se pierde por avisar que hoy hay demora.
 export const QUEUE_MINUTES_PER_ORDER = 5;
 
+// La hora de llegada que se PROMETE al pagar (pantallas 30 G2, 31, 06 y el «prometimos» del
+// detalle). Antes solo existía cuando el pedido salía EN CAMINO: el cliente pagaba sin ver
+// ninguna hora y el detalle no tenía contra qué comparar «llegó dentro». Ahora se fija al
+// crear el pedido y se guarda (`promised_from`/`promised_to`), así lo prometido queda escrito
+// y no se recalcula después con otra cola.
+//
+// Pedido para ya: ahora + el rango de siempre + lo que suma la cola. Programado: la hora que
+// eligió, con el mismo ancho de ventana. DEBE coincidir con ESTIMATED_DELIVERY_RANGE en
+// src/app/01-* — lo verifica `npm run parity`.
+export const ESTIMATED_DELIVERY_RANGE = [25, 40];
+
+export function ventanaPrometida(
+  ahoraMs: number,
+  colaDelante: number,
+  programadoPara?: string | null,
+): { desde: string; hasta: string } {
+  const MIN = 60000;
+  const ancho = ESTIMATED_DELIVERY_RANGE[1] - ESTIMATED_DELIVERY_RANGE[0];
+  const prog = programadoPara ? Date.parse(programadoPara) : NaN;
+  if (Number.isFinite(prog)) {
+    return { desde: new Date(prog).toISOString(), hasta: new Date(prog + ancho * MIN).toISOString() };
+  }
+  const extra = Math.max(0, Math.floor(Number(colaDelante) || 0)) * QUEUE_MINUTES_PER_ORDER;
+  return {
+    desde: new Date(ahoraMs + (ESTIMATED_DELIVERY_RANGE[0] + extra) * MIN).toISOString(),
+    hasta: new Date(ahoraMs + (ESTIMATED_DELIVERY_RANGE[1] + extra) * MIN).toISOString(),
+  };
+}
+
 // #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
 // preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
 // dirección ("portón azul", "3er piso"): una alergia escrita ahí se pinta igual que el
@@ -339,7 +395,7 @@ export function noteNeedsAttention(notes: string | null | undefined): boolean {
 // centraliza la conversión a America/Lima para que cualquier decisión de negocio basada
 // en fecha/hora (horario de atención, mes del reto de recurrencia, etc.) la use en vez
 // de reinventar la conversión — y así no se repita el mismo bug en otro lugar.
-function limaFields(d: Date): { year: number; month: number; day: number; weekday: number; hour: number; minute: number } {
+export function limaFields(d: Date): { year: number; month: number; day: number; weekday: number; hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Lima",
     year: "numeric",

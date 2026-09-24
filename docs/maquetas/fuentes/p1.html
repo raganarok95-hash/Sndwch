@@ -1,0 +1,172 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;width:1240px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+/* el color de septiembre: pica, así que es ají. Cada mes trae el suyo. */
+:root{--sep:#B03A2A;--ago:#C08A3E;--jul:#2E6B63;--jun:#6B4C8A}
+
+/* ═════ A · LA PANTALLA ES EL COLOR ═════ El mes no pinta un detalle: pinta todo. En
+   octubre esta misma pantalla es de otro color y no hay que rediseñar nada.        */
+#A{background:#B03A2A}
+#A .cab{position:absolute;left:24px;top:78px;z-index:6}
+#A .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:rgba(255,240,230,.7);text-transform:uppercase}
+#A .nom{position:absolute;left:24px;right:24px;top:104px;z-index:6}
+#A .nom b{font-family:Anton,sans-serif;font-size:52px;line-height:.9;color:#FFF6EE;letter-spacing:-.03em}
+#A .nom .mes{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;
+  border-bottom:1px solid rgba(255,240,230,.3);padding-bottom:13px}
+#A .nom .mes s{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:rgba(255,240,230,.75);text-transform:uppercase}
+#A .nom .mes k{font-family:Anton,sans-serif;font-size:19px;color:#FFF6EE}
+#A .pistas{position:absolute;left:24px;right:24px;top:222px;z-index:6}
+#A .pistas em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(255,240,230,.62);text-transform:uppercase}
+#A .p{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid rgba(255,240,230,.2)}
+#A .p k{width:27px;height:27px;border-radius:999px;border:1px solid rgba(255,240,230,.55);color:#FFF6EE;
+  font:700 10px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+#A .p .t b{font:800 14px/1.15 Archivo,sans-serif;color:#FFF6EE}
+#A .p .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,240,230,.62);margin-top:4px}
+#A .ant{position:absolute;left:0;right:0;top:434px;bottom:74px;z-index:6;background:#140C0A;padding:18px 24px 0}
+#A .ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E645E;text-transform:uppercase}
+#A .a{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid #241816}
+#A .a .br{width:4px;height:26px;flex:0 0 auto;align-self:center}
+#A .a i{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#6E645E;width:28px}
+#A .a .t{flex:1}
+#A .a .t b{font:700 13px/1.15 Archivo,sans-serif;color:#A79C96}
+#A .a .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#6E645E;margin-top:4px}
+#A .a p{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#6E645E;letter-spacing:.14em}
+#A .adv{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E645E;line-height:1.9;margin-top:14px}
+#A .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:7;display:flex;align-items:flex-end;justify-content:space-between}
+#A .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E645E;padding-bottom:8px;text-transform:uppercase}
+#A .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#FFF6EE}
+
+/* ═════ B · EL CORTE ═════ Arriba el mes, a sangre y en su color. Abajo, negro: lo que ya
+   pasó. La línea que los separa es el mes que se acaba.                            */
+#B{background:#0A0B0C}
+#B .top{position:absolute;left:0;right:0;top:0;height:404px;background:#B03A2A;z-index:2}
+#B .cab{position:absolute;left:24px;top:78px;z-index:6}
+#B .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:rgba(255,240,230,.72);text-transform:uppercase}
+#B .nom{position:absolute;left:24px;right:24px;top:104px;z-index:6}
+#B .nom b{font-family:Anton,sans-serif;font-size:52px;line-height:.9;color:#FFF6EE;letter-spacing:-.03em}
+#B .nom .mes{display:flex;justify-content:space-between;align-items:baseline;margin-top:13px}
+#B .nom .mes s{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:rgba(255,240,230,.75);text-transform:uppercase}
+#B .nom .mes k{font-family:Anton,sans-serif;font-size:19px;color:#FFF6EE}
+#B .pistas{position:absolute;left:24px;right:24px;top:216px;z-index:6}
+#B .pistas em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(255,240,230,.62);text-transform:uppercase}
+#B .p{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,240,230,.22)}
+#B .p k{width:25px;height:25px;border-radius:999px;border:1px solid rgba(255,240,230,.5);color:#FFF6EE;
+  font:700 9.5px/24px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+#B .p .t b{font:800 13.5px/1.15 Archivo,sans-serif;color:#FFF6EE}
+#B .p .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:rgba(255,240,230,.6);margin-top:3px}
+#B .ant{position:absolute;left:24px;right:24px;top:432px;z-index:6}
+#B .ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase}
+#B .a{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #17181A}
+#B .a .br{width:4px;height:26px;flex:0 0 auto}
+#B .a i{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4A4842;width:28px}
+#B .a .t{flex:1}
+#B .a .t b{font:700 13px/1.15 Archivo,sans-serif;color:#8C8880}
+#B .a .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;margin-top:4px}
+#B .a p{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;letter-spacing:.14em}
+#B .adv{position:absolute;left:24px;right:24px;top:630px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4A4842;line-height:1.9}
+#B .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#B .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+#B .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#F2F0EA}
+
+/* ═════ C · EL ARCHIVO ES LA PALETA ═════ Los meses que pasaron no son filas de texto:
+   son bloques de su color, apilados. La pantalla se llena de color por acumulación, y
+   cada mes que pasa le agrega uno más.                                             */
+#C{background:#0A0B0C}
+#C .cab{position:absolute;left:24px;top:78px;z-index:6}
+#C .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:#B03A2A;text-transform:uppercase}
+#C .nom{position:absolute;left:24px;right:24px;top:102px;z-index:6}
+#C .nom b{font-family:Anton,sans-serif;font-size:48px;line-height:.9;color:#F2F0EA;letter-spacing:-.03em}
+#C .nom .mes{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+#C .nom .mes s{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E6A60;text-transform:uppercase}
+#C .nom .mes k{font-family:Anton,sans-serif;font-size:19px;color:#B03A2A}
+#C .pistas{position:absolute;left:0;right:0;top:194px;background:#B03A2A;padding:15px 24px 4px;z-index:6}
+#C .pistas em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(255,240,230,.68);text-transform:uppercase}
+#C .p{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,240,230,.24)}
+#C .p k{width:24px;height:24px;border-radius:999px;border:1px solid rgba(255,240,230,.5);color:#FFF6EE;
+  font:700 9px/23px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+#C .p .t b{font:800 13px/1.15 Archivo,sans-serif;color:#FFF6EE}
+#C .p .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:rgba(255,240,230,.62);margin-top:3px}
+#C .ant{position:absolute;left:0;right:0;top:392px;z-index:6}
+#C .ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase;padding:0 24px 10px}
+#C .blo{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;margin-bottom:2px}
+#C .blo .t b{font:800 15px/1.1 Archivo,sans-serif}
+#C .blo .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;margin-top:5px;opacity:.72}
+#C .blo p{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.14em;opacity:.72}
+#C .adv{position:absolute;left:24px;right:24px;top:634px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4A4842;line-height:1.9}
+#C .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#C .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+#C .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#F2F0EA}
+</style></head><body>
+
+<div class="f" id="A">
+  <div class="tag">SECRETO · A · la pantalla es el color</div>
+  <div class="sal" style="color:rgba(255,240,230,.8)">←</div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b><div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a"><span class="br" style="background:var(--ago)"></span><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><span class="br" style="background:var(--jul)"></span><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><span class="br" style="background:var(--jun)"></span><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+    <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  </div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="B">
+  <div class="tag">SECRETO · B · el corte</div>
+  <div class="top"></div>
+  <div class="sal" style="color:rgba(255,240,230,.8)">←</div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b><div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a"><span class="br" style="background:var(--ago)"></span><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><span class="br" style="background:var(--jul)"></span><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><span class="br" style="background:var(--jun)"></span><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="C">
+  <div class="tag">SECRETO · C · el archivo es la paleta</div>
+  <div class="sal" style="color:#8C8880">←</div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b><div class="mes"><s>El secreto de septiembre</s><k>11 días</k></div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="blo" style="background:var(--ago);color:#2A1D08"><div class="t"><b>El Norteño</b><s>AGOSTO · CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="blo" style="background:var(--jul);color:#E8F4F1"><div class="t"><b>El Bravo</b><s>JULIO · ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="blo" style="background:var(--jun);color:#F0E8F6"><div class="t"><b>El Dominguero</b><s>JUNIO · PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+</body></html>

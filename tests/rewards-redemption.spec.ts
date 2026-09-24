@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // Cubre la reestructura de recompensas de esta sesión: R05 ("BEBIDA // GRATIS", 220 pts
 // tras la recalibración de puntos contra el costo real de insumos) antes no descontaba
@@ -22,10 +22,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   });
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000002');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000002', '1234');
 
   // El login deja al cliente en la pestaña PUNTOS (p_home) — hay que cambiar a PEDIDO
   // para llegar a startOrder().
@@ -41,9 +38,9 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // Sale del modo "pago rápido" (un solo ítem) para poder agregar también una bebida —
   // R05 solo es elegible sobre una línea de bebida/side, nunca sobre un sándwich.
   await page.locator('text=+ CARRITO').click();
-  await page.locator('[onclick*="sndScreen=\'o_sides\'"]').click();
+  await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
   await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
-  await page.getByRole('button', { name: 'VER CARRITO //' }).click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   // Texto exacto de la línea del carrito, no una subcadena — "text=THE BLOOM" también
   // matchea el toast "¡The Bloom agregado! //" que sigue visible unos segundos más
@@ -113,10 +110,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000003');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000003', '1234');
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
   // THE ORIGINAL (SIG01) 15CM = S/20.90.
@@ -126,9 +120,9 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await page.locator('text=+ CARRITO').click();
-  await page.locator('[onclick*="sndScreen=\'o_sides\'"]').click();
+  await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
   await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
-  await page.getByRole('button', { name: 'VER CARRITO //' }).click();
+  await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   await page.locator("[onclick*=\"toggleReward('R06')\"]").click();
 

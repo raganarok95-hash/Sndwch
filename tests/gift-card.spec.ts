@@ -1,91 +1,34 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
-// Tarjeta de regalo digital — rediseñada esta sesión de un cobro real por Culqi a un
-// canje de PUNTOS PROPIOS (sin ningún cobro ni pasarela de pago de por medio): el
-// comprador gasta puntos y el crédito se acredita a OTRO cliente en una sola llamada
-// atómica (gift-card-purchase). Ya no hay widget de Culqi que stubbear.
+// LA TARJETA DE REGALO ESTÁ APAGADA PARA LA APERTURA
+//
+// ⚠ ESTE ARCHIVO CAMBIÓ DE TRABAJO EL 2026-09-23. Antes ejercitaba el flujo completo de
+// regalar crédito con puntos; el dueño lo RETIRÓ para la apertura, así que ese flujo ya no existe
+// en el cliente y aquellas pruebas afirmaban un estado que dejó de ser cierto.
+//
+// No se borraron: se reescribieron para fijar el estado NUEVO, que es lo que hay que
+// proteger ahora — que la app no OFREZCA algo que el servidor va a rechazar. El flujo viejo
+// vive en el historial de git y vuelve entero el día que se prenda
+// TARJETA_REGALO_ACTIVA (está en el servidor y en src/app/01-*, los dos a la vez).
+//
+// Por qué se retiró: le pide al cliente 2 000 puntos (S/50 = cinco sándwiches gratis de por medio) por adelantado antes de que
+// conozca el negocio. Ver docs/PROMESAS_SIN_RESPALDO.md.
 
-test('cliente regala una tarjeta de regalo con puntos a otro cliente', async ({ page }) => {
-  const calls = await gotoApp(page, {
-    login: {
-      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 2500, credit_balance: 0 },
-      isAdmin: false,
-      token: 'tok-ana',
-    },
-    'credit-lookup': { name: 'Beto Amigo' },
-    'gift-card-purchase': (body: any) => ({ success: true, toName: 'Beto Amigo' }),
-    'session-check': {
-      valid: true,
-      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 500, credit_balance: 0 },
-    },
+test('la cuenta no ofrece la tarjeta de regalo mientras esté apagado', async ({ page }) => {
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 5000, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
   });
-
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page);
+  // La oferta vivía en «Mi perfil», no en la pantalla de puntos. La primera versión de esta
+  // prueba miraba la pantalla de puntos, así que PASABA con la oferta encendida: no vigilaba
+  // nada. Se comprobó prendiendo la bandera a propósito — ver docs/AUDITORIA_CLASES_DE_ERROR.md.
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').first().click();
+  await expect(page.getByText('Eliminar mi cuenta permanentemente')).toBeVisible();
 
-  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sndScreen=\'gift_card\'"]').click();
-  await expect(page.getByRole('button', { name: 'REGALAR CON PUNTOS //' })).toBeVisible();
-
-  await page.locator('#gc-phone').fill('911111111');
-  await page.locator('#gc-amt').fill('50');
-
-  await page.getByRole('button', { name: 'REGALAR CON PUNTOS //' }).click();
-
-  // Modal de confirmación propio de la app (no window.confirm) mostrando el destinatario.
-  await expect(page.locator('text=Beto Amigo')).toBeVisible();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-
-  await expect(page.locator('text=¡Regalaste crédito a Beto Amigo!')).toBeVisible({ timeout: 10000 });
-
-  const lookupCall = calls.find((c) => c.action === 'credit-lookup');
-  expect(lookupCall).toBeTruthy();
-  expect(lookupCall!.body.toPhone).toBe('911111111');
-
-  const purchaseCall = calls.find((c) => c.action === 'gift-card-purchase');
-  expect(purchaseCall).toBeTruthy();
-  expect(purchaseCall!.body.toPhone).toBe('911111111');
-  expect(purchaseCall!.body.amount).toBe(50);
-
-  // Vuelve al perfil tras confirmar, no se queda en la pantalla de compra.
-  await expect(page.locator('text=MI PERFIL')).toBeVisible();
-});
-
-// Hallazgo de esta misma sesión: antes de la recompensa de puntos costaba lo mismo sin
-// importar cuántos puntos tenía el cliente — con la tarjeta de regalo pagándose en
-// puntos, un cliente sin puntos suficientes debe ver el error ANTES de gastar tiempo
-// llenando el modal de confirmación (client-side, sin ni siquiera llamar a credit-lookup).
-test('cliente sin puntos suficientes ve el error sin llegar a confirmar', async ({ page }) => {
-  const calls = await gotoApp(page, {
-    login: {
-      customer: { phone: '900000004', name: 'Deco Cliente', email: 'deco@test.com', points: 100, credit_balance: 0 },
-      isAdmin: false,
-      token: 'tok-deco',
-    },
-    'credit-lookup': { name: 'Beto Amigo' },
-  });
-
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000004');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
-
-  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sndScreen=\'gift_card\'"]').click();
-
-  await page.locator('#gc-phone').fill('911111111');
-  await page.locator('#gc-amt').fill('50');
-  await page.getByRole('button', { name: 'REGALAR CON PUNTOS //' }).click();
-
-  await expect(page.locator('text=No tienes puntos suficientes para este monto.')).toBeVisible();
-
-  const lookupCall = calls.find((c) => c.action === 'credit-lookup');
-  expect(lookupCall).toBeFalsy();
-  const purchaseCall = calls.find((c) => c.action === 'gift-card-purchase');
-  expect(purchaseCall).toBeFalsy();
+  // Con 5 000 puntos le alcanzaría de sobra: si apareciera, sería porque está encendido,
+  // no porque el cliente no califica. Se busca el ACCESO a la pantalla, no el rótulo del
+  // botón, que puede reescribirse sin que la oferta deje de estar ahí.
+  await expect(page.locator('[onclick*="sndScreen=\'gift_card\'"]')).toHaveCount(0);
 });

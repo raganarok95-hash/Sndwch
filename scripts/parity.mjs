@@ -193,9 +193,25 @@ for (const id of new Set([...Object.keys(cSig), ...Object.keys(sSig)])) {
 }
 cmp('Zonas de delivery (DELIVERY_PRICE_ZONES ↔ DELIVERY_ZONE_FEES)', cZones, sZones);
 
-cmp('COMBO_DISCOUNT_PER_PAIR',
-  scalar(app, 'COMBO_DISCOUNT_PER_PAIR', /var COMBO_DISCOUNT_PER_PAIR=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'COMBO_DISCOUNT_PER_PAIR', /const COMBO_DISCOUNT_PER_PAIR = ([\d.]+)/, 'catalog.ts'));
+// ── LAS REGLAS DEL DINERO YA NO TIENEN DOS COPIAS (2026-09-24) ─────────────────────────────
+// Combo, topes de R03/R04/R05, salsa extra, recargo de la focaccia, umbral del organizador y
+// la hora valle viven UNA sola vez, en supabase/functions/_shared/dinero.ts, que importan el
+// servidor y el cliente. Ya no hay nada que comparar: lo que se vigila es que ninguna vuelva a
+// escribirse como número en un lado, que es como empieza una segunda copia.
+for (const [nombre, texto, archivo] of [
+  ['COMBO_DISCOUNT_PER_PAIR', app, 'src/app/'], ['COMBO_DISCOUNT_PER_PAIR', catalog, 'catalog.ts'],
+  ['R03_FLAT_WAIVER', app, 'src/app/'], ['R04_FLAT_WAIVER', app, 'src/app/'], ['R05_FLAT_WAIVER', app, 'src/app/'],
+  ['R03_FLAT_WAIVER', catalog, 'catalog.ts'], ['R04_FLAT_WAIVER', catalog, 'catalog.ts'], ['R05_FLAT_WAIVER', catalog, 'catalog.ts'],
+  ['OFFPEAK_DRINK_PROMO_CAP', app, 'src/app/'], ['OFFPEAK_DRINK_PROMO_CAP', catalog, 'catalog.ts'],
+  ['ORGANIZER_FREE_MIN_SANDWICHES', app, 'src/app/'], ['ORGANIZER_FREE_MIN_SANDWICHES', catalog, 'catalog.ts'],
+  ['EXTRA_SAUCE_PRICE', app, 'src/app/'], ['EXTRA_SAUCE_PRICE', catalog, 'catalog.ts'],
+  ['BASE_SURCHARGE', app, 'src/app/'], ['BASE_SURCHARGE', env, 'env.ts'],
+  ['OFFPEAK_DRINK_PROMO_HOURS_LIMA', app, 'src/app/'], ['OFFPEAK_DRINK_PROMO_HOURS_LIMA', catalog, 'catalog.ts'],
+]) {
+  checks++;
+  const re = new RegExp('(?:var|const|let)\\s+' + nombre + '\\b[^=]*=\\s*[\\d{\\[]');
+  if (re.test(texto)) problems.push(`${nombre}: ${archivo} lo vuelve a escribir como valor propio. Vive en _shared/dinero.ts (REGLAS); léelo de ahí.`);
+}
 cmp('GIFT_CARD_POINTS_PER_SOL',
   scalar(app, 'GIFT_CARD_POINTS_PER_SOL', /var GIFT_CARD_POINTS_PER_SOL=([\d.]+)/, 'src/app/'),
   scalar(customer, 'GIFT_CARD_POINTS_PER_SOL', /const GIFT_CARD_POINTS_PER_SOL = ([\d.]+)/, 'customer.ts'));
@@ -213,12 +229,6 @@ cmp('GIFT_CARD_AMOUNT_MAX',
 // Recargo por pan de focaccia (2026-09-03). Es el segundo precio del catálogo que NO vive
 // en `catalog_prices` (el otro es EXTRA_SAUCE_PRICE), así que esta comparación es su única
 // defensa contra que el cliente muestre un monto y el servidor cobre otro.
-cmp('BASE_SURCHARGE B03 15CM (focaccia)',
-  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:([\d.]+)/, 'src/app/'),
-  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: ([\d.]+)/, 'env.ts'));
-cmp('BASE_SURCHARGE B03 30CM (focaccia)',
-  scalar(app, 'BASE_SURCHARGE', /var BASE_SURCHARGE=\{B03:\{p15:[\d.]+,p30:([\d.]+)/, 'src/app/'),
-  scalar(env, 'BASE_SURCHARGE', /B03: \{ p15: [\d.]+, p30: ([\d.]+)/, 'env.ts'));
 
 // Cobro del delivery por DISTANCIA REAL (2026-09-02). Estas cinco son la única defensa
 // contra el defecto clásico de este repo: el cliente muestra un monto de envío y el servidor
@@ -269,6 +279,25 @@ cmp('MAX_ORDERS_PER_HOUR (tope por franja)',
 cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
   scalar(app, 'queueMinutesPerOrder', /queueMinutesPerOrder=(\d+)/, 'src/app/'),
   scalar(env, 'QUEUE_MINUTES_PER_ORDER', /const QUEUE_MINUTES_PER_ORDER = (\d+)/, 'env.ts'));
+
+// La ventana que se promete al pagar la calcula el servidor y la guarda; el cliente la
+// estima antes con el mismo rango. Si se separan, el carrito dice una hora y el pedido otra.
+// «Algo salió mal»: el plazo de 48 h es el de los Términos, y la hora de respuesta se
+// promete en la pantalla antes de enviar. El servidor las vive en actions/problems.ts.
+{
+  const prob = readFileSync(join(ROOT, 'supabase/functions/api/actions/problems.ts'), 'utf8');
+  for (const k of ['REPORTE_PLAZO_HORAS', 'RESPUESTA_CORTE_HORA', 'RESPUESTA_HOY_HORA', 'RESPUESTA_MANANA_HORA']) {
+    cmp(`${k} («Algo salió mal»)`,
+      scalar(app, k, new RegExp(String.raw`\b${k}=(\d+)`), 'src/app/'),
+      scalar(prob, k, new RegExp(String.raw`const ${k} = (\d+)`), 'actions/problems.ts'));
+  }
+}
+cmp('ESTIMATED_DELIVERY_RANGE desde (minutos de la ventana prometida)',
+  scalar(app, 'ESTIMATED_DELIVERY_RANGE', /ESTIMATED_DELIVERY_RANGE=\[(\d+),\d+\]/, 'src/app/'),
+  scalar(env, 'ESTIMATED_DELIVERY_RANGE', /const ESTIMATED_DELIVERY_RANGE = \[(\d+), ?\d+\]/, 'env.ts'));
+cmp('ESTIMATED_DELIVERY_RANGE hasta (minutos de la ventana prometida)',
+  scalar(app, 'ESTIMATED_DELIVERY_RANGE', /ESTIMATED_DELIVERY_RANGE=\[\d+,(\d+)\]/, 'src/app/'),
+  scalar(env, 'ESTIMATED_DELIVERY_RANGE', /const ESTIMATED_DELIVERY_RANGE = \[\d+, ?(\d+)\]/, 'env.ts'));
 
 // El cliente ENSEÑA este número en la invitación a referir ("te ganas un sándwich 15CM
 // gratis (400 pts)"), así que si se separa del servidor la app promete un premio que la
@@ -389,24 +418,6 @@ cmp('REFERRAL_MILESTONES (escalera de referidos: amigos → puntos extra)',
 // otro, y el checkout se rechazara con "el total no coincide" sin ninguna pista de por qué.
 // EXTRA_SAUCE_PRICE es el caso más grave: es el único precio del catálogo que no vive en
 // `catalog_prices`, así que esta comparación es su ÚNICA defensa.
-cmp('R03_FLAT_WAIVER (tope de "sube a 30CM gratis")',
-  scalar(app, 'R03_FLAT_WAIVER', /var R03_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'R03_FLAT_WAIVER', /const R03_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
-cmp('R04_FLAT_WAIVER (tope de doble proteína gratis)',
-  scalar(app, 'R04_FLAT_WAIVER', /var R04_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'R04_FLAT_WAIVER', /const R04_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
-cmp('R05_FLAT_WAIVER (tope de bebida gratis)',
-  scalar(app, 'R05_FLAT_WAIVER', /var R05_FLAT_WAIVER=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'R05_FLAT_WAIVER', /const R05_FLAT_WAIVER = ([\d.]+)/, 'catalog.ts'));
-cmp('OFFPEAK_DRINK_PROMO_CAP (tope de la bebida de hora valle)',
-  scalar(app, 'OFFPEAK_DRINK_PROMO_CAP', /var OFFPEAK_DRINK_PROMO_CAP=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'OFFPEAK_DRINK_PROMO_CAP', /const OFFPEAK_DRINK_PROMO_CAP = ([\d.]+)/, 'catalog.ts'));
-cmp('ORGANIZER_FREE_MIN_SANDWICHES (umbral del sándwich gratis del organizador)',
-  scalar(app, 'ORGANIZER_FREE_MIN_SANDWICHES', /var ORGANIZER_FREE_MIN_SANDWICHES=(\d+)/, 'src/app/'),
-  scalar(catalog, 'ORGANIZER_FREE_MIN_SANDWICHES', /export const ORGANIZER_FREE_MIN_SANDWICHES = (\d+)/, 'catalog.ts'));
-cmp('EXTRA_SAUCE_PRICE (el único precio que NO vive en catalog_prices)',
-  scalar(app, 'EXTRA_SAUCE_PRICE', /var EXTRA_SAUCE_PRICE=([\d.]+)/, 'src/app/'),
-  scalar(catalog, 'EXTRA_SAUCE_PRICE', /export const EXTRA_SAUCE_PRICE = ([\d.]+)/, 'catalog.ts'));
 cmp('WEEKLY_PLAN_PRICE (lo que paga hoy)',
   scalar(app, 'WEEKLY_PLAN_PRICE', /var WEEKLY_PLAN_PRICE=([\d.]+)/, 'src/app/'),
   scalar(customer, 'WEEKLY_PLAN_PRICE', /const WEEKLY_PLAN_PRICE = ([\d.]+)/, 'customer.ts'));
@@ -539,9 +550,6 @@ function hourWindows(src, re, file) {
   // hay que verificar es que los DOS estén apagados.
   return m[1].match(/\[\s*\d+\s*,\s*\d+\s*\]/g)?.map((x) => x.replace(/[[\]\s]/g, '').split(',').map(Number)) ?? [];
 }
-cmp('OFFPEAK_DRINK_PROMO_HOURS_LIMA (ventana de la bebida gratis)',
-  hourWindows(app, /var OFFPEAK_DRINK_PROMO_HOURS_LIMA(?::[^=]+)?=(\[[\s\S]*?\]);/, 'src/app/'),
-  hourWindows(catalog, /const OFFPEAK_DRINK_PROMO_HOURS_LIMA: \[number, number\]\[\] = (\[[\s\S]*?\]);/, 'catalog.ts'));
 
 // Rangos. Son de puro reconocimiento (nunca cambian precio ni multiplicador), pero el
 // cliente pinta uno y el servidor guarda otro en `orders.customer_rank` — dos historias

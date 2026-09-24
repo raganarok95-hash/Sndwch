@@ -1,0 +1,228 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:1240px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+
+/* ══════════ ENTRAR ══════════ */
+/* E1 · EL CORREO ES EL TITULAR — no hay formulario: lo que escribes ocupa la pantalla
+   como si fuera el nombre de la pantalla. Una sola cosa que hacer, imposible perderse. */
+#E1{background:#11130F}
+#E1 .arr{position:absolute;left:26px;right:26px;top:92px;z-index:6}
+#E1 .arr em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#CBA258;text-transform:uppercase}
+#E1 .arr s{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E7268;margin-top:12px;line-height:1.8}
+#E1 .big{position:absolute;left:26px;right:26px;top:230px;z-index:6}
+#E1 .big n{font-family:Anton,sans-serif;font-size:44px;line-height:1.02;color:#F2F0EA;letter-spacing:-.02em;word-break:break-all}
+#E1 .big n u{display:inline-block;width:4px;height:38px;background:#CBA258;vertical-align:-6px;margin-left:4px}
+#E1 .big i{height:2px;background:#33372E;margin-top:18px}
+#E1 .tec{position:absolute;left:0;right:0;bottom:74px;z-index:6;background:#171A14;padding:14px 26px 16px}
+#E1 .tec .fila{display:flex;gap:8px;margin-top:8px}
+#E1 .tec .fila span{flex:1;text-align:center;padding:11px 0;background:#232720;color:#D8D4CA;
+  font:600 13px/1 Archivo,sans-serif;border-radius:4px}
+#E1 .tec .fila span.w{flex:2.4}
+#E1 .goo{position:absolute;left:26px;right:26px;top:392px;z-index:6;border:1px solid #33372E;
+  padding:15px;display:flex;align-items:center;justify-content:center;gap:11px}
+#E1 .goo k{width:18px;height:18px;border-radius:999px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+#E1 .goo b{font:700 12.5px/1 Archivo,sans-serif;color:#E6E3D9;letter-spacing:.06em}
+#E1 .nota{position:absolute;left:26px;right:26px;top:462px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#565A50;line-height:1.9}
+
+/* E2 · TE ABREN LA PUERTA — no entras a un sistema, entras a un local: los dos están del
+   otro lado esperando. El campo es lo único que hay entre tú y ellos.               */
+#E2{background:#F0EBDE}
+#E2 .esc{position:absolute;left:0;right:0;top:0;height:368px;z-index:1;overflow:hidden;
+  background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%)}
+#E2 .esc .sd{position:absolute;left:26px;bottom:12px;height:238px;width:auto;z-index:2}
+#E2 .esc .wc{position:absolute;right:28px;bottom:12px;height:172px;width:auto;z-index:2}
+#E2 .esc .piso{position:absolute;left:0;right:0;bottom:0;height:86px;z-index:1;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.34))}
+#E2 .esc .tx{position:absolute;left:0;right:0;top:62px;text-align:center;z-index:3}
+#E2 .esc .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#CBA258;text-transform:uppercase}
+#E2 .esc .tx b{font-family:Anton,sans-serif;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
+#E2 .campo{position:absolute;left:26px;right:26px;top:418px;z-index:6;border-bottom:2px solid #33230F;padding-bottom:12px}
+#E2 .campo s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33;text-transform:uppercase}
+#E2 .campo n{font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F;margin-top:11px}
+#E2 .campo n u{display:inline-block;width:2px;height:18px;background:#9C5F14;vertical-align:-3px;margin-left:2px}
+#E2 .goo{position:absolute;left:26px;right:26px;top:512px;z-index:6;background:#FBF6E8;border:1px solid rgba(74,50,24,.4);
+  padding:15px;display:flex;align-items:center;justify-content:center;gap:11px}
+#E2 .goo k{width:18px;height:18px;border-radius:999px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+#E2 .goo b{font:700 12.5px/1 Archivo,sans-serif;color:#33230F;letter-spacing:.06em}
+#E2 .nota{position:absolute;left:26px;right:26px;top:588px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8A6A3C;line-height:1.9}
+
+/* E3 · HEREDA EL LADO — vienes de tocar SANDO en la puerta, así que entras por la suya:
+   su color, su letra, su frase. Si hubieras tocado WICHO, esta pantalla sería celeste. */
+#E3{background:#1D2A22}
+#E3 .cin{position:absolute;left:0;right:0;top:0;height:8px;background:#CBA258;z-index:6}
+#E3 .sando{position:absolute;right:-36px;top:74px;width:210px;z-index:4;
+  filter:drop-shadow(-10px 12px 24px rgba(0,0,0,.5))}
+#E3 .dice{position:absolute;left:26px;right:162px;top:116px;z-index:6}
+#E3 .dice em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#CBA258;text-transform:uppercase}
+#E3 .dice q{font-family:Anton,sans-serif;font-size:26px;line-height:1.05;color:#F2F0EA;margin-top:12px;letter-spacing:-.02em;text-transform:uppercase}
+#E3 .campo{position:absolute;left:26px;right:26px;top:342px;z-index:6;border-bottom:2px solid #CBA258;padding-bottom:12px}
+#E3 .campo s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8A9482;text-transform:uppercase}
+#E3 .campo n{font-family:'IBM Plex Mono',monospace;font-size:18px;color:#F2F0EA;margin-top:11px}
+#E3 .campo n u{display:inline-block;width:2px;height:18px;background:#CBA258;vertical-align:-3px;margin-left:2px}
+#E3 .goo{position:absolute;left:26px;right:26px;top:436px;z-index:6;border:1px solid #3A4A3E;
+  padding:15px;display:flex;align-items:center;justify-content:center;gap:11px}
+#E3 .goo k{width:18px;height:18px;border-radius:999px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+#E3 .goo b{font:700 12.5px/1 Archivo,sans-serif;color:#E6E3D9;letter-spacing:.06em}
+#E3 .cambia{position:absolute;left:26px;right:26px;top:510px;z-index:6;display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid #2C3A30;border-bottom:1px solid #2C3A30;padding:15px 0}
+#E3 .cambia b{font:700 13px/1 Archivo,sans-serif;color:#D8D4CA}
+#E3 .cambia s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8CC8EC;letter-spacing:.1em}
+#E3 .nota{position:absolute;left:26px;right:26px;top:590px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E7A6E;line-height:1.9}
+
+/* ══════════ BEBIDAS · LADO SANDO ══════════ */
+/* B1 · UNA POR PANTALLA — su lado ya usa la ficha a pantalla completa para los Signature.
+   Las bebidas siguen esa misma ley: una a la vez, grande, y se desliza.            */
+#B1{background:#14180F}
+#B1 .fo{position:absolute;left:0;right:0;top:0;height:470px;z-index:1;overflow:hidden}
+#B1 .fo img{width:100%;height:100%;object-fit:cover}
+#B1 .fo .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,16,10,.35) 0 16%,transparent 40%,#14180F 97%)}
+#B1 .tx{position:absolute;left:26px;right:26px;top:392px;z-index:6}
+#B1 .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#CBA258;text-transform:uppercase}
+#B1 .tx b{font-family:Anton,sans-serif;font-size:46px;line-height:.9;color:#F2F0EA;margin-top:10px;letter-spacing:-.025em}
+#B1 .tx q{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A9482;margin-top:14px;line-height:1.85}
+#B1 .fila{position:absolute;left:26px;right:26px;top:596px;z-index:6;display:flex;justify-content:space-between;align-items:flex-end;
+  border-top:1px solid #2A3122;padding-top:15px}
+#B1 .fila .pz i{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E7A6A;text-transform:uppercase}
+#B1 .fila .pz n{font-family:Anton,sans-serif;font-size:34px;color:#F2F0EA;margin-top:7px}
+#B1 .fila .pz s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#CBA258;margin-top:6px}
+#B1 .riel{position:absolute;left:26px;right:26px;bottom:96px;z-index:6;display:flex;gap:6px}
+#B1 .riel i{flex:1;height:3px;background:#2A3122}
+#B1 .riel i.on{background:#CBA258}
+
+/* B2 · LA BANDEJA — las tres servidas en fila sobre el papel, a tamaño real relativo. Se
+   elige señalando, como en el mostrador.                                          */
+#B2 .cab{position:absolute;left:26px;top:80px;z-index:6}
+#B2 .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#B2 .cab b{font-family:Anton,sans-serif;font-size:40px;line-height:.88;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+#B2 .band{position:absolute;left:0;right:0;top:214px;height:300px;z-index:4;display:flex;align-items:flex-end;justify-content:center;gap:0}
+#B2 .band .v{width:122px;height:248px;overflow:hidden;position:relative;filter:drop-shadow(0 12px 18px rgba(70,46,16,.3))}
+#B2 .band .v img{width:100%;height:100%;object-fit:cover}
+#B2 .band .v.on{height:292px;width:136px;z-index:3}
+#B2 .band .v.on:after{content:'';position:absolute;inset:0;border:3px solid #33230F}
+#B2 .mesa{position:absolute;left:0;right:0;top:506px;height:3px;background:rgba(74,50,24,.45);z-index:5}
+#B2 .det{position:absolute;left:26px;right:26px;top:534px;z-index:6}
+#B2 .det b{font-family:Anton,sans-serif;font-size:34px;line-height:.92;color:#33230F;letter-spacing:-.02em}
+#B2 .det s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;margin-top:9px}
+#B2 .det .pz{display:flex;align-items:baseline;gap:10px;margin-top:11px}
+#B2 .det .pz n{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#33230F}
+#B2 .det .pz k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#9C5F14;letter-spacing:.12em}
+#B2 .nota{position:absolute;left:26px;right:26px;bottom:100px;z-index:6;border-top:2px solid #4A3218;padding-top:12px;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E4F2A;line-height:1.85}
+
+/* B3 · EL VASO A SANGRE — cero interfaz: el vaso ocupa toda la pantalla y el texto vive
+   encima. Se cambia de bebida deslizando el vaso entero.                          */
+#B3{background:#0E1208}
+#B3 .fo{position:absolute;inset:0;z-index:1}
+#B3 .fo img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+#B3 .fo .v{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(8,12,6,.62) 0 18%,rgba(8,12,6,.1) 42%,rgba(8,12,6,.88) 88%)}
+#B3 .arr{position:absolute;left:26px;right:26px;top:84px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#B3 .arr em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#E8D08A;text-transform:uppercase}
+#B3 .arr u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.6)}
+#B3 .nom{position:absolute;left:26px;right:26px;bottom:206px;z-index:6}
+#B3 .nom b{font-family:Anton,sans-serif;font-size:56px;line-height:.86;color:#fff;letter-spacing:-.03em;text-shadow:0 4px 22px rgba(0,0,0,.6)}
+#B3 .nom s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.72);margin-top:12px;line-height:1.8}
+#B3 .pie{position:absolute;left:26px;right:26px;bottom:118px;z-index:6;display:flex;justify-content:space-between;align-items:flex-end}
+#B3 .pie .pz n{font-family:Anton,sans-serif;font-size:30px;color:#fff}
+#B3 .pie .pz s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#E8D08A;margin-top:5px}
+#B3 .pie .cn{display:flex;gap:6px;align-items:center;padding-bottom:6px}
+#B3 .pie .cn i{width:7px;height:7px;border-radius:999px;background:rgba(255,255,255,.35)}
+#B3 .pie .cn i.on{background:#fff}
+</style></head><body>
+
+<div class="f" id="E1">
+  <div class="tag">ENTRAR · 1 · el correo es el titular</div>
+  <div class="sal" style="color:#8A9482">←</div>
+  <div class="arr"><em>Entrar o crear cuenta</em><s>NO HAY CONTRASEÑA. TE MANDAMOS UN CÓDIGO<br>DE 6 DÍGITOS Y LISTO.</s></div>
+  <div class="big"><n>mafe.rios@gmail<u></u></n><i></i></div>
+  <div class="goo"><k></k><b>Continuar con Google</b></div>
+  <div class="nota">SI ES TU PRIMERA VEZ TE PEDIMOS NOMBRE Y DNI.<br>CON GOOGLE NO PEDIMOS DNI. LA DIRECCIÓN SE PIDE AL PEDIR.</div>
+  <div class="tec">
+    <div class="fila"><span>q</span><span>w</span><span>e</span><span>r</span><span>t</span><span>y</span><span>u</span></div>
+    <div class="fila"><span>a</span><span>s</span><span>d</span><span>f</span><span>g</span><span>h</span><span>j</span></div>
+    <div class="fila"><span>@</span><span class="w">.com</span><span>.pe</span><span>⌫</span></div>
+  </div>
+</div>
+
+<div class="f" id="E2">
+  <div class="tag">ENTRAR · 2 · te abren la puerta</div>
+  <div class="esc">
+    <div class="piso"></div>
+    <img class="sd" src="../../../img/sando2_cuerpo.png">
+    <img class="wc" src="../../../img/wicho_cuerpo_sinsombra.png">
+    <div class="tx"><em>Buenas</em><b>¿QUIÉN LLEGÓ?</b></div>
+  </div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="campo"><s>Tu correo</s><n>mafe.rios@<u></u></n></div>
+  <div class="goo"><k></k><b>Continuar con Google</b></div>
+  <div class="nota">TE MANDAMOS UN CÓDIGO DE 6 DÍGITOS, NO HAY CONTRASEÑA.<br>SI ES TU PRIMERA VEZ TE PEDIMOS NOMBRE Y DNI.<br>CON GOOGLE NO PEDIMOS DNI.</div>
+  <div class="go"><div class="mi oro">Seguir</div><div class="mi cel">Con Google</div></div>
+</div>
+
+<div class="f" id="E3">
+  <div class="tag">ENTRAR · 3 · hereda el lado</div>
+  <div class="cin"></div>
+  <div class="sal" style="color:#D8D4CA">←</div>
+  <img class="sando" src="../../../img/sando2_asoma.png">
+  <div class="dice"><em>Elegiste el lado de Sando</em><q>“Dame tu correo<br>y yo me encargo<br>del resto.”</q></div>
+  <div class="campo"><s>Tu correo</s><n>mafe.rios@<u></u></n></div>
+  <div class="goo"><k></k><b>Continuar con Google</b></div>
+  <div class="cambia"><b>¿Preferías el lado de Wicho?</b><s>CAMBIAR →</s></div>
+  <div class="nota">TE MANDAMOS UN CÓDIGO DE 6 DÍGITOS, NO HAY CONTRASEÑA.<br>CON GOOGLE NO PEDIMOS DNI.</div>
+  <div class="go"><div class="mi oro">Seguir</div><div class="mi cel">Con Google</div></div>
+</div>
+
+<div class="f" id="B1">
+  <div class="tag">BEBIDAS SANDO · 1 · una por pantalla</div>
+  <div class="fo"><img src="../../../img/drink_d06.jpg"><div class="v"></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="tx"><em>Dos de tres</em><b>THE HIBISCUS</b>
+    <q>EMOLIENTE FRÍO DE LA CASA, CON SU PUNTO DE LIMÓN.<br>MEDIO LITRO, SIN AZÚCAR AÑADIDA.</q></div>
+  <div class="fila"><div class="pz"><i>Suelta</i><n>S/6.00</n><s>CON SÁNDWICH, S/5.00</s></div></div>
+  <div class="riel"><i></i><i class="on"></i><i></i></div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+
+<div class="f kraft" id="B2">
+  <div class="tag">BEBIDAS SANDO · 2 · la bandeja</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="cab"><em>Tres, de la casa</em><b>ALGO PARA<br>TOMAR</b></div>
+  <div class="band">
+    <div class="v"><img src="../../../img/drink_d07.jpg"></div>
+    <div class="v on"><img src="../../../img/drink_d06.jpg"></div>
+    <div class="v"><img src="../../../img/drink_d08.jpg"></div>
+  </div>
+  <div class="mesa"></div>
+  <div class="det"><b>The Hibiscus</b><s>EMOLIENTE FRÍO · 500 ML · SIN AZÚCAR AÑADIDA</s>
+    <div class="pz"><n>S/6.00</n><k>CON SÁNDWICH S/5.00</k></div></div>
+  <div class="nota">CON CUALQUIER SÁNDWICH BAJA S/1.<br>SE APLICA SOLA EN EL CARRITO.</div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+
+<div class="f" id="B3">
+  <div class="tag">BEBIDAS SANDO · 3 · el vaso a sangre</div>
+  <div class="fo"><img src="../../../img/drink_d06.jpg"><div class="v"></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="arr"><em>Algo para tomar</em><u>DESLIZA →</u></div>
+  <div class="nom"><b>THE<br>HIBISCUS</b><s>EMOLIENTE FRÍO · 500 ML · SIN AZÚCAR AÑADIDA</s></div>
+  <div class="pie"><div class="pz"><n>S/6.00</n><s>CON SÁNDWICH S/5.00</s></div>
+    <div class="cn"><i></i><i class="on"></i><i></i></div></div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+</body></html>

@@ -1,0 +1,74 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:24px;display:flex;gap:24px;align-items:flex-start}
+.f{width:390px;position:relative;overflow:hidden;background:#EFE6D4;flex:0 0 auto}
+/* el forro de su casaca: franja lisa, vertical, a todo lo alto */
+.forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:20}
+/* el acanalado de sus puños: la textura que separa */
+.rib{height:10px;background:#6C7860;
+  background-image:repeating-linear-gradient(90deg,rgba(24,48,36,.45) 0 2px,transparent 2px 6px)}
+.cab{padding:15px 18px 0 22px;display:flex;justify-content:space-between;align-items:center}
+.wm{font-family:'Instrument Serif',serif;font-size:16px;color:#1E2B22}
+.est{font:600 9px/1 Archivo,sans-serif;letter-spacing:.24em;color:#6C7860}
+/* ÉL Y SU FRASE — lo bueno de la 1. Su figura ya trae el // bordado en la casaca. */
+.abre{display:flex;gap:14px;align-items:flex-end;padding:10px 18px 0 22px}
+.abre img{width:92px;flex:0 0 auto;display:block}
+.abre .tx{flex:1;padding-bottom:6px}
+.abre h1{font-family:Anton,sans-serif;font-size:36px;color:#1E2B22;line-height:.9;text-transform:uppercase}
+.abre p{font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;color:#41503C;line-height:1.28;margin-top:9px}
+.abre span{display:block;font:700 8px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;margin-top:7px}
+.sub{font-family:'EB Garamond',serif;font-size:13px;color:#5C6755;padding:12px 18px 14px 22px;line-height:1.5}
+/* LA FOTO GRANDE Y LIMPIA — lo bueno de la 2. Sin velo, sin nada encima. */
+.plato .ph{height:272px;overflow:hidden;margin-left:8px}
+.plato .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.plato .info{padding:14px 18px 18px 22px}
+.plato .k{font:700 9px/1 Archivo,sans-serif;letter-spacing:.26em;color:#D8823C;text-transform:uppercase}
+.plato .k em{font-style:normal;color:#8A9482;margin-right:9px}
+.plato .nom{font-family:Anton,sans-serif;font-size:32px;color:#1E2B22;line-height:.94;margin-top:8px;text-transform:uppercase}
+.plato .rec{font-family:'EB Garamond',serif;font-size:13.5px;color:#4A5544;line-height:1.5;margin-top:8px}
+.plato .pr{display:flex;align-items:baseline;justify-content:space-between;margin-top:13px}
+.plato .pr b{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:25px;color:#1E2B22;letter-spacing:-.02em}
+.plato .pr s{text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A9482;letter-spacing:.06em}
+.plato .pr .b{background:#1E2B22;color:#EFE6D4;padding:12px 20px;font:700 11px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+/* el secreto: misma banda, la foto tapada */
+.vlt .ph{position:relative;background:#1E2B22}
+.vlt .ph img{filter:blur(18px) saturate(.4) brightness(.5);transform:scale(1.14)}
+.vlt .ph .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.vlt .ph .vn{font-family:Anton,sans-serif;font-size:26px;color:#EFE6D4;text-transform:uppercase}
+.vlt .ph .ba{width:150px;height:3px;background:rgba(195,166,210,.3);position:relative}
+.vlt .ph .ba i{position:absolute;left:0;top:0;bottom:0;width:33%;background:#C3A6D2;display:block}
+.vlt .ph .vm{font:600 9px/1 Archivo,sans-serif;letter-spacing:.24em;color:#C3A6D2}
+</style></head><body>
+<div class="f">
+  <div class="forro"></div>
+  <div class="cab"><span class="wm">SND//WCH</span><span class="est">ABIERTO · CIERRA 10 P.M.</span></div>
+  <div class="abre"><img src="../../../img/sando2_cuerpo_forro.png">
+    <div class="tx"><h1>La carta</h1>
+      <p>“Estas cinco las armé yo.<br>Respondo por cada una.”</p><span>SANDO</span></div></div>
+  <div class="sub">Recetas cerradas. Eliges una y no hay nada más que decidir.</div>
+  <div class="rib"></div>
+
+  <div class="plato"><div class="ph"><img src="../../../img/sig02.jpg"></div>
+    <div class="info"><div class="k"><em>I</em>LA ESTRELLA</div>
+      <div class="nom">The Marinara</div>
+      <div class="rec">Albóndiga en su propia marinara, mozzarella, tomate y cebolla morada.</div>
+      <div class="pr"><div><b>S/21.90</b> <s>30CM 28.90</s></div><div class="b">Lo quiero</div></div></div></div>
+  <div class="rib"></div>
+
+  <div class="plato"><div class="ph"><img src="../../../img/sig01.jpg"></div>
+    <div class="info"><div class="k"><em>II</em></div>
+      <div class="nom">The Original</div>
+      <div class="rec">Punta de pecho a fuego lento, tomate, pepinillo, cebolla y aioli.</div>
+      <div class="pr"><div><b>S/20.90</b> <s>30CM 26.90</s></div><div class="b">Lo quiero</div></div></div></div>
+  <div class="rib"></div>
+
+  <div class="plato vlt"><div class="ph"><img src="../../../img/sig05.jpg">
+    <div class="c"><svg width="52" height="52" viewBox="0 0 40 40"><path d="M20,17.5 a2.5,2.5 0 1,1 -2.5,2.5 a5,5 0 1,1 5,-5 a7.5,7.5 0 1,1 -7.5,7.5 a10,10 0 1,1 10,-10 a12.5,12.5 0 1,1 -12.5,12.5 a15,15 0 1,1 15,-15" fill="none" stroke="#C3A6D2" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <div class="vn">El sándwich secreto</div><div class="ba"><i></i></div><div class="vm">1 DE 3 PEDIDOS</div></div></div>
+    <div class="info"><div class="k"><em>VI</em>CERRADO</div>
+      <div class="nom">No preguntes</div>
+      <div class="rec">No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div></div></div>
+</div>
+</body></html>

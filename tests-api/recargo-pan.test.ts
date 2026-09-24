@@ -16,7 +16,17 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
   }
 }
 import { priceCartItem } from "../supabase/functions/api/catalog.ts";
-import { BASE_SURCHARGE, baseSurcharge } from "../supabase/functions/api/env.ts";
+import { BASE_SURCHARGE } from "../supabase/functions/api/env.ts";
+import { preciosVigentes } from "../supabase/functions/api/catalog.ts";
+import { tasarLinea } from "../supabase/functions/_shared/dinero.ts";
+
+// El recargo se mide por el camino REAL de cobro: lo que cuesta el mismo sándwich con este pan
+// menos lo que cuesta con el pan clásico (B01). Una copia de la fórmula dentro de la prueba
+// coincidiría consigo misma aunque el cobro dejara de sumarlo.
+function baseSurcharge(base: string, size: "15" | "30"): number {
+  const precio = (b: string) => tasarLinea({ type: "byo", base: b, prot: "P02", sauces: [], size, qty: 1 }, preciosVigentes())!.base;
+  return (precio(base) - precio("B01")) / 100;
+}
 
 // Costo real del pan, para que las pruebas comparen contra el hecho medido y no contra
 // el propio número que están verificando.

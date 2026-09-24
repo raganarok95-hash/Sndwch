@@ -20,7 +20,36 @@ REGLA: [COTIZADO] precio real de proveedor · [ESTIMADO] investigado, sin provee
 TECHO = 0.45   # [DECISIÓN del dueño] insumos+empaque como % del precio
 
 # ── COSTOS DE INSUMO ──────────────────────────────────────────────────────────────────
-EMPAQUE = 1.30           # [COTIZADO] papel manteca brandeado + bolsa, punto medio S/1.10-1.50
+# ── EMPAQUE — dejó de ser un número suelto (2026-09-23) ───────────────────────────────
+#
+# Hasta hoy acá había un literal, S/1.30, descrito como "papel manteca + bolsa, punto medio
+# S/1.10-1.50". Ese 1.10 venía de MENU_FINANCIAL_ANALYSIS.md §1, donde dice textualmente
+# "Empaque/PEDIDO", y sumaba **caja de fibra de caña (S/0.48-0.605) + bolsa + servilleta +
+# sticker**. Dos problemas que el número suelto tapaba:
+#
+#   1. INCLUÍA UNA CAJA QUE NO EXISTE. El empaque real que decidió el dueño es papel manteca
+#      brandeado + bolsa. No hay caja, y la caja era casi la mitad del estimado.
+#   2. ERA POR PEDIDO Y ACÁ SE COBRA POR SÁNDWICH. La bolsa es una por pedido; el papel es
+#      uno por sándwich. Con más de un sándwich por pedido, cobrar la bolsa entera a cada
+#      sándwich sobrecostea.
+#
+# Ahora va por partes, cada una con su estado. Mientras falten dos cotizaciones el TOTAL se
+# mantiene en S/1.30 a propósito: equivocarse hacia arriba en un costo es seguro, hacia abajo
+# no. Pero el número de abajo ya no esconde de qué está hecho.
+# Los valores ya no viven acá: viven en modelo/insumos.py, cada uno con su unidad, su
+# estado y su origen, y `npm run check:costos` falla si a alguno le falta algo. Lo que
+# antes era un float con un comentario ahora es una ficha que un chequeo puede leer.
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import insumos as _I
+PAPEL_MANTECA = _I.PAPEL_MANTECA.valor      # por SÁNDWICH
+BOLSA_KRAFT   = _I.BOLSA_KRAFT.valor        # por PEDIDO
+STICKER       = _I.STICKER.valor            # por PEDIDO
+# La suma de abajo es por PEDIDO, no por sándwich. Para pasarla a sándwich hay que ir por
+# _I.por_sandwich(ficha, sand_por_pedido=...), que se NIEGA a hacerlo sin ese dato — que es
+# exactamente el error que tuvo el empaque dos meses.
+EMPAQUE_REAL  = PAPEL_MANTECA + BOLSA_KRAFT + STICKER
+EMPAQUE = _I.EMPAQUE_CONSERVADOR.valor      # [CONSERVADOR] hasta que cierren sticker y bolsa
 SALSA   = (0.266, 0.532) # por porción, 15CM / 30CM
 QUESO   = (0.385, 0.770) # [ESTIMADO] proxy S/35/kg; hay un dato de S/22.50/kg para mozzarella
 TOPS_KG = 4.00           # [ESTIMADO] promedio ponderado de los toppings de frasco y frescos

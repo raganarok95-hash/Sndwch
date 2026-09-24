@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #28 — La lectura del comprobante, del lado del panel.
 //
@@ -42,10 +42,7 @@ async function abrirCola(page: any, extra: Record<string, unknown> = {}) {
     ...extra,
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
   return calls;
 }
@@ -130,10 +127,7 @@ test('un pedido sin comprobante no muestra ningún bloque de lectura', async ({ 
     'admin-orders': { orders: [{ ...PEDIDO_CON_COMPROBANTE, receipt_path: null }], truncated: false },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
   await expect(page.locator('[onclick*="viewReceipt"]')).toHaveCount(0);
   await expect(page.locator('text=/Leyendo el comprobante/')).toHaveCount(0);

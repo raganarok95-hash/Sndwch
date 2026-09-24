@@ -6,18 +6,20 @@ import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
   DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
-  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
+  CULQI_FEE_RATE, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
+  ventanaPrometida, RANKS,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
-import { organizerFreeSandwichApplies } from "./group.ts";
+import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
+import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -49,7 +51,7 @@ async function alertLowStockCrossing(codes: string[], qtys: number[]): Promise<v
 // una reserva/pedido ya descontó stock real pero la operación termina fallando de
 // todos modos. Antes cada uno repetía el mismo try/catch con solo el texto del mensaje
 // de consola distinto (hallazgo de la auditoría de código).
-async function restockBestEffort(codes: string[], qtys: number[], context: string): Promise<void> {
+export async function restockBestEffort(codes: string[], qtys: number[], context: string): Promise<void> {
   if (!codes.length) return;
   try {
     await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
@@ -106,6 +108,10 @@ export async function verifyCulqiCharge(
 // válida para cobrarse — pasado esto, el cron actExpirePendingCharges libera el
 // inventario y el cliente debe volver a intentar.
 const PENDING_CHARGE_TTL_MINUTES = 10;
+// Cuánto se espera a que el propio cliente confirme un pago ya cobrado antes de que el cron
+// cree el pedido por él. La confirmación normal llega en segundos; cinco minutos dejan
+// margen a una red lenta sin que dos caminos compitan por el mismo pedido.
+const ORPHAN_CHARGE_GRACE_MINUTES = 5;
 
 // Límite de pedidos con pago manual (Yape/Plin) sin confirmar por teléfono de contacto —
 // ver el comentario junto a check_rate_limit en actPlaceOrder.
@@ -171,25 +177,17 @@ async function assertBusinessLaunched(): Promise<void> {
   }
 }
 
-// Cuenta los pedidos vivos (no cancelados) cuya entrega cae en la misma hora que `when`, y
-// rechaza si ya se llegó al tope. `scheduled_for` manda cuando existe; si no, la hora de
-// creación es la hora de entrega efectiva (pedido "AHORA").
-async function assertHourCapacity(when: Date): Promise<void> {
+// Rechaza si la hora en que cae `when` ya llegó al tope. La carga es la de capacidad.ts:
+// pedidos vivos (`delivery_time` si es programado, si no la hora de creación) MÁS los lugares
+// que los pedidos fijos tienen apartados en esa hora. `excluirFijo` es el fijo de quien está
+// pidiendo, ya verificado como suyo (fijoPropio): su propio lugar no puede cerrarle la hora a
+// él, es justamente el que viene a usar.
+async function assertHourCapacity(when: Date, excluirFijo: string | null = null): Promise<void> {
   const hourStart = new Date(when);
   hourStart.setMinutes(0, 0, 0);
-  const hourEnd = new Date(hourStart.getTime() + 3600000);
-  const from = encodeURIComponent(hourStart.toISOString());
-  const to = encodeURIComponent(hourEnd.toISOString());
   try {
-    const [scheduled, immediate] = await Promise.all([
-      // La columna se llama `delivery_time`, NO `scheduled_for` (verificado contra
-      // information_schema: `orders` no tiene `scheduled_for`; ese nombre solo existe en
-      // `pending_charges`). Con el nombre equivocado PostgREST devolvía 42703, el catch de
-      // abajo se lo tragaba, y el tope NUNCA se aplicó desde que se introdujo.
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=gte.${from}&delivery_time=lt.${to}&select=id&limit=100`),
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
-    ]);
-    if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
+    const carga = await cargasPorHora(hourStart.getTime(), hourStart.getTime() + 3600000, { excluirFijo });
+    if (horaLlena(carga, hourStart.getTime())) {
       throw new ApiError(
         "Esa hora ya está llena — la cocina no da abasto para más pedidos en esa franja. Elige otra hora, por favor.",
         409,
@@ -229,7 +227,7 @@ export function pointsFor(total: number, deliveryFee: number): number {
   return Math.round(total - (deliveryFee || 0));
 }
 
-type FinalizeOrderParams = {
+export type FinalizeOrderParams = {
   ref: string;
   phone: string | null;
   contactPhone: string;
@@ -260,6 +258,9 @@ type FinalizeOrderParams = {
   /** Código del pedido grupal del que salió este pedido, si vino de uno. Solo sirve para
    *  poder medir cuánta venta genera ese canal (una entrega, varios sándwiches). */
   groupCode?: string | null;
+  /** Pedido fijo del que salió este pedido, ya verificado como del cliente (fijoPropio). Gasta
+   *  el lugar apartado de ese día y, pagado, cuenta como una confirmación (franja.ts). */
+  recurringId?: string | null;
 };
 
 // Coordenadas del pin que el cliente confirmó en el mapa del checkout. Se sanean acá y
@@ -474,177 +475,131 @@ function reportPurchaseToMeta(p: FinalizeOrderParams, cliente?: { ad_tracking_op
   });
 }
 
-async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
-  // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
-  // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
-  // relevante es "quién es este cliente ahora", no una consulta aparte cada vez que se
-  // reimprime. null para invitados (sin cuenta no hay rango que mostrar).
-  let customerRank: string | null = null;
-  async function insertOrder() {
-    return sbInsert("orders", {
-      ref: p.ref,
-      customer_phone: p.phone,
-      contact_phone: p.contactPhone,
-      customer_name: p.name,
-      customer_email: p.email || null,
-      customer_address: p.address,
-      lat: p.lat,
-      lon: p.lon,
-      group_code: p.groupCode || null,
-      summary: p.summary || "",
-      notes: p.notes,
-      total: p.total,
-      delivery_fee: p.deliveryFee,
-      // Los km que se COBRARON, guardados con el pedido. Se podrían recalcular desde
-      // lat/lon, pero guardarlos deja el número inmune a un cambio futuro del factor de
-      // ruta — y todo el sentido de esto es poder comparar contra lo que cobró el
-      // motorizado ese día, no contra lo que hoy diría la fórmula.
-      delivery_km: p.deliveryKm ?? null,
-      delivery_zone: p.deliveryZone,
-      status: "RECIBIDO",
-      payment_status: p.paymentStatus,
-      payment_id: p.paymentId,
-      payment_method: p.paymentMethod,
-      mode: null,
-      product_key: null,
-      size: null,
-      build: null,
-      items: p.items,
-      delivery_time: p.scheduledFor,
-      redeemed_reward: p.reward ? p.reward.label : null,
-      // Puntos exactos que costó la recompensa canjeada (si hubo una) — guardado aparte
-      // de la etiqueta para que actCancelMyOrder pueda devolverlos con exactitud sin
-      // depender de volver a buscar el precio en puntos actual de esa recompensa (que
-      // puede repreciarse con el tiempo, como ya pasó esta sesión con R02/R03/R05).
-      redeemed_reward_pts: p.reward ? p.reward.pts : null,
-      customer_rank: customerRank,
-    });
-  }
+// ── LA FILA DEL PEDIDO Y LO QUE LE PASA A LA CUENTA, COMO DATOS (2026-09-24) ─────────────────
+// Lo que `crear_pedido` escribe, armado acá como datos puros para poder probarlo sin base
+// (tests-api/crear-pedido.test.ts). La escritura es UNA: la función de la base hace el saldo,
+// el pedido y el historial en la misma transacción.
+export function filaDelPedido(p: FinalizeOrderParams, promesa: { desde: string | null; hasta: string | null }) {
+  return {
+    promised_from: promesa.desde,
+    promised_to: promesa.hasta,
+    ref: p.ref,
+    customer_phone: p.phone,
+    contact_phone: p.contactPhone,
+    customer_name: p.name,
+    customer_email: p.email || null,
+    customer_address: p.address,
+    lat: p.lat,
+    lon: p.lon,
+    group_code: p.groupCode || null,
+    recurring_id: p.recurringId || null,
+    summary: p.summary || "",
+    notes: p.notes,
+    total: p.total,
+    delivery_fee: p.deliveryFee,
+    // Los km que se COBRARON, guardados con el pedido: inmunes a un cambio futuro del factor
+    // de ruta, para comparar contra lo que cobró el motorizado ese día.
+    delivery_km: p.deliveryKm ?? null,
+    delivery_zone: p.deliveryZone,
+    payment_status: p.paymentStatus,
+    payment_id: p.paymentId,
+    payment_method: p.paymentMethod,
+    items: p.items,
+    delivery_time: p.scheduledFor,
+    redeemed_reward: p.reward ? p.reward.label : null,
+    // Los puntos exactos que costó la recompensa: la cancelación los devuelve sin volver a
+    // buscar el precio actual, que puede haber cambiado.
+    redeemed_reward_pts: p.reward ? p.reward.pts : null,
+  };
+}
 
+/** Lo que el pedido le hace a la cuenta de quien paga. `referidoPor` es a quién se le
+ *  atribuiría el bono si todavía no se dio; la base decide bajo lock si de verdad se da. */
+export function movimientoDeLaCuenta(p: FinalizeOrderParams & { phone: string }, referidoPor: string | null) {
+  // Puntos solo sobre la comida, nunca sobre el delivery (es un pase directo al motorizado).
+  const basePoints = pointsFor(p.total, p.deliveryFee);
+  return {
+    phone: p.phone,
+    points_delta: basePoints - (p.reward ? p.reward.pts : 0),
+    credit_delta: p.useCredit ? -p.total : 0,
+    redeemed_delta: p.reward ? 1 : 0,
+    last_address: p.address,
+    referrer_phone: referidoPor,
+    referral_bonus: referidoPor ? REFERRAL_BONUS_POINTS : 0,
+    referrer_bonus: referidoPor ? REFERRER_REWARD_POINTS : 0,
+    base_points: basePoints,
+    descripcion: p.useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
+    reward_label: p.reward ? p.reward.label : null,
+    reward_pts: p.reward ? p.reward.pts : null,
+    nombre: p.name,
+  };
+}
+
+export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
+  // La hora que se le promete al cliente queda escrita en el pedido al crearlo (ver
+  // `ventanaPrometida` en env.ts). La cola se cuenta ahora, no la que vio el cliente al
+  // armar el carrito: es la que de verdad tiene delante este pedido.
+  let colaDelante = 0;
+  if (!p.scheduledFor) {
+    try {
+      colaDelante = (await sbGet("orders", "status=in.(RECIBIDO,PREPARANDO)&select=id&limit=200")).length;
+    } catch (e) {
+      // Sin la cola se promete el rango de la cocina vacía: peor que el real, pero el pedido
+      // no puede caerse por un dato de apoyo.
+      console.error("cola para la ventana prometida:", e);
+    }
+  }
+  const promesa = ventanaPrometida(Date.now(), colaDelante, p.scheduledFor);
+  const rangos = RANKS.map((r) => ({ min: r.minOrders, name: r.name }));
+
+  // ── UNA SOLA ESCRITURA: saldo + pedido + historial, en la misma transacción ──────────────
+  // Antes eran hasta cinco peticiones sueltas y el saldo se tocaba ANTES de insertar el
+  // pedido: si el insert fallaba, el cliente quedaba con los puntos o el crédito descontados
+  // y sin pedido. Ahora `crear_pedido` (migración 20260924173551) hace todo o nada.
   if (p.phone && p.paymentStatus === "paid") {
+    // Estas comprobaciones dan un mensaje claro ANTES de intentar nada. La garantía real está
+    // en la base: finalize_order_customer_update rechaza un saldo que quedaría negativo, bajo
+    // lock, aunque dos pedidos lleguen a la vez.
     const custRows = await sbGet("customers", `phone=eq.${encodeURIComponent(p.phone)}`);
     const c = custRows[0];
     if (!c) throw new ApiError("Cliente no encontrado.", 404);
     if (p.reward && (c.points || 0) < p.reward.pts) throw new ApiError("No tienes puntos suficientes para esta recompensa.", 402);
     if (p.useCredit && (c.credit_balance || 0) < p.total) throw new ApiError("No tienes crédito suficiente para cubrir este pedido.", 402);
 
-    // El gate real vive en la RPC (referral_bonus_granted, con lock de fila) — este check
-    // acá es solo para decidir si insertar las transacciones de auditoría "Bono por
-    // referido" más abajo. Antes usaba total_orders===0 como proxy de "primer pedido",
-    // pero total_orders puede volver a 0 tras una autocancelación (actCancelMyOrder resta
-    // 1) sin que referred_by se limpie nunca, así que el bono se podía volver a otorgar
-    // indefinidamente con "pedir con crédito → cancelar → repetir" (hallazgo de auditoría
-    // de código, CRÍTICO). referral_bonus_granted es monotónico: se otorga una sola vez en
-    // la vida del cliente sin importar cuántas veces total_orders suba o baje después.
-    const isReferral = !!c.referred_by && !c.referral_bonus_granted;
-    // Todos los clientes ganan los mismos puntos por sol gastado — antes VIP ganaba 1.25x,
-    // pero eso quedó retirado (decisión de negocio: sin trato preferencial por tier).
-    // Los puntos se ganan solo sobre la comida, nunca sobre el delivery — el delivery es
-    // un pass-through al motorizado (el negocio no se queda con ese margen), así que
-    // premiarlo con puntos 1:1 igual que la comida inflaría el programa de lealtad sin
-    // que haya ingreso real detrás.
-    const basePoints = pointsFor(p.total, p.deliveryFee);
-    let pointsDelta = basePoints;
-    if (p.reward) pointsDelta -= p.reward.pts;
+    const cuenta = movimientoDeLaCuenta({ ...p, phone: p.phone }, c.referred_by || null);
+    const r = await rpc("crear_pedido", { p_pedido: filaDelPedido(p, promesa), p_cuenta: cuenta, p_rangos: rangos });
+    const customer = safeCustomer(r.customer);
 
-    // Actualiza el saldo del cliente ANTES de insertar el pedido: si el crédito o los
-    // puntos resultan insuficientes por una carrera con otra solicitud concurrente del
-    // mismo cliente, finalize_order_customer_update (migración del mismo nombre) lanza
-    // una excepción y el pedido NUNCA llega a crearse — en vez de quedar un pedido
-    // marcado "pagado" sin el débito real detrás.
-    const updated = await rpc("finalize_order_customer_update", {
-      p_phone: p.phone,
-      p_points_delta: pointsDelta,
-      p_credit_delta: p.useCredit ? -p.total : 0,
-      p_total_orders_delta: 1,
-      p_last_address: p.address,
-      p_total_redeemed_delta: p.reward ? 1 : 0,
-      p_referrer_phone: isReferral ? c.referred_by : null,
-      p_referral_bonus: isReferral ? REFERRAL_BONUS_POINTS : 0,
-      p_referrer_bonus: isReferral ? REFERRER_REWARD_POINTS : 0,
-    });
-    const customer = safeCustomer(updated);
-    customerRank = computeRankName(updated.total_orders || 0);
-    // Aviso de "subiste de rango" — compara el rango ANTES de este pedido (con `c`, la fila
-    // leída antes del incremento) contra el de después; si cruzó un umbral, se lo dice de
-    // inmediato en vez de dejar que se entere la próxima vez que abra su perfil.
-    const previousRank = computeRankName(c.total_orders || 0);
-    if (previousRank !== customerRank) {
-      // El rango exacto que desbloquea el menú secreto se deriva de SIG_GATES (hoy 5 pedidos,
-      // antes 15) en vez de estar escrito a mano acá — así este aviso no se desincroniza
-      // si el umbral de negocio vuelve a cambiar.
+    // Lo de abajo es de apoyo: nada de esto puede deshacer un pedido ya creado y pagado.
+    const rangoAntes = computeRankName(r.pedidos_antes || 0);
+    const rangoAhora = computeRankName(r.customer?.total_orders || 0);
+    if (rangoAntes !== rangoAhora) {
+      // El rango que desbloquea el menú secreto se deriva de SIG_GATES, no se escribe.
       const vaultRank = computeRankName(SIG_GATES.SIG05.minOrders);
       try {
         await sendPushToPhone(p.phone, {
           title: "🎖️ ¡Subiste de rango!",
-          body: `Ahora eres ${customerRank} en SND//WCH.` + (customerRank === vaultRank ? " Ya puedes ver el menú secreto 👀" : ""),
+          body: `Ahora eres ${rangoAhora} en SND//WCH.` + (rangoAhora === vaultRank ? " Ya puedes ver el menú secreto 👀" : ""),
           url: "./index.html",
-          tag: "sndwch-rank-up-" + customerRank,
+          tag: "sndwch-rank-up-" + rangoAhora,
         });
       } catch {
         // un push fallido no debe bloquear la creación del pedido
       }
     }
-    const orderRows = await insertOrder();
-
-    // Registro de auditoría (tabla transactions) — se hace DESPUÉS de que el saldo y el
-    // pedido ya quedaron correctos arriba; si algo aquí falla, ambos siguen siendo la
-    // fuente de verdad y solo falta una línea de historial, no un descuadre de dinero.
-    const auditInserts: Promise<unknown>[] = [
-      sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "earn_confirmed",
-        points: basePoints,
-        description: p.useCredit ? "Pedido SND//WCH (pagado con crédito)" : "Pedido SND//WCH (pago con tarjeta)",
-        order_ref: p.ref,
-        confirmed: true,
-      }),
-    ];
-    if (p.useCredit) {
-      auditInserts.push(sbInsert("credit_ledger", {
-        customer_phone: p.phone,
-        delta: -p.total,
-        reason: "Pedido pagado con crédito (" + p.ref + ")",
-      }));
-    }
-    if (p.reward) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "redeem",
-        points: -p.reward.pts,
-        description: p.reward.label + " canjeado en pedido " + p.ref,
-        order_ref: p.ref,
-        confirmed: true,
-      }));
-    }
-    if (isReferral) {
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: p.phone,
-        type: "earn_confirmed",
-        points: REFERRAL_BONUS_POINTS,
-        description: "Bono por referido",
-        confirmed: true,
-      }));
-      auditInserts.push(sbInsert("transactions", {
-        customer_phone: c.referred_by,
-        type: "earn_confirmed",
-        points: REFERRER_REWARD_POINTS,
-        description: "Sándwich gratis por invitar a " + p.name,
-        confirmed: true,
-      }));
-    }
-    await Promise.all(auditInserts);
-    if (isReferral && c.referred_by) await rewardReferrer(c.referred_by, p.name);
+    // Solo si ESTA llamada otorgó el bono (la base lo decidió bajo lock): antes se decidía con
+    // una lectura previa y dos pedidos simultáneos lo anotaban dos veces.
+    if (r.bono_referido && c.referred_by) await rewardReferrer(c.referred_by, p.name);
     await alertLowMarginOrder(p);
     reportPurchaseToMeta(p, c);
     await sendConfirmationEmailSafely(p);
-    return { order: orderRows[0], customer };
+    return { order: r.order, customer };
   }
 
-  const orderRows = await insertOrder();
+  const r = await rpc("crear_pedido", { p_pedido: filaDelPedido(p, promesa), p_cuenta: null, p_rangos: rangos });
   reportPurchaseToMeta(p);
   await sendConfirmationEmailSafely(p);
-  return { order: orderRows[0], customer: null };
+  return { order: r.order, customer: null };
 }
 
 // El cliente valida esto mismo primero (mejor experiencia, feedback inmediato), pero un
@@ -915,15 +870,17 @@ export async function actPrepareOrder(b: any) {
     // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
     // MAÑANA en la UI; esto lo hace valer también fuera de ella.
     if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
-      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+      throw new ApiError(`Solo puedes programar pedidos con hasta ${MAX_SCHEDULE_AHEAD_HOURS} horas de anticipación.`, 400);
     }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
   // Techo de capacidad de la franja (ver assertHourCapacity) — va DESPUÉS de validar el
-  // horario y ANTES de reservar inventario o cobrar nada.
-  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
+  // horario y ANTES de reservar inventario o cobrar nada. Si el pedido sale de un pedido
+  // fijo del cliente, su propio lugar apartado no cuenta en su contra.
+  const recurringId = await fijoPropio(b.recurringId, b.token);
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
@@ -1044,6 +1001,7 @@ export async function actPrepareOrder(b: any) {
         expires_at: expiresAt,
         promo_code_id: promoCodeId,
         promo_discount: promoDiscount,
+        recurring_id: recurringId,
         ...readCoords(b),
         ...readMetaAttribution(b),
       });
@@ -1062,29 +1020,94 @@ export async function actPrepareOrder(b: any) {
   }
 }
 
+// Estados de una reserva desde los que todavía se puede crear el pedido, UNA VEZ que Culqi
+// certificó el cargo. 'charged' es el camino normal (create-charge lo anota tras cobrar);
+// 'charging' entra porque si ese PATCH falló el cobro igual es real; 'pending' por una
+// reserva cobrada con el código anterior, que la devolvía a ese estado.
+//
+// Antes solo se aceptaba 'pending', el mismo defecto que tuvo el pedido grupal: un guard
+// escrito para UN estado deja afuera a otro camino legítimo que produce un estado distinto.
+export const RESERVA_CONFIRMABLE = ["pending", "charging", "charged"];
+
+// Qué hacer con una reserva cuando Culqi YA certificó el cobro. Puro, para poder probarlo:
+// su modo de fallo es decirle "vuelve a intentar" a alguien a quien ya se le cobró, que es
+// invitarlo a pagar dos veces, y eso no lanza ningún error.
+export function destinoDeReservaCobrada(status: string): "crear" | "ya-existe" | "cobro-sin-pedido" {
+  if (status === "consumed") return "ya-existe";
+  if (RESERVA_CONFIRMABLE.includes(status)) return "crear";
+  return "cobro-sin-pedido"; // expired / cancelled: el inventario ya se liberó
+}
+
+// Aviso al dueño de un cobro real sin pedido. Usa la MISMA llave de "una sola vez" que
+// actReconcileCulqiCharges, así el barrido horario no repite un aviso que ya salió en el
+// momento. Nunca lanza: se llama desde caminos que ya están respondiendo un error.
+async function avisarCobroSinPedido(chargeId: string, ref: string, montoSoles: number, motivo: string) {
+  try {
+    const primeraVez = await rpc("check_rate_limit", { p_key: `orphan-charge:${chargeId}`, p_limit: 1, p_window_minutes: 60 * 24 * 7 });
+    if (!primeraVez) return;
+    await sendPushToAdmins({
+      title: "⚠️ Cobro sin pedido — revisar",
+      body: `Se cobró S/${montoSoles.toFixed(2)} (ref ${ref}) y el pedido no se creó: ${motivo}. Verifica en Culqi y contacta al cliente.`,
+      url: "./index.html",
+      tag: "sndwch-orphan-charge-" + chargeId,
+    });
+  } catch (e) {
+    await debugLog({ stage: "avisar-cobro-sin-pedido", ref, chargeId, error: String(e) });
+  }
+}
+
 // Confirma un cobro de Culqi ya realizado contra la reserva creada por actPrepareOrder —
 // ya no repite horario/inventario/total (eso ya pasó ANTES de cobrar), solo verifica el
 // cargo real contra lo reservado y crea el pedido.
-async function actConfirmCulqiOrder(chargeId: string, ref: string) {
+//
+// `recuperado`: lo llama el cron cuando el cliente pagó y nunca volvió a confirmar (cerró
+// la pestaña, perdió la señal). El pedido se crea igual — es lo que pagó.
+async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recuperado?: boolean } = {}) {
   if (!chargeId || !ref) throw new ApiError("Faltan datos del pedido.");
   const rows = await sbGet("pending_charges", `ref=eq.${encodeURIComponent(ref)}&select=*`);
   const pc = rows[0];
   if (!pc) throw new ApiError("No encontramos tu reserva. Vuelve a intentar tu pedido.", 410);
-  if (pc.status !== "pending") throw new ApiError("Este pedido ya fue procesado.", 409);
-  if (new Date(pc.expires_at).getTime() < Date.now()) {
-    throw new ApiError("Tu reserva expiró. Vuelve a intentar tu pedido — el inventario ya se liberó.", 410);
-  }
 
   const total = Number(pc.expected_total);
   const amountCents = Math.round(total * 100);
+  // El cargo se verifica ANTES de mirar el estado o el vencimiento. Antes era al revés: una
+  // reserva vencida respondía "Tu reserva expiró. Vuelve a intentar tu pedido" a alguien a
+  // quien Culqi ya le había cobrado, y una atascada en 'charging', "ya fue procesado".
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "order_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
 
-  // Reclamo atómico pending -> consumed: si el cliente reintenta (ej. su navegador
-  // reintentó tras un timeout de red), la segunda llamada encuentra 0 filas y responde
-  // 409 en vez de crear un segundo pedido para el mismo cargo.
-  const claim = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.pending`, { status: "consumed" });
-  if (!claim.length) throw new ApiError("Este pedido ya fue procesado.", 409);
+  // Ya NO se rechaza por vencimiento: con el cargo certificado y la reserva todavía
+  // confirmable, el inventario sigue apartado (el cron de expiración reclama la fila ANTES
+  // de reponer, así que si ganó él, el reclamo de abajo no encuentra nada).
+  let destino = destinoDeReservaCobrada(pc.status);
+  let claim: any[] = [];
+  if (destino === "crear") {
+    // Reclamo atómico -> consumed: si el cliente reintenta (ej. su navegador reintentó tras
+    // un timeout de red), la segunda llamada encuentra 0 filas y no crea un segundo pedido.
+    claim = await sbUpdate(
+      "pending_charges",
+      `id=eq.${pc.id}&status=in.(${RESERVA_CONFIRMABLE.join(",")})`,
+      { status: "consumed", charge_id: chargeId },
+    );
+    if (!claim.length) {
+      const again = await sbGet("pending_charges", `id=eq.${pc.id}&select=status`);
+      destino = destinoDeReservaCobrada(again[0]?.status || "expired");
+      if (destino === "crear") destino = "ya-existe"; // otro reclamo ganó en el medio
+    }
+  }
+  if (destino === "ya-existe") {
+    // Un reintento del MISMO pago: se devuelve el pedido que ya existe, en vez de un error
+    // que el cliente leería como "no se registró" después de haber pagado.
+    const existing = await sbGet("orders", `payment_id=eq.${encodeURIComponent(chargeId)}&select=*`);
+    if (existing[0]) return { success: true, order: existing[0], customer: null };
+    throw new ApiError("Este pedido ya fue procesado.", 409);
+  }
+  if (destino === "cobro-sin-pedido") {
+    await avisarCobroSinPedido(chargeId, ref, total, pc.status === "expired" ? "la reserva ya había vencido" : "un error previo la canceló");
+    // Sin "vuelve a intentar": el cliente ya pagó. El cliente le agrega su referencia y el
+    // "no vuelvas a pagar" (ver chargeAndFinalize en 05-carrito-y-checkout).
+    throw new ApiError("No pudimos registrar el pedido después del pago.", 409);
+  }
 
   const codes: string[] = pc.reserved_codes || [];
   const qtys: number[] = pc.reserved_qtys || [];
@@ -1115,6 +1138,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
       useCredit: false,
       lat: pc.lat ?? null,
       lon: pc.lon ?? null,
+      recurringId: pc.recurring_id || null,
     });
     orderInserted = true;
     // El código promocional (si se usó uno) ya quedó reclamado de forma atómica desde
@@ -1128,8 +1152,9 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
         // #30 — La restricción va en el TÍTULO, no escondida en el cuerpo: el push se lee
         // de reojo mientras se cocina, y ahí solo se ve la primera línea. Un aviso que hay
         // que abrir para enterarse no sirve para algo que puede enfermar a alguien.
-        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : "Nuevo pedido ") + pc.ref + " 🥪",
+        title: (noteNeedsAttention(pc.notes) ? "⚠️ ALERGIA — pedido " : opts.recuperado ? "Pedido recuperado " : "Nuevo pedido ") + pc.ref + " 🥪",
         body: (pc.customer_name || "Cliente") + " — S/" + total.toFixed(2)
+          + (opts.recuperado ? "\nPagó y no volvió a la app: el pedido se creó solo." : "")
           + (noteNeedsAttention(pc.notes) ? "\nNOTA: " + String(pc.notes || "").slice(0, 180) : ""),
         url: "./index.html",
         tag: "sndwch-new-order-" + pc.ref,
@@ -1154,6 +1179,8 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string) {
     } catch {
       // no debe tumbar la respuesta real
     }
+    // El cobro ya se hizo y el pedido no: el dueño se entera AHORA, no en el barrido horario.
+    if (!orderInserted) await avisarCobroSinPedido(chargeId, ref, total, "falló al crearse");
     throw e;
   }
 }
@@ -1225,7 +1252,7 @@ export async function actPlaceOrder(b: any) {
     // indefinidamente, bloqueando stock que nadie va a usar. El cliente ya acota a HOY o
     // MAÑANA en la UI; esto lo hace valer también fuera de ella.
     if (t > Date.now() + MAX_SCHEDULE_AHEAD_HOURS * 3600000) {
-      throw new ApiError("Solo puedes programar pedidos con hasta 48 horas de anticipación.", 400);
+      throw new ApiError(`Solo puedes programar pedidos con hasta ${MAX_SCHEDULE_AHEAD_HOURS} horas de anticipación.`, 400);
     }
     if (!isWithinStoreHours(schedDate)) throw new ApiError("Esa hora está fuera de nuestro horario de atención.", 400);
   } else if (!isWithinStoreHours(new Date())) {
@@ -1235,7 +1262,8 @@ export async function actPlaceOrder(b: any) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
   // Mismo techo de capacidad por franja que actPrepareOrder (ver assertHourCapacity).
-  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
+  const recurringId = await fijoPropio(b.recurringId, b.token);
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   const deliveryZone = String(b.deliveryZone || "");
   const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFee(b.lat, b.lon, deliveryZone);
@@ -1339,7 +1367,7 @@ export async function actPlaceOrder(b: any) {
         summary: b.summary || "", notes: b.notes || null, total,
         deliveryFee, deliveryKm, deliveryZone,
         paymentStatus, paymentId: null, paymentMethod,
-        items: sanitizedItems, scheduledFor, reward, useCredit,
+        items: sanitizedItems, scheduledFor, reward, useCredit, recurringId,
         ...readCoords(b),
         ...readMetaAttribution(b),
       });
@@ -1382,7 +1410,7 @@ export async function actPlaceOrder(b: any) {
 // es justo quien no tiene dónde más mirar. Ninguna de las dos es un dato sensible: son el
 // monto que ya pagó y la distancia que ya recorrió su propio pedido.
 const GUEST_ORDER_FIELDS =
-  "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at,date";
+  "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,promised_from,promised_to,delivered_at,redeemed_reward,created_at,date";
 export async function actMyOrders(b: any) {
   if (b.token) {
     const s = await requireSession(b.token);
@@ -1852,63 +1880,53 @@ export async function actAdminOrders(b: any) {
 // legado contra entrega) se confirma manualmente por un operador, aquí es donde se
 // otorgan los puntos (nunca antes), replicando la misma lógica de "puntos solo tras
 // pago confirmado" que usa actPlaceOrder para tarjeta/crédito/recompensa.
-async function confirmManualPayment(order: any) {
-  if (!order.customer_phone) return;
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
-  if (!rows.length) return;
-  const c = rows[0];
+// ── CONFIRMAR UN PAGO MANUAL ES UNA SOLA OPERACIÓN (2026-09-24) ─────────────────────────
+// Marcar el pedido pagado, sumar los puntos, el bono de referido y el historial pasa en UNA
+// transacción, dentro de `confirmar_pago_manual` (migración 20260924182608). Antes el pedido se
+// marcaba pagado en una petición y los puntos en otras: si una fallaba, el pedido quedaba
+// pagado SIN puntos para siempre (reconfirmar ya no hacía nada), y el bono de referido se
+// decidía con una lectura previa al lock. Devuelve null si el pedido ya estaba pagado o
+// cancelado (doble toque, reintento de red): entonces no se tocó nada.
+async function confirmManualPayment(order: any): Promise<{ order: any } | null> {
   const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
-  // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
-  // sobre el delivery (pass-through al motorizado, sin margen real detrás).
+  let c: any = null;
+  if (order.customer_phone) {
+    const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
+    c = rows[0] || null;
+  }
+  // Puntos solo sobre la comida, nunca sobre el delivery (igual que al crear el pedido). Quien
+  // invitó se PROPONE; la base decide bajo lock si el bono corresponde y si su cuenta existe.
   const earnedPoints = pointsFor(order.total, order.delivery_fee);
-
-  // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
-  // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
-  let referrerPhone: string | null = null;
-  if (c.referred_by && !c.referral_bonus_granted) {
-    const referrerRows = await sbGet("customers", `phone=eq.${encodeURIComponent(c.referred_by)}&select=phone`);
-    if (referrerRows.length) referrerPhone = c.referred_by;
-  }
-
-  // Una sola llamada atómica (ver migración finalize_order_customer_update) en vez de
-  // varias secuenciales — mismo motivo que en actPlaceOrder.
-  await rpc("finalize_order_customer_update", {
-    p_phone: order.customer_phone,
-    p_points_delta: earnedPoints,
-    p_credit_delta: 0,
-    p_total_orders_delta: 1,
-    p_last_address: order.customer_address,
-    p_total_redeemed_delta: 0,
-    p_referrer_phone: referrerPhone,
-    p_referral_bonus: referrerPhone ? REFERRAL_BONUS_POINTS : 0,
-    p_referrer_bonus: referrerPhone ? REFERRER_REWARD_POINTS : 0,
+  const cuenta = c ? {
+    phone: order.customer_phone,
+    points_delta: earnedPoints,
+    credit_delta: 0,
+    redeemed_delta: 0,
+    last_address: order.customer_address,
+    referrer_phone: c.referred_by || null,
+    referral_bonus: c.referred_by ? REFERRAL_BONUS_POINTS : 0,
+    referrer_bonus: c.referred_by ? REFERRER_REWARD_POINTS : 0,
+    base_points: earnedPoints,
+    descripcion: "Pedido SND//WCH (" + methodLabel + ")",
+    nombre: order.customer_name,
+  } : null;
+  const r = await rpc("confirmar_pago_manual", {
+    p_order_id: String(order.id),
+    p_cuenta: cuenta,
+    p_rangos: RANKS.map((x) => ({ min: x.minOrders, name: x.name })),
   });
+  if (r.ya_estaba) return null;
 
-  await sbInsert("transactions", {
-    customer_phone: order.customer_phone,
-    type: "earn_confirmed",
-    points: earnedPoints,
-    description: "Pedido SND//WCH (" + methodLabel + ")",
-    order_ref: order.ref,
-    confirmed: true,
-  });
-  if (referrerPhone) {
-    await sbInsert("transactions", {
-      customer_phone: order.customer_phone,
-      type: "earn_confirmed",
-      points: REFERRAL_BONUS_POINTS,
-      description: "Bono por referido",
-      confirmed: true,
-    });
-    await sbInsert("transactions", {
-      customer_phone: referrerPhone,
-      type: "earn_confirmed",
-      points: REFERRER_REWARD_POINTS,
-      description: "Sándwich gratis por invitar a " + order.customer_name,
-      confirmed: true,
-    });
-    await rewardReferrer(referrerPhone, order.customer_name);
+  // Lo de abajo es de apoyo: nada de esto puede deshacer un pago ya confirmado.
+  // Parte de un pedido grupal repartido: si con este pago ya pagaron todos, el grupo sale sin
+  // esperar al plazo. Las partes de los invitados no tienen cuenta y suelen pagarse al último.
+  try {
+    if (r.order?.group_code) await cerrarGrupoSiTodosPagaron(r.order.group_code);
+  } catch (e) {
+    console.error("cerrarGrupoSiTodosPagaron", e);
   }
+  if (!c) return { order: r.order };
+  if (r.bono_referido && c.referred_by) await rewardReferrer(c.referred_by, order.customer_name);
 
   // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el
   // dinero llegó), así que este es el momento de reportarlo a Meta — no cuando el cliente
@@ -1943,6 +1961,7 @@ async function confirmManualPayment(order: any) {
   } catch {
     // un push fallido no debe bloquear la confirmación del pago
   }
+  return { order: r.order };
 }
 
 // CANCELADO deliberadamente NO está aquí: solo se llega a ese estado a través de
@@ -2033,8 +2052,9 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     // si dos solicitudes llegan casi juntas (doble clic en "ENTREGADO"), solo una de ellas
     // encuentre la fila para actualizar — la otra recibe un array vacío y no vuelve a
     // otorgar puntos por el mismo pedido (ver el mismo patrón en actAdminConfirmPayment).
-    const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid`, { payment_status: "paid" });
-    if (claim.length) await confirmManualPayment(order);
+    // confirmar_pago_manual hace de reclamo atómico: solo una de dos solicitudes simultáneas
+    // (doble clic en «ENTREGADO») encuentra el pedido sin pagar y otorga los puntos.
+    await confirmManualPayment({ ...order, id: orderId });
   }
 
   // El filtro por el estado que se leyó arriba hace de reclamo atómico. Sin él, este
@@ -2169,14 +2189,15 @@ export async function actAdminConfirmPayment(b: any) {
   // ganarlo UNA vez — antes se leía payment_status, se otorgaban puntos, y RECIÉN AL FINAL
   // se marcaba paid, dejando una ventana donde dos solicitudes casi simultáneas otorgaban
   // el bono/puntos dos veces para el mismo pedido (confirmado en vivo durante la auditoría).
-  const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid&status=neq.CANCELADO`, { payment_status: "paid" });
-  if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado o fue cancelado.", 409);
-  await confirmManualPayment(order);
+  // El reclamo atómico vive en confirmar_pago_manual: marca pagado SOLO si no lo estaba y no
+  // está cancelado, y en la misma transacción otorga los puntos. Un doble clic gana una vez.
+  const confirmado = await confirmManualPayment({ ...order, id: orderId });
+  if (!confirmado) throw new ApiError("Este pedido ya estaba confirmado o fue cancelado.", 409);
   // Confirmar que un Yape/Plin de verdad llegó es tan sensible como cancelar un pedido o
   // dar puntos manuales (ambos ya se auditan) — no quedaba ningún rastro de quién lo
   // confirmó ni cuándo (hallazgo de auditoría de código, ALTO).
   await logAdminAction(s.phone, "confirm-payment", orderId, { paymentMethod: order.payment_method, total: order.total });
-  return { success: true, order: claim[0] };
+  return { success: true, order: confirmado.order };
 }
 
 // Captura de pantalla del comprobante de transferencia (item 12 de la lista de fricción
@@ -2312,7 +2333,7 @@ export async function actAdminReceiptUrl(b: any) {
 // un pago que nunca llega deja el pedido "vivo" para siempre y el inventario bloqueado.
 // Compartido entre la cancelación manual (admin) y la expiración automática de abajo —
 // re-deriva los ingredientes de cada línea del pedido y los devuelve al inventario.
-async function restockOrderItems(items: any): Promise<void> {
+export async function restockOrderItems(items: any): Promise<void> {
   if (!Array.isArray(items) || !items.length) return;
   const ingredients: string[] = [];
   for (const it of items) {
@@ -2892,6 +2913,11 @@ export async function actExpirePendingCharges(b: any) {
   let expired = 0;
   for (const pc of stale) {
     try {
+      // Reclamar PRIMERO, reponer DESPUÉS. Antes era al revés: si la confirmación reclamaba la
+      // fila entre la reposición y este UPDATE, el pedido se creaba con un inventario que ya
+      // se había devuelto al stock — contado dos veces. Ahora solo repone quien ganó.
+      const claimed = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
+      if (!claimed.length) continue;
       const codes: string[] = pc.reserved_codes || [];
       const qtys: number[] = pc.reserved_qtys || [];
       if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
@@ -2901,14 +2927,33 @@ export async function actExpirePendingCharges(b: any) {
       // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO). Misma
       // identidad usada al reclamar: cuenta si había sesión, si no contactPhone.
       if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.customer_phone || pc.contact_phone, p_order_ref: pc.ref });
-      await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
       expired++;
     } catch (e) {
       console.error("expire-pending-charges failed for", pc.id, e);
       await debugLog({ stage: "expire-pending-charges", pendingChargeId: pc.id, error: String(e) });
     }
   }
-  return { success: true, expired };
+
+  // Reservas COBRADAS cuyo pedido nunca se confirmó: el cliente pagó y cerró la pestaña, o
+  // perdió la señal justo después del cobro. 'charged' no entra en el barrido de arriba —
+  // una reserva pagada no vence— así que sin esto quedaría apartando inventario para siempre
+  // y el cliente sin su pedido. Se crea el pedido, que es exactamente lo que pagó. Si
+  // falla, actConfirmCulqiOrder la marca 'cancelled' y avisa al dueño.
+  const graceIso = new Date(Date.now() - ORPHAN_CHARGE_GRACE_MINUTES * 60000).toISOString();
+  const cobradas = await sbGet(
+    "pending_charges",
+    `status=eq.charged&charge_id=not.is.null&charged_at=lt.${encodeURIComponent(graceIso)}&select=ref,charge_id&limit=50`,
+  );
+  let recuperados = 0;
+  for (const pc of cobradas) {
+    try {
+      await actConfirmCulqiOrder(pc.charge_id, pc.ref, { recuperado: true });
+      recuperados++;
+    } catch (e) {
+      await debugLog({ stage: "recuperar-cobro-sin-confirmar", ref: pc.ref, error: String(e) });
+    }
+  }
+  return { success: true, expired, recuperados };
 }
 
 // Recuerda a cocina un pedido "para más tarde" (ver scheduledFor/actPrepareOrder) antes

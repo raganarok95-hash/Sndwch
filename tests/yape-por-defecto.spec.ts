@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, PIN_TEST } from './helpers';
+import { irAlArmador, siguientePaso, gotoApp, PIN_TEST, entrarConTelefono } from './helpers';
 
 // SND//WCH — Yape/Plin es el método de pago por DEFECTO (2026-09-03) y la focaccia
 // se cobra (recargo de pan).
@@ -151,10 +151,7 @@ test('prender y apagar el crédito devuelve a Yape, no deja al cliente en tarjet
   });
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000002');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000002', '1234');
   await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
@@ -184,10 +181,7 @@ test('el default no le esconde las recompensas ni el código promocional al clie
   });
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000003');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000003', '1234');
   await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
@@ -207,10 +201,9 @@ test('el default no le esconde las recompensas ni el código promocional al clie
 
 test('el recargo de la focaccia se ve ANTES de elegirla y entra al precio', async ({ page }) => {
   await gotoApp(page);
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
+  await irAlArmador(page);
   await page.locator('[onclick*="size=\'15\'"]').click();
+  await siguientePaso(page); // tamaño -> pan: el recargo tiene que estar en la tarjeta del pan
 
   // El monto está en la tarjeta del pan, en el paso de elegir — no aparece recién en el
   // carrito. Un precio que sale después de haber elegido es la clase de sorpresa que hace
@@ -218,8 +211,11 @@ test('el recargo de la focaccia se ve ANTES de elegirla y entra al precio', asyn
   await expect(page.locator('[onclick*="base=\'B03\'"]')).toContainText('+S/0.50');
   await expect(page.locator('[onclick*="base=\'B01\'"]')).not.toContainText('+S/');
 
-  // El 30CM cobra el doble, porque usa el doble de pan.
+  // El 30CM cobra el doble, porque usa el doble de pan. El tamaño es su propio paso desde el
+  // rediseño del armador: se vuelve atrás, se cambia, y se regresa al pan.
+  await page.locator('button[onclick="byoStepBack()"]').click();
   await page.locator('[onclick*="size=\'30\'"]').click();
+  await siguientePaso(page);
   // pz() no escribe decimales cuando no hacen falta: el doble de S/0.50 se muestra "+S/1".
   await expect(page.locator('[onclick*="base=\'B03\'"]')).toContainText('+S/1');
   await expect(page.locator('[onclick*="base=\'B03\'"]')).not.toContainText('+S/0.50');

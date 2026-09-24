@@ -1,0 +1,196 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:40;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.h{position:absolute;z-index:38}
+
+/* ═════ 30 · A · EL MURAL ═════ El fondo dejó de ser decoración: el fondo ES tu pedido.
+   Las fotos de lo que llevas, gigantes y fuera de foco, llenan la pantalla en franjas
+   diagonales. Cada pedido pinta una pantalla distinta. Ninguna foto se repite chica. */
+#M{background:#0C0F0D}
+#M .cap{position:absolute;inset:-40px;z-index:0}
+#M .cap img{position:absolute;width:150%;height:150%;object-fit:cover;filter:blur(9px) saturate(1.5) brightness(.68)}
+#M .c1 img{top:-22%;left:-20%;clip-path:polygon(0 0,100% 0,100% 30%,0 56%)}
+#M .c2 img{top:0;left:-10%;clip-path:polygon(0 56%,100% 30%,100% 58%,0 84%)}
+#M .c3 img{top:0;left:0;clip-path:polygon(0 84%,100% 58%,100% 100%,0 100%)}
+#M .vin{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(6,8,7,.62) 0 52%,rgba(6,8,7,.78) 100%)}
+#M .enc{position:absolute;left:24px;right:24px;top:84px;z-index:6;display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid rgba(255,255,255,.22);padding-bottom:12px}
+#M .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#F0C878;text-transform:uppercase}
+#M .enc u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.62)}
+#M .it{position:absolute;left:24px;right:24px;z-index:6;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.16)}
+#M .it .r{display:flex;align-items:baseline;gap:11px}
+#M .it .r i{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.5);width:20px;display:block}
+#M .it .r b{flex:1;font-family:Anton,sans-serif;font-size:29px;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.005em}
+#M .it .r p{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#fff}
+#M .it s{margin-left:31px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);margin-top:6px}
+#M .m1{top:132px}#M .m2{top:224px}#M .m3{top:316px}
+#M .sum{position:absolute;left:24px;right:24px;top:414px;z-index:6}
+#M .sum .l{display:flex;justify-content:space-between;padding:7px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(255,255,255,.58)}
+#M .sum .l.on{color:#F0C878}
+#M .add{position:absolute;left:24px;right:24px;top:486px;z-index:6;border:1px solid rgba(140,200,236,.5);
+  padding:13px 15px;display:flex;justify-content:space-between;align-items:center}
+#M .add span{font:700 10px/1 Archivo,sans-serif;letter-spacing:.16em;color:#8CC8EC;text-transform:uppercase;display:block}
+#M .add u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.5)}
+#M .tot{position:absolute;left:24px;bottom:96px;z-index:6}
+#M .tot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:rgba(255,255,255,.55);text-transform:uppercase}
+#M .tot b{font-family:Anton,sans-serif;font-size:66px;line-height:.82;color:#fff;margin-top:10px;letter-spacing:-.025em}
+#M .tot s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.5);margin-top:12px}
+
+/* ═════ 30 · B · LA CINTA ═════ El pedido no está quieto en una lista: va en camino. Una
+   banda cruza la pantalla en la misma inclinación del "//", SANDO la despacha desde
+   abajo y WICHO la recibe arriba. Dos poses distintas, cada uno en lo suyo.        */
+#C{background:#D6D1C6}
+#C .banda{position:absolute;left:-90px;right:-90px;top:322px;height:186px;background:#F6F3EA;z-index:2;
+  transform:rotate(-16deg);box-shadow:0 12px 30px rgba(60,55,40,.18)}
+#C .banda .in{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:14px}
+#C .banda .in .p{width:98px;height:98px;overflow:hidden;background:#ddd}
+#C .banda .in .p img{width:100%;height:100%;object-fit:cover;display:block}
+#C .banda .in .p:last-child{width:76px;height:76px}
+#C .tit{position:absolute;left:24px;top:92px;z-index:6}
+#C .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;text-transform:uppercase}
+#C .tit b{font-family:Anton,sans-serif;font-size:52px;line-height:.86;color:#24261F;margin-top:12px;letter-spacing:-.02em}
+#C .tit s{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8578;margin-top:10px;line-height:1.7}
+#C .fil{position:absolute;left:126px;right:24px;top:548px;z-index:6}
+#C .fil .l{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #C3BEB1;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E6A5E}
+#C .fil .l.on{color:#A8791E}
+#C .tot{position:absolute;right:24px;bottom:100px;z-index:6;text-align:right}
+#C .tot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;text-transform:uppercase}
+#C .tot b{font-family:Anton,sans-serif;font-size:52px;line-height:.84;color:#24261F;margin-top:8px}
+
+/* ═════ 30 · C · PAPEL DE ESTRAZA ═════ El envoltorio del sándwich, con el pedido
+   ESTAMPADO encima en tinta y los dos pegados como stickers torcidos. Nada de tarjetas
+   blancas flotando: acá todo está impreso sobre la misma hoja.                     */
+#E{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(120% 80% at 20% 0%,rgba(255,240,215,.4),transparent 60%)}
+#E .sello{position:absolute;left:26px;right:26px;top:92px;z-index:5;border:2px solid #4A3218;padding:18px 18px 16px;
+  transform:rotate(-1.1deg);background:rgba(240,226,200,.34)}
+#E .sello .hd{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #4A3218;padding-bottom:11px}
+#E .sello .hd em,#E .sello .hd u{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218}
+#E .sello .li{display:flex;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+#E .sello .li i{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A;width:18px;display:block}
+#E .sello .li b{flex:1;font:800 15px/1.2 Archivo,sans-serif;color:#33230F;text-transform:uppercase;letter-spacing:-.01em}
+#E .sello .li p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
+#E .sello .li s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px}
+#E .sello .ex{display:flex;justify-content:space-between;padding:8px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A}
+#E .sello .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;border-top:2px solid #4A3218;padding-top:12px}
+#E .sello .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:8px}
+#E .sello .tt b{font-family:Anton,sans-serif;font-size:50px;line-height:.82;color:#33230F;letter-spacing:-.02em}
+#E .cinta{position:absolute;z-index:6;background:rgba(255,252,240,.5);border-left:1px solid rgba(255,255,255,.5);
+  border-right:1px solid rgba(255,255,255,.5);width:96px;height:30px}
+#E .c1{top:88px;left:12px;transform:rotate(-24deg)}
+#E .c2{top:88px;right:12px;transform:rotate(26deg)}
+#E .nota{position:absolute;left:120px;right:26px;top:578px;text-align:right;z-index:5;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:#6E4F2A;line-height:1.8;transform:rotate(-1.1deg)}
+
+/* ═════ 31 · EL CÓDIGO ═════ Se quedan la frase, los dos y el botón. Lo demás se rehizo:
+   el papel blanco flotando desapareció y el código pasó a ser lo único grande, dentro
+   de un VISOR —que es el gesto real: apuntar y escanear— sobre el morado de Yape.  */
+#Q{background:#2E1136;
+  background-image:radial-gradient(90% 60% at 50% 18%,rgba(140,60,168,.55),transparent 70%)}
+#Q .cab{position:absolute;left:24px;right:24px;top:80px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#Q .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D9B0EC;text-transform:uppercase}
+#Q .cab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.5)}
+#Q .mt{position:absolute;left:24px;right:24px;top:110px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#Q .mt b{font-family:Anton,sans-serif;font-size:70px;line-height:.82;color:#fff;letter-spacing:-.03em}
+#Q .mt b i{font-size:30px;display:inline}
+#Q .mt s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.55);text-align:right;line-height:1.8;padding-bottom:6px}
+#Q .visor{position:absolute;left:78px;top:206px;width:216px;height:216px;z-index:6}
+#Q .visor img{width:100%;height:100%;display:block}
+#Q .visor b{position:absolute;width:26px;height:26px;display:block}
+#Q .visor b:nth-child(2){top:-13px;left:-13px;border-top:2px solid #CBA258;border-left:2px solid #CBA258}
+#Q .visor b:nth-child(3){top:-13px;right:-13px;border-top:2px solid #8CC8EC;border-right:2px solid #8CC8EC}
+#Q .visor b:nth-child(4){bottom:-13px;left:-13px;border-bottom:2px solid #CBA258;border-left:2px solid #CBA258}
+#Q .visor b:nth-child(5){bottom:-13px;right:-13px;border-bottom:2px solid #8CC8EC;border-right:2px solid #8CC8EC}
+#Q .esc{position:absolute;left:24px;right:24px;top:444px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#D9B0EC;letter-spacing:.14em}
+#Q .alt{position:absolute;left:114px;right:114px;top:486px;z-index:6;text-align:center;border-top:1px solid rgba(255,255,255,.18);padding-top:16px}
+#Q .alt n{font:800 15px/1 Archivo,sans-serif;color:rgba(255,255,255,.62)}
+#Q .alt s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.42);margin-top:6px}
+#Q .fr{position:absolute;left:104px;right:104px;top:566px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);line-height:1.8}
+</style></head><body>
+
+<div class="f" id="M">
+  <div class="tag">30 · A · EL MURAL</div>
+  <div class="cap c1"><img src="../../../img/sig02.jpg"></div>
+  <div class="cap c2"><img src="../../../img/prot_p02.webp"></div>
+  <div class="cap c3"><img src="../../../img/drink_d07.jpg"></div>
+  <div class="vin"></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="enc"><em>Lo que llevas</em><u>tres cosas</u></div>
+  <div class="it m1"><div class="r"><i>01</i><b>The Marinara</b><p>21.90</p></div><s>30 CM · SIN QUESO · SALSA APARTE</s></div>
+  <div class="it m2"><div class="r"><i>02</i><b>Arma el tuyo</b><p>13.90</p></div><s>15 CM · POLLO TERIYAKI</s></div>
+  <div class="it m3"><div class="r"><i>03</i><b>The Midnight ×2</b><p>10.00</p></div><s>HELADA</s></div>
+  <div class="sum"><div class="l on"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div></div>
+  <div class="add"><span>+ Otra bebida</span><u>DESDE S/5.00</u></div>
+  <div class="tot"><em>Total</em><b>S/50.80</b><s>LLEGA ENTRE 7:40 Y 8:05 P.M.</s></div>
+  <img class="h" style="right:-10px;bottom:68px;width:126px" src="../../../img/sando2_mira.png">
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="C">
+  <div class="tag">30 · B · LA CINTA</div>
+  <div class="banda"><div class="in">
+    <div class="p"><img src="../../../img/sig02.jpg"></div>
+    <div class="p"><img src="../../../img/prot_p02.webp"></div>
+    <div class="p"><img src="../../../img/drink_d07.jpg"></div>
+  </div></div>
+  <div class="sal" style="color:#24261F">←</div>
+  <div class="tit"><em>Va saliendo</em><b>TRES<br>COSAS</b><s>THE MARINARA 30CM<br>ARMA EL TUYO 15CM<br>THE MIDNIGHT ×2</s></div>
+  <img class="h" style="right:-22px;top:78px;width:132px" src="../../../img/wicho_saluda.png">
+  <div class="fil">
+    <div class="l on"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div>
+    <div class="l"><span>LLEGA 7:40 – 8:05 P.M.</span><span>3.4 KM</span></div>
+  </div>
+  <img class="h" style="left:-22px;bottom:66px;width:126px" src="../../../img/sando2_mira.png">
+  <div class="tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="E">
+  <div class="tag">30 · C · PAPEL DE ESTRAZA</div>
+  <div class="sal" style="color:#4A3218">←</div>
+  <div class="cinta c1"></div><div class="cinta c2"></div>
+  <div class="sello">
+    <div class="hd"><em>SND//WCH · TRUJILLO</em><u>#1042</u></div>
+    <div class="li"><i>01</i><div style="flex:1"><b>The Marinara 30CM</b><s>SIN QUESO · SALSA APARTE</s></div><p>21.90</p></div>
+    <div class="li"><i>02</i><div style="flex:1"><b>Arma el tuyo 15CM</b><s>POLLO TERIYAKI</s></div><p>13.90</p></div>
+    <div class="li"><i>03</i><div style="flex:1"><b>The Midnight ×2</b><s>HELADA</s></div><p>10.00</p></div>
+    <div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="ex"><span>ENVIO 3.4 KM</span><span>7.00</span></div>
+    <div class="tt"><em>Total</em><b>S/50.80</b></div>
+  </div>
+  <div class="nota">LLEGA ENTRE 7:40 Y 8:05 P.M.<br>AV. LARCO 1234, DPTO 302.</div>
+  <img class="h" style="left:-16px;bottom:66px;width:126px;transform:rotate(-7deg)" src="../../../img/sando2_sonrie.png">
+  <img class="h" style="right:-16px;bottom:66px;width:122px;transform:rotate(6deg)" src="../../../img/wicho_rie.png">
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="Q">
+  <div class="tag">31 · EL CÓDIGO · rehecho</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="cab"><em>Pagar con Yape</em><u>#1042</u></div>
+  <div class="mt"><b>S/50<i>.80</i></b><s>ENVIO S/7.00 INCLUIDO<br>NO SE SUMA NADA MAS</s></div>
+  <div class="visor"><img src="../../../img/yape-qr.png"><b></b><b></b><b></b><b></b></div>
+  <div class="esc">ESCANEA DESDE YAPE</div>
+  <div class="alt"><n>Prefiero tarjeta</n><s>SON S/2.79 MAS</s></div>
+  <div class="fr">APENAS CONFIRMES,<br>EL PEDIDO ENTRA A LA COCINA</div>
+  <img class="h" style="left:-14px;bottom:68px;width:112px" src="../../../img/sando2_cuerpo_forro.png">
+  <img class="h" style="right:-16px;bottom:68px;width:124px" src="../../../img/wicho_cuerpo.png">
+  <div class="go"><div class="mi oro">Ya pagué</div><div class="mi cel">S/50.80</div></div>
+</div>
+</body></html>

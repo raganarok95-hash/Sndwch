@@ -50,3 +50,107 @@ el proxy de este entorno — la llamada funciona, el archivo no se puede traer. 
 Los ocho `sig0N.jpg` son anteriores a este archivo y **no tienen procedencia anotada**: se
 consiguieron antes de que existiera esta libreta y no se inventa acá un dato que nadie
 verificó. Si alguna vez hay que volver a licenciar una, hay que buscarla de nuevo.
+
+## SANDO v2 y las manos de los dos (2026-09-18)
+
+**El dueño rediseñó a SANDO.** Su dibujo nuevo es de línea negra limpia y sombreado plano —
+ya no el trazo pintado del anterior. Llegaron por Flow, generados por él, no licenciados:
+no hay stock detrás de ninguno de estos archivos.
+
+| archivo | qué es | de dónde salió | tratamiento aplicado |
+|---|---|---|---|
+| `sando2_frente.png` | busto de frente, neutro | Flow · `persona_studio_batch_2.zip`, shot 1 | fondo plano recortado por relleno desde los bordes, recorte al sujeto |
+| `sando2_sonrie.png` | tres cuartos a la derecha, media sonrisa | ídem, shot 2 | ídem |
+| `sando2_mira.png` | tres cuartos, mirando de lado | ídem, shot 3 | ídem |
+| `sando2_perfil.png` | perfil izquierdo | ídem, shot 4 | ídem |
+| `sando2_ladea.png` | tres cuartos a la izquierda | ídem, shot 5 | ídem |
+| `sando2_asoma.png` | busto vertical, para asomar por el costado | Flow, imagen suelta | ídem |
+| `sando2_pulgar.png` | brazo y mano, pulgar arriba | Flow, imagen suelta | ver la nota de abajo |
+| `wicho_pulgar.png` | brazo y mano de WICHO, pulgar arriba | Flow, imagen suelta | ver la nota de abajo |
+| `wicho_asoma.png` | busto de WICHO mirando a la izquierda | Flow, imagen suelta | fondo blanco recortado |
+
+⚠ **Las manos llegaron en `.jpg`, así que su transparencia ya no existía**: el damero gris de
+fondo venía **dibujado dentro de la imagen**, no como canal alfa. El alfa se reconstruyó
+detectando el fondo neutro claro por relleno desde los bordes. Funciona, pero los bordes
+quedan más duros que en un PNG original. **Están pedidos los PNG con alfa de verdad** —
+cuando lleguen, estos dos archivos se reemplazan.
+
+⚠ **EL SANDO ACTUAL SON LOS SIETE DE ESTA TABLA MÁS LOS DOS CUERPOS** (`sando2_cuerpo` y
+`sando2_cuerpo_forro`, este con las manos en los bolsillos). El 2026-09-24 se **borraron**
+del repo, a pedido del dueño, los doce archivos del SANDO viejo: los siete `sando_*.png`
+(cuerpo, grita, mira, piensa, saluda, serio, sonrie) y cinco que llevaban «2» en el nombre
+sin ser el actual (`sando2_cuerpo_b`, `_come`, `_come_b`, `_grita`, `_piensa`, con el mechón
+verde oscuro del dibujo anterior). Se usaron creyéndolos nuevos y el dueño lo corrigió: «este
+es el sando viejo en todas». Donde una pantalla aprobada lo dibujaba comiendo va
+`sando2_cuerpo_forro` sin sándwich, y el dueño lo aprobó así («con las manos en los bolsillos
+es correcto»). `npm run check:maquetas` falla si cualquiera de los doce vuelve.
+
+`img/sando.png` y `img/sando.webp` NO se tocan: son la mitad del logo, que se queda con el
+SANDO anterior por decisión del dueño (CLAUDE.md).
+
+## WICHO sin la sombra de piso (2026-09-23)
+
+`wicho_cuerpo.png` trae **un óvalo gris azulado bajo los pies pintado dentro del archivo**,
+no un efecto de la pantalla — así que no se puede apagar por CSS. En la pantalla de entrada,
+donde SANDO y WICHO se paran juntos, uno traía su sombra y el otro no, y el desnivel se veía.
+
+`wicho_cuerpo_sinsombra.png` es el mismo dibujo con esa sombra quitada (8 250 píxeles). El
+original **no se tocó**.
+
+**Cómo se detectó, para poder repetirlo:** una sombra de piso es un componente conectado de
+color **neutro** (los tres canales a menos de 26 de diferencia), **claro** (luminancia ≥ 135),
+**ancho** (más del 45% del cuadro) y **bajo** (menos del 12% de alto), en la franja inferior de
+la imagen. Esos cuatro criterios juntos la separan de las zapatillas, que son beige —no
+neutras— y estrechas. Descartar por "no toca el contorno del dibujo" NO funciona: los pies se
+apoyan sobre la sombra y la tocan.
+
+Se corrió el mismo análisis sobre `wicho_rie` y `sando2_cuerpo` y **ninguno tiene sombra
+horneada**: esto no abre una limpieza general, era solo este archivo.
+
+⚠ Los prompts de `docs/POSES_QUE_TE_TOCAN.md` ya piden «fondo transparente, sin sombra de
+piso» justamente por esto. Si una pose nueva llega con sombra, se le aplica este mismo
+procedimiento antes de usarla.
+
+## Signatures del menú de clásicos de USA (2026-09-23)
+
+Licenciadas en la **categoría gratuita de Adobe Stock** (`pricing:"free"`, sin costo para el
+dueño), igual que las seis de proteínas.
+
+| archivo | producto | Adobe Stock | recorte aplicado al original |
+|---|---|---|---|
+| `sig09.jpg` | **Philly Cheesesteak** (SIG09) | `1877200591` (6720×4480) | (60, 430)-(3700, 4180) — **deja fuera las papas fritas de la derecha** |
+| `sig11.jpg` | **Italian Hoagie** (SIG11) | `580199632` (5133×3666) | (0, 183)-(5133, 3666) — solo se recorta la banda de humo de arriba |
+
+Las dos se guardan reescaladas a 1600 px, como las de proteína, y salen a 1050×708 tratadas
+— **sin el aviso de "le faltan píxeles"** que sí arrastran `sig04`…`sig08`, que son de 640 px
+y se estiran 1.64x en la tarjeta.
+
+### Por qué el Philly costó cuatro intentos
+
+Las cuatro fotos se licenciaron y se miraron; **tres se descartaron por prometer algo que la
+receta no tiene**, que es el mismo criterio que sacó las papas de `prot_p01`:
+
+| descartada | por qué |
+|---|---|
+| `511898883` | ingredientes exactos, pero es un macro: se lee como carne salteada, no como un sándwich. Al lado del Hoagie rompía el set |
+| `469736248` | encuadre perfecto y fondo oscuro, pero **lleva champiñones** y la receta no |
+| `242365153` | el sándwich entero, pero con lechuga y tomate (que el Philly no lleva) y papas al lado |
+
+**La regla que sale de esto: una foto de producto no se elige por lo bonita, se elige por lo
+que promete.** Un ingrediente de más en la foto es la misma clase de defecto que un badge que
+afirma algo que el producto no cumple — ver `docs/PROMESAS_SIN_RESPALDO.md`.
+
+### Las dos que faltan, y por qué no están
+
+**`sig10.jpg` (Turkey) y `sig12.jpg` (Tuna Melt) no se pudieron conseguir.** Los dos productos
+van en **pan sub**, y en la categoría gratuita:
+
+- el «turkey sub» sale siempre en pan redondo con ajonjolí, o con queso encima (nuestro Turkey
+  va **sin queso**: es la opción fit);
+- el «tuna melt» está en **pan de molde tostado** por definición del plato — no existe en pan
+  sub.
+
+Se revisaron ~60 resultados y se licenciaron y miraron las tres mejores candidatas. Ninguna
+sirve. **Poner una foto con otro pan es exactamente el defecto que este archivo existe para
+impedir**, así que quedan pendientes: o el dueño las fotografía, o esos dos productos entran
+a la carta después que los otros cuatro.

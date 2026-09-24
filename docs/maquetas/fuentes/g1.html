@@ -1,0 +1,178 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k{text-decoration:none;font-style:normal;display:block}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+
+/* ═════ 30 · E · LA LÁMINA ═════ El pedido explicado como una lámina anotada: cada cosa
+   es un objeto sobre el papel y una línea fina la conecta con su anotación. No hay
+   lista, no hay tarjetas, no hay banda. Es un diagrama de lo que vas a comer.      */
+#L{background:#ECEDE6;
+  background-image:linear-gradient(rgba(60,72,58,.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(60,72,58,.07) 1px,transparent 1px);
+  background-size:14px 14px}
+#L .enc{position:absolute;left:24px;right:24px;top:78px;z-index:6;display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid #C3C7BB;padding-bottom:10px}
+#L .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6F7A68;text-transform:uppercase}
+#L .enc u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8C9686}
+#L svg{position:absolute;inset:0;z-index:3}
+#L .ob{position:absolute;border-radius:999px;overflow:hidden;z-index:5;box-shadow:0 8px 18px rgba(50,60,45,.22)}
+#L .ob img{width:100%;height:100%;object-fit:cover;display:block}
+#L .an{position:absolute;z-index:6}
+#L .an i{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8C9686;letter-spacing:.18em}
+#L .an b{font:800 16px/1.15 Archivo,sans-serif;color:#22271F;margin-top:5px;letter-spacing:-.01em}
+#L .an s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6F7A68;margin-top:5px}
+#L .an p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#22271F;margin-top:7px}
+#L .cta{position:absolute;left:24px;right:24px;top:500px;z-index:6;border-top:1px solid #C3C7BB;padding-top:11px}
+#L .cta .l{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6F7A68}
+#L .cta .l.on{color:#A8791E}
+#L .ent{position:absolute;left:24px;right:24px;top:572px;z-index:6;border-top:1px solid #C3C7BB;padding-top:12px}
+#L .ent .r{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0}
+#L .ent .r em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8C9686;text-transform:uppercase;width:58px}
+#L .ent .r n{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#22271F}
+#L .ent .r u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#A8791E;text-transform:uppercase}
+#L .tot{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#L .tot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8C9686;text-transform:uppercase;padding-bottom:9px}
+#L .tot b{font-family:Anton,sans-serif;font-size:50px;line-height:.82;color:#22271F}
+
+/* ═════ 30 · F · EL TRES ═════ Lo primero que importa de un carrito es CUÁNTAS cosas
+   hay. Así que el número no es un dato al costado: es la estructura de la pantalla.
+   Las cosas se apoyan sobre él, y el fondo es un azul pizarra que no es de nadie.  */
+#N{background:#C6D0D5}
+#N .big{position:absolute;left:-46px;top:104px;z-index:1;font-family:Anton,sans-serif;font-size:430px;
+  line-height:.72;color:#A2B4BD;letter-spacing:-.05em;user-select:none}
+#N .enc{position:absolute;left:24px;top:82px;z-index:6}
+#N .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#5F6E75;text-transform:uppercase}
+#N .enc b{font:800 17px/1.15 Archivo,sans-serif;color:#17242A;margin-top:8px}
+#N .li{position:absolute;right:20px;z-index:6;display:flex;align-items:center;gap:12px;
+  background:#F4F6F6;padding:10px 14px 10px 10px;border-left:3px solid #17242A}
+#N .li .th{width:52px;height:52px;overflow:hidden;flex:0 0 auto}
+#N .li .th img{width:100%;height:100%;object-fit:cover;display:block}
+#N .li .tx{width:168px}
+#N .li .tx b{font:800 13px/1.15 Archivo,sans-serif;color:#17242A;text-transform:uppercase;letter-spacing:-.01em}
+#N .li .tx s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#68767D;margin-top:4px}
+#N .li .tx p{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#17242A;margin-top:5px}
+#N .l1{top:150px}#N .l2{top:246px;right:38px}#N .l3{top:342px;right:14px}
+#N .cta{position:absolute;left:24px;right:24px;top:436px;z-index:6;border-top:1px solid #A9B7BD;padding-top:11px}
+#N .cta .l{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5F6E75}
+#N .cta .l.on{color:#1E6E96}
+#N .ent{position:absolute;left:24px;right:24px;top:510px;z-index:6;border-top:1px solid #A9B7BD;padding-top:12px}
+#N .ent .r{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0}
+#N .ent .r em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#68767D;text-transform:uppercase;width:58px}
+#N .ent .r n{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#17242A}
+#N .ent .r u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#1E6E96;text-transform:uppercase}
+#N .add{position:absolute;left:24px;right:24px;top:600px;z-index:6;border:1px dashed #8FA2AA;padding:13px 15px;
+  display:flex;justify-content:space-between;align-items:center}
+#N .add span{font:700 10px/1 Archivo,sans-serif;letter-spacing:.16em;color:#1E6E96;text-transform:uppercase;display:block}
+#N .add u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#68767D}
+#N .tot{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#N .tot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#68767D;text-transform:uppercase;padding-bottom:9px}
+#N .tot b{font-family:Anton,sans-serif;font-size:50px;line-height:.82;color:#17242A}
+
+/* ═════ 31 · TARJETA ═════ No le pedimos la tarjeta a nadie: el cobro lo hace la
+   pasarela. Esta pantalla es el traspaso — dice cuánto, por qué cuesta más, que no
+   vemos ni guardamos nada, y deja la puerta de vuelta a Yape siempre abierta.     */
+#P{background:#191C21;background-image:linear-gradient(160deg,#252A33 0%,#14171B 58%,#1F232A 100%)}
+#P .cab{position:absolute;left:24px;right:24px;top:80px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#P .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#9BA3AE;text-transform:uppercase}
+#P .cab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B7280}
+#P .mt{position:absolute;left:24px;right:24px;top:112px;z-index:6}
+#P .mt b{font-family:Anton,sans-serif;font-size:74px;line-height:.82;color:#fff;letter-spacing:-.03em}
+#P .mt b i{font-size:32px;display:inline}
+#P .mt .av{display:flex;align-items:center;gap:10px;margin-top:15px}
+#P .mt .av k{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B7280;text-decoration:line-through}
+#P .mt .av s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.1em}
+#P .paso{position:absolute;left:24px;right:24px;top:266px;z-index:6}
+#P .paso .p{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #2A313A}
+#P .paso .p k{font-family:Anton,sans-serif;font-size:22px;color:#39414C;width:26px;line-height:1}
+#P .paso .p .t b{font:800 14px/1.2 Archivo,sans-serif;color:#E9EDF2}
+#P .paso .p .t s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7B8390;margin-top:6px;line-height:1.7}
+#P .seg{position:absolute;left:24px;right:24px;top:486px;z-index:6;border:1px solid #2F3945;padding:15px 16px}
+#P .seg em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#8CC8EC;text-transform:uppercase}
+#P .seg s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9BA3AE;margin-top:8px;line-height:1.75}
+#P .vol{position:absolute;left:24px;right:24px;top:588px;z-index:6;border-top:1px solid #2A313A;border-bottom:1px solid #2A313A;
+  padding:17px 0;display:flex;justify-content:space-between;align-items:center}
+#P .vol n{font:800 15px/1 Archivo,sans-serif;color:#C9CFD8}
+#P .vol s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.08em}
+#P .fr{position:absolute;left:100px;right:100px;top:672px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6B7280;line-height:1.8}
+</style></head><body>
+
+<div class="f" id="L">
+  <div class="tag">30 · E · LA LÁMINA</div>
+  <div class="sal" style="color:#22271F">←</div>
+  <div class="enc"><em>Tu pedido, pieza por pieza</em><u>#1042</u></div>
+  <svg viewBox="0 0 372 812">
+    <path d="M126 176 L176 176" stroke="#8C9686" stroke-width="1"/>
+    <circle cx="176" cy="176" r="2.5" fill="#8C9686"/>
+    <path d="M150 300 L196 300" stroke="#8C9686" stroke-width="1"/>
+    <circle cx="196" cy="300" r="2.5" fill="#8C9686"/>
+    <path d="M110 414 L162 414" stroke="#8C9686" stroke-width="1"/>
+    <circle cx="162" cy="414" r="2.5" fill="#8C9686"/>
+  </svg>
+  <div class="ob" style="left:28px;top:130px;width:92px;height:92px"><img src="../../../img/sig02.jpg"></div>
+  <div class="an" style="left:188px;top:142px;right:24px"><i>01</i><b>The Marinara 30CM</b><s>SIN QUESO · SALSA APARTE</s><p>S/21.90</p></div>
+  <div class="ob" style="left:52px;top:254px;width:92px;height:92px"><img src="../../../img/prot_p02.webp"></div>
+  <div class="an" style="left:208px;top:266px;right:24px"><i>02</i><b>Arma el tuyo 15CM</b><s>POLLO TERIYAKI</s><p>S/13.90</p></div>
+  <div class="ob" style="left:32px;top:376px;width:76px;height:76px"><img src="../../../img/drink_d07.jpg"></div>
+  <div class="an" style="left:174px;top:382px;right:24px"><i>03</i><b>The Midnight ×2</b><s>HELADA</s><p>S/10.00</p></div>
+  <div class="cta">
+    <div class="l on"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div>
+  </div>
+  <div class="ent">
+    <div class="r"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div>
+    <div class="r"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div>
+  </div>
+  <div class="tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="N">
+  <div class="tag">30 · F · EL TRES</div>
+  <div class="big">3</div>
+  <div class="sal" style="color:#17242A">←</div>
+  <div class="enc"><em>Van saliendo</em><b>cosas para ti</b></div>
+  <div class="li l1"><div class="th"><img src="../../../img/sig02.jpg"></div>
+    <div class="tx"><b>The Marinara 30CM</b><s>SIN QUESO · SALSA APARTE</s><p>S/21.90</p></div></div>
+  <div class="li l2"><div class="th"><img src="../../../img/prot_p02.webp"></div>
+    <div class="tx"><b>Arma el tuyo 15CM</b><s>POLLO TERIYAKI</s><p>S/13.90</p></div></div>
+  <div class="li l3"><div class="th"><img src="../../../img/drink_d07.jpg"></div>
+    <div class="tx"><b>The Midnight ×2</b><s>HELADA</s><p>S/10.00</p></div></div>
+  <div class="cta">
+    <div class="l on"><span>COMBO SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div>
+  </div>
+  <div class="ent">
+    <div class="r"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div>
+    <div class="r"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div>
+  </div>
+  <div class="add"><span>+ Otra bebida</span><u>DESDE S/5.00</u></div>
+  <div class="tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f" id="P">
+  <div class="tag">31 · TARJETA · el traspaso</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="cab"><em>Pagas con tarjeta</em><u>#1042</u></div>
+  <div class="mt"><b>S/53<i>.59</i></b>
+    <div class="av"><k>S/50.80 con Yape</k><s>+S/2.79 POR USAR TARJETA</s></div></div>
+  <div class="paso">
+    <div class="p"><k>1</k><div class="t"><b>Se abre la ventana del banco</b><s>LA PASARELA, NO NOSOTROS</s></div></div>
+    <div class="p"><k>2</k><div class="t"><b>Escribes tu tarjeta ahí</b><s>NUNCA EN ESTA APP</s></div></div>
+    <div class="p"><k>3</k><div class="t"><b>Vuelves y el pedido entra a la cocina</b><s>TE AVISAMOS APENAS SALGA</s></div></div>
+  </div>
+  <div class="seg"><em>Qué vemos nosotros</em><s>SOLO SI EL PAGO SALIO BIEN Y LOS 4 ULTIMOS DIGITOS.<br>NI EL NUMERO COMPLETO NI EL CVV PASAN POR ACA.</s></div>
+  <div class="vol"><n>Mejor con Yape</n><s>NO SE SUMA NADA</s></div>
+  <div class="fr">SI LA VENTANA NO ABRE,<br>VUELVE Y ELIGE YAPE</div>
+  <div class="go"><div class="mi oro">Ir a pagar</div><div class="mi cel">S/53.59</div></div>
+</div>
+</body></html>

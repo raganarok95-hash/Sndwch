@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono } from './helpers';
 
 // INCENTIVO AL ORGANIZADOR (2026-08-22). Quien junta un pedido grupal de 5 o más
 // sándwiches se lleva gratis el 15CM más barato del grupo. Es el motor del canal de
@@ -48,7 +48,7 @@ test('el grupo muestra cuántos sándwiches faltan para que uno vaya gratis', as
   await page.goto(APP_FILE + '?group=OFI001');
   await page.waitForSelector('text=PEDIDO GRUPAL');
 
-  await expect(page.locator('text=Faltan 2 sándwiches para que uno vaya gratis')).toBeVisible();
+  await expect(page.locator('text=Faltan 2 para que uno vaya gratis')).toBeVisible();
 });
 
 test('al llegar a 5 sándwiches el grupo anuncia que uno va gratis', async ({ page }) => {
@@ -89,10 +89,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
   // ESPERAR A QUE EL LOGIN RESUELVA ANTES DE NAVEGAR. Sin esto hay una carrera real: el
   // fetch de `login` sigue en vuelo mientras el test ya cambió de pestaña y abrió el pedido
   // grupal, y cuando la respuesta llega la app vuelve a renderizar y pisa la pantalla del
@@ -109,7 +106,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
   await expect(page.locator('text=¡Un sándwich va gratis!')).toBeVisible();
 
-  await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
+  await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
@@ -160,10 +157,7 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000001', '1234');
   // ESPERAR A QUE EL LOGIN RESUELVA ANTES DE NAVEGAR. Sin esto hay una carrera real: el
   // fetch de `login` sigue en vuelo mientras el test ya cambió de pestaña y abrió el pedido
   // grupal, y cuando la respuesta llega la app vuelve a renderizar y pisa la pantalla del
@@ -183,9 +177,9 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
   // comprobado instrumentando el flujo. La pantalla se pinta recién con la última. Es el
   // mismo timeout que ya usan los specs de admin por la misma razón, y no relaja lo que se
   // comprueba: el texto exigido es idéntico.
-  await expect(page.locator('text=Faltan 1 sándwich para que uno vaya gratis')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Faltan 1 para que uno vaya gratis')).toBeVisible({ timeout: 10000 });
 
-  await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
+  await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 

@@ -1,82 +1,34 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
-// Flujo de dinero real nuevo: Plan Semanal (recarga de saldo PROPIO con bono, cobro Culqi
-// real). Mismo stub de Culqi que gift-card.spec.ts — window.Culqi.open() dispara de
-// inmediato el callback window.culqi() que expone app.ts, sin depender del widget real.
+// EL PLAN SEMANAL ESTÁ APAGADO PARA LA APERTURA
+//
+// ⚠ ESTE ARCHIVO CAMBIÓ DE TRABAJO EL 2026-09-23. Antes ejercitaba el flujo completo de
+// pagar S/95 y recibir S/100 de crédito; el dueño lo RETIRÓ para la apertura, así que ese flujo ya no existe
+// en el cliente y aquellas pruebas afirmaban un estado que dejó de ser cierto.
+//
+// No se borraron: se reescribieron para fijar el estado NUEVO, que es lo que hay que
+// proteger ahora — que la app no OFREZCA algo que el servidor va a rechazar. El flujo viejo
+// vive en el historial de git y vuelve entero el día que se prenda
+// PLAN_SEMANAL_ACTIVO (está en el servidor y en src/app/01-*, los dos a la vez).
+//
+// Por qué se retiró: le pide al cliente S/95 por adelantado antes de que
+// conozca el negocio. Ver docs/PROMESAS_SIN_RESPALDO.md.
 
-test('cliente activa el Plan Semanal y recibe saldo con bono', async ({ page }) => {
-  await page.addInitScript(() => {
-    (window as any).Culqi = {
-      publicKey: null,
-      settings: () => {},
-      options: () => {},
-      token: null,
-      error: null,
-      open: function () {
-        (window as any).Culqi.token = { id: 'tkn-plan-test' };
-        (window as any).culqi();
-      },
-    };
+test('la cuenta no ofrece el Plan Semanal mientras esté apagado', async ({ page }) => {
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 5000, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
   });
-
-  const calls = await gotoApp(page, {
-    login: {
-      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 0, credit_balance: 0 },
-      isAdmin: false,
-      token: 'tok-ana',
-    },
-    'prepare-weekly-plan': {
-      success: true,
-      ref: 'PLAN-TEST01',
-      expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
-      amountPaid: 95,
-      creditAmount: 100,
-    },
-    'confirm-weekly-plan': { success: true, creditAmount: 100 },
-    'session-check': {
-      valid: true,
-      customer: { phone: '900000001', name: 'Ana Cliente', email: 'ana@test.com', points: 0, credit_balance: 100 },
-    },
-  });
-
-  await page.route('**/functions/v1/create-credit-charge', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ success: true, chargeId: 'chr-plan-test', outcome: 'venta_exitosa', ref: 'PLAN-TEST01' }),
-    }),
-  );
-
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000001');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page);
+  // La oferta vivía en «Mi perfil», no en la pantalla de puntos. La primera versión de esta
+  // prueba miraba la pantalla de puntos, así que PASABA con la oferta encendida: no vigilaba
+  // nada. Se comprobó prendiendo la bandera a propósito — ver docs/AUDITORIA_CLASES_DE_ERROR.md.
+  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').first().click();
+  await expect(page.getByText('Eliminar mi cuenta permanentemente')).toBeVisible();
 
-  await page.locator('[onclick*="sndScreen=\'p_profile\'"]').click();
-  await page.locator('[onclick*="sndScreen=\'weekly_plan\'"]').click();
-  await expect(page.getByRole('button', { name: 'ACTIVAR PLAN SEMANAL //' })).toBeVisible();
-
-  await page.locator('#wp-email').fill('ana@test.com');
-  await page.getByRole('button', { name: 'ACTIVAR PLAN SEMANAL //' }).click();
-
-  // Modal de confirmación propio de la app (no window.confirm) — el monto usa un <span>
-  // anidado para el "S/" (ver SOLES en app.ts) así que se verifica por el texto plano
-  // alrededor en vez del monto completo.
-  await expect(page.locator('text=¿Pagar')).toBeVisible();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-
-  await expect(page.locator('text=¡Listo! Recibiste')).toBeVisible({ timeout: 10000 });
-
-  const prepareCall = calls.find((c) => c.action === 'prepare-weekly-plan');
-  expect(prepareCall).toBeTruthy();
-
-  const confirmCall = calls.find((c) => c.action === 'confirm-weekly-plan');
-  expect(confirmCall).toBeTruthy();
-  expect(confirmCall!.body.ref).toBe('PLAN-TEST01');
-  expect(confirmCall!.body.chargeId).toBe('chr-plan-test');
-
-  // Vuelve al perfil tras confirmar, no se queda en la pantalla de compra.
-  await expect(page.locator('text=MI PERFIL')).toBeVisible();
+  // Con 5 000 puntos le alcanzaría de sobra: si apareciera, sería porque está encendido,
+  // no porque el cliente no califica. Se busca el ACCESO a la pantalla, no el rótulo del
+  // botón, que puede reescribirse sin que la oferta deje de estar ahí.
+  await expect(page.locator('[onclick*="sndScreen=\'weekly_plan\'"]')).toHaveCount(0);
 });

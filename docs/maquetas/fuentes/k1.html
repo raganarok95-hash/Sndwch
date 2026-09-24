@@ -1,0 +1,199 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+
+/* ══ EL WORDMARK ══ Mismo sitio en todas las pantallas: arriba a la derecha. Las dos
+   barras son idénticas en forma y viven en UNA sola regla — una por hermano.       */
+.wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.wm img{width:29px;height:29px;display:block}
+.wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em}
+.wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm.osc{color:#F2F0EA}.wm.osc .mk i:first-child{background:#CBA258}.wm.osc .mk i:last-child{background:#8CC8EC}
+.wm.cla{color:#3A2710}.wm.cla .mk i:first-child{background:#A8791E}.wm.cla .mk i:last-child{background:#2E7FA8}
+
+/* ═════ PEDIDO GRUPAL ═════ igual que la aprobada, con el wordmark arriba a la derecha */
+#GR .tit{position:absolute;left:26px;top:80px;z-index:6}
+#GR .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#GR .tit b{font-family:Anton,sans-serif;font-size:46px;line-height:.86;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+#GR .link{position:absolute;left:26px;right:26px;top:194px;z-index:6;border:1px dashed rgba(74,50,24,.55);
+  padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+#GR .link s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#4A3218}
+#GR .link u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+#GR .gente{position:absolute;left:26px;right:26px;top:262px;z-index:6}
+#GR .g{display:flex;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+#GR .g k{width:26px;height:26px;border-radius:999px;background:#4A3218;color:#F0E2CA;
+  font:700 11px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+#GR .g .t{flex:1}
+#GR .g .t b{font:800 14px/1.2 Archivo,sans-serif;color:#33230F}
+#GR .g .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px}
+#GR .g p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
+#GR .g.esp .t b{color:#8A6A3C}#GR .g.esp k{background:transparent;border:1px dashed #8A6A3C;color:#8A6A3C;line-height:24px}
+#GR .sello{position:absolute;left:26px;right:26px;top:496px;z-index:3;text-align:center;transform:rotate(-2deg)}
+#GR .sello .av{width:54px;height:54px;display:block;margin:0 auto 7px;opacity:.42}
+#GR .sello .wmb{display:inline-flex;align-items:center;font:800 22px/1 Archivo,sans-serif;color:rgba(58,39,16,.32)}
+#GR .sello .wmb .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+#GR .sello .wmb .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+#GR .sello .wmb .mk i:first-child{background:rgba(168,121,30,.55)}
+#GR .sello .wmb .mk i:last-child{background:rgba(46,127,168,.55)}
+#GR .sello s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(74,50,24,.38);margin-top:7px}
+#GR .cta{position:absolute;left:26px;right:26px;bottom:110px;z-index:6}
+#GR .cta .l{display:flex;justify-content:space-between;padding:7px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6E4F2A}
+#GR .cta .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:8px;border-top:2px solid #4A3218;padding-top:10px}
+#GR .cta .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px}
+#GR .cta .tt b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#33230F}
+
+/* ═════ TARJETA DE REGALO ═════ misma pantalla aprobada, tres tarjetas distintas */
+.tr{background:#13202A;background-image:radial-gradient(90% 55% at 50% 12%,rgba(140,200,236,.22),transparent 68%)}
+.tr .cab{position:absolute;left:24px;right:24px;top:80px;z-index:6}
+.tr .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+.tr .cab b{font-family:Anton,sans-serif;font-size:38px;line-height:.9;color:#F2F6F8;margin-top:10px;letter-spacing:-.02em}
+.tr .card{position:absolute;left:30px;right:30px;top:216px;height:190px;z-index:6;border-radius:10px;overflow:hidden;
+  box-shadow:0 18px 38px rgba(0,0,0,.45)}
+.tr .mo{position:absolute;left:24px;right:24px;top:440px;z-index:6;display:flex;gap:9px}
+.tr .mo .m{flex:1;border:1px solid #29404E;padding:13px 0;text-align:center;font:700 14px/1 Archivo,sans-serif;color:#7E9AAA}
+.tr .mo .m.on{border-color:#8CC8EC;color:#0E2430;background:#8CC8EC}
+.tr .para{position:absolute;left:24px;right:24px;top:514px;z-index:6}
+.tr .para .r{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid #29404E}
+.tr .para .r em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#6E8A9A;text-transform:uppercase;width:64px}
+.tr .para .r n{flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#E4EEF3}
+.tr .para .r u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#8CC8EC;text-transform:uppercase}
+.tr .nota{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5E7B8B;line-height:1.8}
+/* piezas internas de la tarjeta */
+.cbody{position:absolute;inset:0;padding:18px 20px}
+.cav{position:absolute;top:12px;right:14px;width:42px;height:42px;display:block;z-index:4}
+.cmk{display:inline-flex;align-items:center;font:800 15px/1 Archivo,sans-serif}
+.cmk .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.cmk .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.cmon{font-family:Anton,sans-serif;font-size:54px;line-height:.86;margin-top:14px;letter-spacing:-.025em}
+.cpie{position:absolute;left:20px;right:20px;bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
+.cpie s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em}
+.cpie n{font-family:'IBM Plex Mono',monospace;font-size:12px;margin-top:5px}
+
+/* A · partida por el corte: una mitad por hermano, el monto encima del corte */
+#A1 .card{background:linear-gradient(105deg,#CBA258 0%,#CBA258 47%,#8CC8EC 53%,#8CC8EC 100%)}
+#A1 .cmk{color:#20301F}#A1 .cmk .mk i{background:#20301F}
+#A1 .cmon{color:#fff;text-shadow:0 2px 10px rgba(20,30,25,.35)}
+#A1 .cpie s{color:rgba(20,30,25,.6)}#A1 .cpie n{color:#20301F}
+
+/* B · el degradado de los dos, de esquina a esquina, con el corte gigante de marca de agua */
+#B1 .card{background:linear-gradient(140deg,#E8B85C 0%,#D98F4E 38%,#5FA8D8 100%)}
+#B1 .agua{position:absolute;right:-26px;top:-40px;display:inline-flex;gap:14px;opacity:.26}
+#B1 .agua i{width:26px;height:260px;transform:skewX(-16deg);border-radius:3px;background:#fff;display:block}
+#B1 .cmk{color:#20301F}#B1 .cmk .mk i{background:#20301F}
+#B1 .cmon{color:#fff;text-shadow:0 2px 12px rgba(30,20,10,.3)}
+#B1 .cpie s{color:rgba(30,25,15,.62)}#B1 .cpie n{color:#20301F}
+
+/* C · la tarjeta muestra lo que va a comprar: comida a sangre bajo un velo de color */
+#C1 .card img.fondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#C1 .velo{position:absolute;inset:0;background:linear-gradient(120deg,rgba(203,162,88,.82) 0%,rgba(140,200,236,.72) 100%);
+  mix-blend-mode:multiply}
+#C1 .velo2{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,12,.1),rgba(10,16,12,.5))}
+#C1 .cmk{color:#fff}#C1 .cmk .mk i:first-child{background:#FFD98A}#C1 .cmk .mk i:last-child{background:#BEE6FF}
+#C1 .cmon{color:#fff}
+#C1 .cpie s{color:rgba(255,255,255,.72)}#C1 .cpie n{color:#fff}
+</style></head><body>
+
+<div class="f kraft" id="GR">
+  <div class="tag">PEDIDO GRUPAL · con logo</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="wm cla"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="tit"><em>Pedido grupal · #7741</em><b>QUIÉNES<br>COMEN</b></div>
+  <div class="link"><s>snd.pe/g/7741</s><u>Copiar enlace</u></div>
+  <div class="gente">
+    <div class="g"><k>M</k><div class="t"><b>Mafe</b><s>THE CHICAGO 30CM · SIN GIARDINIERA</s></div><p>28.90</p></div>
+    <div class="g"><k>J</k><div class="t"><b>Jorge</b><s>ARMA EL TUYO 15CM · POLLO TERIYAKI</s></div><p>13.90</p></div>
+    <div class="g"><k>L</k><div class="t"><b>Lucía</b><s>THE FRESH 15CM + THE CITRUS</s></div><p>26.80</p></div>
+    <div class="g esp"><k>?</k><div class="t"><b>Dos más sin elegir</b><s>LES QUEDAN 12 MINUTOS</s></div><p>—</p></div>
+  </div>
+  <div class="sello"><img class="av" src="../../../img/marca/avatar-1024-transparente.png"><div class="wmb"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div><s>TRUJILLO</s></div>
+  <div class="cta">
+    <div class="l"><span>ENVIO 3.4 KM · SE PARTE ENTRE TODOS</span><span>7.00</span></div>
+    <div class="l"><span>TU PARTE POR AHORA</span><span>28.90</span></div>
+    <div class="tt"><em>Van</em><b>S/76.60</b></div>
+  </div>
+  <div class="go"><div class="mi oro">Cerrar y pagar</div><div class="mi cel">Yo invito</div></div>
+</div>
+
+<div class="f tr" id="A1">
+  <div class="tag">REGALO · A · partida por el corte</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Regalar</em><b>UN ALMUERZO<br>A NOMBRE TUYO</b></div>
+  <div class="card"><div class="cbody">
+    <div class="cmk"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+    <div class="cmon">S/50.00</div>
+    <div class="cpie"><div><s>PARA</s><n>Mafe</n></div><div><s>VENCE</s><n>18.12.2026</n></div></div>
+  </div></div>
+  <div class="mo"><div class="m">S/30</div><div class="m on">S/50</div><div class="m">S/80</div><div class="m">Otro</div></div>
+  <div class="para">
+    <div class="r"><em>Para</em><n>Mafe</n><u>Cambiar</u></div>
+    <div class="r"><em>Llega a</em><n>+51 9•• ••• 412</n><u>Cambiar</u></div>
+    <div class="r"><em>Cuándo</em><n>Ahora mismo</n><u>Programar</u></div>
+  </div>
+  <div class="nota">NO VENCE ANTES DE 3 MESES. SI SOBRA SALDO, QUEDA PARA<br>EL SIGUIENTE PEDIDO. NO SE DEVUELVE EN EFECTIVO.</div>
+  <div class="go"><div class="mi oro">Regalar</div><div class="mi cel">S/50.00</div></div>
+</div>
+
+<div class="f tr" id="B1">
+  <div class="tag">REGALO · B · el corte de agua</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Regalar</em><b>UN ALMUERZO<br>A NOMBRE TUYO</b></div>
+  <div class="card">
+    <div class="agua"><i></i><i></i></div>
+    <div class="cbody">
+      <div class="cmk"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+      <div class="cmon">S/50.00</div>
+      <div class="cpie"><div><s>PARA</s><n>Mafe</n></div><div><s>VENCE</s><n>18.12.2026</n></div></div>
+    </div>
+  </div>
+  <div class="mo"><div class="m">S/30</div><div class="m on">S/50</div><div class="m">S/80</div><div class="m">Otro</div></div>
+  <div class="para">
+    <div class="r"><em>Para</em><n>Mafe</n><u>Cambiar</u></div>
+    <div class="r"><em>Llega a</em><n>+51 9•• ••• 412</n><u>Cambiar</u></div>
+    <div class="r"><em>Cuándo</em><n>Ahora mismo</n><u>Programar</u></div>
+  </div>
+  <div class="nota">NO VENCE ANTES DE 3 MESES. SI SOBRA SALDO, QUEDA PARA<br>EL SIGUIENTE PEDIDO. NO SE DEVUELVE EN EFECTIVO.</div>
+  <div class="go"><div class="mi oro">Regalar</div><div class="mi cel">S/50.00</div></div>
+</div>
+
+<div class="f tr" id="C1">
+  <div class="tag">REGALO · C · muestra lo que compra</div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Regalar</em><b>UN ALMUERZO<br>A NOMBRE TUYO</b></div>
+  <div class="card">
+    <img class="fondo" src="../../../img/sig07.jpg">
+    <div class="velo"></div><div class="velo2"></div>
+    <img class="cav" src="../../../img/marca/avatar-1024-transparente.png">
+    <div class="cbody">
+      <div class="cmk"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+      <div class="cmon">S/50.00</div>
+      <div class="cpie"><div><s>PARA</s><n>Mafe</n></div><div><s>VENCE</s><n>18.12.2026</n></div></div>
+    </div>
+  </div>
+  <div class="mo"><div class="m">S/30</div><div class="m on">S/50</div><div class="m">S/80</div><div class="m">Otro</div></div>
+  <div class="para">
+    <div class="r"><em>Para</em><n>Mafe</n><u>Cambiar</u></div>
+    <div class="r"><em>Llega a</em><n>+51 9•• ••• 412</n><u>Cambiar</u></div>
+    <div class="r"><em>Cuándo</em><n>Ahora mismo</n><u>Programar</u></div>
+  </div>
+  <div class="nota">NO VENCE ANTES DE 3 MESES. SI SOBRA SALDO, QUEDA PARA<br>EL SIGUIENTE PEDIDO. NO SE DEVUELVE EN EFECTIVO.</div>
+  <div class="go"><div class="mi oro">Regalar</div><div class="mi cel">S/50.00</div></div>
+</div>
+</body></html>

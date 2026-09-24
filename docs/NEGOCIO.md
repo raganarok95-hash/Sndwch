@@ -155,6 +155,31 @@ de margen hecho sin esto usa el precio del insumo crudo y sale ~1.85x optimista.
   2026-08-15.** NO se presupuesta aparte ni se suma al costo: el 45% de insumos+empaque
   se fijó deliberadamente por encima del costo real calculado (~26-36%) justamente para
   financiar esto. Ya está dentro del número.
+  ⚠ **EL EMPAQUE COSTEADO ERA EL DOBLE DEL REAL, Y NADIE PODÍA VERLO PORQUE ERA UN NÚMERO
+  SUELTO (2026-09-23).** El modelo costeaba **S/1.30 por sándwich**, descrito como "papel
+  manteca + bolsa, punto medio S/1.10-1.50". Ese S/1.10 salía de `MENU_FINANCIAL_ANALYSIS.md`
+  §1, donde dice literalmente **"Empaque/PEDIDO"** y sumaba **caja de fibra de caña
+  (S/0.48-0.605) + bolsa + servilleta + sticker**. O sea arrastraba dos errores a la vez:
+  **incluía una caja que el empaque real no lleva**, y **era por pedido mientras el modelo lo
+  cobraba por sándwich** (el papel es uno por sándwich, pero la bolsa es una por pedido).
+  Precios reales conocidos hoy:
+
+  | parte | precio | estado | por |
+  |---|---|---|---|
+  | papel manteca | **S/0.075** | **COTIZADO dueño 2026-09-23** — S/150 los 2 millares, S/85 el millar | sándwich |
+  | bolsa kraft delivery | S/0.35 | cotizado Bio Pack (Lima); el dueño la está recotizando en Trujillo | pedido |
+  | sticker | ~S/0.10 | **SIN COTIZAR** — el dueño lo está cotizando; rango normal S/0.04-0.15 | pedido |
+  | | **~S/0.53** | por PEDIDO | |
+
+  Eso es **S/0.78 menos por sándwich** que lo costeado, aun en el peor caso (un solo sándwich
+  por pedido, o sea la bolsa entera a cada uno): **+S/465/mes a 600 sándwiches**, sin cambiar
+  un ingrediente. Con 2 sándwiches por pedido son +S/600.
+  **El modelo sigue costeando S/1.30 a propósito** mientras falten las dos cotizaciones:
+  equivocarse hacia arriba en un costo es seguro, hacia abajo no. Pero ya no es un literal —
+  `modelo/rentabilidad_por_parte.py` lo tiene partido en `PAPEL_MANTECA`, `BOLSA_KRAFT` y
+  `STICKER`, cada uno con su estado, para que el próximo que lo lea vea de qué está hecho.
+  **Conviene comprar los 2 millares**: S/20 de ahorro por S/65 más de desembolso, con un papel
+  que no caduca — a 600 sándwiches/mes son 3.3 meses de stock.
 - **Hipótesis (del dueño, 2026-08-15, explícitamente NO una decisión): el 15CM sería el
   tamaño dominante.** Analizada con el modelo v5 y respaldada por el propio producto (la
   app etiqueta 30CM como "Para compartir" y 15CM como "Para uno"; el delivery individual

@@ -4,6 +4,7 @@
 // Supabase; todo lo demás en la función pasa por aquí.
 import { SB_URL, SERVICE_KEY } from "./env.ts";
 import { ApiError } from "./types.ts";
+import type { Columna, Fila, Tabla } from "../_shared/dominio.ts";
 
 export function sbHeaders(extra?: Record<string, string>) {
   return {
@@ -21,6 +22,18 @@ export async function sbGet(table: string, query: string) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders() });
   if (!r.ok) throw new Error(`Error leyendo ${table}: ${await r.text()}`);
   return r.json();
+}
+/** Lectura TIPADA: la tabla y cada columna se comprueban contra el esquema real (base.ts), y la
+ *  fila vuelve con el tipo exacto de lo que se pidió. Una columna que no existe no compila —
+ *  con `sbGet` y un select escrito a mano, el error llegaba en producción y a veces un catch se
+ *  lo tragaba. `filtro` es la parte de PostgREST que no es el select (`id=eq.5&order=...`). */
+export async function leer<T extends Tabla, K extends Columna<T>>(
+  tabla: T,
+  columnas: readonly K[],
+  filtro = "",
+): Promise<Pick<Fila<T>, K>[]> {
+  const q = `select=${columnas.join(",")}${filtro ? "&" + filtro : ""}`;
+  return await sbGet(tabla, q) as Pick<Fila<T>, K>[];
 }
 export async function sbInsert(table: string, data: unknown) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
@@ -121,6 +134,9 @@ export async function rpc(name: string, args: unknown) {
     if (text.includes("insufficient_balance")) throw new ApiError("Saldo insuficiente para este pedido.", 402);
     if (text.includes("already_claimed")) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
     if (text.includes("customer_not_found")) throw new ApiError("Cliente no encontrado.", 404);
+    // El mismo cobro de Culqi no puede crear dos pedidos. Antes lo traducía el insert directo
+    // (sbInsert); desde que el pedido se crea dentro de crear_pedido, llega por acá.
+    if (text.includes("23505") && text.includes("payment_id")) throw new ApiError("Este pago ya fue usado en otro pedido.", 409);
     throw new Error(`rpc ${name} failed`);
   }
   // Las funciones que declaran `returns void` (ej. gift_credit) responden sin cuerpo —

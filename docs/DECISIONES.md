@@ -797,3 +797,355 @@ Signatures distintos... gana 50 puntos extra». Los cuatro números viven en el 
 el servidor rechaza el reclamo y la pantalla sigue prometiendo 3: el cliente cree que la app
 le falló. Es el mismo defecto que este repo ya documentó en grande; ahora se interpolan y
 `parity` compara los cuatro.
+
+
+## El empaque costó el doble dos meses, y ningún chequeo podía verlo (2026-09-23)
+
+El dueño cotizó el papel manteca —S/85 el millar, S/150 los dos millares— y al meterlo en el
+modelo el número no encajaba con nada: **S/0.075 la hoja contra S/1.30 que el modelo costeaba
+como "empaque"**. El papel era el 6% de su propio costo.
+
+Al abrir el literal aparecieron **tres errores dentro del mismo número**:
+
+```python
+EMPAQUE = 1.30   # [COTIZADO] papel manteca brandeado + bolsa, punto medio S/1.10-1.50
+```
+
+1. **Decía COTIZADO y no lo estaba.** El S/1.10 salía de `MENU_FINANCIAL_ANALYSIS.md` §1,
+   que lo lista como estimado heredado de su v2.
+2. **Incluía una caja que el empaque real no lleva.** Ese estimado sumaba *caja de fibra de
+   caña (S/0.48-0.605) + bolsa + servilleta + sticker*. El empaque que decidió el dueño es
+   papel manteca + bolsa. La caja era casi la mitad del número.
+3. **Estaba medido POR PEDIDO y se sumaba POR SÁNDWICH.** El documento original dice
+   literalmente «Empaque/pedido». El papel sí es uno por sándwich; la bolsa es una por pedido.
+
+Efecto: **S/0.78 de sobrecosto por sándwich**, aun en el peor caso. A 600 sándwiches/mes son
+S/465 — la segunda palanca del negocio, escondida en un comentario.
+
+### Lo que hay que aprender no es "revisar mejor"
+
+La pregunta útil es por qué doce chequeos no lo vieron, y la respuesta no es descuido:
+**todos comparan dos copias del mismo número.** `parity` compara cliente contra servidor.
+`check:precios` compara lo mostrado contra lo cobrado. `test:api` compara el cálculo contra
+lo esperado. Los tres son excelentes para lo que hacen y ninguno podía servir acá, porque
+**un número que está solo, y mal, coincide consigo mismo**.
+
+Faltaba una clase entera de verificación: no *¿coinciden las copias?* sino
+**¿este número puede justificarse?**
+
+### Lo que se construyó
+
+`modelo/insumos.py` — un costo deja de ser un `float` y pasa a ser una ficha de cinco campos
+obligatorios. Los dos que faltaban son justo los que causaron el error:
+
+- **unidad** — `por_sandwich()` es el único camino de una ficha a un costo, y **lanza una
+  excepción** si le pasas un costo *por pedido* sin decirle cuántos sándwiches trae. El error
+  del empaque, escrito hoy, revienta en vez de costar S/0.78 en silencio.
+- **estado** — COTIZADO / ESTIMADO / SIN_COTIZAR como campo, no como comentario. Un
+  comentario que dice COTIZADO no obliga a nada; un campo que un chequeo lee, sí.
+
+`scripts/check_costos.py` (`npm run check:costos`, dentro de `verify`) comprueba cinco cosas,
+y **cada una se verificó inyectándole el defecto que caza** — `--probar` rompe el modelo siete
+veces a propósito y falla si alguna pasa.
+
+### Lo que el chequeo encontró al primer intento
+
+Obligar a que **el costo de cada porción se derive** de `precio/kg × gramaje ÷ rendimiento`
+destapó que **cuatro de las siete proteínas no se pueden reproducir**:
+
+| | en uso | derivado del rendimiento documentado | |
+|---|---|---|---|
+| P02 pollo teriyaki | S/2.47 | S/2.17 | sobrecostea S/0.30, sin explicación escrita |
+| P03 pollo cajún | S/2.49 | S/2.17 | ídem |
+| P05 embutido | S/4.29 | — | **nunca se documentó un rendimiento**; es fiambre, debería ser 1.00 → S/4.08 |
+| P06 albóndiga | S/1.34 | — | **ni rendimiento ni cotización**, y es la proteína del producto más rentable del menú |
+
+Las cuatro quedan anotadas en `SIN_RECONCILIAR` con su motivo. El chequeo falla si **aparece
+una quinta**, y también si una de estas se arregla y alguien olvida sacarla de la lista —
+una deuda saldada que queda anotada hace que nadie vuelva a leer la lista.
+
+⚠ **Un detalle de método que casi arruina la auditoría.** El primer intento despejó los
+rendimientos *desde* los costos que ya estaban escritos. Reconciliaron los siete, claro:
+comparar un número contra sí mismo siempre da bien. Los rendimientos tienen que salir de
+`docs/NEGOCIO.md` y de `recetas/`, nunca del número que se quiere auditar.
+
+## La auditoría por clases de error: un cobro que podía repetirse (2026-09-23)
+
+Después de una sesión con varios errores de cálculo, el dueño pidió buscar dónde más estaban
+ocurriendo. Se nombró la forma de cada defecto de esa sesión y se barrió el repo por esa
+forma. El hallazgo más caro: tras cobrar, la reserva de Culqi volvía a `pending` —«todavía no
+pagó»—, así que un reintento cobraba dos veces, y la confirmación podía decirle «vuelve a
+intentar» a quien ya había pagado. Es el mismo defecto que tuvo el pedido grupal ese mismo
+día: un guard atómico escrito para un solo estado. También apareció el libro de crédito
+anotado dos veces por regalo, y tres pruebas propias que pasaban con el defecto puesto.
+
+El detalle completo, clase por clase, con lo que no se tocó y por qué, está en
+`docs/AUDITORIA_CLASES_DE_ERROR.md`.
+
+## El pedido fijo guarda el lugar, y la capacidad se cuenta en un solo sitio (2026-09-24)
+
+El dueño aprobó el 2026-09-23 «apartar la franja» en vez de una suscripción: el fijo **no se
+manda ni se cobra solo**, pero desde que el hábito está probado (2 días distintos pagados desde
+el fijo, en los últimos 120) le guarda un lugar en el tope de su hora **desde la medianoche del
+día antes hasta 90 minutos antes**. El aviso sale una hora antes de soltarlo y puede decir
+«tu jueves está guardado hasta las 12:00»; sin lugar, sale una hora antes de la entrega y, si
+la hora se llenó, ofrece la siguiente media hora libre en vez de prometer un toque que va a
+chocar contra el tope.
+
+**El lugar no se guarda: se calcula** (`supabase/functions/api/franja.ts`), a partir del fijo y
+de los pedidos que salieron de él (`orders.recurring_id`). Un «apartado: sí» guardado es algo
+que un cron tiene que acordarse de soltar; el día que ese cron falla, la cocina pierde un lugar
+que nadie usa. Calculado, se suelta solo por construcción — el mismo criterio que la pausa de
+la tienda y las horas llenas.
+
+**Lo que obligó a tocar dos archivos que no eran del fijo.** La cuenta de «pedidos en esta
+hora» estaba escrita dos veces: en `assertHourCapacity` (rechaza) y en `capacidad()` de
+`get-store-hours` (tacha horas en el cliente). Sumar los lugares apartados a una y no a la otra
+habría dejado al cliente viendo libre una hora que después le rechazan. Ahora las dos preguntan
+a `capacidad.ts`. Y el cliente recibe también la carga de cada hora (`cargaPorHora`), porque
+la hora que le guardamos a alguien no puede tachársele a él: el servidor no le cuenta su propio
+lugar, y el cliente tiene que hacer la misma resta.
+
+**Dos defectos que salieron al construirlo**, los dos silenciosos:
+
+- **Los ids de dirección son números** (`saved_addresses.id` es bigint) y los botones los
+  mandan como texto: `pickAddr('12')` comparaba `12 === '12'` y elegir una dirección guardada
+  en el checkout no hacía nada. Las pruebas simulaban ids de texto y pasaban. Ahora toda
+  comparación de un id que pasó por el HTML va por `mismoId()`.
+- **«Recuperar mi PIN» no funcionaba para ningún cliente.** Su función (`doRecover`) seguía en
+  el panel, que solo se descarga cuando lo abre el dueño. `check:cliente` no lo veía porque
+  quita los strings antes de buscar, y un `onclick` ES un string; además lo tapaba una
+  casualidad: dos regex `/"/g` en 07-* desbalanceaban las comillas y se anulaban entre sí. Al
+  reescribir el fijo quedó una sola y el chequeo empezó a quejarse de lo que no era. Ahora
+  ignora los literales de regex y revisa también las llamadas dentro de strings.
+
+Y uno más, pequeño: el máximo de 3 fijos contaba también los QUITADOS (`active=false`), así que
+quien quitó tres ya no podía armar ninguno.
+
+## 2026-09-24 · Paso 2: tipos de la base, dominio y contrato de la API
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.3): no había ningún tipo para lo que viaja entre
+el cliente, el servidor y la base. Las acciones recibían `any` y las lecturas devolvían `any`, y
+lo único que ataba al cliente con el servidor era un texto repetido en los dos lados
+(`api('recurring-skip')` / `"recurring-skip": actRecurringSkip`) que nadie comparaba.
+
+**Lo que se hizo**, todo en `supabase/functions/_shared/`, que importan los dos lados:
+
+- **`base.ts`**: los tipos de cada tabla, GENERADOS desde el esquema real con Supabase. No se
+  editan a mano; `check:tipos-base` falla si hay una migración más nueva que el archivo.
+- **`dominio.ts`**: los nombres del negocio (`Direccion`, `FijoDelCliente`, `EstadoDeFranja`…),
+  derivados de `base.ts` cuando salen de una tabla.
+- **`esquema.ts`**: un validador chico, sin dependencias (jsr.io está bloqueado). Un esquema es a
+  la vez la validación y el tipo: no pueden divergir. Normaliza en la frontera: el id de
+  dirección entra como `12` o `'12'` y sale siempre número.
+- **`contrato.ts`**: cada acción declara qué recibe y qué devuelve. El servidor valida la entrada
+  antes de llamar a la acción (`api/entrada.ts`) y solo le pasa los campos declarados; la tabla
+  `ACTIONS` no compila si a una acción del contrato le falta manejador o su firma no coincide.
+  El cliente nuevo llama `llamar('recurring-skip', {...})` (`src/nuevo/api.ts`): un nombre de
+  acción o un campo mal escrito no compila.
+- **`leer()`** en `db.ts`: lectura con la tabla y las columnas comprobadas contra `base.ts`, y la
+  fila tipada con exactamente lo que se pidió. Es la clase de error de `scheduled_for`.
+
+**Migradas hoy**: las cinco acciones que usa la base nueva (`addresses-list`, `recurring-list`,
+`-add`, `-delete`, `-skip`). Las demás siguen con `any` en la tabla, a la vista; entran al
+contrato a medida que se tocan.
+
+**Lo primero que encontró**: `orders.created_at` admite null en la base, y `franja.ts` suponía
+que siempre traía fecha. No rompía nada hoy (`Date.parse(null)` da NaN y el pedido no cuenta),
+pero el tipo lo decía distinto de la base. Pasa a NOT NULL en el paso 6.
+
+**Un 400 que no es un 400**: el token NO se valida en el contrato. Sin él, `requireSession`
+responde 401, que es lo que hace que el cliente mande a iniciar sesión; un 400 de validación lo
+dejaría en la pantalla con un error.
+
+## 2026-09-24 · Paso 3: el dinero en un solo módulo, y dos defectos que lo justificaban
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.4): el cálculo del total existía dos veces,
+`deriveCart`/`priceCartItem` en el servidor (lo que se cobra) e `itemUnitPrice`/`cartFinalTotal`
+/`rewardWaiverAmount`… en el cliente (lo que se muestra). `parity` comparaba las constantes como
+texto; la lógica no la comparaba nadie.
+
+**Los dos defectos vivos que salieron al ponerlas lado a lado**, los dos con el pan focaccia
+(B03): el servidor cuenta su recargo dentro del precio base del sándwich y el cliente no.
+- «15CM gratis» (R06) sobre una focaccia: el cliente mostraba S/0.50, el servidor cobraba S/0.
+- Pedido grupal donde el 15CM más barato es de focaccia: el cliente mostraba S/96.10, el
+  servidor cobraba S/95.60.
+En los dos el servidor rechazaba el pago por «el total no coincide» y el cliente no podía pagar.
+`tests/dinero-cliente.spec.ts` se escribió primero y se vio fallar con esas dos cifras.
+
+**Lo que se hizo.** `supabase/functions/_shared/dinero.ts`: las reglas (`REGLAS`: combo, topes
+de R03/R04/R05, salsa extra, recargo del pan, umbral del organizador, hora valle) y el cálculo
+(`tasarLinea`, `resolverCarrito`), en CÉNTIMOS ENTEROS. El servidor valida en `catalog.ts` y
+delega la aritmética; el cliente viejo la pide a la base nueva (`src/nuevo/dinero.ts`), que usa
+los precios que el propio cliente cargó de get-catalog.
+
+**Cómo se comprobó que el servidor no cambió lo que cobra**: antes de tocarlo se fotografió lo
+que `deriveCart` devolvía en 8 064 combinaciones (todas las proteínas y Signatures, los dos panes
+y tamaños, doble proteína, salsa extra, bebidas, cantidades, las cinco recompensas, con y sin
+organizador, incluidos los rechazos). Después del cambio: cero diferencias.
+
+**`parity`**: las diez comparaciones de esas reglas se retiraron porque ya no hay dos copias. En su
+lugar, un guardia falla si alguna vuelve a escribirse como número en `src/app` o en el servidor.
+
+## 2026-09-24 · Dos arreglos de proceso
+
+**El hook de verificación corría antes de CADA comando Bash**, no solo antes de un commit: el
+filtro `"if": "Bash(git commit *)"` de `.claude/settings.json` no se respetaba. Cada comando
+pagaba ~16 s de `verify:rapido` y, a mitad de un cambio con algo rojo, bloqueaba hasta el comando
+que servía para ver qué estaba rojo. Ahora `scripts/hook-antes-de-comitear.sh` lee el comando que
+va a correr y verifica solo si es un `git commit`.
+
+**Una suite siempre roja no avisa de nada.** Llevaba días con las mismas 22 rojas conocidas, y
+«¿son las mismas de antes?» se comprobaba a mano con `diff` en cada cambio. `npm run test:estado`
+lo hace siempre: compara contra `tests/ROJAS_CONOCIDAS.txt` y falla si aparece una roja nueva o
+si una conocida ya pasa. Se verificó inyectándole un defecto en el total del carrito.
+
+## 2026-09-24 · Paso 4: crear un pedido es una sola operación en la base
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.5): `finalizeAndInsertOrder` hacía hasta cinco
+escrituras sueltas, cada una en su propia petición: primero el saldo del cliente
+(`finalize_order_customer_update`), después el pedido, después el historial (`transactions`,
+`credit_ledger`). Si el insert del pedido fallaba, el cliente quedaba con los puntos o el crédito
+descontados y sin pedido; el código devolvía el stock y liberaba el código promocional, pero el
+saldo no tenía vuelta atrás.
+
+**Un segundo defecto, de carrera**: el historial del bono de referido se decidía con una lectura
+de la fila hecha ANTES del lock de la función de la base. Con dos pedidos simultáneos del mismo
+cliente, la base otorgaba el bono una vez y el historial lo anotaba dos.
+
+**Lo que se hizo**: la función `crear_pedido` (migración 20260924173551) hace saldo + pedido +
+historial en una transacción. El bono se anota solo si ESA llamada lo otorgó, comparando la fila
+antes y después bajo el mismo lock. El rango del cliente se calcula adentro con el conteo ya
+actualizado; los rangos se le pasan desde env.ts en vez de copiarse al SQL. El servidor arma la
+fila y el movimiento de la cuenta como datos puros (`filaDelPedido`, `movimientoDeLaCuenta`).
+
+**Cómo se probó contra la base real sin dejar rastro**: un bloque `do $$ … $$` que termina con una
+excepción a propósito. Todo lo que hizo se deshace, y el resultado vuelve en el mensaje de la
+excepción. Cinco casos: invitado; pago con recompensa + crédito + bono de referido (puntos 490,
+crédito 20, 4 movimientos, 1 línea en el libro, quien invita +400); segundo pedido sin repetir el
+bono; una falla DESPUÉS de mover el saldo (+999) que no deja ni el saldo cambiado, ni el pedido, ni
+el historial; y saldo insuficiente. Después se confirmó que no quedó nada y que la clave pública no
+puede ejecutarla. Es la técnica para probar cualquier función de la base hasta que exista el
+Postgres de pruebas del paso 5.
+
+**Un punto ciego que apareció en `check:doble-escritura`**: tomaba como cuerpo de una función la
+primera llave después del primer paréntesis. En una función con tipo de retorno de objeto
+(`Promise<{ order: any }>`) eso es el TIPO, y la función entera quedaba fuera del chequeo:
+justamente `finalizeAndInsertOrder`. Se vio al inyectarle una doble escritura y comprobar que el
+chequeo seguía en verde. Ahora empareja los paréntesis y salta el tipo de retorno.
+
+**Despliegue**: la función ya está en la base, pero el `api` desplegado no la llama hasta que esta
+rama llegue a `main`. No cambia nada de lo que corre hoy.
+
+## 2026-09-24 · Paso 5 (primera parte): de 22 pruebas rojas a 3, y qué había detrás
+
+Llevaban días rojas y, siendo siempre las mismas, ya no avisaban de nada. Mirando cada una:
+
+- **19 buscaban el inicio anterior al rediseño del 2026-09-17**: textos («Signatures», «Arma el
+  tuyo», «Build your own bite», «Recomendado», «Repetir pedido»), una barra de tres pestañas con
+  `aria-pressed`, un paso intermedio del armador. Se reescribieron sobre lo que la app hace hoy y,
+  donde se pudo, sobre lo que se puede HACER (botones que empiezan un pedido, la puerta con sus dos
+  lados, el riel del armador) en vez de sobre una frase. Cada una conserva lo que protegía.
+- **Una era un defecto real**: en el primer paso del armador, el botón deshabilitado «Elige un
+  tamaño» tenía opacidad .4 y quedaba en 2.13:1 de contraste (mínimo 4.5:1). Su texto ES la
+  instrucción de qué hacer. Ahora se distingue por la forma (solo borde), no apagando el texto.
+- **El estimado de entrega se había mudado**, no roto: del inicio («25-40 min») al checkout
+  («Llega 2:30 – 2:45 p.m.»). La prueba lo sigue ahí, y se vio fallar con la cola sin sumar.
+- **El ayudante `elegirSando` esperaba siempre la puerta**, pero la app recuerda el lado elegido:
+  cargarla dos veces en una prueba la dejaba colgada. Ahora toca la puerta solo si está, que es
+  lo que hace un cliente que vuelve.
+
+**Las 3 que quedan esperan pantallas aprobadas que todavía no existen**, y no se «arreglaron»
+bajándoles la exigencia:
+- el puente «¿Prefieres que ya esté resuelto?» (2 pruebas) vive en el Mundo WICHO de la maqueta
+  M22 con puente (tarea #71). Se perdió en el rediseño del 17 sin que nadie lo decidiera: el commit
+  que partió el inicio no lo trasladó.
+- la entrada «Pedir lo mismo» (tarea #69), perdida en el mismo rediseño. La LÓGICA de repetir sí
+  se sigue probando, en verde, a través de `loadCart` —la función que hoy usa «Pedirlo ahora» del
+  pedido fijo—, y se vio fallar con el filtro de la carta roto.
+
+Están en `tests/ROJAS_CONOCIDAS.txt` con su tarea al lado.
+
+## 2026-09-24 · Paso 5 (segunda parte): las migraciones no reconstruían la base
+
+**El hallazgo.** Al intentar levantar un Postgres de pruebas aplicando las 123 migraciones, la
+PRIMERA falló: `20260424021855_add_birthday_columns_to_customers` agrega columnas a `customers`,
+y ninguna migración crea esa tabla. Las tablas originales se crearon desde el panel de Supabase
+antes de que existiera el historial. Consecuencia: la regla del respaldo —«restaurar = aplicar
+las migraciones y cargar los datos»— era falsa. Si la base se perdía, el repo no la podía
+reconstruir. (El chequeo del respaldo no lo veía porque restaura contra un DDL mínimo que arma
+del propio volcado, no contra el esquema real con sus restricciones, funciones y permisos.)
+
+**Lo que se hizo.**
+- `scripts/pg-local/foto-del-esquema.sql`: una consulta al catálogo que devuelve el SQL del
+  esquema completo (41 tablas, 36 funciones, restricciones, 52 índices, 2 triggers, RLS y
+  permisos). Su resultado vive en `supabase/esquema-actual.sql`.
+- `scripts/pg-local/supabase-de-mentira.sql`: versiones mínimas de lo que Supabase trae y un
+  Postgres común no (roles, `cron`, `net`, `vault`, `storage`), para cargar esa foto localmente.
+- `npm run check:pg`: levanta un Postgres propio, carga la foto y corre `tests-db/*.sql`, cada uno
+  en una base nueva. 2 segundos; va dentro de `verify:rapido`. La primera prueba es la de
+  `crear_pedido` (seis casos), que antes solo se podía correr contra producción con el bloque que
+  se deshace; se vio fallar con el defecto del bono repetido inyectado en la función.
+- El respaldo diario guarda también la foto (`backup/esquema.sql`) y, después de guardar, la
+  compara con la del repo: si difieren, alguien cambió la base sin migración o falta actualizar
+  la foto, y el workflow queda en rojo con el diff.
+- El arranque del Postgres local se movió a `scripts/pg-local/postgres.mjs`, compartido por el
+  chequeo del respaldo y el de la base, en vez de copiarse.
+
+## 2026-09-24 · Paso 5 (cierre): el backend real de punta a punta, y confirmar un pago en una transacción
+
+**El backend real corre entero en local** (`npm run check:e2e`, ~4 s): Postgres con el esquema
+real, PostgREST delante (lo mismo que pone Supabase) y la edge function `api` tal cual, en Deno.
+Nada simulado salvo terceros sin clave (Culqi, Resend, Meta, push), que el propio código salta.
+Seis flujos, cada uno entrando por la API y mirando la base después: registrarse y entrar; pagar
+con crédito (total justo, saldo, pedido, libro de crédito, puntos = historial); un total
+manipulado se rechaza sin tocar nada; Yape pendiente reserva stock y cancelarlo lo devuelve; el
+dueño confirma el Yape (puntos una sola vez aunque confirme dos veces); cancelar un pedido pagado
+con crédito deja la cuenta exactamente como estaba. Se vieron fallar con un defecto de crédito
+inyectado en el servidor.
+
+**`confirmManualPayment` tenía los mismos defectos que el paso 4 corrigió al crear pedidos**: el
+pedido se marcaba pagado en una petición y los puntos en otras (si fallaban, pagado sin puntos
+para siempre), y el bono de referido se decidía con una lectura previa al lock. Ahora
+`confirmar_pago_manual` (migración 20260924182608) marca pagado y acredita la cuenta en una
+transacción; un doble clic gana una sola vez.
+
+**Un defecto que tenían las dos, crear y confirmar**: el historial exige que el cliente exista, y
+el bono se anotaba a nombre de quien invitó sin comprobar que su cuenta siguiera existiendo. Si la
+había borrado, el primer pedido pagado del invitado fallaba entero —con tarjeta, después de
+cobrar—. `tests-db/confirmar-pago.sql` lo reproduce: sin la comprobación, revienta con la clave
+foránea.
+
+**Una sola copia de las reglas de la cuenta**: `aplicar_pedido_a_la_cuenta` (saldo bajo lock,
+bono, rango, historial) la usan `crear_pedido` y `confirmar_pago_manual`.
+
+**Proceso**: la migración se probó en el Postgres local ANTES de aplicarla a la base real. Y
+guardar la foto del esquema y los tipos después de una migración ya no es un comando armado a
+mano: `scripts/pg-local/guardar-foto.mjs` y `guardar-tipos.mjs`.
+
+## 2026-09-24 · Paso 6: el esquema de `orders` dice lo que la app ya suponía
+
+**`delivery_time` era texto** y se comparaba como texto: la capacidad de una hora y el orden de los
+pedidos programados dependían de que todas las cadenas vinieran en el mismo formato. Ahora es
+`timestamptz` (migración 20260924183412). El flujo e2e nuevo «un pedido programado guarda su hora
+como fecha y ocupa su hora en la capacidad» se vio fallar quitando los programados del conteo en
+`capacidad.ts`.
+
+**Lo que la base ahora garantiza por su cuenta**: `created_at` no nulo, `items` no nulo, con
+`'[]'` por defecto y obligado a ser una lista, y `id` con formato uuid. El id se queda como `text`
+con un check en vez de pasar a `uuid`: con el tipo, un id mal escrito en una URL revienta con un
+500 en la conversión; con el check, sigue siendo un 404. Lo prueba `tests-db/esquema-de-pedidos.sql`.
+
+**Cuatro columnas muertas (`mode`, `product_key`, `size`, `build`) no se quitaron todavía.** Las
+dejó de leer esta rama —dashboard, reporte por rango, exportación, historial del cliente, «lo de
+siempre»—, pero el `api` desplegado desde `main` todavía las escribe al insertar: quitarlas hoy
+rompía cada pedido en producción. El borrado vive en
+`supabase/migrations-al-mergear/quitar_columnas_viejas_de_orders.sql` y se aplica justo después del
+merge; `check:pg` lo anuncia en cada corrida mientras siga pendiente.
+
+**Cómo se supo quién las pedía**: `check:columnas` (nuevo, dentro de `verify`) compara cada
+consulta de texto a PostgREST contra la foto del esquema. Su primera versión leía solo el literal
+pegado al nombre de la tabla y se le escapaban tres de las cuatro consultas que el borrado iba a
+romper (había comentarios entre medio y consultas armadas con `+`). Se vio simulando el borrado en
+la foto; ahora lee el argumento entero. `-- --probar` le inyecta una columna que no existe.
+

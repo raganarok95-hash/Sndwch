@@ -38,6 +38,20 @@ export async function sendRecoveryEmail(to: string, name: string, newPin: string
 // se llama desde el propio servidor en finalizeAndInsertOrder, en el mismo tiro en que
 // se crea el pedido — no depende de que el cliente siga conectado ni de que un admin
 // haga algo después.
+// El código de 6 dígitos con el que se entra. Deliberadamente SECO: sin ofertas, sin
+// enlaces y sin nada en qué hacer clic. Un correo de acceso que además vende es el que
+// entrena al cliente a hacer clic en correos que dicen ser nuestros — y ese hábito es
+// justo por donde entra la suplantación.
+export async function sendLoginCodeEmail(to: string, code: string, ttlMinutes: number): Promise<boolean> {
+  const html = emailShell("TU CÓDIGO PARA ENTRAR", `
+    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Escribe este código en la app:</p>
+    <p style="font-size:38px;font-weight:900;color:#CBA258;letter-spacing:.22em;margin:18px 0">${escHtml(code)}</p>
+    <p style="font-size:12px;color:#8BAF9A;line-height:1.6">Vence en ${ttlMinutes} minutos y sirve una sola vez.</p>
+    <p style="font-size:12px;color:#8BAF9A;margin-top:18px">Si no lo pediste, ignora este correo: sin el código nadie entra a tu cuenta.</p>
+  `);
+  return sendResend([to], `SND//WCH — ${code} es tu código`, html);
+}
+
 export async function sendOrderConfirmationEmail(to: string, name: string, ref: string, total: number): Promise<boolean> {
   const html = emailShell("TU PEDIDO FUE RECIBIDO //", `
     <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>

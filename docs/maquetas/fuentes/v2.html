@@ -1,0 +1,163 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;width:1240px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.wm img{width:29px;height:29px;display:block}
+.wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em}
+.wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm.cla .tx{color:#3A2710}.wm.cla .mk i:first-child{background:#A8791E}.wm.cla .mk i:last-child{background:#2E7FA8}
+
+/* ═════ BEBIDAS · LADO SANDO ═════ El de WICHO se elige MIRANDO (tres franjas de foto). El
+   de SANDO no puede ser su reflejo: él cura, así que su carta se elige LEYENDO. Los tres
+   nombres en grande, y solo el que tocas se sirve al costado.                      */
+#B .cab{position:absolute;left:26px;top:80px;z-index:6}
+#B .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#B .cab b{font-family:Anton,sans-serif;font-size:42px;line-height:.88;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+#B .vaso{position:absolute;right:-48px;top:236px;width:186px;height:186px;border-radius:999px;overflow:hidden;z-index:4;
+  box-shadow:0 14px 30px rgba(70,46,16,.3)}
+#B .vaso img{width:100%;height:100%;object-fit:cover;display:block}
+#B .carta{position:absolute;left:26px;right:26px;top:212px;z-index:6}
+#B .it{padding-right:126px}
+#B .it{padding:16px 126px 16px 0;border-bottom:1px dashed rgba(74,50,24,.42)}
+#B .it b{font-family:Anton,sans-serif;font-size:30px;line-height:.92;color:#6E4F2A;letter-spacing:-.02em;text-transform:uppercase}
+#B .it s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:7px}
+#B .it .pz{display:flex;align-items:baseline;gap:9px;margin-top:8px}
+#B .it .pz n{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#33230F}
+#B .it .pz k{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#9C5F14;letter-spacing:.12em}
+#B .it.on b{color:#33230F}
+#B .it.on s,#B .it.on .pz{max-width:160px}
+#B .nota{position:absolute;left:26px;right:26px;bottom:104px;z-index:6;border-top:2px solid #4A3218;padding-top:13px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A;line-height:1.85}
+
+/* ═════ TUS PEDIDOS ═════ Ni lista ni pincho: los pedidos viejos son SELLOS. Cada uno un
+   cuadro con su mes; la grilla entera es cuántas veces comiste acá. Se toca uno y se
+   abre. Y el contador de arriba es el que nadie te muestra.                        */
+#H{background:#EFE9DC}
+#H .ult{position:absolute;left:0;right:0;top:0;height:282px;z-index:2;overflow:hidden}
+#H .ult img{width:100%;height:100%;object-fit:cover}
+#H .ult .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,12,.4) 0 20%,transparent 44%,rgba(10,16,12,.92))}
+#H .ult .tx{position:absolute;left:24px;right:24px;bottom:15px}
+#H .ult .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#H .ult .tx b{font:800 20px/1.15 Archivo,sans-serif;color:#fff;margin-top:7px}
+#H .ult .tx s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#C4CBD0;margin-top:6px}
+#H .rep{position:absolute;left:0;right:0;top:282px;height:54px;background:#20261C;z-index:5;
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+#H .rep span{font:700 12px/1 Archivo,sans-serif;letter-spacing:.2em;color:#EFE9DC;text-transform:uppercase}
+#H .rep b{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#CBA258}
+#H .cont{position:absolute;left:24px;right:24px;top:362px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between;
+  border-bottom:1px solid #DCD3BE;padding-bottom:13px}
+#H .cont em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8B8270;text-transform:uppercase;padding-bottom:7px}
+#H .cont b{font-family:Anton,sans-serif;font-size:40px;line-height:.82;color:#2B2A20}
+#H .sellos{position:absolute;left:24px;right:24px;top:432px;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+#H .se{aspect-ratio:1;border:1px solid #CFC5AC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:#F7F2E5}
+#H .se s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#A79C86}
+#H .se n{font:800 13px/1 Archivo,sans-serif;color:#2B2A20}
+#H .se.hoy{background:#20261C;border-color:#20261C}
+#H .se.hoy s{color:#9AA48E}#H .se.hoy n{color:#EFE9DC}
+#H .pie{position:absolute;left:24px;right:24px;bottom:100px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8B8270;line-height:1.85}
+
+/* ═════ ENTRAR ═════ Un solo campo. La cuenta se abre con el correo o con Google, y nada
+   más — el resto de los datos se piden cuando hacen falta, no antes. Lo que sí se dice
+   de una vez es qué pasa después de tocar el botón.                                */
+#E .cab{position:absolute;left:26px;top:92px;z-index:6}
+#E .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#E .cab b{font-family:Anton,sans-serif;font-size:46px;line-height:.86;color:#3A2710;margin-top:11px;letter-spacing:-.02em}
+#E .campo{position:absolute;left:26px;right:26px;top:262px;z-index:6;border-bottom:2px solid #4A3218;padding-bottom:12px}
+#E .campo s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33;text-transform:uppercase}
+#E .campo n{font-family:'IBM Plex Mono',monospace;font-size:19px;color:#33230F;margin-top:12px}
+#E .campo n u{display:inline-block;width:2px;height:19px;background:#9C5F14;vertical-align:-3px;margin-left:2px}
+#E .oel{position:absolute;left:26px;right:26px;top:370px;z-index:6;display:flex;align-items:center;gap:12px}
+#E .oel i{flex:1;height:1px;background:rgba(74,50,24,.35)}
+#E .oel s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33}
+#E .goo{position:absolute;left:26px;right:26px;top:406px;z-index:6;background:#FBF6E8;border:1px solid rgba(74,50,24,.4);
+  padding:16px;display:flex;align-items:center;justify-content:center;gap:11px}
+#E .goo k{width:19px;height:19px;border-radius:999px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+#E .goo b{font:700 13px/1 Archivo,sans-serif;color:#33230F;letter-spacing:.06em}
+#E .desp{position:absolute;left:26px;right:26px;top:496px;z-index:6}
+#E .desp em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33;text-transform:uppercase}
+#E .desp .r{display:flex;gap:11px;padding:11px 0;border-bottom:1px dashed rgba(74,50,24,.38)}
+#E .desp .r k{font-family:Anton,sans-serif;font-size:17px;color:#9C7A4A;width:20px;line-height:1}
+#E .desp .r .t b{font:800 13px/1.15 Archivo,sans-serif;color:#33230F}
+#E .desp .r .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7A5B33;margin-top:4px}
+#E .legal{position:absolute;left:26px;right:26px;bottom:100px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8A6A3C;line-height:1.9}
+</style></head><body>
+
+<div class="f kraft" id="B">
+  <div class="tag">BEBIDAS · LADO SANDO</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="wm cla"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Tres, de la casa</em><b>ALGO PARA<br>TOMAR</b></div>
+  <div class="vaso"><img src="../../../img/drink_d06.jpg"></div>
+  <div class="carta">
+    <div class="it"><b>The Midnight</b><s>CHICHA MORADA · 500 ML</s>
+      <div class="pz"><n>S/6.00</n><k>EN COMBO S/5.00</k></div></div>
+    <div class="it on"><b>The Hibiscus</b><s>EMOLIENTE FRIO · 500 ML</s>
+      <div class="pz"><n>S/6.00</n><k>EN COMBO S/5.00</k></div></div>
+    <div class="it"><b>The Citrus</b><s>LIMONADA · HIERBABUENA · 500 ML</s>
+      <div class="pz"><n>S/6.00</n><k>EN COMBO S/5.00</k></div></div>
+  </div>
+  <div class="nota">CON CUALQUIER SÁNDWICH BAJA S/1.<br>SE APLICA SOLA EN EL CARRITO, NO HAY QUE PEDIRLA.</div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+
+<div class="f" id="H">
+  <div class="tag">TUS PEDIDOS · los sellos</div>
+  <div class="ult"><img src="../../../img/sig07.jpg"><div class="v"></div>
+    <div class="tx"><em>El último · ayer</em><b>The Chicago 30CM + The Midnight</b>
+      <s>LLEGÓ 7:52 P.M. · S/38.80</s></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="rep"><span>Pedir lo mismo</span><b>S/38.80</b></div>
+  <div class="cont"><em>Has comido acá</em><b>14 veces</b></div>
+  <div class="sellos">
+    <div class="se hoy"><s>SEP</s><n>17</n></div>
+    <div class="se"><s>AGO</s><n>28</n></div>
+    <div class="se"><s>AGO</s><n>21</n></div>
+    <div class="se"><s>AGO</s><n>14</n></div>
+    <div class="se"><s>AGO</s><n>09</n></div>
+    <div class="se"><s>AGO</s><n>02</n></div>
+    <div class="se"><s>JUL</s><n>26</n></div>
+    <div class="se"><s>JUL</s><n>19</n></div>
+    <div class="se"><s>JUL</s><n>12</n></div>
+    <div class="se"><s>JUL</s><n>05</n></div>
+    <div class="se"><s>JUN</s><n>28</n></div>
+    <div class="se"><s>JUN</s><n>21</n></div>
+    <div class="se"><s>JUN</s><n>14</n></div>
+    <div class="se"><s>JUN</s><n>07</n></div>
+  </div>
+  <div class="pie">TOCA UN SELLO Y SE ABRE ESE PEDIDO.<br>LOS JUEVES SON 9 DE LOS 14 — POR ALGO SERÁ.</div>
+</div>
+
+<div class="f kraft" id="E">
+  <div class="tag">ENTRAR</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="wm cla"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Entrar o crear cuenta</em><b>UN SOLO<br>CAMPO</b></div>
+  <div class="campo"><s>Tu correo</s><n>mafe.rios@<u></u></n></div>
+  <div class="oel"><i></i><s>O SI PREFIERES</s><i></i></div>
+  <div class="goo"><k></k><b>Continuar con Google</b></div>
+  <div class="desp"><em>Qué pasa después</em>
+    <div class="r"><k>1</k><div class="t"><b>Te mandamos un código de 6 dígitos</b><s>LLEGA EN SEGUNDOS, NO HAY CONTRASEÑA</s></div></div>
+    <div class="r"><k>2</k><div class="t"><b>Lo escribes y ya estás dentro</b><s>SI ES TU PRIMERA VEZ, TE PEDIMOS NOMBRE Y DNI</s></div></div>
+    <div class="r"><k>3</k><div class="t"><b>La dirección se pide al pedir</b><s>NO ANTES</s></div></div>
+  </div>
+  <div class="legal">AL ENTRAR ACEPTAS LOS TÉRMINOS Y LA POLÍTICA DE<br>PRIVACIDAD. CON GOOGLE NO PEDIMOS DNI.</div>
+  <div class="go"><div class="mi oro">Seguir</div><div class="mi cel">Con Google</div></div>
+</div>
+</body></html>

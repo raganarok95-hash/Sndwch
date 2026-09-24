@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // C5 — El panel de negocio ya responde "¿cómo va el negocio?" (ingresos, productos top,
 // retención). La pregunta que faltaba es otra: "¿hay algo que atender AHORA?" — y para
@@ -32,10 +32,7 @@ function salud(overall: string, signals: any[]) {
 
 async function abrirSalud(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000000');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
   await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
   await page.locator('[onclick*="loadHealth()"]').first().click();

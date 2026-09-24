@@ -1,0 +1,194 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+
+/* ═════ 33 · TUS PEDIDOS ═════ Arriba queda lo aprobado. Abajo, lo que no funcionaba: el
+   historial ya no es una lista, es EL PINCHO de la cocina — las comandas viejas
+   ensartadas una sobre otra, y solo asoma el borde de cada una.                    */
+#H{background:#EFE9DC}
+#H .ult{position:absolute;left:0;right:0;top:0;height:300px;z-index:2;overflow:hidden}
+#H .ult img{width:100%;height:100%;object-fit:cover;display:block}
+#H .ult .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,12,.35) 0 22%,transparent 46%,rgba(10,16,12,.9))}
+#H .ult .tx{position:absolute;left:22px;right:22px;bottom:16px}
+#H .ult .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#H .ult .tx b{font:800 21px/1.15 Archivo,sans-serif;color:#fff;margin-top:8px}
+#H .ult .tx s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C4CBD0;margin-top:6px}
+#H .rep{position:absolute;left:0;right:0;top:300px;height:56px;background:#20261C;z-index:5;
+  display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+#H .rep span{font:700 12px/1 Archivo,sans-serif;letter-spacing:.2em;color:#EFE9DC;text-transform:uppercase;display:block}
+#H .rep b{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#CBA258}
+#H .rot{position:absolute;left:24px;right:24px;top:384px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#H .rot em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8B8270;text-transform:uppercase}
+#H .rot u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79C86}
+/* el pincho */
+#H .pin{position:absolute;left:0;right:0;top:414px;bottom:74px;z-index:5}
+#H .cm{position:absolute;left:26px;right:26px;background:#FBF7EC;border:1px solid #D8CFB8;
+  box-shadow:0 -3px 10px rgba(70,60,40,.12);padding:12px 16px 0}
+#H .cm .r{display:flex;justify-content:space-between;align-items:baseline}
+#H .cm .r i{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A79C86}
+#H .cm .r b{flex:1;font:800 13px/1.2 Archivo,sans-serif;color:#2B2A20;text-transform:uppercase;letter-spacing:-.01em;margin-left:12px}
+#H .cm .r p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#2B2A20}
+#H .cm .r u{font-size:13px;color:#A8791E;margin-left:14px}
+#H .cm:before{content:'';position:absolute;left:50%;top:-1px;width:22px;height:5px;margin-left:-11px;
+  background:#8B8270;border-radius:0 0 3px 3px}
+#H .k1{top:0;height:150px;transform:rotate(-.5deg)}
+#H .k2{top:56px;height:150px;transform:rotate(.6deg)}
+#H .k3{top:112px;height:150px;transform:rotate(-.4deg)}
+#H .k4{top:168px;height:150px;transform:rotate(.5deg)}
+#H .k5{top:224px;height:160px;transform:rotate(-.3deg)}
+
+/* ═════ 34 · DÓNDE TE LO DEJAMOS ═════ Una dirección no es un campo: es la ETIQUETA que
+   va pegada en la bolsa. Cada una va pegada al papel con su cinta, dice su distancia y
+   cuánto cuesta llegar. El flete deja de ser la sorpresa del final.               */
+#D .tit{position:absolute;left:26px;top:80px;z-index:6}
+#D .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#D .tit b{font-family:Anton,sans-serif;font-size:46px;line-height:.86;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+#D .et{position:absolute;left:26px;right:26px;z-index:6;background:#FBF6E8;padding:15px 16px 14px;
+  box-shadow:0 8px 20px rgba(70,46,16,.22)}
+#D .et:after{content:'';position:absolute;left:50%;top:-11px;margin-left:-44px;width:88px;height:22px;
+  background:rgba(255,252,240,.62);transform:rotate(-2deg)}
+#D .e1{top:206px;transform:rotate(-.7deg)}
+#D .e2{top:350px;transform:rotate(.6deg)}
+#D .e3{top:494px;transform:rotate(-.5deg);background:transparent;border:1px dashed rgba(74,50,24,.5);box-shadow:none}
+#D .e3:after{display:none}
+#D .et .hd{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(74,50,24,.35);padding-bottom:8px;
+  font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33}
+#D .et b{font:800 16px/1.2 Archivo,sans-serif;color:#33230F;margin-top:10px;letter-spacing:-.01em}
+#D .et s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:6px}
+#D .et .pie{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;border-top:1px solid rgba(74,50,24,.3);padding-top:9px}
+#D .et .pie i{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#33230F}
+#D .et .pie u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+#D .e3 b{color:#4A3218}#D .e3 .hd{color:#6E4F2A}
+#D .nota{position:absolute;left:26px;right:26px;top:626px;z-index:6;font-family:'IBM Plex Mono',monospace;
+  font-size:9.5px;color:#6E4F2A;line-height:1.8}
+
+/* ═════ BEBIDAS · A (lado WICHO) ═════ Tres franjas a sangre, una por bebida, con el
+   nombre puesto encima del líquido. Se elige tocando, no leyendo una lista.       */
+#B{background:#0F2230}
+#B .bd{position:absolute;left:0;right:0;overflow:hidden}
+#B .bd img{width:100%;height:100%;object-fit:cover;display:block}
+#B .bd .v{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,22,31,.9) 0%,rgba(9,22,31,.44) 52%,rgba(9,22,31,.78) 100%)}
+#B .bd .tx{position:absolute;left:24px;top:50%;transform:translateY(-50%);right:132px}
+#B .bd .tx b{font-family:Anton,sans-serif;font-size:34px;line-height:.9;color:#fff;letter-spacing:-.015em;text-transform:uppercase}
+#B .bd .tx s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A9C6D6;margin-top:9px}
+#B .bd .pz{position:absolute;right:24px;top:50%;transform:translateY(-50%);text-align:right}
+#B .bd .pz i{font-family:Anton,sans-serif;font-size:26px;color:#8CC8EC}
+#B .bd .pz s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7FA4B8;margin-top:5px}
+#B .b1{top:76px;height:196px}#B .b2{top:274px;height:196px}#B .b3{top:472px;height:196px}
+#B .cab{position:absolute;left:24px;right:24px;top:22px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#B .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#B .cab u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E90A4}
+#B .pie{position:absolute;left:24px;right:24px;bottom:90px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E90A4;line-height:1.7}
+
+/* ═════ BEBIDAS · B (lado SANDO) ═════ La bebida no se vende sola: se vende AL LADO de lo
+   que ya elegiste. Arriba tu sándwich, abajo lo que le va — y el precio en combo, que es
+   el único número que al cliente le importa acá.                                  */
+#C{background:#E9E3D4}
+#C .mio{position:absolute;left:0;right:0;top:0;height:228px;z-index:2;overflow:hidden}
+#C .mio img{width:100%;height:100%;object-fit:cover;display:block}
+#C .mio .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,20,12,.4) 0 20%,transparent 44%,rgba(14,20,12,.88))}
+#C .mio .tx{position:absolute;left:24px;right:24px;bottom:15px}
+#C .mio .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#CBA258;text-transform:uppercase}
+#C .mio .tx b{font:800 20px/1.15 Archivo,sans-serif;color:#fff;margin-top:7px}
+#C .ban{position:absolute;left:0;right:0;top:228px;height:46px;background:#20301F;z-index:5;
+  display:flex;align-items:center;justify-content:center;gap:10px}
+#C .ban span{font:700 10px/1 Archivo,sans-serif;letter-spacing:.2em;color:#EFE9DC;text-transform:uppercase;display:block}
+#C .ban b{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#CBA258}
+#C .op{position:absolute;left:24px;right:24px;top:302px;z-index:6}
+#C .op .o{display:flex;align-items:center;gap:15px;padding:15px 0;border-bottom:1px solid #CFC7B2}
+#C .op .o .th{width:66px;height:66px;overflow:hidden;flex:0 0 auto;border-radius:999px}
+#C .op .o .th img{width:100%;height:100%;object-fit:cover;display:block}
+#C .op .o .tx{flex:1}
+#C .op .o .tx b{font:800 15px/1.15 Archivo,sans-serif;color:#24261F;text-transform:uppercase;letter-spacing:-.01em}
+#C .op .o .tx s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8A8578;margin-top:5px}
+#C .op .o .pz{text-align:right}
+#C .op .o .pz i{font-family:Anton,sans-serif;font-size:22px;color:#24261F}
+#C .op .o .pz s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#A8791E;margin-top:4px;text-decoration:line-through}
+#C .sin{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8A8578;letter-spacing:.06em}
+</style></head><body>
+
+<div class="f" id="H">
+  <div class="tag">33 · TUS PEDIDOS · el pincho</div>
+  <div class="ult"><img src="../../../img/sig07.jpg"><div class="v"></div>
+    <div class="tx"><em>El último · ayer</em><b>The Chicago 30CM + The Midnight</b><s>AV. LARCO 1234 · LLEGO 7:52 P.M. · S/38.80</s></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="rep"><span>Pedir lo mismo</span><b>S/38.80</b></div>
+  <div class="rot"><em>Los de antes</em><u>toca para abrir</u></div>
+  <div class="pin">
+    <div class="cm k1"><div class="r"><i>28.08</i><b>The Original 15CM + papas</b><p>24.40</p><u>↻</u></div></div>
+    <div class="cm k2"><div class="r"><i>21.08</i><b>Arma el tuyo · teriyaki</b><p>19.90</p><u>↻</u></div></div>
+    <div class="cm k3"><div class="r"><i>14.08</i><b>The Meatball 30CM ×2</b><p>43.80</p><u>↻</u></div></div>
+    <div class="cm k4"><div class="r"><i>09.08</i><b>The Smoke 15CM</b><p>22.90</p><u>↻</u></div></div>
+    <div class="cm k5"><div class="r"><i>02.08</i><b>The Fresh + The Midnight</b><p>26.80</p><u>↻</u></div></div>
+  </div>
+  <div class="go"><div class="mi oro">Pedir algo</div><div class="mi cel">Nuevo</div></div>
+</div>
+
+<div class="f kraft" id="D">
+  <div class="tag">34 · DÓNDE TE LO DEJAMOS</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="tit"><em>Tus direcciones</em><b>DÓNDE TE<br>LO DEJAMOS</b></div>
+  <div class="et e1"><div class="hd"><span>CASA · LA DE SIEMPRE</span><span>3.4 KM</span></div>
+    <b>Av. Larco 1234, Dpto 302</b><s>URB. SAN ANDRES · TIMBRE 302, PORTON NEGRO</s>
+    <div class="pie"><i>Envío S/7.00</i><u>Editar</u></div></div>
+  <div class="et e2"><div class="hd"><span>TRABAJO</span><span>5.1 KM</span></div>
+    <b>Jr. Pizarro 480, of. 12</b><s>CENTRO HISTORICO · DEJAR EN RECEPCION</s>
+    <div class="pie"><i>Envío S/9.50</i><u>Editar</u></div></div>
+  <div class="et e3"><div class="hd"><span>AGREGAR</span><span>—</span></div>
+    <b>Otra dirección</b><s>TE DECIMOS EL COSTO APENAS LA MARQUES EN EL MAPA</s></div>
+  <div class="nota">FUERA DE LOS DISTRITOS QUE CUBRIMOS NO LLEGAMOS TODAVIA.<br>TE AVISAMOS APENAS ABRAMOS LA ZONA.</div>
+  <div class="go"><div class="mi oro">Usar esta</div><div class="mi cel">S/7.00</div></div>
+</div>
+
+<div class="f" id="B">
+  <div class="tag">BEBIDAS · A · lado WICHO</div>
+  <div class="cab"><em>Algo para tomar</em><u>TRES, BIEN HELADAS</u></div>
+  <div class="bd b1"><img src="../../../img/drink_d07.jpg"><div class="v"></div>
+    <div class="tx"><b>The Midnight</b><s>CHICHA MORADA · 500 ML</s></div>
+    <div class="pz"><i>S/6</i><s>EN COMBO S/5</s></div></div>
+  <div class="bd b2"><img src="../../../img/drink_d06.jpg"><div class="v"></div>
+    <div class="tx"><b>The Hibiscus</b><s>EMOLIENTE FRIO · 500 ML</s></div>
+    <div class="pz"><i>S/6</i><s>EN COMBO S/5</s></div></div>
+  <div class="bd b3"><img src="../../../img/drink_d08.jpg"><div class="v"></div>
+    <div class="tx"><b>The Citrus</b><s>LIMONADA · HIERBABUENA · 500 ML</s></div>
+    <div class="pz"><i>S/6</i><s>EN COMBO S/5</s></div></div>
+  <div class="pie">CON CUALQUIER SANDWICH, LA BEBIDA BAJA S/1.<br>SE APLICA SOLA EN EL CARRITO.</div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+
+<div class="f" id="C">
+  <div class="tag">BEBIDAS · B · lado SANDO</div>
+  <div class="mio"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="tx"><em>Ya llevas</em><b>The Marinara 30CM</b></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="ban"><span>Con bebida, el sándwich baja</span><b>−S/1.00</b></div>
+  <div class="op">
+    <div class="o"><div class="th"><img src="../../../img/drink_d07.jpg"></div>
+      <div class="tx"><b>The Midnight</b><s>CHICHA MORADA · 500 ML</s></div>
+      <div class="pz"><i>S/5</i><s>S/6</s></div></div>
+    <div class="o"><div class="th"><img src="../../../img/drink_d06.jpg"></div>
+      <div class="tx"><b>The Hibiscus</b><s>EMOLIENTE FRIO · 500 ML</s></div>
+      <div class="pz"><i>S/5</i><s>S/6</s></div></div>
+    <div class="o"><div class="th"><img src="../../../img/drink_d08.jpg"></div>
+      <div class="tx"><b>The Citrus</b><s>LIMONADA · HIERBABUENA · 500 ML</s></div>
+      <div class="pz"><i>S/5</i><s>S/6</s></div></div>
+  </div>
+  <div class="sin">SEGUIR SIN BEBIDA</div>
+  <div class="go"><div class="mi oro">Agregar</div><div class="mi cel">S/5.00</div></div>
+</div>
+</body></html>

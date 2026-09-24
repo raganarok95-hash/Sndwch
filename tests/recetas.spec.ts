@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, entrarConTelefono } from './helpers';
 
 // #9 / #3 / #4 — La pantalla de recetas.
 //
@@ -43,10 +43,7 @@ const RECETA_BASE = {
 async function entrarARecetas(page: any, respuesta: unknown) {
   const calls = await gotoApp(page, { ...ADMIN, 'admin-recipes': respuesta });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  await page.locator('#l-phone').fill('900000099');
-  await page.locator('#l-pin').fill('1234');
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
   await page.locator('[onclick*="loadRecipes()"]').first().click();
   return calls;

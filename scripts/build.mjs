@@ -10,6 +10,7 @@
 // corregidos, etc.) que no deben perderse en cada build. tsc con removeComments:false
 // sí los conserva tal cual (ver tsconfig.build.json).
 import { execFileSync } from 'child_process';
+import { buildSync } from 'esbuild';
 import { readFileSync, writeFileSync, rmSync, readdirSync } from 'fs';
 import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
@@ -87,6 +88,27 @@ function main() {
 
   const shell = readFileSync(path.join(root, 'src/shell.html'), 'utf8');
 
+  // ── LA BASE NUEVA (2026-09-24) ─────────────────────────────────────────────────────
+  // src/nuevo/ son MÓDULOS de verdad (import/export, TypeScript estricto): esbuild los
+  // empaqueta en un solo script envuelto en su propia función, así que nada de adentro queda
+  // global salvo el registro que main.ts deja a propósito en `window.__sndNuevo`. Va en su
+  // propio <script>, ANTES del viejo: el registro tiene que existir antes del primer render(),
+  // y el viejo conserva su `'use strict'` como primera línea. Los tipos NO los revisa esbuild
+  // (solo los quita): eso lo hace `npm run typecheck` con tsconfig.nuevo.json.
+  const nuevo = buildSync({
+    entryPoints: [path.join(root, 'src/nuevo/main.ts')],
+    bundle: true,
+    format: 'iife',
+    target: 'es2020',
+    write: false,
+    legalComments: 'none',
+    charset: 'utf8',
+  });
+  const nuevoJs = nuevo.outputFiles[0].text;
+  if (!shell.includes('__NUEVO_JS__')) {
+    throw new Error('src/shell.html no tiene el placeholder __NUEVO_JS__ — las pantallas de la base nueva no cargarían.');
+  }
+
   // Sello de build. Se inyecta acá y no se escribe a mano en src/app.ts para que no haya
   // forma de que quede desactualizado. Es lo que permite saber, mirando la app en el
   // teléfono del dueño, si está corriendo el código que acabamos de desplegar o un shell
@@ -113,14 +135,14 @@ function main() {
   // y el dueño vería su panel sin actualizar sin ningún error de por medio. Es exactamente
   // el defecto del 2026-08-21 (shell viejo pegado a la vez en la app, el celular y la PC),
   // que ya obligó a escribir `check:shell`.
-  const stamp = createHash('sha256').update(appJs).update(adminJs).digest('hex').slice(0, 10);
+  const stamp = createHash('sha256').update(nuevoJs).update(appJs).update(adminJs).digest('hex').slice(0, 10);
   appJs = appJs.split('__APP_BUILD__').join(stamp);
 
   if (!shell.includes('__APP_JS__')) {
     throw new Error('src/shell.html no tiene el placeholder __APP_JS__ — revisa que no se haya borrado por error.');
   }
 
-  const html = shell.replace('__APP_JS__', () => appJs);
+  const html = shell.replace('__NUEVO_JS__', () => nuevoJs).replace('__APP_JS__', () => appJs);
   writeFileSync(path.join(root, 'index.html'), html);
 
   // El panel, como archivo aparte servido desde la raíz. Lo pide `loadAdminBundle()` en el

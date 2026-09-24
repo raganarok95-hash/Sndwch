@@ -1,4 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import type { Accion, Entrada, Salida } from "../_shared/contrato.ts";
+import { validarEntrada } from "./entrada.ts";
 
 // SND//WCH — api
 // Punto único de acceso a datos sensibles (clientes, pedidos, transacciones, cuentas admin).
@@ -16,7 +18,7 @@ import { actPing } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
   actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
-  actGoogleAuth,
+  actGoogleAuth, actRequestLoginCode, actVerifyLoginCode,
 } from "./actions/auth.ts";
 import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actAdminUpdateStatus,
@@ -27,9 +29,9 @@ import {
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
-  actSetAdTracking,
+  actSetAdTracking, actSetPreferences,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
-  actRecurringList, actRecurringAdd, actRecurringDelete, actRemindRecurringOrders, actRemindPointsNudge,
+  actRecurringList, actRecurringAdd, actRecurringDelete, actRecurringSkip, actRemindRecurringOrders, actRemindPointsNudge,
   actRemindMonthlyRecap,
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
@@ -58,8 +60,13 @@ import { actGetStoreHours, actAdminSetStoreHours, actAdminSetBusinessLaunched, a
 import {
   actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
 } from "./actions/complaints.ts";
+import { actReportClientError } from "./actions/errores.ts";
 import {
-  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
+  actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
+} from "./actions/problems.ts";
+import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
+import {
+  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
@@ -80,12 +87,22 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
+// Cada acción del contrato (_shared/contrato.ts) TIENE que estar acá, con un manejador que
+// reciba exactamente su entrada y devuelva exactamente su salida: si falta una, o su firma no
+// coincide, no compila. Las que todavía no tienen contrato reciben `any` y se validan a mano.
+type ConContrato = { [A in Accion]: (b: Entrada<A> & { _ip: string }) => Promise<Salida<A>> };
+type SinContrato = Record<string, (b: any) => Promise<unknown>>;
+
+const ACTIONS: ConContrato & SinContrato = {
   ping: actPing,
   "get-catalog": actGetCatalog,
   register: actRegister,
   login: actLogin,
   "google-auth": actGoogleAuth,
+  // Entrar con correo y código de 6 dígitos. `login` (teléfono + PIN) NO se retira: lo
+  // siguen usando las cuentas creadas antes de esto y el panel admin.
+  "request-login-code": actRequestLoginCode,
+  "verify-login-code": actVerifyLoginCode,
   "session-check": actSessionCheck,
   recover: actRecover,
   "logout-everywhere": actLogoutEverywhere,
@@ -97,6 +114,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "my-history": actMyHistory,
   // Derecho de oposición a la medición publicitaria (Ley 29733) — ver customer.ts.
   "set-ad-tracking": actSetAdTracking,
+  "set-preferences": actSetPreferences,
   "addresses-list": actAddressesList,
   "addresses-add": actAddressesAdd,
   "addresses-update": actAddressesUpdate,
@@ -109,6 +127,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "recurring-list": actRecurringList,
   "recurring-add": actRecurringAdd,
   "recurring-delete": actRecurringDelete,
+  "recurring-skip": actRecurringSkip,
   "remind-recurring-orders": actRemindRecurringOrders,
   // #64 — Empuja solo a quien está CERCA de una recompensa. Al que le faltan 300 puntos no
   // le sirve saberlo; al que le faltan 30, sí.
@@ -227,6 +246,15 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,
   "alert-complaint-deadlines": actAlertComplaintDeadlines,
+  "report-client-error": actReportClientError,
+  "report-order-problem": actReportOrderProblem,
+  "my-order-problems": actMyOrderProblems,
+  "admin-order-problems": actAdminOrderProblems,
+  "admin-resolve-order-problem": actAdminResolveOrderProblem,
+  "alert-order-problems": actAlertOrderProblems,
+  "zone-waitlist-join": actZoneWaitlistJoin,
+  "admin-zone-waitlist": actAdminZoneWaitlist,
+  "admin-notify-zone": actAdminNotifyZone,
   "remind-unclaimed-challenge": actRemindUnclaimedChallenge,
   "remind-peak-hour": actRemindPeakHour,
   "gift-card-purchase": actGiftCardPurchase,
@@ -250,6 +278,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "add-group-item": actAddGroupItem,
   "cancel-group-order": actCancelGroupOrder,
   "close-group-order": actCloseGroupOrder,
+  "split-group-order": actSplitGroupOrder,
+  "expire-group-shares": actExpireGroupShares,
 };
 
 Deno.serve(async (req: Request) => {
@@ -271,10 +301,12 @@ Deno.serve(async (req: Request) => {
   // valor es la IP real del cliente. Se inyecta en el body (nunca se confía en un ip que
   // el cliente reporte directamente) para que acciones sin identidad de cuenta todavía
   // (ej. register) puedan aplicar rate limiting por IP — ver actRegister.
-  body._ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
 
   const startedAt = Date.now();
   try {
+    // La frontera: una acción con contrato recibe su entrada ya validada y normalizada.
+    body = validarEntrada(action, body && typeof body === "object" ? body : {}, ip);
     const result = await handler(body);
     await recordCronHeartbeat(body, action, true);
     recordSlowRequest(action, Date.now() - startedAt);

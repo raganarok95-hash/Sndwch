@@ -1,0 +1,182 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n{text-decoration:none;font-style:normal;display:block}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40;color:#fff}
+
+/* el botón que le gustó: partido por el corte, una mitad por hermano, y cada hermano
+   PARADO sobre la suya. El botón deja de ser un rectángulo: es su terreno.          */
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:40;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;justify-content:center;
+  font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.sando{position:absolute;z-index:38;filter:drop-shadow(6px 8px 16px rgba(40,34,20,.28))}
+.wicho{position:absolute;z-index:38;filter:drop-shadow(-6px 8px 16px rgba(20,40,55,.28))}
+
+/* ═════ A · MEDIA CANCHA ═════ El fondo ya no es el crema de nadie: es un amanecer que
+   va del dorado de SANDO al celeste de WICHO, cortado por el "//". Los dos aparecen
+   parados en su mitad del botón, sosteniendo la pantalla entre los dos.            */
+.mc{background:linear-gradient(146deg,#F6E1B4 0%,#F8F3E8 40%,#EDF4F8 60%,#C6E5FA 100%)}
+.mc .corte{position:absolute;left:-40px;top:240px;width:520px;height:520px;z-index:0;overflow:hidden}
+.mc .corte b{position:absolute;top:-120px;width:26px;height:760px;transform:skewX(-16deg);border-radius:6px;display:block}
+.mc .corte b:nth-child(1){left:150px;background:rgba(255,255,255,.55)}
+.mc .corte b:nth-child(2){left:196px;background:rgba(255,255,255,.55)}
+
+/* ═════ B · LA TRAMA ═════ Cero degradado. El fondo lo hacen sus dos texturas propias:
+   el acanalado de los puños de SANDO por la izquierda y las curvas de nivel del polo
+   de WICHO por la derecha, encontrándose en el medio. Ellos asoman por los bordes.  */
+.tr{background:#F4F2EC}
+.tr .tex{position:absolute;inset:0;z-index:0}
+.tr .tex .iz{position:absolute;left:0;top:0;bottom:0;width:58%;
+  background:repeating-linear-gradient(94deg,rgba(203,162,88,.34) 0 2px,transparent 2px 11px)}
+.tr .tex .de{position:absolute;right:0;top:0;bottom:0;width:62%;
+  background:repeating-radial-gradient(circle at 118% 46%,rgba(140,200,236,.42) 0 2px,transparent 2px 17px)}
+
+.hero{position:absolute;left:0;right:0;top:0;height:282px;overflow:hidden;z-index:2}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,12,.4) 0 12%,transparent 34%,rgba(8,10,12,.88))}
+.hero .pz{position:absolute;right:20px;top:60px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff}
+.hero .tx{position:absolute;left:20px;bottom:16px;right:118px}
+.hero .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#F0C878;text-transform:uppercase}
+.hero .tx b{font:800 22px/1.1 Archivo,sans-serif;color:#fff;margin-top:8px;letter-spacing:-.02em}
+.hero .tx s{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C5CACE;margin-top:6px}
+.hero .ct{position:absolute;right:20px;bottom:16px;display:flex;align-items:center;gap:12px}
+.hero .ct span{width:28px;height:28px;border:1px solid rgba(255,255,255,.45);color:#fff;
+  display:flex;align-items:center;justify-content:center;font:400 15px/1 Archivo,sans-serif}
+.hero .ct i{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;display:inline}
+
+.rot{position:absolute;left:24px;right:24px;top:300px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+.rot em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8A8578;text-transform:uppercase}
+.rot u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A8A297}
+.car{position:absolute;left:24px;right:0;top:324px;height:158px;display:flex;gap:9px;z-index:6}
+.car .c{width:132px;flex:0 0 auto}
+.car .c .im{height:100px;overflow:hidden;position:relative;background:#DAD6CC}
+.car .c .im img{width:100%;height:100%;object-fit:cover;display:block}
+.car .c .im i{position:absolute;right:0;top:0;background:rgba(8,10,12,.76);color:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 7px;display:block}
+.car .c b{font:700 12px/1.2 Archivo,sans-serif;color:#24261F;margin-top:8px;text-transform:uppercase;letter-spacing:-.01em}
+.car .c p{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A8578;margin-top:3px}
+
+.mid{position:absolute;left:104px;right:104px;z-index:12;text-align:center}
+.mid.sum{top:486px}
+.mid.sum .l{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8A8578}
+.mid.sum .l.on{color:#B88A2E}
+.mid.dic{top:540px;font-family:'Instrument Serif',serif;font-style:italic;font-size:15px;color:#54544A}
+.mid.tot{top:596px}
+.mid.tot em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;text-transform:uppercase}
+.mid.tot b{font-family:Anton,sans-serif;font-size:38px;line-height:.9;color:#24261F;margin-top:10px;letter-spacing:-.01em}
+.mid.lle{top:676px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A8A297;line-height:1.6}
+
+/* ═════ 31 · EL CÓDIGO ═════ El cartel ya no flota solo con una sombra rara: lo
+   sostienen los dos. El QR es lo más grande de la pantalla, que es lo que hay que
+   hacer con él, y el monto va impreso en el mismo papel, no aparte.               */
+.qcab{position:absolute;left:24px;right:24px;top:76px;z-index:12;display:flex;justify-content:space-between;align-items:baseline}
+.qcab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;text-transform:uppercase}
+.qcab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A8A297}
+.cartel{position:absolute;left:32px;right:32px;top:100px;background:#fff;z-index:12;padding:18px 18px 16px;
+  border:1px solid rgba(0,0,0,.07)}
+.cartel .hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:13px;border-bottom:1px dashed #DDD9CE}
+.cartel .hd em,.cartel .hd u{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#8A8578;display:flex;align-items:center;gap:3px}
+.cartel .hd .mk{display:inline-flex;gap:2px;align-items:center;margin:0 1px}
+.cartel .hd .mk b{width:2px;height:11px;transform:skewX(-16deg);border-radius:1px;display:block}
+.cartel .hd .mk b:first-child{background:#CBA258}.cartel .hd .mk b:last-child{background:#8CC8EC}
+.cartel .mt{display:flex;align-items:baseline;justify-content:space-between;margin-top:14px}
+.cartel .mt b{font-family:Anton,sans-serif;font-size:52px;line-height:.84;color:#24261F;letter-spacing:-.025em}
+.cartel .mt b i{font-size:24px;display:inline}
+.cartel .mt s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#A8A297;text-align:right;line-height:1.7}
+.cartel .qr{display:flex;justify-content:center;margin-top:12px}
+.cartel .qr img{width:194px;height:194px;display:block}
+.cartel .pie{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8A8578;margin-top:12px;letter-spacing:.05em}
+.qalt{position:absolute;left:114px;right:114px;top:500px;z-index:12;text-align:center}
+.qalt n{font:800 15px/1 Archivo,sans-serif;color:#54544A}
+.qalt s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A8A297;margin-top:6px}
+.qnot{position:absolute;left:110px;right:110px;top:566px;z-index:12;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#B3AEA2;line-height:1.7}
+</style></head><body>
+
+<div class="f mc" id="A">
+  <div class="tag">30A · MEDIA CANCHA</div>
+  <div class="corte"><b></b><b></b></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal">←</div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div><b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div><b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div><b>Agregar</b><p>desde 5.00</p></div>
+  </div>
+  <div class="mid sum"><div class="l on"><span>COMBO</span><span>−2.00</span></div><div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div></div>
+  <div class="mid dic">“Nosotros nos encargamos.”</div>
+  <div class="mid tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="mid lle">LLEGA ENTRE<br>7:40 Y 8:05 P.M.</div>
+  <img class="sando" style="left:-10px;bottom:70px;width:102px" src="../../../img/sando2_cuerpo_forro.png">
+  <img class="wicho" style="right:-12px;bottom:70px;width:114px" src="../../../img/wicho_cuerpo.png">
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f tr" id="B">
+  <div class="tag">30A · LA TRAMA</div>
+  <div class="tex"><div class="iz"></div><div class="de"></div></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal">←</div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div><b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div><b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div><b>Agregar</b><p>desde 5.00</p></div>
+  </div>
+  <div class="mid sum"><div class="l on"><span>COMBO</span><span>−2.00</span></div><div class="l"><span>ENVIO 3.4 KM</span><span>7.00</span></div></div>
+  <div class="mid dic">“Nosotros nos encargamos.”</div>
+  <div class="mid tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="mid lle">LLEGA ENTRE<br>7:40 Y 8:05 P.M.</div>
+  <img class="sando" style="left:-14px;bottom:70px;width:104px" src="../../../img/sando2_cuerpo_forro.png">
+  <img class="wicho" style="right:-16px;bottom:70px;width:116px" src="../../../img/wicho_cuerpo.png">
+  <div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f mc" id="C">
+  <div class="tag">31 · EL CÓDIGO · MEDIA CANCHA</div>
+  <div class="corte"><b></b><b></b></div>
+  <div class="sal" style="color:#54544A">←</div>
+  <div class="qcab"><em>Pagar con Yape</em><u>#1042</u></div>
+  <div class="cartel">
+    <div class="hd"><em>SND<span class="mk"><b></b><b></b></span>WCH · TRUJILLO</em><u>#1042</u></div>
+    <div class="mt"><b>S/50<i>.80</i></b><s>ENVIO S/7.00 INCLUIDO<br>NO SE SUMA NADA MAS</s></div>
+    <div class="qr"><img src="../../../img/yape-qr.png"></div>
+    <div class="pie">ESCANEA DESDE YAPE</div>
+  </div>
+  <div class="qalt"><n>Prefiero tarjeta</n><s>SON S/2.79 MAS</s></div>
+  <div class="qnot">APENAS CONFIRMES,<br>EL PEDIDO ENTRA A LA COCINA</div>
+  <img class="sando" style="left:-12px;bottom:70px;width:106px" src="../../../img/sando2_cuerpo_forro.png">
+  <img class="wicho" style="right:-14px;bottom:70px;width:118px" src="../../../img/wicho_cuerpo.png">
+  <div class="go"><div class="mi oro">Ya pagué</div><div class="mi cel">S/50.80</div></div>
+</div>
+
+<div class="f tr" id="D">
+  <div class="tag">31 · EL CÓDIGO · LA TRAMA</div>
+  <div class="tex"><div class="iz"></div><div class="de"></div></div>
+  <div class="sal" style="color:#54544A">←</div>
+  <div class="qcab"><em>Pagar con Yape</em><u>#1042</u></div>
+  <div class="cartel">
+    <div class="hd"><em>SND<span class="mk"><b></b><b></b></span>WCH · TRUJILLO</em><u>#1042</u></div>
+    <div class="mt"><b>S/50<i>.80</i></b><s>ENVIO S/7.00 INCLUIDO<br>NO SE SUMA NADA MAS</s></div>
+    <div class="qr"><img src="../../../img/yape-qr.png"></div>
+    <div class="pie">ESCANEA DESDE YAPE</div>
+  </div>
+  <div class="qalt"><n>Prefiero tarjeta</n><s>SON S/2.79 MAS</s></div>
+  <div class="qnot">APENAS CONFIRMES,<br>EL PEDIDO ENTRA A LA COCINA</div>
+  <img class="sando" style="left:-14px;bottom:70px;width:108px" src="../../../img/sando2_cuerpo_forro.png">
+  <img class="wicho" style="right:-16px;bottom:70px;width:120px" src="../../../img/wicho_cuerpo.png">
+  <div class="go"><div class="mi oro">Ya pagué</div><div class="mi cel">S/50.80</div></div>
+</div>
+</body></html>

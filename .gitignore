@@ -26,3 +26,10 @@ __pycache__/
 
 # hojas de contacto de scripts/check_personaje.py — se regeneran, no se versionan
 *_check.jpg
+
+# Índice de búsqueda local (knowledge-rag): se regenera con npm run indice
+.knowledge-rag/data/
+.knowledge-rag/models_cache/
+
+# Binarios descargados para las pruebas de punta a punta (PostgREST)
+.cache/

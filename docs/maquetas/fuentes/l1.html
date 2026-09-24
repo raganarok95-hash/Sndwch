@@ -1,0 +1,193 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.wm img{width:29px;height:29px;display:block}
+.wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em}
+.wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm.osc .tx{color:#F2F0EA}.wm.osc .mk i:first-child{background:#CBA258}.wm.osc .mk i:last-child{background:#8CC8EC}
+.wm.cla .tx{color:#3A2710}.wm.cla .mk i:first-child{background:#A8791E}.wm.cla .mk i:last-child{background:#2E7FA8}
+
+/* ═════ FICHA · VERSIÓN WICHO ═════ La de SANDO explica la receta como una tabla, porque él
+   cura. La de WICHO enseña las PIEZAS, porque él arma: cada cosa es una ficha con su foto,
+   y el botón de abajo no es «lo quiero» sino «armo uno parecido».                  */
+#W{background:#0E2231}
+#W .foto{position:absolute;left:0;right:0;top:0;height:300px;overflow:hidden;z-index:1}
+#W .foto img{width:100%;height:100%;object-fit:cover;display:block}
+#W .foto .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,18,26,.45) 0 18%,transparent 40%,#0E2231 98%)}
+#W .cur{position:absolute;left:0;right:0;top:252px;height:66px;z-index:3;
+  background:repeating-radial-gradient(circle at 20% 120%,rgba(140,200,236,.35) 0 2px,transparent 2px 15px)}
+#W .tit{position:absolute;left:24px;right:24px;top:296px;z-index:6}
+#W .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#W .tit b{font-family:Anton,sans-serif;font-size:42px;line-height:.88;color:#F2F6F8;margin-top:9px;letter-spacing:-.02em}
+#W .tit s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7FA6BC;margin-top:10px;line-height:1.7}
+#W .piezas{position:absolute;left:24px;right:24px;top:424px;z-index:6}
+#W .piezas em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E90A4;text-transform:uppercase}
+#W .fila{display:flex;gap:9px;margin-top:12px}
+#W .pz{flex:1}
+#W .pz .im{height:62px;overflow:hidden;background:#17303F;border-radius:6px}
+#W .pz .im img{width:100%;height:100%;object-fit:cover;display:block}
+#W .pz b{font:700 9.5px/1.25 Archivo,sans-serif;color:#D6E6EF;margin-top:7px;text-transform:uppercase;letter-spacing:.01em;height:24px}
+#W .pz s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#6E90A4;margin-top:3px}
+#W .sz{position:absolute;left:24px;right:24px;top:614px;z-index:6;display:flex;gap:9px}
+#W .sz .o{flex:1;border:1px solid #2A4757;padding:13px 0;text-align:center}
+#W .sz .o b{font:800 15px/1 Archivo,sans-serif;color:#7FA6BC}
+#W .sz .o s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E7E92;margin-top:6px}
+#W .sz .o.on{background:#8CC8EC;border-color:#8CC8EC}
+#W .sz .o.on b{color:#0E2430}#W .sz .o.on s{color:#1B4257}
+#W .arm{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E90A4;letter-spacing:.06em}
+
+/* ═════ EL MENÚ SECRETO ═════ Sus ingredientes NO son públicos y rota cada semana, así que
+   la pantalla no puede tener foto ni lista: lo único que se muestra es que existe, cuánto
+   cuesta y cuánto le queda. El vacío ES el producto.                               */
+#S{background:#0A0B0C}
+#S .halo{position:absolute;left:-60px;right:-60px;top:120px;height:420px;z-index:0;
+  background:radial-gradient(45% 45% at 50% 50%,rgba(203,162,88,.16) 0%,transparent 72%)}
+#S .cab{position:absolute;left:24px;right:24px;top:84px;z-index:6;text-align:center}
+#S .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:#CBA258;text-transform:uppercase}
+#S .nom{position:absolute;left:24px;right:24px;top:240px;z-index:6;text-align:center}
+#S .nom b{font-family:Anton,sans-serif;font-size:66px;line-height:.86;color:#F2F0EA;letter-spacing:-.03em}
+#S .nom s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6E6A60;margin-top:16px;line-height:1.9}
+#S .reloj{position:absolute;left:24px;right:24px;top:414px;z-index:6;border-top:1px solid #232426;border-bottom:1px solid #232426;
+  padding:18px 0;display:flex;justify-content:space-between;align-items:center}
+#S .reloj s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E6A60;letter-spacing:.1em}
+#S .reloj b{font-family:Anton,sans-serif;font-size:24px;color:#CBA258}
+#S .adv{position:absolute;left:34px;right:34px;top:500px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4E4B45;line-height:1.9}
+#S .pre{position:absolute;left:24px;right:24px;bottom:100px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#S .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+#S .pre b{font-family:Anton,sans-serif;font-size:46px;line-height:.82;color:#F2F0EA}
+
+/* ═════ TU CUENTA ═════ No es un formulario: es la credencial de la casa. Arriba quién
+   eres y desde cuándo; abajo, las cosas que puedes tocar, en orden de qué tan seguido se
+   tocan. Lo irreversible va al final y se ve distinto.                             */
+#U .car{position:absolute;left:26px;right:26px;top:96px;z-index:6;border:2px solid #4A3218;
+  padding:16px;background:rgba(242,228,202,.36)}
+#U .car .hd{display:flex;justify-content:space-between;font:700 9px/1 'IBM Plex Mono',monospace;
+  letter-spacing:.2em;color:#7A5B33;border-bottom:1.5px solid #4A3218;padding-bottom:10px}
+#U .car .nm{font-family:Anton,sans-serif;font-size:40px;line-height:.9;color:#33230F;margin-top:14px;letter-spacing:-.02em}
+#U .car .dt{display:flex;gap:26px;margin-top:16px}
+#U .car .dt div s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33;text-transform:uppercase}
+#U .car .dt div n{font-family:'IBM Plex Mono',monospace;font-size:15px;color:#33230F;margin-top:6px}
+#U .lis{position:absolute;left:26px;right:26px;top:306px;z-index:6}
+#U .lis .r{display:flex;justify-content:space-between;align-items:baseline;padding:15px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+#U .lis .r b{font:800 15px/1 Archivo,sans-serif;color:#33230F}
+#U .lis .r s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:5px}
+#U .lis .r u{font-size:15px;color:#9C5F14}
+#U .fin{position:absolute;left:26px;right:26px;bottom:104px;z-index:6;border-top:1px solid rgba(74,50,24,.35);padding-top:14px}
+#U .fin .r{display:flex;justify-content:space-between;align-items:center;padding:9px 0}
+#U .fin .r b{font:700 12px/1 Archivo,sans-serif;letter-spacing:.14em;color:#6E4F2A;text-transform:uppercase}
+#U .fin .r.peli b{color:#8C2F1E}
+#U .fin .r s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8A6A3C}
+
+/* ═════ SIN NADA TODAVÍA ═════ El patrón de todos los estados vacíos: el hermano del lado
+   en el que estás, una frase suya, y UNA salida. Nunca un rótulo suelto en medio de la
+   nada, que es como quedaron dos pantallas de la app vieja.                        */
+#V{background:#0E2231}
+#V .cur{position:absolute;inset:0;z-index:0;
+  background:repeating-radial-gradient(circle at 115% 12%,rgba(140,200,236,.28) 0 2px,transparent 2px 18px)}
+#V .blq{position:absolute;left:26px;right:140px;top:162px;z-index:6}
+#V .blq em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#V .blq b{font-family:Anton,sans-serif;font-size:40px;line-height:.9;color:#F2F6F8;margin-top:12px;letter-spacing:-.02em}
+#V .blq s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#7FA6BC;margin-top:14px;line-height:1.8}
+#V .her{position:absolute;right:-30px;bottom:74px;width:186px;z-index:5;filter:drop-shadow(-8px 10px 22px rgba(0,0,0,.45))}
+#V .sug{position:absolute;left:26px;right:206px;bottom:104px;z-index:6}
+#V .sug em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E90A4;text-transform:uppercase}
+#V .sug .r{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #1E3E50}
+#V .sug .r b{font:800 14px/1 Archivo,sans-serif;color:#D6E6EF}
+#V .sug .r p{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7FA6BC}
+</style></head><body>
+
+<div class="f" id="W">
+  <div class="tag">FICHA · VERSIÓN WICHO</div>
+  <div class="foto"><img src="../../../img/sig06.jpg"><div class="v"></div></div>
+  <div class="cur"></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="tit"><em>Asiático</em><b>THE TERIYAKI</b><s>EL SABOR QUE LE FALTABA AL MENU.<br>DULCE, CON MANI Y UN FILO SALADO.</s></div>
+  <div class="piezas"><em>Lo que lleva</em>
+    <div class="fila">
+      <div class="pz"><div class="im"><img src="../../../img/prot_p02.webp"></div><b>Pollo teriyaki</b><s>85 G</s></div>
+      <div class="pz"><div class="im ch" style="background:linear-gradient(140deg,#E8D37A,#C9A94A)"></div><b>Queso edam</b><s>2 LONJAS</s></div>
+      <div class="pz"><div class="im ch" style="background:linear-gradient(140deg,#C98B4A,#8A5A2A)"></div><b>Satay maní</b><s>SALSA</s></div>
+      <div class="pz"><div class="im ch" style="background:linear-gradient(140deg,#B8564A,#7A2F28)"></div><b>De la casa</b><s>SALSA</s></div>
+    </div>
+  </div>
+  <div class="sz">
+    <div class="o on"><b>15 CM</b><s>S/21.90</s></div>
+    <div class="o"><b>30 CM</b><s>S/28.90</s></div>
+  </div>
+  <div class="arm">¿LO QUIERES A TU MANERA? ARMA UNO PARECIDO →</div>
+  <div class="go"><div class="mi oro">Lo quiero</div><div class="mi cel">S/21.90</div></div>
+</div>
+
+<div class="f" id="S">
+  <div class="tag">EL MENÚ SECRETO</div>
+  <div class="halo"></div>
+  <div class="sal" style="color:#8C8880">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>THE<br>VAULT</b>
+    <s>NO DECIMOS QUE LLEVA. NO SALE EN LA CARTA.<br>CAMBIA CADA SEMANA Y NO AVISA.</s></div>
+  <div class="reloj"><s>ESTE SE VA EN</s><b>4 días</b></div>
+  <div class="adv">SI TE GUSTA, PÍDELO AHORA:<br>EL DE LA SEMANA QUE VIENE ES OTRO.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f kraft" id="U">
+  <div class="tag">TU CUENTA</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="wm cla"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="car">
+    <div class="hd"><span>CLIENTE DESDE JULIO 2026</span><span>#0117</span></div>
+    <div class="nm">Mafe Ríos</div>
+    <div class="dt">
+      <div><s>Pedidos</s><n>14</n></div>
+      <div><s>Puntos</s><n>380</n></div>
+      <div><s>Crédito</s><n>S/12.50</n></div>
+    </div>
+  </div>
+  <div class="lis">
+    <div class="r"><div><b>Tus direcciones</b><s>DOS GUARDADAS</s></div><u>→</u></div>
+    <div class="r"><div><b>Tus datos</b><s>NOMBRE, TELEFONO, DNI</s></div><u>→</u></div>
+    <div class="r"><div><b>Cómo pagas</b><s>YAPE POR DEFECTO</s></div><u>→</u></div>
+    <div class="r"><div><b>Avisos</b><s>CUANDO SALE Y CUANDO LLEGA</s></div><u>→</u></div>
+    <div class="r"><div><b>Términos y privacidad</b><s>LO LEGAL, EN CRIOLLO</s></div><u>→</u></div>
+  </div>
+  <div class="fin">
+    <div class="r"><b>Cerrar sesión</b><s>EN ESTE APARATO</s></div>
+    <div class="r peli"><b>Borrar mi cuenta</b><s>NO SE PUEDE DESHACER</s></div>
+  </div>
+</div>
+
+<div class="f" id="V">
+  <div class="tag">ESTADO VACÍO · el patrón</div>
+  <div class="cur"></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="wm osc"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="blq"><em>Tus pedidos</em><b>TODAVÍA<br>NO HAY<br>NADA ACÁ</b>
+    <s>“CUANDO PIDAS TU PRIMERO,<br>ESTA PANTALLA SE LLENA SOLA.”</s></div>
+  <img class="her" src="../../../img/wicho_cuerpo.png">
+  <div class="sug"><em>Por dónde empezar</em>
+    <div class="r"><b>The Original 15CM</b><p>S/21.90</p></div>
+    <div class="r"><b>Arma el tuyo</b><p>DESDE S/13.90</p></div>
+  </div>
+  <div class="go"><div class="mi oro">Ver la carta</div><div class="mi cel">Armar</div></div>
+</div>
+</body></html>

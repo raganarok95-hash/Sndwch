@@ -62,3 +62,12 @@ jobs:
           # 90 días es el techo de retención de artefactos en el plan gratuito de GitHub.
           retention-days: 90
           if-no-files-found: error
+
+      # ── ¿La base cambió sin pasar por el repo? (2026-09-24) ─────────────────────────────
+      # Va DESPUÉS de guardar el respaldo: si falla, el respaldo del día ya quedó guardado.
+      # Compara la foto del esquema de esta noche con supabase/esquema-actual.sql. Una
+      # diferencia es una de dos: alguien cambió la base desde el panel sin migración, o se
+      # aplicó una migración y no se volvió a sacar la foto. Las dos se arreglan igual:
+      # actualizando esquema-actual.sql con la foto nueva (el diff está en el log).
+      - name: Comparar el esquema real con el del repo
+        run: node scripts/comparar-esquema.mjs backup/esquema.sql supabase/esquema-actual.sql

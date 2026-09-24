@@ -27,6 +27,9 @@ const ENTRYPOINT = 'supabase/functions/api/index.ts';
 
 const leer = (p) => readFileSync(p, 'utf8');
 const archivos = (dir, ext) => readdirSync(dir).filter((f) => f.endsWith(ext)).map((f) => join(dir, f));
+// La base nueva (src/nuevo) tiene carpetas: se recorre entera.
+const archivosEnArbol = (dir, ext) =>
+  readdirSync(dir, { recursive: true }).map(String).filter((f) => f.endsWith(ext)).map((f) => join(dir, f));
 
 // ── 1. Lo que el servidor EXPORTA, con el cuerpo de cada función ──────────────────────────
 // El cuerpo hace falta para reconocer un cron sin lista escrita a mano: una acción que llama a
@@ -69,10 +72,12 @@ for (const m of tabla.matchAll(/"?([a-z0-9][a-z0-9-]*)"?\s*:\s*(act\w+)/g)) regi
 // que habría hecho borrar código vivo o, peor, apagar el chequeo entero.
 const consumidores = [
   ...archivos('src/app', '.ts'),
+  ...archivosEnArbol('src/nuevo', '.ts'),
   ...archivos('scripts', '.mjs').filter((f) => !f.endsWith('check-acciones.mjs')),
 ].map(leer).join('\n');
 const llamadas = new Set();
-for (const m of consumidores.matchAll(/(?:api|exportCsv|llamar)\(\s*\\?['"]([a-z0-9][a-z0-9-]*)\\?['"]/g)) llamadas.add(m[1]);
+// En la base nueva la llamada lleva el tipo de la respuesta: `legado.api<RespuestaLista>('x'`.
+for (const m of consumidores.matchAll(/(?:api|exportCsv|llamar)(?:<[^>()]*>)?\(\s*\\?['"]([a-z0-9][a-z0-9-]*)\\?['"]/g)) llamadas.add(m[1]);
 
 // ── Veredictos ────────────────────────────────────────────────────────────────────────────
 const errores = [];

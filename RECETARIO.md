@@ -62,7 +62,32 @@ convierte en estopa.
 
 Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda quepa en un día.
 
-**Sazón por kg de carne limpia:** 12 g de sal (1.2%), pimienta negra gruesa, poco comino, ajo picado.
+> ### ⚠ Revisada el 2026-09-17 — la versión anterior salía SOSA y SECA
+>
+> El dueño la probó y no pasó. No era un error de ejecución, era la receta. Cuatro causas, y
+> las cuatro están corregidas abajo:
+>
+> 1. **No tenía un solo ácido.** Se braseaba, se reducía y se probaba **solo de sal**. Una res
+>    mechada grasa, comida fría-recalentada dentro de un pan, sin ácido al final, sabe pesada y
+>    plana — no importa cuánto tiempo la cocines. El vinagre del desglasado (paso 5) se evapora
+>    entero: no cuenta. **El cambio más importante de todos es el paso 12.**
+> 2. **No tenía fondo umami.** 2 cucharadas de pasta de tomate para 6 kg de carne es
+>    prácticamente nada. Por eso sabía a "carne cocida" y no a un asado.
+> 3. **Se quedaba sin grasa ni caldo suficiente para sobrevivir el congelado.** Se desgrasaba
+>    todo y se reunía con 150-200 ml por kg. Entre congelar, descongelar y recalentar se pierde
+>    humedad: lo que llega al cliente son hebras secas. La propia tabla de riesgos de este
+>    documento ya lo decía —"mechado seco si se recalienta mal"— y se trató como un problema de
+>    recalentado cuando era de formulación.
+> 4. **El comino la mandaba a otro plato.** Empujaba el sabor a relleno de taco, y encima
+>    peleaba con las dos salsas de SIG01 (Aioli de ajo-limón + Honey Mustard). Ni una cosa ni la
+>    otra. **Fuera.**
+>
+> **Todo esto cuesta centavos**: pasta de tomate, sillao y vinagre ya están en la lista de
+> compras por otras recetas. El rinde no baja — sube un poco, porque vuelve más líquido al
+> producto final.
+
+**Sazón por kg de carne limpia:** 12 g de sal (1.2%), pimienta negra gruesa, ajo picado.
+**Sin comino** (ver arriba).
 
 1. **Limpia (20 min).** Recorta nervio y grasa que pase de 5 mm — **deja ~5 mm, no la quites toda**.
    Los recortes iban al au jus de THE CHICAGO, que está en pausa: guárdalos si vas a hacer un
@@ -71,10 +96,16 @@ Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda 
 3. **Sella (15 min).** Olla muy caliente, aceite, de pocos trozos a la vez. **Marrón oscuro, no
    dorado pálido** — ahí está la mitad del sabor. Si llenas la olla, se hierve.
 4. **Base aromática (10 min).** En la misma grasa: 2 cebollas en juliana, 1 cabeza de ajo picada,
-   2 zanahorias. Cuando la cebolla esté transparente, 2 cdas de pasta de tomate, tuesta 2 min.
+   2 zanahorias. Cuando la cebolla esté transparente, **120 g de pasta de tomate** (no 2 cucharadas
+   — eran 30 g para 6 kg de carne, o sea nada) y **tuéstala 3-4 min hasta que se ponga ladrillo
+   oscuro y huela dulce**. Ese tostado es de donde sale el fondo. Si la agregas y sigues de largo,
+   la pasta queda cruda y aporta acidez metálica en vez de profundidad.
 5. **Desglasa** con un chorro de agua/cerveza/vinagre y **raspa el fondo pegado**. Ese fondo es sabor.
 6. **Brasea.** Devuelve la carne. Líquido hasta **la mitad de la altura, no más** (si la cubres, el
-   sabor se diluye). Laurel, orégano.
+   sabor se diluye). Laurel, orégano, **y el fondo umami: 60 ml de sillao para la tanda de 6 kg**.
+   No va a saber a sillao —a esa dilución no se reconoce— va a saber a carne con más cuerpo.
+   *Si tienes anchoas en aceite: 6 filetes deshechos en la base aromática hacen lo mismo y mejor.
+   Tampoco se reconocen; se deshacen enteras en el braseado.*
    - Presión: **50-60 min desde que pita**, fuego bajo. Deja bajar la presión sola.
    - Olla común: tapa, fuego mínimo, **4-5 h**. Nunca fuego medio "para apurar".
 7. **Punto:** el tenedor entra y **gira sin resistencia** (~92-96°C internos). Si hay que hacer
@@ -83,12 +114,28 @@ Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda 
 9. **Deshilacha** con dos tenedores, en el sentido de la fibra. **Deja hebras largas e irregulares** —
    todo del mismo grosor fino parece carne de lata.
 10. **Reduce el caldo** colado a fuego fuerte, a la mitad o un tercio. Debe napar la cuchara.
-11. **Reúne:** 150-200 ml de caldo reducido por kg de mechado. **Húmedo y brillante, sin charco.**
-    Prueba la sal acá, y pruébala **fría** (el calor enmascara la sal).
+    **Antes de reducir, deja reposar 10 min y retira la grasa de arriba con un cucharón —
+    guárdala, no la tires.** Vuelve al paso 11.
+11. **Reúne:** **250-300 ml de caldo reducido por kg de mechado** (antes eran 150-200, y con eso
+    llegaba seco al cliente), **más 2-3 cucharadas de la grasa que guardaste**. La grasa no es
+    opcional: es lo que transporta el sabor y lo que hace que la hebra no se sienta lijosa después
+    de congelar. **Húmedo y brillante, con un poco de caldo en el fondo del bowl** — el "sin
+    charco" de antes era el consejo que lo dejaba seco.
+12. **⚠ EL ÁCIDO, QUE ES LO QUE FALTABA.** Fuera del fuego, ya reunido: **45-60 ml de vinagre de
+    manzana por kg de mechado**, en tres veces, mezclando y probando entre cada una. Va **al final
+    y en frío del fuego a propósito**: si lo echas mientras hierve se evapora y no hiciste nada,
+    que es exactamente lo que pasaba antes.
+    **Cómo se sabe que está bien:** no tiene que saber a vinagre. Tiene que saber a la misma carne
+    pero *despierta* — el punto es cuando dejas de notar la grasa en el paladar después de tragar.
+    Si sabe a vinagre, te pasaste: se arregla con más carne, no con azúcar.
+13. **Prueba la sal recién ahora, y pruébala FRÍA** (el calor enmascara la sal, y el ácido cambia
+    cuánta sal parece tener). Prueba **dentro de un pedazo de pan**, no a cuchara: el pan se lleva
+    parte de la sal y del ácido, y es como el cliente lo va a comer.
 
 ### Congelado y servicio
-- Porciones **pesadas** de 85 g y 170 g, cada una en su bolsa, **con 15-20 ml del caldo reducido
-  adentro**. Ese caldo es lo que sostiene la palabra "jugosa" del pitch.
+- Porciones **pesadas** de 85 g y 170 g, cada una en su bolsa, **con 25-30 ml del caldo reducido
+  adentro** (antes 15-20, y no alcanzaba). Ese caldo es lo que sostiene la palabra "jugosa" del
+  pitch, y es lo primero que se pierde en el ciclo congelar-descongelar-recalentar.
 - Bolsa ziploc **aplanada a menos de 2 cm**, sin aire (sumérgela casi cerrada en agua para expulsarlo).
 - Rotula: `P01 · 85g · 24-AGO`. **Sin fecha no hay rotación.**
 - Usar dentro de **4-6 semanas** por calidad.
@@ -781,6 +828,32 @@ contenido de marketing gratis: un plato que la gente ya vio y no pudo pedir.
 
 **Preparación físicamente distinta de P01. Otro corte, otra técnica, otra tanda. Nunca se mezclan.**
 
+> ### ⚠ Revisada el 2026-09-17 — salía GRIS y SECA, y no era culpa de la rebanadora
+>
+> El dueño la probó y no pasó. La rebanadora es un problema real, pero **no es el principal**.
+> Hay tres defectos de receta que la arruinan aunque laminaras perfecto:
+>
+> 1. **SE COCINA TRES VECES Y LA RECETA CONTABA UNA.** Sale del horno a 52-55 °C… y entonces se
+>    sumerge en el jus (paso 5), y después se recalienta en jus al armar. Si el jus está caliente
+>    cuando la sumerges, una pieza de 2 kg sigue subiendo de temperatura dentro de una masa
+>    térmica enorme durante una hora larga: llega al refri bien pasada. Ese es el paso que la
+>    mata. **La corrección no es bajar el horno: es enfriar el jus antes de meterla.**
+> 2. **EL JUS ES AGUA CON ORÉGANO.** 3 L de agua + recortes salteados + 2 cebollas, hervido 1 h 30.
+>    Eso no es un jus, es un caldo flojo. Y en un Italian Beef **el jus ES el plato**: es lo único
+>    que sazona la lámina por dentro. Un corte magro laminado, con un caldo flojo al lado, sabe a
+>    carne seca. Por eso también fallaba la sazón: toda la mezcla seca va POR FUERA de la pieza,
+>    así que después de laminar solo las rebanadas del borde tienen sabor y las del centro ninguno.
+> 3. **LLEGABA SIN JUS ENCIMA.** Las láminas iban por un lado y los 70 ml de jus por otro. El
+>    cliente que no lo vierte —o al que se le enfrió— se come carne magra seca. El clásico va
+>    *mojado*, no *con salsa al costado*.
+>
+> Las tres correcciones están abajo y **ninguna cuesta dinero**: huesos de res son baratos o
+> regalados, la pasta de tomate y el vinagre ya están en la lista.
+>
+> **Lo que sigue siendo cierto:** sin rebanadora no vuelve. A 2.5 mm, un magro de pierna es
+> chicloso por mucho que hagas bien todo lo demás. **Regla: si no llegas a 1.5 mm, el plato no
+> sale a la carta.**
+
 **Corte: ASADO PEJERREY.** Segunda opción: bola de lomo. Tercera: cadera. Son los magros de pierna
 de fibra larga, el equivalente peruano del *top round* del Italian Beef.
 **Precio real: S/28-34/kg.** ⚠ **El brief costea toda la res a S/20/kg y P07 no se puede hacer a
@@ -801,22 +874,44 @@ ese precio** — el corte que exige la técnica cuesta 40-70% más.
 envuelve, **refri 12-24 h**.
 
 **Día 2 (30 min + horno):**
-1. **Jus base:** los recortes de P07 **+ los recortes de la limpieza de P01** (acá se usan), 2 cebollas,
-   1 cabeza de ajo, sofritos hasta dorar. 3 L de agua, laurel, orégano, hinojo, sal. **Hierve suave
-   1 h 30 y cuela.** Que salga de recortes propios es lo que hace literalmente cierto el pitch.
+1. **Jus base — rehecho, porque el jus ES el plato.** Los recortes de P07 **+ los recortes de la
+   limpieza de P01** (acá se usan) **+ 1.5 kg de huesos de res** (el carnicero te los da baratos o
+   gratis; sin ellos no hay cuerpo). **Al horno a 220 °C hasta MARRÓN OSCURO, 35-45 min**, no
+   salteados en olla: el tostado del horno es de donde sale el color y la mitad del sabor.
+   Aparte, en la olla: 2 cebollas, 1 cabeza de ajo y 2 zanahorias hasta dorar, **80 g de pasta de
+   tomate tostada 3-4 min**, desglasa con **120 ml de vinagre de vino tinto** y raspa el fondo.
+   Suma los huesos y recortes tostados + 3 L de agua + laurel, orégano, hinojo.
+   **Hierve suave 3 h** (no 1 h 30), cuela, **y reduce hasta 2.2 L**.
+   **Sazónalo al final y sazónalo FUERTE**: tiene que estar visiblemente más salado que un caldo
+   de tomar, porque su trabajo es salar la carne por dentro. Pruébalo con una lámina adentro, no
+   a cuchara sola. Que salga de recortes propios es lo que hace literalmente cierto el pitch.
 2. Saca la carne del refri **45 min antes** de asar.
 3. **Sella** en sartén muy caliente, 6-8 min en total, marrón oscuro.
-4. **Asa a 160°C** con 2-3 dedos de jus en el fondo de la bandeja hasta **52-55°C internos**
-   (~1 h 45 - 2 h 15 por pieza de 2 kg). **Tiene que quedar cruda-media a propósito**: se termina de
-   cocinar en el jus caliente al armar cada sándwich. Si la sacas a punto, el sándwich sale recocido.
-5. **Reposo 30 min**, luego **sumerge la pieza entera en el jus y al refri 8-12 h. Sin excepción.**
+4. **Asa a 160°C** con 2-3 dedos de jus en el fondo de la bandeja hasta **50-52°C internos**
+   (~1 h 30 - 2 h por pieza de 2 kg). Antes decía 52-55; se baja porque **después de esto la carne
+   recibe DOS calores más** (el baño de jus y el recalentado al armar) y la receta anterior no los
+   contaba. Sacarla a punto acá significa gris en el plato.
+5. **Reposo 30 min al aire, destapada, hasta que baje de 40 °C.**
+   **⚠ EL JUS TIENE QUE ESTAR FRÍO ANTES DE SUMERGIRLA — menos de 10 °C.** Este es el paso que
+   arruinaba la tanda: meter una pieza de 2 kg en jus caliente la sigue cocinando más de una hora
+   dentro del refri, porque la olla tarda muchísimo en bajar. Enfría el jus aparte (baño de agua
+   con hielo, o la noche anterior), **y recién ahí sumerge la pieza. Refri 8-12 h. Sin excepción.**
 
 **Día 3 (1 h 15):**
 6. **Desgrasa el jus** — la grasa se solidificó arriba. Retírala. Este paso decide si el au jus se ve
    bien o mal cuando llegue tibio al cliente.
-7. **Congelado parcial: 45-60 min.** Firme, no dura: no debes poder doblarla, pero sí atravesarla.
-8. **Lamina** contra la fibra, cuchillo largo bien afilado. **Objetivo real a mano: 1.5-2.5 mm**
-   (con rebanadora se llega a 0.5-1 mm; a mano no). Porciona a 85/170 g con jus y al congelador.
+7. **Congelado parcial: 60-90 min** (antes 45-60). Firme de verdad: no debes poder doblarla, y el
+   cuchillo tiene que entrar con algo de resistencia. Cuanto más firme, más fina sale la lámina —
+   es la única variable que puedes mover sin comprar una máquina.
+8. **Lamina** contra la fibra, cuchillo largo bien afilado. **Objetivo: 1-1.5 mm. Si te sale más de
+   1.5 mm, el plato no sale a la carta ese día** — no es perfeccionismo, es que a 2.5 mm un magro
+   de pierna se mastica como goma y ninguna otra corrección lo salva.
+9. **⚠ MOJA LAS LÁMINAS, NO LAS DEJES SECAS.** Recién laminadas, mézclalas en un bowl con **jus
+   frío hasta que queden brillantes y pesadas**, y prueba la sal ahí. Esto es lo que sazona el
+   centro de cada lámina, que con la sazón seca por fuera nunca se sazonaba.
+10. Porciona a 85/170 g **con 30-40 ml de jus DENTRO de la bolsa** y al congelador. Los 70 ml del
+    pote aparte siguen yendo: son para mojar el pan, no para salvar la carne. **Una lámina que
+    depende de que el cliente se acuerde de verter el jus es una lámina seca.**
 
 > ⚠ **Para P07 el termómetro de pincho NO es opcional.** P01 se controla con el tenedor porque su
 > punto tiene un rango enorme; P07 sale a 52-55°C y el margen es de pocos grados. 5°C de más y la

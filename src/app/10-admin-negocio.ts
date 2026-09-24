@@ -675,7 +675,7 @@ async function saveAllCatalogChanges(){
 // fijo). Publicar un cambio INSERTA una fila nueva en `secret_signature` (nunca
 // actualiza in-place, ver actAdminSecretSignatureSet) — la fila de mayor id es la
 // vigente, así queda historial de sándwiches secretos anteriores gratis.
-var ssName='',ssBase='',ssProt='',ssTops:string[]=[],ssSauces:string[]=[],ssVaultIds:string[]=[],ssP15='',ssP30='',ssMinOrders='',ssImagePath='',ssMsg='',ssHistory:any[]=[];
+var ssName='',ssBase='',ssProt='',ssTops:string[]=[],ssSauces:string[]=[],ssVaultIds:string[]=[],ssP15='',ssP30='',ssMinOrders='',ssImagePath='',ssMsg='',ssHistory:any[]=[],ssEnds='',ssBlurb='',ssHints:{t:string,s:string}[]=[];
 async function loadSecretSignatureAdmin(){
   sndScreen='admin_secret';busy=true;busyMsg='Cargando menú secreto...';render();
   try{
@@ -687,6 +687,8 @@ async function loadSecretSignatureAdmin(){
     ssVaultIds=cur&&Array.isArray(cur.vault_only_ids)?cur.vault_only_ids.slice():[];
     ssP15=cur?String(cur.price_15):'';ssP30=cur?String(cur.price_30):'';
     ssMinOrders=cur?String(cur.min_orders):'5';ssImagePath=cur&&cur.image_path?cur.image_path:'';
+    ssEnds=cur&&cur.ends_at?String(cur.ends_at).slice(0,10):'';ssBlurb=cur&&cur.blurb?cur.blurb:'';
+    ssHints=[0,1,2].map(function(i){var h=cur&&Array.isArray(cur.hints)?cur.hints[i]:null;return{t:h&&h.t||'',s:h&&h.s||''};});
     ssHistory=r.history||[];
   }catch(e){showToast('Error: '+e.message);}
   busy=false;render();
@@ -740,6 +742,14 @@ function sAdminSecretSignature(){
       +'<div style="margin-bottom:14px">'+vaultChips+'</div>':'')
     +'<div style="display:flex;gap:8px;margin-bottom:14px">'+cpNumField('ss-p15','15CM',ssP15)+cpNumField('ss-p30','30CM',ssP30)+cpNumField('ss-min','Pedidos mín.',ssMinOrders)+'</div>'
     +'<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Foto (ruta/URL, opcional)</div>'+INP('ss-img','ej. img/sig05.jpg',undefined,ssImagePath)+'</div>'
+    // Lo que la pantalla del secreto cuenta además de la receta (maquetas «estructura» y
+    // «fondo»): hasta cuándo dura, la reseña que queda en «los que ya no vuelven», y tres
+    // pistas. ⚠ Las pistas dicen CÓMO pega, nunca QUÉ lleva: nombrar un ingrediente rompe el secreto.
+    +'<div style="margin-bottom:14px">'+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Dura hasta (vacío = fin de mes)</div><input id="ss-ends" type="date" value="'+esc(ssEnds)+'" style="width:100%;box-sizing:border-box;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;color:var(--sw-text,#FFFFFF);font-size:15px"></div>'
+    +'<div style="margin-bottom:14px">'+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Reseña para cuando se vaya (ej. «cabrito, culantro y zarandaja»)</div>'+INP('ss-blurb','Una línea',ssBlurb||undefined)+'</div>'
+    +'<div style="margin-bottom:18px">'+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Tres pistas: cómo pega, nunca qué lleva</div>'
+      +[0,1,2].map(function(i){var h=ssHints[i]||{t:'',s:''};return'<div style="display:flex;gap:6px;margin-bottom:6px"><div style="flex:1">'+INP('ss-h'+i+'t','Pista '+(i+1)+' (ej. Pica, y no de mentira)',h.t||undefined)+'</div><div style="flex:1">'+INP('ss-h'+i+'s','Detalle (opcional)',h.s||undefined)+'</div></div>';}).join('')
+      +'</div>'
     +BTN('Publicar sándwich del mes //','saveSecretSignature()')
     +(ssHistory.length?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
       +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
@@ -853,6 +863,8 @@ async function saveCatalogItem(){
 }
 async function saveSecretSignature(){
   ssName=gv('ss-name');ssImagePath=gv('ss-img');ssP15=gv('ss-p15');ssP30=gv('ss-p30');ssMinOrders=gv('ss-min');
+  ssEnds=gv('ss-ends');ssBlurb=gv('ss-blurb');
+  ssHints=[0,1,2].map(function(i){return{t:gv('ss-h'+i+'t').trim(),s:gv('ss-h'+i+'s').trim()};});
   if(!ssName.trim()){showToast('Falta el nombre del sándwich del mes.');return;}
   if(!ssBase||!ssProt){showToast('Elige pan y proteína.');return;}
   // Al menos una salsa (no "un topping O una salsa"): el cargo de SALSA EXTRA duplica la
@@ -865,7 +877,9 @@ async function saveSecretSignature(){
   if(!Number.isInteger(minOrders)||minOrders<0){showToast('Pedidos mínimos inválido.');return;}
   busy=true;busyMsg='Publicando...';render();
   try{
-    var pubRes=await api('admin-secret-signature-set',{token:token,name:ssName.trim(),base:ssBase,proteinId:ssProt,tops:ssTops,sauces:ssSauces,vaultOnlyIds:ssVaultIds,price15:p15,price30:p30,minOrders:minOrders,imagePath:ssImagePath.trim()||null});
+    var pubRes=await api('admin-secret-signature-set',{token:token,name:ssName.trim(),base:ssBase,proteinId:ssProt,tops:ssTops,sauces:ssSauces,vaultOnlyIds:ssVaultIds,price15:p15,price30:p30,minOrders:minOrders,imagePath:ssImagePath.trim()||null,
+      // El fin se toma a las 23:59 de Lima del día elegido; sin fecha, el servidor usa el fin de mes.
+      endsAt:ssEnds?ssEnds+'T23:59:59-05:00':null,blurb:ssBlurb.trim()||null,hints:ssHints.filter(function(h){return!!h.t;})});
     await loadCatalogBackground();
     // El servidor avisa por push a quienes ya desbloquearon el menú secreto y devuelve a
     // cuántos les llegó. Se muestra el número porque el dueño no tiene otra forma de saber
@@ -1734,6 +1748,86 @@ function sAdminProblemAddresses(){
 // ver COMPLAINT_DEADLINE_BUSINESS_DAYS en supabase/functions/api/actions/complaints.ts)
 // (obligación legal, no solo buena práctica); esta pantalla es donde el operador ve la
 // cola pendiente y deja constancia de la respuesta.
+// ALGO SALIÓ MAL — los reportes rápidos de la pantalla 35 (actions/problems.ts). Al cliente se
+// le prometió una hora de respuesta: los que están por pasarla van primero y en rojo.
+var orderProblems:any[]|null=null,orderProblemsErr='';
+async function loadOrderProblems(){
+  sndScreen='admin_order_problems';busy=true;busyMsg='Cargando reportes...';render();
+  try{var r=await api('admin-order-problems',{token:token});orderProblems=r.problems||[];orderProblemsErr='';}
+  catch(e){orderProblems=null;orderProblemsErr=(e&&e.message)||'';}
+  busy=false;render();
+}
+async function resolveOrderProblem(id,solucion){
+  var nota=(document.getElementById('op-nota-'+id) as HTMLInputElement|null);
+  try{
+    await api('admin-resolve-order-problem',{token:token,id:id,solucion:solucion,nota:nota?nota.value:''});
+    showToast('Listo. Le avisamos al cliente.','success');
+  }catch(e){showToast(e.message);}
+  loadOrderProblems();
+}
+function sAdminOrderProblems(){
+  var h=H('ALGO SALIÓ MAL',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!orderProblems){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadOrderProblems()',true)+'</div>';
+  }
+  var MOT={falto:'Faltó algo',frio:'Llegó frío',distinto:'No era lo que pidió',otro:'Otra cosa'};
+  var SOL={reposicion:'Reponer',credito:'Crédito',reembolso:'Reembolso'};
+  var abiertos=orderProblems.filter(function(p){return!p.resolved_at;}).sort(function(a,b){return Date.parse(a.respond_by)-Date.parse(b.respond_by);});
+  var cerrados=orderProblems.filter(function(p){return!!p.resolved_at;});
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">'+abiertos.length+' por responder //</div>';
+  h+=abiertos.length?abiertos.map(function(p){
+    var vence=Date.parse(p.respond_by),tarde=vence<Date.now();
+    return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(tarde?'rgba(255,85,85,.5)':'rgba(255,165,0,.35)')+';border-radius:10px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;gap:8px"><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">'+esc(p.ref)+' · '+esc((MOT as any)[p.motivo]||p.motivo)+'</b>'
+      +'<span style="font-family:EB Garamond,serif;font-size:11px;color:'+(tarde?'var(--sw-danger,#ff8888)':GOLD)+'">'+(tarde?'Se pasó: ':'Antes de ')+esc(horaLima(vence))+'</span></div>'
+      +(p.detalle?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(p.detalle)+'</div>':'')
+      +'<input id="op-nota-'+p.id+'" placeholder="Nota para el cliente (opcional)" style="margin-top:10px;width:100%;box-sizing:border-box;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+      +'<div style="display:flex;gap:6px;margin-top:8px">'+Object.keys(SOL).map(function(k){return'<button onclick="resolveOrderProblem('+p.id+',\''+k+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px 0;border:1px solid '+GOLD+';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:'+GOLD+'">'+(SOL as any)[k]+'</button>';}).join('')+'</div>'
+      +'</div>';
+  }).join(''):'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nada por responder.</div>';
+  if(cerrados.length){
+    h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.2em;margin:18px 0 10px">Resueltos //</div>'
+      +cerrados.slice(0,20).map(function(p){return'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);padding:6px 0;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">'+esc(p.ref)+' · '+esc((MOT as any)[p.motivo]||p.motivo)+' → '+esc((SOL as any)[p.resolution]||'')+'</div>';}).join('');
+  }
+  h+=BTN('Actualizar //','loadOrderProblems()',true);
+  return h+'</div>';
+}
+
+// ZONAS QUE ESPERAN — quién se anotó en el checkout para que le avisemos cuando lleguemos a
+// su distrito (actions/zones.ts). Sirve para decidir qué zona abrir, y para avisarles a todos
+// de una vez cuando se abre. El servidor se niega a avisar mientras la zona siga excluida.
+var zoneWaitlist:any[]|null=null;
+async function loadZoneWaitlist(){
+  sndScreen='admin_zone_waitlist';busy=true;busyMsg='Cargando zonas...';render();
+  try{var r=await api('admin-zone-waitlist',{token:token});zoneWaitlist=r.zones||[];}
+  catch(e){zoneWaitlist=null;}
+  busy=false;render();
+}
+async function notifyZone(id){
+  var d=districtById(id);
+  if(!(await showConfirm('¿Avisar a todos los que esperan en '+((d&&d.l)||id)+' que ya llegamos? Hazlo solo si ya abriste esa zona.')))return;
+  try{
+    var r=await api('admin-notify-zone',{token:token,district:id,districtLabel:(d&&d.l)||id});
+    showToast('Avisados: '+r.avisados+' de '+r.total+'.','success');
+  }catch(e){showToast(e.message);}
+  loadZoneWaitlist();
+}
+function sAdminZoneWaitlist(){
+  var h=H('ZONAS QUE ESPERAN',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!zoneWaitlist){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadZoneWaitlist()',true)+'</div>';
+  }
+  h+=zoneWaitlist.length?zoneWaitlist.map(function(z){
+    var d=districtById(z.district);
+    return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      +'<div><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">'+esc((d&&d.l)||z.district)+'</b>'
+      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+z.count+' esperando</div></div>'
+      +'<button onclick="notifyZone(\''+esc(z.district)+'\')" style="all:unset;cursor:pointer;padding:8px 12px;border:1px solid '+GOLD+';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:'+GOLD+'">Ya llegamos</button></div>';
+  }).join(''):'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nadie esperando todavía.</div>';
+  h+=BTN('Actualizar //','loadZoneWaitlist()',true);
+  return h+'</div>';
+}
+
 async function loadAdminComplaints(){
   sndScreen='admin_complaints';busy=true;busyMsg='Cargando reclamaciones...';render();
   try{var r=await api('admin-list-complaints',{token:token,status:cmplFilterStatus||undefined});adminComplaints=r.complaints;}
@@ -1755,7 +1849,9 @@ function sAdminComplaints(){
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">'+list.length+' reclamaciones //</div>';
   h+=list.length?list.map(function(c){
     var pending=c.status==='pendiente';
-    var openId=cmplRespondingId===c.id;
+    // `c.id` es bigint (número) y el botón lo guarda como texto: con === la caja de respuesta
+    // no se abría nunca y el Libro de Reclamaciones no se podía contestar desde el panel.
+    var openId=mismoId(cmplRespondingId,c.id);
     return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(pending?'rgba(255,165,0,.35)':'#2C3228')+';border-radius:10px;padding:14px;margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div>'
       +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(c.claim_code)+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+(c.kind==='queja'?'Queja':'Reclamo')+'</div>'
@@ -1767,7 +1863,7 @@ function sAdminComplaints(){
       +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE'))+'</div>'
       +(c.provider_response?'<div style="background:var(--sw-card2,#171A14);border-radius:8px;padding:10px 12px;margin-top:10px;font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)"><b style="color:'+GOLD+'">Respuesta:</b> '+esc(c.provider_response)+'</div>'
         :(openId
-          ?'<div style="margin-top:10px"><textarea id="cq-resp-'+c.id+'" placeholder="Escribe tu respuesta al consumidor" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;font-family:EB Garamond,serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint(\''+c.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">Guardar respuesta //</button></div>'
+          ?'<div style="margin-top:10px"><textarea id="cq-resp-'+c.id+'" placeholder="Escribe tu respuesta al consumidor" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;font-family:EB Garamond,serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint('+Number(c.id)+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">Guardar respuesta //</button></div>'
           :'<button onclick="cmplRespondingId=\''+c.id+'\';render()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:9px 0;border-radius:8px;margin-top:10px">Responder //</button>'))
       +'</div>';
   }).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;padding:20px 0">Sin reclamaciones //</div>';
@@ -1783,31 +1879,6 @@ async function doRespondComplaint(id){
     cmplRespondingId=null;
     loadAdminComplaints();
   }catch(e){showToast(e.message,'error');}
-}
-
-async function doRecover(){
-  var phone=gv('rec-phone').trim();
-  var dni=gv('rec-dni').trim();
-  var bdayRaw=gv('rec-bday').trim();
-  recPhone=phone;recDni=dni;recBday=bdayRaw;
-  var msg=(document.getElementById('rec-msg') as HTMLInputElement | null);
-  if(!phone||!dni||!bdayRaw){if(msg)msg.textContent='Completa teléfono, DNI y fecha de nacimiento.';return;}
-  var bday=parseBdayDDMMYYYY(bdayRaw);
-  if(!bday){if(msg)msg.textContent='Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';return;}
-  busy=true;busyMsg='Verificando...';render();
-  try{
-    var r=await api('recover',{phone:phone,dni:dni,bday:bday});
-    if(r.emailSent){recNewPin=null;recEmailMasked=r.emailMasked;}
-    else{recNewPin=r.newPin;recEmailMasked=null;recPinRevealed=false;}
-    // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
-    // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
-    savedPh=phone;
-    busy=false;sndScreen='p_recover';render();
-  }catch(e){
-    busy=false;sndScreen='p_recover';render();
-    var m2=(document.getElementById('rec-msg') as HTMLInputElement | null);
-    if(m2)m2.textContent=e.message;
-  }
 }
 
 
@@ -2588,6 +2659,8 @@ Object.assign(ADMIN_SCREENS, {
   admin_report: sAdminReport,
   admin_ratings: sAdminRatings,
   admin_complaints: sAdminComplaints,
+  admin_order_problems: sAdminOrderProblems,
+  admin_zone_waitlist: sAdminZoneWaitlist,
   admin_prep: sAdminPrepList,
   admin_recipes: sAdminRecipes,
   admin_cash: sAdminCashClose,

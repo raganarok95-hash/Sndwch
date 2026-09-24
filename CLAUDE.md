@@ -16,6 +16,7 @@ romper nada. Se lee entero, siempre. Lo demás vive al lado y se consulta cuando
 | `docs/DECISIONES.md` | por qué cada cosa está como está, en orden | cuando algo parezca arbitrario, o antes de "simplificarlo" |
 | `docs/FUNCIONALIDADES.md` | qué existe hoy: flujos, crons, medición | antes de proponer algo que quizá ya está |
 | `docs/ENTORNO.md` | qué bloquea el proxy, qué MCP responde, qué no | antes de concluir que algo "no se puede" |
+| `docs/COMO_DISENAR_ACA.md` | ARREGLO vs REPENSAR, y el detector de rediseños falsos | **antes de rediseñar cualquier pantalla** |
 
 ⚠ **Este archivo se partió el 2026-09-17** porque había llegado a 2 473 líneas (~52 000
 tokens) que se inyectaban íntegras en cada turno de cada sesión. No se borró nada: todo lo
@@ -157,11 +158,60 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   `medirBarraFija()` (08-router) después de pintar; un número escrito a mano deja contenido
   debajo de una barra opaca en las pantallas cuya barra mide otra cosa.
 - **`BYO_STEP_LABELS` es el ORDEN REAL de los pasos del armador, no una lista de nombres.**
-  Cambiar qué pinta cada `if` sin cambiar ese array (y `byoValor`) hace que el riel anuncie
-  un paso y la pantalla muestre otro. Pasó, y duró doce días. Lo vigila
-  `tests/armador-riel.spec.ts`, que compara el rótulo encendido contra el título pintado.
+  Cambiar qué pinta cada `if` sin cambiar ese array (ni los índices `i:` de
+  `BYO_LOQUELLEVAS`) hace que el riel anuncie un paso y la pantalla muestre otro. Pasó, y
+  duró doce días. Lo vigila `tests/armador-riel.spec.ts`, que compara el rótulo encendido
+  contra la pregunta pintada y que cada parte de «lo que llevas» vuelva a su paso.
 - **Un estado vacío del cliente se pinta con `VACIO()`**, que trae al hermano del lado en el
   que está. Dos pantallas se lo saltaron y quedaron con un rótulo suelto en medio de la nada.
+- **UN SECRET NO SE DA POR AUSENTE MIRANDO EL CÓDIGO.** `GOOGLE_CLIENT_ID`, `META_PIXEL_ID` y
+  compañía viven como **texto de relleno** en `src/app/01-*` **a propósito**: el valor real llega
+  del servidor en `get-store-hours`, leyendo el secret de Supabase, y por eso se prenden sin
+  redesplegar el cliente. Ver el marcador `REEMPLAZA_...` en el archivo **no prueba nada**, y que
+  ninguna fila tenga `google_id` tampoco (puede estar configurado y sin usar: hoy hay 1 cliente de
+  prueba). **El secret de Google SÍ está puesto desde el 2026-09 y el botón ya se dibuja en
+  producción.** Antes de afirmar que falta un secret, verifícalo contra Supabase — nunca por
+  inferencia. Error real cometido dos veces el 2026-09-17, la segunda después de que el dueño lo
+  corrigiera.
+- **Un costo no es un número: es una ficha con unidad.** Todo insumo que entre a un
+  cálculo de dinero vive en `modelo/insumos.py` con cinco campos obligatorios —valor,
+  **unidad**, **estado** (COTIZADO/ESTIMADO/SIN_COTIZAR), fuente y fecha— y se convierte a
+  costo por sándwich SOLO por `por_sandwich()`, que **se niega** a repartir un costo *por
+  pedido* sin que le digas cuántos sándwiches trae. Lo vigila `npm run check:costos`.
+  El empaque se costeó al doble durante dos meses porque era un `float` con un comentario:
+  el comentario decía COTIZADO y no lo estaba, y el número venía medido *por pedido* y se
+  sumaba *por sándwich*. **Los doce chequeos anteriores comparan dos copias de un número;
+  uno que está solo y mal coincide consigo mismo.**
+
+- **Un guard atómico por estado (`status=eq.X`) tiene que admitir TODOS los estados desde
+  los que el paso es legítimo**, no solo el del camino feliz. Dos veces el mismo defecto: el
+  grupo vencido pasaba a `closed` y pagar exigía `open`; la reserva cobrada quedaba en
+  `charging` y confirmar exigía `pending`. Ver `RESERVA_CONFIRMABLE` en `orders.ts`.
+- **La carga de una hora se cuenta SOLO en `capacidad.ts`** (pedidos + lugares apartados por
+  pedidos fijos). Rechazar (`assertHourCapacity`) y tachar horas (`get-store-hours`) preguntan
+  ahí; una segunda copia de la cuenta deja al cliente viendo libre lo que el servidor rechaza.
+- **Un id que pasó por el HTML se compara con `mismoId()`, nunca con `===`.** Los ids de
+  dirección son números y el onclick los devuelve como texto: `12 === '12'` es falso y el
+  botón no hace nada. Las pruebas simulan ids numéricos, como la base.
+- **Una acción que se escribe o se toca se declara en `supabase/functions/_shared/contrato.ts`**
+  (entrada con esquema, salida con tipo) y lee la base con `leer()` (db.ts), no con `sbGet` y un
+  select a mano: así un campo o una columna mal escrita no compila. Tras cada migración se
+  regeneran los tipos (`_shared/base.ts`); lo vigila `npm run check:tipos-base`.
+- **El dinero se calcula en UN solo sitio: `supabase/functions/_shared/dinero.ts`.** El servidor
+  cobra con él (`deriveCart`) y el cliente muestra el total con él (`cartDesglose()` en 03-*).
+  Una regla nueva de precio va AHÍ, nunca como segunda copia en `src/app` o en `catalog.ts`:
+  `parity` falla si una regla vuelve a escribirse como número en un lado.
+- **Tras cada migración se saca de nuevo la foto del esquema**: correr
+  `scripts/pg-local/foto-del-esquema.sql` contra la base y guardar el resultado en
+  `supabase/esquema-actual.sql` (con su marca `foto-tomada-tras-migracion`). `npm run check:pg`
+  falla si está vieja, y es la base con la que corren las pruebas de `tests-db/` en un Postgres
+  local. Una función nueva de la base se prueba AHÍ, no contra producción.
+- **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
+  vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
+- **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23
+  pasaban con el defecto puesto (una miraba otra pantalla; otra quitaba comentarios con
+  `//…` y se comía todo lo que seguía a «SND//WCH»). Inyecta el defecto antes de darla por buena.
+
 - **El modo de fallo que importa es el SILENCIO.** Casi todo lo listado acá no lanza
   ninguna excepción: solo deja de hacer lo que prometía. Por eso hay tantos chequeos en
   `verify` y por eso cada uno se verifica inyectándole el defecto que caza.
@@ -181,9 +231,9 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    `assertHourCapacity` consultando una columna inexistente cuyo error se tragaba un catch.
    **Cualquier función nueva que toque dinero va acá**, no solo al typecheck. No uses
    `jsr:@std/assert`: jsr.io está bloqueado por el proxy, cada archivo trae su propio assert.
-   Hoy son 3 archivos / 23 pruebas: `dinero.test.ts` (`pointsFor`), `carrito.test.ts`
-   (`deriveCart` — combo vs. hora valle, recompensas, sándwich del organizador) y
-   `cancelacion.test.ts` (`cancellationDeltas`, la reversión al cancelar). El patrón para
+   Empezó con `dinero.test.ts` (`pointsFor`), `carrito.test.ts` (`deriveCart`) y
+   `cancelacion.test.ts` (`cancellationDeltas`); hoy son decenas — el conteo está en la
+   salida, no acá (este párrafo dijo «3 archivos / 23 pruebas» cuando ya eran 36). El patrón para
    que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
@@ -216,6 +266,12 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    quién lo llama desde `src/app` o `scripts/`), y reconoce un cron por estructura —que su
    cuerpo llame a `verifyCronSecret`— en vez de por una lista de nombres que se desactualiza.
    **Registrar una acción es un paso APARTE de importarla.**
+5f-bis. `npm run check:costos` — que ningún número de dinero entre al modelo sin unidad,
+   sin origen y sin estado, y que un costo *por pedido* no se pueda sumar *por sándwich*.
+   `npm run check:costos:probar` le inyecta los siete defectos que dice cazar y falla si
+   alguno pasa. Es el único chequeo del repo que no compara dos copias de un número sino que
+   pregunta si un número **puede justificarse** — la clase de error que el empaque tuvo dos
+   meses sin que nada lo notara.
 5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
    Fue el séptimo caso del mismo defecto en este repo; ahora hay algo que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
    normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,
@@ -223,18 +279,42 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
    script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
    verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+5h. `npm run check:e2e` — flujos de punta a punta contra el backend REAL levantado en local:
+   el `api` en Deno + PostgREST + Postgres con el esquema real (`scripts/e2e/servidor-local.mjs`).
+   Cada flujo (`tests-e2e/flujos.mjs`) entra por la API y después mira la base. Es lo único que
+   ejecuta el servidor y la base juntos: un flujo de dinero nuevo (cobrar, devolver, confirmar)
+   se agrega acá. ~4 s.
+5i. `npm run check:columnas` — que toda columna que el servidor nombra en un
+   `sbGet/sbUpdate/sbDelete` escrito como texto exista en `supabase/esquema-actual.sql`. Es la
+   clase de defecto de `assertHourCapacity` (columna inexistente, error tragado por un catch).
+   Antes de quitar una columna de la base, este chequeo dice quién la sigue pidiendo.
 5g. `tests/panel-todas-las-herramientas.spec.ts` abre las 30 herramientas del panel una
    por una y comprueba que ninguna reviente, se quede en "No se pudo cargar" con una
    respuesta válida, ni se pinte con la piel del cliente. La lista sale de
    `adminToolsSections()`, no del test: una herramienta nueva entra sola. Corre dentro de
    `npm test`.
-6. `npm test` (o `npm run verify`, que ahora encadena doce) — deben pasar TODOS (revisa el
-   conteo real en la salida, ej. "19 passed", no un número fijo escrito aquí).
+5f-ter. `npm run check:doble-escritura` — que ninguna función inserte en una tabla que la RPC
+   que llama ya inserta (lee la última definición de cada RPC de las migraciones). Cada regalo
+   de crédito quedaba anotado dos veces en `credit_ledger`. `-- --probar` le inyecta ese caso.
+6. `npm run test:estado` — la suite entera comparada contra `tests/ROJAS_CONOCIDAS.txt`: falla
+   si aparece una roja NUEVA o si una conocida ya pasa (hay que borrarla de la lista). Mientras
+   haya rojas conocidas, es ESTO lo que dice si un cambio rompió algo, no el conteo a ojo.
+   `npm test` (o `npm run verify`) — deben pasar TODOS (revisa el conteo real en la salida,
+   ej. "19 passed", no un número fijo escrito aquí). **Nunca a través de `| tail` ni `| grep`**:
+   el código de salida pasa a ser el del filtro y la línea de fallos puede quedar cortada. El
+   2026-09-23 se reportó «239 passed» con 42 fallando por eso. Redirige a un archivo y guarda
+   `$?` (`... > log 2>&1; echo EXIT=$? >> log`).
 7. Si el cambio toca un flujo cubierto por `tests/` (checkout, pedido programado, cola
    admin, borrar cuenta, reclamos, tarjeta de regalo, Plan Semanal, pedido grupal,
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
 8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+   **Si existe `supabase/migrations-al-mergear/`**, lo que hay ahí se aplica JUSTO DESPUÉS de que el
+   deploy de `main` termine (quita columnas que la versión anterior todavía escribía), se mueve a
+   `supabase/migrations/` con su versión real, y se regeneran foto y tipos
+   (`scripts/pg-local/guardar-foto.mjs`, `guardar-tipos.mjs`). `check:pg` lo recuerda mientras exista.
+- **`orders.id` es `text` con un check de formato uuid, a propósito**: cambiar el tipo a `uuid` haría
+  que un id mal escrito en la URL diera 500 en vez de 404.
 
 ## Fotos de producto
 
@@ -309,10 +389,13 @@ puntos y saldo de crédito sin vuelta atrás.
 necesita ningún secret nuevo**: usa `SUPABASE_ACCESS_TOKEN`, el mismo que ya usa
 `deploy-api.yml`, contra la Management API. Por eso no depende de nada del dueño.
 
-- **Respalda DATOS, no esquema.** El esquema ya está versionado en `supabase/migrations/`;
-  duplicarlo sería una segunda fuente de verdad, el mismo defecto que costó tres semanas de
-  precios fantasma. **Restaurar de verdad = aplicar las migraciones y después cargar los
-  datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`).
+- **⚠ LAS MIGRACIONES NO RECONSTRUYEN LA BASE** (descubierto el 2026-09-24): la primera ya
+  altera `customers`, que ninguna migración crea — las tablas originales nacieron desde el panel.
+  **Restaurar de verdad = cargar `supabase/esquema-actual.sql` (la foto completa del esquema) y
+  después los datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`). El respaldo diario
+  saca también esa foto (`backup/esquema.sql`) y el workflow falla si la base se alejó de la del
+  repo (`scripts/comparar-esquema.mjs`): o se cambió desde el panel sin migración, o falta
+  actualizar la foto.
 - **La lista de tablas se descubre en cada corrida** (`pg_class`), nunca está escrita a
   mano: una lista fija dejaría fuera en silencio cualquier tabla nueva, y el día que eso
   importe es el día del desastre.
@@ -361,19 +444,75 @@ agrega porque en ese momento "se veía mejor así".
 Ver `docs/REVISION_ESTETICA.md` para la medición completa, lo que está bien, lo que falta y
 lo que **no** es un problema aunque lo parezca.
 
-## Los dos hermanos NO comparten estilo de dibujo, y no se unifican (2026-09-10)
+## SANDO SE REDIBUJÓ — Y NO COMPARTE TRAZO CON WICHO (dueño, 2026-09-18)
 
-**Decisión del dueño, corrigiendo una propuesta de esta sesión que quería unificarlos.** SANDO
-tiene línea negra uniforme, sombreado plano de dos tonos y paleta sobria; WICHO tiene trazo
-suelto y texturado, ojos en espiral y color saturado. Parecen dibujados por dos manos distintas
-porque **lo están, a propósito**: SANDO cura los Signatures, donde la receta está cerrada y no la
-tocas, y su dibujo también está cerrado; WICHO es ARMA EL TUYO, donde eliges tú, y su dibujo
-también es suelto. **La gracia es que sean distintos.**
+**El dueño rehízo a SANDO y su dibujo nuevo es el bueno.** Es de **línea negra limpia de
+grosor parejo y sombreado plano**, sin pinceladas ni textura. WICHO sigue con su trazo
+pintado. **Que no compartan tipo de dibujo ya no es un defecto que haya que corregir: es
+como quedó.** No intentes acercar uno al otro, en ninguna dirección.
 
-**Nunca "arregles" a WICHO acercándolo a SANDO** — es exactamente el error que se cometió acá.
-Cada hermano se regenera contra SU PROPIA referencia (`img/sando_sonrie.png`, `img/wicho_rie.png`),
-nunca contra la del otro. Ver `docs/PROMPTS_PERSONAJES.md` para las fichas y las poses que la app
-todavía no tiene.
+⚠ Lo que decía esta sección hasta hoy —que sí compartían trazo y que SANDO debía acercarse
+a WICHO— **quedó sin efecto**. Cuidado al leer sesiones o commits viejos: esa regla vivió un
+solo día y ya no aplica.
+
+⚠ **EL LOGO NO SE MIGRA. Se queda con el SANDO anterior y ya está aprobado así**
+(dueño, 2026-09-18): «Ese logo no se cambia, ya está aprobado. Su rostro no cambió.»
+Vale para `img/marca/avatar-1024-transparente.png`, los demás `img/marca/avatar-*` y
+`logo-hermanos.png`, y para **la pantalla de la puerta**, que usa esa misma ilustración a
+pantalla completa. No es un descuido ni una inconsistencia que haya que arreglar: es una
+decisión. Si una sesión futura ve "el SANDO viejo" en el logo, **lo deja como está**.
+
+**El SANDO actual son nueve archivos: `img/sando2_frente`, `_sonrie`, `_mira`, `_perfil`,
+`_ladea`, `_asoma`, `_pulgar`, `_cuerpo` y `_cuerpo_forro`.** El 2026-09-24 se borraron los
+del dibujo viejo, incluidos cinco que llevaban «2» sin ser el actual (`cuerpo_b`, `come`,
+`come_b`, `grita`, `piensa`) y que se usaron por error. Donde una pantalla aprobada lo
+dibujaba comiendo va `sando2_cuerpo_forro` (manos en los bolsillos, sin sándwich): aprobado
+así por el dueño. **No lo cambies por un busto**: se probó y rompía las pantallas aprobadas.
+Los nombres de pose se escriben ENTEROS en `POSES` (02-*), nunca armados por partes: así se
+escondió el viejo en los estados vacíos. Lo vigila `npm run check:maquetas`.
+
+**Lo que los distingue no es la mano: es cada personaje.** De SANDO son el **acanalado** de
+puños y basta, el **forro naranja** de su bomber —el único naranja de toda la marca, franja
+lisa y vertical, NO una cremallera a rayas—, el `//` bordado al pecho, el oliva salvia, el
+tan cálido y el ojo almendrado de párpado pesado. De WICHO son la **espiral** de sus ojos,
+las **curvas de nivel** estampadas en su polo, el rosa durazno, el lila y la sonrisa
+abierta. **Puestas en blanco y negro, sus dos pantallas se tienen que seguir distinguiendo.**
+Todo en `docs/LOS_DOS_HERMANOS.md`, que se lee antes de diseñar cualquier pantalla del
+cliente — se escribió después de que el dueño corrigiera tres rondas seguidas con la misma
+frase, «no es solo un color».
+
+Cada hermano se regenera contra SU PROPIA referencia — hoy `img/sando2_frente.png` y
+`img/wicho_rie.png`, **nunca la del otro**. Ver `docs/POSES_QUE_TE_TOCAN.md` para las poses
+que faltan.
+
+⚠ **Y las referencias para Flow se mandan SIN transparencia.** Un PNG con alfa se aplana
+contra negro al cargarlo como referencia, y ese negro sale como manchas en lo generado.
+Fondo blanco plano y al doble de tamaño.
+
+## LAS MAQUETAS APROBADAS SON LA ESPECIFICACIÓN EXACTA (dueño, 2026-09-24)
+
+«Las maquetas no son referencias sino como debe quedar exactamente.» Viven en
+`docs/maquetas/` (PNG en `aprobadas/`, HTML en `fuentes/`, índice en su README) y una
+pantalla aprobada se construye **hasta que se vea como su PNG**. Toda aprobación nueva se
+guarda ahí **el mismo día** — antes vivían en `/tmp` y cinco fuentes se perdieron. Lo vigila
+`npm run check:maquetas`. Los datos de muestra dentro de la maqueta (nombres, precios) no se
+copian: salen del código.
+
+## PEDIR LA IMAGEN QUE FALTA ES PARTE DEL DISEÑO (2026-09-18)
+
+**No diseñes contra el inventario de `img/`.** Las imágenes son **ilimitadas** en Flow y el
+dueño las genera el mismo día que se las pides. Elegir una pose que ya existe «porque es la
+que hay» es la trampa de buscar lo más fácil: la pantalla sale peor y encima los hermanos
+terminan siempre parados y siempre iguales, de adorno.
+
+Regla: cuando una pantalla quede mejor con una pose, un encuadre o un gesto que no existe,
+**pídelo** —con su prompt escrito en `docs/POSES_QUE_TE_TOCAN.md`— y muestra la maqueta
+avisando que esa figura es una aproximación. Nunca al revés: que el archivo disponible
+nunca decida la composición.
+
+Corolario que el dueño ha tenido que repetir en varias formas distintas: **en diseño, la
+respuesta más fácil casi nunca es la correcta.** Si la primera solución que se te ocurre es
+reusar lo que ya está a mano, esa misma es la señal de que hay que buscar otra.
 
 ## Restricciones permanentes (no negociables sin pedido explícito del usuario)
 

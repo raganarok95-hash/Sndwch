@@ -1,14 +1,21 @@
 // SND//WCH — api / actions/customer
 // Acciones de cuenta autenticada que no son ni auth ni pedidos: direcciones guardadas,
 // favoritos, calificaciones, el reto mensual, regalar crédito, y suscripciones push.
-import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import { leer, sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import type { Entrada, Salida } from "../../_shared/contrato.ts";
+import type { FijoSugerido, ItemCarrito } from "../../_shared/dominio.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN } from "../env.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts, deriveCart } from "../catalog.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, limaFields, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA, loadStoreHours, STORE_HOURS } from "../env.ts";
+import {
+  FRANJA_DESDE_CONFIRMADOS, FRANJA_SUELTA_MIN, fechaLima, franjaSugerida, habitoDe, momentoDelAviso, proximaVez,
+  slotMinutos, textoAvisoFijo, type EstadoDeFranja,
+} from "../franja.ts";
+import { cargarFranjas, cargasPorHora, horaLlena, siguienteLibreDelDia } from "../capacidad.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
-import { verifyCulqiCharge, pointsFor } from "./orders.ts";
+import { verifyCulqiCharge, pointsFor, RESERVA_CONFIRMABLE } from "./orders.ts";
 
 // Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
 // retención corren en producción desde antes de abrir, sin verificar que el negocio ya
@@ -115,40 +122,167 @@ async function assertUnderLimit(table: string, phone: string, max: number, label
   if (existing.length >= max) throw new ApiError(`Ya tienes el máximo de ${label} (${max}).`, 400);
 }
 
-// ── #60: pedido recurrente ──────────────────────────────────────────────────────────────
+// ── #60 / #61: el pedido fijo ───────────────────────────────────────────────────────────
 //
 // "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
 // falta a un negocio nuevo.
 //
-// ⚠ NO COBRA SOLO, Y NO PUEDE. El token de tarjeta de Culqi es de un solo uso y vive 5
-// minutos, así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta
-// otra vez; hacerlo exigiría guardar la tarjeta (One Click), o sea decidir guardar medios de
-// pago de los clientes — decisión del dueño. Y tampoco cobra solo contra el crédito interno,
-// aunque técnicamente se podría: sacarle plata a alguien sin una decisión fresca suya es la
-// clase de sorpresa que cuesta el cliente entero.
+// ⚠ NO SE MANDA NI SE COBRA SOLO, Y NO PUEDE. El token de tarjeta de Culqi es de un solo uso
+// y vive 5 minutos, así que el servidor no puede volver a cobrar sin que el cliente ponga una
+// tarjeta otra vez; hacerlo exigiría guardar la tarjeta (One Click), o sea decidir guardar
+// medios de pago de los clientes — decisión del dueño. Y tampoco cobra solo contra el crédito
+// interno, aunque técnicamente se podría: sacarle plata a alguien sin una decisión fresca suya
+// es la clase de sorpresa que cuesta el cliente entero. El dueño lo confirmó el 2026-09-23:
+// el pedido fijo NO es una suscripción.
 //
 // Lo que sí hace: a la hora elegida le llega el aviso con el carrito ya armado y confirma en
-// un toque.
+// un toque. Y desde que el hábito está probado, le GUARDA EL LUGAR en el tope de su hora
+// (franja.ts, capacidad.ts): el aviso puede decir «tu jueves está guardado hasta las 12:00».
 const MAX_RECURRING = 3;
+// Desde cuántas veces pedido lo mismo la pantalla ofrece dejarlo fijo. Una vez es un pedido;
+// dos ya es una costumbre que vale la pena ofrecerle guardar.
+const SUGERIR_FIJO_DESDE_VECES = 2;
 
-export async function actRecurringList(b: any) {
-  const s = await requireSession(b.token);
-  return {
-    recurring: await sbGet(
-      "recurring_orders",
-      `customer_phone=eq.${encodeURIComponent(s.phone)}&active=eq.true&select=id,items,weekday,slot,label,last_notified_at&order=weekday.asc,slot.asc&limit=${MAX_RECURRING * 2}`,
-    ),
-  };
+// Un ítem sin las claves que no cambian qué es (qty) y con todo ordenado, para que el mismo
+// pedido armado en otro orden sea el mismo.
+function ordenado(v: unknown): unknown {
+  if (Array.isArray(v)) {
+    const xs = v.map(ordenado);
+    return xs.every((x) => typeof x !== "object" || x === null) ? [...xs].sort() : xs;
+  }
+  if (v && typeof v === "object") {
+    const o: Record<string, unknown> = {};
+    for (const k of Object.keys(v as object).sort()) if (k !== "qty") o[k] = ordenado((v as Record<string, unknown>)[k]);
+    return o;
+  }
+  return v;
 }
 
-export async function actRecurringAdd(b: any) {
+/** Qué pedido es, sin importar el orden de las líneas ni si «2 iguales» vino en una línea o en
+ *  dos. Sirve para contar «lo pediste 9 veces». null si algún ítem ya no existe en la carta. */
+export function firmaDeItems(items: unknown): string | null {
+  if (!Array.isArray(items) || !items.length) return null;
+  try {
+    const partes: string[] = [];
+    for (const it of items) {
+      const p = priceCartItem(it);
+      const f = JSON.stringify(ordenado(p.item));
+      for (let i = 0; i < p.qty; i++) partes.push(f);
+    }
+    return partes.sort().join("|");
+  } catch {
+    return null;
+  }
+}
+
+/** «The Original 15CM + The Midnight»: con los nombres de la carta vigente, nunca con la
+ *  etiqueta que mandó el cliente al guardarlo («2 ítems» no le dice nada a nadie). */
+export function nombreDeItems(items: unknown): string {
+  try {
+    const partes = (items as unknown[]).map((it) => {
+      const p = priceCartItem(it);
+      return p.label + (p.qty > 1 ? " ×" + p.qty : "");
+    });
+    return partes.join(" + ") || "Tu pedido fijo";
+  } catch {
+    return "Tu pedido fijo";
+  }
+}
+
+/** Cuánto sale HOY la comida (con el combo), con los precios vigentes. Sin envío: depende
+ *  de la dirección y lo suma el cliente con la misma tarifa que cobra el checkout. */
+export function precioDeItems(items: unknown): number | null {
+  try {
+    return deriveCart(items, null, null).expectedTotal;
+  } catch {
+    return null;
+  }
+}
+
+function isoONull(ms: number): string | null {
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
+
+export async function actRecurringList(b: Entrada<"recurring-list">): Promise<Salida<"recurring-list">> {
   const s = await requireSession(b.token);
-  const weekday = Math.floor(Number(b.weekday));
-  if (!Number.isFinite(weekday) || weekday < 0 || weekday > 6) throw new ApiError("Elige un día de la semana.");
-  const slot = String(b.slot || "").trim();
-  if (!/^[0-2][0-9]:[0-5][0-9]$/.test(slot)) throw new ApiError("Elige una hora válida.");
-  const items = Array.isArray(b.items) ? b.items : [];
-  if (!items.length) throw new ApiError("Tu carrito está vacío — arma el pedido antes de dejarlo fijo.");
+  await Promise.all([loadCatalogPrices(), loadStoreHours()]);
+  const enc = encodeURIComponent(s.phone);
+  const [franjas, historial] = await Promise.all([
+    cargarFranjas(Date.now(), `&customer_phone=eq.${enc}`),
+    leer(
+      "orders",
+      ["items", "created_at", "delivery_time"],
+      `customer_phone=eq.${enc}&payment_status=eq.paid&status=neq.CANCELADO&order=created_at.desc&limit=200`,
+    ),
+  ]);
+  // «Lo pediste 9 veces · siempre a las 7:20 p.m.» (maqueta tu-pedido-fijo): sale del
+  // historial pagado del cliente, agrupado por qué pidió — no de un contador aparte que
+  // habría que acordarse de mantener.
+  type Pedido = (typeof historial)[number];
+  const porFirma = new Map<string, Pedido[]>();
+  for (const o of historial) {
+    const f = firmaDeItems(o.items);
+    if (!f) continue;
+    const l = porFirma.get(f) || [];
+    l.push(o);
+    porFirma.set(f, l);
+  }
+  const recurring = franjas
+    .sort((x, y) => x.franja.vez - y.franja.vez)
+    .map(({ fila, franja }) => {
+      const firma = firmaDeItems(fila.items);
+      const hab = habitoDe(firma ? porFirma.get(firma) || [] : []);
+      return {
+        id: fila.id,
+        items: fila.items,
+        weekday: fila.weekday,
+        slot: fila.slot,
+        addressId: fila.address_id,
+        label: nombreDeItems(fila.items),
+        valido: firma !== null,
+        precio: precioDeItems(fila.items),
+        veces: hab.veces,
+        horaHabitual: hab.hora,
+        vez: isoONull(franja.vez),
+        estado: franja.estado,
+        apartada: franja.apartada,
+        sueltaA: isoONull(franja.sueltaA),
+        confirmados: franja.confirmados,
+      };
+    });
+  // Quien todavía no tiene un fijo pero repite: la pantalla le ofrece dejarlo fijo el día y
+  // a la hora en que ya lo pide, sin que tenga que elegir nada.
+  let sugerido: FijoSugerido | null = null;
+  if (!recurring.length) {
+    let mejor: Pedido[] | null = null;
+    for (const l of porFirma.values()) {
+      if (l.length >= SUGERIR_FIJO_DESDE_VECES && (!mejor || l.length > mejor.length)) mejor = l;
+    }
+    if (mejor && mejor[0]) {
+      const items = mejor[0].items as ItemCarrito[];
+      const hab = habitoDe(mejor);
+      const slot = hab.weekday === null || hab.minutos === null ? null : franjaSugerida(hab.minutos, STORE_HOURS[hab.weekday]);
+      sugerido = {
+        items,
+        label: nombreDeItems(items),
+        precio: precioDeItems(items),
+        veces: hab.veces,
+        horaHabitual: hab.hora,
+        weekday: slot ? hab.weekday : null,
+        slot,
+      };
+    }
+  }
+  return { recurring, sugerido, desdeConfirmados: FRANJA_DESDE_CONFIRMADOS, sueltaMin: FRANJA_SUELTA_MIN };
+}
+
+export async function actRecurringAdd(b: Entrada<"recurring-add">): Promise<Salida<"recurring-add">> {
+  const s = await requireSession(b.token);
+  const enc = encodeURIComponent(s.phone);
+  // Día, forma de la hora, ítems y dirección ya llegan validados por el contrato; acá queda lo
+  // que el esquema no sabe: que la hora exista en el reloj.
+  const { weekday, slot, items } = b;
+  if (slotMinutos(slot) === null) throw new ApiError("Elige una hora válida.");
 
   // Se re-tasa con el catálogo VIGENTE antes de guardar, por dos motivos. Uno: valida que
   // cada ítem siga existiendo, en vez de guardar un carrito que el día de mañana no se puede
@@ -157,27 +291,37 @@ export async function actRecurringAdd(b: any) {
   await loadCatalogPrices();
   for (const it of items) priceCartItem(it);
 
-  await assertUnderLimit("recurring_orders", s.phone, MAX_RECURRING, "pedidos fijos");
-  const existing = await sbGet(
-    "recurring_orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&weekday=eq.${weekday}&slot=eq.${encodeURIComponent(slot)}&active=eq.true&select=id`,
-  );
-  if (existing.length) throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
+  // Solo los ACTIVOS cuentan para el máximo. «Quitar» apaga la fila (active=false) sin
+  // borrarla, y el límite genérico las contaba todas: quien quitó tres fijos ya no podía
+  // armar ninguno nuevo, y nada lo decía.
+  const activos = await leer("recurring_orders", ["id", "weekday", "slot"], `customer_phone=eq.${enc}&active=eq.true`);
+  if (activos.length >= MAX_RECURRING) throw new ApiError(`Ya tienes el máximo de pedidos fijos (${MAX_RECURRING}).`, 400);
+  if (activos.some((r) => r.weekday === weekday && r.slot === slot)) {
+    throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
+  }
+
+  // A dónde va: sin esto, confirmar cada semana obligaba a volver a elegir la dirección, y
+  // «un toque» eran cuatro.
+  const addressId = b.addressId;
+  if (addressId !== null) {
+    const rows = await leer("saved_addresses", ["id"], `id=eq.${addressId}&customer_phone=eq.${enc}`);
+    if (!rows.length) throw new ApiError("Esa dirección ya no está entre las tuyas.");
+  }
 
   await sbInsert("recurring_orders", {
     customer_phone: s.phone,
     items,
     weekday,
     slot,
-    label: String(b.label || "").trim().slice(0, 40) || null,
+    address_id: addressId,
+    label: nombreDeItems(items).slice(0, 80),
   });
   return { success: true };
 }
 
-export async function actRecurringDelete(b: any) {
+export async function actRecurringDelete(b: Entrada<"recurring-delete">): Promise<Salida<"recurring-delete">> {
   const s = await requireSession(b.token);
-  const id = String(b.id || "").trim();
-  if (!id) throw new ApiError("Falta el pedido fijo.");
+  const id = b.id;
   // El filtro por teléfono no es cosmético: sin él, cualquiera con una sesión válida podría
   // borrar la recurrencia de otro cliente mandando su id.
   await sbUpdate(
@@ -185,52 +329,78 @@ export async function actRecurringDelete(b: any) {
     `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
     { active: false },
   );
-  return { success: true };
+  return { success: true as const };
 }
 
-// Cuánto antes de la hora elegida llega el aviso. Una hora: suficiente para decidir y para
-// que el pedido entre a una franja que todavía tiene lugar, sin ser tan temprano que se
-// olvide.
-const RECURRING_LEAD_MINUTES = 60;
+// «Esta semana no»: suelta el lugar de la PRÓXIMA vez sin quitar el fijo. Sin esto, quien no
+// iba a pedir ese jueves solo podía esperar a que se soltara solo 90 minutos antes — un lugar
+// que otro pudo haber usado desde la mañana. `deshacer` lo vuelve a poner.
+export async function actRecurringSkip(b: Entrada<"recurring-skip">): Promise<Salida<"recurring-skip">> {
+  const s = await requireSession(b.token);
+  const id = b.id;
+  const enc = encodeURIComponent(s.phone);
+  const [fijo] = await leer("recurring_orders", ["id", "weekday", "slot"], `id=eq.${id}&customer_phone=eq.${enc}&active=eq.true`);
+  if (!fijo) throw new ApiError("Ese pedido fijo ya no existe.", 404);
+  const skipOn = b.deshacer ? null : fechaLima(proximaVez(fijo, Date.now()));
+  await sbUpdate("recurring_orders", `id=eq.${id}&customer_phone=eq.${enc}`, { skip_on: skipOn });
+  return { success: true, skipOn };
+}
+
+// Cada cuánto corre el cron (`sndwch-remind-recurring-orders`: '5,35 * * * *'). El aviso de
+// cada fijo cae en una ventana de este ancho, así sale en UNA sola corrida.
+const VENTANA_DEL_CRON_MIN = 30;
+// Estados en los que todavía se avisa: en los demás ya se pidió, se saltó, la tienda no
+// atiende a esa hora, o el fijo se quitó.
+const SE_AVISA: EstadoDeFranja[] = ["apartada", "faltan-confirmaciones", "aun-no-toca", "soltada"];
 
 export async function actRemindRecurringOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  await Promise.all([loadCatalogPrices(), loadStoreHours()]);
 
-  // La franja objetivo es la de dentro de una hora, en hora de LIMA — la recurrencia la
-  // eligió el cliente sobre el mismo reloj con el que ve el horario de la tienda.
-  const objetivo = new Date(Date.now() + RECURRING_LEAD_MINUTES * 60000);
-  const enLima = new Date(objetivo.toLocaleString("en-US", { timeZone: "America/Lima" }));
-  const weekday = enLima.getDay();
-  const hh = String(enLima.getHours()).padStart(2, "0");
-  // Se buscan las dos franjas de media hora que caen dentro de esta hora, porque el cron
-  // corre cada 30 minutos y las recurrencias se guardan en :00 o :30.
-  const slots = [`${hh}:00`, `${hh}:30`];
+  // Antes se buscaban los fijos cuya hora caía dentro de una hora exacta. Ahora cada fijo
+  // tiene SU momento de aviso (franja.ts · momentoDelAviso): una hora antes de la entrega, o
+  // —si tiene el lugar apartado— una hora antes de SOLTARLO, porque avisar después de soltar
+  // sería prometer un lugar que ya no tiene.
+  const now = Date.now();
+  const franjas = await cargarFranjas(now);
+  const tocan = franjas.filter(({ fila, franja }) => {
+    if (!SE_AVISA.includes(franja.estado)) return false;
+    const t = momentoDelAviso(franja);
+    if (!(now >= t && now < t + VENTANA_DEL_CRON_MIN * 60000)) return false;
+    // Una vez por semana por fijo, aunque una corrida se repita.
+    const last = fila.last_notified_at ? Date.parse(fila.last_notified_at) : 0;
+    return now - last >= 20 * 3600 * 1000;
+  }).slice(0, MAX_PUSH_PER_RUN);
 
-  const rows = await sbGet(
-    "recurring_orders",
-    `active=eq.true&weekday=eq.${weekday}&slot=in.(${slots.join(",")})&select=id,customer_phone,items,slot,label,last_notified_at&limit=${MAX_PUSH_PER_RUN}`,
-  );
+  // La carga de las horas que vienen, UNA vez para todos los avisos de esta corrida. Es la
+  // misma cuenta con la que el servidor rechaza al pagar (capacidad.ts), así que el aviso no
+  // puede prometer una hora que el checkout después no acepta.
+  const carga = tocan.length ? await cargasPorHora(now - 3600000, now + 36 * 3600000, { franjas }) : null;
   let avisados = 0;
-  for (const r of rows) {
+  for (const { fila, franja } of tocan) {
     try {
-      // Una vez por semana por recurrencia: el cron corre cada media hora y sin esto
-      // mandaría el mismo aviso varias veces en la misma tarde.
-      const last = r.last_notified_at ? new Date(r.last_notified_at).getTime() : 0;
-      if (Date.now() - last < 20 * 3600 * 1000) continue;
-      await sendPushToPhone(String(r.customer_phone), {
-        title: "¿Va lo de siempre? 🥪",
-        body: `${r.label || "Tu pedido fijo"} para las ${r.slot} — ya está armado, confirmas en un toque.`,
-        url: "./index.html",
-        tag: "sndwch-recurring-" + r.id,
-      });
-      await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(r.id))}`, { last_notified_at: new Date().toISOString() });
+      // Quien tiene el lugar apartado tiene el suyo aunque la hora esté llena. Para el resto se
+      // mira la hora ANTES de prometerla: si se llenó, el aviso ofrece la siguiente libre en vez
+      // de decir «confirmas en un toque» y que el toque choque contra el tope.
+      const llena = !franja.apartada && !!carga && horaLlena(carga, franja.vez);
+      const alternativa = llena && carga ? siguienteLibreDelDia(carga, franja.vez) : null;
+      const aviso = textoAvisoFijo({ id: fila.id, nombre: nombreDeItems(fila.items), franja, llena, alternativa });
+      await sendPushToPhone(String(fila.customer_phone), { ...aviso, tag: "sndwch-recurring-" + fila.id });
+      await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(fila.id))}`, { last_notified_at: new Date().toISOString() });
+      // DEJA RASTRO, AUNQUE NO SE FRENE POR ÉL (2026-09-23). Este aviso es el único de los
+      // quince que el cliente PIDIÓ: lo configuró él al guardar su pedido fijo. Por eso NO
+      // consulta `phonesTouchedToday()` — un servicio que alguien pidió no puede quedarse
+      // sin salir porque ese día ya le llegó una promoción. Pero sí REGISTRA, para que los
+      // crones de marketing que respetan el tope de uno por día se corran ese día. Va DESPUÉS
+      // del push y es best-effort: que falle el log nunca puede afectar un aviso que ya salió.
+      await logMarketingTouch(String(fila.customer_phone), "pedido-fijo");
       avisados++;
     } catch (e) {
-      console.error("remind-recurring-orders failed for", r.id, e);
+      console.error("remind-recurring-orders failed for", fila.id, e);
     }
   }
-  return { success: true, avisados, revisadas: rows.length };
+  return { success: true, avisados, revisadas: franjas.length };
 }
 
 // ── #64: "te faltan N puntos" ───────────────────────────────────────────────────────────
@@ -337,6 +507,20 @@ export function monthlyRecap(orders: any[]): { count: number; points: number; fa
   return { count: orders.length, points: Math.max(0, points), favorite };
 }
 
+// Último día del mes en que corre el cron del resumen (20260830001847_cron_remind_monthly_recap:
+// '20 15 1-5 * *'). tests-api/resumen-mensual.test.ts lee ese horario de la migración y
+// falla si este número y el del cron se separan.
+export const MONTHLY_RECAP_LAST_DAY = 5;
+
+// El resumen CEDE ante otro aviso del mismo día, salvo en su última corrida. Hasta hoy no
+// consultaba el tope de uno por día: el 1 del mes podía llegar junto a "te faltan 30
+// puntos" o al reto sin reclamar. Como corre cinco días seguidos, esperar a mañana no le
+// cuesta nada — pero el último día sale igual, porque perderse el resumen del mes entero
+// por un aviso de otra campaña sería peor que dos avisos en un día.
+export function resumenCedeHoy(diaLima: number, yaTocadoHoy: boolean): boolean {
+  return yaTocadoHoy && diaLima < MONTHLY_RECAP_LAST_DAY;
+}
+
 // Cron del resumen. Corre los primeros días de cada mes (ver la migración del cron): no una
 // sola vez, porque MAX_PUSH_PER_RUN corta en 200 por corrida y una corrida única dejaría al
 // cliente 201 sin su resumen hasta el mes siguiente, cuando la ventana ya se movió. La marca
@@ -352,7 +536,7 @@ export async function actRemindMonthlyRecap(b: any) {
   const orders = await sbGet(
     "orders",
     `created_at=gte.${startIso}&created_at=lt.${endIso}&payment_status=eq.paid&status=neq.CANCELADO` +
-      `&customer_phone=not.is.null&select=customer_phone,items,total,delivery_fee,product_key,summary&limit=20000`,
+      `&customer_phone=not.is.null&select=customer_phone,items,total,delivery_fee,summary&limit=20000`,
   );
   const porCliente = new Map<string, any[]>();
   for (const o of orders) {
@@ -374,6 +558,9 @@ export async function actRemindMonthlyRecap(b: any) {
   );
 
   let avisados = 0;
+  let cedidos = 0;
+  const tocadosHoy = await phonesTouchedToday();
+  const diaLima = limaFields(new Date()).day;
   for (const c of pendientes) {
     if (avisados >= MAX_PUSH_PER_RUN) {
       await capReached("resumen-mensual", avisados, pendientes.length - avisados);
@@ -382,6 +569,10 @@ export async function actRemindMonthlyRecap(b: any) {
     const phone = String(c.phone || "");
     const recap = monthlyRecap(porCliente.get(phone) || []);
     if (!recap) continue;
+    if (resumenCedeHoy(diaLima, tocadosHoy.has(phone))) {
+      cedidos++;
+      continue;
+    }
     try {
       await sendPushToPhone(phone, {
         title: `Tu mes en SND//WCH 🥪`,
@@ -401,7 +592,7 @@ export async function actRemindMonthlyRecap(b: any) {
       console.error("remind-monthly-recap failed for", phone, e);
     }
   }
-  return { success: true, avisados, mes: ym };
+  return { success: true, avisados, cedidos, mes: ym };
 }
 
 const MAX_ADDRESSES = 6;
@@ -425,9 +616,36 @@ export async function actSetAdTracking(b: any) {
   return { success: true, customer: safeCustomer(rows[0]) };
 }
 
-export async function actAddressesList(b: any) {
+// Tu cuenta · «Cómo pagas» y «Avisos». Solo se escribe lo que llega: tocar un interruptor
+// no borra el método de pago, ni al revés.
+export function preferenciasValidas(b: any): Record<string, unknown> {
+  const upd: Record<string, unknown> = {};
+  if (b.preferredPayment !== undefined) {
+    const m = String(b.preferredPayment);
+    if (m !== "yape" && m !== "culqi") throw new ApiError("Método de pago inválido.");
+    upd.preferred_payment = m;
+  }
+  if (b.notifPrefs !== undefined) {
+    const n = b.notifPrefs || {};
+    upd.notif_prefs = { pedido: n.pedido !== false, promo: n.promo !== false };
+  }
+  if (!Object.keys(upd).length) throw new ApiError("No hay nada que guardar.");
+  return upd;
+}
+export async function actSetPreferences(b: any) {
   const s = await requireSession(b.token);
-  return { addresses: await sbGet("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`) };
+  const rows = await sbUpdate("customers", `phone=eq.${encodeURIComponent(s.phone)}`, preferenciasValidas(b));
+  return { success: true, customer: safeCustomer(rows[0]) };
+}
+
+export async function actAddressesList(b: Entrada<"addresses-list">): Promise<Salida<"addresses-list">> {
+  const s = await requireSession(b.token);
+  const addresses = await leer(
+    "saved_addresses",
+    ["id", "customer_phone", "label", "address", "reference", "lat", "lon", "created_at"],
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`,
+  );
+  return { addresses };
 }
 export async function actAddressesAdd(b: any) {
   const s = await requireSession(b.token);
@@ -441,6 +659,9 @@ export async function actAddressesAdd(b: any) {
     address,
     lat: typeof b.lat === "number" ? b.lat : null,
     lon: typeof b.lon === "number" ? b.lon : null,
+    // La referencia de la maqueta 34 («timbre 302, portón negro»): antes se escribía de nuevo
+    // en cada pedido porque la dirección guardada no tenía dónde llevarla.
+    reference: String(b.reference || "").trim().slice(0, 200) || null,
   });
   return { success: true, address: rows[0] };
 }
@@ -456,7 +677,13 @@ export async function actAddressesUpdate(b: any) {
   const rows = await sbUpdate(
     "saved_addresses",
     `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
-    { label, address },
+    {
+      label,
+      address,
+      reference: String(b.reference || "").trim().slice(0, 200) || null,
+      // Si la corrección trae un pin nuevo, la distancia (y el envío) sale de ahí.
+      ...(typeof b.lat === "number" && typeof b.lon === "number" ? { lat: b.lat, lon: b.lon } : {}),
+    },
   );
   if (!rows.length) throw new ApiError("Dirección no encontrada.", 404);
   return { success: true, address: rows[0] };
@@ -680,11 +907,11 @@ export async function actCreditGift(b: any) {
   // gift_credit (migración atomic_balance_functions) debita al emisor y acredita al
   // receptor en UNA sola transacción de Postgres — si algo falla a la mitad, ambas
   // mitades se revierten juntas en vez de que el dinero "desaparezca".
+  // La RPC también escribe las dos filas de credit_ledger, dentro de la misma transacción.
+  // Hasta el 2026-09-23 este archivo las volvía a escribir acá, fuera: cada regalo quedaba
+  // anotado dos veces, y si esta segunda escritura fallaba el cliente veía un error con el
+  // saldo ya movido (migración libro_de_credito_se_escribe_una_sola_vez).
   await rpc("gift_credit", { p_from: s.phone, p_to: toPhone, p_amount: amount });
-  await Promise.all([
-    sbInsert("credit_ledger", { customer_phone: s.phone, delta: -amount, reason: "Regalo enviado", related_phone: toPhone }),
-    sbInsert("credit_ledger", { customer_phone: toPhone, delta: amount, reason: "Regalo recibido", related_phone: s.phone }),
-  ]);
   // Antes este flujo no avisaba al receptor de ninguna forma — a diferencia de la
   // tarjeta de regalo (actGiftCardPurchase, misma acción conceptual: mover saldo a otro
   // cliente), que sí notifica. El saldo regalado podía quedar sin usarse simplemente
@@ -1344,6 +1571,7 @@ const GIFT_CARD_AMOUNT_MAX = 500;
 export const GIFT_CARD_POINTS_PER_SOL = 40;
 
 export async function actGiftCardPurchase(b: any) {
+  if (!TARJETA_REGALO_ACTIVA) throw new ApiError("La tarjeta de regalo no está disponible por ahora.", 409);
   const active = await verifyActiveSession(b.token);
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
   const s = active.payload;
@@ -1369,21 +1597,15 @@ export async function actGiftCardPurchase(b: any) {
     }
     throw e;
   }
-  await Promise.all([
-    sbInsert("transactions", {
-      customer_phone: s.phone,
-      type: "redeem",
-      points: -pointsNeeded,
-      description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
-      confirmed: true,
-    }),
-    sbInsert("credit_ledger", {
-      customer_phone: toPhone,
-      delta: amount,
-      reason: "Tarjeta de regalo recibida",
-      related_phone: s.phone,
-    }),
-  ]);
+  // La fila de credit_ledger la escribe la RPC, dentro de la transacción — acá se escribía
+  // otra vez (ver actCreditGift). Los puntos (transactions) sí quedan acá: la RPC no los anota.
+  await sbInsert("transactions", {
+    customer_phone: s.phone,
+    type: "redeem",
+    points: -pointsNeeded,
+    description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
+    confirmed: true,
+  });
   try {
     await sendPushToPhone(toPhone, {
       title: "¡Recibiste una tarjeta de regalo! 🎁",
@@ -1420,6 +1642,7 @@ export const WEEKLY_PLAN_CREDIT = 100;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 export async function actPrepareWeeklyPlan(b: any) {
+  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
   const active = await verifyActiveSession(b.token);
   if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
 
@@ -1450,6 +1673,10 @@ export async function actPrepareWeeklyPlan(b: any) {
 }
 
 export async function actConfirmWeeklyPlan(b: any) {
+  // El confirm también se corta, y no solo el prepare: un plan que quedó a medio pagar
+  // ANTES del apagado no puede terminar de acreditarse después. Si eso pasara, se resuelve
+  // a mano desde el panel, que es donde debe resolverse un caso de uno.
+  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
   const s = await requireSession(b.token);
   const ref = String(b.ref || "").trim();
   const chargeId = String(b.chargeId || "").trim();
@@ -1458,14 +1685,14 @@ export async function actConfirmWeeklyPlan(b: any) {
   const pp = rows[0];
   if (!pp) throw new ApiError("No encontramos tu Plan Semanal. Vuelve a intentarlo.", 410);
   if (pp.buyer_phone !== s.phone) throw new ApiError("No autorizado.", 403);
-  if (pp.status !== "pending") throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-  if (new Date(pp.expires_at).getTime() < Date.now()) {
-    throw new ApiError("Tu Plan Semanal expiró. Vuelve a intentarlo.", 410);
-  }
-
+  // Mismo orden que actConfirmCulqiOrder: el cargo se verifica ANTES de mirar estado y
+  // vencimiento, para no decirle "vuelve a intentarlo" a alguien a quien ya se le cobró.
+  // 'charging'/'charged' se aceptan por la misma razón (ver RESERVA_CONFIRMABLE en orders.ts
+  // y la migración plan_semanal_acepta_reserva_cobrada, que hace lo mismo en la RPC).
   const amountCents = Math.round(Number(pp.amount_paid) * 100);
   const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
   if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
+  if (!RESERVA_CONFIRMABLE.includes(pp.status)) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
 
   // claim + otorgar crédito + registrar en el ledger van en una sola transacción SQL
   // (confirm_weekly_plan_credit) — si cualquier paso falla, todo se revierte y la fila

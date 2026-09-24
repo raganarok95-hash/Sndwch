@@ -42,19 +42,31 @@ export async function claimAndChargeCulqi(cfg: CulqiClaimConfig): Promise<CulqiC
     } catch (_e) { /* nunca debe tumbar la respuesta real */ }
   }
 
+  // 'charged' entra en la búsqueda a propósito: es una reserva que YA se cobró y cuyo pedido
+  // todavía no se creó (el cliente perdió la respuesta, cerró la pestaña, o la confirmación
+  // falló). Un segundo intento sobre ella no puede volver a cobrar — ver más abajo.
   const pcResp = await fetch(
-    `${cfg.sbUrl}/rest/v1/${cfg.table}?ref=eq.${encodeURIComponent(cfg.refValue)}&status=eq.pending&select=id,${cfg.amountField},expires_at`,
+    `${cfg.sbUrl}/rest/v1/${cfg.table}?ref=eq.${encodeURIComponent(cfg.refValue)}&status=in.(pending,charged)&select=id,status,charge_id,${cfg.amountField},expires_at`,
     { headers: sbHeaders },
   );
   if (!pcResp.ok) return { ok: false, status: 500, error: "No se pudo verificar la reserva." };
   const pcRows = await pcResp.json();
   const pc = pcRows[0];
   if (!pc) return { ok: false, status: 404, error: cfg.notFoundMsg };
-  if (new Date(pc.expires_at).getTime() < Date.now()) {
-    return { ok: false, status: 410, error: cfg.expiredMsg };
-  }
   if (Math.round(Number(pc[cfg.amountField]) * 100) !== cfg.amountCents) {
     return { ok: false, status: 400, error: cfg.mismatchMsg };
+  }
+  // Idempotencia: esta reserva ya tiene un cobro real. Se devuelve ESE cobro, sin llamar a
+  // Culqi. Antes la reserva volvía a 'pending' después de cobrar, así que si la respuesta se
+  // perdía en la red el cliente veía "Error de conexión. Intenta de nuevo", reintentaba con
+  // un token nuevo y se le cobraba DOS veces. Va antes del vencimiento: una reserva pagada
+  // no vence, se confirma.
+  if (pc.status === "charged" && pc.charge_id) {
+    await debugLog({ event: "charge-reused", ref: cfg.refValue, chargeId: pc.charge_id });
+    return { ok: true, chargeId: pc.charge_id, outcome: "ya_cobrado" };
+  }
+  if (new Date(pc.expires_at).getTime() < Date.now()) {
+    return { ok: false, status: 410, error: cfg.expiredMsg };
   }
 
   // Reclamo atómico pending -> charging: si otra llamada para esta misma referencia ya
@@ -70,14 +82,20 @@ export async function claimAndChargeCulqi(cfg: CulqiClaimConfig): Promise<CulqiC
     return { ok: false, status: 409, error: cfg.conflictMsg };
   }
 
+  // Solo para los caminos SIN cobro (Culqi rechazó o no respondió): la reserva vuelve a
+  // estar libre para otro intento. Si esto falla, la fila queda 'charging' y el cron la
+  // expira — correcto, porque no se cobró nada.
   async function releaseClaim() {
     try {
-      await fetch(`${cfg.sbUrl}/rest/v1/${cfg.table}?id=eq.${pc.id}&status=eq.charging`, {
+      const r = await fetch(`${cfg.sbUrl}/rest/v1/${cfg.table}?id=eq.${pc.id}&status=eq.charging`, {
         method: "PATCH",
         headers: sbHeaders,
         body: JSON.stringify({ status: "pending" }),
       });
-    } catch (_e) { /* el cron de expiración igual limpia una fila 'charging' atascada */ }
+      if (!r.ok) await debugLog({ event: "release-failed", ref: cfg.refValue, status: r.status });
+    } catch (e) {
+      await debugLog({ event: "release-failed", ref: cfg.refValue, error: String(e) });
+    }
   }
 
   let culqiResp: Response;
@@ -124,11 +142,24 @@ export async function claimAndChargeCulqi(cfg: CulqiClaimConfig): Promise<CulqiC
     return { ok: false, status: 402, error: msg, culqi: culqiData };
   }
 
-  // Cobro real ya realizado — se libera la reserva de vuelta a 'pending' (no antes) para
-  // que la función api pueda hacer su propio reclamo atómico pending -> consumed al
-  // crear el pedido / acreditar el saldo, exactamente igual que siempre.
-  await releaseClaim();
+  // Cobro real ya realizado. La reserva pasa a 'charged' con el id del cargo — NO vuelve a
+  // 'pending', que significaba "todavía no pagó" y dejaba cobrar otra vez. Si este PATCH
+  // falla, el cobro sigue siendo real: se responde éxito igual (la confirmación acepta
+  // también una reserva 'charging' si Culqi certifica el cargo) y queda anotado.
   await debugLog({ event: "charge-succeeded", ref: cfg.refValue, amountCents: cfg.amountCents, chargeId: culqiData.id });
+  try {
+    const r = await fetch(`${cfg.sbUrl}/rest/v1/${cfg.table}?id=eq.${pc.id}&status=eq.charging`, {
+      method: "PATCH",
+      headers: { ...sbHeaders, Prefer: "return=representation" },
+      body: JSON.stringify({ status: "charged", charge_id: culqiData.id, charged_at: new Date().toISOString() }),
+    });
+    const marked = r.ok ? await r.json().catch(() => []) : [];
+    if (!marked.length) {
+      await debugLog({ event: "mark-charged-failed", ref: cfg.refValue, chargeId: culqiData.id, status: r.status });
+    }
+  } catch (e) {
+    await debugLog({ event: "mark-charged-failed", ref: cfg.refValue, chargeId: culqiData.id, error: String(e) });
+  }
 
   return { ok: true, chargeId: culqiData.id, outcome: culqiData.outcome?.type };
 }

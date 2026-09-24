@@ -124,7 +124,13 @@ function renderOverlays(){
   // ⚠ La regla, para no volver a listarlas de a una: el boton NO va en ninguna pantalla
   // donde el cliente este ELIGIENDO que comprar. Ahi tapa justo lo que decide la compra.
   // Va en las de cuenta, pedidos y ayuda, que es donde de verdad se necesita escribir.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'){
+  //
+  // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
+  // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
+  // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
+  // aprobada la burbuja caía encima del total y de la barra de cierre. p_recurring (tu pedido
+  // fijo): es una pantalla de UN toque, y la burbuja tapaba justo el precio de ese toque.
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'&&sndScreen!=='p_recurring'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }
@@ -154,6 +160,21 @@ async function api(action,payload){
   var data=await r.json().catch(function(){return{};});
   if(!r.ok)throw new Error(data.error||'Error de conexión.');
   return data;
+}
+// UN ERROR DE CÓDIGO EN EL TELÉFONO DE UN CLIENTE TIENE QUE LLEGAR AL DUEÑO (2026-09-24).
+// Antes no había forma: lo que se rompía en un celular quedaba en una consola que nadie mira.
+// Llega a `debug_logs` y el resumen diario lo cuenta como «error técnico · cliente». Nunca lanza
+// (reportar no puede romper más cosas), y el mismo error se manda una sola vez por visita.
+var _erroresReportados:Record<string,boolean>={};
+function reportarError(donde:string,e:any){
+  try{
+    var mensaje=String((e&&e.message)||e||'').slice(0,300);
+    console.error('['+donde+']',e);
+    var clave=donde+'|'+mensaje;
+    if(_erroresReportados[clave])return;
+    _erroresReportados[clave]=true;
+    api('report-client-error',{donde:donde,mensaje:mensaje,pila:String((e&&e.stack)||'').slice(0,800),pantalla:String(sndScreen||''),version:APP_BUILD}).catch(function(){});
+  }catch(_){}
 }
 
 // SOUND
@@ -302,8 +323,13 @@ async function loadInvBackground(){
 // Muta PROTS/SIGS/SIDES/RWDS en el sitio en vez de cambiar cómo se leen en el resto del
 // archivo, así el resto del pricing/checkout sigue funcionando igual.
 async function loadCatalogBackground(){
+  // DOS FALLAS DISTINTAS, DOS TRATOS (2026-09-24). Antes las 99 líneas iban en un solo try con
+  // el catch vacío: un corte de señal y un error de CÓDIGO al aplicar la carta se callaban
+  // igual. El primero es normal —se sigue con la carta semilla y el servidor cobra—; el segundo
+  // deja al cliente viendo precios que el servidor rechaza al pagar, y tiene que llegar al dueño.
+  var r;
+  try{r=await api('get-catalog',{});}catch(e){return;}
   try{
-    var r=await api('get-catalog',{});
     // El inventario viaja en la misma respuesta, así que el arranque no necesita una
     // segunda llamada para saber qué está agotado.
     applyInventory(r.inventory);
@@ -389,6 +415,9 @@ async function loadCatalogBackground(){
         secretSig.tops=secret.tops;secretSig.sauces=secret.sauces;
         secretSig.p15=secret.p15;secretSig.p30=secret.p30;secretSig.minOrders=secret.minOrders;
       }
+      // Lo que cuenta la pantalla del secreto además de la receta (catalog.ts ·
+      // SECRET_EXTRA): hasta cuándo dura, sus pistas y los que ya no vuelven.
+      SECRET_EXTRA={endsAt:secret.endsAt||null,hints:secret.hints||[],past:secret.past||[]};
       // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
       // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
       // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que
@@ -397,7 +426,7 @@ async function loadCatalogBackground(){
       TOPS.forEach(function(t){t.vaultOnly=(secret.vaultOnlyTops||[]).indexOf(t.id)>=0;});
       SAUCES.forEach(function(sauce){sauce.vaultOnly=(secret.vaultOnlySauces||[]).indexOf(sauce.id)>=0;});
     }
-  }catch(e){}
+  }catch(e){reportarError('cargar-catalogo',e);}
 }
 // Horario vigente desde el panel admin (tabla store_hours vía get-store-hours) — antes
 // STORE_HOURS quedaba hardcodeado arriba y nunca se actualizaba con lo que el dueño
@@ -405,8 +434,10 @@ async function loadCatalogBackground(){
 // validación de "pedir para más tarde" seguían mostrando el horario placeholder aunque
 // el horario real ya hubiera cambiado en la base de datos.
 async function loadStoreHoursBackground(){
+  // Igual que la carta: la falla de red se tolera, el error de código se reporta.
+  var r;
+  try{r=await api('get-store-hours',{});}catch(e){return;}
   try{
-    var r=await api('get-store-hours',{});
     if(Array.isArray(r.hours)&&r.hours.length===7){
       STORE_HOURS=r.hours.map(function(d){return d.closed?null:[d.open,d.close];});
     }
@@ -438,10 +469,11 @@ async function loadStoreHoursBackground(){
     // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
     // cocina por delante ahora mismo.
     fullHours=Array.isArray(r.fullHours)?r.fullHours:[];
+    cargaPorHora=r.cargaPorHora&&typeof r.cargaPorHora==='object'?r.cargaPorHora:{};
     queueAhead=typeof r.queueAhead==='number'?r.queueAhead:0;
     if(typeof r.queueMinutesPerOrder==='number')queueMinutesPerOrder=r.queueMinutesPerOrder;
     if(typeof r.maxPerHour==='number')maxPerHour=r.maxPerHour;
-  }catch(e){}
+  }catch(e){reportarError('cargar-horario',e);}
 }
 
 
@@ -584,7 +616,9 @@ function CUT(alto?,ancho?,gap?){
 // una pantalla de cliente y el celeste ahí no significaría nada.
 var LADO_WICHO=[
   'o_build',      // armas el sándwich
-  'o_sides',      // eliges la bebida
+  // 'o_sides' (bebidas) estuvo acá y se fue el 2026-09-17: es la única pantalla que los DOS
+  // lados comparten —el dueño pidió que cada lado tuviera su bebida—, así que su color no
+  // puede estar fijado en esta lista. Lo decide ladoActual() por el lado de entrada.
   'p_rewards',    // eliges qué canjear
   'p_favorites',  // tus armados guardados
   'p_recurring',  // eliges qué se repite y cuándo
@@ -594,7 +628,8 @@ var LADO_WICHO=[
 function ladoActual(){
   if(/^admin/.test(String(sndScreen||'')))return'sando';
   if(LADO_WICHO.indexOf(String(sndScreen||''))>=0)return'wicho';
-  if(sndScreen==='o_home'&&(homeTab==='byo'||homeTab==='drink'))return'wicho';
+  // Bebidas se pinta del lado por el que se entro: es la misma pantalla para los dos.
+  if((sndScreen==='o_home'||sndScreen==='o_sides')&&homeTab==='byo')return'wicho';
   return'sando';
 }
 function ACC(){return ladoActual()==='wicho'?'var(--sw-sky,#8CC8EC)':GOLD;}
@@ -708,11 +743,12 @@ function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
 function CAB(quien,texto,activo?){
   var esW=quien==='wicho';
   var pose=activo?'saluda':'cuerpo';
+  var src=broPose(quien,pose);
   return'<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
     // ⚠ Se fija la ALTURA y no el ancho: los dos cuerpos son de 640 px de alto pero de
     // ancho distinto (WICHO 448, SANDO 302), así que con un ancho fijo SANDO salía casi
     // 50% más alto que su hermano y la banda cambiaba de tamaño según de quién fuera.
-    +'<img class="sw-nudge" src="img/'+quien+'_'+pose+'.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
+    +'<img class="sw-nudge" src="'+src+'" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
     +'<div style="flex:1;padding-bottom:4px">'
     +'<div style="display:flex;align-items:center;gap:5px">'
     +(esW?'<span style="display:inline-flex">'+SPIRAL(11,'var(--sw-spiral,#C3A6D2)',true)+'</span>':'')
@@ -733,28 +769,35 @@ function CAB(quien,texto,activo?){
 // de la pantalla y el hermano que la habita.
 //
 // ⚠ LOS DOS HERMANOS NO TIENEN LAS MISMAS POSES, y por eso existe este mapa en vez de
-// concatenar el nombre del estado al del personaje. En `img/` hay hoy siete poses de SANDO
-// (cuerpo, grita, mira, piensa, saluda, serio, sonrie) y cuatro de WICHO (cuerpo, grita,
-// rie, saluda). Pedir `img/wicho_piensa.png` no da un error de compilación ni de runtime:
+// concatenar el nombre del estado al del personaje. Del SANDO actual hay dos cuerpos
+// (cuerpo, cuerpo_forro) y siete bustos (frente, sonrie, mira, perfil, ladea, asoma,
+// pulgar); de WICHO cuatro cuerpos (cuerpo, grita, rie, saluda). Los archivos del SANDO
+// viejo se borraron el 2026-09-24. Pedir `img/wicho_piensa.png` no da un error de compilación ni de runtime:
 // da una imagen rota en la pantalla del cliente, que es el peor sitio para enterarse.
 //
 // Cada estado declara qué archivo usa PARA CADA HERMANO, y donde WICHO no tiene la pose
 // cae a `cuerpo`, que sí existe. Eso deja el hueco a la vista en vez de taparlo: las tres
 // entradas donde WICHO dice 'cuerpo' son exactamente las tres poses que faltan por generar
 // (ver docs/PROMPTS_PERSONAJES.md § 4.3).
+//
+// ⚠ SANDO VA CON EL NOMBRE DE ARCHIVO ENTERO, NUNCA ARMADO (dueño, 2026-09-24). Antes esto
+// armaba el nombre pegando el hermano y la pose, y así pedía sando_cuerpo, sando_saluda…:
+// el SANDO VIEJO, en todos los estados vacíos, sin que ninguna búsqueda lo encontrara. El
+// actual está en img/fuente/FUENTES.md; los archivos viejos se borraron el 2026-09-24 y
+// `npm run check:maquetas` falla si un nombre viejo vuelve.
 var POSES: Record<string, Record<string, string>> = {
-  cuerpo: { sando: 'cuerpo', wicho: 'cuerpo' },
-  saluda: { sando: 'saluda', wicho: 'saluda' },
-  grita:  { sando: 'grita',  wicho: 'grita'  },
-  alegre: { sando: 'sonrie', wicho: 'rie'    },
+  cuerpo: { sando: 'sando2_cuerpo_forro', wicho: 'wicho_cuerpo' },
+  saluda: { sando: 'sando2_sonrie',       wicho: 'wicho_saluda' },
+  grita:  { sando: 'sando2_cuerpo_forro', wicho: 'wicho_grita'  },
+  alegre: { sando: 'sando2_sonrie',       wicho: 'wicho_rie'    },
   // WICHO todavía no tiene estas tres:
-  mira:   { sando: 'mira',   wicho: 'cuerpo' },
-  piensa: { sando: 'piensa', wicho: 'cuerpo' },
-  serio:  { sando: 'serio',  wicho: 'cuerpo' },
+  mira:   { sando: 'sando2_mira',         wicho: 'wicho_cuerpo' },
+  piensa: { sando: 'sando2_ladea',        wicho: 'wicho_cuerpo' },
+  serio:  { sando: 'sando2_cuerpo',       wicho: 'wicho_cuerpo' },
 };
 function broPose(quien,estado){
   var fila=POSES[estado||'cuerpo']||POSES.cuerpo;
-  return 'img/'+quien+'_'+(fila[quien]||'cuerpo')+'.png';
+  return 'img/'+(fila[quien]||POSES.cuerpo[quien])+'.png';
 }
 
 function VACIO(titulo,texto,cta?,estado?){
@@ -814,9 +857,13 @@ function SZTOG(){
   // navega con teclado o con lector de pantalla. `aria-pressed` dice cuál está elegido, que
   // es lo que el color por sí solo no comunica.
   function opt(sz,l,d){var sel=size===sz;return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+sz+'\';render()" style="all:unset;box-sizing:border-box;flex:1;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(sel?'#FFFFFF':'#9DA096')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+d+'</div></button>';}
-  // "Individual"/"Clásico" no comunicaban porción real (hallazgo de auditoría UX, MEDIO)
-  // — un cliente sin contexto de la marca no sabía si "Clásico" alcanzaba para compartir.
-  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','Para uno')+opt('30','30CM','Para compartir')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+  // ⚠ LA APP NO LE DICE AL CLIENTE CUÁNTA GENTE DEBE COMERSE UN SÁNDWICH (dueño, 2026-09-17).
+  // Decía "Para uno" / "Para compartir", y es falso: hay quien se come un 30CM solo — el dueño
+  // el primero. Asignarle comensales a un tamaño no informa, juzga, y encima puede frenar la
+  // venta del producto más caro. La diferencia real es física y no necesita adorno: 30CM es el
+  // doble de pan y el doble de relleno. Eso se dice, y el resto lo dice el precio.
+  // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
+  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
 }
 function today(){return new Date().toLocaleDateString('es-PE');}
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que

@@ -5,7 +5,7 @@ import { sbUpsert, sbGet, sbInsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { loadCatalogPrices, loadCatalogItems, PROT_PRICE, SIG_DATA, SIG_CONTENT, SIG_GATES, SIDE_PRICE, REWARDS, VALID_BASES, VALID_TOPS, VALID_SAUCES, VALID_CHEESE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME } from "../catalog.ts";
+import { loadCatalogPrices, loadCatalogItems, PROT_PRICE, SIG_DATA, SIG_CONTENT, SIG_GATES, SIDE_PRICE, REWARDS, VALID_BASES, VALID_TOPS, VALID_SAUCES, VALID_CHEESE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME, SECRET_EXTRA } from "../catalog.ts";
 
 // Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
 // que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
@@ -83,6 +83,9 @@ export async function actGetCatalog(_b: any) {
           vaultOnlyProts: [...VAULT_ONLY_PROTS],
           vaultOnlyTops: [...VAULT_ONLY_TOPS],
           vaultOnlySauces: [...VAULT_ONLY_SAUCES],
+          endsAt: SECRET_EXTRA.endsAt,
+          hints: SECRET_EXTRA.hints,
+          past: SECRET_EXTRA.past,
         }
       : null,
   };

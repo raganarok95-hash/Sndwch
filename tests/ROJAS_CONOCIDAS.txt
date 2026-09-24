@@ -1,0 +1,19 @@
+# Pruebas de Playwright que HOY fallan y se sabe por qué. Una por línea: «archivo › título».
+#
+# No es una lista de excepciones para siempre: es una deuda con fecha y con dueño. Cada una
+# espera una pantalla aprobada que todavía no está construida, y SE BORRA DE ACÁ el mismo día
+# que esa pantalla exista. `npm run test:estado` corre la suite entera y:
+#   · falla si aparece una roja que NO está en esta lista (eso es un defecto nuevo);
+#   · avisa si una de la lista ya pasa (hay que borrarla, o volvería a esconder una regresión).
+#
+# 2026-09-24 — de 22 rojas quedan 3. Las otras 19 buscaban textos o botones del inicio anterior
+# al rediseño del 2026-09-17 y se reescribieron sobre lo que la app hace hoy; una era un defecto
+# real (el botón deshabilitado del armador con contraste 2.13:1) y se corrigió.
+#
+# Tarea #71 — Mundo WICHO (maqueta M22 con puente): el puente «¿Prefieres que ya esté resuelto?»
+estrella-del-menu.spec.ts › la estrella del menú › el puente desde ARMA EL TUYO ofrece esa MISMA estrella, no otra
+palancas-del-modelo.spec.ts › ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armador
+#
+# Tarea #69 — «Pedir lo mismo» arriba de Tus pedidos (pantalla 33). La lógica de repetir sí está
+# cubierta y en verde (loadCart); lo que falta es la entrada visible.
+repetir-pedido.spec.ts › el inicio ofrece «Pedir lo mismo» con el último pedido (se construye en la tarea #69)

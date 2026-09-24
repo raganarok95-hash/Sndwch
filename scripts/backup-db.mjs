@@ -23,7 +23,7 @@
 // LA LISTA DE TABLAS NO ESTÁ ESCRITA A MANO. Se lee de `pg_class` en cada corrida. Una
 // lista fija habría dejado fuera, en silencio, cualquier tabla creada después — y el día
 // que eso importe es justamente el día del desastre.
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -177,6 +177,14 @@ writeFileSync(join(OUT_DIR, 'cron.json'), JSON.stringify(crons, null, 2));
 manifiesto.filasTotales = filasTotales;
 manifiesto.secuencias = secuencias.length;
 writeFileSync(join(OUT_DIR, 'manifiesto.json'), JSON.stringify(manifiesto, null, 2));
+
+// ── La foto COMPLETA del esquema (2026-09-24). Las migraciones no reconstruyen la base (las
+// tablas originales nacieron fuera del historial), así que el respaldo guarda también el SQL que
+// sí la reconstruye: tablas, restricciones, índices, funciones, triggers, RLS y permisos. El
+// workflow la compara después con supabase/esquema-actual.sql para detectar una base que cambió
+// sin migración.
+const foto = await sql(readFileSync(new URL('./pg-local/foto-del-esquema.sql', import.meta.url), 'utf8'));
+writeFileSync(join(OUT_DIR, 'esquema.sql'), (foto[0] && foto[0].ddl ? foto[0].ddl.trim() : '') + '\n');
 
 console.log(`\n✓ ${tablas.length} tablas · ${filasTotales} filas · ${secuencias.length} secuencias → ${OUT_DIR}/`);
 

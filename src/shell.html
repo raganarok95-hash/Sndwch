@@ -21,9 +21,9 @@
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#12150F">
+<meta name="theme-color" content="#0F1A14">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -60,12 +60,20 @@
      ⚠ NO es un fondo neutro: lleva verde dentro (#12150F, no #121212). El tinte por lado
      sigue existiendo (ver data-lado abajo), solo que ahora la temperatura del negro hace
      el trabajo silencioso y el acento el ruidoso. */
-  --sw-bg:#12150F;
-  --sw-card:#1B1F18;
-  --sw-card2:#171A14;
+  /* ⚠ SUBIDO EL 2026-09-17, a pedido del dueño. Antes el lado de SANDO era #12150F y el de
+     WICHO #0D1216: tres puntos de diferencia. El atributo `data-lado` cambiaba, la app no.
+     "¿si selecciono derecha o izquierda no debería ir a la opción respectiva con el color
+     respectivo?" — tenía razón, y medirlo lo confirmó.
+     Ahora cada lado tiene su color de verdad y se sigue viendo al instante cuál es cuál.
+     NO se vuelve al verde de la app anterior (#1E3932): aquel era un verde medio que era EL
+     fondo de todo; este es casi negro con verde dentro, y sigue dejando que la foto de
+     comida sea lo más claro de la pantalla. */
+  --sw-bg:#0F1A14;
+  --sw-card:#16241D;
+  --sw-card2:#122019;
   --sw-card-danger:#1E1614;
-  --sw-border:#2C3228;
-  --sw-border-soft:#1A1D17;
+  --sw-border:#25382D;
+  --sw-border-soft:#16241C;
   --sw-text:#FFFFFF;
   --sw-text-body:#EFEDE4;
   --sw-text-muted:#9DA096;
@@ -129,12 +137,12 @@
   /* El lado de WICHO: el mismo negro, con azul dentro en vez de verde. El salto se siente
      —la app SÍ se va con él— pero ninguna de las dos mitades vuelve a ser un bloque de
      color plano peleándose con la foto. */
-  --sw-bg:#0D1216;
-  --sw-card:#161D23;
-  --sw-card2:#12181D;
+  --sw-bg:#0B1724;
+  --sw-card:#12222F;
+  --sw-card2:#0F1D29;
   --sw-card-danger:#1E1614;
-  --sw-border:#27313A;
-  --sw-border-soft:#161C21;
+  --sw-border:#1F3243;
+  --sw-border-soft:#111F2B;
   --sw-text:#FFFFFF;
   --sw-text-body:#E9EFF3;
   --sw-text-muted:#98A3AB;
@@ -349,6 +357,207 @@ body.kb-open #app{padding-bottom:0}
 [style*="cursor:pointer"]{transition:transform .08s ease}
 [style*="cursor:pointer"]:active{transform:scale(.97)}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
+
+/* ═════ LAS PANTALLAS DE LAS MAQUETAS APROBADAS ═════
+   docs/maquetas/aprobadas/ es la especificación exacta (dueño, 2026-09-24): el CSS de cada
+   pantalla se copia de su maqueta y vive acá, con su prefijo, para que el TS solo arme el
+   marcado. Tipografías de las maquetas: Anton, Archivo, IBM Plex Mono, Instrument Serif. */
+
+/* 35 · ALGO SALIÓ MAL — docs/maquetas/aprobadas/35-algo-salio-mal.png */
+.m35{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;overflow:hidden;padding-bottom:74px;box-sizing:border-box}
+.m35 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:5}
+.m35 .wicho{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:5}
+.m35 .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:24px;font-size:18px;color:#1E2B22;z-index:6}
+.m35 .cab{padding:103px 26px 0 24px}
+.m35 .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D8823C;text-transform:uppercase;font-style:normal}
+.m35 .cab h1{margin:16px 0 0;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:28px;line-height:1.1;color:#1E2B22}
+.m35 .cab p{margin:14px 0 0;max-width:190px;font-family:'Instrument Serif',serif;font-size:13px;line-height:1.3;color:#5F6B58}
+.m35 .figura{position:absolute;left:-24px;bottom:72px;height:348px;z-index:2;pointer-events:none}
+.m35 .ops{margin:46px 16px 0 158px;border-top:1px solid rgba(30,43,34,.14)}
+.m35 .op{all:unset;display:block;cursor:pointer;width:100%;box-sizing:border-box;padding:22px 0 16px;border-bottom:1px solid rgba(30,43,34,.14)}
+.m35 .op b{display:block;font:700 17px/1.1 Archivo,sans-serif;color:#1E2B22}
+.m35 .op i{display:block;margin-top:7px;font-family:'Instrument Serif',serif;font-size:12px;color:#8C8F82}
+.m35 .op.on b{color:#D8823C}
+.m35 .op:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
+.m35 textarea{display:block;width:100%;box-sizing:border-box;margin-top:10px;border:1px solid rgba(30,43,34,.25);background:#F6F0E3;border-radius:4px;padding:10px;font:13px/1.35 'Instrument Serif',serif;color:#1E2B22;resize:vertical;min-height:64px}
+.m35 .plazo{margin:46px 24px 0 158px;max-width:190px;font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8C8F82}
+.m35 .err{margin:14px 24px 0 158px;font:600 11px/1.3 'IBM Plex Mono',monospace;color:#B3402A}
+.m35 .ir{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:74px;border:0;background:#1E2B22;color:#EFE6D4;font:700 12px/1 Archivo,sans-serif;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;z-index:20}
+.m35 .ir:disabled{opacity:.55;cursor:default}
+/* MENÚ SECRETO — docs/maquetas/aprobadas/menu-secreto-estructura.png + menu-secreto-fondo.png
+   (t2.html #C, «el bocado de cerca»). CSS copiado de la fuente; lo único que cambia es que
+   las filas van en flujo en vez de a coordenadas fijas, porque las pistas y los que ya no
+   vuelven pueden ser menos de tres. */
+.msec{position:relative;min-height:100dvh;overflow:hidden;background:#0A0B0C;padding:78px 24px 186px;box-sizing:border-box;color:#F2F0EA}
+.msec em,.msec s,.msec k,.msec i{text-decoration:none;font-style:normal;display:block}
+.msec .fo{position:absolute;inset:0;z-index:0;overflow:hidden}
+.msec .fo img{width:100%;height:100%;object-fit:cover;object-position:52% 46%;transform:scale(3.4);filter:saturate(1.55) contrast(1.06) brightness(.95)}
+.msec .velo{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,11,12,.5) 0 18%,rgba(10,11,12,.72) 44%,rgba(10,11,12,.93) 76%)}
+.msec .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#8C8880}
+.msec .wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.msec .wm img{width:29px;height:29px;display:block}
+.msec .wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em;color:#F2F0EA}
+.msec .wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.msec .wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.msec .wm .mk i:first-child{background:#CBA258}.msec .wm .mk i:last-child{background:#8CC8EC}
+.msec .cuerpo{position:relative;z-index:6}
+.msec .cab{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:#C3A6D2;text-transform:uppercase}
+.msec .nom{margin-top:17px}
+.msec .nom b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:50px;line-height:.9;color:#F2F0EA;letter-spacing:-.03em;text-shadow:0 3px 20px rgba(0,0,0,.7)}
+.msec .nom .mes{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;border-bottom:1px solid #1E1F21;padding-bottom:13px}
+.msec .nom .mes s{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E6A60;text-transform:uppercase}
+.msec .nom .mes k{font-family:Anton,sans-serif;font-size:19px;color:#C3A6D2}
+.msec .pistas{margin-top:26px}
+.msec .pistas>em,.msec .ant>em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase}
+.msec .p{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid #17181A}
+.msec .p k{width:27px;height:27px;border-radius:999px;border:1px solid #4A3D62;color:#C3A6D2;font:700 10px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto;box-sizing:border-box}
+.msec .p .t b{display:block;font:800 14px/1.15 Archivo,sans-serif;color:#EDEAE2}
+.msec .p .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#5E5B54;margin-top:4px;text-transform:uppercase}
+.msec .ant{margin-top:30px}
+.msec .a{display:flex;align-items:baseline;gap:11px;padding:11px 0;border-bottom:1px solid #17181A}
+.msec .a i{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4A4842;width:30px;flex:0 0 auto}
+.msec .a .t{flex:1}
+.msec .a .t b{display:block;font:700 13px/1.15 Archivo,sans-serif;color:#8C8880}
+.msec .a .t s{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;margin-top:4px;text-transform:uppercase}
+.msec .a p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:#4A4842;letter-spacing:.14em}
+.msec .adv{margin-top:22px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4A4842;line-height:1.9;text-transform:uppercase}
+.msec .pre{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;box-sizing:border-box;padding:0 24px;bottom:98px;z-index:40;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}
+.msec .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+.msec .pre b{font-family:Anton,sans-serif;font-weight:700;font-size:42px;line-height:.82;color:#F2F0EA}
+.msec .go{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:0;height:74px;z-index:45;display:flex}
+.msec .go button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.msec .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.msec .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.msec .go button:focus-visible{outline:2px solid #F2F0EA;outline-offset:-4px}
+
+/* TU CUENTA · «Cómo pagas» y «Avisos» — sin maqueta propia: heredan la de Tu cuenta
+   (docs/maquetas/aprobadas/tu-cuenta.png): papel kraft, Anton, Archivo e IBM Plex Mono. */
+.mct{position:relative;min-height:100dvh;box-sizing:border-box;padding:18px 26px 40px;color:#33230F;background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.mct .sal{all:unset;cursor:pointer;font-size:18px;color:#33230F}
+.mct .cab{margin-top:44px}
+.mct .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase;font-style:normal}
+.mct .cab h1{margin:10px 0 0;font-family:Anton,sans-serif;font-weight:400;font-size:44px;line-height:.9;letter-spacing:-.02em;color:#33230F}
+.mct .cab p{margin:14px 0 0;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:#6E4F2A}
+.mct .lis{margin-top:30px;border-top:1px dashed rgba(74,50,24,.4)}
+.mct .r{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;gap:14px;padding:16px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+.mct .r b{display:block;font:800 15px/1.1 Archivo,sans-serif;color:#33230F}
+.mct .r s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9.5px;line-height:1.5;color:#7A5B33;margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+.mct .r:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mct .marca{flex-shrink:0;width:22px;height:22px;border:2px solid #4A3218;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.mct .r.on .marca::after{content:'';width:10px;height:10px;border-radius:999px;background:#4A3218}
+.mct .llave{flex-shrink:0;width:44px;height:24px;border:2px solid #4A3218;border-radius:999px;position:relative;box-sizing:border-box}
+.mct .llave::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:999px;background:#7A5B33;transition:left .15s}
+.mct .r.on .llave{background:#4A3218}
+.mct .r.on .llave::after{left:23px;background:#F2E4CA}
+.mct .nota{margin-top:22px;font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.7;color:#6E4F2A}
+.mct .nota b{color:#33230F}
+.mct .ok{margin-top:14px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A6B2E;text-transform:uppercase;min-height:10px}
+@media (prefers-reduced-motion: reduce){.mct .llave::after{transition:none}}
+/* TU PEDIDO FIJO — docs/maquetas/aprobadas/tu-pedido-fijo.png (u2.html #P). CSS copiado de la
+   fuente; los bloques van en flujo porque el nombre del pedido y la caja cambian de largo. */
+.mfj{position:relative;min-height:100dvh;box-sizing:border-box;background:#12212B;color:#F2F6F8;padding:0 0 110px;overflow:hidden}
+.mfj em,.mfj s{text-decoration:none;font-style:normal;display:block}
+.mfj .hero{position:absolute;left:0;right:0;top:0;height:352px;z-index:1;overflow:hidden}
+.mfj .hero img{width:100%;height:100%;object-fit:cover;display:block}
+.mfj .hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,16,22,.5) 0 16%,transparent 38%,#12212B 97%)}
+.mfj .hero.vacio{background:radial-gradient(90% 60% at 50% 30%,rgba(140,200,236,.16),transparent 70%)}
+.mfj .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#fff}
+.mfj .cuerpo{position:relative;z-index:6;padding:236px 24px 0}
+.mfj .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+.mfj .tx b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.9;color:#F2F6F8;margin-top:10px;letter-spacing:-.02em;text-transform:uppercase}
+.mfj .tx s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC;margin-top:10px;line-height:1.7;text-transform:uppercase}
+.mfj .vec{display:flex;gap:9px;margin-top:18px}
+.mfj .vec div{flex:1;min-width:0;border:1px solid #27455A;padding:12px 10px}
+.mfj .vec div s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#6E90A4;text-transform:uppercase}
+.mfj .vec div b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:24px;line-height:1.05;color:#F2F6F8;margin-top:7px}
+.mfj .prog{all:unset;box-sizing:border-box;display:block;width:100%;border:1px dashed #2F5266;padding:14px 15px}
+.mfj button.prog{cursor:pointer}
+.mfj .prog b{display:block;font:800 14px/1.15 Archivo,sans-serif;color:#D6E6EF}
+.mfj .prog s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7FA6BC;margin-top:7px;line-height:1.7;text-transform:uppercase}
+.mfj .prog .acc{display:flex;gap:18px;margin-top:10px}
+.mfj .prog .acc button{all:unset;cursor:pointer;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#8CC8EC;text-transform:uppercase;padding:4px 0}
+.mfj .otros{margin-top:34px}
+.mfj .otros em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E90A4;text-transform:uppercase;margin-bottom:4px}
+.mfj .o{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid #1E3E50}
+.mfj .o b{font:700 13px/1.2 Archivo,sans-serif;color:#D6E6EF}
+.mfj .o p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC;flex:0 0 auto}
+.mfj .go{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:0;height:74px;z-index:45;display:flex}
+.mfj .go button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.mfj .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.mfj .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.mfj button:focus-visible{outline:2px solid #F2F6F8;outline-offset:-4px}
+/* PEDIDO GRUPAL — docs/maquetas/aprobadas/pedido-grupal.png (k1.html #GR). CSS copiado de la
+   fuente; las filas van en flujo porque la gente del grupo puede ser una o doce. */
+.mgr{position:relative;min-height:100dvh;box-sizing:border-box;padding:80px 26px 110px;color:#33230F;background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.mgr em,.mgr s,.mgr k,.mgr u{text-decoration:none;font-style:normal;display:block}
+.mgr .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;color:#3A2710;z-index:40}
+.mgr .wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px;color:#3A2710}
+.mgr .wm img{width:29px;height:29px;display:block}
+.mgr .wm .tx,.mgr .sello .wmb{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em}
+.mgr .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.mgr .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mgr .wm .mk i:first-child{background:#A8791E}.mgr .wm .mk i:last-child{background:#2E7FA8}
+.mgr .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.mgr .tit b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:46px;line-height:.86;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+.mgr .link{all:unset;box-sizing:border-box;cursor:pointer;width:100%;margin-top:18px;border:1px dashed rgba(74,50,24,.55);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mgr .link s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#4A3218;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mgr .link u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase;flex:0 0 auto}
+.mgr .gente{margin-top:22px}
+.mgr .g{display:flex;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+.mgr .g k{width:26px;height:26px;border-radius:999px;background:#4A3218;color:#F0E2CA;font:700 11px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+.mgr .g .t{flex:1;min-width:0}
+.mgr .g .t b{display:block;font:800 14px/1.2 Archivo,sans-serif;color:#33230F}
+.mgr .g .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px;text-transform:uppercase}
+.mgr .g p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
+.mgr .g.esp .t b{color:#8A6A3C}.mgr .g.esp k{background:transparent;border:1px dashed #8A6A3C;color:#8A6A3C;line-height:24px;box-sizing:border-box}
+.mgr .g.esp.urge .t s:first-of-type{color:#B3402A}
+.mgr .g .t s.oro{color:#9C5F14;font-weight:700}
+.mgr .g .pagar{all:unset;cursor:pointer;background:#4A3218;color:#F0E2CA;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;padding:9px 12px;align-self:center}
+.mgr .g .est{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#4A6B2E;align-self:center}
+.mgr .g .est.no{color:#B3402A}
+.mgr .sello{margin:-10px 0 6px;text-align:center;transform:rotate(-2deg);pointer-events:none}
+.mgr .sello .av{width:54px;height:54px;display:block;margin:0 auto 7px;opacity:.42}
+.mgr .sello .wmb{font-size:22px;color:rgba(58,39,16,.32)}
+.mgr .sello .mk i:first-child{background:rgba(168,121,30,.55)}.mgr .sello .mk i:last-child{background:rgba(46,127,168,.55)}
+.mgr .sello s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(74,50,24,.38);margin-top:7px}
+.mgr .cta .l{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6E4F2A;text-transform:uppercase}
+.mgr .cta .l.oro{color:#9C5F14;font-weight:700}
+.mgr .cta .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:8px;border-top:2px solid #4A3218;padding-top:10px}
+.mgr .cta .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px;text-transform:uppercase}
+.mgr .cta .tt b{font-family:Anton,sans-serif;font-weight:400;font-size:42px;line-height:.82;color:#33230F}
+.mgr .aviso{margin-top:22px;border:1px dashed rgba(74,50,24,.55);padding:12px 14px}
+.mgr .aviso b{display:block;font:800 13px/1.2 Archivo,sans-serif;color:#33230F}
+.mgr .aviso s{font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.6;color:#6E4F2A;margin-top:5px}
+.mgr .sumar{margin-top:40px}
+.mgr .sumar>em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#7A5B33;text-transform:uppercase;margin-bottom:10px}
+.mgr .sumar input{display:block;width:100%;box-sizing:border-box;border:1px solid rgba(74,50,24,.45);background:rgba(255,242,218,.35);padding:12px 14px;font:600 14px/1 Archivo,sans-serif;color:#33230F;border-radius:0}
+.mgr .tam{display:flex;gap:8px;margin:10px 0 4px}
+.mgr .tam button{all:unset;cursor:pointer;flex:1;text-align:center;padding:11px 0;border:1px solid rgba(74,50,24,.45);font:700 12px/1 Archivo,sans-serif;letter-spacing:.14em;color:#6E4F2A}
+.mgr .tam button.on{background:#4A3218;border-color:#4A3218;color:#F0E2CA}
+.mgr .it{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+.mgr .it .t{flex:1}
+.mgr .it .t b{display:block;font:800 14px/1.2 Archivo,sans-serif;color:#33230F}
+.mgr .it .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px;text-transform:uppercase}
+.mgr .it button{all:unset;cursor:pointer;border:1px solid #4A3218;color:#33230F;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;padding:9px 12px}
+.mgr .msg{margin-top:10px;min-height:14px;font:700 10px/1.4 'IBM Plex Mono',monospace;color:#4A6B2E}
+.mgr .cancelar{all:unset;cursor:pointer;display:block;margin:26px auto 0;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#B3402A;text-transform:uppercase}
+.mgr .dir{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:14px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+.mgr .dir b{display:block;font:800 15px/1.1 Archivo,sans-serif;color:#33230F}
+.mgr .dir s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;margin-top:5px}
+.mgr .dir.on b::before{content:'● ';color:#9C5F14}
+.mgr .go{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:0;height:74px;z-index:45;display:flex}
+.mgr .go button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.mgr .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.mgr .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.mgr .go .solo{justify-content:center;padding:0}
+.mgr .go button:focus-visible,.mgr button:focus-visible{outline:2px solid #33230F;outline-offset:-4px}
+.m35 .listo{margin:40px 24px 0 158px;font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;line-height:1.3;color:#1E2B22}
 </style>
 <style>
 #mmap{display:none;position:fixed;inset:0;background:var(--sw-bg,#12150F);z-index:9999}
@@ -495,6 +704,9 @@ body.kb-open #app{padding-bottom:0}
 </noscript>
 <div id="app"></div>
 <div id="ui-overlays"></div>
+<script>
+__NUEVO_JS__
+</script>
 <script>
 __APP_JS__
 </script>

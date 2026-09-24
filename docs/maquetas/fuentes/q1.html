@@ -1,0 +1,165 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;width:1240px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+
+/* ═════ A · EL AÑO ═════ Lo que define a este producto no es que sea secreto: es que se
+   VA. Entonces la estructura no es una lista, es el CALENDARIO. Doce casillas: las que
+   pasaron con su color y su nombre, la de ahora tapada, las que vienen en blanco.   */
+#A{background:#0E0F10}
+#A .enc{position:absolute;left:24px;right:24px;top:76px;z-index:6}
+#A .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.32em;color:#6E6A60;text-transform:uppercase}
+#A .enc b{font-family:Anton,sans-serif;font-size:44px;line-height:.9;color:#F2F0EA;margin-top:11px;letter-spacing:-.03em}
+#A .enc .l{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+#A .enc .l s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E6A60;letter-spacing:.14em}
+#A .enc .l k{font-family:Anton,sans-serif;font-size:20px;color:#B03A2A}
+#A .cal{position:absolute;left:24px;right:24px;top:228px;z-index:6;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#A .c{height:76px;border:1px solid #1E1F21;padding:8px;display:flex;flex-direction:column;justify-content:space-between}
+#A .c s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#4A4842}
+#A .c b{font:800 10px/1.15 Archivo,sans-serif;color:#8C8880}
+#A .c.ido{border-color:transparent}
+#A .c.ido s{color:rgba(255,255,255,.62)}#A .c.ido b{color:#fff}
+#A .c.hoy{border:2px solid #B03A2A;background:#B03A2A}
+#A .c.hoy s{color:rgba(255,240,230,.8)}#A .c.hoy b{color:#FFF6EE;font-size:11px}
+#A .c.fut b{color:#2E2F31;font-family:Anton,sans-serif;font-size:20px}
+#A .ley{position:absolute;left:24px;right:24px;top:500px;z-index:6;display:flex;gap:18px}
+#A .ley div{display:flex;align-items:center;gap:7px;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6E6A60}
+#A .ley i{width:9px;height:9px;display:block}
+#A .txt{position:absolute;left:24px;right:24px;top:546px;z-index:6}
+#A .txt q{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#D8D4CC;line-height:1.35}
+#A .txt s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4A4842;margin-top:14px;line-height:1.9}
+#A .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#A .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+#A .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#F2F0EA}
+
+/* ═════ B · NO SE DEJA VER ═════ Es un sándwich: lo natural sería mostrarlo. Acá la foto
+   ESTÁ, pero irreconocible — y se destapa un poco cada día que pasa. El producto es la
+   tensión, y te hace volver a mirar.                                               */
+#B{background:#0B0C0D}
+#B .ph{position:absolute;inset:0;z-index:1}
+#B .ph img{width:100%;height:100%;object-fit:cover;filter:blur(34px) saturate(1.6) brightness(.72);transform:scale(1.2)}
+#B .ph .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,13,.72) 0 26%,rgba(11,12,13,.2) 48%,rgba(11,12,13,.94) 86%)}
+#B .enc{position:absolute;left:24px;right:24px;top:84px;z-index:6}
+#B .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.32em;color:#E0C38A;text-transform:uppercase}
+#B .enc b{font-family:Anton,sans-serif;font-size:50px;line-height:.9;color:#FFF;margin-top:11px;letter-spacing:-.03em}
+#B .barra{position:absolute;left:24px;right:24px;top:392px;z-index:6}
+#B .barra .t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+#B .barra .t s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:rgba(255,255,255,.62)}
+#B .barra .t k{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0C38A}
+#B .barra .p{height:3px;background:rgba(255,255,255,.2)}
+#B .barra .p i{display:block;height:100%;width:63%;background:#E0C38A}
+#B .dice{position:absolute;left:24px;right:24px;top:452px;z-index:6}
+#B .dice q{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#F2F0EA;line-height:1.32}
+#B .dice s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.5);margin-top:14px;line-height:1.9}
+#B .ant{position:absolute;left:24px;right:24px;bottom:172px;z-index:6;border-top:1px solid rgba(255,255,255,.14);padding-top:14px}
+#B .ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:rgba(255,255,255,.44);text-transform:uppercase}
+#B .ant .r{display:flex;gap:16px;margin-top:11px}
+#B .ant .r div{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,.44);line-height:1.7}
+#B .ant .r div b{display:block;color:rgba(255,255,255,.78);font-family:Archivo,sans-serif;font-weight:700;font-size:11px;margin-bottom:4px}
+#B .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#B .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:rgba(255,255,255,.5);padding-bottom:8px;text-transform:uppercase}
+#B .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#fff}
+
+/* ═════ C · LO QUE DICEN ═════ Nosotros no podemos contar qué lleva. Los que ya lo
+   comieron, sí pueden decir cómo les fue. La pantalla no la escribimos nosotros:
+   la escriben ellos.                                                              */
+#C{background:#F0EDE4}
+#C .enc{position:absolute;left:24px;right:24px;top:78px;z-index:6}
+#C .enc em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.32em;color:#9C5F14;text-transform:uppercase}
+#C .enc b{font-family:Anton,sans-serif;font-size:46px;line-height:.9;color:#21201C;margin-top:10px;letter-spacing:-.03em}
+#C .enc .l{display:flex;justify-content:space-between;align-items:baseline;margin-top:11px;
+  border-bottom:1px solid #D6D0C0;padding-bottom:12px}
+#C .enc .l s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8A8578;letter-spacing:.12em}
+#C .enc .l k{font-family:Anton,sans-serif;font-size:19px;color:#9C5F14}
+#C .muro{position:absolute;left:24px;right:24px;top:228px;z-index:6}
+#C .m{padding:15px 0;border-bottom:1px solid #DDD7C8}
+#C .m q{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#21201C;line-height:1.3}
+#C .m .w{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+#C .m .w s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8A8578;letter-spacing:.12em}
+#C .m .w u{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#9C5F14;letter-spacing:.12em}
+#C .cont{position:absolute;left:24px;right:24px;bottom:158px;z-index:6;display:flex;justify-content:space-between;align-items:baseline;
+  border-top:1px solid #D6D0C0;padding-top:13px}
+#C .cont s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8A8578;line-height:1.8}
+#C .pre{position:absolute;left:24px;right:24px;bottom:96px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+#C .pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;padding-bottom:8px;text-transform:uppercase}
+#C .pre b{font-family:Anton,sans-serif;font-size:42px;line-height:.82;color:#21201C}
+</style></head><body>
+
+<div class="f" id="A">
+  <div class="tag">SECRETO · A · el año</div>
+  <div class="sal" style="color:#8C8880">←</div>
+  <div class="enc"><em>Lo desbloqueaste</em><b>EL CHIFERO</b>
+    <div class="l"><s>SEPTIEMBRE · SE VA Y NO VUELVE</s><k>11 días</k></div></div>
+  <div class="cal">
+    <div class="c ido" style="background:#5B6E8C"><s>ENE</s><b>El Tibio</b></div>
+    <div class="c ido" style="background:#7A5C8C"><s>FEB</s><b>El Sureño</b></div>
+    <div class="c ido" style="background:#2E6B63"><s>MAR</s><b>El Húmedo</b></div>
+    <div class="c ido" style="background:#8C5A3A"><s>ABR</s><b>El Terco</b></div>
+    <div class="c ido" style="background:#4A7A4E"><s>MAY</s><b>El Verde</b></div>
+    <div class="c ido" style="background:#6B4C8A"><s>JUN</s><b>El Dominguero</b></div>
+    <div class="c ido" style="background:#2E6B63"><s>JUL</s><b>El Bravo</b></div>
+    <div class="c ido" style="background:#C08A3E"><s>AGO</s><b>El Norteño</b></div>
+    <div class="c hoy"><s>SEP</s><b>El Chifero</b></div>
+    <div class="c fut"><s>OCT</s><b>?</b></div>
+    <div class="c fut"><s>NOV</s><b>?</b></div>
+    <div class="c fut"><s>DIC</s><b>?</b></div>
+  </div>
+  <div class="ley">
+    <div><i style="background:#C08A3E"></i>YA NO EXISTEN</div>
+    <div><i style="background:#B03A2A"></i>EL DE AHORA</div>
+    <div><i style="background:#2E2F31"></i>SIN ESCRIBIR</div>
+  </div>
+  <div class="txt"><q>“De este no digo nada.<br>Pídelo y lo averiguas.”</q>
+    <s>NINGUNO SE REPITIÓ. NINGUNO VOLVIÓ.<br>EL DE OCTUBRE TODAVÍA NO EXISTE.</s></div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="B">
+  <div class="tag">SECRETO · B · no se deja ver</div>
+  <div class="ph"><img src="../../../img/sig03.jpg"><div class="v"></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="enc"><em>Lo desbloqueaste</em><b>EL CHIFERO</b></div>
+  <div class="barra">
+    <div class="t"><s>SE DESTAPA UN POCO CADA DÍA</s><k>19 DE 30</k></div>
+    <div class="p"><i></i></div>
+  </div>
+  <div class="dice"><q>“Cuando se vea entero,<br>ya no lo vas a poder pedir.”</q>
+    <s>EL 30 DE SEPTIEMBRE QUEDA A LA VISTA<br>Y ESE MISMO DÍA SE VA.</s></div>
+  <div class="ant"><em>Los que alcanzaron a verse enteros</em>
+    <div class="r">
+      <div><b>El Norteño</b>AGOSTO</div>
+      <div><b>El Bravo</b>JULIO</div>
+      <div><b>El Dominguero</b>JUNIO</div>
+    </div>
+  </div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="C">
+  <div class="tag">SECRETO · C · lo que dicen</div>
+  <div class="sal" style="color:#21201C">←</div>
+  <div class="enc"><em>Lo desbloqueaste</em><b>EL CHIFERO</b>
+    <div class="l"><s>NOSOTROS NO CONTAMOS NADA</s><k>11 días</k></div></div>
+  <div class="muro">
+    <div class="m"><q>“Pica más de lo que esperaba. Volvería igual.”</q>
+      <div class="w"><s>LUCIA M. · HACE 2 DÍAS</s><u>LO PIDIÓ 2 VECES</u></div></div>
+    <div class="m"><q>“Hay algo ahumado ahí adentro y no logro saber qué es.”</q>
+      <div class="w"><s>JORGE P. · HACE 4 DÍAS</s><u>LO PIDIÓ 1 VEZ</u></div></div>
+    <div class="m"><q>“No lo compartas. Se acaba en cuatro mordidas.”</q>
+      <div class="w"><s>MAFE R. · HACE 6 DÍAS</s><u>LO PIDIÓ 3 VECES</u></div></div>
+  </div>
+  <div class="cont"><s>31 PERSONAS LO PIDIERON ESTE MES.<br>NINGUNA SABE QUÉ LLEVA.</s></div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+</body></html>

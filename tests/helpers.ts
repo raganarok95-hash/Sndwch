@@ -131,8 +131,18 @@ export async function clearDeliveryPin(page: Page) {
 // Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
 // el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
 export async function elegirSando(page: Page) {
-  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
-  await page.waitForSelector('text=SIGNATURE');
+  // La app RECUERDA el lado elegido (localStorage `sw_lado`): quien vuelve entra directo a su
+  // lado sin ver la puerta. Una prueba que carga la app dos veces vive exactamente eso, y
+  // esperar una puerta que la app no muestra la dejaba colgada (recetas.spec.ts, 2026-09-24).
+  // Se toca la puerta SOLO si está: es lo mismo que hace un cliente.
+  const puerta = page.getByRole('button', { name: /Ya está resuelto/ });
+  await Promise.race([puerta.waitFor(), page.waitForSelector('text=Y además')]);
+  if (await puerta.isVisible()) await puerta.click();
+  // Se espera un texto que SOLO existe en el mundo de SANDO ya pintado. Antes era
+  // "SIGNATURE", que era la pestaña del catálogo viejo; al desaparecer esa barra el helper
+  // se quedaba esperando 30s en cada prueba de la suite. El ancla es el tramo de abajo del
+  // mundo, así que llegar hasta él significa que la pantalla se pintó ENTERA.
+  await page.waitForSelector('text=Y además');
 }
 
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
@@ -156,4 +166,47 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
   // cubierta por toda la suite: si se rompe, se rompe ruidosamente y en todas partes.
   await elegirSando(page);
   return calls;
+}
+
+// ── Entrar por la interfaz ────────────────────────────────────────────────────────────
+//
+// POR QUÉ EXISTE. Hasta el 2026-09-23, 35 specs repetían las mismas tres líneas para entrar:
+// llenar `#l-phone`, llenar `#l-pin`, tocar «INGRESAR //». El día que la pantalla de entrada
+// pasó a correo + código de 6 dígitos —que es lo que las pantallas aprobadas prometen— esas
+// tres líneas dejaron de existir y **46 pruebas se rompieron de golpe por un cambio de una
+// pantalla**. No porque el cambio estuviera mal: porque el detalle de CÓMO se entra estaba
+// copiado 46 veces.
+//
+// Ahora vive acá. El próximo cambio de la pantalla de entrada toca un archivo, no 35.
+//
+// Sigue entrando por teléfono + PIN a propósito: es el camino que el panel admin usa y el
+// que conservan las cuentas creadas antes del correo, así que es el que la mayoría de estas
+// pruebas quiere ejercitar. Para probar el camino de correo está su propio spec.
+export async function entrarConTelefono(page: Page, phone = '900000001', pin = '1234') {
+  await page.getByRole('button', { name: 'INGRESAR' }).click();
+  // La pestaña abre en el flujo de correo; este enlace destapa el de teléfono + PIN.
+  await page.locator('[onclick*="authPinFallback=true"]').click();
+  await page.locator('#l-phone').fill(phone);
+  await page.locator('#l-pin').fill(pin);
+  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+}
+
+// ── Entrar al armador ─────────────────────────────────────────────────────────────────
+//
+// Hasta el rediseño, el armador se abría tocando el texto «Arma el tuyo» en el home. Ese
+// texto ya no existe: el home es la puerta partida entre los dos hermanos, y el armador es
+// el lado de WICHO. Diez pruebas quedaron buscando el texto viejo y esperando 30 s cada una.
+//
+// Se entra como entra un cliente que ya está del lado de SANDO (donde deja `gotoApp`):
+// «Cambiar de lado» → la mitad de WICHO. El armador abre en el paso del TAMAÑO.
+export async function irAlArmador(page: Page) {
+  await page.locator('[aria-label="Cambiar de lado"]').first().click();
+  await page.locator('button[onclick="elegirLado(\'byo\')"]').click();
+  await page.waitForSelector('text=¿De qué tamaño?');
+}
+
+// El botón de avanzar del armador. Se busca por lo que HACE, no por su rótulo: el rótulo
+// cambia entre «Siguiente», «Listo» y la pista de lo que falta («Elige un pan»).
+export async function siguientePaso(page: Page) {
+  await page.locator('button[onclick="byoStepNext()"]').click();
 }

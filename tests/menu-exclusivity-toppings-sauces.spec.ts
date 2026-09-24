@@ -1,5 +1,22 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, irAlArmador, siguientePaso } from './helpers';
+
+// Recorrido hasta el paso de VEGETALES del armador actual: tamaño → pan → proteína → queso
+// (se salta: es opcional) → vegetales. Vive en un solo sitio porque las tres pruebas de este
+// archivo lo necesitan, y la vez anterior que el armador cambió de orden hubo que corregirlo
+// en tres copias (el salto del queso se agregó a mano en cada una).
+async function hastaLosVegetales(page: any) {
+  await irAlArmador(page);
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await siguientePaso(page); // tamaño -> pan
+  await page.locator('[onclick^="base="]').first().click();
+  await siguientePaso(page); // pan -> proteína
+  await page.locator('[onclick^="prot="]').first().click();
+  await siguientePaso(page); // proteína -> queso
+  await siguientePaso(page); // queso -> vegetales
+  // El riel nombra el paso en el que estás; el título es una pregunta («¿Qué le pones encima?»).
+  await expect(page.locator('[aria-label="VEGETALES (aquí)"]')).toHaveCount(1);
+}
 
 // Extiende el mismo criterio de POLLO CAJÚN (P03, vault-exclusive-protein.spec.ts) a
 // JALAPEÑO (T04) + SPICY MAYO/PICANTE MIEL (S02/S12), que solo aparecen en el menú
@@ -17,24 +34,13 @@ import { gotoApp } from './helpers';
 test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no aparecen en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});
 
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="base="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  await page.locator('[onclick^="prot="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-
-  // ⚠ El orden del armador cambió el 2026-09-05 al de Subway: pan -> proteína -> QUESO ->
-  // vegetales -> salsas. Sin este salto extra la aserción caía en el paso del queso, donde
-  // "Jalapeño" no aparece jamás — o sea que pasaba en falso y habría seguido pasando aunque
-  // el jalapeño volviera a listarse entre los vegetales.
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // queso -> vegetales
+  // ⚠ Hay que llegar de verdad al paso de VEGETALES: en el del queso "Jalapeño" no aparece
+  // jamás, así que la aserción pasaría en falso. hastaLosVegetales() lo comprueba por el título.
+  await hastaLosVegetales(page);
 
   // Paso de vegetales: Jalapeño no debe listarse.
   await expect(page.locator('text=Jalapeño')).not.toBeVisible();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click(); // vegetales -> salsas
+  await siguientePaso(page); // vegetales -> salsas
 
   // Otras salsas siguen disponibles normalmente.
   await expect(page.locator('text=Aioli').first()).toBeVisible();
@@ -69,26 +75,15 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
     }),
   });
 
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="base="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  await page.locator('[onclick^="prot="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  // Paso de QUESO: desde el 2026-09-05 el armador sigue el orden de Subway (pan -> proteína
-  // -> queso -> vegetales -> salsas), así que hay un paso más antes de los vegetales. Se
-  // salta sin elegir nada — el queso es opcional.
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await hastaLosVegetales(page);
 
   // Paso de vegetales: la lechuga se lista y se puede elegir.
   await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
   await page.locator('[onclick*="\'T09\'"]').first().click();
 
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();   // vegetales -> salsas
-  await page.locator('[onclick*="sauces.push("]').first().click();
-  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
+  await siguientePaso(page); // vegetales -> salsas
+  await page.locator('[onclick^="byoToggleSalsa("]').first().click();
+  await siguientePaso(page); // «Listo» -> confirmar
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
   await page.locator('#o-nom').fill('Cliente Lechuga');
@@ -125,16 +120,7 @@ test('lo marcado como sigOnly no aparece en ARMA EL TUYO, pero sigue en sus Sign
   await gotoApp(page, {});
 
   // 1) No se ofrecen en el armador: ni apio, ni pepinillo.
-  await page.locator('text=Arma el tuyo').click();
-  await page.locator('[onclick*="startOrder(\'byo\')"]').first().click();
-  await expect(page.locator('text=ARMA EL TUYO')).toBeVisible();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="base="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  await page.locator('[onclick^="prot="]').first().click();
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
-  // Un paso más: el queso va antes de los vegetales desde el reorden Subway (2026-09-05).
-  await page.getByRole('button', { name: 'SIGUIENTE →' }).click();
+  await hastaLosVegetales(page);
   // T08 ya no está en ninguna parte del catálogo; T02 sí existe, pero solo dentro de sus
   // Signatures. Los dos tienen que dar cero acá, por motivos distintos.
   await expect(page.locator('[onclick*="\'T08\'"]')).toHaveCount(0);
