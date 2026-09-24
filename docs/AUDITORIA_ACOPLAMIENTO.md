@@ -120,12 +120,19 @@ permisos, validación y código muerto.
   reclamo, acreditando un pendiente). El flujo nuevo de `check:e2e` pasa también con el código
   anterior —el camino feliz no rompía—: es red para el recorrido completo, no la prueba del defecto.
 
+- **A3** (2026-09-24): `cancelar_pedido` (migración `20260924212826`) marca, devuelve stock,
+  deshace la cuenta, anota historial y libro, y revierte el bono de referido en una transacción;
+  el bono se decide bajo lock y no con una lectura previa. Si el saldo no alcanza, no se cancela
+  nada (antes: cancelado y sin devolver). Las dos cancelaciones usan `cancelarEnLaBase()` en vez
+  del bloque que estaba copiado dos veces. `tests-db/cancelar-pedido.sql`, vista fallar sin la
+  función y con dos defectos inyectados (sin filtro de estado, leyendo el bono después de
+  descontar el pedido). Los dos flujos de cancelación de `check:e2e` pasan por la función nueva.
+  Con esto también desaparece el comentario desactualizado sobre «dos versiones vivas».
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida
   no tiene tipo. Se cierran a medida que cada pantalla migra a la base nueva.
-- **Comentario desactualizado** en orders.ts sobre «dos versiones vivas» de
-  `finalize_order_customer_update`: el esquema real tiene una sola. Engaña al próximo que lo lea.
 - **Tres exportaciones sin uso** (`BUSINESS_CITY`, `Constants`, `sbRpc`).
 
 ## Lo que se revisó y está bien

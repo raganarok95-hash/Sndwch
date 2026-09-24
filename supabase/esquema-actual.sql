@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924212333
+-- foto-tomada-tras-migracion: 20260924212826
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -977,6 +977,64 @@ begin
 
   return jsonb_build_object('customer', to_jsonb(v_cli), 'bono_referido', v_bono,
                             'pedidos_antes', v_antes.total_orders, 'rango', v_rango);
+end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_ord public.orders;
+  v_cli public.customers;
+  v_phone text := p_deshacer->>'phone';
+  v_puntos int := coalesce((p_deshacer->>'points_delta')::int, 0);
+  v_credito numeric := coalesce((p_deshacer->>'credit_delta')::numeric, 0);
+  v_invita text;
+begin
+  update public.orders set status = 'CANCELADO', cancel_reason = p_motivo
+   where id = p_order_id
+     and case when p_desde is null then status not in ('ENTREGADO', 'CANCELADO') else status = any(p_desde) end
+  returning * into v_ord;
+  if not found then
+    return jsonb_build_object('cancelado', false);
+  end if;
+
+  perform public.restock_inventory(p_codes, p_qtys);
+
+  if v_phone is not null then
+    select * into v_cli from public.customers where phone = v_phone for update;
+    if found and coalesce((p_deshacer->>'pagado')::boolean, false) and v_cli.referral_bonus_granted
+       and v_cli.total_orders = 1 and v_cli.referred_by is not null
+       and exists (select 1 from public.customers where phone = v_cli.referred_by) then
+      v_invita := v_cli.referred_by;
+    end if;
+
+    perform public.finalize_order_customer_update(
+      v_phone, v_puntos, v_credito,
+      coalesce((p_deshacer->>'total_orders_delta')::int, 0), null,
+      coalesce((p_deshacer->>'redeemed_delta')::int, 0), null, 0, 0);
+
+    if v_puntos <> 0 then
+      insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
+      values (v_phone, 'cancel_reversal', v_puntos, p_deshacer->>'desc_puntos', v_ord.ref, true);
+    end if;
+    if v_credito > 0 then
+      insert into public.credit_ledger (customer_phone, delta, reason)
+      values (v_phone, v_credito, p_deshacer->>'desc_credito');
+    end if;
+    if v_invita is not null then
+      perform public.reverse_referral_bonus(v_phone, v_invita, (p_deshacer->>'referral_bonus')::int, (p_deshacer->>'referrer_bonus')::int);
+      insert into public.transactions (customer_phone, type, points, description, confirmed)
+      values (v_phone, 'cancel_reversal', -(p_deshacer->>'referral_bonus')::int, p_deshacer->>'desc_bono', true),
+             (v_invita, 'cancel_reversal', -(p_deshacer->>'referrer_bonus')::int, p_deshacer->>'desc_bono', true);
+    end if;
+  end if;
+
+  return jsonb_build_object('cancelado', true, 'order', to_jsonb(v_ord), 'bono_revertido', v_invita is not null);
 end;
 $function$
 ;
@@ -2106,6 +2164,8 @@ revoke all on function public.adjust_credit_balance(p_phone text, p_delta numeri
 revoke all on function public.admin_adjust_credit(p_phone text, p_delta numeric) from public; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to postgres; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to service_role;
 
 revoke all on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) from public; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to postgres; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to service_role;
+
+revoke all on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) from public; grant execute on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) to postgres; grant execute on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) to service_role;
 
 revoke all on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) from public; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to postgres; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to service_role;
 

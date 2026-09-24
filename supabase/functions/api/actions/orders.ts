@@ -2334,7 +2334,12 @@ export async function actAdminReceiptUrl(b: any) {
 // Compartido entre la cancelación manual (admin) y la expiración automática de abajo —
 // re-deriva los ingredientes de cada línea del pedido y los devuelve al inventario.
 export async function restockOrderItems(items: any): Promise<void> {
-  if (!Array.isArray(items) || !items.length) return;
+  const { codes, qtys } = ingredientesADevolver(items);
+  if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+}
+// Los insumos que un pedido devuelve al inventario al cancelarse, contados por código.
+export function ingredientesADevolver(items: any): { codes: string[]; qtys: number[] } {
+  if (!Array.isArray(items) || !items.length) return { codes: [], qtys: [] };
   const ingredients: string[] = [];
   for (const it of items) {
     try {
@@ -2358,20 +2363,14 @@ export async function restockOrderItems(items: any): Promise<void> {
       // su composición, así que se omite la restitución solo para ese ítem.
     }
   }
-  if (!ingredients.length) return;
   const codes = Array.from(new Set(ingredients));
-  const qtys = codes.map((c) => ingredients.filter((x) => x === c).length);
-  await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+  return { codes, qtys: codes.map((c) => ingredients.filter((x) => x === c).length) };
 }
 
-// El bono de referido (+50/+50 pts) se otorgaba al pagar pero nunca se revertía al
-// cancelar — permitía "registrarse con código de referido → pedido mínimo pagado →
-// cancelar antes de que cocina empiece → repetir" para farmear el bono sin comprar de
-// verdad (hallazgo de auditoría financiera). No hay columna en `orders` que diga qué
-// pedido exacto disparó el bono, así que se usa `total_orders === 1` (justo antes de
-// que este cancelación lo baje a 0) como el mejor indicador disponible de "este pedido
-// fue el que lo otorgó" — debe leerse ANTES de que finalize_order_customer_update
-// decremente total_orders, nunca después.
+// El bono de referido se revierte al cancelar el pedido que lo otorgó (si no, se farmeaba:
+// registrarse con código → pedido mínimo pagado → cancelar → repetir). No hay columna que diga
+// qué pedido lo disparó, así que el indicador es `total_orders = 1` leído ANTES de descontar el
+// pedido: lo hace `cancelar_pedido` en la base, bajo lock (ver cancelarEnLaBase).
 // Lo que hay que DESHACER en la cuenta del cliente al cancelar un pedido. Es la misma
 // aritmética para la cancelación del cliente (actCancelMyOrder) y la del admin
 // (actAdminCancelOrder) — estaba escrita dos veces palabra por palabra, que es justo
@@ -2405,35 +2404,39 @@ export function cancellationDeltas(order: {
     totalRedeemedDelta: paid && order.redeemed_reward_pts ? -1 : 0,
   };
 }
-async function referrerPhoneToReverse(phone: string): Promise<string | null> {
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=referred_by,referral_bonus_granted,total_orders`);
-  const c = rows[0];
-  if (c && c.referred_by && c.referral_bonus_granted && c.total_orders === 1) return c.referred_by;
-  return null;
-}
-async function reverseReferralBonus(referredPhone: string, referrerPhone: string, contextLabel: string) {
-  await rpc("reverse_referral_bonus", {
-    p_referred_phone: referredPhone,
-    p_referrer_phone: referrerPhone,
-    p_bonus: REFERRAL_BONUS_POINTS,
-    p_referrer_bonus: REFERRER_REWARD_POINTS,
+// Cancelar es UNA transacción en la base (A3, migración 20260924212826): marcar CANCELADO solo
+// desde los estados permitidos, devolver el stock, deshacer la cuenta (cancellationDeltas),
+// anotar historial y libro de crédito, y revertir el bono de referido si este pedido fue el que
+// lo otorgó — eso último lo decide la base bajo lock, no una lectura previa. Antes eran pasos
+// sueltos desde acá: si uno fallaba, el pedido quedaba cancelado con el saldo sin devolver, o
+// devuelto sin anotar. Si el saldo no alcanza para deshacer (el cliente ya gastó esos puntos),
+// no se cancela nada y el cliente ve «saldo insuficiente».
+// Devuelve el pedido ya cancelado, o null si ya no estaba en un estado cancelable.
+async function cancelarEnLaBase(order: any, desde: string[] | null, motivo: string, etiqueta: string): Promise<any | null> {
+  const d = cancellationDeltas(order);
+  const hayQueDeshacer = order.customer_phone && (d.creditToRefund > 0 || d.pointsToRefund !== 0 || d.totalOrdersDelta !== 0);
+  const { codes, qtys } = ingredientesADevolver(order.items);
+  const r = await rpc("cancelar_pedido", {
+    p_order_id: String(order.id),
+    p_desde: desde,
+    p_motivo: motivo,
+    p_codes: codes,
+    p_qtys: qtys,
+    p_deshacer: hayQueDeshacer ? {
+      phone: order.customer_phone,
+      points_delta: d.pointsToRefund,
+      credit_delta: d.creditToRefund,
+      total_orders_delta: d.totalOrdersDelta,
+      redeemed_delta: d.totalRedeemedDelta,
+      pagado: order.payment_status === "paid",
+      referral_bonus: REFERRAL_BONUS_POINTS,
+      referrer_bonus: REFERRER_REWARD_POINTS,
+      desc_puntos: "Ajuste de puntos por cancelación " + etiqueta,
+      desc_credito: "Reembolso por cancelación " + etiqueta,
+      desc_bono: "Reversión de bono de referido por cancelación " + etiqueta,
+    } : null,
   });
-  await Promise.all([
-    sbInsert("transactions", {
-      customer_phone: referredPhone,
-      type: "cancel_reversal",
-      points: -REFERRAL_BONUS_POINTS,
-      description: "Reversión de bono de referido por cancelación " + contextLabel,
-      confirmed: true,
-    }),
-    sbInsert("transactions", {
-      customer_phone: referrerPhone,
-      type: "cancel_reversal",
-      points: -REFERRER_REWARD_POINTS,
-      description: "Reversión de bono de referido por cancelación " + contextLabel,
-      confirmed: true,
-    }),
-  ]);
+  return r?.cancelado ? r.order : null;
 }
 
 export async function actAdminCancelOrder(b: any) {
@@ -2472,68 +2475,11 @@ export async function actAdminCancelOrder(b: any) {
   // `status=neq.ENTREGADO&status=neq.CANCELADO` en la MISMA sentencia hace que solo una
   // de las dos solicitudes encuentre la fila para actualizar — la otra recibe un array
   // vacío y nunca llega a restockear/reembolsar.
-  const claimRows = await sbUpdate(
-    "orders",
-    `id=eq.${encodeURIComponent(orderId)}&status=neq.ENTREGADO&status=neq.CANCELADO`,
-    { status: "CANCELADO", cancel_reason: reason },
-  );
-  if (!claimRows.length) {
+  // Solo una de dos solicitudes casi simultáneas (doble clic, reintento) encuentra el pedido
+  // todavía cancelable: la otra no devuelve ni reembolsa nada (ver cancelarEnLaBase).
+  const cancelado = await cancelarEnLaBase(order, null, reason, "admin (" + order.id + ")");
+  if (!cancelado) {
     throw new ApiError("Este pedido ya no se puede cancelar — puede que ya esté cancelado, entregado, o que otra solicitud ya lo haya cancelado.", 409);
-  }
-
-  await restockOrderItems(order.items);
-
-  // A diferencia de actCancelMyOrder, esta función NUNCA revertía puntos/crédito/
-  // total_orders al cancelar un pedido pagado (hallazgo de auditoría de código, ALTO) —
-  // dos consecuencias reales: (1) si se pagó con crédito interno, ese saldo quedaba
-  // debitado para siempre sin ninguna herramienta para corregirlo; (2) si se pagó con
-  // tarjeta/Yape/Plin y se reembolsó por fuera de la app, el cliente igual conservaba
-  // los puntos/rango ganados por un pedido que terminó devuelto. Mismo cálculo que
-  // actCancelMyOrder: revierte el delta neto que se aplicó al pagar.
-  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
-  // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
-  // total_orders — ver comentario de referrerPhoneToReverse.
-  const referrerToReverse = order.payment_status === "paid" && order.customer_phone
-    ? await referrerPhoneToReverse(order.customer_phone)
-    : null;
-  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
-    await rpc("finalize_order_customer_update", {
-      p_phone: order.customer_phone,
-      p_points_delta: pointsToRefund,
-      p_credit_delta: creditToRefund,
-      p_total_orders_delta: totalOrdersDelta,
-      p_last_address: null,
-      p_total_redeemed_delta: totalRedeemedDelta,
-      p_referrer_phone: null,
-      p_referral_bonus: 0,
-      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
-      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
-      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
-      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
-      // alguien pase un referrer real por acá.
-      p_referrer_bonus: 0,
-    });
-    const refundAudits: Promise<unknown>[] = [];
-    if (pointsToRefund !== 0) {
-      refundAudits.push(sbInsert("transactions", {
-        customer_phone: order.customer_phone,
-        type: "cancel_reversal",
-        points: pointsToRefund,
-        description: "Ajuste de puntos por cancelación admin (" + order.id + ")",
-        confirmed: true,
-      }));
-    }
-    if (creditToRefund > 0) {
-      refundAudits.push(sbInsert("credit_ledger", {
-        customer_phone: order.customer_phone,
-        delta: creditToRefund,
-        reason: "Reembolso por cancelación admin (" + order.id + ")",
-      }));
-    }
-    if (referrerToReverse) {
-      refundAudits.push(reverseReferralBonus(order.customer_phone, referrerToReverse, "admin (" + order.id + ")"));
-    }
-    await Promise.all(refundAudits);
   }
 
   // Avisarle al cliente. Antes cancelar no mandaba nada: se enteraba abriendo la app, o no
@@ -2553,7 +2499,7 @@ export async function actAdminCancelOrder(b: any) {
     }
   }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
-  return { success: true, order: claimRows[0] };
+  return { success: true, order: cancelado };
 }
 
 // La página de Cambios y Devoluciones promete "puedes cancelar sin costo antes de que la
@@ -2587,84 +2533,12 @@ export async function actCancelMyOrder(b: any) {
     throw new ApiError("Ya no se puede cancelar — la cocina ya empezó a preparar tu pedido.", 400);
   }
 
-  // Reclamo atómico ANTES de restockear/reembolsar — mismo motivo y mismo patrón que
-  // actAdminCancelOrder (ver su comentario): sin el filtro `status=eq.RECIBIDO` en esta
-  // MISMA sentencia, un doble-tap en "Cancelar pedido" (sin guard de cliente hasta ahora)
-  // dejaba pasar dos solicitudes casi simultáneas por el chequeo de arriba antes de que
-  // la primera terminara de escribir, y ambas restockeaban/reembolsaban el mismo pedido
-  // (hallazgo de auditoría de funcionamiento, CRÍTICO).
-  const claimRows = await sbUpdate(
-    "orders",
-    `id=eq.${encodeURIComponent(order.id)}&status=eq.RECIBIDO`,
-    { status: "CANCELADO", cancel_reason: "Cliente canceló" },
-  );
-  if (!claimRows.length) {
+  // Solo desde RECIBIDO, comprobado en la misma transacción que cancela: un doble toque o una
+  // cocina que empezó entre la lectura y este paso no devuelven nada dos veces. Lo que se
+  // deshace en la cuenta es el mismo delta neto que se aplicó al pagar (cancellationDeltas).
+  const cancelado = await cancelarEnLaBase(order, ["RECIBIDO"], "Cliente canceló", "de pedido (" + order.ref + ")");
+  if (!cancelado) {
     throw new ApiError("Ya no se puede cancelar — la cocina ya empezó a preparar tu pedido.", 400);
-  }
-
-  await restockOrderItems(order.items);
-
-  // Devuelve lo que el cliente ya gastó para pagar este pedido (crédito interno usado)
-  // Y revierte lo que había GANADO por la compra (puntos 1:1 sobre el total, el conteo
-  // de total_orders, y el contador de recompensas canjeadas) — antes solo se devolvían
-  // los puntos de una recompensa canjeada, dejando los puntos GANADOS como un premio
-  // permanente aunque el pedido se cancelara y el stock se restituyera. Eso permitía
-  // "pedir con crédito propio → cancelar → repetir" para farmear puntos infinitos sin
-  // costo real, e inflar total_orders para desbloquear rangos/menú secreto sin comprar de
-  // verdad (hallazgo de auditoría de código — CRÍTICO). Ahora se revierte exactamente
-  // el mismo delta neto que finalizeAndInsertOrder/confirmManualPayment aplicaron al
-  // pagar: total ganado menos puntos de recompensa ya restados en ese momento. Solo
-  // aplica si el pedido llegó a debitar/acreditar algo de verdad: payment_status debe
-  // ser "paid" (un Yape/Plin todavía "pending" nunca pasó por finalize_order_customer_
-  // update, así que no hay nada que revertir ahí). El propio RPC bloquea la reversión
-  // (y por tanto la cancelación) si el cliente ya gastó esos puntos en otra parte antes
-  // de cancelar (guarda points+delta>=0) — en ese caso raro, el cliente ve "saldo
-  // insuficiente" en vez de perder la cuenta en silencio.
-  const { creditToRefund, pointsToRefund, totalOrdersDelta, totalRedeemedDelta } = cancellationDeltas(order);
-  // Debe leerse ANTES de finalize_order_customer_update, que es el que decrementa
-  // total_orders — ver comentario de referrerPhoneToReverse.
-  const referrerToReverse = order.payment_status === "paid" && order.customer_phone
-    ? await referrerPhoneToReverse(order.customer_phone)
-    : null;
-  if (order.customer_phone && (creditToRefund > 0 || pointsToRefund !== 0 || totalOrdersDelta !== 0)) {
-    await rpc("finalize_order_customer_update", {
-      p_phone: order.customer_phone,
-      p_points_delta: pointsToRefund,
-      p_credit_delta: creditToRefund,
-      p_total_orders_delta: totalOrdersDelta,
-      p_last_address: null,
-      p_total_redeemed_delta: totalRedeemedDelta,
-      p_referrer_phone: null,
-      p_referral_bonus: 0,
-      // p_referrer_bonus explícito aunque acá siempre sea 0: PostgREST elige la sobrecarga
-      // por los NOMBRES de los argumentos, así que omitirlo hacía caer estas dos llamadas
-      // en la versión vieja de 8 parámetros. Hoy es inocuo (p_referrer_phone es null),
-      // pero es exactamente el defecto de los "350 puntos regalados" esperando a que
-      // alguien pase un referrer real por acá.
-      p_referrer_bonus: 0,
-    });
-    const refundAudits: Promise<unknown>[] = [];
-    if (pointsToRefund !== 0) {
-      refundAudits.push(sbInsert("transactions", {
-        customer_phone: order.customer_phone,
-        type: "cancel_reversal",
-        points: pointsToRefund,
-        description: "Ajuste de puntos por cancelación de pedido (" + order.ref + ")",
-        order_ref: order.ref,
-        confirmed: true,
-      }));
-    }
-    if (creditToRefund > 0) {
-      refundAudits.push(sbInsert("credit_ledger", {
-        customer_phone: order.customer_phone,
-        delta: creditToRefund,
-        reason: "Reembolso por cancelación (" + order.ref + ")",
-      }));
-    }
-    if (referrerToReverse) {
-      refundAudits.push(reverseReferralBonus(order.customer_phone, referrerToReverse, "(" + order.ref + ")"));
-    }
-    await Promise.all(refundAudits);
   }
 
   // Dinero real ya cobrado que este endpoint NO puede devolver solo (tarjeta vía Culqi,
@@ -2693,7 +2567,7 @@ export async function actCancelMyOrder(b: any) {
     }
   }
 
-  return { success: true, order: claimRows[0] };
+  return { success: true, order: cancelado };
 }
 
 // Un pedido Yape/Plin que el cliente nunca terminó de transferir se quedaba "vivo" para

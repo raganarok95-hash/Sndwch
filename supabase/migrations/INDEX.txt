@@ -184,3 +184,4 @@
 20260924185004  quitar_columnas_viejas_de_orders
 20260924211810  reponer_tanda_atomica
 20260924212333  vincular_pedido_de_invitado
+20260924212826  cancelar_pedido_transaccional
