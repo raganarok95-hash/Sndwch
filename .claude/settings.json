@@ -33,7 +33,7 @@
           {
             "type": "command",
             "if": "Bash(git commit *)",
-            "command": "cd /home/user/Sndwch && export PATH=\"/opt/node22/bin:$PATH\" && npm run verify:rapido || { echo 'npm run verify:rapido fallo -- commit bloqueado. Revisa la salida arriba antes de reintentar.' >&2; exit 2; }",
+            "command": "bash /home/user/Sndwch/scripts/hook-antes-de-comitear.sh",
             "timeout": 300,
             "statusMessage": "Verificando (typecheck+parity+build) antes de comitear..."
           }

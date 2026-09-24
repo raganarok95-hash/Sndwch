@@ -1,6 +1,7 @@
 // SND//WCH — api / env
 // Todas las variables de entorno y constantes de negocio del backend, centralizadas en
 // un solo lugar en vez de estar dispersas (y a veces repetidas) por todo index.ts.
+import { REGLAS } from "../_shared/dinero.ts";
 
 export const SB_URL = Deno.env.get("SUPABASE_URL")!;
 export const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -258,15 +259,9 @@ export const DELIVERY_ZONE_FEES: Record<string, number> = {
 // [DECISIÓN] dueño 2026-09-03: se cobra S/0.50 y S/1.00. Cubre el sobrecosto con holgura y
 // deja la focaccia como lo que es —una opción premium— en vez de una fuga silenciosa.
 //
-// Solo B03 lleva recargo; B01 (Classic) es el pan sub y no cambia. DEBE coincidir con
-// BASE_SURCHARGE en src/app/ — lo verifica `npm run parity`.
-export const BASE_SURCHARGE: Record<string, { p15: number; p30: number }> = {
-  B03: { p15: 0.5, p30: 1 },
-};
-export function baseSurcharge(base: string, size: "15" | "30"): number {
-  const s = BASE_SURCHARGE[base];
-  return s ? (size === "15" ? s.p15 : s.p30) : 0;
-}
+// Solo B03 lleva recargo; B01 (Classic) es el pan sub y no cambia. El valor vive en UN solo
+// sitio, el módulo de dinero que comparten el cliente y el servidor (_shared/dinero.ts).
+export const BASE_SURCHARGE = REGLAS.recargoPan;
 
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
 //

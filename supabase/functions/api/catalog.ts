@@ -4,7 +4,8 @@
 // reporte el cliente, todo se recalcula aquí a partir de estos datos.
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
-import { computeRankName , baseSurcharge, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
+import { computeRankName , REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
+import { REGLAS, resolverCarrito, tasarLinea, type LineaDelCarrito, type Precios, type Recompensa } from "../_shared/dinero.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -730,9 +731,9 @@ export function rewardWaiver(rewardId: string | null, b: any, priced: PricedBuil
   if (rewardId === "R04" && !b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
   if (rewardId === "R06" && b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
   return rewardId === "R02" ? priced.sauceSurcharge
-    : rewardId === "R03" ? Math.min(priced.sizeUpgradeDiff, R03_FLAT_WAIVER)
-    : rewardId === "R04" ? Math.min(priced.dblSurcharge, R04_FLAT_WAIVER)
-    : rewardId === "R05" ? Math.min(priced.basePrice, R05_FLAT_WAIVER)
+    : rewardId === "R03" ? Math.min(priced.sizeUpgradeDiff, REGLAS.topeR03)
+    : rewardId === "R04" ? Math.min(priced.dblSurcharge, REGLAS.topeR04)
+    : rewardId === "R05" ? Math.min(priced.basePrice, REGLAS.topeR05)
     : rewardId === "R06" ? priced.basePrice
     : 0;
 }
@@ -764,11 +765,12 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   if (SIG_CONTENT[sigId] && SIG_CONTENT[sigId].active === false) {
     throw new ApiError("Ese Signature ya no está disponible.", 400);
   }
-  const protInfo = PROT_PRICE[sig.prot];
-  const basePrice = size === "15" ? sig.p15 : sig.p30;
   assertDoubleAllowed(doubleProt, sig ? sig.prot : "", size);
-  const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
-  const sizeUpgradeDiff = size === "15" ? Math.max(0, sig.p30 - sig.p15) : 0;
+  // Los montos los calcula el módulo de dinero compartido: el cliente usa el mismo.
+  const t = tasarLinea({ type: "sig", sigId, size, doubleProt, extraSauce, qty: 1 }, preciosVigentes())!;
+  const basePrice = t.base / 100;
+  const dblSurcharge = t.doble / 100;
+  const sizeUpgradeDiff = t.subir30 / 100;
   const ingredientsPerUnit = [sig.base, sig.prot, ...sig.tops, ...sig.sauces];
   if (doubleProt) ingredientsPerUnit.push(sig.prot);
   // Queso fijo (hoy SIG02 Mozzarella, SIG03 Cheddar) — parte de la receta, no depende de
@@ -798,7 +800,7 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   // salsas no hay nada que duplicar, así que no se cobra ni se descuenta nada.
   const canExtraSauce = extraSauce && sig.sauces.length > 0;
   if (canExtraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: canExtraSauce ? 2 : 0, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
+  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
   base: string, prot: string, cheese: string | null, tops: string[], sauces: string[],
@@ -826,22 +828,19 @@ function priceByoBuild(
   // El recargo del pan va DENTRO de basePrice, no como un cargo aparte: así fluye solo por
   // unitPrice, por el total esperado y por R06 (que perdona el 15CM entero — si el recargo
   // quedara fuera, la recompensa dejaría al cliente pagando S/0.50 por un sándwich "gratis").
-  const panExtra = baseSurcharge(base, size);
-  const basePrice = (size === "15" ? protInfo.p15 : protInfo.p30) + panExtra;
   assertDoubleAllowed(doubleProt, prot, size);
-  const dblSurcharge = doubleProt ? dblFee(protInfo, size) : 0;
-  // R03 sube un 15CM a 30CM gratis, así que la diferencia que perdona tiene que incluir
-  // TAMBIÉN el salto del pan (la focaccia de 30CM cuesta más que la de 15CM). Sin esto, un
-  // cliente con focaccia canjeaba el upgrade y seguía debiendo la diferencia del pan.
-  const sizeUpgradeDiff = size === "15"
-    ? Math.max(0, (protInfo.p30 + baseSurcharge(base, "30")) - (protInfo.p15 + baseSurcharge(base, "15")))
-    : 0;
+  // Los montos los calcula el módulo de dinero compartido. El recargo del pan va DENTRO del
+  // precio base (así R06 lo perdona entero) y R03 perdona también el salto del pan.
+  const t = tasarLinea({ type: "byo", base, prot, sauces, size, doubleProt, extraSauce, qty: 1 }, preciosVigentes())!;
+  const basePrice = t.base / 100;
+  const dblSurcharge = t.doble / 100;
+  const sizeUpgradeDiff = t.subir30 / 100;
   const ingredientsPerUnit = [base, prot, ...tops, ...(cheese ? [cheese] : []), ...sauces];
   if (doubleProt) ingredientsPerUnit.push(prot);
   // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
   // especificar) — se descuenta del inventario real de esa misma salsa.
   if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: extraSauce ? EXTRA_SAUCE_PRICE : 0, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
+  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
 }
 
 // Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,
@@ -1049,7 +1048,7 @@ export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): n
 // bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle (que
 // sí puede crear un pedido que no existía), este descuento se le aplica a alguien que YA
 // decidió comprar la bebida: es margen regalado, no adquisición.
-const COMBO_DISCOUNT_PER_PAIR = 1;
+const COMBO_DISCOUNT_PER_PAIR = REGLAS.comboPorPar;
 export { COMBO_DISCOUNT_PER_PAIR };
 
 // Tope plano de R03 ("SUBE A 30CM // GRATIS") — antes perdonaba la diferencia p30-p15
@@ -1067,7 +1066,6 @@ export { COMBO_DISCOUNT_PER_PAIR };
 // deshiría exactamente el anti-abuso documentado arriba. No hay cambio: el tope sigue
 // protegiendo el margen (el cliente sigue pagando la diferencia sobre S/8), no
 // perdiéndolo. Mismo razonamiento en R04_FLAT_WAIVER abajo.
-const R03_FLAT_WAIVER = 8;
 
 // Mismo criterio que R03_FLAT_WAIVER: R04 ("DOBLE PROTEÍNA // GRATIS") perdonaba antes el
 // pDbl EXACTO de la proteína elegida (S/5-9 según proteína), dejando elegir la más cara
@@ -1075,7 +1073,6 @@ const R03_FLAT_WAIVER = 8;
 // recompensa de 320 pts muy por encima del resto. Se topa al valor mayoritario (S/6,
 // P01/P02) — DEBE coincidir con R04_FLAT_WAIVER en src/app.ts. Revisado de nuevo esta
 // sesión junto con R03_FLAT_WAIVER arriba — mismo veredicto, sin cambio.
-const R04_FLAT_WAIVER = 6;
 // R05 ("BEBIDA // GRATIS") perdonaba antes el precio completo de la bebida elegida
 // (S/3-6), permitiendo elegir siempre THE SPICE (S/6, la más cara) para maximizar el
 // valor de la recompensa. Se topa al mismo valor ya establecido para la promo de hora
@@ -1089,7 +1086,6 @@ const R04_FLAT_WAIVER = 6;
 // y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE COOL y deja THE SPICE
 // parcial, la misma relación que había antes con el tope en S/4. Los puntos de R05 NO
 // cambian (120): a S/6 de tope quedan en 20 pts/sol, justo donde ya está R06.
-const R05_FLAT_WAIVER = 6;
 
 // Bebida gratis (hasta S/4) de 2pm a 6pm hora Lima, la ventana de menor demanda entre el
 // almuerzo y la cena (ver PEAK_HOURS_LIMA en orders.ts: [12,14] y [19,21]) — el costo
@@ -1122,7 +1118,7 @@ const R05_FLAT_WAIVER = 6;
 // El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
 // horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
 // verdad crea pedidos nuevos, que es la única forma en que se paga sola.
-const OFFPEAK_DRINK_PROMO_HOURS_LIMA: [number, number][] = [];
+const OFFPEAK_DRINK_PROMO_HOURS_LIMA = REGLAS.valleHorasLima;
 // Se exporta para que el CONTENIDO DE MARKETING pueda preguntar si la promo existe, en vez
 // de tenerlo escrito. Ver `offpeakActiva()` abajo y su uso en marketingContent().
 export function offpeakActiva(): boolean {
@@ -1172,7 +1168,6 @@ export function etiquetaDeEscalon(
 }
 // Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
 // a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
-const OFFPEAK_DRINK_PROMO_CAP = 6;
 
 // INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22).
 // El canal de oficinas es el de mejor economía del negocio: un pedido de 6 sándwiches
@@ -1196,22 +1191,26 @@ const OFFPEAK_DRINK_PROMO_CAP = 6;
 // pueda gamear con el menú secreto, y se excluye del conteo de combo igual que R06 — si
 // no, el combo terminaría regalando también la bebida emparejada con un sándwich que ya
 // es gratis (es exactamente el bug que ya se corrigió una vez para R06).
-export const ORGANIZER_FREE_MIN_SANDWICHES = 5;
+export const ORGANIZER_FREE_MIN_SANDWICHES = REGLAS.organizadorDesde;
 
 // Recargo por SALSA EXTRA. Era el único precio del catálogo que vivía como literal `2`
 // suelto — 4 veces acá y 5 en src/app.ts — y además el único que NO se puede editar desde
 // `catalog_prices`. Cambiarlo en un solo lado rompía todo checkout que lo usara, sin que
 // nada avisara: `npm run parity` no podía vigilar un número sin nombre.
-export const EXTRA_SAUCE_PRICE = 2;
+export const EXTRA_SAUCE_PRICE = REGLAS.salsaExtra;
 // Antes esto siempre miraba la hora en la que llegaba el request, sin importar que el
 // pedido fuera "para más tarde" (scheduledFor) — un pedido armado a las 3pm (hora valle)
 // pero programado para entregarse a las 8pm (hora pico, ver PEAK_HOURS_LIMA en
 // orders.ts) igual regalaba la bebida, aunque la cocina la fuera a preparar en hora
 // pico, que es la justificación completa de este descuento (hallazgo de auditoría de
 // rentabilidad). Ahora evalúa la hora en la que de verdad se va a preparar el pedido.
-function isOffPeakDrinkPromoActiveLima(refDate: Date): boolean {
-  const limaHour = new Date(refDate.getTime() - 5 * 3600000).getUTCHours();
-  return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
+
+/** Los precios que están rigiendo AHORA en este proceso: la semilla de este archivo con lo que
+ *  `loadCatalogPrices`/`loadCatalogItems`/`loadSecretSignature` le hayan cargado encima. */
+export function preciosVigentes(): Precios {
+  const sig: Precios["sig"] = {};
+  for (const [id, x] of Object.entries(SIG_DATA)) sig[id] = { prot: x.prot, p15: x.p15, p30: x.p30, salsas: x.sauces.length };
+  return { prot: PROT_PRICE, sig, bebida: SIDE_PRICE };
 }
 
 export function deriveCart(
@@ -1231,97 +1230,26 @@ export function deriveCart(
   const totalQty = priced.reduce((s, p) => s + p.qty, 0);
   if (totalQty > 100) throw new ApiError("Cantidad total del carrito demasiado alta.", 400);
 
-  let total = priced.reduce((s, p) => s + p.unitPrice * p.qty, 0);
   const ingredients: string[] = [];
   priced.forEach((p) => {
     for (let i = 0; i < p.qty; i++) ingredients.push(...p.ingredientsPerUnit);
   });
 
-  // La recompensa se resuelve ANTES de combo/hora valle (no después, como antes) — R05
-  // y R06 regalan una unidad COMPLETA (una bebida entera o un sándwich 15CM entero), a
-  // diferencia de R02/R03/R04 que solo perdonan un extra parcial sobre un producto que
-  // se sigue cobrando. Si esa unidad completa sigue contando para combo/hora valle,
-  // esos dos mecanismos terminan regalando TAMBIÉN la otra mitad del par sobre algo que
-  // ya es gratis — ej. sándwich 15CM (S/25) + bebida (S/3): combo -S/3, reward -S/25,
-  // total S/0 — la bebida quedaba gratis de rebote. Hallazgo de auditoría de
-  // rentabilidad, confirmado en vivo justo el día que se reestructuraron R02-R06.
-  let rewardTargetIdx = -1;
-  let reward: { pts: number; label: string } | null = null;
-  if (rewardId) {
-    reward = REWARDS[rewardId];
-    if (!reward) throw new ApiError("Recompensa inválida.");
-    rewardTargetIdx = findRewardTargetIndex(priced, rewardId);
-    if (rewardTargetIdx < 0) throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
-  }
-  const fullyWaivedSandwich = rewardId === "R06" && rewardTargetIdx >= 0 && priced[rewardTargetIdx].item.type !== "side";
-  const fullyWaivedSide = rewardId === "R05" && rewardTargetIdx >= 0 && priced[rewardTargetIdx].item.type === "side";
-
-  let sandwichQty = priced.filter((p) => p.item.type !== "side").reduce((s, p) => s + p.qty, 0);
-  let sideQty = priced.filter((p) => p.item.type === "side").reduce((s, p) => s + p.qty, 0);
-  // El umbral del organizador se mide sobre los sándwiches que el cliente REALMENTE pidió,
-  // antes de descontar la unidad que regala R06. Restar R06 primero hacía que un grupo de
-  // 5 con la recompensa canjeada cayera a 4 y perdiera el sándwich del organizador solo en
-  // el servidor: el cliente descontaba los dos y el checkout se rechazaba por total que no
-  // coincide. Es también lo que ya miden organizerFreeSandwichApplies y la pantalla del
-  // grupo, así que las tres cuentas quedan alineadas.
-  const sandwichQtyForOrganizerGate = sandwichQty;
-  if (fullyWaivedSandwich) sandwichQty -= 1;
-  if (fullyWaivedSide) sideQty -= 1;
-
-  // Incentivo al organizador: el 15CM más barato va gratis a partir de
-  // ORGANIZER_FREE_MIN_SANDWICHES sándwiches. Se resuelve acá arriba, junto con la
-  // recompensa, porque también regala una unidad COMPLETA y por lo tanto esa unidad no
-  // puede seguir contando para el combo.
-  let organizerWaivedIdx = -1;
-  if (organizerFreeSandwich && sandwichQtyForOrganizerGate >= ORGANIZER_FREE_MIN_SANDWICHES) {
-    let best = Infinity;
-    priced.forEach((p, idx) => {
-      if (idx === rewardTargetIdx) return; // no se apila con R06 sobre la misma línea
-      if (!p.eligibleR06) return;          // misma elegibilidad: 15CM y no RESERVE
-      if (p.basePrice < best) { best = p.basePrice; organizerWaivedIdx = idx; }
-    });
-    if (organizerWaivedIdx >= 0) sandwichQty -= 1;
-  }
-  const comboCount = Math.min(sandwichQty, sideQty);
-  const comboDiscount = comboCount * COMBO_DISCOUNT_PER_PAIR;
-
-  let offPeakDrinkDiscount = 0;
+  // Toda la aritmética —combo, hora valle, sándwich del organizador, recompensa y el orden en
+  // que se aplican— vive en el módulo de dinero compartido (_shared/dinero.ts), el MISMO que usa
+  // el cliente para mostrar el total. Acá queda lo que solo el servidor puede decidir: que las
+  // líneas son válidas (priceCartItem, arriba) y los errores que se le devuelven al cliente.
+  if (rewardId && !REWARDS[rewardId]) throw new ApiError("Recompensa inválida.");
   const refDate = scheduledFor ? new Date(scheduledFor) : new Date();
-  if (isOffPeakDrinkPromoActiveLima(isNaN(refDate.getTime()) ? new Date() : refDate)) {
-    const sidePrices = priced.flatMap((p, idx) => {
-      if (p.item.type !== "side") return [];
-      const qty = fullyWaivedSide && idx === rewardTargetIdx ? p.qty - 1 : p.qty;
-      return Array(Math.max(0, qty)).fill(p.unitPrice);
-    });
-    if (sidePrices.length) {
-      offPeakDrinkDiscount = Math.min(Math.min(...sidePrices), OFFPEAK_DRINK_PROMO_CAP);
-    }
+  const d = resolverCarrito(priced.map((p) => p.item as LineaDelCarrito), {
+    recompensa: (rewardId as Recompensa) || null,
+    organizador: organizerFreeSandwich,
+    cuandoMs: isNaN(refDate.getTime()) ? Date.now() : refDate.getTime(),
+  }, preciosVigentes());
+  if (d.recompensa && d.recompensa.indice < 0) {
+    throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
   }
-
-  // Antes combo y hora valle se aplicaban los DOS a la vez sobre el mismo pedido
-  // (sándwich+bebida en la ventana de hora valle podía perder S/3+S/4=S/7 sin usar
-  // ningún punto) — con el margen real de insumos confirmado (~45-52%), apilar ambos
-  // llegaba a comerse una fracción grande de la utilidad de ese pedido. Ninguno de los
-  // dos deja de existir, pero ya no se suman: solo se aplica el mayor de los dos
-  // (hallazgo de auditoría de rentabilidad, decisión del dueño) — DEBE coincidir con el
-  // mismo criterio en src/app.ts.
-  const stackedDiscount = Math.max(comboDiscount, offPeakDrinkDiscount);
-  total = Math.max(0, total - stackedDiscount);
-
-  if (organizerWaivedIdx >= 0) {
-    total = Math.max(0, total - priced[organizerWaivedIdx].basePrice);
-  }
-
-  if (rewardId && reward) {
-    const target = priced[rewardTargetIdx];
-    const waiver = rewardId === "R02" ? target.sauceSurcharge
-      : rewardId === "R03" ? Math.min(target.sizeUpgradeDiff, R03_FLAT_WAIVER)
-      : rewardId === "R04" ? Math.min(target.dblSurcharge, R04_FLAT_WAIVER)
-      : rewardId === "R05" ? Math.min(target.basePrice, R05_FLAT_WAIVER)
-      : rewardId === "R06" ? target.basePrice
-      : 0;
-    total = Math.max(0, total - waiver);
-  }
+  const total = d.total;
 
   return { ingredients, expectedTotal: total, sanitizedItems: priced.map((p) => p.item) };
 }

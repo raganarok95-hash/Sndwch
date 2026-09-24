@@ -706,6 +706,187 @@ body.kb-open #app{padding-bottom:0}
 <div id="ui-overlays"></div>
 <script>
 (() => {
+  // supabase/functions/_shared/dinero.ts
+  var REGLAS = {
+    /** Descuento por cada par sándwich + bebida. Bajado de S/2 a S/1 el 2026-08-22: a S/2 el
+     *  combo se comía entre el 58% y el 118% de lo que deja una bebida (ver catalog.ts). */
+    comboPorPar: 1,
+    /** Topes de las recompensas que perdonan un monto variable: sin tope, elegir la proteína o la
+     *  bebida más cara maximizaba el valor de los mismos puntos. */
+    topeR03: 8,
+    topeR04: 6,
+    topeR05: 6,
+    /** Recargo de la salsa extra. Uno de los dos precios que NO viven en `catalog_prices`. */
+    salsaExtra: 2,
+    /** Recargo del pan por tamaño. El otro precio que no vive en `catalog_prices`. Solo la
+     *  focaccia lleva. Va DENTRO del precio base: así lo perdonan R06 y R03 enteros. */
+    recargoPan: { B03: { p15: 0.5, p30: 1 } },
+    /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
+     *  del catálogo y se gamearía. */
+    reservas: ["SIG05"],
+    /** Desde cuántos sándwiches el organizador de un pedido grupal se lleva el 15CM más barato. */
+    organizadorDesde: 5,
+    /** Bebida gratis de hora valle. RETIRADA el 2026-09-05 (era la única operación con
+     *  contribución negativa): la ventana vacía la apaga sin ramas muertas. */
+    valleHorasLima: [],
+    valleTope: 6
+  };
+  var cent = (soles2) => Math.round(soles2 * 100);
+  var soles = (c2) => c2 / 100;
+  function recargoPan(base, t3) {
+    const r2 = REGLAS.recargoPan[base];
+    return r2 ? t3 === "15" ? r2.p15 : r2.p30 : 0;
+  }
+  function tasarLinea(it, p2) {
+    if (it.type === "side") {
+      const precio = p2.bebida[it.code];
+      if (precio == null) return null;
+      const c2 = cent(precio);
+      return {
+        tipo: "side",
+        qty: it.qty,
+        unitario: c2,
+        base: c2,
+        doble: 0,
+        salsa: 0,
+        subir30: 0,
+        elegible: { R02: false, R03: false, R04: false, R05: true, R06: false }
+      };
+    }
+    const t3 = it.size;
+    let base;
+    let base30;
+    let prot;
+    let hayQueDuplicar;
+    let r02;
+    let reserva = false;
+    if (it.type === "sig") {
+      const s2 = p2.sig[it.sigId];
+      if (!s2) return null;
+      prot = p2.prot[s2.prot];
+      base = cent(t3 === "15" ? s2.p15 : s2.p30);
+      base30 = cent(s2.p30);
+      hayQueDuplicar = !!it.extraSauce && s2.salsas > 0;
+      r02 = !!it.extraSauce;
+      reserva = REGLAS.reservas.includes(it.sigId);
+    } else {
+      prot = p2.prot[it.prot];
+      if (!prot) return null;
+      base = cent((t3 === "15" ? prot.p15 : prot.p30) + recargoPan(it.base, t3));
+      base30 = cent(prot.p30 + recargoPan(it.base, "30"));
+      hayQueDuplicar = !!it.extraSauce;
+      r02 = !!it.extraSauce && it.sauces.length === 3;
+    }
+    const doble = it.doubleProt && prot ? cent(t3 === "30" ? prot.pDbl30 : prot.pDbl) : 0;
+    const salsa = hayQueDuplicar ? cent(REGLAS.salsaExtra) : 0;
+    const subir30 = t3 === "15" ? Math.max(0, base30 - base) : 0;
+    return {
+      tipo: it.type,
+      qty: it.qty,
+      unitario: base + doble + salsa,
+      base,
+      doble,
+      salsa,
+      subir30,
+      elegible: { R02: r02, R03: subir30 > 0, R04: !!it.doubleProt, R05: false, R06: t3 === "15" && !reserva }
+    };
+  }
+  function lineaDeLaRecompensa(tasadas, r2) {
+    return tasadas.findIndex((x2) => !!x2 && x2.elegible[r2]);
+  }
+  function perdonDe(r2, x2) {
+    switch (r2) {
+      case "R02":
+        return x2.salsa;
+      case "R03":
+        return Math.min(x2.subir30, cent(REGLAS.topeR03));
+      case "R04":
+        return Math.min(x2.doble, cent(REGLAS.topeR04));
+      case "R05":
+        return Math.min(x2.base, cent(REGLAS.topeR05));
+      case "R06":
+        return x2.base;
+    }
+  }
+  function enHoraValle(ms) {
+    const h2 = new Date(ms - 5 * 36e5).getUTCHours();
+    return REGLAS.valleHorasLima.some(([a2, b2]) => h2 >= a2 && h2 < b2);
+  }
+  function resolverCarrito(items, op, p2) {
+    const tasadas = items.map((it) => tasarLinea(it, p2));
+    const reales = tasadas.map((x2, i3) => ({ x: x2, i: i3 })).filter((v2) => !!v2.x);
+    let total = reales.reduce((s2, { x: x2 }) => s2 + x2.unitario * x2.qty, 0);
+    const subtotal = total;
+    const rid = op.recompensa ?? null;
+    const ri = rid ? lineaDeLaRecompensa(tasadas, rid) : -1;
+    const objetivo = ri >= 0 ? tasadas[ri] : null;
+    let sandwiches = reales.filter(({ x: x2 }) => x2.tipo !== "side").reduce((s2, { x: x2 }) => s2 + x2.qty, 0);
+    let bebidas = reales.filter(({ x: x2 }) => x2.tipo === "side").reduce((s2, { x: x2 }) => s2 + x2.qty, 0);
+    const sandwichesPedidos = sandwiches;
+    if (rid === "R06" && objetivo && objetivo.tipo !== "side") sandwiches -= 1;
+    if (rid === "R05" && objetivo && objetivo.tipo === "side") bebidas -= 1;
+    let oi = -1;
+    if (op.organizador && sandwichesPedidos >= REGLAS.organizadorDesde) {
+      let mejor = Infinity;
+      reales.forEach(({ x: x2, i: i3 }) => {
+        if (i3 === ri || !x2.elegible.R06) return;
+        if (x2.base < mejor) {
+          mejor = x2.base;
+          oi = i3;
+        }
+      });
+      if (oi >= 0) sandwiches -= 1;
+    }
+    const combo = Math.max(0, Math.min(sandwiches, bebidas)) * cent(REGLAS.comboPorPar);
+    let valle = 0;
+    if (enHoraValle(op.cuandoMs ?? Date.now())) {
+      const precios2 = [];
+      reales.forEach(({ x: x2, i: i3 }) => {
+        if (x2.tipo !== "side") return;
+        const n2 = rid === "R05" && i3 === ri ? x2.qty - 1 : x2.qty;
+        for (let k2 = 0; k2 < n2; k2++) precios2.push(x2.unitario);
+      });
+      if (precios2.length) valle = Math.min(Math.min(...precios2), cent(REGLAS.valleTope));
+    }
+    total = Math.max(0, total - Math.max(combo, valle));
+    const organizador = oi >= 0 ? tasadas[oi].base : 0;
+    total = Math.max(0, total - organizador);
+    const perdon = objetivo && rid ? perdonDe(rid, objetivo) : 0;
+    total = Math.max(0, total - perdon);
+    return {
+      subtotal: soles(subtotal),
+      combo: soles(combo),
+      valle: soles(valle),
+      organizador: { indice: oi, monto: soles(organizador) },
+      recompensa: rid ? { id: rid, indice: ri, monto: soles(perdon) } : null,
+      total: soles(total),
+      tasadas
+    };
+  }
+  function precioUnitario(it, p2) {
+    const x2 = tasarLinea(it, p2);
+    return x2 ? soles(x2.unitario) : 0;
+  }
+
+  // src/nuevo/dinero.ts
+  var w = window;
+  function precios() {
+    const prot = {};
+    for (const p2 of w.PROTS || []) prot[p2.id] = { p15: p2.p15, p30: p2.p30, pDbl: p2.pDbl, pDbl30: p2.pDbl30 };
+    const sig = {};
+    for (const s2 of w.SIGS || []) sig[s2.id] = { prot: s2.prot, p15: s2.p15, p30: s2.p30, salsas: (s2.sauces || []).length };
+    const bebida = {};
+    for (const d2 of w.SIDES || []) bebida[d2.id] = d2.p;
+    return { prot, sig, bebida };
+  }
+  var dinero = {
+    reglas: REGLAS,
+    desglose: (items, op) => resolverCarrito(items, op, precios()),
+    unitario: (it) => precioUnitario(it, precios()),
+    tasar: (it) => tasarLinea(it, precios()),
+    lineaDeLaRecompensa: (items, r2) => lineaDeLaRecompensa(items.map((it) => tasarLinea(it, precios())), r2)
+  };
+
   // node_modules/lit-html/lit-html.js
   var t = globalThis;
   var i = (t3) => t3;
@@ -731,7 +912,7 @@ body.kb-open #app{padding-bottom:0}
   var y = /^(?:script|style|textarea|title)$/i;
   var x = (t3) => (i3, ...s2) => ({ _$litType$: t3, strings: i3, values: s2 });
   var b = x(1);
-  var w = x(2);
+  var w2 = x(2);
   var T = x(3);
   var E = /* @__PURE__ */ Symbol.for("lit-noChange");
   var A = /* @__PURE__ */ Symbol.for("lit-nothing");
@@ -999,68 +1180,68 @@ body.kb-open #app{padding-bottom:0}
   var o2 = e2(e3);
 
   // src/nuevo/legado.ts
-  var w2 = window;
+  var w3 = window;
   var legado = {
     /** Solo para `llamar()` (api.ts), que le pone el tipo del contrato. No se usa directo. */
-    api: (accion, datos) => w2.api(accion, datos),
+    api: (accion, datos) => w3.api(accion, datos),
     get token() {
-      return w2.token;
+      return w3.token;
     },
     get pantalla() {
-      return w2.sndScreen;
+      return w3.sndScreen;
     },
     /** Navega a una pantalla por el router viejo (que pinta la nueva si está migrada). */
     irA(pantalla) {
-      w2.sndScreen = pantalla;
-      w2.render();
+      w3.sndScreen = pantalla;
+      w3.render();
     },
-    aviso: (texto, tipo) => w2.showToast(texto, tipo),
-    confirmar: (texto) => w2.showConfirm(texto),
+    aviso: (texto, tipo) => w3.showToast(texto, tipo),
+    confirmar: (texto) => w3.showConfirm(texto),
     // Piezas de interfaz viejas que todavía son HTML en texto. Se pintan con unsafeHTML y se
     // reemplazan cuando migren.
-    htmlVacio: (titulo, texto, pose) => w2.VACIO(titulo, texto, "", pose),
-    htmlCabecera: (titulo, volver) => w2.H(titulo, volver),
-    htmlNav: () => w2.NAV(),
+    htmlVacio: (titulo, texto, pose) => w3.VACIO(titulo, texto, "", pose),
+    htmlCabecera: (titulo, volver) => w3.H(titulo, volver),
+    htmlNav: () => w3.NAV(),
     get direcciones() {
-      return w2.myAddresses || [];
+      return w3.myAddresses || [];
     },
     set direcciones(v2) {
-      w2.myAddresses = v2;
+      w3.myAddresses = v2;
     },
     carrito: {
       cargar(items) {
-        w2.loadCart(items);
-        return w2.cart.length > 0 && w2.sndScreen === "o_cart";
+        w3.loadCart(items);
+        return w3.cart.length > 0 && w3.sndScreen === "o_cart";
       },
-      elegirDireccion: (id) => w2.pickAddr(id),
-      franjasLibres: (dia) => w2.schedSlots(dia),
+      elegirDireccion: (id) => w3.pickAddr(id),
+      franjasLibres: (dia) => w3.schedSlots(dia),
       programar(dia, franja) {
-        w2.scheduleMode = "later";
-        w2.schedDay = dia;
-        w2.schedSlot = franja;
+        w3.scheduleMode = "later";
+        w3.schedDay = dia;
+        w3.schedSlot = franja;
       },
       /** El origen del carrito: el pedido fijo del que sale, y la hora que tiene apartada. */
       marcarOrigenFijo(id, horaApartada) {
-        w2.pendingRecurringId = id;
-        w2.miHoraApartada = horaApartada;
+        w3.pendingRecurringId = id;
+        w3.miHoraApartada = horaApartada;
       },
-      repintar: () => w2.confirmRerender()
+      repintar: () => w3.confirmRerender()
     },
     enlace: {
       get fijo() {
-        return w2.fijoFromUrl;
+        return w3.fijoFromUrl;
       },
       get franja() {
-        return w2.franjaFromUrl;
+        return w3.franjaFromUrl;
       }
     },
-    imagenSignature: (sigId) => w2.SIG_IMG[sigId] || "",
-    imagenProteina: (prot) => w2.PROT_IMG[prot] || "",
-    soles: (n2) => w2.SOLES_TXT + w2.pz(n2),
-    horaLima: (ms) => w2.horaLima(ms),
-    envioA: (a2) => w2.envioADireccion(a2),
+    imagenSignature: (sigId) => w3.SIG_IMG[sigId] || "",
+    imagenProteina: (prot) => w3.PROT_IMG[prot] || "",
+    soles: (n2) => w3.SOLES_TXT + w3.pz(n2),
+    horaLima: (ms) => w3.horaLima(ms),
+    envioA: (a2) => w3.envioADireccion(a2),
     get diasSemana() {
-      return w2.DIAS_SEMANA;
+      return w3.DIAS_SEMANA;
     }
   };
 
@@ -1076,11 +1257,11 @@ body.kb-open #app{padding-bottom:0}
     estado = { ...estado, ...parcial };
     if (contenedor && contenedor.isConnected) D(vista(), contenedor);
   }
-  function diaMinuscula(w3) {
-    return (legado.diasSemana[w3] || "").toLowerCase();
+  function diaMinuscula(w4) {
+    return (legado.diasSemana[w4] || "").toLowerCase();
   }
-  function diasPlural(w3) {
-    const d2 = diaMinuscula(w3);
+  function diasPlural(w4) {
+    const d2 = diaMinuscula(w4);
     return /s$/.test(d2) ? d2 : d2 + "s";
   }
   function hhmmATexto(hhmm) {
@@ -1312,7 +1493,8 @@ body.kb-open #app{padding-bottom:0}
   // src/nuevo/main.ts
   var registro = {
     pantallas: { p_recurring: pantallaFijo },
-    fijo: { abrir }
+    fijo: { abrir },
+    dinero
   };
   window.__sndNuevo = registro;
 })();
@@ -2357,9 +2539,16 @@ function willPayWithCard() {
 // de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
 // del pan sub. Se cobra S/0.50 y S/1.00.
 //
-// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
-// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
-var BASE_SURCHARGE = { B03: { p15: 0.5, p30: 1 } };
+// Solo B03 (Focaccia) lleva recargo.
+//
+// ⚠ EL DINERO SE CALCULA CON EL MISMO MÓDULO QUE EL SERVIDOR (2026-09-24). Las reglas —recargo
+// del pan, combo, topes de las recompensas, salsa extra, organizador— y el cálculo del total
+// viven en supabase/functions/_shared/dinero.ts, que el servidor usa para cobrar y la base nueva
+// (src/nuevo/dinero.ts) le presta a este código. Acá ya no se escribe ningún número de dinero:
+// se lee de ahí. Antes eran dos copias y con la focaccia daban totales distintos.
+var DINERO = window.__sndNuevo.dinero;
+var REGLAS_DINERO = DINERO.reglas;
+var BASE_SURCHARGE = REGLAS_DINERO.recargoPan;
 function baseSurcharge(base, size) { var b = BASE_SURCHARGE[base]; return b ? (size === '15' ? b.p15 : b.p30) : 0; }
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
 //
@@ -2449,66 +2638,19 @@ function payableTotal() { return money(cartFinalTotal() + deliveryFeeAmount()); 
 // bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle
 // (que sí puede crear un pedido que no existía), este descuento se le aplica a alguien
 // que YA decidió comprar la bebida: es margen regalado, no adquisición.
-var COMBO_DISCOUNT_PER_PAIR = 1;
-// Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
-// que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
-var R03_FLAT_WAIVER = 8;
-// Topes planos de R04/R05 — mismo criterio que R03: evitan que el valor mostrado al
-// cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
-// más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
-var R04_FLAT_WAIVER = 6;
-// Subido de 4 a 6 el 2026-08-22, junto con la subida de precio de las bebidas. NO es
-// generosidad nueva: es lo que mantiene cierto el nombre de la recompensa. Con las
-// bebidas a S/5-9 y el tope en S/4, "BEBIDA // GRATIS" habría dejado de cubrir una sola
-// bebida del catálogo — la misma clase de promesa falsa que ya obligó a retirar los
-// badges MÁS PEDIDO y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE
-// COOL y deja THE SPICE parcial, exactamente la misma relación que había antes con el
-// tope en S/4. Los puntos de R05 NO cambian (120): a S/6 de tope quedan en 20 pts/sol,
-// que es justo donde ya está R06, así que el programa sigue internamente coherente.
-var R05_FLAT_WAIVER = 6;
-// Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
-// se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
-// en catalog.ts.
-var RESERVE_SIGS = new Set(['SIG05']);
-// Bebida gratis (hasta S/4) de 3pm a 6pm hora Lima — DEBE coincidir con
-// OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
-// quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
-// antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
-// Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
-// hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
-// entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
-// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
-// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
-//
-// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
-// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
-// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
-// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
-// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
-// entrar. Ver RENTABILIDAD_POR_PARTE.md.
-//
-// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
-// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
-// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA = [];
-// Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
-// a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
-var OFFPEAK_DRINK_PROMO_CAP = 6;
-// INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22). Quien junta al grupo se lleva
-// un sándwich gratis a partir de este número de sándwiches. Convierte al cliente en el
-// vendedor del canal de oficinas — el de mejor economía del negocio y el único que el
-// dueño no puede trabajar él mismo, porque sus mañanas están cocinando.
-// DEBE coincidir con ORGANIZER_FREE_MIN_SANDWICHES en supabase/functions/api/catalog.ts.
-// Ojo: esto es solo el espejo para que el cliente muestre el mismo número; quien de
-// verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
-// base (organizerFreeSandwichApplies en actions/group.ts).
-var ORGANIZER_FREE_MIN_SANDWICHES = 5;
-// Recargo por salsa extra. DEBE coincidir con EXTRA_SAUCE_PRICE en
-// supabase/functions/api/catalog.ts — lo verifica `npm run parity`. Antes era un literal
-// `2` repetido 5 veces acá y 4 en el servidor, y es el único precio del catálogo que no se
-// puede editar desde el panel, así que la única defensa posible es esta comparación.
-var EXTRA_SAUCE_PRICE = 2;
+// Las reglas del dinero, leídas del módulo compartido (ver DINERO arriba). Quedan con su nombre
+// de siempre porque los textos de la app las interpolan («el combo te descuenta S/1»). El porqué
+// de cada valor está en supabase/functions/api/catalog.ts, junto a donde se cobra.
+var COMBO_DISCOUNT_PER_PAIR = REGLAS_DINERO.comboPorPar;
+var R03_FLAT_WAIVER = REGLAS_DINERO.topeR03;
+var R04_FLAT_WAIVER = REGLAS_DINERO.topeR04;
+var R05_FLAT_WAIVER = REGLAS_DINERO.topeR05;
+var RESERVE_SIGS = new Set(REGLAS_DINERO.reservas);
+// La bebida gratis de hora valle está RETIRADA (2026-09-05): su ventana es una lista vacía.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA = REGLAS_DINERO.valleHorasLima;
+var OFFPEAK_DRINK_PROMO_CAP = REGLAS_DINERO.valleTope;
+var ORGANIZER_FREE_MIN_SANDWICHES = REGLAS_DINERO.organizadorDesde;
+var EXTRA_SAUCE_PRICE = REGLAS_DINERO.salsaExtra;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
@@ -2986,7 +3128,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '1cf219a71d';
+var APP_BUILD = '1a1a450a24';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4806,33 +4948,9 @@ function sigsEnOrden(lista) {
 function lastPaidOrder() {
     return myOrders.find(function (o) { return o.payment_status === 'paid' && ((o.items && o.items.length) || o.build); });
 }
-// Precio de una línea del carrito (una unidad, sin multiplicar por qty) — usado
-// tanto para mostrar el carrito como para armar el pedido a enviar.
-function itemUnitPrice(item) {
-    if (item.type === 'side') {
-        var d = SIDES.find(function (x) { return x.id === item.code; });
-        return d ? d.p : 0;
-    }
-    if (item.type === 'sig') {
-        var sig = SIGS.find(function (x) { return x.id === item.sigId; });
-        if (!sig)
-            return 0;
-        var pr = PROTS.find(function (x) { return x.id === sig.prot; });
-        var bp = item.size === '15' ? sig.p15 : sig.p30;
-        var dbl = item.doubleProt ? dblFee(pr, item.size) : 0;
-        var extraSauceFee = item.extraSauce ? EXTRA_SAUCE_PRICE : 0;
-        return bp + dbl + extraSauceFee;
-    }
-    var pr2 = PROTS.find(function (x) { return x.id === item.prot; });
-    if (!pr2)
-        return 0;
-    // El recargo del pan solo existe en ARMA EL TUYO: en un Signature la receta fija el pan y
-    // el cliente no lo elige, así que no hay nada que recargar.
-    var bp2 = (item.size === '15' ? pr2.p15 : pr2.p30) + baseSurcharge(item.base, item.size);
-    var dbl2 = item.doubleProt ? dblFee(pr2, item.size) : 0;
-    var sc2 = item.extraSauce ? EXTRA_SAUCE_PRICE : 0;
-    return bp2 + dbl2 + sc2;
-}
+// Precio de una línea del carrito (una unidad, sin multiplicar por qty). Lo calcula el módulo
+// de dinero compartido con el servidor (ver DINERO en 01-*): 0 si la línea ya no está en la carta.
+function itemUnitPrice(item) { return DINERO.unitario(item); }
 // money() acá y pz() en los dos displays: sin esto, 3 x The Original 15CM daba
 // 20.9*3 = 62.699999999999996 y ESE número se le mostraba al cliente en el carrito y en
 // el mensaje de WhatsApp. Es exactamente el defecto que money()/pz() existen para evitar.
@@ -4961,78 +5079,24 @@ function itemExtrasLabel(item) {
         parts.push('nota: ' + item.note);
     return parts.join(' · ');
 }
-function cartBaseTotal() { return cart.reduce(function (s, it) { return s + itemLineTotal(it); }, 0); }
-// Un combo = 1 sándwich + 1 bebida en el carrito — si hay más sándwiches que bebidas (o
-// viceversa), solo se descuenta por la cantidad de pares completos, no por cada unidad.
-// R05/R06 regalan una unidad COMPLETA (bebida o sándwich 15CM entero) — esa unidad no
-// debe contar para el combo, o el combo termina regalando TAMBIÉN la otra mitad del par
-// sobre algo que ya es gratis (espejo exacto del fix de deriveCart en el servidor, ver
-// ese comentario para el caso concreto que esto corrige).
-function cartComboCount() {
-    var sw = 0, sd = 0;
-    cart.forEach(function (it) { if (it.type === 'side')
-        sd += it.qty;
-    else
-        sw += it.qty; });
-    if (appliedReward) {
-        var idx = findRewardTargetIndex(appliedReward);
-        if (idx >= 0) {
-            var target = cart[idx];
-            if (appliedReward === 'R06' && target.type !== 'side')
-                sw -= 1;
-            if (appliedReward === 'R05' && target.type === 'side')
-                sd -= 1;
-        }
-    }
-    // El sándwich gratis del organizador tampoco cuenta: si contara, el combo terminaría
-    // regalando también la bebida emparejada con un sándwich que ya no se está cobrando —
-    // exactamente el bug que ya se corrigió una vez para R06.
-    if (organizerFreeIdx() >= 0)
-        sw -= 1;
-    return Math.min(sw, sd);
+// ── EL TOTAL DEL CARRITO: UN SOLO CÁLCULO, EL DEL SERVIDOR (2026-09-24) ──────────────────
+// Todo lo de abajo lee de `cartDesglose()`, que le pide el desglose al módulo de dinero
+// compartido con el servidor (supabase/functions/_shared/dinero.ts): combo, sándwich del
+// organizador, recompensa y el orden en que se aplican. Antes esto era una segunda copia del
+// cálculo, y con el pan focaccia daba S/0.50 más que el servidor en R06 y en el sándwich del
+// organizador — el cliente veía un total y el pago se rechazaba por «el total no coincide».
+// Lo vigila tests/dinero-cliente.spec.ts. Las funciones conservan su nombre porque las usan
+// el carrito y el checkout; ninguna calcula nada propio.
+function cartDesglose() {
+    return DINERO.desglose(cart, { recompensa: appliedReward || null, organizador: !!pendingGroupCode, cuandoMs: effectiveOrderDate().getTime() });
 }
-function cartComboDiscount() { return cartComboCount() * COMBO_DISCOUNT_PER_PAIR; }
-function cartOffPeakDrinkDiscount() {
-    if (!isOffPeakDrinkPromoActiveNow())
-        return 0;
-    var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
-    var sidePrices = [];
-    cart.forEach(function (it, idx) {
-        if (it.type === 'side') {
-            var qty = (appliedReward === 'R05' && idx === rewardIdx) ? it.qty - 1 : it.qty;
-            for (var i = 0; i < qty; i++)
-                sidePrices.push(itemUnitPrice(it));
-        }
-    });
-    if (!sidePrices.length)
-        return 0;
-    return Math.min(Math.min.apply(null, sidePrices), OFFPEAK_DRINK_PROMO_CAP);
-}
-// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM — 0 si ya es 30CM o si el
-// producto cobra lo mismo en ambos tamaños. Hoy ningún ítem del catálogo está en ese
-// caso, pero la guarda se queda: es lo que evita regalar un canje que no vale nada si
-// alguna vez vuelve a haber uno. Usado por R03.
-function itemSizeUpgradeDiff(it) {
-    if (it.type === 'side' || it.size !== '15')
-        return 0;
-    if (it.type === 'sig') {
-        var sig = SIGS.find(function (x) { return x.id === it.sigId; });
-        return sig ? Math.max(0, sig.p30 - sig.p15) : 0;
-    }
-    var pr = PROTS.find(function (x) { return x.id === it.prot; });
-    return pr ? Math.max(0, pr.p30 - pr.p15) : 0;
-}
-// Busca el primer producto del carrito elegible para una recompensa — R02 necesita una
-// línea con SALSA EXTRA activada, R03 una línea 15CM cuya versión 30CM cueste más, R04
-// una línea con doble proteína activada, R05 una línea de bebida/side, R06 una línea
-// 15CM. El resto de recompensas no tiene requisito propio (basta con que el carrito no
-// esté vacío).
-// 15CM y no RESERVE — la misma regla que usan R06 ("SÁNDWICH GRATIS") y el sándwich
-// gratis del organizador. Excluir los RESERVE evita que cualquiera de los dos se gamee
-// eligiendo el menú secreto, que es el ítem más caro del catálogo.
-function isFreeSandwichEligible(it) {
-    return it.type !== 'side' && it.size === '15' && !(it.type === 'sig' && RESERVE_SIGS.has(it.sigId));
-}
+function cartComboCount() { return Math.round(cartDesglose().combo / COMBO_DISCOUNT_PER_PAIR); }
+function cartComboDiscount() { return cartDesglose().combo; }
+function cartOffPeakDrinkDiscount() { return cartDesglose().valle; }
+// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
+function itemSizeUpgradeDiff(it) { var t = DINERO.tasar(it); return t ? t.subir30 / 100 : 0; }
+// 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
+function isFreeSandwichEligible(it) { var t = DINERO.tasar(it); return !!t && t.elegible.R06; }
 // Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
 function cartSandwichQty() {
     var n = 0;
@@ -5040,125 +5104,31 @@ function cartSandwichQty() {
         n += it.qty; });
     return n;
 }
-// Índice del 15CM más barato que se regala al organizador, o -1 si no corresponde.
-// Espejo exacto de deriveCart en el servidor: solo si el carrito viene de un pedido
-// grupal (pendingGroupCode) y llega al mínimo de sándwiches; nunca sobre la misma línea
-// que ya está regalando una recompensa.
-function organizerFreeIdx() {
-    if (!pendingGroupCode)
-        return -1;
-    if (cartSandwichQty() < ORGANIZER_FREE_MIN_SANDWICHES)
-        return -1;
-    var rewardIdx = appliedReward ? findRewardTargetIndex(appliedReward) : -1;
-    var best = Infinity, bi = -1;
-    cart.forEach(function (it, idx) {
-        if (idx === rewardIdx)
-            return;
-        if (!isFreeSandwichEligible(it))
-            return;
-        var pr = itemBasePrice(it);
-        if (pr < best) {
-            best = pr;
-            bi = idx;
-        }
-    });
-    return bi;
-}
-function itemBasePrice(it) {
-    if (it.type === 'side')
-        return itemUnitPrice(it);
-    if (it.type === 'sig') {
-        var sig = SIGS.find(function (x) { return x.id === it.sigId; });
-        return sig ? (it.size === '15' ? sig.p15 : sig.p30) : 0;
-    }
-    var pr = PROTS.find(function (x) { return x.id === it.prot; });
-    return pr ? (it.size === '15' ? pr.p15 : pr.p30) : 0;
-}
-function organizerFreeAmount() {
-    var i = organizerFreeIdx();
-    return i < 0 ? 0 : itemBasePrice(cart[i]);
-}
-function findRewardTargetIndex(rewardId) {
-    // En BUILD YOUR OWN, R02 ("4TA SALSA GRATIS") solo aplica si ya llegó al tope de 3
-    // salsas base antes de pagar por la extra — un Signature no tiene ese tope (sus salsas
-    // son fijas de receta), así que ahí basta con extraSauce activado. DEBE coincidir con
-    // eligibleR02 en supabase/functions/api/catalog.ts.
-    if (rewardId === 'R02') {
-        for (var i = 0; i < cart.length; i++) {
-            if (cart[i].type !== 'side' && cart[i].extraSauce && (cart[i].type === 'sig' || cart[i].sauces.length === 3))
-                return i;
-        }
-        return -1;
-    }
-    if (rewardId === 'R03') {
-        for (var j = 0; j < cart.length; j++) {
-            if (itemSizeUpgradeDiff(cart[j]) > 0)
-                return j;
-        }
-        return -1;
-    }
-    if (rewardId === 'R04') {
-        for (var k = 0; k < cart.length; k++) {
-            if (cart[k].type !== 'side' && cart[k].doubleProt)
-                return k;
-        }
-        return -1;
-    }
-    if (rewardId === 'R05') {
-        for (var m = 0; m < cart.length; m++) {
-            if (cart[m].type === 'side')
-                return m;
-        }
-        return -1;
-    }
-    if (rewardId === 'R06') {
-        for (var n = 0; n < cart.length; n++) {
-            if (isFreeSandwichEligible(cart[n]))
-                return n;
-        }
-        return -1;
-    }
-    return cart.length ? 0 : -1;
-}
+// Índice del 15CM que se regala al organizador (-1 si no corresponde) y cuánto vale.
+function organizerFreeIdx() { return cartDesglose().organizador.indice; }
+function organizerFreeAmount() { return cartDesglose().organizador.monto; }
+// Precio del sándwich (pan incluido) o de la bebida, sin extras.
+function itemBasePrice(it) { var t = DINERO.tasar(it); return t ? t.base / 100 : 0; }
+// La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
+function findRewardTargetIndex(rewardId) { return DINERO.lineaDeLaRecompensa(cart, rewardId); }
+// Cuánto perdona la recompensa sobre la línea `targetIdx`. Se pide el desglose con esa
+// recompensa: el monto sale del mismo cálculo que cobra el servidor.
 function rewardWaiverAmount(rewardId, targetIdx) {
     if (targetIdx < 0)
         return 0;
-    var it = cart[targetIdx];
-    if (rewardId === 'R02')
-        return it.extraSauce ? EXTRA_SAUCE_PRICE : 0;
-    if (rewardId === 'R03')
-        return Math.min(itemSizeUpgradeDiff(it), R03_FLAT_WAIVER);
-    if (rewardId === 'R04') {
-        var protCode = it.type === 'sig' ? (SIGS.find(function (x) { return x.id === it.sigId; }) || {}).prot : it.prot;
-        var pr = PROTS.find(function (x) { return x.id === protCode; });
-        return pr ? Math.min(dblFee(pr, it.size), R04_FLAT_WAIVER) : 0;
-    }
-    if (rewardId === 'R05')
-        return it.type === 'side' ? Math.min(itemUnitPrice(it), R05_FLAT_WAIVER) : 0;
-    if (rewardId === 'R06') {
-        if (it.type === 'sig') {
-            var sig = SIGS.find(function (x) { return x.id === it.sigId; });
-            return sig ? (it.size === '15' ? sig.p15 : sig.p30) : 0;
-        }
-        var pr2 = PROTS.find(function (x) { return x.id === it.prot; });
-        return pr2 ? (it.size === '15' ? pr2.p15 : pr2.p30) : 0;
-    }
-    return 0;
+    var d = DINERO.desglose(cart, { recompensa: rewardId, organizador: !!pendingGroupCode, cuandoMs: effectiveOrderDate().getTime() });
+    return d.recompensa && d.recompensa.indice === targetIdx ? d.recompensa.monto : 0;
 }
-// Combo y hora valle ya no se suman — antes sándwich+bebida en la ventana de hora valle
-// perdía S/3+S/4=S/7 sin usar ningún punto. Solo se aplica el mayor de los dos (espejo
-// exacto del fix en deriveCart, supabase/functions/api/catalog.ts).
-function cartStackedDiscount() { return Math.max(cartComboDiscount(), cartOffPeakDrinkDiscount()); }
+// Combo y hora valle no se suman: se aplica el mayor.
+function cartStackedDiscount() { var d = cartDesglose(); return Math.max(d.combo, d.valle); }
+function cartBaseTotal() { return cart.reduce(function (s, it) { return s + itemLineTotal(it); }, 0); }
+// El código promocional lo valida y lo descuenta el servidor aparte; acá se resta el mismo
+// monto que él confirmó.
 function cartFinalTotal() {
-    var base = cartBaseTotal() - cartStackedDiscount();
-    base -= organizerFreeAmount();
-    if (appliedReward) {
-        var idx = findRewardTargetIndex(appliedReward);
-        base -= rewardWaiverAmount(appliedReward, idx);
-    }
+    var total = cartDesglose().total;
     if (appliedPromo)
-        base -= appliedPromo.discount;
-    return money(Math.max(0, base));
+        total -= appliedPromo.discount;
+    return money(Math.max(0, total));
 }
 // El carrito se guarda en localStorage en cada cambio y se restaura al abrir la app
 // (ver restoreCart() en INIT) — sin esto, refrescar la página, cerrar la pestaña por

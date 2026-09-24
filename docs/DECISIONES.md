@@ -957,3 +957,45 @@ pero el tipo lo decía distinto de la base. Pasa a NOT NULL en el paso 6.
 **Un 400 que no es un 400**: el token NO se valida en el contrato. Sin él, `requireSession`
 responde 401, que es lo que hace que el cliente mande a iniciar sesión; un 400 de validación lo
 dejaría en la pantalla con un error.
+
+## 2026-09-24 · Paso 3: el dinero en un solo módulo, y dos defectos que lo justificaban
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.4): el cálculo del total existía dos veces,
+`deriveCart`/`priceCartItem` en el servidor (lo que se cobra) e `itemUnitPrice`/`cartFinalTotal`
+/`rewardWaiverAmount`… en el cliente (lo que se muestra). `parity` comparaba las constantes como
+texto; la lógica no la comparaba nadie.
+
+**Los dos defectos vivos que salieron al ponerlas lado a lado**, los dos con el pan focaccia
+(B03): el servidor cuenta su recargo dentro del precio base del sándwich y el cliente no.
+- «15CM gratis» (R06) sobre una focaccia: el cliente mostraba S/0.50, el servidor cobraba S/0.
+- Pedido grupal donde el 15CM más barato es de focaccia: el cliente mostraba S/96.10, el
+  servidor cobraba S/95.60.
+En los dos el servidor rechazaba el pago por «el total no coincide» y el cliente no podía pagar.
+`tests/dinero-cliente.spec.ts` se escribió primero y se vio fallar con esas dos cifras.
+
+**Lo que se hizo.** `supabase/functions/_shared/dinero.ts`: las reglas (`REGLAS`: combo, topes
+de R03/R04/R05, salsa extra, recargo del pan, umbral del organizador, hora valle) y el cálculo
+(`tasarLinea`, `resolverCarrito`), en CÉNTIMOS ENTEROS. El servidor valida en `catalog.ts` y
+delega la aritmética; el cliente viejo la pide a la base nueva (`src/nuevo/dinero.ts`), que usa
+los precios que el propio cliente cargó de get-catalog.
+
+**Cómo se comprobó que el servidor no cambió lo que cobra**: antes de tocarlo se fotografió lo
+que `deriveCart` devolvía en 8 064 combinaciones (todas las proteínas y Signatures, los dos panes
+y tamaños, doble proteína, salsa extra, bebidas, cantidades, las cinco recompensas, con y sin
+organizador, incluidos los rechazos). Después del cambio: cero diferencias.
+
+**`parity`**: las diez comparaciones de esas reglas se retiraron porque ya no hay dos copias. En su
+lugar, un guardia falla si alguna vuelve a escribirse como número en `src/app` o en el servidor.
+
+## 2026-09-24 · Dos arreglos de proceso
+
+**El hook de verificación corría antes de CADA comando Bash**, no solo antes de un commit: el
+filtro `"if": "Bash(git commit *)"` de `.claude/settings.json` no se respetaba. Cada comando
+pagaba ~16 s de `verify:rapido` y, a mitad de un cambio con algo rojo, bloqueaba hasta el comando
+que servía para ver qué estaba rojo. Ahora `scripts/hook-antes-de-comitear.sh` lee el comando que
+va a correr y verifica solo si es un `git commit`.
+
+**Una suite siempre roja no avisa de nada.** Llevaba días con las mismas 22 rojas conocidas, y
+«¿son las mismas de antes?» se comprobaba a mano con `diff` en cada cambio. `npm run test:estado`
+lo hace siempre: compara contra `tests/ROJAS_CONOCIDAS.txt` y falla si aparece una roja nueva o
+si una conocida ya pasa. Se verificó inyectándole un defecto en el total del carrito.

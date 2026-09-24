@@ -197,6 +197,10 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   (entrada con esquema, salida con tipo) y lee la base con `leer()` (db.ts), no con `sbGet` y un
   select a mano: así un campo o una columna mal escrita no compila. Tras cada migración se
   regeneran los tipos (`_shared/base.ts`); lo vigila `npm run check:tipos-base`.
+- **El dinero se calcula en UN solo sitio: `supabase/functions/_shared/dinero.ts`.** El servidor
+  cobra con él (`deriveCart`) y el cliente muestra el total con él (`cartDesglose()` en 03-*).
+  Una regla nueva de precio va AHÍ, nunca como segunda copia en `src/app` o en `catalog.ts`:
+  `parity` falla si una regla vuelve a escribirse como número en un lado.
 - **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
   vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
 - **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23
@@ -278,7 +282,10 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
 5f-ter. `npm run check:doble-escritura` — que ninguna función inserte en una tabla que la RPC
    que llama ya inserta (lee la última definición de cada RPC de las migraciones). Cada regalo
    de crédito quedaba anotado dos veces en `credit_ledger`. `-- --probar` le inyecta ese caso.
-6. `npm test` (o `npm run verify`) — deben pasar TODOS (revisa el conteo real en la salida,
+6. `npm run test:estado` — la suite entera comparada contra `tests/ROJAS_CONOCIDAS.txt`: falla
+   si aparece una roja NUEVA o si una conocida ya pasa (hay que borrarla de la lista). Mientras
+   haya rojas conocidas, es ESTO lo que dice si un cambio rompió algo, no el conteo a ojo.
+   `npm test` (o `npm run verify`) — deben pasar TODOS (revisa el conteo real en la salida,
    ej. "19 passed", no un número fijo escrito aquí). **Nunca a través de `| tail` ni `| grep`**:
    el código de salida pasa a ser el del filtro y la línea de fallos puede quedar cortada. El
    2026-09-23 se reportó «239 passed» con 42 fallando por eso. Redirige a un archivo y guarda

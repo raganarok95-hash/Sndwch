@@ -1006,9 +1006,16 @@ function willPayWithCard(){
 // de S/13 salen 10 sándwiches de 15CM o 5 de 30CM → S/1.30 y S/2.60 contra S/1.00 y S/2.00
 // del pan sub. Se cobra S/0.50 y S/1.00.
 //
-// Solo B03 (Focaccia) lleva recargo. DEBE coincidir con BASE_SURCHARGE en env.ts — el
-// servidor es el que de verdad cobra; `npm run parity` compara los dos lados.
-var BASE_SURCHARGE={B03:{p15:0.5,p30:1}};
+// Solo B03 (Focaccia) lleva recargo.
+//
+// ⚠ EL DINERO SE CALCULA CON EL MISMO MÓDULO QUE EL SERVIDOR (2026-09-24). Las reglas —recargo
+// del pan, combo, topes de las recompensas, salsa extra, organizador— y el cálculo del total
+// viven en supabase/functions/_shared/dinero.ts, que el servidor usa para cobrar y la base nueva
+// (src/nuevo/dinero.ts) le presta a este código. Acá ya no se escribe ningún número de dinero:
+// se lee de ahí. Antes eran dos copias y con la focaccia daban totales distintos.
+var DINERO=(window as any).__sndNuevo.dinero;
+var REGLAS_DINERO=DINERO.reglas;
+var BASE_SURCHARGE=REGLAS_DINERO.recargoPan;
 function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='15'?b.p15:b.p30):0;}
 
 // ── COBRO DEL DELIVERY POR DISTANCIA REAL (2026-09-02) ────────────────────────────────
@@ -1094,66 +1101,19 @@ function payableTotal(){return money(cartFinalTotal()+deliveryFeeAmount());}
 // bebida rendía MENOS que el sándwich solo. Y a diferencia de la promo de hora valle
 // (que sí puede crear un pedido que no existía), este descuento se le aplica a alguien
 // que YA decidió comprar la bebida: es margen regalado, no adquisición.
-var COMBO_DISCOUNT_PER_PAIR=1;
-// Tope plano de R03 — DEBE coincidir con R03_FLAT_WAIVER en catalog.ts (ese lado es el
-// que de verdad cobra; este solo estima el ahorro que ve el cliente antes de pagar).
-var R03_FLAT_WAIVER=8;
-// Topes planos de R04/R05 — mismo criterio que R03: evitan que el valor mostrado al
-// cliente (y lo que el servidor de verdad cobra) dependa de elegir la proteína/bebida
-// más cara. DEBEN coincidir con R04_FLAT_WAIVER/R05_FLAT_WAIVER en catalog.ts.
-var R04_FLAT_WAIVER=6;
-// Subido de 4 a 6 el 2026-08-22, junto con la subida de precio de las bebidas. NO es
-// generosidad nueva: es lo que mantiene cierto el nombre de la recompensa. Con las
-// bebidas a S/5-9 y el tope en S/4, "BEBIDA // GRATIS" habría dejado de cubrir una sola
-// bebida del catálogo — la misma clase de promesa falsa que ya obligó a retirar los
-// badges MÁS PEDIDO y EDICIÓN LIMITADA. A S/6 cubre entero THE MIDNIGHT/THE BLOOM/THE
-// COOL y deja THE SPICE parcial, exactamente la misma relación que había antes con el
-// tope en S/4. Los puntos de R05 NO cambian (120): a S/6 de tope quedan en 20 pts/sol,
-// que es justo donde ya está R06, así que el programa sigue internamente coherente.
-var R05_FLAT_WAIVER=6;
-// Signatures RESERVE (menú secreto/premium) excluidas de R06 para que esa recompensa no
-// se gamee eligiendo el sándwich más caro del catálogo — DEBE coincidir con RESERVE_SIGS
-// en catalog.ts.
-var RESERVE_SIGS=new Set(['SIG05']);
-// Bebida gratis (hasta S/4) de 3pm a 6pm hora Lima — DEBE coincidir con
-// OFFPEAK_DRINK_PROMO_HOURS_LIMA en supabase/functions/api/catalog.ts, el servidor es
-// quien de verdad aplica el descuento; esto solo calcula el estimado que ve el cliente
-// antes de pagar (si no coincide, el checkout rechaza el total por no cuadrar).
-// Empezaba a las 14:00 hasta el 2026-08-15 — en Perú el almuerzo por delivery se estira
-// hasta cerca de las 16:00, así que esa primera hora descontaba pedidos que igual iban a
-// entrar en vez de crear pedidos nuevos (ver el comentario largo del lado del servidor).
-// ⚠ LA BEBIDA GRATIS DE HORA VALLE SE RETIRA EL 2026-09-05 (decisión del dueño), y la
-// ventana vacía es la forma de apagarla: `isOffPeakDrinkPromoActiveNow` devuelve false
-// siempre, el descuento queda en 0 y todo lo de abajo sigue funcionando sin ramas muertas.
-//
-// POR QUÉ SE RETIRA. Era la ÚNICA operación del catálogo con contribución NEGATIVA. Regalar
-// una bebida de hasta S/6 cuesta ~S/2.34 de insumo y devuelve S/0: la contribución media de
-// una bebida pasaba de +S/3.97 a −S/1.79. El argumento original —"en valle el costo marginal
-// es casi cero, así que es margen incremental si CREA un pedido que no existía"— nunca se
-// midió, y mientras tanto el descuento también se lo llevaban los pedidos que igual iban a
-// entrar. Ver RENTABILIDAD_POR_PARTE.md.
-//
-// El mecanismo NO se borra: la ventana es un dato, así que volver a prenderla es poner las
-// horas de vuelta acá y en el cliente. Lo que sí hay que hacer si se reactiva es medir si de
-// verdad crea pedidos nuevos, que es la única forma en que se paga sola.
-var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=[];
-// Subido de 4 a 6 el 2026-08-22 por el mismo motivo que R05_FLAT_WAIVER: con las bebidas
-// a S/5-9, un tope de S/4 dejaba de regalar "la bebida" para pasar a regalar un pedazo.
-var OFFPEAK_DRINK_PROMO_CAP=6;
-// INCENTIVO AL ORGANIZADOR DE PEDIDO GRUPAL (2026-08-22). Quien junta al grupo se lleva
-// un sándwich gratis a partir de este número de sándwiches. Convierte al cliente en el
-// vendedor del canal de oficinas — el de mejor economía del negocio y el único que el
-// dueño no puede trabajar él mismo, porque sus mañanas están cocinando.
-// DEBE coincidir con ORGANIZER_FREE_MIN_SANDWICHES en supabase/functions/api/catalog.ts.
-// Ojo: esto es solo el espejo para que el cliente muestre el mismo número; quien de
-// verdad decide si el descuento corresponde es el servidor, que lo verifica contra la
-// base (organizerFreeSandwichApplies en actions/group.ts).
-var ORGANIZER_FREE_MIN_SANDWICHES=5;
-// Recargo por salsa extra. DEBE coincidir con EXTRA_SAUCE_PRICE en
-// supabase/functions/api/catalog.ts — lo verifica `npm run parity`. Antes era un literal
-// `2` repetido 5 veces acá y 4 en el servidor, y es el único precio del catálogo que no se
-// puede editar desde el panel, así que la única defensa posible es esta comparación.
-var EXTRA_SAUCE_PRICE=2;
+// Las reglas del dinero, leídas del módulo compartido (ver DINERO arriba). Quedan con su nombre
+// de siempre porque los textos de la app las interpolan («el combo te descuenta S/1»). El porqué
+// de cada valor está en supabase/functions/api/catalog.ts, junto a donde se cobra.
+var COMBO_DISCOUNT_PER_PAIR=REGLAS_DINERO.comboPorPar;
+var R03_FLAT_WAIVER=REGLAS_DINERO.topeR03;
+var R04_FLAT_WAIVER=REGLAS_DINERO.topeR04;
+var R05_FLAT_WAIVER=REGLAS_DINERO.topeR05;
+var RESERVE_SIGS=new Set(REGLAS_DINERO.reservas);
+// La bebida gratis de hora valle está RETIRADA (2026-09-05): su ventana es una lista vacía.
+var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=REGLAS_DINERO.valleHorasLima;
+var OFFPEAK_DRINK_PROMO_CAP=REGLAS_DINERO.valleTope;
+var ORGANIZER_FREE_MIN_SANDWICHES=REGLAS_DINERO.organizadorDesde;
+var EXTRA_SAUCE_PRICE=REGLAS_DINERO.salsaExtra;
 // Hora efectiva para el descuento de hora valle: si el pedido está programado para más
 // tarde (scheduleMode==='later'), usa esa hora elegida — no la hora en la que se arma
 // el carrito. Antes esto siempre miraba "ahora", así que programar un pedido para las
