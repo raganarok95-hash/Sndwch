@@ -21,7 +21,6 @@ const SALIDA = join(RAIZ, 'docs/maquetas/aprobadas');
 export const MAPA = [
   ['06-pedido-enviado', 'p2.html', 2],
   ['06A-pedido-enviado-la-losa', 'y1.html', 0],
-  ['06B-pedido-enviado-la-ventana', 'y1.html', 1],
   ['29-tus-puntos', 'v1.html', 0],
   ['29-estado-a-entra', 'w1.html', 0],
   ['29-estado-b-el-llega', 'w1.html', 1],
@@ -29,6 +28,7 @@ export const MAPA = [
   ['30G-el-carrito', 'h1.html', 0],
   ['30G2-el-carrito-con-la-franja', 'y1.html', 2],
   ['31-pago-con-tarjeta', 'y1.html', 3],
+  ['31-pagar-con-yape', 'e1.html', 3],
   ['34-donde-te-lo-dejamos', 'i1.html', 1],
   ['bebidas-lado-wicho', 'i1.html', 2],
   ['bebidas-lado-sando', 'w2.html', 5],

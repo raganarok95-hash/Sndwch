@@ -25,8 +25,7 @@ vive en el chat o en `/tmp`, no existe.
 |---|---|---|---|
 | 01 · Ficha de un Signature (SANDO) | `01-ficha-de-un-signature.png` | perdida — recorte de captura | «La pantalla de la ficha, me agrada para sando» |
 | 06 · Pedido enviado | `06-pedido-enviado.png` | `p2.html` #3 | «Pedido ya está en la cocina, esa pantalla bien» |
-| 06 A · la losa | `06A-pedido-enviado-la-losa.png` | `y1.html` #1 | rehecha 2026-09-23 — **falta elegir A o B** |
-| 06 B · la ventana | `06B-pedido-enviado-la-ventana.png` | `y1.html` #2 | rehecha 2026-09-23 — **falta elegir A o B** |
+| 06 A · la losa | `06A-pedido-enviado-la-losa.png` | `y1.html` #1 | «La losa, pero bien hecho» (2026-09-24) — **la vigente**: SANDO entero hasta la losa, sin la columna que le cortaba la cara |
 | 23 · La comanda (cocina) | `23-la-comanda.png` | perdida — recorte de captura | «La comanda me gusta» |
 | 29 · Tus puntos | `29-tus-puntos.png` | `v1.html` #1 | «Ok listo esa queda» |
 | 29 · estado A · entra | `29-estado-a-entra.png` | `w1.html` #1 | la animación de la 29 |
@@ -34,6 +33,7 @@ vive en el chat o en `/tmp`, no existe.
 | 29 · estado C · sellada | `29-estado-c-sellada.png` | `w1.html` #3 | la animación de la 29 |
 | 30 G · el carrito | `30G-el-carrito.png` | `h1.html` #1 | «Me encantó la pantalla 30 G» |
 | 30 G2 · con la franja | `30G2-el-carrito-con-la-franja.png` | `y1.html` #3 | corrección 2026-09-23 — **falta el visto bueno** |
+| 31 · Pagar con Yape | `31-pagar-con-yape.png` | `e1.html` #4 | «es la 31 código rehecho» (2026-09-24) — la cifra «son S/2.79 más» es de muestra y se calcula; el QR será el QR de Yape del dueño |
 | 31 · Pago con tarjeta | `31-pago-con-tarjeta.png` | `y1.html` #4 | «las instrucciones de la tarjeta igual, están bien» + el pulgar |
 | 32 · En camino | `32-en-camino.png` | perdida — recorte de captura | «22, aprobada» (era la 32) |
 | 33 · Tus pedidos — solo la mitad de arriba | `33-tus-pedidos-mitad-de-arriba.png` | perdida — recorte de captura | arriba sí, la lista no — **la vigente es «los sellos»** |
@@ -61,9 +61,8 @@ vive en el chat o en `/tmp`, no existe.
 
 ## Lo que todavía no tiene maqueta aprobada
 
-- **31 · pagar con Yape** — gustó «la versión con el visor sobre morado», pero no quedó
-  registrado cuál de las candidatas es (`z1`, `e1`, `d1`, `n1` en `fuentes/`). Hay que
-  volver a mostrarlas.
+- **30 G2 · con la franja** — corrección del 2026-09-23, falta el visto bueno. Mientras
+  tanto la 30 G es la aprobada.
 
 ## Datos de muestra dentro de las maquetas
 
