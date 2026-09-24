@@ -201,6 +201,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   cobra con él (`deriveCart`) y el cliente muestra el total con él (`cartDesglose()` en 03-*).
   Una regla nueva de precio va AHÍ, nunca como segunda copia en `src/app` o en `catalog.ts`:
   `parity` falla si una regla vuelve a escribirse como número en un lado.
+- **Tras cada migración se saca de nuevo la foto del esquema**: correr
+  `scripts/pg-local/foto-del-esquema.sql` contra la base y guardar el resultado en
+  `supabase/esquema-actual.sql` (con su marca `foto-tomada-tras-migracion`). `npm run check:pg`
+  falla si está vieja, y es la base con la que corren las pruebas de `tests-db/` en un Postgres
+  local. Una función nueva de la base se prueba AHÍ, no contra producción.
 - **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
   vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
 - **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23
@@ -369,10 +374,13 @@ puntos y saldo de crédito sin vuelta atrás.
 necesita ningún secret nuevo**: usa `SUPABASE_ACCESS_TOKEN`, el mismo que ya usa
 `deploy-api.yml`, contra la Management API. Por eso no depende de nada del dueño.
 
-- **Respalda DATOS, no esquema.** El esquema ya está versionado en `supabase/migrations/`;
-  duplicarlo sería una segunda fuente de verdad, el mismo defecto que costó tres semanas de
-  precios fantasma. **Restaurar de verdad = aplicar las migraciones y después cargar los
-  datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`).
+- **⚠ LAS MIGRACIONES NO RECONSTRUYEN LA BASE** (descubierto el 2026-09-24): la primera ya
+  altera `customers`, que ninguna migración crea — las tablas originales nacieron desde el panel.
+  **Restaurar de verdad = cargar `supabase/esquema-actual.sql` (la foto completa del esquema) y
+  después los datos** (`node scripts/backup-to-sql.mjs backup > datos.sql`). El respaldo diario
+  saca también esa foto (`backup/esquema.sql`) y el workflow falla si la base se alejó de la del
+  repo (`scripts/comparar-esquema.mjs`): o se cambió desde el panel sin migración, o falta
+  actualizar la foto.
 - **La lista de tablas se descubre en cada corrida** (`pg_class`), nunca está escrita a
   mano: una lista fija dejaría fuera en silencio cualquier tabla nueva, y el día que eso
   importe es el día del desastre.

@@ -1065,3 +1065,29 @@ bajándoles la exigencia:
   pedido fijo—, y se vio fallar con el filtro de la carta roto.
 
 Están en `tests/ROJAS_CONOCIDAS.txt` con su tarea al lado.
+
+## 2026-09-24 · Paso 5 (segunda parte): las migraciones no reconstruían la base
+
+**El hallazgo.** Al intentar levantar un Postgres de pruebas aplicando las 123 migraciones, la
+PRIMERA falló: `20260424021855_add_birthday_columns_to_customers` agrega columnas a `customers`,
+y ninguna migración crea esa tabla. Las tablas originales se crearon desde el panel de Supabase
+antes de que existiera el historial. Consecuencia: la regla del respaldo —«restaurar = aplicar
+las migraciones y cargar los datos»— era falsa. Si la base se perdía, el repo no la podía
+reconstruir. (El chequeo del respaldo no lo veía porque restaura contra un DDL mínimo que arma
+del propio volcado, no contra el esquema real con sus restricciones, funciones y permisos.)
+
+**Lo que se hizo.**
+- `scripts/pg-local/foto-del-esquema.sql`: una consulta al catálogo que devuelve el SQL del
+  esquema completo (41 tablas, 36 funciones, restricciones, 52 índices, 2 triggers, RLS y
+  permisos). Su resultado vive en `supabase/esquema-actual.sql`.
+- `scripts/pg-local/supabase-de-mentira.sql`: versiones mínimas de lo que Supabase trae y un
+  Postgres común no (roles, `cron`, `net`, `vault`, `storage`), para cargar esa foto localmente.
+- `npm run check:pg`: levanta un Postgres propio, carga la foto y corre `tests-db/*.sql`, cada uno
+  en una base nueva. 2 segundos; va dentro de `verify:rapido`. La primera prueba es la de
+  `crear_pedido` (seis casos), que antes solo se podía correr contra producción con el bloque que
+  se deshace; se vio fallar con el defecto del bono repetido inyectado en la función.
+- El respaldo diario guarda también la foto (`backup/esquema.sql`) y, después de guardar, la
+  compara con la del repo: si difieren, alguien cambió la base sin migración o falta actualizar
+  la foto, y el workflow queda en rojo con el diff.
+- El arranque del Postgres local se movió a `scripts/pg-local/postgres.mjs`, compartido por el
+  chequeo del respaldo y el de la base, en vez de copiarse.
