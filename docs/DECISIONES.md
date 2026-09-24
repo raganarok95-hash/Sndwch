@@ -921,3 +921,39 @@ lugar, y el cliente tiene que hacer la misma resta.
 
 Y uno más, pequeño: el máximo de 3 fijos contaba también los QUITADOS (`active=false`), así que
 quien quitó tres ya no podía armar ninguno.
+
+## 2026-09-24 · Paso 2: tipos de la base, dominio y contrato de la API
+
+**El problema** (docs/REVISION_DE_LA_BASE.md §2.3): no había ningún tipo para lo que viaja entre
+el cliente, el servidor y la base. Las acciones recibían `any` y las lecturas devolvían `any`, y
+lo único que ataba al cliente con el servidor era un texto repetido en los dos lados
+(`api('recurring-skip')` / `"recurring-skip": actRecurringSkip`) que nadie comparaba.
+
+**Lo que se hizo**, todo en `supabase/functions/_shared/`, que importan los dos lados:
+
+- **`base.ts`**: los tipos de cada tabla, GENERADOS desde el esquema real con Supabase. No se
+  editan a mano; `check:tipos-base` falla si hay una migración más nueva que el archivo.
+- **`dominio.ts`**: los nombres del negocio (`Direccion`, `FijoDelCliente`, `EstadoDeFranja`…),
+  derivados de `base.ts` cuando salen de una tabla.
+- **`esquema.ts`**: un validador chico, sin dependencias (jsr.io está bloqueado). Un esquema es a
+  la vez la validación y el tipo: no pueden divergir. Normaliza en la frontera: el id de
+  dirección entra como `12` o `'12'` y sale siempre número.
+- **`contrato.ts`**: cada acción declara qué recibe y qué devuelve. El servidor valida la entrada
+  antes de llamar a la acción (`api/entrada.ts`) y solo le pasa los campos declarados; la tabla
+  `ACTIONS` no compila si a una acción del contrato le falta manejador o su firma no coincide.
+  El cliente nuevo llama `llamar('recurring-skip', {...})` (`src/nuevo/api.ts`): un nombre de
+  acción o un campo mal escrito no compila.
+- **`leer()`** en `db.ts`: lectura con la tabla y las columnas comprobadas contra `base.ts`, y la
+  fila tipada con exactamente lo que se pidió. Es la clase de error de `scheduled_for`.
+
+**Migradas hoy**: las cinco acciones que usa la base nueva (`addresses-list`, `recurring-list`,
+`-add`, `-delete`, `-skip`). Las demás siguen con `any` en la tabla, a la vista; entran al
+contrato a medida que se tocan.
+
+**Lo primero que encontró**: `orders.created_at` admite null en la base, y `franja.ts` suponía
+que siempre traía fecha. No rompía nada hoy (`Date.parse(null)` da NaN y el pedido no cuenta),
+pero el tipo lo decía distinto de la base. Pasa a NOT NULL en el paso 6.
+
+**Un 400 que no es un 400**: el token NO se valida en el contrato. Sin él, `requireSession`
+responde 401, que es lo que hace que el cliente mande a iniciar sesión; un 400 de validación lo
+dejaría en la pantalla con un error.

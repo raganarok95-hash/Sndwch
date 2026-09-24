@@ -1001,6 +1001,7 @@ body.kb-open #app{padding-bottom:0}
   // src/nuevo/legado.ts
   var w2 = window;
   var legado = {
+    /** Solo para `llamar()` (api.ts), que le pone el tipo del contrato. No se usa directo. */
     api: (accion, datos) => w2.api(accion, datos),
     get token() {
       return w2.token;
@@ -1063,6 +1064,11 @@ body.kb-open #app{padding-bottom:0}
     }
   };
 
+  // src/nuevo/api.ts
+  function llamar(accion, entrada) {
+    return legado.api(accion, { ...entrada, token: legado.token });
+  }
+
   // src/nuevo/pantallas/fijo.ts
   var estado = { cargando: false, fijos: [], sugerido: null, desdeConfirmados: null, seleccionado: null };
   var contenedor = null;
@@ -1087,7 +1093,7 @@ body.kb-open #app{padding-bottom:0}
   }
   function direccionDe(f2) {
     const dirs = legado.direcciones;
-    const suya = f2 && f2.addressId != null ? dirs.find((d2) => Number(d2.id) === Number(f2.addressId)) : void 0;
+    const suya = f2 && f2.addressId != null ? dirs.find((d2) => d2.id === f2.addressId) : void 0;
     return suya || dirs.find((d2) => typeof d2.lat === "number" && typeof d2.lon === "number") || null;
   }
   function totalDe(precio, f2) {
@@ -1118,16 +1124,16 @@ body.kb-open #app{padding-bottom:0}
     legado.irA("p_recurring");
     try {
       const [lista, dirs] = await Promise.all([
-        legado.api("recurring-list", { token: legado.token }),
-        legado.direcciones.length ? Promise.resolve(null) : legado.api("addresses-list", { token: legado.token }).catch(() => null)
+        llamar("recurring-list", {}),
+        legado.direcciones.length ? Promise.resolve(null) : llamar("addresses-list", {}).catch(() => null)
       ]);
-      if (dirs && Array.isArray(dirs.addresses)) legado.direcciones = dirs.addresses;
-      const fijos = Array.isArray(lista.recurring) ? lista.recurring : [];
+      if (dirs) legado.direcciones = dirs.addresses;
+      const fijos = lista.recurring;
       cambiar({
         cargando: false,
         fijos,
-        sugerido: lista.sugerido || null,
-        desdeConfirmados: typeof lista.desdeConfirmados === "number" ? lista.desdeConfirmados : null,
+        sugerido: lista.sugerido,
+        desdeConfirmados: lista.desdeConfirmados,
         seleccionado: id && fijos.some((f2) => f2.id === id) ? id : fijos[0]?.id ?? null
       });
     } catch {
@@ -1157,7 +1163,7 @@ body.kb-open #app{padding-bottom:0}
     if (s2.weekday == null || !s2.slot) return;
     const dir = direccionDe(null);
     try {
-      await legado.api("recurring-add", { token: legado.token, items: s2.items, weekday: s2.weekday, slot: s2.slot, addressId: dir ? dir.id : null });
+      await llamar("recurring-add", { items: s2.items, weekday: s2.weekday, slot: s2.slot, addressId: dir ? dir.id : null });
       legado.aviso("Listo: fijo los " + diasPlural(s2.weekday) + " a las " + hhmmATexto(s2.slot) + ". Te avisamos antes.");
       await abrir();
     } catch (e4) {
@@ -1166,7 +1172,7 @@ body.kb-open #app{padding-bottom:0}
   }
   async function saltar(f2, deshacer) {
     try {
-      await legado.api("recurring-skip", { token: legado.token, id: f2.id, deshacer });
+      await llamar("recurring-skip", { id: f2.id, deshacer });
     } catch (e4) {
       legado.aviso("No se pudo: " + e4.message);
       return;
@@ -1180,7 +1186,7 @@ body.kb-open #app{padding-bottom:0}
     const quedan = antes.filter((x2) => x2.id !== f2.id);
     cambiar({ fijos: quedan, seleccionado: estado.seleccionado === f2.id ? quedan[0]?.id ?? null : estado.seleccionado });
     try {
-      await legado.api("recurring-delete", { token: legado.token, id: f2.id });
+      await llamar("recurring-delete", { id: f2.id });
     } catch (e4) {
       cambiar({ fijos: antes });
       legado.aviso("No se pudo quitar: " + e4.message);
@@ -2980,7 +2986,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '9e0a8968be';
+var APP_BUILD = '1cf219a71d';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por

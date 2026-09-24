@@ -193,6 +193,10 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
 - **Un id que pasó por el HTML se compara con `mismoId()`, nunca con `===`.** Los ids de
   dirección son números y el onclick los devuelve como texto: `12 === '12'` es falso y el
   botón no hace nada. Las pruebas simulan ids numéricos, como la base.
+- **Una acción que se escribe o se toca se declara en `supabase/functions/_shared/contrato.ts`**
+  (entrada con esquema, salida con tipo) y lee la base con `leer()` (db.ts), no con `sbGet` y un
+  select a mano: así un campo o una columna mal escrita no compila. Tras cada migración se
+  regeneran los tipos (`_shared/base.ts`); lo vigila `npm run check:tipos-base`.
 - **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
   vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
 - **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23

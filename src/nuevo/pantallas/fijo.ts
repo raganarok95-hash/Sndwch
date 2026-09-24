@@ -14,37 +14,12 @@
 // sí promete es el LUGAR GUARDADO (servidor: franja.ts).
 import { html, nothing, render, type TemplateResult } from 'lit-html';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
-import { legado, type DireccionGuardada, type ItemCarrito } from '../legado';
+import type { Direccion, FijoDelCliente, FijoSugerido, ItemCarrito } from '../../../supabase/functions/_shared/dominio.ts';
+import { llamar } from '../api';
+import { legado } from '../legado';
 
-// Lo que devuelve `recurring-list`. Pasa al contrato compartido en el paso 2.
-type EstadoDeFranja =
-  | 'apartada' | 'faltan-confirmaciones' | 'aun-no-toca' | 'soltada' | 'saltada' | 'usada' | 'cerrado' | 'inactivo';
-type Fijo = {
-  id: string;
-  items: ItemCarrito[];
-  weekday: number;
-  slot: string;
-  addressId: number | null;
-  label: string;
-  precio: number | null;
-  veces: number;
-  horaHabitual: string | null;
-  vez: string | null;
-  estado: EstadoDeFranja;
-  apartada: boolean;
-  sueltaA: string | null;
-  confirmados: number;
-};
-type Sugerido = {
-  items: ItemCarrito[];
-  label: string;
-  precio: number | null;
-  veces: number;
-  horaHabitual: string | null;
-  weekday: number | null;
-  slot: string | null;
-};
-type RespuestaLista = { recurring?: Fijo[]; sugerido?: Sugerido | null; desdeConfirmados?: number };
+type Fijo = FijoDelCliente;
+type Sugerido = FijoSugerido;
 
 type Estado = {
   cargando: boolean;
@@ -81,9 +56,9 @@ function actual(): Fijo | null {
   return estado.fijos.find((f) => f.id === estado.seleccionado) || estado.fijos[0] || null;
 }
 /** La dirección guardada con el fijo, o la primera marcada en el mapa. */
-function direccionDe(f: Fijo | null): DireccionGuardada | null {
+function direccionDe(f: Fijo | null): Direccion | null {
   const dirs = legado.direcciones;
-  const suya = f && f.addressId != null ? dirs.find((d) => Number(d.id) === Number(f.addressId)) : undefined;
+  const suya = f && f.addressId != null ? dirs.find((d) => d.id === f.addressId) : undefined;
   return suya || dirs.find((d) => typeof d.lat === 'number' && typeof d.lon === 'number') || null;
 }
 /** «Te sale»: la comida a precio de hoy más el envío a SU dirección, con la tarifa del checkout. */
@@ -119,18 +94,16 @@ export async function abrir(id?: string): Promise<void> {
     // Las direcciones hacen falta para «Te sale» y para dejar el pedido con la suya: quien
     // llega por el aviso no pasó por el perfil.
     const [lista, dirs] = await Promise.all([
-      legado.api<RespuestaLista>('recurring-list', { token: legado.token }),
-      legado.direcciones.length
-        ? Promise.resolve(null)
-        : legado.api<{ addresses?: DireccionGuardada[] }>('addresses-list', { token: legado.token }).catch(() => null),
+      llamar('recurring-list', {}),
+      legado.direcciones.length ? Promise.resolve(null) : llamar('addresses-list', {}).catch(() => null),
     ]);
-    if (dirs && Array.isArray(dirs.addresses)) legado.direcciones = dirs.addresses;
-    const fijos = Array.isArray(lista.recurring) ? lista.recurring : [];
+    if (dirs) legado.direcciones = dirs.addresses;
+    const fijos = lista.recurring;
     cambiar({
       cargando: false,
       fijos,
-      sugerido: lista.sugerido || null,
-      desdeConfirmados: typeof lista.desdeConfirmados === 'number' ? lista.desdeConfirmados : null,
+      sugerido: lista.sugerido,
+      desdeConfirmados: lista.desdeConfirmados,
       seleccionado: id && fijos.some((f) => f.id === id) ? id : fijos[0]?.id ?? null,
     });
   } catch {
@@ -165,7 +138,7 @@ async function dejarFijo(s: Sugerido): Promise<void> {
   if (s.weekday == null || !s.slot) return;
   const dir = direccionDe(null);
   try {
-    await legado.api('recurring-add', { token: legado.token, items: s.items, weekday: s.weekday, slot: s.slot, addressId: dir ? dir.id : null });
+    await llamar('recurring-add', { items: s.items, weekday: s.weekday, slot: s.slot, addressId: dir ? dir.id : null });
     legado.aviso('Listo: fijo los ' + diasPlural(s.weekday) + ' a las ' + hhmmATexto(s.slot) + '. Te avisamos antes.');
     await abrir();
   } catch (e) {
@@ -176,7 +149,7 @@ async function dejarFijo(s: Sugerido): Promise<void> {
 /** «Esta semana no» suelta el lugar de la próxima vez sin quitar el fijo; «Mejor sí va» lo vuelve a poner. */
 async function saltar(f: Fijo, deshacer: boolean): Promise<void> {
   try {
-    await legado.api('recurring-skip', { token: legado.token, id: f.id, deshacer });
+    await llamar('recurring-skip', { id: f.id, deshacer });
   } catch (e) {
     legado.aviso('No se pudo: ' + (e as Error).message);
     return;
@@ -192,7 +165,7 @@ async function quitar(f: Fijo): Promise<void> {
   const quedan = antes.filter((x) => x.id !== f.id);
   cambiar({ fijos: quedan, seleccionado: estado.seleccionado === f.id ? quedan[0]?.id ?? null : estado.seleccionado });
   try {
-    await legado.api('recurring-delete', { token: legado.token, id: f.id });
+    await llamar('recurring-delete', { id: f.id });
   } catch (e) {
     cambiar({ fijos: antes });
     legado.aviso('No se pudo quitar: ' + (e as Error).message);

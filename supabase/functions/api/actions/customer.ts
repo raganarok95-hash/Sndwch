@@ -1,7 +1,9 @@
 // SND//WCH — api / actions/customer
 // Acciones de cuenta autenticada que no son ni auth ni pedidos: direcciones guardadas,
 // favoritos, calificaciones, el reto mensual, regalar crédito, y suscripciones push.
-import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import { leer, sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
+import type { Entrada, Salida } from "../../_shared/contrato.ts";
+import type { FijoSugerido, ItemCarrito } from "../../_shared/dominio.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
 import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts, deriveCart } from "../catalog.ts";
@@ -140,7 +142,6 @@ const MAX_RECURRING = 3;
 // Desde cuántas veces pedido lo mismo la pantalla ofrece dejarlo fijo. Una vez es un pedido;
 // dos ya es una costumbre que vale la pena ofrecerle guardar.
 const SUGERIR_FIJO_DESDE_VECES = 2;
-const UUID_FIJO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Un ítem sin las claves que no cambian qué es (qty) y con todo ordenado, para que el mismo
 // pedido armado en otro orden sea el mismo.
@@ -202,21 +203,23 @@ function isoONull(ms: number): string | null {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
 }
 
-export async function actRecurringList(b: any) {
+export async function actRecurringList(b: Entrada<"recurring-list">): Promise<Salida<"recurring-list">> {
   const s = await requireSession(b.token);
   await Promise.all([loadCatalogPrices(), loadStoreHours()]);
   const enc = encodeURIComponent(s.phone);
   const [franjas, historial] = await Promise.all([
     cargarFranjas(Date.now(), `&customer_phone=eq.${enc}`),
-    sbGet(
+    leer(
       "orders",
-      `customer_phone=eq.${enc}&payment_status=eq.paid&status=neq.CANCELADO&select=items,created_at,delivery_time&order=created_at.desc&limit=200`,
+      ["items", "created_at", "delivery_time"],
+      `customer_phone=eq.${enc}&payment_status=eq.paid&status=neq.CANCELADO&order=created_at.desc&limit=200`,
     ),
   ]);
   // «Lo pediste 9 veces · siempre a las 7:20 p.m.» (maqueta tu-pedido-fijo): sale del
   // historial pagado del cliente, agrupado por qué pidió — no de un contador aparte que
   // habría que acordarse de mantener.
-  const porFirma = new Map<string, any[]>();
+  type Pedido = (typeof historial)[number];
+  const porFirma = new Map<string, Pedido[]>();
   for (const o of historial) {
     const f = firmaDeItems(o.items);
     if (!f) continue;
@@ -249,19 +252,20 @@ export async function actRecurringList(b: any) {
     });
   // Quien todavía no tiene un fijo pero repite: la pantalla le ofrece dejarlo fijo el día y
   // a la hora en que ya lo pide, sin que tenga que elegir nada.
-  let sugerido = null;
+  let sugerido: FijoSugerido | null = null;
   if (!recurring.length) {
-    let mejor: any[] | null = null;
+    let mejor: Pedido[] | null = null;
     for (const l of porFirma.values()) {
       if (l.length >= SUGERIR_FIJO_DESDE_VECES && (!mejor || l.length > mejor.length)) mejor = l;
     }
-    if (mejor) {
+    if (mejor && mejor[0]) {
+      const items = mejor[0].items as ItemCarrito[];
       const hab = habitoDe(mejor);
       const slot = hab.weekday === null || hab.minutos === null ? null : franjaSugerida(hab.minutos, STORE_HOURS[hab.weekday]);
       sugerido = {
-        items: mejor[0].items,
-        label: nombreDeItems(mejor[0].items),
-        precio: precioDeItems(mejor[0].items),
+        items,
+        label: nombreDeItems(items),
+        precio: precioDeItems(items),
         veces: hab.veces,
         horaHabitual: hab.hora,
         weekday: slot ? hab.weekday : null,
@@ -272,15 +276,13 @@ export async function actRecurringList(b: any) {
   return { recurring, sugerido, desdeConfirmados: FRANJA_DESDE_CONFIRMADOS, sueltaMin: FRANJA_SUELTA_MIN };
 }
 
-export async function actRecurringAdd(b: any) {
+export async function actRecurringAdd(b: Entrada<"recurring-add">): Promise<Salida<"recurring-add">> {
   const s = await requireSession(b.token);
   const enc = encodeURIComponent(s.phone);
-  const weekday = Math.floor(Number(b.weekday));
-  if (!Number.isFinite(weekday) || weekday < 0 || weekday > 6) throw new ApiError("Elige un día de la semana.");
-  const slot = String(b.slot || "").trim();
+  // Día, forma de la hora, ítems y dirección ya llegan validados por el contrato; acá queda lo
+  // que el esquema no sabe: que la hora exista en el reloj.
+  const { weekday, slot, items } = b;
   if (slotMinutos(slot) === null) throw new ApiError("Elige una hora válida.");
-  const items = Array.isArray(b.items) ? b.items : [];
-  if (!items.length) throw new ApiError("Tu carrito está vacío — arma el pedido antes de dejarlo fijo.");
 
   // Se re-tasa con el catálogo VIGENTE antes de guardar, por dos motivos. Uno: valida que
   // cada ítem siga existiendo, en vez de guardar un carrito que el día de mañana no se puede
@@ -292,21 +294,18 @@ export async function actRecurringAdd(b: any) {
   // Solo los ACTIVOS cuentan para el máximo. «Quitar» apaga la fila (active=false) sin
   // borrarla, y el límite genérico las contaba todas: quien quitó tres fijos ya no podía
   // armar ninguno nuevo, y nada lo decía.
-  const activos = await sbGet("recurring_orders", `customer_phone=eq.${enc}&active=eq.true&select=id,weekday,slot`);
+  const activos = await leer("recurring_orders", ["id", "weekday", "slot"], `customer_phone=eq.${enc}&active=eq.true`);
   if (activos.length >= MAX_RECURRING) throw new ApiError(`Ya tienes el máximo de pedidos fijos (${MAX_RECURRING}).`, 400);
-  if (activos.some((r: any) => Number(r.weekday) === weekday && r.slot === slot)) {
+  if (activos.some((r) => r.weekday === weekday && r.slot === slot)) {
     throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
   }
 
   // A dónde va: sin esto, confirmar cada semana obligaba a volver a elegir la dirección, y
   // «un toque» eran cuatro.
-  let addressId: number | null = null;
-  const rawAddr = b.addressId === undefined || b.addressId === null ? "" : String(b.addressId).trim();
-  if (rawAddr) {
-    if (!/^\d+$/.test(rawAddr)) throw new ApiError("Esa dirección no es válida.");
-    const rows = await sbGet("saved_addresses", `id=eq.${rawAddr}&customer_phone=eq.${enc}&select=id`);
+  const addressId = b.addressId;
+  if (addressId !== null) {
+    const rows = await leer("saved_addresses", ["id"], `id=eq.${addressId}&customer_phone=eq.${enc}`);
     if (!rows.length) throw new ApiError("Esa dirección ya no está entre las tuyas.");
-    addressId = Number(rows[0].id);
   }
 
   await sbInsert("recurring_orders", {
@@ -320,10 +319,9 @@ export async function actRecurringAdd(b: any) {
   return { success: true };
 }
 
-export async function actRecurringDelete(b: any) {
+export async function actRecurringDelete(b: Entrada<"recurring-delete">): Promise<Salida<"recurring-delete">> {
   const s = await requireSession(b.token);
-  const id = String(b.id || "").trim();
-  if (!id) throw new ApiError("Falta el pedido fijo.");
+  const id = b.id;
   // El filtro por teléfono no es cosmético: sin él, cualquiera con una sesión válida podría
   // borrar la recurrencia de otro cliente mandando su id.
   await sbUpdate(
@@ -331,20 +329,19 @@ export async function actRecurringDelete(b: any) {
     `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
     { active: false },
   );
-  return { success: true };
+  return { success: true as const };
 }
 
 // «Esta semana no»: suelta el lugar de la PRÓXIMA vez sin quitar el fijo. Sin esto, quien no
 // iba a pedir ese jueves solo podía esperar a que se soltara solo 90 minutos antes — un lugar
 // que otro pudo haber usado desde la mañana. `deshacer` lo vuelve a poner.
-export async function actRecurringSkip(b: any) {
+export async function actRecurringSkip(b: Entrada<"recurring-skip">): Promise<Salida<"recurring-skip">> {
   const s = await requireSession(b.token);
-  const id = String(b.id || "").trim();
-  if (!UUID_FIJO.test(id)) throw new ApiError("Falta el pedido fijo.");
+  const id = b.id;
   const enc = encodeURIComponent(s.phone);
-  const rows = await sbGet("recurring_orders", `id=eq.${id}&customer_phone=eq.${enc}&active=eq.true&select=id,weekday,slot`);
-  if (!rows.length) throw new ApiError("Ese pedido fijo ya no existe.", 404);
-  const skipOn = b.deshacer ? null : fechaLima(proximaVez(rows[0], Date.now()));
+  const [fijo] = await leer("recurring_orders", ["id", "weekday", "slot"], `id=eq.${id}&customer_phone=eq.${enc}&active=eq.true`);
+  if (!fijo) throw new ApiError("Ese pedido fijo ya no existe.", 404);
+  const skipOn = b.deshacer ? null : fechaLima(proximaVez(fijo, Date.now()));
   await sbUpdate("recurring_orders", `id=eq.${id}&customer_phone=eq.${enc}`, { skip_on: skipOn });
   return { success: true, skipOn };
 }
@@ -641,9 +638,14 @@ export async function actSetPreferences(b: any) {
   return { success: true, customer: safeCustomer(rows[0]) };
 }
 
-export async function actAddressesList(b: any) {
+export async function actAddressesList(b: Entrada<"addresses-list">): Promise<Salida<"addresses-list">> {
   const s = await requireSession(b.token);
-  return { addresses: await sbGet("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`) };
+  const addresses = await leer(
+    "saved_addresses",
+    ["id", "customer_phone", "label", "address", "reference", "lat", "lon", "created_at"],
+    `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`,
+  );
+  return { addresses };
 }
 export async function actAddressesAdd(b: any) {
   const s = await requireSession(b.token);

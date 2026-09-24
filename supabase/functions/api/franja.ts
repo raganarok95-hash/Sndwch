@@ -35,20 +35,16 @@ const LIMA_MS = 5 * 3600000;
 
 export type Fijo = { id: string; weekday: number; slot: string; active?: boolean; skip_on?: string | null };
 export type PedidoDelFijo = {
-  created_at: string;
+  // La columna admite null en la base (lo mostraron los tipos generados, 2026-09-24). Pasa a
+  // NOT NULL en el paso 6; mientras tanto, sin fecha el pedido no cuenta (NaN).
+  created_at: string | null;
   delivery_time?: string | null;
   status?: string | null;
   payment_status?: string | null;
 };
-export type EstadoDeFranja =
-  | "apartada"
-  | "faltan-confirmaciones"
-  | "aun-no-toca"
-  | "soltada"
-  | "saltada"
-  | "usada"
-  | "cerrado"
-  | "inactivo";
+// El tipo vive en el dominio compartido: el cliente lee el mismo.
+import type { EstadoDeFranja } from "../_shared/dominio.ts";
+export type { EstadoDeFranja };
 
 export function slotMinutos(slot: string): number | null {
   const m = /^([0-2][0-9]):([0-5][0-9])$/.exec(String(slot || ""));
@@ -83,7 +79,7 @@ export function proximaVez(f: Fijo, nowMs: number): number {
 /** Cuándo se entrega un pedido: la hora programada si la tiene, si no la de creación. */
 export function entregaDe(p: PedidoDelFijo): number {
   const t = p.delivery_time ? Date.parse(p.delivery_time) : NaN;
-  return Number.isFinite(t) ? t : Date.parse(p.created_at);
+  return Number.isFinite(t) ? t : Date.parse(p.created_at ?? "");
 }
 
 /** Cuántas veces se CONFIRMÓ el fijo: días distintos con un pedido pagado y no cancelado.

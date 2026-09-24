@@ -4,6 +4,7 @@
 // Supabase; todo lo demás en la función pasa por aquí.
 import { SB_URL, SERVICE_KEY } from "./env.ts";
 import { ApiError } from "./types.ts";
+import type { Columna, Fila, Tabla } from "../_shared/dominio.ts";
 
 export function sbHeaders(extra?: Record<string, string>) {
   return {
@@ -21,6 +22,18 @@ export async function sbGet(table: string, query: string) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: sbHeaders() });
   if (!r.ok) throw new Error(`Error leyendo ${table}: ${await r.text()}`);
   return r.json();
+}
+/** Lectura TIPADA: la tabla y cada columna se comprueban contra el esquema real (base.ts), y la
+ *  fila vuelve con el tipo exacto de lo que se pidió. Una columna que no existe no compila —
+ *  con `sbGet` y un select escrito a mano, el error llegaba en producción y a veces un catch se
+ *  lo tragaba. `filtro` es la parte de PostgREST que no es el select (`id=eq.5&order=...`). */
+export async function leer<T extends Tabla, K extends Columna<T>>(
+  tabla: T,
+  columnas: readonly K[],
+  filtro = "",
+): Promise<Pick<Fila<T>, K>[]> {
+  const q = `select=${columnas.join(",")}${filtro ? "&" + filtro : ""}`;
+  return await sbGet(tabla, q) as Pick<Fila<T>, K>[];
 }
 export async function sbInsert(table: string, data: unknown) {
   const r = await fetch(`${SB_URL}/rest/v1/${table}`, {

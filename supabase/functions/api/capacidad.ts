@@ -6,7 +6,8 @@
 // del pedido fijo había que sumar un tercer término a las dos, y una copia que se actualiza y
 // otra que no es exactamente el defecto que este repo ya pagó con precios: el cliente tacharía
 // una hora que el servidor acepta, o al revés. Ahora las dos preguntan acá.
-import { sbGet } from "./db.ts";
+import { leer, sbGet } from "./db.ts";
+import type { Fila, ItemCarrito } from "../_shared/dominio.ts";
 import { isWithinStoreHours, MAX_ORDERS_PER_HOUR } from "./env.ts";
 import { verifyActiveSession } from "./session.ts";
 import {
@@ -22,17 +23,13 @@ import {
 
 const HORA = 3600000;
 
-export type FilaFijo = {
-  id: string;
-  customer_phone: string;
-  items: unknown[];
-  weekday: number;
-  slot: string;
-  label: string | null;
-  active: boolean;
-  skip_on: string | null;
-  address_id: number | null;
-  last_notified_at: string | null;
+// La fila sale del esquema real (base.ts). `items` es `jsonb` en la base; lo que guarda es un
+// carrito que `priceCartItem` validó al guardarlo.
+const COLUMNAS_FIJO = [
+  "id", "customer_phone", "items", "weekday", "slot", "label", "active", "skip_on", "address_id", "last_notified_at",
+] as const;
+export type FilaFijo = Omit<Pick<Fila<"recurring_orders">, (typeof COLUMNAS_FIJO)[number]>, "items"> & {
+  items: ItemCarrito[];
 };
 export type FijoConFranja = { fila: FilaFijo; franja: Franja };
 
@@ -61,10 +58,7 @@ async function pedidosPorFijo(ids: string[]): Promise<Map<string, PedidoDelFijo[
  *  (`loadStoreHours`): sin él se decidiría con el horario de respaldo si la tienda atiende a
  *  esa hora. `filtro` es un trozo de query de PostgREST (ej. `&customer_phone=eq.X`). */
 export async function cargarFranjas(nowMs = Date.now(), filtro = ""): Promise<FijoConFranja[]> {
-  const filas: FilaFijo[] = await sbGet(
-    "recurring_orders",
-    `active=eq.true${filtro}&select=id,customer_phone,items,weekday,slot,label,active,skip_on,address_id,last_notified_at&limit=1000`,
-  );
+  const filas = (await leer("recurring_orders", COLUMNAS_FIJO, `active=eq.true${filtro}&limit=1000`)) as FilaFijo[];
   const pedidos = await pedidosPorFijo(filas.map((f) => f.id));
   return filas.map((fila) => {
     const vez = proximaVez(fila, nowMs);

@@ -9,27 +9,7 @@
 // compilador señala todo lo que dependía de ella. A medida que las piezas viejas migren, sus
 // entradas se borran de acá; el día que este archivo quede vacío, la migración terminó.
 
-export type Id = string;
-
-export type DireccionGuardada = {
-  id: number;
-  label: string;
-  address: string;
-  reference?: string | null;
-  lat: number | null;
-  lon: number | null;
-};
-
-/** Un ítem del carrito tal como lo guarda el código viejo. Se tipa de verdad en el paso 2. */
-export type ItemCarrito = {
-  type?: string;
-  sigId?: string;
-  prot?: string;
-  code?: string;
-  size?: string;
-  qty: number;
-  [k: string]: unknown;
-};
+import type { Direccion, ItemCarrito } from '../../supabase/functions/_shared/dominio.ts';
 
 type DiaDelCarrito = 'today' | 'tomorrow';
 
@@ -44,7 +24,7 @@ type Viejo = {
   VACIO: (titulo: string, texto: string, cta?: string, estado?: string) => string;
   H: (sub?: string, bk?: string, showCart?: boolean) => string;
   NAV: () => string;
-  myAddresses: DireccionGuardada[];
+  myAddresses: Direccion[];
   cart: ItemCarrito[];
   loadCart: (items: ItemCarrito[]) => void;
   pickAddr: (id: number) => void;
@@ -62,13 +42,14 @@ type Viejo = {
   SOLES_TXT: string;
   pz: (n: number) => string;
   horaLima: (ms: number) => string;
-  envioADireccion: (a: DireccionGuardada | null) => number | null;
+  envioADireccion: (a: Direccion | null) => number | null;
   DIAS_SEMANA: string[];
 };
 
 const w = window as unknown as Viejo;
 
 export const legado = {
+  /** Solo para `llamar()` (api.ts), que le pone el tipo del contrato. No se usa directo. */
   api: <T>(accion: string, datos: Record<string, unknown>): Promise<T> => w.api(accion, datos) as Promise<T>,
   get token(): string {
     return w.token;
@@ -88,10 +69,10 @@ export const legado = {
   htmlVacio: (titulo: string, texto: string, pose: string): string => w.VACIO(titulo, texto, '', pose),
   htmlCabecera: (titulo: string, volver: string): string => w.H(titulo, volver),
   htmlNav: (): string => w.NAV(),
-  get direcciones(): DireccionGuardada[] {
+  get direcciones(): Direccion[] {
     return w.myAddresses || [];
   },
-  set direcciones(v: DireccionGuardada[]) {
+  set direcciones(v: Direccion[]) {
     w.myAddresses = v;
   },
   carrito: {
@@ -125,7 +106,7 @@ export const legado = {
   imagenProteina: (prot: string): string => w.PROT_IMG[prot] || '',
   soles: (n: number): string => w.SOLES_TXT + w.pz(n),
   horaLima: (ms: number): string => w.horaLima(ms),
-  envioA: (a: DireccionGuardada | null): number | null => w.envioADireccion(a),
+  envioA: (a: Direccion | null): number | null => w.envioADireccion(a),
   get diasSemana(): string[] {
     return w.DIAS_SEMANA;
   },
