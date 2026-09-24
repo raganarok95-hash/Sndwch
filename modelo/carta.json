@@ -351,6 +351,7 @@
       ],
       "p15": 23.9,
       "p30": 34.9,
+      "foto": "img/sig10.jpg",
       "pitch": "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre."
     },
     {
@@ -365,6 +366,7 @@
       "p15": 22.9,
       "p30": 36.9,
       "queso": "C02",
+      "foto": "img/sig12.jpg",
       "pitch": "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo."
     },
     {

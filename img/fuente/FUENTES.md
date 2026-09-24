@@ -140,17 +140,25 @@ receta no tiene**, que es el mismo criterio que sacó las papas de `prot_p01`:
 que promete.** Un ingrediente de más en la foto es la misma clase de defecto que un badge que
 afirma algo que el producto no cumple — ver `docs/PROMESAS_SIN_RESPALDO.md`.
 
-### Las dos que faltan, y por qué no están
+### Turkey y Tuna Melt: las dos que faltaban (2026-09-24)
 
-**`sig10.jpg` (Turkey) y `sig12.jpg` (Tuna Melt) no se pudieron conseguir.** Los dos productos
-van en **pan sub**, y en la categoría gratuita:
+El 2026-09-23 quedaron sin foto porque ninguna candidata gratuita calzaba con la receta. El
+2026-09-24 el dueño pidió ponerles foto igual («se ve mal sin foto ahora»), así que entran
+**las más fieles que existen en la categoría gratuita, con sus diferencias anotadas acá**, para
+cambiarlas en cuanto haya foto propia.
 
-- el «turkey sub» sale siempre en pan redondo con ajonjolí, o con queso encima (nuestro Turkey
-  va **sin queso**: es la opción fit);
-- el «tuna melt» está en **pan de molde tostado** por definición del plato — no existe en pan
-  sub.
+| archivo | producto | Adobe Stock | recorte aplicado al original | en qué NO calza con la receta |
+|---|---|---|---|---|
+| `sig10.jpg` | **Turkey** (SIG10) | `214459869` (6000×4000) | el sub de abajo a la izquierda, rotado −65.4° alrededor de (790, 3150) y recortado a (85, 2547)-(2235, 3995) | trae **pepino**; no se ven tomate, cebolla ni pimiento. Pan sub blanco, pavo en lonjas, lechuga y **sin queso**, como la receta |
+| `sig12.jpg` | **Tuna Melt** (SIG12) | `325349325` (7360×4912) | (600, 1900)-(4600, 4597) — deja fuera la rúcula, el limón y la salsa | es un tuna melt **abierto sobre pan tostado**, no en pan sub; el queso fundido se ve más blanco que un cheddar |
 
-Se revisaron ~60 resultados y se licenciaron y miraron las tres mejores candidatas. Ninguna
-sirve. **Poner una foto con otro pan es exactamente el defecto que este archivo existe para
-impedir**, así que quedan pendientes: o el dueño las fotografía, o esos dos productos entran
-a la carta después que los otros cuatro.
+Se descartó otra vez `591239613` (tuna melt con cheddar bien amarillo, pero con **tomate**, que
+la receta no lleva: prometer un ingrediente de más es peor que mostrar otro pan) y
+`415274082` (sub de pavo con jamón rosado, espinaca y pepino en pan con maíz). La búsqueda
+cubrió «tuna melt» (11 resultados gratuitos en total), «turkey hoagie» (5) y otras seis
+consultas; esta cuenta no ve la categoría de pago, y Unsplash, Pexels y Wikimedia están
+bloqueados por el proxy.
+
+⚠ **Siguen siendo aproximaciones.** La regla de arriba («una foto se elige por lo que promete»)
+se relajó solo en esto, a pedido del dueño: foto propia de los dos productos en cuanto estén
+en cocina.

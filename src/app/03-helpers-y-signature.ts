@@ -147,7 +147,10 @@ function AB(t,can?,bk?,nfn?,nl?,hint?){
 // dueño desde el panel). La píldora trae su propio fondo, así que se lee sobre lo que sea.
 // `dorado` no es una variante decorativa: marca lo que tiene que ganar la mirada — el
 // precio y la selección. Todo lo demás va en vidrio oscuro.
+// Sin texto no hay píldora: un óvalo vacío sobre la foto no dice nada y parece roto (pasó con
+// la carta v4, que no lleva badges).
 function PILL(txt,dorado?){
+  if(!txt)return'';
   return'<span style="display:inline-block;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;'
     +(dorado
       ?'background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-weight:600;border:1px solid '+GOLD
@@ -1194,8 +1197,8 @@ function TILE_SIGNATURE(sig,ancho){
       ?'<span style="position:absolute;top:11px;left:11px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
        +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
        +'text-transform:uppercase;border-radius:999px;padding:4px 10px">La estrella</span>'
-      :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
-       +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">'+esc(sigBadge(sig))+'</span>')
+      :sigBadge(sig)?'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
+       +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">'+esc(sigBadge(sig))+'</span>':'')
     :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.65);color:var(--sw-danger,#ff8888);'
      +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">Agotado</span>';
   var cuerpo='<div style="position:absolute;left:0;right:0;bottom:0;padding:13px;'
@@ -1893,7 +1896,7 @@ function sigPreviewOverlayHTML(){
   // a mano como estaba, dejaba una neblina verde encima de cada foto ahora que el fondo
   // dejó de ser verde.
   var hero=photo
-    ?'<div style="position:relative;border-radius:12px 14px 0 0;overflow:hidden;height:52vh;min-height:300px;max-height:460px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,7,.94),rgba(8,10,7,.18) 55%,rgba(8,10,7,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span></div></div>'
+    ?'<div style="position:relative;border-radius:12px 14px 0 0;overflow:hidden;height:52vh;min-height:300px;max-height:460px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,7,.94),rgba(8,10,7,.18) 55%,rgba(8,10,7,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'+(sigBadge(s)?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span>':'')+'</div></div>'
     // Sin foto no hay nada que rotular como "referencial" — el aviso va SOBRE la foto
     // (ver arriba), que es donde de verdad puede diferir de lo que llega a la mesa.
     // Estaba al revés: se mostraba solo en el placeholder sin imagen, o sea justo donde
@@ -1901,7 +1904,7 @@ function sigPreviewOverlayHTML(){
     :'<div style="background:linear-gradient(160deg,#1B1F18,#171A14);border-radius:12px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
     +'<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">'+icon('sandwich',56,GOLD)+'</div>'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>'
+    +(sigBadge(s)?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>':'')
     +'</div>';
   return'<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
     +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
