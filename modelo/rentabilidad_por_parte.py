@@ -61,8 +61,6 @@ RECARGO_PAN = {"B03": (0.50, 1.00)}   # lo que SE COBRA por la focaccia
 
 # Costo por porción YA CON MERMA DE COCCIÓN (res 0.54, pollo 0.64-0.69)
 PROT = {
-    "P01": (3.15, 6.30, "[COTIZADO] res ~S/20/kg, rendimiento 0.54"),
-    "P02": (2.47, 4.95, "[COTIZADO] pollo ~S/17/kg, rendimiento 0.64-0.69"),
     "P03": (2.49, 4.97, "[COTIZADO] pollo cajún, mismo rendimiento"),
     "P04": (3.25, 6.50, "[COTIZADO 2026-09-04] atún S/4 la lata de 140 g neto = S/43.96/kg"),
     "P05": (4.29, 8.59, "[ESTIMADO] embutido S/48/kg confirmado por el dueño, porción sin cotizar"),
@@ -71,27 +69,50 @@ PROT = {
     # porción es literalmente el precio del kilo por el gramaje, sin el ~1.85x de merma que
     # llevan las que sí pasan por la olla.
     "P08": (3.76, 7.51, "[WEB] pavo S/44.20/kg (retail Braedt S/43.75) — sin merma, rendimiento 1.00"),
+    # P09 entra con la carta v4 (2026-09-24): la res del Philly, laminada en frío y salteada.
+    # Rendimiento 0.70 SUPUESTO — hay que medirlo en la primera tanda (ver insumos.py).
+    "P09": (2.43, 4.86, "[COTIZADO] res ~S/20/kg laminada en frío, rendimiento 0.70 SUPUESTO"),
 }
-PROT_NOM = {"P01": "Res asada", "P02": "Pollo teriyaki", "P03": "Pollo cajún",
-            "P04": "Atún", "P05": "Embutido", "P06": "Albóndiga", "P08": "Pavo"}
+# Las que salieron con la carta v4 (2026-09-24): ya no se preparan. Se guardan SOLO para poder
+# costear la carta de apertura en comparaciones históricas (SIG_APERTURA, abajo).
+PROT_RETIRADA = {
+    "P01": (3.15, 6.30, "[COTIZADO] res ~S/20/kg, rendimiento 0.54"),
+    "P02": (2.47, 4.95, "[COTIZADO] pollo ~S/17/kg, rendimiento 0.64-0.69"),
+}
+PROT_NOM = {"P03": "Pollo cajún",
+            "P04": "Atún", "P05": "Embutido", "P06": "Albóndiga", "P08": "Pavo", "P09": "Res laminada"}
 # Quién se puede armar DE VERDAD en ARMA EL TUYO. P01 y P05 salieron el 2026-09-05 por
 # rentabilidad (siguen en sus Signatures) y P03 es exclusiva del menú secreto. Se siguen
 # imprimiendo sus filas —el número es real y sirve para decidir si vuelven— pero NO cuentan
 # contra el techo: reportar como problema abierto algo que ya se cerró hace que la lista
 # final deje de leerse, que es la forma en que un tablero de control se muere.
-FUERA_DEL_ARMADOR = {"P01", "P05", "P03"}
+# Carta v4 (2026-09-24): P05 queda solo para el Italian Hoagie; P01 y P02 dejaron de prepararse.
+FUERA_DEL_ARMADOR = {"P05", "P03"}
 
 # Gramaje de toppings — estándar Subway desde 2026-09-04
-TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21}
+# T10 (cebolla blanca salteada, solo Philly): 70 g crudos que quedan en ~40 g. Se costea al
+# promedio de vegetales (S/4/kg) y no a su S/3/kg: sobreestima unos centavos, del lado seguro.
+TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21, "T10": 70}
 
 # ── PRECIOS REALES, leídos de la base 2026-09-05 ──────────────────────────────────────
 BYO = {  # catalog_prices, category='protein'
-    "P01": (14.90, 24.90, 7.00, 14.00), "P02": (13.90, 23.90, 6.00, 11.00),
     "P03": (13.90, 23.90, 6.00, 11.00), "P04": (16.90, 32.90, 10.90, 21.90),
     "P05": (16.90, 32.90, 9.90, 19.90), "P06": (14.90, 26.90, 6.00, 12.00),
     "P08": (15.90, 28.90, 9.00, 17.00),
+    # P09 a precio de techo: 44.8% en los dos tamaños, calculado con este mismo modelo.
+    "P09": (12.90, 22.90, 7.00, 13.00),
 }
-SIG = {  # catalog_items, fila vigente por item_id
+SIG = {  # catalog_items, fila vigente por item_id — carta v4, los clásicos de USA (2026-09-24)
+    "SIG09": ("Philly Cheesesteak", "B01", "P09", ["T10", "T06"],              0, "C02", 22.90, 32.90),
+    "SIG02": ("Meatball Marinara",  "B01", "P06", ["T01", "T03", "T05"],       1, "C01", 21.90, 28.90),
+    "SIG10": ("Turkey",             "B01", "P08", ["T09", "T01", "T03", "T06"], 1, None, 23.90, 34.90),
+    "SIG12": ("Tuna Melt",          "B01", "P04", [],                          0, "C02", 22.90, 36.90),
+    "SIG11": ("Italian Hoagie",     "B01", "P05", ["T09", "T01", "T03", "T06"], 1, "C01", 23.90, 33.90),
+    "SIG04": ("Classic Tuna",       "B01", "P04", [],                          0, None, 20.90, 34.90),
+}
+# La carta de APERTURA, retirada el 2026-09-24. No se cobra: queda para comparar (la usa
+# menu_clasicos_usa.py como «el menú de hoy» de su análisis).
+SIG_APERTURA = {  # catalog_items, fila vigente por item_id
     "SIG01": ("The Original", "B01", "P01", ["T01", "T02", "T03"], 2, None, 20.90, 26.90),
     "SIG02": ("The Marinara", "B01", "P06", ["T01", "T03", "T05"], 1, "C01", 21.90, 28.90),
     "SIG03": ("The Smoke",    "B03", "P05", ["T03", "T02", "T01"], 1, "C02", 23.90, 34.90),
@@ -158,9 +179,9 @@ def veg(gramos, i):
     return (gramos if i == 0 else gramos * 2) / 1000 * TOPS_KG
 
 
-def costo_sig(sid, i):
-    _n, base, p, tops, ns, queso, _p15, _p30 = SIG[sid]
-    c = PROT[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg(sum(TOPS_G[t] for t in tops), i)
+def costo_sig(sid, i, carta=None):
+    _n, base, p, tops, ns, queso, _p15, _p30 = (carta or SIG)[sid]
+    c = {**PROT_RETIRADA, **PROT}[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg(sum(TOPS_G[t] for t in tops), i)
     if queso:
         c += QUESO[i]
     return c
@@ -300,10 +321,12 @@ if __name__ == "__main__":
 
     costo_r = {
         "R02": SALSA[0],
-        "R03": costo_byo("P01", 1) - costo_byo("P01", 0),
-        "R04": PROT["P01"][0],
-        "R05": costo_bebida("D06"),   # el tope de S/6 cubre entero a D06/D08
-        "R06": costo_byo("P02", 0),
+        # Peor caso sobre las proteínas del armador de HOY, no sobre una escrita a mano: la que
+        # más cuesta honrar es la que decide si la recompensa sale cara.
+        "R03": max(costo_byo(p, 1) - costo_byo(p, 0) for p in BYO if p not in FUERA_DEL_ARMADOR),
+        "R04": max(PROT[p][0] for p in BYO if p not in FUERA_DEL_ARMADOR),
+        "R05": max(costo_bebida(c) for c in BEBIDA_INSUMO),   # la bebida más cara de costear
+        "R06": max(costo_byo(p, 0) for p in BYO if p not in FUERA_DEL_ARMADOR),
     }
     for r, (pts, desc) in RECOMPENSA.items():
         c = costo_r[r]

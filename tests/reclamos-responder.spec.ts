@@ -28,6 +28,9 @@ test('el dueño puede escribir y guardar la respuesta a un reclamo', async ({ pa
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000000', '1234');
   await page.locator('[onclick*="admin_home"]').click();
+  // El panel vive en admin.js, que se descarga aparte recién al entrar (08-router): llamar a la
+  // función antes de que llegue fallaba una de cada dos corridas con «no es una función».
+  await page.waitForFunction(() => typeof (window as any).loadAdminComplaints === 'function');
   await page.evaluate(() => (window as any).loadAdminComplaints());
   await page.getByRole('button', { name: /Responder/ }).click();
 

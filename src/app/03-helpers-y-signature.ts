@@ -502,15 +502,16 @@ function confirmRerender(){syncConfirmFields();render();}
 // sobre S/23.90. A 15CM porque es el 80% del negocio según la hipótesis del dueño.
 // Números de `modelo/rentabilidad_por_parte.py`, que lee `catalog_prices` y
 // `catalog_items` (la base), nunca los literales del código:
-//   SIG02 Marinara S/17.43 · SIG03 Smoke S/16.14 · SIG04 Fresh S/15.35
-//   SIG01 Original S/14.70 · SIG06 Teriyaki S/14.43
+//   carta v4 (2026-09-24), `deja` a 15CM de modelo/menu_clasicos_usa.py:
+//   SIG09 Philly S/17.48 · SIG02 Meatball S/17.43 · SIG10 Turkey S/17.28
+//   SIG12 Tuna Melt S/16.96 · SIG11 Hoagie S/16.37 · SIG04 Classic Tuna S/15.35
 //
 // NO es menu engineering completo: la matriz de Kasavana & Smith cruza margen con
 // POPULARIDAD, y popularidad todavía no existe — el negocio no ha abierto. Esto ordena por
 // la única de las dos dimensiones que hoy se puede medir, y habrá que rehacerlo con ventas
 // reales. Un Signature que se venda el triple puede merecer la primera fila aunque deje
 // S/1 menos.
-var SIG_DISPLAY_ORDER=['SIG02','SIG03','SIG04','SIG01','SIG06'];
+var SIG_DISPLAY_ORDER=['SIG09','SIG02','SIG10','SIG12','SIG11','SIG04'];
 function sigsEnOrden(lista){
   return lista.slice().sort(function(a,b){
     var ia=SIG_DISPLAY_ORDER.indexOf(a.id),ib=SIG_DISPLAY_ORDER.indexOf(b.id);

@@ -38,7 +38,7 @@ function guion(sigId: string, angleKey = 'macro', fmtKey = 'pleito') {
   return {
     success: true,
     sigId,
-    name: 'The Original',
+    name: 'Un Signature',
     angle: { key: angleKey, label: angleKey === 'macro' ? 'Macro del corte' : 'Vapor y calor' },
     formato: fmt,
     guion: {
@@ -50,7 +50,7 @@ function guion(sigId: string, angleKey = 'macro', fmtKey = 'pleito') {
       pan: 'CLASSIC // WHITE',
     },
     flowPrompt: 'PROMPT DE PRUEBA para ' + sigId,
-    caption: 'The Original //\n\nRes asada en pan classic.',
+    caption: 'Un Signature //\n\nReceta de prueba.',
     hashtags: '#sndwch #trujillo',
     formatos: FORMATOS,
     angles: [
@@ -85,7 +85,7 @@ test('el panel arma el guion y deja copiar prompt, pie y hashtags por separado',
   // Tres bloques copiables distintos: el prompt va a Flow, el pie y los hashtags a
   // Instagram. Juntarlos obligaría a recortar a mano justo al publicar.
   await expect(page.locator('#vid-prompt')).toHaveValue(/PROMPT DE PRUEBA/);
-  await expect(page.locator('#vid-caption')).toHaveValue(/The Original/);
+  await expect(page.locator('#vid-caption')).toHaveValue(/Un Signature/);
   await expect(page.locator('#vid-tags')).toHaveValue(/#sndwch/);
   await expect(page.getByRole('button', { name: 'Copiar' })).toHaveCount(3);
 
@@ -97,10 +97,13 @@ test('cambiar de Signature vuelve a pedir el guion de ese sándwich', async ({ p
   const calls = await abrirGuion(page);
   const primera = calls.filter((c) => c.action === 'admin-video-script').length;
 
-  await page.getByText('The Smoke', { exact: true }).first().click();
+  // Otro Signature de la carta que la app tiene cargada, distinto del que el panel abre primero.
+  const primero = calls.filter((c) => c.action === 'admin-video-script').pop()!.body.sigId;
+  const otro = await page.evaluate((ya: string) => (window as any).SIGS.find((s: any) => !s.secret && s.id !== ya), primero);
+  await page.getByText(otro.n, { exact: true }).first().click();
   await expect.poll(() => calls.filter((c) => c.action === 'admin-video-script').length).toBeGreaterThan(primera);
   const ultima = calls.filter((c) => c.action === 'admin-video-script').pop()!;
-  expect(ultima.body.sigId).toBe('SIG03');
+  expect(ultima.body.sigId).toBe(otro.id);
 });
 
 test('cambiar de plano pide el mismo sándwich con otro ángulo', async ({ page }) => {

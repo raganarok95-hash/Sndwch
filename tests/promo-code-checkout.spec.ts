@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, entrarConTelefono, cartaDeLaApp } from './helpers';
 
 // Sistema de códigos promocionales (validate-promo-code/prepare-order/place-order,
 // computePromoDiscount en orders.ts): cubre que aplicar un código en el checkout (1)
@@ -27,9 +27,11 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
-  // SIG01 (THE ORIGINAL) 15CM = S/20.90 — primer Signature del catálogo, precio conocido.
+  // Un Signature cualquiera de la carta cargada; su precio se lee de ella, no se escribe.
+  const c = await cartaDeLaApp(page);
+  const sig = c.signature();
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
+  await page.locator(`[onclick^="sigId='${sig}'"]`).click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
@@ -43,12 +45,13 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await page.getByRole('button', { name: 'Aplicar' }).click();
   await expect(page.locator('text=PROMO10 aplicado')).toBeVisible();
 
-  // 20.90 (comida) - 3 (promo) = 17.90, más S/8 de delivery → total mostrado S/25.90.
-  // Prueba de que el descuento ya se restó client-side.
+  // comida - 3 (promo) + S/8 de delivery. Prueba de que el descuento ya se restó client-side.
+  const esperado = Math.round((c.p15[sig]! - 3 + 8) * 100) / 100;
+  const esperadoTxt = await page.evaluate((n) => (window as any).SOLES_TXT + (window as any).pz(n), esperado);
   // Era S/26.37 hasta el 2026-09-03, cuando el fee iba engordado para tarjeta
   // (8/(1-0.055)=8.47) porque el método por defecto era la tarjeta. Hoy el default es
   // Yape/Plin, que no paga comisión (ver tests/yape-por-defecto.spec.ts).
-  await expect(page.locator('text=S/25.90').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.locator(`text=${esperadoTxt}`).first()).toBeVisible({ timeout: 10000 });
 
   await page.locator('[onclick*="toggleCredit()"]').click();
   await expect(page.getByRole('button', { name: 'Confirmar con crédito //' })).toBeVisible();
@@ -59,13 +62,13 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await expect(page.locator('text=Pago confirmado')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=Monto cobrado')).toBeVisible();
   // Al pagar con crédito el pedido deja de ir por Culqi, así que el delivery vuelve a
-  // su fee real (S/8) y el cobro baja a 17.90 + 8 = 25.90.
-  await expect(page.locator('text=S/25.90').first()).toBeVisible();
+  // su fee real (S/8), el mismo total de arriba.
+  await expect(page.locator(`text=${esperadoTxt}`).first()).toBeVisible();
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
   expect(placeOrderCall!.body.promoCode).toBe('PROMO10');
-  expect(placeOrderCall!.body.total).toBe(25.9);
+  expect(placeOrderCall!.body.total).toBe(esperado);
   expect(placeOrderCall!.body.useCredit).toBe(true);
 });
 
@@ -88,8 +91,9 @@ test('código promocional inválido muestra el error del servidor sin bloquear e
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURES')).toBeVisible();
+  const c = await cartaDeLaApp(page);
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
+  await page.locator(`[onclick^="sigId='${c.signature()}'"]`).click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();

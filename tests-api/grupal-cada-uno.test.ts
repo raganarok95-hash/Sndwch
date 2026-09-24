@@ -13,8 +13,12 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { repartirGrupo } from "../supabase/functions/api/actions/group.ts";
 import { deriveCart } from "../supabase/functions/api/catalog.ts";
+import { unSignature } from "./carta.ts";
 
-const sig15 = () => ({ type: "sig", sigId: "SIG01", size: "15", qty: 1 });
+// Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
+const UN_SIGNATURE = unSignature();
+
+const sig15 = () => ({ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 });
 const bebida = (code: string) => ({ type: "side", code, qty: 1 });
 const c = (x: number) => Math.round(x * 100);
 

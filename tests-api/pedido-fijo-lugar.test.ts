@@ -24,6 +24,10 @@ import {
 } from "../supabase/functions/api/franja.ts";
 import { horaLlena, siguienteLibreDelDia } from "../supabase/functions/api/capacidad.ts";
 import { firmaDeItems } from "../supabase/functions/api/actions/customer.ts";
+import { unSignature } from "./carta.ts";
+
+// Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
+const UN_SIGNATURE = unSignature();
 
 const Z = (iso: string) => Date.parse(iso);
 const FIJO = { id: "f1", weekday: 4, slot: "13:30", active: true, skip_on: null };
@@ -134,7 +138,7 @@ Deno.test("la franja sugerida cae en :00 o :30 y dentro del horario de ese día"
 });
 
 Deno.test("el mismo pedido es el mismo aunque cambie el orden o venga en una línea de 2", () => {
-  const sig = { type: "sig", sigId: "SIG01", size: "15", qty: 1 };
+  const sig = { type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 };
   const beb = { type: "side", code: "D07", qty: 1 };
   assertEquals(firmaDeItems([sig, beb]), firmaDeItems([beb, sig]));
   assertEquals(firmaDeItems([{ ...sig, qty: 2 }]), firmaDeItems([sig, sig]));

@@ -281,6 +281,11 @@ de sus combinaciones estaban calibradas contra las que salen.
 
 # v4 — el Turkey sin tocino, y de dónde sale de verdad la plata (2026-09-23)
 
+> ⚠ **CORRECCIÓN DEL DUEÑO, 2026-09-24: NO HAY PLANCHA.** La res del Philly y la cebolla se
+> saltean **en sartén grande, al momento**. Donde este documento dice «a la plancha» (v2, v3 y
+> abajo), léase sartén; nunca se decidió plancha. El rendimiento de 0.70 queda igual de supuesto:
+> se mide en la primera tanda.
+
 **Los números de esta versión ya no se escriben a mano.** Salen de
 `modelo/menu_clasicos_usa.py`, que importa sus constantes de `modelo/rentabilidad_por_parte.py`
 en vez de repetirlas. Se hizo así porque al recostear aparecieron **dos errores de base en las

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp, type Carta } from './helpers';
 
 // INCENTIVO AL ORGANIZADOR (2026-08-22). Quien junta un pedido grupal de 5 o más
 // sándwiches se lleva gratis el 15CM más barato del grupo. Es el motor del canal de
@@ -16,23 +16,25 @@ import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono } fro
 
 const enOchoMinutos = () => new Date(Date.now() + 3600000).toISOString();
 
-// 5 sándwiches: cuatro THE ORIGINAL 15CM (S/20.90) y uno THE TERIYAKI 15CM (S/19.90),
-// que es el más barato y por lo tanto el que debe salir gratis.
-const CINCO_SANDWICHES = [
-  { id: 1, contributorName: 'Ana', label: 'THE ORIGINAL // 15CM', qty: 1, unitPrice: 20.9, isSandwich: true },
-  { id: 2, contributorName: 'Beto', label: 'THE ORIGINAL // 15CM', qty: 1, unitPrice: 20.9, isSandwich: true },
-  { id: 3, contributorName: 'Caro', label: 'THE ORIGINAL // 15CM', qty: 1, unitPrice: 20.9, isSandwich: true },
-  { id: 4, contributorName: 'Dani', label: 'THE ORIGINAL // 15CM', qty: 1, unitPrice: 20.9, isSandwich: true },
-  { id: 5, contributorName: 'Eli', label: 'THE TERIYAKI // 15CM', qty: 1, unitPrice: 19.9, isSandwich: true },
-];
+// Lo que el servidor le muestra al grupo: cinco sándwiches. Las etiquetas y precios de esta
+// lista son solo lo que pinta la pantalla del grupo; lo que se COBRA sale del carrito de abajo.
+const CINCO_SANDWICHES = ['Ana', 'Beto', 'Caro', 'Dani', 'Eli'].map((contributorName, i) => (
+  { id: i + 1, contributorName, label: 'Un Signature // 15CM', qty: 1, unitPrice: 20, isSandwich: true }
+));
 
-const ITEMS_CARRITO = [
-  { type: 'sig', sigId: 'SIG01', size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false },
-  { type: 'sig', sigId: 'SIG01', size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false },
-  { type: 'sig', sigId: 'SIG01', size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false },
-  { type: 'sig', sigId: 'SIG01', size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false },
-  { type: 'sig', sigId: 'SIG06', size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false },
-];
+// El carrito que arma el grupo al cerrarse, con la carta que la app tiene cargada: cuatro del
+// Signature más caro y uno del más barato, que es el que tiene que salir gratis.
+function extremos(c: Carta) {
+  const porPrecio = [...c.signatures].sort((x, y) => c.p15[x]! - c.p15[y]!);
+  return { barato: porPrecio[0]!, caro: porPrecio[porPrecio.length - 1]! };
+}
+const linea = (sigId: string) => ({ type: 'sig', sigId, size: '15', qty: 1, cheese: null, extraSauce: false, doubleProt: false });
+const carritoDelGrupo = (c: Carta) => {
+  const { barato, caro } = extremos(c);
+  return [linea(caro), linea(caro), linea(caro), linea(caro), linea(barato)];
+};
+const soles = (page: any, n: number) =>
+  page.evaluate((x: number) => (window as any).SOLES_TXT + (window as any).pz(x), Math.round(n * 100) / 100);
 
 test('el grupo muestra cuántos sándwiches faltan para que uno vaya gratis', async ({ page }) => {
   // 3 de 5: todavía falta. El aviso es lo que le da al organizador una razón concreta
@@ -40,7 +42,7 @@ test('el grupo muestra cuántos sándwiches faltan para que uno vaya gratis', as
   await mockBackend(page, {
     'get-group-order': {
       code: 'OFI001', status: 'open', organizerName: 'Ana Cliente', expiresAt: enOchoMinutos(),
-      items: CINCO_SANDWICHES.slice(0, 3), total: 62.7, isOrganizer: false,
+      items: CINCO_SANDWICHES.slice(0, 3), total: 60, isOrganizer: false,
       sandwichQty: 3, organizerFreeAt: 5,
     },
   });
@@ -55,7 +57,7 @@ test('al llegar a 5 sándwiches el grupo anuncia que uno va gratis', async ({ pa
   await mockBackend(page, {
     'get-group-order': {
       code: 'OFI001', status: 'open', organizerName: 'Ana Cliente', expiresAt: enOchoMinutos(),
-      items: CINCO_SANDWICHES, total: 103.5, isOrganizer: false,
+      items: CINCO_SANDWICHES, total: 100, isOrganizer: false,
       sandwichQty: 5, organizerFreeAt: 5,
     },
   });
@@ -68,15 +70,16 @@ test('al llegar a 5 sándwiches el grupo anuncia que uno va gratis', async ({ pa
 });
 
 test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más barato', async ({ page }) => {
+  let items: any[] = [];
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
     'create-group-order': { success: true, code: 'OFI001', expiresAt: enOchoMinutos() },
     'get-group-order': {
       code: 'OFI001', status: 'open', organizerName: 'Ana Cliente', expiresAt: enOchoMinutos(),
-      items: CINCO_SANDWICHES, total: 103.5, isOrganizer: true,
+      items: CINCO_SANDWICHES, total: 100, isOrganizer: true,
       sandwichQty: 5, organizerFreeAt: 5,
     },
-    'close-group-order': { success: true, items: ITEMS_CARRITO },
+    'close-group-order': () => ({ success: true, items }),
     'place-order': (body: any) => ({
       success: true,
       order: { id: 'ord-ofi', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total },
@@ -87,6 +90,9 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   // bebidas, así que la promo no aplicaría igual, pero fijar la hora deja el test
   // determinista sin importar cuándo corra.
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
+  const c = await cartaDeLaApp(page);
+  const { barato, caro } = extremos(c);
+  items = carritoDelGrupo(c);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000001', '1234');
@@ -111,13 +117,12 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
-  // 4 × SIG01 (20.90) + 1 × SIG06 (19.90) = S/103.50 de comida.
-  // El 15CM más barato del carrito es SIG06 (19.90) y va gratis → S/83.60.
+  // Cuatro del más caro y uno del más barato: el más barato va gratis.
   // ⚠ SE COMPRUEBA LA CUENTA, NO LA FRASE — ver la nota equivalente en
-  // rewards-redemption.spec.ts. La línea verde "sándwich del organizador: ahorras S/19.90"
+  // rewards-redemption.spec.ts. La línea verde "sándwich del organizador: ahorras …"
   // dejó de existir al pasar el carrito a recibo (2026-09-10); el descuento sigue igual.
   const perdonado = await page.evaluate(() => (window as any).organizerFreeAmount());
-  expect(perdonado, 'el 15CM más barato del grupo (SIG06, S/19.90) tiene que ir gratis').toBeCloseTo(19.9, 2);
+  expect(perdonado, 'el 15CM más barato del grupo tiene que ir gratis').toBeCloseTo(c.p15[barato]!, 2);
   await expect(page.locator('text=/Sándwich del organizador/')).toBeVisible();
 
   await page.locator('#o-nom').fill('Ana Cliente');
@@ -132,10 +137,10 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
 
   const placeOrder = calls.find((c) => c.action === 'place-order');
   expect(placeOrder).toBeTruthy();
-  // 83.60 de comida + delivery de zona 'media' (S/8, sin engordar porque paga con
-  // Yape/Plin) = S/91.60. Si el descuento del organizador no se hubiera aplicado el
-  // total sería S/111.50 y el servidor rechazaría el pedido por no coincidir.
-  expect(placeOrder!.body.total).toBe(91.6);
+  // Los cuatro que se pagan + delivery de zona 'media' (S/8, sin engordar porque paga con
+  // Yape/Plin). Si el descuento del organizador no se hubiera aplicado el total no
+  // coincidiría con el del servidor y el pedido se rechazaría.
+  expect(placeOrder!.body.total).toBe(Math.round((4 * c.p15[caro]! + 8) * 100) / 100);
   // El código del grupo viaja con el pedido: es lo que le permite al servidor verificar
   // el descuento contra la base y, además, medir el canal de oficinas.
   expect(placeOrder!.body.groupCode).toBe('OFI001');
@@ -144,17 +149,20 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
 test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) => {
   // El umbral tiene que morder de verdad: si el descuento se aplicara con 4, el
   // incentivo dejaría de empujar hacia el quinto sándwich, que es todo su propósito.
+  let items: any[] = [];
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
     'create-group-order': { success: true, code: 'OFI002', expiresAt: enOchoMinutos() },
     'get-group-order': {
       code: 'OFI002', status: 'open', organizerName: 'Ana Cliente', expiresAt: enOchoMinutos(),
-      items: CINCO_SANDWICHES.slice(0, 4), total: 83.6, isOrganizer: true,
+      items: CINCO_SANDWICHES.slice(0, 4), total: 80, isOrganizer: true,
       sandwichQty: 4, organizerFreeAt: 5,
     },
-    'close-group-order': { success: true, items: ITEMS_CARRITO.slice(0, 4) },
+    'close-group-order': () => ({ success: true, items }),
   });
   await page.clock.setFixedTime(new Date('2026-01-15T15:00:00Z'));
+  const c = await cartaDeLaApp(page);
+  items = carritoDelGrupo(c).slice(0, 4);
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000001', '1234');
@@ -185,11 +193,9 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
 
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
   await expect(page.locator('text=sándwich del organizador')).not.toBeVisible();
-  // 4 × SIG01 (20.90) = S/83.60 de comida, sin ningún descuento, más S/8 de delivery →
-  // S/91.60. Con el descuento indebido serían S/70.70.
-  // Era S/92.07 hasta el 2026-09-03, cuando el fee iba engordado para tarjeta
-  // (8/(1-0.055)=8.47) porque el método por defecto era la tarjeta. Hoy el default es
-  // Yape/Plin, que no paga comisión (ver tests/yape-por-defecto.spec.ts).
-  await expect(page.locator('text=S/91.60').first()).toBeVisible();
+  // Los cuatro enteros, sin ningún descuento, más S/8 de delivery (sin engordar: el default
+  // es Yape/Plin, que no paga comisión — ver tests/yape-por-defecto.spec.ts).
+  const { caro } = extremos(c);
+  await expect(page.locator(`text=${await soles(page, 4 * c.p15[caro]! + 8)}`).first()).toBeVisible();
   expect(calls.length).toBeGreaterThan(0);
 });

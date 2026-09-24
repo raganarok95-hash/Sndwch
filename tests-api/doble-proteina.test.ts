@@ -17,6 +17,7 @@
 //
 // Correr con: npm run test:api
 import { assertDoubleAllowed, NO_DOUBLE_PROTS, NO_DOUBLE_30_PROTS, PROT_PRICE, dblFee } from "../supabase/functions/api/catalog.ts";
+import { proteinasConDoble } from "./carta.ts";
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
@@ -77,7 +78,7 @@ Deno.test("sin doble pedido, nunca rechaza", () => {
 });
 
 Deno.test("el resto de proteínas admite doble en los dos tamaños", () => {
-  for (const prot of ["P02", "P06", "P08"]) {
+  for (const prot of proteinasConDoble()) {
     for (const size of ["15", "30"]) {
       acepta(() => assertDoubleAllowed(true, prot, size), `${prot} ${size}CM tiene que admitir doble`);
     }

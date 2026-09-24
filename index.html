@@ -489,6 +489,33 @@ body.kb-open #app{padding-bottom:0}
 .mfj .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .mfj .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .mfj button:focus-visible{outline:2px solid #F2F6F8;outline-offset:-4px}
+/* TUS PEDIDOS · LOS SELLOS (maqueta tus-pedidos-los-sellos.png, fuente v2.html #2). */
+.mtp{position:relative;min-height:100dvh;box-sizing:border-box;background:#EFE9DC;color:#2B2A20;padding:0 0 40px;overflow:hidden}
+.mtp em,.mtp s,.mtp n{text-decoration:none;font-style:normal;display:block}
+.mtp .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#fff}
+.mtp .ult{all:unset;cursor:pointer;display:block;position:relative;width:100%;height:282px;overflow:hidden;background:#20261C}
+.mtp .ult img{width:100%;height:100%;object-fit:cover;display:block}
+.mtp .ult .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,12,.4) 0 20%,transparent 44%,rgba(10,16,12,.92))}
+.mtp .ult .tx{position:absolute;left:24px;right:24px;bottom:15px}
+.mtp .ult .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+.mtp .ult .tx b{display:block;font:800 20px/1.15 Archivo,sans-serif;color:#fff;margin-top:7px}
+.mtp .ult .tx s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#C4CBD0;margin-top:6px;text-transform:uppercase}
+.mtp .rep{all:unset;box-sizing:border-box;cursor:pointer;width:100%;height:54px;background:#20261C;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.mtp .rep span{font:700 12px/1 Archivo,sans-serif;letter-spacing:.2em;color:#EFE9DC;text-transform:uppercase}
+.mtp .rep b{font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:13px;color:#CBA258}
+.mtp .cuerpo{padding:26px 24px 0}
+.mtp .cont{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #DCD3BE;padding-bottom:13px}
+.mtp .cont em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8B8270;text-transform:uppercase;padding-bottom:7px}
+.mtp .cont b{font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.82;color:#2B2A20}
+.mtp .sellos{margin-top:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.mtp .se{all:unset;box-sizing:border-box;cursor:pointer;aspect-ratio:1;border:1px solid #CFC5AC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#F7F2E5}
+.mtp .se s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#A79C86}
+.mtp .se n{font:800 13px/1 Archivo,sans-serif;color:#2B2A20}
+.mtp .se.hoy{background:#20261C;border-color:#20261C}
+.mtp .se.hoy s{color:#9AA48E}.mtp .se.hoy n{color:#EFE9DC}
+.mtp .pie{margin:56px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8B8270;line-height:1.85;text-transform:uppercase}
+.mtp button:focus-visible{outline:2px solid #20261C;outline-offset:2px}
+.mtp .ult:focus-visible,.mtp .rep:focus-visible{outline-color:#8CC8EC;outline-offset:-4px}
 /* PEDIDO GRUPAL — docs/maquetas/aprobadas/pedido-grupal.png (k1.html #GR). CSS copiado de la
    fuente; las filas van en flujo porque la gente del grupo puede ser una o doce. */
 .mgr{position:relative;min-height:100dvh;box-sizing:border-box;padding:80px 26px 110px;color:#33230F;background:#C6A579;
@@ -1242,6 +1269,48 @@ body.kb-open #app{padding-bottom:0}
     envioA: (a2) => w3.envioADireccion(a2),
     get diasSemana() {
       return w3.DIAS_SEMANA;
+    },
+    pedidos: {
+      get lista() {
+        return w3.myOrders || [];
+      },
+      get cargando() {
+        return !!w3.listLoading;
+      },
+      /** Pide los pedidos al servidor y vuelve a pintar «Tus pedidos» (loadMyOrders, 06-*). */
+      cargar: () => w3.loadMyOrders(),
+      /** Abre el detalle de un pedido (sOrdDetail, 06-*), con la calificación en blanco. */
+      abrir(id) {
+        w3._sndOd = id;
+        w3.rtStars = 0;
+        w3.rtMsg = "";
+        w3.sndScreen = "p_ord_detail";
+        w3.render();
+      },
+      /** Si una línea de un pedido pasado se puede volver a pedir hoy tal cual (cartItemRepeatable,
+       *  03-*: sigue en la carta, se puede pedir suelta y no es del menú secreto). Si lo es, es una
+       *  línea que el módulo de dinero sabe tasar. */
+      repetible: (it) => w3.cartItemRepeatable(it),
+      estado(st) {
+        const e4 = st ? w3.STATUSES[st] : void 0;
+        return { texto: e4 ? e4.label : st || "", terminado: !!e4 && !e4.next };
+      }
+    },
+    /** Cuántos pedidos pagados lleva el cliente con cuenta (lo lleva la base); null si es invitado. */
+    get pedidosDelCliente() {
+      return w3.cust ? w3.cust.total_orders || 0 : null;
+    },
+    /** «The Chicago 30CM», «The Midnight», «Pollo 15CM»: el nombre de la carta, sin la segunda
+     *  parte («// Italian Beef»). '' si ya no está en la carta. */
+    nombreDeLinea(it) {
+      const cm = it.size === "15" || it.size === "30" ? " " + it.size + "CM" : "";
+      if (it.type === "side") return (w3.SIDES.find((d2) => d2.id === it.code) || { l: "" }).l;
+      if (it.type === "sig") {
+        const s2 = w3.SIGS.find((x2) => x2.id === it.sigId);
+        return s2 ? s2.n + cm : "";
+      }
+      const p2 = w3.PROTS.find((x2) => x2.id === it.prot);
+      return p2 ? p2.l + cm : "";
     }
   };
 
@@ -1250,37 +1319,13 @@ body.kb-open #app{padding-bottom:0}
     return legado.api(accion, { ...entrada, token: legado.token });
   }
 
-  // src/nuevo/pantallas/fijo.ts
-  var estado = { cargando: false, fijos: [], sugerido: null, desdeConfirmados: null, seleccionado: null };
-  var contenedor = null;
-  function cambiar(parcial) {
-    estado = { ...estado, ...parcial };
-    if (contenedor && contenedor.isConnected) D(vista(), contenedor);
-  }
+  // src/nuevo/pantallas/comun.ts
   function diaMinuscula(w4) {
     return (legado.diasSemana[w4] || "").toLowerCase();
   }
   function diasPlural(w4) {
     const d2 = diaMinuscula(w4);
     return /s$/.test(d2) ? d2 : d2 + "s";
-  }
-  function hhmmATexto(hhmm) {
-    const [h2, m2] = String(hhmm || "").split(":").map(Number);
-    if (h2 === void 0 || m2 === void 0 || !Number.isFinite(h2) || !Number.isFinite(m2)) return "";
-    return (h2 % 12 || 12) + (m2 ? ":" + String(m2).padStart(2, "0") : "") + (h2 < 12 ? " a.m." : " p.m.");
-  }
-  function actual() {
-    return estado.fijos.find((f2) => f2.id === estado.seleccionado) || estado.fijos[0] || null;
-  }
-  function direccionDe(f2) {
-    const dirs = legado.direcciones;
-    const suya = f2 && f2.addressId != null ? dirs.find((d2) => d2.id === f2.addressId) : void 0;
-    return suya || dirs.find((d2) => typeof d2.lat === "number" && typeof d2.lon === "number") || null;
-  }
-  function totalDe(precio, f2) {
-    if (precio == null) return null;
-    const envio = legado.envioA(direccionDe(f2));
-    return envio == null ? null : precio + envio;
   }
   function imagenDe(items) {
     for (const it of items) {
@@ -1294,6 +1339,35 @@ body.kb-open #app{padding-bottom:0}
       }
     }
     return "";
+  }
+  function direccionConMapa() {
+    return legado.direcciones.find((d2) => typeof d2.lat === "number" && typeof d2.lon === "number") || null;
+  }
+
+  // src/nuevo/pantallas/fijo.ts
+  var estado = { cargando: false, fijos: [], sugerido: null, desdeConfirmados: null, seleccionado: null };
+  var contenedor = null;
+  function cambiar(parcial) {
+    estado = { ...estado, ...parcial };
+    if (contenedor && contenedor.isConnected) D(vista(), contenedor);
+  }
+  function hhmmATexto(hhmm) {
+    const [h2, m2] = String(hhmm || "").split(":").map(Number);
+    if (h2 === void 0 || m2 === void 0 || !Number.isFinite(h2) || !Number.isFinite(m2)) return "";
+    return (h2 % 12 || 12) + (m2 ? ":" + String(m2).padStart(2, "0") : "") + (h2 < 12 ? " a.m." : " p.m.");
+  }
+  function actual() {
+    return estado.fijos.find((f2) => f2.id === estado.seleccionado) || estado.fijos[0] || null;
+  }
+  function direccionDe(f2) {
+    const dirs = legado.direcciones;
+    const suya = f2 && f2.addressId != null ? dirs.find((d2) => d2.id === f2.addressId) : void 0;
+    return suya || direccionConMapa();
+  }
+  function totalDe(precio, f2) {
+    if (precio == null) return null;
+    const envio = legado.envioA(direccionDe(f2));
+    return envio == null ? null : precio + envio;
   }
   function inicioDeHoraIso(ms) {
     const d2 = new Date(ms);
@@ -1672,8 +1746,10 @@ var PROTS = [
     // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
     // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
     // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
-    { id: 'P01', l: 'Res', s: 'Asado', d: 'Punta de pecho a fuego lento hasta que se deshace sola con el tenedor.', p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14, sigOnly: true },
-    { id: 'P02', l: 'Pollo', s: 'Teriyaki', d: 'Muslo marinado toda la noche en sillao, jengibre y ajo. Se glasea al armar.', p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
+    // P01 (res mechada) y P02 (pollo teriyaki) salieron con la carta v4 (2026-09-24): ya no se
+    // preparan. Se retiraron enteras, como el apio: marcarlas `sigOnly` sin ningún Signature que
+    // las use las dejaba imposibles de pedir y vivas como insumo. Los pedidos viejos conservan
+    // su resumen. P05 sigue, solo para el Italian Hoagie.
     // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
     // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
     // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
@@ -1735,7 +1811,14 @@ var PROTS = [
     // sándwich. 85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51 → 44.7% de costo en los dos
     // tamaños, justo debajo del techo de 45%.
     // DEBE coincidir con PROT_PRICE.P08 en supabase/functions/api/catalog.ts.
-    { id: 'P08', l: 'Pavo', s: 'Horneado', d: 'Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.', p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 }
+    { id: 'P08', l: 'Pavo', s: 'Horneado', d: 'Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.', p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 },
+    // P09 (RES // LAMINADA) entra con la carta v4 (2026-09-24): la res del Philly, laminada en
+    // frío y salteada al momento en sartén grande —no hay plancha— (no el corte exclusivo P07 que se retiró con THE CHICAGO).
+    // Porción 85 g a S/20/kg con rendimiento 0.70 = S/2.43 (supuesto: medirlo en la primera
+    // tanda). El precio es el que deja el armado en el techo de 45%, calculado con
+    // modelo/rentabilidad_por_parte.py como el del pavo: 44.8% en los dos tamaños. El doble
+    // (7 / 13) es el de la v4. DEBE coincidir con PROT_PRICE.P09 en catalog.ts.
+    { id: 'P09', l: 'Res', s: 'Laminada', d: 'Laminada fina y salteada al momento.', p15: 12.9, p30: 22.9, pDbl: 7, pDbl30: 13 }
     // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
     // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
     // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
@@ -1760,7 +1843,7 @@ var TOPS = [
     { id: 'T01', l: 'Tomate', s: 'Fresco', d: 'En rodajas gruesas, cortado el mismo día.' },
     // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
     // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
-    { id: 'T02', l: 'Pepinillo', s: 'Encurtido', d: 'Ácido y crujiente. Le corta la grasa a cada bocado.', sigOnly: true },
+    // T02 (pepinillo) retirado con la carta v4 (2026-09-24): ya ningún Signature lo lleva.
     { id: 'T03', l: 'Cebolla', s: 'Morada juliana', d: 'En pluma fina y cruda. Dulce al entrar, con filo al final.' },
     { id: 'T04', l: 'Jalapeño', s: 'Encurtido', d: 'Picor limpio y corto, del que no tapa lo demás.', vaultOnly: true },
     { id: 'T05', l: 'Aceituna', s: 'Negra en rodajas', d: 'Salada, con un fondo amargo que despierta el resto.' },
@@ -1778,7 +1861,11 @@ var TOPS = [
     // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
     // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
     // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
-    { id: 'T09', l: 'Lechuga', s: 'Fresca', d: 'En tiras y fría. Es lo que hace crujir los bordes.' }
+    { id: 'T09', l: 'Lechuga', s: 'Fresca', d: 'En tiras y fría. Es lo que hace crujir los bordes.' },
+    // T10 entra con el Philly (2026-09-24): cebolla BLANCA salteada, que no es la T03 (morada,
+    // cruda, en juliana). Solo para Signatures, como el pepinillo. DEBE coincidir con
+    // TOP_LABEL/SIG_ONLY_TOPS en catalog.ts.
+    { id: 'T10', l: 'Cebolla', s: 'Salteada', d: 'Blanca, salteada junto con la res.', sigOnly: true }
 ];
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
@@ -1841,198 +1928,33 @@ var SAUCES = [
     // catalog.ts.
 ];
 var SIGS = [
-    // PRECIOS +S/2 en los 5 Signatures del menú de apertura (decisión del dueño,
-    // 2026-08-22, en AMBOS tamaños para no alterar la diferencia p30-p15 de la que depende
-    // R03). Se subió DESPUÉS de recostear todo el menú con la merma de cocción real del
-    // recetario: los cinco ya cumplían el techo de 45% de insumos y esta subida es para
-    // ganar margen, no para tapar un hueco. DEBEN coincidir con SIG_DATA en catalog.ts y
-    // con la tabla catalog_prices, que es la que de verdad cobra.
-    // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
-    // Council): SIG01/02/03/06 p30 y SIG04 p15+p30 estaban EXACTAMENTE igualados al precio
-    // de armar la misma proteína+tamaño por BUILD YOUR OWN (ver itemUnitPrice — BYO cobra
-    // directo prot.p15/p30, sin sumar nada por curaduría) — 0 premio de precio por la
-    // curaduría en 5 de 7 Signatures. +S/2 en esos puntos exactos de paridad (nunca donde ya
-    // había premio, ej. SIG01 p15=18 vs BYO P01 p15=14 se deja igual). DEBE coincidir con
-    // SIG_DATA en supabase/functions/api/catalog.ts.
-    // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
-    // estaba en el signature más barato de los tres comparables (18/22) mientras el más
-    // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
-    // real. THE ORIGINAL pasa a CLÁSICO (encaja mejor: el asado mechado de siempre).
-    // recommended:true en vez de asumir "el primero del array" para el badge Recomendado
-    // del home — antes se calculaba por posición (i===0), frágil si SIGS se reordena de
-    // nuevo (ya pasó una vez esta sesión, al mover el badge chef) — hallazgo de auditoría
-    // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
-    // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
-    // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
+    // LA CARTA v4, LOS CLÁSICOS DE USA (decisión del dueño, 2026-09-24). Reemplaza entera a la de
+    // apertura: salen The Original (SIG01), The Smoke (SIG03) y The Teriyaki (SIG06), que quedan
+    // retirados en `catalog_items` (active=false) con su receta guardada. Costeo, precios y por qué
+    // en docs/MENU_CLASICOS_USA.md (v4) y modelo/menu_clasicos_usa.py; el relato en DECISIONES.
     //
-    // ⚠ LA ESTRELLA SE MOVIÓ A SIG02 EL 2026-09-12, y no por gusto: THE ORIGINAL deja
-    // S/14.70 en 15CM contra los S/17.43 de THE MARINARA (29.7% de costo contra 20.4%).
-    // Recomendar el cuarto de cinco en contribución es regalar S/2.73 cada vez que alguien
-    // hace caso. `recommended` NO vive en `catalog_items` (SIG_CONTENT solo lleva n/s/badge/
-    // pitch/img/active, ver catalog.ts), así que este literal SÍ es la fuente real de la
-    // bandera — es la única del bloque que no se puede mover desde el panel.
-    { id: 'SIG01', n: 'The Original', s: 'Signature', badge: 'Clásico', base: 'B01', prot: 'P01', tops: ['T01', 'T02', 'T03'], sauces: ['S01', 'S04'], p15: 20.9, p30: 26.9,
-        pitch: 'El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola, con pepinillo encurtido que le corta la grasa a cada bocado. Si es tu primera vez acá, empieza por este.' },
-    // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
-    // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
-    // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
-    // como pide el pitch.
-    // Badge cambiado de PREMIUM a ITALIANO (auditoría de naming por sabor 2026-08-07):
-    // "Premium" prometía una experiencia elevada que la proteína real no entrega (carne
-    // molida, el insumo más barato del catálogo por kilo) y contradecía el propio pitch
-    // ("el clásico de toda la vida"). ITALIANO describe el estilo real (marinara +
-    // vinagreta al estilo italiano) sin implicar sobreprecio — mismo patrón descriptivo que
-    // ya usa AHUMADO (SIG03). Explícitamente NO se usa
-    // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
-    // como compañía consolidada, no como negocio local/casero).
-    // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
-    // menú — investigación real de comparables exitosos confirmó que el queso derretido es
-    // estructural en esta categoría de sándwich, no un extra: "melted mozzarella is what
-    // makes a Meatball Sub"). fixedCheese:'C01' (Mozzarella) va siempre en la receta, sin
-    // depender de que el cliente lo pida — DEBE coincidir con SIG_DATA.SIG02 en catalog.ts.
-    // Sin cambio de precio (costo real ~S/0.39-0.77/unidad, el dueño confirmó no subirlo).
-    // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
-    // hecho más auténtico para un meatball sub que uno con hierbas.
-    // chef:true (FAVORITO DEL CHEF) retirado esta sesión (auditoría de menú/copy) — se
-    // había movido acá desde SIG03 por tener mejor margen real (P06, carne molida, cuesta
-    // ~3.8x menos por kilo que P05 sin bajar de precio proporcionalmente), pero el badge
-    // implica un juicio de sabor genuino de una persona real, y el propio código admitía
-    // que la razón era margen, no gusto — mismo riesgo que ya motivó retirar MÁS PEDIDO/
-    // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
-    // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
-    // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-    // Nombre cambiado de "The Meatball" a "The Marinara" 2026-08-08 (decisión del dueño, LLM
-    // Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que la
-    // proteína interna ya muestra en español ("Albóndiga", ver PROTS.P06 arriba), bilingüismo
-    // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
-    // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
-    // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-    { id: 'SIG02', n: 'The Marinara', s: 'Signature', badge: 'Italiano', recommended: true, base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 21.9, p30: 28.9, fixedCheese: 'C01',
+    // SEMILLA: el primer render y el respaldo si la base no responde. La carta real es la de
+    // `catalog_items` y se edita desde el panel. Sin badges (decisión del dueño). Los textos de
+    // Philly y Turkey siguen cómo los describen las cadenas grandes: por ingredientes, sin adorno.
+    //
+    // `recommended` NO vive en `catalog_items`: este literal es la fuente real de la estrella. Va
+    // en el que más deja en soles a 15CM (regla del 2026-09-12, ver SIG_DISPLAY_ORDER en 03-*):
+    // con la v4 es el Philly (S/17.48 contra S/17.43 del Meatball). Lo fija estrella-del-menu.spec.
+    { id: 'SIG09', n: 'Philly Cheesesteak', s: 'Signature', badge: '', recommended: true, base: 'B01', prot: 'P09', tops: ['T10', 'T06'], sauces: [], p15: 22.9, p30: 32.9, fixedCheese: 'C02',
+        pitch: 'Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta.' },
+    { id: 'SIG02', n: 'Meatball Marinara', s: 'Signature', badge: '', base: 'B01', prot: 'P06', tops: ['T01', 'T03', 'T05'], sauces: ['S06'], p15: 21.9, p30: 28.9, fixedCheese: 'C01',
         pitch: 'Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con mozzarella derretida hasta el borde. Se come con las dos manos y con servilleta al lado.' },
-    // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
-    // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
-    // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
-    // p30 subido de 26 a 30 (mismo motivo que P05 arriba) — mantiene el criterio de premio
-    // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-    // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): MÁS PEDIDO
-    // afirmaba un dato de ventas real que no existe — el negocio aún no ha abierto, no hay
-    // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
-    // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
-    // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-    // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02) —
-    // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
-    // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
-    // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
-    { id: 'SIG03', n: 'The Smoke', s: 'Signature', badge: 'Ahumado', base: 'B03', prot: 'P05', tops: ['T03', 'T02', 'T01'], sauces: ['S03'], p15: 23.9, p30: 34.9, fixedCheese: 'C02',
-        pitch: 'El del viernes, cuando el día ya se acabó y te lo estás cobrando. Tres fiambres ahumados puestos en pliegues sobre focaccia, cheddar derretido y una BBQ espesa con miel y pimentón. De los que se quedan contigo.' },
-    // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
-    // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
-    // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
-    // Ahora sí iguala el criterio de premio S/0 a 30CM que ya tienen los demás Signatures.
-    // Badge cambiado de LIGERO a CÍTRICO (auditoría de naming por sabor 2026-08-07):
-    // "Ligero" choca con la proteína real (atún CON MAYONESA + Aioli, otra base cremosa) —
-    // evidencia real de "health halo" muestra que una etiqueta tipo "light" puede bajar la
-    // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
-    // Receta y pitch corregidos otra vez 2026-08-08 (decisión del dueño, LLM Council de
-    // naming/sabor 2026-08-08): el consejo señaló, con 5/5 asesores y 5/5 rondas de
-    // revisión por pares, que el fix de arriba corrigió el badge pero dejó intactos el
-    // nombre del producto y el pitch — "Ligero" seguía escrito en el pitch, prometiendo algo
-    // que el bocado real (dos bases cremosas: mayonesa de P04 + Aioli) no entregaba. En vez
-    // de renombrar el producto, el dueño eligió arreglar la receta: se quita el Aioli
-    // (duplicaba la mayonesa que P04 ya trae) y se agrega un chorrito de limón real —
-    // CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. El limón
-    // es un ingrediente de preparación (se exprime al armar el sándwich), no una salsa
-    // seleccionable — no tiene entrada propia en SAUCES/catalog.ts, solo vive en este pitch
-    // (confirmado con el dueño 2026-08-08, no asumir de nuevo que necesita ser una entidad
-    // de catálogo). "Ligero" se retira del pitch (no es honesto con una base de mayonesa,
-    // sea una o dos).
-    // Pimiento (T06) reemplazado por Apio (T08) 2026-08-08 (decisión del dueño, LLM Council
-    // de menú) — el pimiento curado es tierno, no aporta crocancia real, dejando esta receta
-    // con un solo elemento crocante (Pepinillo) y riesgo real de fatiga de paladar (5/5
-    // asesores lo confirmaron). Apio picado es el ingrediente clásico de ensalada de atún
-    // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
-    // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
-    // de dulzor, no inventar una solución sin pedido explícito.
-    { id: 'SIG04', n: 'The Fresh', s: 'Signature', badge: 'Sin vueltas', base: 'B01', prot: 'P04', tops: [], sauces: [], p15: 20.9, p30: 34.9,
-        // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
-        // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
-        // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
-        // un ítem del catálogo (ver RECETARIO.md).
-        //
-        // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
-        // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
-        // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
-        //
-        // ⚠ Y EL BADGE ES PARTE DE ESE TEXTO — se corrigió recién el 2026-09-12, una semana
-        // después de la receta. Decía 'Cítrico', que era cierto cuando la receta llevaba S11
-        // (dijon y limón) y dejó de serlo el día que salió: quedó un rótulo de sabor prometiendo
-        // un cítrico que el sándwich no tiene, al lado de un pitch que ya decía "Nada más". La
-        // regla de este repo para los números escritos a mano vale igual para los rótulos de
-        // sabor: si la receta se mueve, el badge se revisa en la MISMA operación.
-        // 'Sin vueltas' describe lo único que el producto de verdad es. Reversible desde
-        // Admin // Catálogo en un toque — el badge vive en catalog_items, esto es solo semilla.
+    // Sin tocino (v4) y con Oil & Vinegar: el «Mike's Way» de Jersey Mike's, no aioli.
+    { id: 'SIG10', n: 'Turkey', s: 'Signature', badge: '', base: 'B01', prot: 'P08', tops: ['T09', 'T01', 'T03', 'T06'], sauces: ['S06'], p15: 23.9, p30: 34.9,
+        pitch: 'Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre.' },
+    { id: 'SIG12', n: 'Tuna Melt', s: 'Signature', badge: '', base: 'B01', prot: 'P04', tops: [], sauces: [], p15: 22.9, p30: 36.9, fixedCheese: 'C02',
+        pitch: 'El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo.' },
+    { id: 'SIG11', n: 'Italian Hoagie', s: 'Signature', badge: '', base: 'B01', prot: 'P05', tops: ['T09', 'T01', 'T03', 'T06'], sauces: ['S06'], p15: 23.9, p30: 33.9, fixedCheese: 'C01',
+        pitch: 'Embutidos italianos en pliegues, mozzarella, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre.' },
+    // Atún escurrido, mayonesa y pimienta, nada más: la mayonesa está dentro de P04 y la pimienta
+    // es parte de su preparación (RECETARIO.md), por eso `tops` y `sauces` van vacíos.
+    { id: 'SIG04', n: 'Classic Tuna', s: 'Signature', badge: '', base: 'B01', prot: 'P04', tops: [], sauces: [], p15: 20.9, p30: 34.9,
         pitch: 'Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más.' },
-    // badge:'Asiático' es el permanente (mismo rol que Clásico/Italiano/Ahumado en el resto).
-    //
-    // ⚠ `newUntil` SE RETIRÓ DE ESTE SIGNATURE EL 2026-09-12, y no por incumplir la fecha:
-    // el comentario anterior pedía "AJUSTAR a la fecha real de apertura en cuanto se
-    // confirme" (era 2026-10-31, anclado a un lanzamiento de ~septiembre que ya se movió a
-    // la segunda semana de octubre). Ajustarlo hacia adelante lo habría EMPEORADO.
-    //
-    // El motivo es que `sigBadge()` REEMPLAZA el badge, no lo agrega: mientras `newUntil` no
-    // pase, esta tarjeta dice "Nuevo" EN LUGAR DE "Asiático". Y el día de la apertura el
-    // 100% de la carta es nuevo para el 100% de los clientes, así que "Nuevo" no distingue
-    // nada — mientras que "Asiático" es lo único que le dice a alguien a qué sabe. El badge
-    // costaba información en vez de darla, justo en las semanas que más importan.
-    //
-    // EL MECANISMO SE QUEDA, y está bien construido: expira solo, que era el defecto que
-    // vino a arreglar ('Nuevo' era un string fijo que se habría quedado ahí para siempre).
-    // Sirve el día que entre un Signature de verdad nuevo a una carta que el cliente ya
-    // conoce — que es el único momento en que la palabra significa algo.
-    // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño) — el consejo de
-    // menú había señalado que el pepinillo mitigaba sin querer el riesgo de "doble dulce"
-    // (teriyaki+satay, dos salsas dulces sin nada ácido) documentado por fuentes de chef;
-    // el dueño pidió quitarlo igual. Queda Tomate+Pimiento. El riesgo de doble dulce ya NO
-    // tiene ningún elemento ácido que lo corte — sin resolver, documentado a propósito
-    // (no se agregó ningún reemplazo sin que el dueño lo pidiera). DEBE coincidir con
-    // SIG_DATA.SIG06 en catalog.ts si esa entrada llega a declarar tops explícitos.
-    // Naming ("The Teriyaki" sin salsa Teriyaki Glaze/S08) revisado 2026-08-08 — un council
-    // posterior señaló que el nombre no coincide con ninguna salsa de la receta (usa S10
-    // Peanut Satay + S05 SNDWCH Special). El dueño decidió NO reactivar S08 (agregarla
-    // habría sumado una tercera fuente dulce — "dulce, soja, jengibre" — al doble dulce ya
-    // documentado arriba). El nombre queda igual sin cambiar la receta: "Teriyaki" describe
-    // la proteína (Pollo//Teriyaki, P02, marinado real), no una salsa — el pitch ya lo deja
-    // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
-    // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
-    // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
-    { id: 'SIG06', n: 'The Teriyaki', s: 'Signature', badge: 'Asiático', base: 'B01', prot: 'P02', tops: ['T01', 'T06'], sauces: ['S10', 'S05'], p15: 19.9, p30: 25.9,
-        pitch: 'Para cuando ya te aburriste de lo de siempre. Muslo marinado toda la noche en sillao, jengibre y ajo, glaseado recién al armarlo, con maní tostado y pimiento curado en aceite. Dulce y salado en el mismo bocado.' },
-    // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
-    // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
-    // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
-    // auditoría de producción).
-    // THE CHICAGO (SIG07) se retiró del catálogo de apertura el 2026-08-22 (decisión del
-    // dueño). NO es un problema de producto — su naming por procedencia real era el mejor
-    // resuelto del catálogo y es el único plato que nadie más vende en Trujillo. Es puro
-    // costo de producción para una persona sola cocinando en casa, según el recetario que
-    // se escribió el mismo día (ver RECETARIO.md): 3 días de calendario (marinar → asar →
-    // enfriar toda la noche EN el jus → laminar), su propio corte a S/28-34/kg en tanda
-    // separada que nunca se puede mezclar con el mechado de P01, un margen de cocción de
-    // pocos grados (52-55°C, el único ítem donde equivocarse 5°C arruina la tanda), un
-    // laminado fino que a cuchillo llega a 1.5-2.5 mm cuando la técnica pide 0.5-1 mm de
-    // rebanadora, la giardiniera como ÚNICO topping de producción propia (5 días de
-    // anticipación), y el au jus en envase aparte con riesgo real de derrame en moto.
-    // Con él salen sus tres ingredientes exclusivos: P07, T07 y S13 (ver arriba).
-    // Vuelve cuando haya rodaje y ojalá una rebanadora. Para restaurarlo: reponer las 3
-    // entradas de arriba, esta entrada, SIG_IMG.SIG07, SIG07 en RESERVE_SIGS y en
-    // SIG_HOME_ORDER, y del lado servidor SIG_DATA.SIG07/SIG_LABEL.SIG07/RESERVE_SIGS.
-    // Variante de temporada de apertura (aprobada 2026-08-07, investigación de menú §10.8/
-    // §11.4): S08 (Teriyaki Glaze) y S09 (Chimichurri Piña Asada) eran las únicas 2 salsas
-    // del catálogo sin ninguna receta fija detrás. Reutiliza la proteína más preparada del
-    // negocio (P01, la de THE ORIGINAL) — cero fricción de producción, cero SKU nuevo.
-    // `availableUntil` (distinto de `newUntil`, que solo cambia el badge a "Nuevo" pero
-    // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
-    // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
     // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
     // minOrders (ver sOSig). Bajado 15 → 5 → 3 pedidos (decisiones de negocio; el paso a 3 es
     // del 2026-08-26). Este literal es solo la SEMILLA: el valor real vive en la columna
@@ -2080,7 +2002,9 @@ function sigTypeTag(tag) {
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig03.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG06: 'img/sig06.jpg' };
+// Turkey (SIG10) y Tuna Melt (SIG12) todavía no tienen foto: se pintan sin ella, a la misma
+// altura (ver FUENTES.md, «las dos que faltan»).
+var SIG_IMG = { SIG02: 'img/sig02.jpg', SIG04: 'img/sig04.jpg', SIG05: 'img/sig05.jpg', SIG09: 'img/sig09.jpg', SIG11: 'img/sig11.jpg' };
 // Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -2098,7 +2022,7 @@ var SIG_IMG = { SIG01: 'img/sig01.jpg', SIG02: 'img/sig02.jpg', SIG03: 'img/sig0
 // A 1050 px (4.4x los píxeles de las de 500) en JPEG las seis pesaban 1.3 MB, que es lo que
 // el cliente baja de golpe al abrir esta pantalla porque las seis miniaturas se ven a la
 // vez; en WebP pesan 635 KB sin perder un píxel.
-var PROT_IMG = { P01: 'img/prot_p01.webp', P02: 'img/prot_p02.webp', P04: 'img/prot_p04.webp', P05: 'img/prot_p05.webp', P06: 'img/prot_p06.webp', P08: 'img/prot_p08.webp' };
+var PROT_IMG = { P04: 'img/prot_p04.webp', P05: 'img/prot_p05.webp', P06: 'img/prot_p06.webp', P08: 'img/prot_p08.webp' };
 // Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
 // dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
@@ -3128,7 +3052,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '26cef123e7';
+var APP_BUILD = '632771386b';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4921,15 +4845,16 @@ function confirmRerender() { syncConfirmFields(); render(); }
 // sobre S/23.90. A 15CM porque es el 80% del negocio según la hipótesis del dueño.
 // Números de `modelo/rentabilidad_por_parte.py`, que lee `catalog_prices` y
 // `catalog_items` (la base), nunca los literales del código:
-//   SIG02 Marinara S/17.43 · SIG03 Smoke S/16.14 · SIG04 Fresh S/15.35
-//   SIG01 Original S/14.70 · SIG06 Teriyaki S/14.43
+//   carta v4 (2026-09-24), `deja` a 15CM de modelo/menu_clasicos_usa.py:
+//   SIG09 Philly S/17.48 · SIG02 Meatball S/17.43 · SIG10 Turkey S/17.28
+//   SIG12 Tuna Melt S/16.96 · SIG11 Hoagie S/16.37 · SIG04 Classic Tuna S/15.35
 //
 // NO es menu engineering completo: la matriz de Kasavana & Smith cruza margen con
 // POPULARIDAD, y popularidad todavía no existe — el negocio no ha abierto. Esto ordena por
 // la única de las dos dimensiones que hoy se puede medir, y habrá que rehacerlo con ventas
 // reales. Un Signature que se venda el triple puede merecer la primera fila aunque deje
 // S/1 menos.
-var SIG_DISPLAY_ORDER = ['SIG02', 'SIG03', 'SIG04', 'SIG01', 'SIG06'];
+var SIG_DISPLAY_ORDER = ['SIG09', 'SIG02', 'SIG10', 'SIG12', 'SIG11', 'SIG04'];
 function sigsEnOrden(lista) {
     return lista.slice().sort(function (a, b) {
         var ia = SIG_DISPLAY_ORDER.indexOf(a.id), ib = SIG_DISPLAY_ORDER.indexOf(b.id);

@@ -33,14 +33,6 @@ import { gotoApp } from './helpers';
 // y cambia el día que el dueño mueva un precio desde el panel. Acá solo se fija que los
 // tres mecanismos apunten al MISMO, que es la parte que se rompe sola.
 
-const SIG_ITEMS = [
-  { item_id: 'SIG01', name: 'The Original', active: true },
-  { item_id: 'SIG02', name: 'The Marinara', active: true },
-  { item_id: 'SIG03', name: 'The Smoke', active: true },
-  { item_id: 'SIG04', name: 'The Fresh', active: true },
-  { item_id: 'SIG06', name: 'The Teriyaki', active: true },
-];
-
 test.describe('la estrella del menú', () => {
   test('exactamente UN Signature lleva el sello, y se ve como sello y no como sufijo', async ({ page }) => {
     await gotoApp(page);
@@ -82,7 +74,7 @@ test.describe('la estrella del menú', () => {
   // (tarea #71): esta prueba queda roja hasta entonces, en tests/ROJAS_CONOCIDAS.txt.
   test('el puente desde ARMA EL TUYO ofrece esa MISMA estrella, no otra', async ({ page }) => {
     await gotoApp(page, {
-      'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {}, sigItems: SIG_ITEMS },
+      'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {}, sigItems: {} },
     });
 
     const estrella = await page.evaluate(() => {

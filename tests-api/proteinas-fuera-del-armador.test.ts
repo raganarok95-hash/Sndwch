@@ -1,18 +1,21 @@
-// P01 (Res) y P05 (Embutido) NO se pueden armar en ARMA EL TUYO — pero SÍ siguen vivas en
-// sus Signatures.
+// Lo que NO se puede armar en ARMA EL TUYO, y lo que sí — preguntado al catálogo, nunca con
+// códigos de producto escritos: la carta cambia (la v4 del 2026-09-24 sacó tres proteínas del
+// armador de una vez) y esta prueba tiene que seguir diciendo lo mismo con cualquier carta.
 //
-// POR QUÉ EXISTE ESTE ARCHIVO. El 2026-09-05 las dos salieron del armador por RENTABILIDAD,
-// no por producto: cada una cruzaba el techo de 45% de costo en un tamaño (Res 30CM al 47.6%,
-// Embutido 15CM al 45.7%) y eran las dos únicas del armador que lo hacían. En receta cerrada
-// rinden bien; lo que no estaba costeado es el armador de elección libre, donde el cliente
-// combina el tamaño caro con el pan caro y nadie calculó esa combinación.
+// Una proteína queda fuera del armador marcándola en `SIG_ONLY_PROTS`, no borrándola: puede
+// seguir viva en un Signature, y los pedidos viejos conservan su nombre.
 //
 // SU MODO DE FALLO ES SILENCIO, en las DOS direcciones:
-//   · Si alguien vacía `SIG_ONLY_PROTS`, las dos vuelven al armador, nada revienta, los tipos
-//     siguen compilando, y el negocio simplemente vuelve a vender por debajo del techo.
-//   · Si alguien las BORRA del catálogo en vez de marcarlas, THE ORIGINAL y THE SMOKE se
-//     quedan sin proteína — y eso sí rompe, pero recién en producción.
-// Por eso las dos aserciones son opuestas: no se puede en BYO, sí se puede en el Signature.
+//   · Si alguien vacía `SIG_ONLY_PROTS`, vuelven al armador proteínas que ya no se preparan o
+//     que pasan el techo de costo: nada revienta hasta que el pedido llega a la cocina.
+//   · Si alguien las BORRA del catálogo en vez de marcarlas, el Signature que las usa se queda
+//     sin proteína — y eso rompe recién en producción.
+// Por eso las aserciones son opuestas: no se puede en BYO, sí se puede en su Signature.
+//
+// ⚠ Lo que esta prueba NO puede ver: que alguien VACÍE `SIG_ONLY_PROTS`. Pregunta a esa misma
+// lista qué revisar, así que vacía no revisa nada y pasa. Eso lo caza `npm run parity`, que la
+// compara contra la marca `sigOnly` de PROTS en el cliente, una copia independiente (probado
+// el 2026-09-24 vaciándola).
 //
 // jsr.io está bloqueado por el proxy, así que el assert va acá adentro (ver CLAUDE.md).
 function assertEquals<T>(actual: T, expected: T, msg?: string): void {
@@ -23,13 +26,14 @@ function assertEquals<T>(actual: T, expected: T, msg?: string): void {
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
-import { priceCartItem, SIG_ONLY_PROTS, PROT_PRICE } from "../supabase/functions/api/catalog.ts";
+import { priceCartItem, PROT_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
+import { proteinasDelArmador, proteinasSoloDeSignature, signaturesRetirados, signaturesVigentes, unaSalsaDelArmador } from "./carta.ts";
 
 const armar = (prot: string, size: "15" | "30") =>
-  priceCartItem({ type: "byo", base: "B01", prot, tops: [], sauces: ["S01"], size, qty: 1 });
+  priceCartItem({ type: "byo", base: "B01", prot, tops: [], sauces: [unaSalsaDelArmador()], size, qty: 1 });
 
-Deno.test("res y embutido no se pueden armar en ARMA EL TUYO", () => {
-  for (const prot of ["P01", "P05"]) {
+Deno.test("ninguna proteína marcada como exclusiva de Signature se puede armar", () => {
+  for (const prot of proteinasSoloDeSignature()) {
     for (const size of ["15", "30"] as const) {
       let tiro = false;
       try {
@@ -42,39 +46,46 @@ Deno.test("res y embutido no se pueden armar en ARMA EL TUYO", () => {
   }
 });
 
-Deno.test("las proteínas que SÍ quedan en el armador siguen funcionando", () => {
-  // El riesgo del cambio de al lado es pasarse de largo y dejar el armador vacío.
-  for (const prot of ["P02", "P04", "P06"]) {
-    const r = armar(prot, "15");
-    assert(r.unitPrice > 0, `${prot} dejó de poder armarse`);
+Deno.test("las proteínas del armador se pueden armar en los dos tamaños", () => {
+  for (const prot of proteinasDelArmador()) {
+    for (const size of ["15", "30"] as const) {
+      assert(armar(prot, size).unitPrice > 0, `${prot} ${size}CM dejó de poder armarse`);
+    }
   }
 });
 
-Deno.test("res y embutido NO se borraron del catálogo: sus Signatures las necesitan", () => {
-  // THE ORIGINAL (SIG01) lleva P01 y THE SMOKE (SIG03) lleva P05. Marcarlas es lo correcto;
-  // borrarlas dejaría a esos dos Signatures sin proteína.
-  for (const prot of ["P01", "P05"]) {
+Deno.test("la exclusiva que usa un Signature vigente se puede pedir dentro de él", () => {
+  // Es todo el sentido de `sigOnly`: si esto falla, ese Signature no se puede pedir.
+  for (const prot of proteinasSoloDeSignature()) {
+    for (const sigId of signaturesVigentes().filter((id) => SIG_DATA[id]!.prot === prot)) {
+      const r = priceCartItem({ type: "sig", sigId, size: "15", qty: 1 });
+      assert(r.unitPrice > 0, `${sigId} (con ${prot}) dejó de poder pedirse`);
+    }
+  }
+});
+
+Deno.test("una exclusiva sigue en el catálogo: se marca, no se borra", () => {
+  for (const prot of proteinasSoloDeSignature()) {
     assert(PROT_PRICE[prot] !== undefined, `${prot} desapareció del catálogo`);
-    assert(SIG_ONLY_PROTS.has(prot), `${prot} dejó de estar marcada como exclusiva de Signature`);
   }
 });
 
-Deno.test("un Signature sí puede usarlas", () => {
-  // La misma proteína que el armador rechaza tiene que seguir tasándose dentro de su receta,
-  // que es todo el sentido de `sigOnly` — si esto falla, THE ORIGINAL no se puede pedir.
-  const sig = priceCartItem({ type: "sig", sigId: "SIG01", size: "15", qty: 1 });
-  assert(sig.unitPrice > 0, "THE ORIGINAL dejó de poder pedirse");
-  const smoke = priceCartItem({ type: "sig", sigId: "SIG03", size: "15", qty: 1 });
-  assert(smoke.unitPrice > 0, "THE SMOKE dejó de poder pedirse");
+Deno.test("un Signature retirado ya no se puede pedir", () => {
+  // Sigue en SIG_DATA para que un pedido viejo conserve su nombre; pedirlo tiene que fallar con
+  // el motivo claro, no cobrarse con una receta que la cocina ya no prepara.
+  for (const sigId of signaturesRetirados()) {
+    let motivo = "";
+    try {
+      priceCartItem({ type: "sig", sigId, size: "15", qty: 1 });
+    } catch (e) {
+      motivo = (e as Error).message;
+    }
+    assertEquals(motivo, "Ese Signature ya no está disponible.", `${sigId} todavía se puede pedir`);
+  }
 });
 
 Deno.test("el armador no se quedó demasiado corto", () => {
-  // Con P01 y P05 fuera y P03 exclusiva del menú secreto, ARMA EL TUYO baja a TRES proteínas.
-  // Tres ya es poco para una sección cuyo argumento entero es que el cliente elige; menos de
-  // tres deja de ser un armador. Esta prueba es el piso, no una meta.
-  const armables = Object.keys(PROT_PRICE).filter((p) => !SIG_ONLY_PROTS.has(p));
-  assert(
-    armables.length >= 4,
-    `solo quedan ${armables.length} proteínas en el catálogo sin marcar (incluida la del menú secreto)`,
-  );
+  // Es el argumento entero de la sección: el cliente elige. Menos de cuatro deja de serlo.
+  // Esta prueba es el piso, no una meta.
+  assert(proteinasDelArmador().length >= 4, `solo quedan ${proteinasDelArmador().length} proteínas en el armador`);
 });

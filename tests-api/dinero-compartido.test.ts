@@ -14,19 +14,25 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { deriveCart, preciosVigentes, PROT_PRICE } from "../supabase/functions/api/catalog.ts";
 import { REGLAS, resolverCarrito, type LineaDelCarrito } from "../supabase/functions/_shared/dinero.ts";
+import { unaProteinaDelArmador, unaSalsaDelArmador, unSignature } from "./carta.ts";
+
+// Productos de la carta, no escritos (ver carta.ts).
+const UN_SIGNATURE = unSignature();
+const UNA_PROTEINA = unaProteinaDelArmador();
+const UNA_SALSA = unaSalsaDelArmador();
 
 const byo = (base: string, size: "15" | "30", extra: Record<string, unknown> = {}) =>
-  ({ type: "byo", base, prot: "P02", tops: [], cheese: null, sauces: ["S01"], size, qty: 1, ...extra }) as LineaDelCarrito;
+  ({ type: "byo", base, prot: UNA_PROTEINA, tops: [], cheese: null, sauces: [UNA_SALSA], size, qty: 1, ...extra }) as LineaDelCarrito;
 const cobra = (items: LineaDelCarrito[], r: string | null = null, org = false) => deriveCart(items, r, null, org).expectedTotal;
-const P02 = PROT_PRICE.P02;
+const PROT = PROT_PRICE[UNA_PROTEINA]!;
 
 Deno.test("focaccia 15CM con «15CM gratis» (R06): el pan va dentro de lo que se regala", () => {
   assertEquals(cobra([byo("B03", "15")], "R06"), 0);
 });
 
 Deno.test("focaccia 15CM con «sube a 30CM» (R03): se perdona también el salto del pan, hasta el tope", () => {
-  const salto = (P02.p30 + REGLAS.recargoPan.B03.p30) - (P02.p15 + REGLAS.recargoPan.B03.p15);
-  const esperado = Math.round((P02.p15 + REGLAS.recargoPan.B03.p15 - Math.min(salto, REGLAS.topeR03)) * 100) / 100;
+  const salto = (PROT.p30 + REGLAS.recargoPan.B03.p30) - (PROT.p15 + REGLAS.recargoPan.B03.p15);
+  const esperado = Math.round((PROT.p15 + REGLAS.recargoPan.B03.p15 - Math.min(salto, REGLAS.topeR03)) * 100) / 100;
   assertEquals(cobra([byo("B03", "15")], "R03"), esperado);
 });
 
@@ -34,7 +40,7 @@ Deno.test("el organizador se lleva el 15CM más barato, con su pan, desde el umb
   const n = REGLAS.organizadorDesde;
   const items = [byo("B03", "15"), { ...byo("B01", "30"), qty: n - 1 } as LineaDelCarrito];
   const sin = cobra(items, null, false);
-  assertEquals(Math.round((sin - cobra(items, null, true)) * 100), Math.round((P02.p15 + REGLAS.recargoPan.B03.p15) * 100));
+  assertEquals(Math.round((sin - cobra(items, null, true)) * 100), Math.round((PROT.p15 + REGLAS.recargoPan.B03.p15) * 100));
   const menos = [byo("B03", "15"), { ...byo("B01", "30"), qty: n - 2 } as LineaDelCarrito];
   assertEquals(cobra(menos, null, true), cobra(menos, null, false), "por debajo del umbral no regala nada");
 });
@@ -49,7 +55,7 @@ Deno.test("el combo descuenta por PAR, y la bebida que regala R05 no arma par", 
 });
 
 Deno.test("todo en céntimos: tres iguales no dan decimales infinitos", () => {
-  const t = cobra([{ type: "sig", sigId: "SIG01", size: "15", qty: 3 } as LineaDelCarrito]);
+  const t = cobra([{ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 3 } as LineaDelCarrito]);
   assertEquals(Math.round(t * 100) / 100, t);
 });
 

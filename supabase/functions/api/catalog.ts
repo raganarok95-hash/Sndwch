@@ -94,7 +94,9 @@ export const VALID_BASES = new Set(["B01", "B03"]);
 // de Subway). Era el único ingrediente de su set estándar que no existía en el catálogo, y
 // además el de MAYOR volumen (21 g en el 6-inch) y el más barato por gramo — o sea lo que
 // más hace que un sándwich se vea lleno, por lo que menos cuesta. Ver CAMINO_MENU.md §1.
-export const VALID_TOPS = new Set(["T01", "T02", "T03", "T04", "T05", "T06", "T09"]);
+// T10 (cebolla blanca salteada) entra con el Philly, carta v4 2026-09-24: solo Signatures.
+// T02 (pepinillo) retirado con la carta v4: ya ningún Signature lo lleva.
+export const VALID_TOPS = new Set(["T01", "T03", "T04", "T05", "T06", "T09", "T10"]);
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
@@ -183,8 +185,8 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // ticket alto, en un negocio que aún no abre, cuesta más de lo que el techo vale.
 // ⚠ Un cambio de precio NO está terminado hasta que `catalog_prices` lo refleje.
 export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number; pDbl30: number }> = {
-  P01: { p15: 14.9, p30: 24.9, pDbl: 7, pDbl30: 14 },
-  P02: { p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
+  // P01 (res mechada) y P02 (pollo teriyaki) retiradas con la carta v4 (2026-09-24): ya no se
+  // preparan. Los pedidos viejos conservan su resumen (statUnitPrice/statItemLabel toleran el id).
   // P03 sube igual que los demás por coherencia de la tabla, aunque no tiene efecto público:
   // es vaultOnly, así que no se puede pedir por ARMA EL TUYO.
   P03: { p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
@@ -218,6 +220,12 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
   // que es el defecto que ya obligó a partir `pDbl` en dos y a corregir P06.
   // DEBE coincidir con PROTS.P08 en src/app/01-*.
   P08: { p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 },
+  // P09 (RES // LAMINADA) entra con la carta v4 (2026-09-24): la res del Philly, laminada en
+  // frío y salteada al momento en sartén grande (no hay plancha). Porción 85 g a S/20/kg con rendimiento 0.70 = S/2.43 (el
+  // rendimiento es supuesto: medirlo en la primera tanda). p15/p30 dejan el armado en el techo
+  // de 45%, calculados con modelo/rentabilidad_por_parte.py igual que el pavo (44.8% en los dos
+  // tamaños); el doble es el de la v4. DEBE coincidir con PROTS.P09 en src/app/01-*.
+  P09: { p15: 12.9, p30: 22.9, pDbl: 7, pDbl30: 13 },
   // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
   // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
 };
@@ -307,7 +315,7 @@ export const SIG_ONLY_SAUCES = new Set<string>([]);
 // T08 (Apio) salió del Set el 2026-09-12 junto con su retiro del catálogo: estaba acá
 // porque THE FRESH lo llevaba, y esa receta cambió el 2026-09-05. Un id en SIG_ONLY_TOPS
 // que ningún Signature usa no restringe nada — solo lo vuelve imposible de pedir.
-export const SIG_ONLY_TOPS = new Set<string>(["T02"]);
+export const SIG_ONLY_TOPS = new Set<string>(["T10"]);
 // P01 (Res) y P05 (Embutido) salen de ARMA EL TUYO el 2026-09-05 (decisión del dueño), por
 // RENTABILIDAD y no por producto. Cada una se pasaba del techo de 45% de costo en un tamaño:
 //   · Res 30CM ....... 47.6%  (el 15CM estaba en 44.2%)
@@ -324,7 +332,8 @@ export const SIG_ONLY_TOPS = new Set<string>(["T02"]);
 // secreto. Tres es poco para una sección cuyo argumento entero es que tú eliges — si vuelve
 // a haber margen (proveedor más barato, o subir el precio), lo primero que hay que revisar
 // es devolver P01 acá.
-export const SIG_ONLY_PROTS = new Set<string>(["P01", "P05"]);
+// Carta v4 (2026-09-24): P05 queda solo para el Italian Hoagie. P01 y P02 se retiraron enteras.
+export const SIG_ONLY_PROTS = new Set<string>(["P05"]);
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05, el menú secreto, S/24.90) muy por encima del
@@ -347,77 +356,34 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
 // Estos literales son SEMILLA: valen para el primer arranque de cada instancia y como
 // respaldo si la base no responde. Nunca edites acá para cambiar el menú — eso se hace
 // desde Admin // Catálogo // Signatures.
+// Carta v4 (2026-09-24): los seis clásicos de USA. The Original, The Smoke y The Teriyaki salieron:
+// su fila vive en `catalog_items` con active=false (loadCatalogItems la carga y priceSigBuild
+// rechaza pedirlos). Sin badges (decisión del dueño).
 export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = {
-  SIG01: { n: "The Original", s: "Signature", badge: "Clásico", pitch: "", img: "img/sig01.jpg", active: true },
-  SIG02: { n: "The Marinara", s: "Signature", badge: "Italiano", pitch: "", img: "img/sig02.jpg", active: true },
-  SIG03: { n: "The Smoke", s: "Signature", badge: "Ahumado", pitch: "", img: "img/sig03.jpg", active: true },
-  SIG04: { n: "The Fresh", s: "Signature", badge: "Sin vueltas", pitch: "", img: "img/sig04.jpg", active: true },
-  SIG06: { n: "The Teriyaki", s: "Signature", badge: "Asiático", pitch: "", img: "img/sig06.jpg", active: true },
+  SIG02: { n: "Meatball Marinara", s: "Signature", badge: "", pitch: "", img: "img/sig02.jpg", active: true },
+  SIG04: { n: "Classic Tuna", s: "Signature", badge: "", pitch: "", img: "img/sig04.jpg", active: true },
+  SIG09: { n: "Philly Cheesesteak", s: "Signature", badge: "", pitch: "", img: "img/sig09.jpg", active: true },
+  SIG10: { n: "Turkey", s: "Signature", badge: "", pitch: "", img: null, active: true },
+  SIG11: { n: "Italian Hoagie", s: "Signature", badge: "", pitch: "", img: "img/sig11.jpg", active: true },
+  SIG12: { n: "Tuna Melt", s: "Signature", badge: "", pitch: "", img: null, active: true },
 };
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
-  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
-  // Council): revierte el criterio anterior de "premio S/0 a 30CM frente a BUILD YOUR
-  // OWN" documentado en los comentarios de abajo — SIG01/02/03/06 p30 y SIG04 p15+p30
-  // quedaban EXACTAMENTE igualados al precio de armar la misma proteína+tamaño por BYO
-  // (priceByoBuild cobra directo PROT_PRICE[prot].p15/p30, sin sumar nada por curaduría).
-  // +S/2 solo en los puntos exactos de paridad — DEBE coincidir con SIGS en src/app.ts.
-  SIG01: { base: "B01", prot: "P01", tops: ["T01", "T02", "T03"], sauces: ["S01", "S04"], p15: 20.9, p30: 26.9 },
-  // RANCH (antes S07) ya no existe en el catálogo — esta receta ya venía sin ella (ver
-  // mismo cambio en src/app.ts, DEBE coincidir).
-  // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
-  // menú — investigación real confirmó que el queso derretido es un componente
-  // estructural del plato en sus comparables exitosos, "melted mozzarella is what makes
-  // a Meatball Sub", no un extra). fixedCheese:'C01' (Mozzarella, ver VALID_CHEESE arriba)
-  // se agrega siempre a ingredientsPerUnit en priceSigBuild, sin depender de que el
-  // cliente lo pida. Sin cambio de precio (costo real ~S/0.39-0.77/unidad, confirmado por
-  // el dueño que no amerita subir S/19/26). base movida de B02 (retirado) a B01 — DEBE
-  // coincidir con SIGS en src/app.ts.
+  // CARTA v4, LOS CLÁSICOS DE USA (2026-09-24) — ver docs/MENU_CLASICOS_USA.md y DECISIONES.
+  // SEMILLA: la fuente real es `catalog_items`. La historia de las recetas anteriores (The
+  // Original, The Smoke, The Teriyaki, The Chicago) quedó en git y en docs/DECISIONES.md.
+  // DEBEN coincidir con SIGS en src/app/01-* (lo vigila `npm run parity`).
+  //
+  // Queso fijo (`fixedCheese`) = parte de la receta: priceSigBuild lo suma siempre a los
+  // ingredientes, lo pida o no el cliente. Por ahora cheddar (C02) y mozzarella (C01); el
+  // provolone reemplazará al edam cuando se cotice (dueño, 2026-09-24).
+  SIG09: { base: "B01", prot: "P09", tops: ["T10", "T06"], sauces: [], p15: 22.9, p30: 32.9, fixedCheese: "C02" },
   SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 21.9, p30: 28.9, fixedCheese: "C01" },
-  // TERIYAKI (S08) retirada esta sesión — perfil asiático ajeno a "fiambres italianos"
-  // (ver mismo cambio en src/app.ts, DEBE coincidir).
-  // p30 subido de 26 a 30 (mismo motivo que P05 en PROT_PRICE arriba: el embutido
-  // italiano cuesta casi el doble por kilo que pollo/res, duplicar su porción a 30CM
-  // costaba más de lo que el precio fijo anterior cubría) — mantiene el criterio de
-  // premio S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02 arriba) —
-  // fixedCheese:'C02' (Cheddar), comparable exitoso investigado (Firehouse "Smokehouse
-  // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
-  // categoría. Sin cambio de precio.
-  SIG03: { base: "B03", prot: "P05", tops: ["T03", "T02", "T01"], sauces: ["S03"], p15: 23.9, p30: 34.9, fixedCheese: "C02" },
-  // p30 subido de 22 a 25 (mismo motivo — atún cuesta casi el doble por kilo que pollo,
-  // ver PROT_PRICE.P04) — mantiene el criterio de premio S/0 a 30CM ya aceptado para
-  // THE ORIGINAL/THE MARINARA/THE SMOKE.
-  // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
-  // subió su p30 de 25 a 30; DEBE coincidir con SIGS.SIG04 en src/app.ts.
-  // Receta corregida 2026-08-08 (decisión del dueño, LLM Council de naming/sabor): se
-  // quita el Aioli (S01, segunda base cremosa que duplicaba la mayonesa ya incluida en
-  // P04 "Atún premium con mayonesa clásica") y se agrega un chorrito de limón real — el
-  // badge CÍTRICO ahora se sostiene con un ingrediente cítrico directo en vez de depender
-  // del limón que llevaba el Aioli. El limón es un ingrediente de preparación, no una
-  // salsa seleccionable — no tiene entrada en VALID_SAUCES/SIG_ONLY_SAUCES arriba, solo
-  // vive en el pitch de SIGS.SIG04 en src/app.ts (confirmado con el dueño 2026-08-08).
-  // Mantiene la mostaza Dijon (S11). Pimiento (T06) reemplazado por Apio (T08) 2026-08-08
-  // (decisión del dueño, LLM Council de menú) — el pimiento curado no aportaba crocancia
-  // real, dejando la receta con un solo elemento crocante. DEBE coincidir con SIGS.SIG04
-  // en src/app.ts.
-  // T08 (Apio) sale de la receta el 2026-09-05 (decisión del dueño). Semilla alineada con
-  // catalog_items, que es la fuente vigente — ver 20260905183956_the_fresh_sin_apio.sql.
+  SIG10: { base: "B01", prot: "P08", tops: ["T09", "T01", "T03", "T06"], sauces: ["S06"], p15: 23.9, p30: 34.9 },
+  SIG12: { base: "B01", prot: "P04", tops: [], sauces: [], p15: 22.9, p30: 36.9, fixedCheese: "C02" },
+  SIG11: { base: "B01", prot: "P05", tops: ["T09", "T01", "T03", "T06"], sauces: ["S06"], p15: 23.9, p30: 33.9, fixedCheese: "C01" },
+  // Atún escurrido, mayonesa y pimienta: la mayonesa está dentro de P04 y la pimienta es parte
+  // de su preparación (RECETARIO.md), por eso `tops` y `sauces` van vacíos.
   SIG04: { base: "B01", prot: "P04", tops: [], sauces: [], p15: 20.9, p30: 34.9 },
-  // p30 bajado de 22 a 21 (decisión del dueño) — quedaba S/1 por encima de armarlo en
-  // BUILD YOUR OWN (P02 cuesta S/21 a 30CM), rompiendo por poco el criterio de premio
-  // S/0 a 30CM ya aplicado a THE ORIGINAL/THE MARINARA/THE SMOKE/THE FRESH.
-  // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño, mismo cambio que
-  // SIGS.SIG06 en src/app.ts) — queda Tomate+Pimiento. El riesgo de "doble dulce"
-  // (teriyaki+satay) que el pepinillo mitigaba sin querer queda sin cortar, documentado
-  // a propósito, sin reemplazo agregado sin pedido explícito del dueño.
-  SIG06: { base: "B01", prot: "P02", tops: ["T01", "T06"], sauces: ["S10", "S05"], p15: 19.9, p30: 25.9 },
-  // SIG07 (THE CHICAGO) retirado del catálogo de apertura el 2026-08-22 por costo de
-  // producción, no por el producto — ver el comentario completo en SIGS de src/app.ts.
-  // Para restaurarlo:
-  //   SIG07: { base: "B01", prot: "P07", tops: ["T07"], sauces: ["S13"], p15: 22, p30: 29.9 },
-  // más P07 en PROT_PRICE/PROT_LABEL/SIG_ONLY_PROTS, T07 en VALID_TOPS/TOP_LABEL/
-  // SIG_ONLY_TOPS, S13 en VALID_SAUCES/SAUCE_LABEL/SIG_ONLY_SAUCES, SIG_LABEL.SIG07 y
-  // SIG07 en RESERVE_SIGS.
   // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
   // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
   // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
@@ -518,12 +484,13 @@ export const SIDE_LABEL: Record<string, string> = {
 // igual en español e inglés (la salsa italiana), evita la traducción duplicada y sigue
 // encajando con el badge "Italiano". DEBE coincidir con SIGS.SIG02 en src/app.ts.
 export const SIG_LABEL: Record<string, string> = {
-  SIG01: "THE ORIGINAL // SIGNATURE",
-  SIG02: "THE MARINARA // SIGNATURE",
-  SIG03: "THE SMOKE // SIGNATURE",
-  SIG04: "THE FRESH // SIGNATURE",
+  SIG02: "MEATBALL MARINARA // SIGNATURE",
+  SIG04: "CLASSIC TUNA // SIGNATURE",
+  SIG09: "PHILLY CHEESESTEAK // SIGNATURE",
+  SIG10: "TURKEY // SIGNATURE",
+  SIG11: "ITALIAN HOAGIE // SIGNATURE",
+  SIG12: "TUNA MELT // SIGNATURE",
   SIG05: "MENÚ SECRETO // RESERVE",
-  SIG06: "THE TERIYAKI // SIGNATURE",
 };
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
@@ -678,12 +645,12 @@ export const BASE_LABEL: Record<string, string> = {
 };
 export const TOP_LABEL: Record<string, string> = {
   T01: "Tomate // Fresco",
-  T02: "Pepinillo // Encurtido",
   T03: "Cebolla // Morada juliana",
   T04: "Jalapeño // Encurtido",
   T05: "Aceituna // Negra en rodajas",
   T06: "Pimiento // Curado",
   T09: "Lechuga // Fresca",
+  T10: "Cebolla // Salteada",
 };
 export const SAUCE_LABEL: Record<string, string> = {
   S01: "Aioli // Signature",
@@ -700,8 +667,6 @@ export const SAUCE_LABEL: Record<string, string> = {
 };
 
 export const PROT_LABEL: Record<string, string> = {
-  P01: "RES // ASADO",
-  P02: "POLLO // TERIYAKI",
   P03: "POLLO // CAJUN",
   P04: "ATÚN // HOUSE",
   P05: "EMBUTIDO // ITALIANO",
@@ -713,6 +678,7 @@ export const PROT_LABEL: Record<string, string> = {
   // (Res/Pollo/Atún/Embutido/Albóndiga) y mezclar idiomas en la misma lista es el defecto que
   // obligó a renombrar MEATBALL. DEBE coincidir con PROTS.P08 en src/app/01-*.
   P08: "PAVO // HORNEADO",
+  P09: "RES // LAMINADA",
 };
 
 // priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo

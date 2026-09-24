@@ -17,11 +17,18 @@ try {
   for (const [id, x] of Object.entries(cat.sigItems || {})) sig[id] = { prot: x.prot, p15: x.p15, p30: x.p30, salsas: (x.sauces || []).length };
   for (const [id, x] of Object.entries(cat.sigs || {})) if (sig[id]) Object.assign(sig[id], { p15: x.p15, p30: x.p30 });
   const precios = { prot: cat.proteins, sig, bebida: cat.sides };
+  // Lo que cada flujo necesita de la carta, sacado de la carta que sirve el propio servidor:
+  // ningún flujo nombra un producto, porque la carta cambia (la v4 del 2026-09-24 retiró tres
+  // Signatures de una vez). `signature(i)` da uno vigente distinto por flujo cuando hay varios.
+  const vigentes = Object.entries(cat.sigItems || {}).filter(([, x]) => x.active !== false).map(([id]) => id);
+  const bebidas = Object.keys(cat.sides || {}).sort();
+  if (!vigentes.length || !bebidas.length) throw new Error('get-catalog no trae Signatures vigentes o bebidas: los flujos no pueden armarse');
+  const carta = { signature: (i = 0) => vigentes[i % vigentes.length], bebida: (i = 0) => bebidas[i % bebidas.length] };
   for (const [nombre, flujo] of Object.entries(FLUJOS)) {
     if (soloEste && !nombre.includes(soloEste)) continue;
     corridos++;
     try {
-      await flujo(s, precios);
+      await flujo(s, precios, carta);
       console.log('  ✓ ' + nombre);
     } catch (e) {
       console.log('  ✗ ' + nombre + '\n      ' + e.message);

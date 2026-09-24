@@ -141,13 +141,17 @@ PROTEINA_KG = {
 # la primera tanda — con 0.55 en vez de 0.70 el Philly 15CM pasa de 23.6% a 27.9% de costo.
 RES_LAMINADA_KG = (Insumo(20.00, KG, COTIZADO, "res ~S/20/kg, laminada en frío", "2026-08-01"),
                    0.70)
+# Carta v4 (2026-09-24): la res laminada ES una proteína del catálogo (P09, Philly y armador).
+PROTEINA_KG["P09"] = RES_LAMINADA_KG
 
 # Lo que el modelo usa HOY, escrito a mano en su día. `check:costos` lo compara contra la
 # derivación de arriba; las cuatro que no reconcilian salen nombradas en su salida.
 PORCION_EN_USO = {
     "P01": (3.15, 6.30), "P02": (2.47, 4.95), "P03": (2.49, 4.97), "P04": (3.25, 6.50),
-    "P05": (4.29, 8.59), "P06": (1.34, 2.68), "P08": (3.76, 7.51),
+    "P05": (4.29, 8.59), "P06": (1.34, 2.68), "P08": (3.76, 7.51), "P09": (2.43, 4.86),
 }
+# P01 y P02 salieron de la carta con la v4 (2026-09-24). Siguen acá porque el modelo todavía
+# costea la carta de apertura para compararla (SIG_APERTURA en rentabilidad_por_parte.py).
 # El atún no es proteína pura: la porción son 68 g de atún + 17 g de mayonesa.
 EXTRA_PORCION = {"P04": (0.26, 0.52)}   # mayonesa, [ESTIMADO] ~S/15/kg
 

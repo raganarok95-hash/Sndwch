@@ -17,13 +17,17 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { filaDelPedido, movimientoDeLaCuenta, pointsFor } from "../supabase/functions/api/actions/orders.ts";
 import { REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "../supabase/functions/api/env.ts";
+import { unSignature } from "./carta.ts";
+
+// Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
+const UN_SIGNATURE = unSignature();
 
 const SQL = Deno.readTextFileSync(new URL("../supabase/migrations/20260924173551_crear_pedido_transaccional.sql", import.meta.url));
 
 const P = {
   ref: "R1", phone: "999", contactPhone: "999", name: "Ana", email: "", address: "Av. X 1", summary: "1x", notes: null,
   total: 42.5, deliveryFee: 6, deliveryKm: 3.2, deliveryZone: null, paymentStatus: "paid", paymentId: "chr_1",
-  paymentMethod: "card", items: [{ type: "sig", sigId: "SIG01", size: "15", qty: 1 }], scheduledFor: null,
+  paymentMethod: "card", items: [{ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 }], scheduledFor: null,
   reward: { pts: 160, label: "BEBIDA GRATIS" }, useCredit: false, lat: -8.1, lon: -79, groupCode: "G1", recurringId: null,
 };
 
