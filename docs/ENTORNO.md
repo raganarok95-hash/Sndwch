@@ -29,7 +29,10 @@ anótalo acá.
   - **`knowledge-rag` se instala con `pip install --ignore-installed PyYAML knowledge-rag`**:
     el PyYAML del sistema (paquete de Debian) no se deja desinstalar.
   - **No hay GPU**: el indexado corre en CPU con un modelo de 1024 dimensiones sobre ~456
-    archivos, y tarda. Lanzarlo en segundo plano.
+    archivos, y tarda: el 2026-09-24 llevaba **más de 19 minutos sin terminar** y se detuvo a
+    pedido del dueño. **No lanzarlo dentro de una sesión** sin preguntar antes: ocupa la CPU del
+    contenedor (las pruebas corren más lentas mientras tanto) y la tarea queda a la vista como
+    «en ejecución». Si hace falta, con un modelo más chico o solo sobre `docs/`.
 
 - **El service worker sirve el shell desde caché (stale-while-revalidate) desde
   2026-08-19** — `sw.js`. Dos trampas que lo hacían fallar en silencio y que ya están
