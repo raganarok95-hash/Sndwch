@@ -844,7 +844,8 @@ function estimatedRangeText(){var r=estimatedDeliveryRange();return r[0]+'-'+r[1
 // Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
 // la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
 function horaLima(ms:number):string{
-  return new Date(ms).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s?a\.?\s?m\.?/i,' a.m.').replace(/\s?p\.?\s?m\.?/i,' p.m.');
+  // «9 p.m.», no «9:00 p.m.»: la hora en punto se dice sin los ceros, como en las maquetas.
+  return new Date(ms).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s?a\.?\s?m\.?/i,' a.m.').replace(/\s?p\.?\s?m\.?/i,' p.m.').replace(':00 ',' ');
 }
 function textoVentana(desde:number,hasta:number):string{
   var a=horaLima(desde),b=horaLima(hasta),sufA=a.slice(-5),sufB=b.slice(-5);

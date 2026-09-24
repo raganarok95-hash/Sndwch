@@ -272,6 +272,16 @@ cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
 
 // La ventana que se promete al pagar la calcula el servidor y la guarda; el cliente la
 // estima antes con el mismo rango. Si se separan, el carrito dice una hora y el pedido otra.
+// «Algo salió mal»: el plazo de 48 h es el de los Términos, y la hora de respuesta se
+// promete en la pantalla antes de enviar. El servidor las vive en actions/problems.ts.
+{
+  const prob = readFileSync(join(ROOT, 'supabase/functions/api/actions/problems.ts'), 'utf8');
+  for (const k of ['REPORTE_PLAZO_HORAS', 'RESPUESTA_CORTE_HORA', 'RESPUESTA_HOY_HORA', 'RESPUESTA_MANANA_HORA']) {
+    cmp(`${k} («Algo salió mal»)`,
+      scalar(app, k, new RegExp(String.raw`\b${k}=(\d+)`), 'src/app/'),
+      scalar(prob, k, new RegExp(String.raw`const ${k} = (\d+)`), 'actions/problems.ts'));
+  }
+}
 cmp('ESTIMATED_DELIVERY_RANGE desde (minutos de la ventana prometida)',
   scalar(app, 'ESTIMATED_DELIVERY_RANGE', /ESTIMATED_DELIVERY_RANGE=\[(\d+),\d+\]/, 'src/app/'),
   scalar(env, 'ESTIMATED_DELIVERY_RANGE', /const ESTIMATED_DELIVERY_RANGE = \[(\d+), ?\d+\]/, 'env.ts'));

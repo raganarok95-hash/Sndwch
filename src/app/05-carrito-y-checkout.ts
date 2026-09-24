@@ -1443,7 +1443,7 @@ function sOSent(){
   // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
   // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
   var caraSando=!pending
-    ?'<img src="img/sando_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
+    ?'<img src="img/sando2_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
     :'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>';
   return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#12150F)" class="fi">'
     +caraSando

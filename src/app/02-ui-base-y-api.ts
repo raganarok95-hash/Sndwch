@@ -124,7 +124,10 @@ function renderOverlays(){
   // ⚠ La regla, para no volver a listarlas de a una: el boton NO va en ninguna pantalla
   // donde el cliente este ELIGIENDO que comprar. Ahi tapa justo lo que decide la compra.
   // Va en las de cuenta, pedidos y ayuda, que es donde de verdad se necesita escribir.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'){
+  //
+  // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
+  // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }

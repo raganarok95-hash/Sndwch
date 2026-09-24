@@ -189,6 +189,9 @@ function sOrdDetail(){
       :o.status==='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>'
       :'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px">Este pedido se canceló.</div>')
     +ratingHTML(o)
+    // «Algo salió mal · hasta 48 h después» (maqueta del detalle). Solo mientras se puede:
+    // pasado el plazo el botón desaparece en vez de llevar a una pantalla que dice que no.
+    +(puedeReportarPedido(o)&&cust?BTN('Algo salió mal · hasta '+REPORTE_PLAZO_HORAS+' h después //','abrirAlgoSalioMal(\''+esc(String(o.ref))+'\')',true):'')
     +'</div>'+NAV();
 }
 var _cancelMyOrderInProgress=false;
@@ -894,7 +897,7 @@ function sPReturns(){
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px">Última actualización: 2026</div>'
     +providerBlockHTML()
     +sec('POR QUÉ NO HAY DEVOLUCIÓN GENERAL //','Nuestros productos son alimentos preparados al momento y perecibles: una vez entregado el pedido, no aceptamos devoluciones de dinero por simple arrepentimiento, tal como establece el Código de Protección y Defensa del Consumidor para este tipo de bienes.')
-    +sec('SI TU PEDIDO LLEGÓ MAL //','Si el pedido llega incompleto, con un ingrediente distinto al pedido, o en mal estado, repórtalo dentro de las 2 horas siguientes a la entrega por WhatsApp (con foto si es posible) o desde el Libro de Reclamaciones. Verificado el problema, te ofrecemos —a tu elección— reposición sin costo, crédito interno equivalente en la app, o reembolso por el mismo medio de pago.')
+    +sec('SI TU PEDIDO LLEGÓ MAL //','Si el pedido llega incompleto, con un ingrediente distinto al pedido, o en mal estado, repórtalo dentro de las 48 horas siguientes a la entrega por WhatsApp (con foto si es posible) o desde el Libro de Reclamaciones. Verificado el problema, te ofrecemos —a tu elección— reposición sin costo, crédito interno equivalente en la app, o reembolso por el mismo medio de pago.')
     +sec('CANCELACIONES //','Puedes cancelar sin costo antes de que la cocina empiece a preparar tu pedido. Una vez iniciada la preparación, ya no se puede cancelar ni reembolsar.')
     +sec('TIEMPOS DE REEMBOLSO //','Cuando corresponde reembolso por el medio de pago original (tarjeta vía Culqi, Yape o Plin), el abono puede demorar entre 3 y 10 días hábiles según el operador financiero — nosotros lo iniciamos apenas se aprueba el caso.')
     +sec('CONTACTO //','Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
@@ -997,4 +1000,107 @@ async function toggleAdTracking(){
     adOptOutMsg=(e&&e.message)||'No se pudo guardar. Intenta de nuevo.';
   }
   render();
+}
+
+// ── 35 · ALGO SALIÓ MAL ────────────────────────────────────────────────────────────────
+// Maqueta: docs/maquetas/aprobadas/35-algo-salio-mal.png. Reporte rápido de UN pedido
+// entregado, dentro de las 48 h (los Términos dicen lo mismo, ver sPReturns). No es el Libro
+// de Reclamaciones: eso sigue en su pantalla, con su plazo legal. DEBEN coincidir con
+// problems.ts — lo verifica `npm run parity`.
+var REPORTE_PLAZO_HORAS=48;
+var RESPUESTA_CORTE_HORA=19,RESPUESTA_HOY_HORA=21,RESPUESTA_MANANA_HORA=13;
+var MOTIVOS_PROBLEMA=[
+  {id:'falto',t:'Faltó algo',s:'Vino incompleto'},
+  {id:'frio',t:'Llegó frío',s:'O tarde de más'},
+  {id:'distinto',t:'No era lo que pedí',s:'Cambiaron algo'},
+  {id:'otro',t:'Otra cosa',s:'Cuéntamelo tú'},
+];
+var probRef='',probMotivo='',probDetalle='',probEnviando=false,probError='',probListo:string|null=null;
+
+function puedeReportarPedido(o:any):boolean{
+  if(!o||o.status!=='ENTREGADO')return false;
+  var e=Date.parse(o.delivered_at);
+  return isFinite(e)&&Date.now()-e<=REPORTE_PLAZO_HORAS*3600000;
+}
+// La misma regla que respondeAntesDe() del servidor, para mostrar la hora ANTES de enviar;
+// después de enviar manda la que guardó el servidor.
+function respondeAntesTexto(iso?:string|null):string{
+  var t=iso?Date.parse(iso):NaN;
+  if(!isFinite(t)){
+    var LIMA=-5*3600000,local=new Date(Date.now()+LIMA);
+    var y=local.getUTCFullYear(),m=local.getUTCMonth(),d=local.getUTCDate();
+    t=(local.getUTCHours()<RESPUESTA_CORTE_HORA?Date.UTC(y,m,d,RESPUESTA_HOY_HORA,0):Date.UTC(y,m,d+1,RESPUESTA_MANANA_HORA,0))-LIMA;
+  }
+  var mismoDia=new Date(t-5*3600000).getUTCDate()===new Date(Date.now()-5*3600000).getUTCDate();
+  var hora=horaLima(t);
+  return 'Sando responde antes de '+(hora.indexOf('1:')===0?'la ':'las ')+hora+(mismoDia?'':' de mañana');
+}
+function cuandoFuePedido(o:any):string{
+  var t=Date.parse(o&&(o.delivered_at||o.created_at));
+  if(!isFinite(t))return '';
+  var dia=function(ms:number){return new Date(ms-5*3600000).toISOString().slice(0,10);};
+  var hoy=dia(Date.now()),ayer=dia(Date.now()-86400000),el=dia(t);
+  return el===hoy?'hoy':el===ayer?'ayer':new Date(t).toLocaleDateString('es-PE',{timeZone:'America/Lima',day:'numeric',month:'short'});
+}
+var probRespuesta='';
+async function abrirAlgoSalioMal(ref:string){
+  probRef=ref;probMotivo='';probDetalle='';probError='';probListo=null;probEnviando=false;probRespuesta='';
+  sndScreen='p_problema';render();
+  // Si ya lo reportó, la pantalla no vuelve a pedirle que marque nada: le dice hasta cuándo
+  // le respondemos, o qué se decidió.
+  try{
+    var r=await api('my-order-problems',{token:token});
+    var p=(r.problems||[]).find(function(x:any){return x.ref===ref;});
+    if(p){
+      probListo=p.respond_by||'';
+      if(p.resolved_at)probRespuesta=({reposicion:'Te lo reponemos sin costo',credito:'Te dejamos el monto como crédito en la app',reembolso:'Te devolvemos el dinero por el mismo medio'} as any)[p.resolution]+(p.resolution_note?'. '+p.resolution_note:'.');
+      if(sndScreen==='p_problema')render();
+    }
+  }catch(e){/* sin la consulta, la pantalla sigue sirviendo para reportar */}
+}
+function elegirMotivo(id:string){
+  var ta=document.getElementById('prob-detalle') as HTMLTextAreaElement|null;
+  if(ta)probDetalle=ta.value;
+  probMotivo=id;probError='';render();
+}
+async function enviarProblema(){
+  if(!probMotivo){probError='Marca qué pasó.';render();return;}
+  var ta=document.getElementById('prob-detalle') as HTMLTextAreaElement|null;
+  if(ta)probDetalle=ta.value;
+  if(probMotivo==='otro'&&!probDetalle.trim()){probError='Cuéntanos qué pasó.';render();return;}
+  probEnviando=true;probError='';render();
+  try{
+    var r=await api('report-order-problem',{token:token,ref:probRef,motivo:probMotivo,detalle:probDetalle});
+    probListo=r.respondeAntesDe||'';
+  }catch(e:any){probError=(e&&e.message)||'No se pudo enviar. Intenta de nuevo.';}
+  probEnviando=false;render();
+}
+function sAlgoSalioMal(){
+  var o=myOrders.find(function(x){return x.ref===probRef;});
+  if(!o)return sPOrders();
+  var volver="sndScreen='p_ord_detail';render()";
+  var h='<div class="m35 fi"><div class="forro"></div><div class="wicho"></div>'
+    +'<button class="sal" onclick="'+volver+'" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Pedido '+esc(String(o.ref||''))+(cuandoFuePedido(o)?' · '+esc(cuandoFuePedido(o)):'')+'</em>'
+    +'<h1>“Dime qué pasó.<br>Lo arreglo yo.”</h1>'
+    +'<p>No hace falta que escribas nada. Marca lo que pasó y te respondo hoy mismo.</p></div>'
+    +'<img class="figura" src="img/sando2_cuerpo_b.png" alt="">';
+  if(probListo!==null){
+    return h+'<div class="listo">'+(probRespuesta?esc(probRespuesta):'Listo. Ya lo tengo.')+'</div>'
+      +(probRespuesta?'':'<div class="plazo">'+esc(respondeAntesTexto(probListo))+'.</div>')
+      +'<button class="ir sw-barra" onclick="'+volver+'">Volver a mi pedido</button></div>';
+  }
+  if(!puedeReportarPedido(o)){
+    return h+'<div class="listo">Pasaron más de '+REPORTE_PLAZO_HORAS+' horas desde la entrega.</div>'
+      +'<div class="plazo">Si igual quieres dejar constancia, está el Libro de Reclamaciones.</div>'
+      +'<button class="ir sw-barra" onclick="sndScreen=\'p_complaints\';render()">Libro de Reclamaciones</button></div>';
+  }
+  return h+'<div class="ops" role="radiogroup" aria-label="Qué pasó">'+MOTIVOS_PROBLEMA.map(function(m){
+      var on=probMotivo===m.id;
+      return'<button class="op'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="elegirMotivo(\''+m.id+'\')"><b>'+esc(m.t)+'</b><i>'+esc(m.s)+'</i></button>'
+        +(on&&m.id==='otro'?'<textarea id="prob-detalle" maxlength="1000" placeholder="Cuéntamelo acá">'+esc(probDetalle)+'</textarea>':'');
+    }).join('')+'</div>'
+    +'<div class="plazo">'+esc(respondeAntesTexto(null))+'</div>'
+    +(probError?'<div class="err">'+esc(probError)+'</div>':'')
+    +'<button class="ir sw-barra"'+(probEnviando?' disabled':'')+' onclick="enviarProblema()">'+(probEnviando?'Enviando…':'Enviar el reclamo')+'</button></div>';
 }

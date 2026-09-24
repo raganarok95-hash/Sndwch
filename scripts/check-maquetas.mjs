@@ -18,6 +18,20 @@ for (const [nombre, fuente] of MAPA) {
   if (!pngs.includes(nombre + '.png')) problemas.push(`${nombre}: está en MAPA y no tiene PNG (correr scripts/render-maquetas.mjs)`);
 }
 
+// El SANDO viejo (`img/sando_*.png`, sin el 2) no vuelve ni a la app ni a una maqueta: el
+// dueño lo pidió dos veces (2026-09-18 y 2026-09-24). El logo (`img/marca/`) no cuenta: ese
+// se queda con el anterior a propósito.
+const VIEJO = /img\/sando_[a-z_]+\.png/g;
+const revisar = [
+  ...readdirSync('src/app').map((f) => join('src/app', f)),
+  'src/shell.html',
+  ...readdirSync(join(D, 'fuentes')).filter((f) => f.endsWith('.html')).map((f) => join(D, 'fuentes', f)),
+];
+for (const f of revisar) {
+  const m = readFileSync(f, 'utf8').match(VIEJO);
+  if (m) problemas.push(`${f} usa el SANDO viejo (${[...new Set(m)].join(', ')}) — va el actual, img/sando2_*`);
+}
+
 if (problemas.length) {
   console.error(`\n✗ Maquetas: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  • ' + p);

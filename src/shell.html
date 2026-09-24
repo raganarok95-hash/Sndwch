@@ -21,7 +21,7 @@
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0F1A14">
 <link rel="icon" href="icon-192.png">
@@ -357,6 +357,34 @@ body.kb-open #app{padding-bottom:0}
 [style*="cursor:pointer"]{transition:transform .08s ease}
 [style*="cursor:pointer"]:active{transform:scale(.97)}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
+
+/* ═════ LAS PANTALLAS DE LAS MAQUETAS APROBADAS ═════
+   docs/maquetas/aprobadas/ es la especificación exacta (dueño, 2026-09-24): el CSS de cada
+   pantalla se copia de su maqueta y vive acá, con su prefijo, para que el TS solo arme el
+   marcado. Tipografías de las maquetas: Anton, Archivo, IBM Plex Mono, Instrument Serif. */
+
+/* 35 · ALGO SALIÓ MAL — docs/maquetas/aprobadas/35-algo-salio-mal.png */
+.m35{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;overflow:hidden;padding-bottom:74px;box-sizing:border-box}
+.m35 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:5}
+.m35 .wicho{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:5}
+.m35 .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:24px;font-size:18px;color:#1E2B22;z-index:6}
+.m35 .cab{padding:103px 26px 0 24px}
+.m35 .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D8823C;text-transform:uppercase;font-style:normal}
+.m35 .cab h1{margin:16px 0 0;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:28px;line-height:1.1;color:#1E2B22}
+.m35 .cab p{margin:14px 0 0;max-width:190px;font-family:'Instrument Serif',serif;font-size:13px;line-height:1.3;color:#5F6B58}
+.m35 .figura{position:absolute;left:-24px;bottom:72px;height:348px;z-index:2;pointer-events:none}
+.m35 .ops{margin:46px 16px 0 158px;border-top:1px solid rgba(30,43,34,.14)}
+.m35 .op{all:unset;display:block;cursor:pointer;width:100%;box-sizing:border-box;padding:22px 0 16px;border-bottom:1px solid rgba(30,43,34,.14)}
+.m35 .op b{display:block;font:700 17px/1.1 Archivo,sans-serif;color:#1E2B22}
+.m35 .op i{display:block;margin-top:7px;font-family:'Instrument Serif',serif;font-size:12px;color:#8C8F82}
+.m35 .op.on b{color:#D8823C}
+.m35 .op:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
+.m35 textarea{display:block;width:100%;box-sizing:border-box;margin-top:10px;border:1px solid rgba(30,43,34,.25);background:#F6F0E3;border-radius:4px;padding:10px;font:13px/1.35 'Instrument Serif',serif;color:#1E2B22;resize:vertical;min-height:64px}
+.m35 .plazo{margin:46px 24px 0 158px;max-width:190px;font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8C8F82}
+.m35 .err{margin:14px 24px 0 158px;font:600 11px/1.3 'IBM Plex Mono',monospace;color:#B3402A}
+.m35 .ir{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:74px;border:0;background:#1E2B22;color:#EFE6D4;font:700 12px/1 Archivo,sans-serif;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;z-index:20}
+.m35 .ir:disabled{opacity:.55;cursor:default}
+.m35 .listo{margin:40px 24px 0 158px;font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;line-height:1.3;color:#1E2B22}
 </style>
 <style>
 #mmap{display:none;position:fixed;inset:0;background:var(--sw-bg,#12150F);z-index:9999}

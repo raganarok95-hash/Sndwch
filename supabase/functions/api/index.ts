@@ -59,6 +59,9 @@ import {
   actSubmitComplaint, actAdminListComplaints, actAdminRespondComplaint, actAlertComplaintDeadlines,
 } from "./actions/complaints.ts";
 import {
+  actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
+} from "./actions/problems.ts";
+import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
@@ -231,6 +234,11 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-list-complaints": actAdminListComplaints,
   "admin-respond-complaint": actAdminRespondComplaint,
   "alert-complaint-deadlines": actAlertComplaintDeadlines,
+  "report-order-problem": actReportOrderProblem,
+  "my-order-problems": actMyOrderProblems,
+  "admin-order-problems": actAdminOrderProblems,
+  "admin-resolve-order-problem": actAdminResolveOrderProblem,
+  "alert-order-problems": actAlertOrderProblems,
   "remind-unclaimed-challenge": actRemindUnclaimedChallenge,
   "remind-peak-hour": actRemindPeakHour,
   "gift-card-purchase": actGiftCardPurchase,

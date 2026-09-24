@@ -599,6 +599,7 @@ function renderScreen(){
     case'p_history':   h=sPHistory();break;
     case'p_orders':    h=sPOrders();break;
     case'p_ord_detail':h=sOrdDetail();break;
+    case'p_problema':  h=sAlgoSalioMal();break;
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
     case'p_recurring': h=sPRecurring();break;

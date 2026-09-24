@@ -38,7 +38,7 @@ vive en el chat o en `/tmp`, no existe.
 | 32 · En camino | `32-en-camino.png` | perdida — recorte de captura | «22, aprobada» (era la 32) |
 | 33 · Tus pedidos — solo la mitad de arriba | `33-tus-pedidos-mitad-de-arriba.png` | perdida — recorte de captura | arriba sí, la lista no — **la vigente es «los sellos»** |
 | 34 · Dónde te lo dejamos | `34-donde-te-lo-dejamos.png` | `i1.html` #2 | «34 y bebidas de wicho aprobadas» |
-| 35 · Algo salió mal | `35-algo-salio-mal.png` | perdida — recorte de captura | «25 también» (era la 35) |
+| 35 · Algo salió mal | `35-algo-salio-mal.png` | perdida — recorte de captura | «25 también» (era la 35) — ⚠ el PNG trae el SANDO viejo; la pantalla se construye con el actual (sando2_cuerpo_b, la misma pose) |
 | Bebidas · lado WICHO | `bebidas-lado-wicho.png` | `i1.html` #3 | «34 y bebidas de wicho aprobadas» |
 | Bebidas · lado SANDO | `bebidas-lado-sando.png` | `w2.html` #6 | «Bebidas 3 aprobada» |
 | Entrar | `entrar.png` | `w2.html` #2 | «entrar 2 aprobada» (corregida: se cortaba la cabeza de SANDO) |
@@ -66,6 +66,14 @@ vive en el chat o en `/tmp`, no existe.
 ## Qué prometen y qué existe
 
 Ver `FUNCIONES_PROMETIDAS.md`: cada promesa de cada maqueta contra el código y la base.
+
+## SANDO es siempre el actual
+
+Las fuentes usan el SANDO redibujado (`img/sando2_*`), cambiado el 2026-09-24 a pedido del
+dueño: `sando_cuerpo` → `sando2_cuerpo_b` (la misma pose, comiendo), `sando_sonrie` →
+`sando2_sonrie`, `sando_mira` → `sando2_mira`, `sando_piensa` → `sando2_piensa`. Las cinco
+maquetas sin fuente (01, 23, 32, 33, 35) no se pueden volver a renderizar: si su PNG trae el
+SANDO viejo, la pantalla se construye con el actual igual. El logo NO cambia (CLAUDE.md).
 
 ## Datos de muestra dentro de las maquetas
 
