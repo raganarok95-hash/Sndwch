@@ -69,20 +69,15 @@ Ver `FUNCIONES_PROMETIDAS.md`: cada promesa de cada maqueta contra el código y 
 
 ## SANDO es siempre el actual
 
-Las fuentes usan el SANDO redibujado, cambiado el 2026-09-24 a pedido del dueño.
+El SANDO actual son `sando2_frente`, `_sonrie`, `_mira`, `_perfil`, `_ladea`, `_asoma`,
+`_pulgar`, `_cuerpo` y `_cuerpo_forro`. Los del dibujo viejo se borraron del repo el
+2026-09-24 (ver `img/fuente/FUENTES.md`) — incluidos cinco que llevaban «2» sin ser el actual.
 
-⚠ **El «2» del nombre no prueba nada.** `sando2_cuerpo_b`, `sando2_come`, `sando2_come_b`,
-`sando2_grita` y `sando2_piensa` son del dibujo VIEJO (mechón verde oscuro, trazo pintado)
-aunque se llamen así. La primera pasada de este cambio los usó y el dueño lo corrigió: «este
-es el sando viejo en todas». El SANDO nuevo de verdad es: frente, sonrie, mira, perfil,
-ladea, asoma, pulgar, cuerpo y cuerpo_forro (lista en `img/fuente/FUENTES.md`).
-
-Quedó así: `sando_cuerpo` → `sando2_cuerpo_forro` (cuerpo entero, manos en los bolsillos),
-`sando_sonrie` → `sando2_sonrie`, `sando_mira` y `sando_piensa` → `sando2_mira`.
-
-**La pose de cuerpo entero comiendo el sándwich todavía no existe en el dibujo nuevo** —la
-usan la 06, la 31 de Yape, la M15 y la 35—, así que por ahora va el cuerpo con las manos en
-los bolsillos. Está pedida en `docs/POSES_QUE_TE_TOCAN.md`.
+Donde una maqueta dibujaba a SANDO comiendo de cuerpo entero (06, 31 Yape, M15, 35) va
+`sando2_cuerpo_forro`, con las manos en los bolsillos y sin sándwich. **Aprobado así por el
+dueño** («con las manos en los bolsillos es correcto… no es necesario el sando comiendo»):
+no se pide ninguna pose nueva. ⚠ No se reemplaza por un busto: se probó y el dueño lo
+rechazó porque rompía las pantallas ya aprobadas.
 
 Las cinco maquetas sin fuente (01, 23, 32, 33, 35) no se pueden volver a renderizar: si su PNG
 trae el SANDO viejo, la pantalla se construye con el actual igual. El logo NO cambia

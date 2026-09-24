@@ -27,7 +27,12 @@ for (const [nombre, fuente] of MAPA) {
 // come_b, grita y piensa. Se usaron creyendo que eran el nuevo y el dueño lo corrigió
 // (2026-09-24, «este es el sando viejo en todas»). Los nuevos de verdad están en
 // img/fuente/FUENTES.md.
-const VIEJO = /img\/sando_[a-z_]+\.png|img\/sando2_(?:cuerpo_b|come_b|come|grita|piensa)\.png/g;
+// Los dos cuerpos del SANDO actual SÍ valen: sando2_cuerpo y sando2_cuerpo_forro (manos en
+// los bolsillos), confirmado por el dueño el mismo día.
+//
+// El nombre armado por partes (hermano + pose) escondía el viejo de cualquier búsqueda: por
+// eso también se cazan las raíces sueltas 'sando_xxx' entre comillas.
+const VIEJO = /img\/sando_[a-z_]+\.png|img\/sando2_(?:cuerpo_b|come_b|come|grita|piensa)\.png|['"]sando_(?:cuerpo|saluda|grita|mira|piensa|serio|sonrie)['"]|['"]sando2_(?:cuerpo_b|come_b|come|grita|piensa)['"]|['"]img\/['"]\s*\+\s*quien\s*\+\s*['"]_/g;
 const revisar = [
   ...readdirSync('src/app').map((f) => join('src/app', f)),
   'src/shell.html',

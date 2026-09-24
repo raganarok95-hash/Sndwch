@@ -21,7 +21,13 @@ for (const m of bloque[1].matchAll(/(\w+)\s*:\s*\{\s*sando:\s*'([^']+)'\s*,\s*wi
   const [, estado, sando, wicho] = m;
   for (const [quien, pose] of [['sando', sando], ['wicho', wicho]]) {
     total++;
-    const rel = `img/${quien}_${pose}.png`;
+    // Desde el 2026-09-24 cada entrada trae el nombre de archivo ENTERO (sando2_sonrie,
+    // wicho_rie…): armarlo pegando hermano + pose fue justo lo que dejó al SANDO viejo en
+    // todos los estados vacíos sin que ninguna búsqueda lo encontrara.
+    const rel = `img/${pose}.png`;
+    if (!pose.startsWith(quien)) {
+      fallos.push(`estado "${estado}" → ${quien} apunta a ${rel}, que es del otro hermano`);
+    }
     if (!fs.existsSync(path.join(RAIZ, rel))) {
       fallos.push(`estado "${estado}" → ${rel} NO EXISTE (imagen rota en el cliente, sin error)`);
     }

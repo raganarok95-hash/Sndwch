@@ -422,10 +422,14 @@ Vale para `img/marca/avatar-1024-transparente.png`, los demás `img/marca/avatar
 pantalla completa. No es un descuido ni una inconsistencia que haya que arreglar: es una
 decisión. Si una sesión futura ve "el SANDO viejo" en el logo, **lo deja como está**.
 
-Los archivos del SANDO nuevo son `img/sando2_*.png` (retratos, el asoma, el pulgar y los dos
-cuerpos). **Los `img/sando_*.png` sin el `2` son del SANDO viejo y el cliente todavía los
-referencia**: cambiarlos es una tarea aparte y hay que hacerla COMPLETA, porque un SANDO
-nuevo junto a uno viejo en dos pantallas distintas se ve peor que dejar todo viejo.
+**El SANDO actual son nueve archivos: `img/sando2_frente`, `_sonrie`, `_mira`, `_perfil`,
+`_ladea`, `_asoma`, `_pulgar`, `_cuerpo` y `_cuerpo_forro`.** El 2026-09-24 se borraron los
+del dibujo viejo, incluidos cinco que llevaban «2» sin ser el actual (`cuerpo_b`, `come`,
+`come_b`, `grita`, `piensa`) y que se usaron por error. Donde una pantalla aprobada lo
+dibujaba comiendo va `sando2_cuerpo_forro` (manos en los bolsillos, sin sándwich): aprobado
+así por el dueño. **No lo cambies por un busto**: se probó y rompía las pantallas aprobadas.
+Los nombres de pose se escriben ENTEROS en `POSES` (02-*), nunca armados por partes: así se
+escondió el viejo en los estados vacíos. Lo vigila `npm run check:maquetas`.
 
 **Lo que los distingue no es la mano: es cada personaje.** De SANDO son el **acanalado** de
 puños y basta, el **forro naranja** de su bomber —el único naranja de toda la marca, franja
