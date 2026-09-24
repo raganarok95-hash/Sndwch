@@ -270,3 +270,41 @@ PNG, 2048 px on the long side.
 ```
 
 ---
+
+## 6 · SANDO COMIENDO, CUERPO ENTERO — el del dibujo NUEVO (pedida 2026-09-24)
+
+Referencia a subir: **`img/sando2_cuerpo_forro.png`** *(el SANDO nuevo. NO `sando2_cuerpo_b`,
+que aunque se llame «2» es el dibujo viejo)*
+
+> **Por qué se pide:** cuatro pantallas aprobadas lo dibujan de cuerpo entero, parado, con el
+> sándwich en la boca y las manos en los bolsillos: la 06 (pedido enviado), la 31 (pagar con
+> Yape), la M15 (el mundo de SANDO) y la 35 (algo salió mal). Esa pose solo existe en el
+> dibujo VIEJO (`sando_cuerpo.png` y `sando2_cuerpo_b.png`). Mientras llega, esas pantallas
+> usan `sando2_cuerpo_forro.png` sin el sándwich.
+>
+> Nombre del archivo: **`sando2_cuerpo_come.png`**.
+
+```
+Same anthropomorphic ape character as the reference image, in the exact same
+illustration style — same head, same face, same fur colour, same clothes.
+POSE: full body, standing relaxed, facing three-quarters to the viewer, both hands
+in the pockets of his olive bomber jacket, holding a long sub sandwich crosswise
+in his mouth with his teeth (no hands on it). Heavy-lidded, calm, satisfied eyes.
+Keep his clothes exactly as in the reference: olive bomber with the orange lining
+visible as a flat vertical strip, ribbed cuffs and hem, the // embroidered on the
+chest, white t-shirt, dark cargo trousers, the same sneakers.
+The sandwich: a long crusty sub roll, with visible layers of meat, cheese, lettuce
+and tomato, drawn in the same flat clean style as the character.
+ART STYLE (match the reference image exactly): clean uniform black linework of
+EVEN weight, flat two-tone shading, restrained palette. No painterly brush strokes,
+no texture, no cross-hatching.
+Do NOT give him a dark green tuft of hair on top of the head — that is the OLD
+drawing. Match the head of the reference image.
+
+BACKGROUND: flat plain WHITE filling the entire frame, edge to edge.
+No floor, no ground plane, no ellipse or oval under the character, no drop shadow,
+no cast shadow, no reflection, no vignette, no gradient, no border, no frame.
+Full body, both feet fully visible, generous margin — nothing touching the canvas edge.
+No text, no letters, no numbers, no logotype, no watermark.
+PNG, 2048 px on the long side.
+```

@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~338 KB que antes
+// de admin. Ningún cliente lo descarga: son ~346 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -370,6 +370,8 @@ function adminToolsSections() {
                 ['reportes', 'Reportes', 'sndScreen=\'admin_report\';reportData=null;render()'],
                 ['estrella', 'Calificaciones', 'loadRatingsList()'],
                 ['reclamo', 'Reclamaciones', 'loadAdminComplaints()'],
+                ['reclamo', 'Algo salió mal', 'loadOrderProblems()'],
+                ['direccion', 'Zonas que esperan', 'loadZoneWaitlist()'],
             ]],
         ['Marketing //', [
                 // ⚠ "Avísale a tu gente" va PRIMERO de todo Marketing. La simulación del 2026-09-13
@@ -3139,6 +3141,111 @@ function sAdminProblemAddresses() {
 // ver COMPLAINT_DEADLINE_BUSINESS_DAYS en supabase/functions/api/actions/complaints.ts)
 // (obligación legal, no solo buena práctica); esta pantalla es donde el operador ve la
 // cola pendiente y deja constancia de la respuesta.
+// ALGO SALIÓ MAL — los reportes rápidos de la pantalla 35 (actions/problems.ts). Al cliente se
+// le prometió una hora de respuesta: los que están por pasarla van primero y en rojo.
+var orderProblems = null, orderProblemsErr = '';
+async function loadOrderProblems() {
+    sndScreen = 'admin_order_problems';
+    busy = true;
+    busyMsg = 'Cargando reportes...';
+    render();
+    try {
+        var r = await api('admin-order-problems', { token: token });
+        orderProblems = r.problems || [];
+        orderProblemsErr = '';
+    }
+    catch (e) {
+        orderProblems = null;
+        orderProblemsErr = (e && e.message) || '';
+    }
+    busy = false;
+    render();
+}
+async function resolveOrderProblem(id, solucion) {
+    var nota = document.getElementById('op-nota-' + id);
+    try {
+        await api('admin-resolve-order-problem', { token: token, id: id, solucion: solucion, nota: nota ? nota.value : '' });
+        showToast('Listo. Le avisamos al cliente.', 'success');
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+    loadOrderProblems();
+}
+function sAdminOrderProblems() {
+    var h = H('ALGO SALIÓ MAL', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (!orderProblems) {
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadOrderProblems()', true) + '</div>';
+    }
+    var MOT = { falto: 'Faltó algo', frio: 'Llegó frío', distinto: 'No era lo que pidió', otro: 'Otra cosa' };
+    var SOL = { reposicion: 'Reponer', credito: 'Crédito', reembolso: 'Reembolso' };
+    var abiertos = orderProblems.filter(function (p) { return !p.resolved_at; }).sort(function (a, b) { return Date.parse(a.respond_by) - Date.parse(b.respond_by); });
+    var cerrados = orderProblems.filter(function (p) { return !!p.resolved_at; });
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">' + abiertos.length + ' por responder //</div>';
+    h += abiertos.length ? abiertos.map(function (p) {
+        var vence = Date.parse(p.respond_by), tarde = vence < Date.now();
+        return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (tarde ? 'rgba(255,85,85,.5)' : 'rgba(255,165,0,.35)') + ';border-radius:10px;padding:14px;margin-bottom:10px">'
+            + '<div style="display:flex;justify-content:space-between;gap:8px"><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">' + esc(p.ref) + ' · ' + esc(MOT[p.motivo] || p.motivo) + '</b>'
+            + '<span style="font-family:EB Garamond,serif;font-size:11px;color:' + (tarde ? 'var(--sw-danger,#ff8888)' : GOLD) + '">' + (tarde ? 'Se pasó: ' : 'Antes de ') + esc(horaLima(vence)) + '</span></div>'
+            + (p.detalle ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(p.detalle) + '</div>' : '')
+            + '<input id="op-nota-' + p.id + '" placeholder="Nota para el cliente (opcional)" style="margin-top:10px;width:100%;box-sizing:border-box;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+            + '<div style="display:flex;gap:6px;margin-top:8px">' + Object.keys(SOL).map(function (k) { return '<button onclick="resolveOrderProblem(' + p.id + ',\'' + k + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px 0;border:1px solid ' + GOLD + ';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:' + GOLD + '">' + SOL[k] + '</button>'; }).join('') + '</div>'
+            + '</div>';
+    }).join('') : '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nada por responder.</div>';
+    if (cerrados.length) {
+        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.2em;margin:18px 0 10px">Resueltos //</div>'
+            + cerrados.slice(0, 20).map(function (p) { return '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);padding:6px 0;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">' + esc(p.ref) + ' · ' + esc(MOT[p.motivo] || p.motivo) + ' → ' + esc(SOL[p.resolution] || '') + '</div>'; }).join('');
+    }
+    h += BTN('Actualizar //', 'loadOrderProblems()', true);
+    return h + '</div>';
+}
+// ZONAS QUE ESPERAN — quién se anotó en el checkout para que le avisemos cuando lleguemos a
+// su distrito (actions/zones.ts). Sirve para decidir qué zona abrir, y para avisarles a todos
+// de una vez cuando se abre. El servidor se niega a avisar mientras la zona siga excluida.
+var zoneWaitlist = null;
+async function loadZoneWaitlist() {
+    sndScreen = 'admin_zone_waitlist';
+    busy = true;
+    busyMsg = 'Cargando zonas...';
+    render();
+    try {
+        var r = await api('admin-zone-waitlist', { token: token });
+        zoneWaitlist = r.zones || [];
+    }
+    catch (e) {
+        zoneWaitlist = null;
+    }
+    busy = false;
+    render();
+}
+async function notifyZone(id) {
+    var d = districtById(id);
+    if (!(await showConfirm('¿Avisar a todos los que esperan en ' + ((d && d.l) || id) + ' que ya llegamos? Hazlo solo si ya abriste esa zona.')))
+        return;
+    try {
+        var r = await api('admin-notify-zone', { token: token, district: id, districtLabel: (d && d.l) || id });
+        showToast('Avisados: ' + r.avisados + ' de ' + r.total + '.', 'success');
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+    loadZoneWaitlist();
+}
+function sAdminZoneWaitlist() {
+    var h = H('ZONAS QUE ESPERAN', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (!zoneWaitlist) {
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadZoneWaitlist()', true) + '</div>';
+    }
+    h += zoneWaitlist.length ? zoneWaitlist.map(function (z) {
+        var d = districtById(z.district);
+        return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+            + '<div><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">' + esc((d && d.l) || z.district) + '</b>'
+            + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + z.count + ' esperando</div></div>'
+            + '<button onclick="notifyZone(\'' + esc(z.district) + '\')" style="all:unset;cursor:pointer;padding:8px 12px;border:1px solid ' + GOLD + ';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:' + GOLD + '">Ya llegamos</button></div>';
+    }).join('') : '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nadie esperando todavía.</div>';
+    h += BTN('Actualizar //', 'loadZoneWaitlist()', true);
+    return h + '</div>';
+}
 async function loadAdminComplaints() {
     sndScreen = 'admin_complaints';
     busy = true;
@@ -4101,6 +4208,8 @@ Object.assign(ADMIN_SCREENS, {
     admin_report: sAdminReport,
     admin_ratings: sAdminRatings,
     admin_complaints: sAdminComplaints,
+    admin_order_problems: sAdminOrderProblems,
+    admin_zone_waitlist: sAdminZoneWaitlist,
     admin_prep: sAdminPrepList,
     admin_recipes: sAdminRecipes,
     admin_cash: sAdminCashClose,

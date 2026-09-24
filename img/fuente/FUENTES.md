@@ -75,6 +75,13 @@ detectando el fondo neutro claro por relleno desde los bordes. Funciona, pero lo
 quedan más duros que en un PNG original. **Están pedidos los PNG con alfa de verdad** —
 cuando lleguen, estos dos archivos se reemplazan.
 
+⚠ **Cinco archivos con «2» en el nombre son del SANDO VIEJO** (mechón verde oscuro, trazo
+pintado): `sando2_cuerpo_b`, `sando2_come`, `sando2_come_b`, `sando2_grita` y
+`sando2_piensa`, llegados el 2026-09-23. El 2026-09-24 se usaron creyendo que eran el nuevo y
+el dueño lo corrigió: «este es el sando viejo en todas». Los nuevos de verdad son los siete de
+la tabla de arriba más `sando2_cuerpo` y `sando2_cuerpo_forro`. `npm run check:maquetas`
+falla si alguno de los cinco vuelve a la app o a una maqueta.
+
 ⚠ **Los `img/sando_*.png` viejos son del SANDO anterior** y no se borraron todavía porque
 el cliente los sigue referenciando. Reemplazarlos es una tarea aparte, y hay que hacerla
 completa: un SANDO nuevo junto a uno viejo en dos pantallas distintas es peor que dejar

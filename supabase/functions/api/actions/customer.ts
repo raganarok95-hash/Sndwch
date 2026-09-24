@@ -477,6 +477,9 @@ export async function actAddressesAdd(b: any) {
     address,
     lat: typeof b.lat === "number" ? b.lat : null,
     lon: typeof b.lon === "number" ? b.lon : null,
+    // La referencia de la maqueta 34 («timbre 302, portón negro»): antes se escribía de nuevo
+    // en cada pedido porque la dirección guardada no tenía dónde llevarla.
+    reference: String(b.reference || "").trim().slice(0, 200) || null,
   });
   return { success: true, address: rows[0] };
 }
@@ -492,7 +495,13 @@ export async function actAddressesUpdate(b: any) {
   const rows = await sbUpdate(
     "saved_addresses",
     `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`,
-    { label, address },
+    {
+      label,
+      address,
+      reference: String(b.reference || "").trim().slice(0, 200) || null,
+      // Si la corrección trae un pin nuevo, la distancia (y el envío) sale de ahí.
+      ...(typeof b.lat === "number" && typeof b.lon === "number" ? { lat: b.lat, lon: b.lon } : {}),
+    },
   );
   if (!rows.length) throw new ApiError("Dirección no encontrada.", 404);
   return { success: true, address: rows[0] };

@@ -21,7 +21,13 @@ for (const [nombre, fuente] of MAPA) {
 // El SANDO viejo (`img/sando_*.png`, sin el 2) no vuelve ni a la app ni a una maqueta: el
 // dueño lo pidió dos veces (2026-09-18 y 2026-09-24). El logo (`img/marca/`) no cuenta: ese
 // se queda con el anterior a propósito.
-const VIEJO = /img\/sando_[a-z_]+\.png/g;
+//
+// ⚠ EL «2» DEL NOMBRE NO PRUEBA NADA. Cinco archivos que llegaron el 2026-09-23 se llaman
+// sando2_* y son del dibujo VIEJO (mechón verde oscuro, trazo pintado): cuerpo_b, come,
+// come_b, grita y piensa. Se usaron creyendo que eran el nuevo y el dueño lo corrigió
+// (2026-09-24, «este es el sando viejo en todas»). Los nuevos de verdad están en
+// img/fuente/FUENTES.md.
+const VIEJO = /img\/sando_[a-z_]+\.png|img\/sando2_(?:cuerpo_b|come_b|come|grita|piensa)\.png/g;
 const revisar = [
   ...readdirSync('src/app').map((f) => join('src/app', f)),
   'src/shell.html',
@@ -29,7 +35,7 @@ const revisar = [
 ];
 for (const f of revisar) {
   const m = readFileSync(f, 'utf8').match(VIEJO);
-  if (m) problemas.push(`${f} usa el SANDO viejo (${[...new Set(m)].join(', ')}) — va el actual, img/sando2_*`);
+  if (m) problemas.push(`${f} usa el SANDO viejo (${[...new Set(m)].join(', ')}) — va el actual (ver img/fuente/FUENTES.md)`);
 }
 
 if (problemas.length) {

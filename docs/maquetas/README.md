@@ -69,11 +69,24 @@ Ver `FUNCIONES_PROMETIDAS.md`: cada promesa de cada maqueta contra el código y 
 
 ## SANDO es siempre el actual
 
-Las fuentes usan el SANDO redibujado (`img/sando2_*`), cambiado el 2026-09-24 a pedido del
-dueño: `sando_cuerpo` → `sando2_cuerpo_b` (la misma pose, comiendo), `sando_sonrie` →
-`sando2_sonrie`, `sando_mira` → `sando2_mira`, `sando_piensa` → `sando2_piensa`. Las cinco
-maquetas sin fuente (01, 23, 32, 33, 35) no se pueden volver a renderizar: si su PNG trae el
-SANDO viejo, la pantalla se construye con el actual igual. El logo NO cambia (CLAUDE.md).
+Las fuentes usan el SANDO redibujado, cambiado el 2026-09-24 a pedido del dueño.
+
+⚠ **El «2» del nombre no prueba nada.** `sando2_cuerpo_b`, `sando2_come`, `sando2_come_b`,
+`sando2_grita` y `sando2_piensa` son del dibujo VIEJO (mechón verde oscuro, trazo pintado)
+aunque se llamen así. La primera pasada de este cambio los usó y el dueño lo corrigió: «este
+es el sando viejo en todas». El SANDO nuevo de verdad es: frente, sonrie, mira, perfil,
+ladea, asoma, pulgar, cuerpo y cuerpo_forro (lista en `img/fuente/FUENTES.md`).
+
+Quedó así: `sando_cuerpo` → `sando2_cuerpo_forro` (cuerpo entero, manos en los bolsillos),
+`sando_sonrie` → `sando2_sonrie`, `sando_mira` y `sando_piensa` → `sando2_mira`.
+
+**La pose de cuerpo entero comiendo el sándwich todavía no existe en el dibujo nuevo** —la
+usan la 06, la 31 de Yape, la M15 y la 35—, así que por ahora va el cuerpo con las manos en
+los bolsillos. Está pedida en `docs/POSES_QUE_TE_TOCAN.md`.
+
+Las cinco maquetas sin fuente (01, 23, 32, 33, 35) no se pueden volver a renderizar: si su PNG
+trae el SANDO viejo, la pantalla se construye con el actual igual. El logo NO cambia
+(CLAUDE.md). `npm run check:maquetas` falla si el SANDO viejo vuelve a aparecer.
 
 ## Datos de muestra dentro de las maquetas
 

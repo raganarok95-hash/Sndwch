@@ -61,6 +61,7 @@ import {
 import {
   actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
 } from "./actions/problems.ts";
+import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
 } from "./actions/group.ts";
@@ -239,6 +240,9 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "admin-order-problems": actAdminOrderProblems,
   "admin-resolve-order-problem": actAdminResolveOrderProblem,
   "alert-order-problems": actAlertOrderProblems,
+  "zone-waitlist-join": actZoneWaitlistJoin,
+  "admin-zone-waitlist": actAdminZoneWaitlist,
+  "admin-notify-zone": actAdminNotifyZone,
   "remind-unclaimed-challenge": actRemindUnclaimedChallenge,
   "remind-peak-hour": actRemindPeakHour,
   "gift-card-purchase": actGiftCardPurchase,

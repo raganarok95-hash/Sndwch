@@ -21,7 +21,7 @@
 <title>SND//WCH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0F1A14">
 <link rel="icon" href="icon-192.png">
@@ -357,6 +357,34 @@ body.kb-open #app{padding-bottom:0}
 [style*="cursor:pointer"]{transition:transform .08s ease}
 [style*="cursor:pointer"]:active{transform:scale(.97)}
 @media (prefers-reduced-motion: reduce){[style*="cursor:pointer"]{transition:none}[style*="cursor:pointer"]:active{transform:none}}
+
+/* ═════ LAS PANTALLAS DE LAS MAQUETAS APROBADAS ═════
+   docs/maquetas/aprobadas/ es la especificación exacta (dueño, 2026-09-24): el CSS de cada
+   pantalla se copia de su maqueta y vive acá, con su prefijo, para que el TS solo arme el
+   marcado. Tipografías de las maquetas: Anton, Archivo, IBM Plex Mono, Instrument Serif. */
+
+/* 35 · ALGO SALIÓ MAL — docs/maquetas/aprobadas/35-algo-salio-mal.png */
+.m35{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;overflow:hidden;padding-bottom:74px;box-sizing:border-box}
+.m35 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:5}
+.m35 .wicho{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:5}
+.m35 .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:24px;font-size:18px;color:#1E2B22;z-index:6}
+.m35 .cab{padding:103px 26px 0 24px}
+.m35 .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D8823C;text-transform:uppercase;font-style:normal}
+.m35 .cab h1{margin:16px 0 0;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:28px;line-height:1.1;color:#1E2B22}
+.m35 .cab p{margin:14px 0 0;max-width:190px;font-family:'Instrument Serif',serif;font-size:13px;line-height:1.3;color:#5F6B58}
+.m35 .figura{position:absolute;left:-24px;bottom:72px;height:348px;z-index:2;pointer-events:none}
+.m35 .ops{margin:46px 16px 0 158px;border-top:1px solid rgba(30,43,34,.14)}
+.m35 .op{all:unset;display:block;cursor:pointer;width:100%;box-sizing:border-box;padding:22px 0 16px;border-bottom:1px solid rgba(30,43,34,.14)}
+.m35 .op b{display:block;font:700 17px/1.1 Archivo,sans-serif;color:#1E2B22}
+.m35 .op i{display:block;margin-top:7px;font-family:'Instrument Serif',serif;font-size:12px;color:#8C8F82}
+.m35 .op.on b{color:#D8823C}
+.m35 .op:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
+.m35 textarea{display:block;width:100%;box-sizing:border-box;margin-top:10px;border:1px solid rgba(30,43,34,.25);background:#F6F0E3;border-radius:4px;padding:10px;font:13px/1.35 'Instrument Serif',serif;color:#1E2B22;resize:vertical;min-height:64px}
+.m35 .plazo{margin:46px 24px 0 158px;max-width:190px;font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8C8F82}
+.m35 .err{margin:14px 24px 0 158px;font:600 11px/1.3 'IBM Plex Mono',monospace;color:#B3402A}
+.m35 .ir{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:74px;border:0;background:#1E2B22;color:#EFE6D4;font:700 12px/1 Archivo,sans-serif;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;z-index:20}
+.m35 .ir:disabled{opacity:.55;cursor:default}
+.m35 .listo{margin:40px 24px 0 158px;font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;line-height:1.3;color:#1E2B22}
 </style>
 <style>
 #mmap{display:none;position:fixed;inset:0;background:var(--sw-bg,#12150F);z-index:9999}
@@ -1370,6 +1398,35 @@ function estimatedDeliveryRange() {
     return [ESTIMATED_DELIVERY_RANGE[0] + extra, ESTIMATED_DELIVERY_RANGE[1] + extra];
 }
 function estimatedRangeText() { var r = estimatedDeliveryRange(); return r[0] + '-' + r[1] + ' min'; }
+// La ventana como HORA, que es como la dibujan las maquetas («Llega 7:40 – 8:05 p.m.»).
+// Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
+// la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
+function horaLima(ms) {
+    // «9 p.m.», no «9:00 p.m.»: la hora en punto se dice sin los ceros, como en las maquetas.
+    return new Date(ms).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s?a\.?\s?m\.?/i, ' a.m.').replace(/\s?p\.?\s?m\.?/i, ' p.m.').replace(':00 ', ' ');
+}
+function textoVentana(desde, hasta) {
+    var a = horaLima(desde), b = horaLima(hasta), sufA = a.slice(-5), sufB = b.slice(-5);
+    return (sufA === sufB ? a.slice(0, -5) : a) + ' – ' + b;
+}
+function ventanaEstimadaTexto(programadoPara) {
+    var ancho = (ESTIMATED_DELIVERY_RANGE[1] - ESTIMATED_DELIVERY_RANGE[0]) * 60000;
+    var prog = programadoPara ? Date.parse(programadoPara) : NaN;
+    if (isFinite(prog))
+        return textoVentana(prog, prog + ancho);
+    var r = estimatedDeliveryRange(), ahora = Date.now();
+    return textoVentana(ahora + r[0] * 60000, ahora + r[1] * 60000);
+}
+function ventanaDelPedido(o) {
+    var d = Date.parse(o && o.promised_from), h = Date.parse(o && o.promised_to);
+    return isFinite(d) && isFinite(h) ? textoVentana(d, h) : '';
+}
+// «dentro» / «tarde» del detalle de un pedido: se compara la entrega contra lo prometido,
+// nunca contra la ventana de hoy.
+function llegoDentro(o) {
+    var h = Date.parse(o && o.promised_to), e = Date.parse(o && o.delivered_at);
+    return isFinite(h) && isFinite(e) ? e <= h : null;
+}
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.
@@ -2111,7 +2168,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '2012055c67';
+var APP_BUILD = '1debb7664c';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2475,7 +2532,10 @@ function renderOverlays() {
     // ⚠ La regla, para no volver a listarlas de a una: el boton NO va en ninguna pantalla
     // donde el cliente este ELIGIENDO que comprar. Ahi tapa justo lo que decide la compra.
     // Va en las de cuenta, pedidos y ayuda, que es donde de verdad se necesita escribir.
-    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build') {
+    //
+    // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
+    // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
+    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build' && sndScreen !== 'p_problema') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, 'var(--sw-on-gold,#241a08)') + '</a>';
     }
@@ -6209,8 +6269,13 @@ function pickAddr(id) {
     // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
     // tiene que volver a elegir algo que ya escribió cuando la guardó.
     var inferred = districtFromAddress(a.address);
-    if (inferred)
+    if (inferred) {
         deliveryDistrict = inferred;
+        deliveryDistrictFromPin = true;
+    }
+    // La referencia viaja con la dirección (maqueta 34): no se vuelve a escribir en cada pedido.
+    if (a.reference)
+        confNotes = a.reference;
     render();
 }
 // Bloque de campos de checkout (puntos a ganar, recompensas, direcciones guardadas,
@@ -6313,12 +6378,53 @@ function districtPickerHTML() {
     // no hay pin, y el servidor no ve el mapa), pero preguntar dos veces el mismo dato —
     // una al mapa y otra al cliente — era exactamente lo que el dueño reportó como fricción.
     var delPin = deliveryDistrictFromPin && deliveryDistrict;
+    // ── EL DISTRITO YA NO SE PREGUNTA SI EL MAPA LO SABE (maqueta 34, dueño 2026-09-24) ──
+    // La maqueta no tiene selector de distrito: la dirección se marca en el mapa y de ahí sale
+    // todo. El selector queda solo cuando el mapa no lo resolvió, o cuando el cliente pide
+    // cambiarlo. El <select> sigue existiendo (oculto) para que doOrder lea el mismo campo.
+    var d = districtById(deliveryDistrict);
+    if (delPin && d && !districtSelectOpen) {
+        var fuera = !!d.out;
+        return '<div><input type="hidden" id="o-district" value="' + esc(deliveryDistrict) + '">'
+            + '<div id="o-district-hint" style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-family:\'EB Garamond\',serif;font-size:13px;color:' + (fuera ? 'var(--sw-danger,#ff8888)' : 'var(--sw-text-muted,#9DA096)') + '">'
+            + '<span>' + (fuera ? 'Todavía no llegamos a ' + esc(d.l) + '.' : 'Entregamos en ' + esc(d.l) + '.') + '</span>'
+            + '<button onclick="districtSelectOpen=true;syncConfirmFields();render()" style="all:unset;cursor:pointer;font-size:11px;color:' + GOLD + ';letter-spacing:.1em">No es mi distrito</button></div>'
+            + (fuera ? zonaEsperaHTML(d) : '')
+            + '</div>';
+    }
     return '<div>'
         + '<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">' + (delPin ? 'Distrito // lo tomamos de tu mapa' : 'Distrito //') + '</label>'
         + '<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-shadow:' + SHADOW_SM + ';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
         + '<option value=""' + (deliveryDistrict ? '' : ' selected') + '>Elige tu distrito</option>' + opts + '</select>'
         + '<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:5px">' + esc(delPin ? 'Si no es el correcto, cámbialo aquí.' : 'Por ahora no llegamos a ' + out + '.') + '</div>'
         + '</div>';
+}
+var districtSelectOpen = false;
+// «Te avisamos apenas abramos la zona» (maqueta 34): queda anotado con su distrito y el dueño
+// avisa desde el panel cuando abre esa zona (actions/zones.ts). Sin sesión no hay a quién
+// avisarle, así que se lo dice en vez de fingir que quedó anotado.
+var zonaEsperaEstado = {};
+function zonaEsperaHTML(d) {
+    var st = zonaEsperaEstado[d.id] || '';
+    if (st === 'ok')
+        return '<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">Listo. Te avisamos apenas abramos ' + esc(d.l) + '.</div>';
+    if (!cust)
+        return '<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096)">Entra a tu cuenta y te avisamos apenas abramos ' + esc(d.l) + '.</div>';
+    return '<button onclick="unirmeAZona(\'' + d.id + '\')" style="all:unset;cursor:pointer;margin-top:8px;display:inline-block;font-family:\'EB Garamond\',serif;font-size:13px;color:' + GOLD + ';border-bottom:1px solid ' + GOLD + '">' + (st === 'enviando' ? 'Anotándote…' : 'Avísame cuando lleguen') + '</button>'
+        + (st && st !== 'enviando' ? '<div style="margin-top:4px;font-size:11px;color:var(--sw-danger,#ff8888)">' + esc(st) + '</div>' : '');
+}
+async function unirmeAZona(id) {
+    syncConfirmFields();
+    zonaEsperaEstado[id] = 'enviando';
+    render();
+    try {
+        await api('zone-waitlist-join', { token: token, district: id, lat: window._mLat, lon: window._mLon });
+        zonaEsperaEstado[id] = 'ok';
+    }
+    catch (e) {
+        zonaEsperaEstado[id] = (e && e.message) || 'No se pudo anotar. Intenta de nuevo.';
+    }
+    render();
 }
 // No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
 // tenga escrito a medias en los inputs de arriba (nombre/dirección/referencia solo se
@@ -6426,7 +6532,7 @@ function checkoutExtrasHTML() {
         // sesión no lo ve — sería ruido en el paso de pagar.
         + (!cust ? googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.') : '')
         + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address', 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">' + icon('gps', 16, '#A8C8B0') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
-        + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#9DA096') + '<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">' + estimatedRangeText() + '</b> desde que confirmamos tu pedido.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
+        + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#9DA096') + '<span>Llega <b style="color:var(--sw-text,#FFFFFF)">' + esc(ventanaEstimadaTexto(null)) + '</b> si lo confirmas ahora.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
         + deliveryZonePickerHTML()
@@ -7679,6 +7785,8 @@ function finalizeOrderSuccess(res, po, chargeId) {
     // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
     window._lOrderCreatedAt = Date.now();
     window._lRef = po.ref;
+    // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
+    window._lVentana = ventanaDelPedido(res.order);
     receiptUploadState = null;
     cart = [];
     pendingGroupCode = null;
@@ -7747,14 +7855,14 @@ function sOSent() {
     // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
     // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
     var caraSando = !pending
-        ? '<img src="img/sando_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
+        ? '<img src="img/sando2_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
         : '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>';
     return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#12150F)" class="fi">'
         + caraSando
         // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
         // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
         + (pending ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>' : (window._lTot === 0 ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
-        + (window._lRef ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido ' + esc(window._lRef) + '</div>' : '<div style="margin-bottom:20px"></div>')
+        + (window._lRef ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido ' + esc(window._lRef) + (window._lVentana ? ' · llega ' + esc(window._lVentana) : '') + '</div>' : '<div style="margin-bottom:20px"></div>')
         + (rankUp ? '<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid ' + GOLD + ';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:' + SHADOW_GOLD + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + esc(rankUp) + '</div>' + (rankPerk ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">' + rankPerk + '</div>' : '') + '</div>' : '')
         // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
         // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral
@@ -8848,6 +8956,10 @@ function sOrdDetail() {
         + PAPEL_ABRE(String(o.ref || 'TU PEDIDO') + ' · NO ES BOLETA')
         + reciboLinea('Fecha', esc(String(o.date || '')), 'mudo')
         + reciboLinea('A nombre de', esc(String(o.customer_name || '')))
+        // «Prometimos» es lo que el servidor dejó escrito al crear el pedido, no lo que diría
+        // la cola de hoy; «llegó» se compara contra eso (maqueta del detalle).
+        + (ventanaDelPedido(o) ? reciboLinea('Prometimos', esc(ventanaDelPedido(o))) : '')
+        + (o.delivered_at ? reciboLinea('Llegó', esc(horaLima(Date.parse(o.delivered_at))) + (llegoDentro(o) === true ? ' · dentro' : llegoDentro(o) === false ? ' · tarde' : ''), llegoDentro(o) === true ? 'ahorro' : undefined) : '')
         + '<div style="font-size:11px;line-height:1.5;padding:6px 0 2px">' + esc(String(o.summary || '')) + '</div>'
         + '<div style="border-top:1px dashed ' + PAPEL_TINTA + ';margin:7px 0"></div>'
         // El envío solo aparece cuando de verdad se sabe cuánto fue. Un pedido consultado por
@@ -8877,6 +8989,9 @@ function sOrdDetail() {
             : o.status === 'ENTREGADO' ? '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>'
                 : '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px">Este pedido se canceló.</div>')
         + ratingHTML(o)
+        // «Algo salió mal · hasta 48 h después» (maqueta del detalle). Solo mientras se puede:
+        // pasado el plazo el botón desaparece en vez de llevar a una pantalla que dice que no.
+        + (puedeReportarPedido(o) && cust ? BTN('Algo salió mal · hasta ' + REPORTE_PLAZO_HORAS + ' h después //', 'abrirAlgoSalioMal(\'' + esc(String(o.ref)) + '\')', true) : '')
         + '</div>' + NAV();
 }
 var _cancelMyOrderInProgress = false;
@@ -9770,7 +9885,7 @@ function sPReturns() {
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px">Última actualización: 2026</div>'
         + providerBlockHTML()
         + sec('POR QUÉ NO HAY DEVOLUCIÓN GENERAL //', 'Nuestros productos son alimentos preparados al momento y perecibles: una vez entregado el pedido, no aceptamos devoluciones de dinero por simple arrepentimiento, tal como establece el Código de Protección y Defensa del Consumidor para este tipo de bienes.')
-        + sec('SI TU PEDIDO LLEGÓ MAL //', 'Si el pedido llega incompleto, con un ingrediente distinto al pedido, o en mal estado, repórtalo dentro de las 2 horas siguientes a la entrega por WhatsApp (con foto si es posible) o desde el Libro de Reclamaciones. Verificado el problema, te ofrecemos —a tu elección— reposición sin costo, crédito interno equivalente en la app, o reembolso por el mismo medio de pago.')
+        + sec('SI TU PEDIDO LLEGÓ MAL //', 'Si el pedido llega incompleto, con un ingrediente distinto al pedido, o en mal estado, repórtalo dentro de las 48 horas siguientes a la entrega por WhatsApp (con foto si es posible) o desde el Libro de Reclamaciones. Verificado el problema, te ofrecemos —a tu elección— reposición sin costo, crédito interno equivalente en la app, o reembolso por el mismo medio de pago.')
         + sec('CANCELACIONES //', 'Puedes cancelar sin costo antes de que la cocina empiece a preparar tu pedido. Una vez iniciada la preparación, ya no se puede cancelar ni reembolsar.')
         + sec('TIEMPOS DE REEMBOLSO //', 'Cuando corresponde reembolso por el medio de pago original (tarjeta vía Culqi, Yape o Plin), el abono puede demorar entre 3 y 10 días hábiles según el operador financiero — nosotros lo iniciamos apenas se aprueba el caso.')
         + sec('CONTACTO //', 'Escríbenos por WhatsApp desde el botón de soporte, o a ' + BIZ_EMAIL + '.')
@@ -9903,6 +10018,138 @@ async function toggleAdTracking() {
         adOptOutMsg = (e && e.message) || 'No se pudo guardar. Intenta de nuevo.';
     }
     render();
+}
+// ── 35 · ALGO SALIÓ MAL ────────────────────────────────────────────────────────────────
+// Maqueta: docs/maquetas/aprobadas/35-algo-salio-mal.png. Reporte rápido de UN pedido
+// entregado, dentro de las 48 h (los Términos dicen lo mismo, ver sPReturns). No es el Libro
+// de Reclamaciones: eso sigue en su pantalla, con su plazo legal. DEBEN coincidir con
+// problems.ts — lo verifica `npm run parity`.
+var REPORTE_PLAZO_HORAS = 48;
+var RESPUESTA_CORTE_HORA = 19, RESPUESTA_HOY_HORA = 21, RESPUESTA_MANANA_HORA = 13;
+var MOTIVOS_PROBLEMA = [
+    { id: 'falto', t: 'Faltó algo', s: 'Vino incompleto' },
+    { id: 'frio', t: 'Llegó frío', s: 'O tarde de más' },
+    { id: 'distinto', t: 'No era lo que pedí', s: 'Cambiaron algo' },
+    { id: 'otro', t: 'Otra cosa', s: 'Cuéntamelo tú' },
+];
+var probRef = '', probMotivo = '', probDetalle = '', probEnviando = false, probError = '', probListo = null;
+function puedeReportarPedido(o) {
+    if (!o || o.status !== 'ENTREGADO')
+        return false;
+    var e = Date.parse(o.delivered_at);
+    return isFinite(e) && Date.now() - e <= REPORTE_PLAZO_HORAS * 3600000;
+}
+// La misma regla que respondeAntesDe() del servidor, para mostrar la hora ANTES de enviar;
+// después de enviar manda la que guardó el servidor.
+function respondeAntesTexto(iso) {
+    var t = iso ? Date.parse(iso) : NaN;
+    if (!isFinite(t)) {
+        var LIMA = -5 * 3600000, local = new Date(Date.now() + LIMA);
+        var y = local.getUTCFullYear(), m = local.getUTCMonth(), d = local.getUTCDate();
+        t = (local.getUTCHours() < RESPUESTA_CORTE_HORA ? Date.UTC(y, m, d, RESPUESTA_HOY_HORA, 0) : Date.UTC(y, m, d + 1, RESPUESTA_MANANA_HORA, 0)) - LIMA;
+    }
+    var mismoDia = new Date(t - 5 * 3600000).getUTCDate() === new Date(Date.now() - 5 * 3600000).getUTCDate();
+    var hora = horaLima(t);
+    return 'Sando responde antes de ' + (hora.indexOf('1:') === 0 ? 'la ' : 'las ') + hora + (mismoDia ? '' : ' de mañana');
+}
+function cuandoFuePedido(o) {
+    var t = Date.parse(o && (o.delivered_at || o.created_at));
+    if (!isFinite(t))
+        return '';
+    var dia = function (ms) { return new Date(ms - 5 * 3600000).toISOString().slice(0, 10); };
+    var hoy = dia(Date.now()), ayer = dia(Date.now() - 86400000), el = dia(t);
+    return el === hoy ? 'hoy' : el === ayer ? 'ayer' : new Date(t).toLocaleDateString('es-PE', { timeZone: 'America/Lima', day: 'numeric', month: 'short' });
+}
+var probRespuesta = '';
+async function abrirAlgoSalioMal(ref) {
+    probRef = ref;
+    probMotivo = '';
+    probDetalle = '';
+    probError = '';
+    probListo = null;
+    probEnviando = false;
+    probRespuesta = '';
+    sndScreen = 'p_problema';
+    render();
+    // Si ya lo reportó, la pantalla no vuelve a pedirle que marque nada: le dice hasta cuándo
+    // le respondemos, o qué se decidió.
+    try {
+        var r = await api('my-order-problems', { token: token });
+        var p = (r.problems || []).find(function (x) { return x.ref === ref; });
+        if (p) {
+            probListo = p.respond_by || '';
+            if (p.resolved_at)
+                probRespuesta = { reposicion: 'Te lo reponemos sin costo', credito: 'Te dejamos el monto como crédito en la app', reembolso: 'Te devolvemos el dinero por el mismo medio' }[p.resolution] + (p.resolution_note ? '. ' + p.resolution_note : '.');
+            if (sndScreen === 'p_problema')
+                render();
+        }
+    }
+    catch (e) { /* sin la consulta, la pantalla sigue sirviendo para reportar */ }
+}
+function elegirMotivo(id) {
+    var ta = document.getElementById('prob-detalle');
+    if (ta)
+        probDetalle = ta.value;
+    probMotivo = id;
+    probError = '';
+    render();
+}
+async function enviarProblema() {
+    if (!probMotivo) {
+        probError = 'Marca qué pasó.';
+        render();
+        return;
+    }
+    var ta = document.getElementById('prob-detalle');
+    if (ta)
+        probDetalle = ta.value;
+    if (probMotivo === 'otro' && !probDetalle.trim()) {
+        probError = 'Cuéntanos qué pasó.';
+        render();
+        return;
+    }
+    probEnviando = true;
+    probError = '';
+    render();
+    try {
+        var r = await api('report-order-problem', { token: token, ref: probRef, motivo: probMotivo, detalle: probDetalle });
+        probListo = r.respondeAntesDe || '';
+    }
+    catch (e) {
+        probError = (e && e.message) || 'No se pudo enviar. Intenta de nuevo.';
+    }
+    probEnviando = false;
+    render();
+}
+function sAlgoSalioMal() {
+    var o = myOrders.find(function (x) { return x.ref === probRef; });
+    if (!o)
+        return sPOrders();
+    var volver = "sndScreen='p_ord_detail';render()";
+    var h = '<div class="m35 fi"><div class="forro"></div><div class="wicho"></div>'
+        + '<button class="sal" onclick="' + volver + '" aria-label="Volver">←</button>'
+        + '<div class="cab"><em>Pedido ' + esc(String(o.ref || '')) + (cuandoFuePedido(o) ? ' · ' + esc(cuandoFuePedido(o)) : '') + '</em>'
+        + '<h1>“Dime qué pasó.<br>Lo arreglo yo.”</h1>'
+        + '<p>No hace falta que escribas nada. Marca lo que pasó y te respondo hoy mismo.</p></div>'
+        + '<img class="figura" src="img/sando2_cuerpo_forro.png" alt="">';
+    if (probListo !== null) {
+        return h + '<div class="listo">' + (probRespuesta ? esc(probRespuesta) : 'Listo. Ya lo tengo.') + '</div>'
+            + (probRespuesta ? '' : '<div class="plazo">' + esc(respondeAntesTexto(probListo)) + '.</div>')
+            + '<button class="ir sw-barra" onclick="' + volver + '">Volver a mi pedido</button></div>';
+    }
+    if (!puedeReportarPedido(o)) {
+        return h + '<div class="listo">Pasaron más de ' + REPORTE_PLAZO_HORAS + ' horas desde la entrega.</div>'
+            + '<div class="plazo">Si igual quieres dejar constancia, está el Libro de Reclamaciones.</div>'
+            + '<button class="ir sw-barra" onclick="sndScreen=\'p_complaints\';render()">Libro de Reclamaciones</button></div>';
+    }
+    return h + '<div class="ops" role="radiogroup" aria-label="Qué pasó">' + MOTIVOS_PROBLEMA.map(function (m) {
+        var on = probMotivo === m.id;
+        return '<button class="op' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" onclick="elegirMotivo(\'' + m.id + '\')"><b>' + esc(m.t) + '</b><i>' + esc(m.s) + '</i></button>'
+            + (on && m.id === 'otro' ? '<textarea id="prob-detalle" maxlength="1000" placeholder="Cuéntamelo acá">' + esc(probDetalle) + '</textarea>' : '');
+    }).join('') + '</div>'
+        + '<div class="plazo">' + esc(respondeAntesTexto(null)) + '</div>'
+        + (probError ? '<div class="err">' + esc(probError) + '</div>' : '')
+        + '<button class="ir sw-barra"' + (probEnviando ? ' disabled' : '') + ' onclick="enviarProblema()">' + (probEnviando ? 'Enviando…' : 'Enviar el reclamo') + '</button></div>';
 }
 // ── #60: pedido fijo (recurrente) ───────────────────────────────────────────────────────
 //
@@ -10074,19 +10321,20 @@ function sPAddresses() {
     var h = H('MIS DIRECCIONES', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (myAddresses.length) {
         h += myAddresses.map(function (a) {
-            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (editingAddrId === a.id ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.address) + '</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
+            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (editingAddrId === a.id ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.address) + '</div>' + (a.reference ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.reference) + '</div>' : '') + '</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
         }).join('');
     }
     else {
         h += VACIO('Sin direcciones guardadas', 'Guarda la tuya abajo y la próxima vez la eliges de un toque.', '', 'mira');
     }
-    h += '<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">' + (editing ? 'Editar dirección //' : 'Agregar dirección //') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'Nombre // Casa, Trabajo...', 'text', editing ? editing.label : undefined, 'clientes') + INP('na-addr', 'Dirección completa', 'text', editing ? editing.address : undefined, 'direccion') + '<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">' + newAddrMsg + '</div>' + BTN(editing ? 'Guardar cambios //' : 'Guardar dirección //', 'doSaveAddress()') + (editing ? '<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>' : '') + '</div></div>';
+    h += '<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">' + (editing ? 'Editar dirección //' : 'Agregar dirección //') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'Nombre // Casa, Trabajo...', 'text', editing ? editing.label : undefined, 'clientes') + INP('na-addr', 'Dirección completa', 'text', editing ? editing.address : undefined, 'direccion') + INP('na-ref', 'Referencia // timbre, portón, piso (opcional)', 'text', editing ? (editing.reference || '') : undefined) + '<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">' + newAddrMsg + '</div>' + BTN(editing ? 'Guardar cambios //' : 'Guardar dirección //', 'doSaveAddress()') + (editing ? '<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>' : '') + '</div></div>';
     h += '</div>' + NAV();
     return h;
 }
 async function doSaveAddress() {
     var label = gv('na-label').trim();
     var addr = gv('na-addr').trim();
+    var ref = gv('na-ref').trim();
     if (!label || !addr) {
         newAddrMsg = 'Completa nombre y dirección.';
         render();
@@ -10094,11 +10342,11 @@ async function doSaveAddress() {
     }
     try {
         if (editingAddrId) {
-            await api('addresses-update', { token: token, id: editingAddrId, label: label, address: addr });
+            await api('addresses-update', { token: token, id: editingAddrId, label: label, address: addr, reference: ref });
             editingAddrId = null;
         }
         else {
-            await api('addresses-add', { token: token, label: label, address: addr });
+            await api('addresses-add', { token: token, label: label, address: addr, reference: ref });
         }
         newAddrMsg = '';
         await loadAddresses();
@@ -11387,6 +11635,9 @@ function renderScreen() {
             break;
         case 'p_ord_detail':
             h = sOrdDetail();
+            break;
+        case 'p_problema':
+            h = sAlgoSalioMal();
             break;
         case 'p_profile':
             h = sPProfile();

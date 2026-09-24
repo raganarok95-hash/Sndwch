@@ -176,7 +176,9 @@ function pickAddr(id){
   // Si la dirección guardada ya menciona el distrito, se preselecciona — el cliente no
   // tiene que volver a elegir algo que ya escribió cuando la guardó.
   var inferred=districtFromAddress(a.address);
-  if(inferred)deliveryDistrict=inferred;
+  if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=true;}
+  // La referencia viaja con la dirección (maqueta 34): no se vuelve a escribir en cada pedido.
+  if(a.reference)confNotes=a.reference;
   render();
 }
 // Bloque de campos de checkout (puntos a ganar, recompensas, direcciones guardadas,
@@ -278,12 +280,47 @@ function districtPickerHTML(){
   // no hay pin, y el servidor no ve el mapa), pero preguntar dos veces el mismo dato —
   // una al mapa y otra al cliente — era exactamente lo que el dueño reportó como fricción.
   var delPin=deliveryDistrictFromPin&&deliveryDistrict;
+  // ── EL DISTRITO YA NO SE PREGUNTA SI EL MAPA LO SABE (maqueta 34, dueño 2026-09-24) ──
+  // La maqueta no tiene selector de distrito: la dirección se marca en el mapa y de ahí sale
+  // todo. El selector queda solo cuando el mapa no lo resolvió, o cuando el cliente pide
+  // cambiarlo. El <select> sigue existiendo (oculto) para que doOrder lea el mismo campo.
+  var d=districtById(deliveryDistrict);
+  if(delPin&&d&&!districtSelectOpen){
+    var fuera=!!(d as any).out;
+    return'<div><input type="hidden" id="o-district" value="'+esc(deliveryDistrict)+'">'
+      +'<div id="o-district-hint" style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-family:\'EB Garamond\',serif;font-size:13px;color:'+(fuera?'var(--sw-danger,#ff8888)':'var(--sw-text-muted,#9DA096)')+'">'
+      +'<span>'+(fuera?'Todavía no llegamos a '+esc(d.l)+'.':'Entregamos en '+esc(d.l)+'.')+'</span>'
+      +'<button onclick="districtSelectOpen=true;syncConfirmFields();render()" style="all:unset;cursor:pointer;font-size:11px;color:'+GOLD+';letter-spacing:.1em">No es mi distrito</button></div>'
+      +(fuera?zonaEsperaHTML(d):'')
+      +'</div>';
+  }
   return'<div>'
     +'<label for="o-district" style="display:block;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">'+(delPin?'Distrito // lo tomamos de tu mapa':'Distrito //')+'</label>'
     +'<select id="o-district" onchange="pickDistrict(this.value)" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-shadow:'+SHADOW_SM+';box-sizing:border-box;-webkit-appearance:none;appearance:none">'
     +'<option value=""'+(deliveryDistrict?'':' selected')+'>Elige tu distrito</option>'+opts+'</select>'
     +'<div id="o-district-hint" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:5px">'+esc(delPin?'Si no es el correcto, cámbialo aquí.':'Por ahora no llegamos a '+out+'.')+'</div>'
     +'</div>';
+}
+var districtSelectOpen=false;
+// «Te avisamos apenas abramos la zona» (maqueta 34): queda anotado con su distrito y el dueño
+// avisa desde el panel cuando abre esa zona (actions/zones.ts). Sin sesión no hay a quién
+// avisarle, así que se lo dice en vez de fingir que quedó anotado.
+var zonaEsperaEstado:Record<string,string>={};
+function zonaEsperaHTML(d:any):string{
+  var st=zonaEsperaEstado[d.id]||'';
+  if(st==='ok')return'<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">Listo. Te avisamos apenas abramos '+esc(d.l)+'.</div>';
+  if(!cust)return'<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096)">Entra a tu cuenta y te avisamos apenas abramos '+esc(d.l)+'.</div>';
+  return'<button onclick="unirmeAZona(\''+d.id+'\')" style="all:unset;cursor:pointer;margin-top:8px;display:inline-block;font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';border-bottom:1px solid '+GOLD+'">'+(st==='enviando'?'Anotándote…':'Avísame cuando lleguen')+'</button>'
+    +(st&&st!=='enviando'?'<div style="margin-top:4px;font-size:11px;color:var(--sw-danger,#ff8888)">'+esc(st)+'</div>':'');
+}
+async function unirmeAZona(id:string){
+  syncConfirmFields();
+  zonaEsperaEstado[id]='enviando';render();
+  try{
+    await api('zone-waitlist-join',{token:token,district:id,lat:window._mLat,lon:window._mLon});
+    zonaEsperaEstado[id]='ok';
+  }catch(e:any){zonaEsperaEstado[id]=(e&&e.message)||'No se pudo anotar. Intenta de nuevo.';}
+  render();
 }
 // No re-renderiza el checkout entero a propósito: hacerlo borraría lo que el cliente
 // tenga escrito a medias en los inputs de arriba (nombre/dirección/referencia solo se

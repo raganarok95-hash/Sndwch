@@ -1779,6 +1779,41 @@ function sAdminOrderProblems(){
   return h+'</div>';
 }
 
+// ZONAS QUE ESPERAN — quién se anotó en el checkout para que le avisemos cuando lleguemos a
+// su distrito (actions/zones.ts). Sirve para decidir qué zona abrir, y para avisarles a todos
+// de una vez cuando se abre. El servidor se niega a avisar mientras la zona siga excluida.
+var zoneWaitlist:any[]|null=null;
+async function loadZoneWaitlist(){
+  sndScreen='admin_zone_waitlist';busy=true;busyMsg='Cargando zonas...';render();
+  try{var r=await api('admin-zone-waitlist',{token:token});zoneWaitlist=r.zones||[];}
+  catch(e){zoneWaitlist=null;}
+  busy=false;render();
+}
+async function notifyZone(id){
+  var d=districtById(id);
+  if(!(await showConfirm('¿Avisar a todos los que esperan en '+((d&&d.l)||id)+' que ya llegamos? Hazlo solo si ya abriste esa zona.')))return;
+  try{
+    var r=await api('admin-notify-zone',{token:token,district:id,districtLabel:(d&&d.l)||id});
+    showToast('Avisados: '+r.avisados+' de '+r.total+'.','success');
+  }catch(e){showToast(e.message);}
+  loadZoneWaitlist();
+}
+function sAdminZoneWaitlist(){
+  var h=H('ZONAS QUE ESPERAN',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!zoneWaitlist){
+    return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadZoneWaitlist()',true)+'</div>';
+  }
+  h+=zoneWaitlist.length?zoneWaitlist.map(function(z){
+    var d=districtById(z.district);
+    return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      +'<div><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">'+esc((d&&d.l)||z.district)+'</b>'
+      +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+z.count+' esperando</div></div>'
+      +'<button onclick="notifyZone(\''+esc(z.district)+'\')" style="all:unset;cursor:pointer;padding:8px 12px;border:1px solid '+GOLD+';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:'+GOLD+'">Ya llegamos</button></div>';
+  }).join(''):'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nadie esperando todavía.</div>';
+  h+=BTN('Actualizar //','loadZoneWaitlist()',true);
+  return h+'</div>';
+}
+
 async function loadAdminComplaints(){
   sndScreen='admin_complaints';busy=true;busyMsg='Cargando reclamaciones...';render();
   try{var r=await api('admin-list-complaints',{token:token,status:cmplFilterStatus||undefined});adminComplaints=r.complaints;}
@@ -2634,6 +2669,7 @@ Object.assign(ADMIN_SCREENS, {
   admin_ratings: sAdminRatings,
   admin_complaints: sAdminComplaints,
   admin_order_problems: sAdminOrderProblems,
+  admin_zone_waitlist: sAdminZoneWaitlist,
   admin_prep: sAdminPrepList,
   admin_recipes: sAdminRecipes,
   admin_cash: sAdminCashClose,

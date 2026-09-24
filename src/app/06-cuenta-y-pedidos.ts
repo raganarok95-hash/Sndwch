@@ -1084,7 +1084,7 @@ function sAlgoSalioMal(){
     +'<div class="cab"><em>Pedido '+esc(String(o.ref||''))+(cuandoFuePedido(o)?' · '+esc(cuandoFuePedido(o)):'')+'</em>'
     +'<h1>“Dime qué pasó.<br>Lo arreglo yo.”</h1>'
     +'<p>No hace falta que escribas nada. Marca lo que pasó y te respondo hoy mismo.</p></div>'
-    +'<img class="figura" src="img/sando2_cuerpo_b.png" alt="">';
+    +'<img class="figura" src="img/sando2_cuerpo_forro.png" alt="">';
   if(probListo!==null){
     return h+'<div class="listo">'+(probRespuesta?esc(probRespuesta):'Listo. Ya lo tengo.')+'</div>'
       +(probRespuesta?'':'<div class="plazo">'+esc(respondeAntesTexto(probListo))+'.</div>')

@@ -126,25 +126,26 @@ function sPAddresses(){
   var h=H('MIS DIRECCIONES',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(myAddresses.length){
     h+=myAddresses.map(function(a){
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div></div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
+      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div>'+(a.reference?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.reference)+'</div>':'')+'</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
     }).join('');
   }else{
     h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.','','mira');
   }
-  h+='<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
+  h+='<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+INP('na-ref','Referencia // timbre, portón, piso (opcional)','text',editing?(editing.reference||''):undefined)+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#A8C8B0)">Cancelar edición</div>':'')+'</div></div>';
   h+='</div>'+NAV();
   return h;
 }
 async function doSaveAddress(){
   var label=gv('na-label').trim();
   var addr=gv('na-addr').trim();
+  var ref=gv('na-ref').trim();
   if(!label||!addr){newAddrMsg='Completa nombre y dirección.';render();return;}
   try{
     if(editingAddrId){
-      await api('addresses-update',{token:token,id:editingAddrId,label:label,address:addr});
+      await api('addresses-update',{token:token,id:editingAddrId,label:label,address:addr,reference:ref});
       editingAddrId=null;
     }else{
-      await api('addresses-add',{token:token,label:label,address:addr});
+      await api('addresses-add',{token:token,label:label,address:addr,reference:ref});
     }
     newAddrMsg='';
     await loadAddresses();

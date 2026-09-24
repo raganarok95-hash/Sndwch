@@ -320,6 +320,7 @@ function adminToolsSections(){
       ['estrella','Calificaciones','loadRatingsList()'],
       ['reclamo','Reclamaciones','loadAdminComplaints()'],
       ['reclamo','Algo salió mal','loadOrderProblems()'],
+      ['direccion','Zonas que esperan','loadZoneWaitlist()'],
     ]],
     ['Marketing //',[
       // ⚠ "Avísale a tu gente" va PRIMERO de todo Marketing. La simulación del 2026-09-13
