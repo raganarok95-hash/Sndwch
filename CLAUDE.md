@@ -328,18 +328,12 @@ ninguna foto servida se quede sin original y que no sobreviva un archivo del for
 
 ## Cómo desplegar el backend
 
-**El despliegue de `api`, `create-charge`, `create-credit-charge` y `weekly-summary` es
-automático vía CI — NUNCA lo hagas llamando a `mcp__Supabase__deploy_edge_function` a
-mano para estas 4.** `.github/workflows/deploy-api.yml` corre en cada push a `main` que
-toque `supabase/functions/**` y ejecuta `supabase functions deploy` para esas 4 funciones
-directo desde el checkout del repo, sin costo de tokens.
-
-`daily-summary`, `birthday-bonus`, `winback-campaign` y `send-order-email` **NO están en
-ese workflow** (sus `entrypoint_path` en `list_edge_functions` apuntan a `/tmp/user_fn_.../
-source/`, no al runner de GitHub Actions — señal de que la última vez que cambiaron fue
-con un deploy manual). Si alguna vez tocas una de estas 4, sí necesitas
-`mcp__Supabase__deploy_edge_function` a mano para esa función específica (son de un solo
-archivo cada una, mucho más barato que `api`) — o mejor, agrégala al workflow.
+**El despliegue de las 8 edge functions es automático vía CI — NUNCA lo hagas llamando a
+`mcp__Supabase__deploy_edge_function` a mano.** `.github/workflows/deploy-api.yml` corre en cada
+push a `main` que toque `supabase/functions/**` y despliega las 8 directo desde el checkout del
+repo, sin costo de tokens. `birthday-bonus` entró el 2026-08-29; `daily-summary`,
+`winback-campaign` y `send-order-email` el 2026-09-24 (hasta entonces un cambio en ellas quedaba
+en el repo sin llegar a producción). Una función NUEVA se agrega a ese workflow el mismo día.
 
 Esto quedó documentado aquí después de que una sesión entera (2026-07-18/19) se gastó el
 límite de varias sesiones intentando desplegar `api` a mano — leyendo y reincrustando sus
@@ -367,7 +361,7 @@ desde una sesión no se puede correr contra producción: para probar cambios al 
    igual" al que viste antes de pushear; puede que ya sea el post-CI y estés comparándolo
    contra sí mismo.
 2. Solo usa `mcp__Supabase__deploy_edge_function` manualmente si el CI está roto/no
-   disponible, o para una de las 4 funciones fuera del workflow. En ese caso sí exige los
+   disponible. En ese caso sí exige los
    archivos completos de la función tal cual están en disco (nunca reconstruidos de
    memoria) y compara después con `mcp__Supabase__get_edge_function` contra git antes de
    confiar en que coinciden.

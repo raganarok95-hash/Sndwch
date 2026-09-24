@@ -51,6 +51,19 @@ jobs:
       - run: supabase functions deploy birthday-bonus --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Las tres que quedaban fuera entran el 2026-09-24: los correos pasaron a la paleta
+      # vigente (_shared/paleta.ts) y, sin estar acá, producción seguía mandándolos en la
+      # paleta anterior hasta que alguien se acordara de desplegarlas a mano. Las tres son
+      # verify_jwt=false en producción, igual que las demás.
+      - run: supabase functions deploy daily-summary --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase functions deploy winback-campaign --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase functions deploy send-order-email --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       # PRUEBA DE HUMO DESPUÉS DEL DEPLOY (2026-08-29, automatización #99).
       # Todo lo de arriba verifica ANTES de desplegar: `deno check`, las pruebas de dinero,
       # y recién entonces el deploy. Después del deploy no verificaba nadie, y ahí es
