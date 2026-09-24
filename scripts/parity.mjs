@@ -270,6 +270,15 @@ cmp('QUEUE_MINUTES_PER_ORDER (minutos que suma cada pedido en cola)',
   scalar(app, 'queueMinutesPerOrder', /queueMinutesPerOrder=(\d+)/, 'src/app/'),
   scalar(env, 'QUEUE_MINUTES_PER_ORDER', /const QUEUE_MINUTES_PER_ORDER = (\d+)/, 'env.ts'));
 
+// La ventana que se promete al pagar la calcula el servidor y la guarda; el cliente la
+// estima antes con el mismo rango. Si se separan, el carrito dice una hora y el pedido otra.
+cmp('ESTIMATED_DELIVERY_RANGE desde (minutos de la ventana prometida)',
+  scalar(app, 'ESTIMATED_DELIVERY_RANGE', /ESTIMATED_DELIVERY_RANGE=\[(\d+),\d+\]/, 'src/app/'),
+  scalar(env, 'ESTIMATED_DELIVERY_RANGE', /const ESTIMATED_DELIVERY_RANGE = \[(\d+), ?\d+\]/, 'env.ts'));
+cmp('ESTIMATED_DELIVERY_RANGE hasta (minutos de la ventana prometida)',
+  scalar(app, 'ESTIMATED_DELIVERY_RANGE', /ESTIMATED_DELIVERY_RANGE=\[\d+,(\d+)\]/, 'src/app/'),
+  scalar(env, 'ESTIMATED_DELIVERY_RANGE', /const ESTIMATED_DELIVERY_RANGE = \[\d+, ?(\d+)\]/, 'env.ts'));
+
 // El cliente ENSEÑA este número en la invitación a referir ("te ganas un sándwich 15CM
 // gratis (400 pts)"), así que si se separa del servidor la app promete un premio que la
 // recompensa ya no paga. El chequeo de abajo ata además ese valor a R06.

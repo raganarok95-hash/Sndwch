@@ -7,6 +7,7 @@ import {
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
   DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
   CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
+  ventanaPrometida,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -484,8 +485,24 @@ async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: 
   // relevante es "quién es este cliente ahora", no una consulta aparte cada vez que se
   // reimprime. null para invitados (sin cuenta no hay rango que mostrar).
   let customerRank: string | null = null;
+  // La hora que se le promete al cliente queda escrita en el pedido al crearlo (ver
+  // `ventanaPrometida` en env.ts). La cola se cuenta ahora, no la que vio el cliente al
+  // armar el carrito: es la que de verdad tiene delante este pedido.
+  let colaDelante = 0;
+  if (!p.scheduledFor) {
+    try {
+      colaDelante = (await sbGet("orders", "status=in.(RECIBIDO,PREPARANDO)&select=id&limit=200")).length;
+    } catch (e) {
+      // Sin la cola se promete el rango de la cocina vacía: peor que el real, pero el pedido
+      // no puede caerse por un dato de apoyo.
+      console.error("cola para la ventana prometida:", e);
+    }
+  }
+  const promesa = ventanaPrometida(Date.now(), colaDelante, p.scheduledFor);
   async function insertOrder() {
     return sbInsert("orders", {
+      promised_from: promesa.desde,
+      promised_to: promesa.hasta,
       ref: p.ref,
       customer_phone: p.phone,
       contact_phone: p.contactPhone,
@@ -1454,7 +1471,7 @@ export async function actPlaceOrder(b: any) {
 // es justo quien no tiene dónde más mirar. Ninguna de las dos es un dato sensible: son el
 // monto que ya pagó y la distancia que ya recorrió su propio pedido.
 const GUEST_ORDER_FIELDS =
-  "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at,date";
+  "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,promised_from,promised_to,delivered_at,redeemed_reward,created_at,date";
 export async function actMyOrders(b: any) {
   if (b.token) {
     const s = await requireSession(b.token);

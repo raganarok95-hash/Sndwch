@@ -840,6 +840,33 @@ function estimatedDeliveryRange(){
   return[ESTIMATED_DELIVERY_RANGE[0]+extra,ESTIMATED_DELIVERY_RANGE[1]+extra];
 }
 function estimatedRangeText(){var r=estimatedDeliveryRange();return r[0]+'-'+r[1]+' min';}
+// La ventana como HORA, que es como la dibujan las maquetas («Llega 7:40 – 8:05 p.m.»).
+// Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
+// la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
+function horaLima(ms:number):string{
+  return new Date(ms).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit',hour12:true}).replace(/\s?a\.?\s?m\.?/i,' a.m.').replace(/\s?p\.?\s?m\.?/i,' p.m.');
+}
+function textoVentana(desde:number,hasta:number):string{
+  var a=horaLima(desde),b=horaLima(hasta),sufA=a.slice(-5),sufB=b.slice(-5);
+  return(sufA===sufB?a.slice(0,-5):a)+' – '+b;
+}
+function ventanaEstimadaTexto(programadoPara?:string|null):string{
+  var ancho=(ESTIMATED_DELIVERY_RANGE[1]-ESTIMATED_DELIVERY_RANGE[0])*60000;
+  var prog=programadoPara?Date.parse(programadoPara):NaN;
+  if(isFinite(prog))return textoVentana(prog,prog+ancho);
+  var r=estimatedDeliveryRange(),ahora=Date.now();
+  return textoVentana(ahora+r[0]*60000,ahora+r[1]*60000);
+}
+function ventanaDelPedido(o:any):string{
+  var d=Date.parse(o&&o.promised_from),h=Date.parse(o&&o.promised_to);
+  return isFinite(d)&&isFinite(h)?textoVentana(d,h):'';
+}
+// «dentro» / «tarde» del detalle de un pedido: se compara la entrega contra lo prometido,
+// nunca contra la ventana de hoy.
+function llegoDentro(o:any):boolean|null{
+  var h=Date.parse(o&&o.promised_to),e=Date.parse(o&&o.delivered_at);
+  return isFinite(h)&&isFinite(e)?e<=h:null;
+}
 // Coordenadas reales del punto de despacho (Av. Prolongación César Vallejo 2670,
 // Condominio El Mirador del Golf, Trujillo) — usadas SOLO para el banner "Estás cerca"
 // (ver checkNearbyStore/sOHome). No confundir con ESTIMATED_DELIVERY_RANGE de arriba.

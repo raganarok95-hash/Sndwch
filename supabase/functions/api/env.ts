@@ -333,6 +333,35 @@ export const MAX_ORDERS_PER_HOUR = 10;
 // cuesta más que la venta que se pierde por avisar que hoy hay demora.
 export const QUEUE_MINUTES_PER_ORDER = 5;
 
+// La hora de llegada que se PROMETE al pagar (pantallas 30 G2, 31, 06 y el «prometimos» del
+// detalle). Antes solo existía cuando el pedido salía EN CAMINO: el cliente pagaba sin ver
+// ninguna hora y el detalle no tenía contra qué comparar «llegó dentro». Ahora se fija al
+// crear el pedido y se guarda (`promised_from`/`promised_to`), así lo prometido queda escrito
+// y no se recalcula después con otra cola.
+//
+// Pedido para ya: ahora + el rango de siempre + lo que suma la cola. Programado: la hora que
+// eligió, con el mismo ancho de ventana. DEBE coincidir con ESTIMATED_DELIVERY_RANGE en
+// src/app/01-* — lo verifica `npm run parity`.
+export const ESTIMATED_DELIVERY_RANGE = [25, 40];
+
+export function ventanaPrometida(
+  ahoraMs: number,
+  colaDelante: number,
+  programadoPara?: string | null,
+): { desde: string; hasta: string } {
+  const MIN = 60000;
+  const ancho = ESTIMATED_DELIVERY_RANGE[1] - ESTIMATED_DELIVERY_RANGE[0];
+  const prog = programadoPara ? Date.parse(programadoPara) : NaN;
+  if (Number.isFinite(prog)) {
+    return { desde: new Date(prog).toISOString(), hasta: new Date(prog + ancho * MIN).toISOString() };
+  }
+  const extra = Math.max(0, Math.floor(Number(colaDelante) || 0)) * QUEUE_MINUTES_PER_ORDER;
+  return {
+    desde: new Date(ahoraMs + (ESTIMATED_DELIVERY_RANGE[0] + extra) * MIN).toISOString(),
+    hasta: new Date(ahoraMs + (ESTIMATED_DELIVERY_RANGE[1] + extra) * MIN).toISOString(),
+  };
+}
+
 // #30 — Palabras que convierten una nota del cliente en un asunto de SEGURIDAD, no de
 // preferencia. El campo de notas es texto libre y se usa sobre todo para referencias de
 // dirección ("portón azul", "3er piso"): una alergia escrita ahí se pinta igual que el

@@ -390,7 +390,7 @@ function checkoutExtrasHTML(){
     // sesión no lo ve — sería ruido en el paso de pagar.
     +(!cust?googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.'):'')
     +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name','nombre')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address','direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#A8C8B0)">'+icon('gps',16,'#A8C8B0')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
-    +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#9DA096')+'<span>Tiempo estimado: <b style="color:var(--sw-text,#FFFFFF)">'+estimatedRangeText()+'</b> desde que confirmamos tu pedido.'+(queueAhead>0?' Ahora mismo hay '+queueAhead+' pedido'+(queueAhead===1?'':'s')+' por delante.':'')+'</span></div></div>':'')
+    +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#9DA096')+'<span>Llega <b style="color:var(--sw-text,#FFFFFF)">'+esc(ventanaEstimadaTexto(null))+'</b> si lo confirmas ahora.'+(queueAhead>0?' Ahora mismo hay '+queueAhead+' pedido'+(queueAhead===1?'':'s')+' por delante.':'')+'</span></div></div>':'')
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
     +deliveryZonePickerHTML()
@@ -1389,6 +1389,8 @@ function finalizeOrderSuccess(res,po,chargeId){
   // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
   window._lOrderCreatedAt=Date.now();
   window._lRef=po.ref;
+  // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
+  window._lVentana=ventanaDelPedido(res.order);
   receiptUploadState=null;
   cart=[];
   pendingGroupCode=null;
@@ -1448,7 +1450,7 @@ function sOSent(){
     // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
     // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
     +(pending?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>':(window._lTot===0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
-    +(window._lRef?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido '+esc(window._lRef)+'</div>':'<div style="margin-bottom:20px"></div>')
+    +(window._lRef?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido '+esc(window._lRef)+(window._lVentana?' · llega '+esc(window._lVentana):'')+'</div>':'<div style="margin-bottom:20px"></div>')
     +(rankUp?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(rankUp)+'</div>'+(rankPerk?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px">'+rankPerk+'</div>':'')+'</div>':'')
     // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
     // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral

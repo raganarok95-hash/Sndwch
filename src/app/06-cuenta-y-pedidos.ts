@@ -156,6 +156,10 @@ function sOrdDetail(){
     +PAPEL_ABRE(String(o.ref||'TU PEDIDO')+' · NO ES BOLETA')
     +reciboLinea('Fecha',esc(String(o.date||'')),'mudo')
     +reciboLinea('A nombre de',esc(String(o.customer_name||'')))
+    // «Prometimos» es lo que el servidor dejó escrito al crear el pedido, no lo que diría
+    // la cola de hoy; «llegó» se compara contra eso (maqueta del detalle).
+    +(ventanaDelPedido(o)?reciboLinea('Prometimos',esc(ventanaDelPedido(o))):'')
+    +(o.delivered_at?reciboLinea('Llegó',esc(horaLima(Date.parse(o.delivered_at)))+(llegoDentro(o)===true?' · dentro':llegoDentro(o)===false?' · tarde':''),llegoDentro(o)===true?'ahorro':undefined):'')
     +'<div style="font-size:11px;line-height:1.5;padding:6px 0 2px">'+esc(String(o.summary||''))+'</div>'
     +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:7px 0"></div>'
     // El envío solo aparece cuando de verdad se sabe cuánto fue. Un pedido consultado por
