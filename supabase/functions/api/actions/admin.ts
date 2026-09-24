@@ -5,7 +5,7 @@ import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
-import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva, loQueGanaElInvitado } from "../catalog.ts";
+import { loadCatalogPrices, loadSecretSignature, buildTopProducts, priceCartItem, SIG_DATA, SIG_CONTENT, SIG_LABEL, SIG_GATES, VALID_BASES, VALID_TOPS, VALID_SAUCES, PROT_PRICE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, ORGANIZER_FREE_MIN_SANDWICHES, COMBO_DISCOUNT_PER_PAIR, offpeakActiva, loQueGanaElInvitado, pistasValidas } from "../catalog.ts";
 import { computeRankName, limaDayStartIso, limaMonthStartIso, REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS, QUEUE_MINUTES_PER_ORDER, CULQI_FEE_RATE, MAX_LOGIN_ATTEMPTS, MODELO_SUPUESTOS, MODELO_OBJETIVOS, CAC_TECHO, cacTechoPrimerPedido, cacTechoValorVida, pedidosPorCliente } from "../env.ts";
 import { WEEKLY_PLAN_PRICE, WEEKLY_PLAN_CREDIT } from "./customer.ts";
 import { businessDaysSince, COMPLAINT_DEADLINE_BUSINESS_DAYS, DEADLINE_WARNING_BUSINESS_DAYS } from "./complaints.ts";
@@ -1725,7 +1725,16 @@ export async function actAdminSecretSignatureSet(b: any) {
     );
   }
   const imagePath = b.imagePath ? String(b.imagePath).trim().slice(0, 300) : null;
+  // Lo que la pantalla del secreto cuenta además de la receta. Las pistas NO pueden nombrar
+  // ingredientes (el mecanismo es no revelarlos): el panel lo recuerda, acá solo se acotan.
+  const endsAt = b.endsAt && Number.isFinite(Date.parse(String(b.endsAt))) ? new Date(Date.parse(String(b.endsAt))).toISOString() : null;
+  if (endsAt && Date.parse(endsAt) < Date.now()) throw new ApiError("La fecha de fin ya pasó.", 400);
+  const hints = pistasValidas(b.hints);
+  const blurb = b.blurb ? String(b.blurb).trim().slice(0, 80) : null;
   await sbInsert("secret_signature", {
+    ends_at: endsAt,
+    hints,
+    blurb,
     name,
     base,
     protein_id: proteinId,

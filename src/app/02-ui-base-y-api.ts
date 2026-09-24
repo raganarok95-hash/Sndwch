@@ -127,7 +127,7 @@ function renderOverlays(){
   //
   // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
   // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'){
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }
@@ -392,6 +392,9 @@ async function loadCatalogBackground(){
         secretSig.tops=secret.tops;secretSig.sauces=secret.sauces;
         secretSig.p15=secret.p15;secretSig.p30=secret.p30;secretSig.minOrders=secret.minOrders;
       }
+      // Lo que cuenta la pantalla del secreto además de la receta (catalog.ts ·
+      // SECRET_EXTRA): hasta cuándo dura, sus pistas y los que ya no vuelven.
+      SECRET_EXTRA={endsAt:secret.endsAt||null,hints:secret.hints||[],past:secret.past||[]};
       // vaultOnly ya no es un flag fijo en PROTS/TOPS/SAUCES (ver comentarios junto a
       // P03/T04/S02/S12 arriba) — se recalcula en cada refresco a partir de qué ids
       // manda el servidor este ciclo, para que ARMA EL TUYO excluya exactamente lo que

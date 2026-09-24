@@ -1468,6 +1468,9 @@ var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
 // equivocado por ese mismo descuido, así que acá no se repite la lista: se nombra dónde
 // vive. Ver sOBuild/byoStepBack/byoStepNext.
 var byoStep=0;
+// Lo que cuenta la pantalla del menú secreto además de la receta: llega en get-catalog
+// (catalog.ts · SECRET_EXTRA). Vacío hasta que el catálogo responda.
+var SECRET_EXTRA:{endsAt:string|null,hints:{t:string,s:string}[],past:{name:string,blurb:string,mes:string}[]}={endsAt:null,hints:[],past:[]};
 var useCredit=false;
 // El campo de código promocional arranca colapsado (ver promoCodeHTML) — se abre solo si
 // el cliente dice que tiene uno.

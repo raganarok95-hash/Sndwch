@@ -240,6 +240,51 @@ export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
 // loadSecretSignature() lo reasigna en cada refresco (a diferencia de los Sets de
 // arriba, un string no se puede mutar in-place).
 export let SECRET_SIGNATURE_NAME = "Menú secreto";
+// Lo que la pantalla del menú secreto cuenta además de la receta: hasta cuándo dura, sus
+// pistas («Pica, y no de mentira») y los que ya no vuelven. Sale de la misma tabla.
+export let SECRET_EXTRA: {
+  endsAt: string | null;
+  hints: { t: string; s: string }[];
+  past: { name: string; blurb: string; mes: string }[];
+} = { endsAt: null, hints: [], past: [] };
+
+// Fin del secreto vigente: el que puso el dueño, o si no puso ninguno, el último día del mes
+// en que se publicó (la rotación es mensual). Hora de Lima.
+export function finDelSecreto(endsAt: string | null | undefined, publicadoEn: string | null | undefined): string | null {
+  if (endsAt && Number.isFinite(Date.parse(endsAt))) return new Date(Date.parse(endsAt)).toISOString();
+  const p = publicadoEn ? Date.parse(publicadoEn) : NaN;
+  if (!Number.isFinite(p)) return null;
+  const LIMA = -5 * 3600000;
+  const d = new Date(p + LIMA);
+  // 23:59:59 del último día de ese mes en Lima.
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) - 1000 - LIMA).toISOString();
+}
+
+// «Los que ya no vuelven»: los secretos anteriores al vigente, uno por nombre (corregir una
+// tilde inserta otra fila con el mismo nombre), los más recientes primero, hasta seis. El
+// vigente nunca aparece acá aunque se haya publicado dos veces.
+const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+export function secretosQueYaNoVuelven(rows: any[]): { name: string; blurb: string; mes: string }[] {
+  if (!rows.length) return [];
+  const vigente = String(rows[0].name || "").trim().toLowerCase();
+  const vistos = new Set<string>([vigente]);
+  const out: { name: string; blurb: string; mes: string }[] = [];
+  for (const r of rows.slice(1)) {
+    const n = String(r.name || "").trim();
+    if (!n || vistos.has(n.toLowerCase())) continue;
+    vistos.add(n.toLowerCase());
+    const t = Date.parse(r.created_at);
+    out.push({ name: n, blurb: String(r.blurb || "").trim(), mes: Number.isFinite(t) ? MESES[new Date(t - 5 * 3600000).getUTCMonth()] : "" });
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+export function pistasValidas(h: unknown): { t: string; s: string }[] {
+  return (Array.isArray(h) ? h : [])
+    .map((x: any) => ({ t: String(x?.t || "").trim().slice(0, 60), s: String(x?.s || "").trim().slice(0, 80) }))
+    .filter((x) => x.t)
+    .slice(0, 3);
+}
 // Ingredientes exclusivos de un signature PÚBLICO (no del menú secreto, que usa los
 // VAULT_ONLY_* de arriba): existen en PROT_PRICE/VALID_TOPS/VALID_SAUCES para que
 // SIG_DATA/priceCartItem puedan tasar ese Signature, pero no son seleccionables por BUILD
@@ -579,9 +624,14 @@ export async function loadCatalogItems(): Promise<void> {
 // existentes de esa función la recojan sin tocarlos uno por uno.
 export async function loadSecretSignature(): Promise<void> {
   try {
-    const rows = await sbGet("secret_signature", "select=*&order=id.desc&limit=1");
+    const rows = await sbGet("secret_signature", "select=*&order=id.desc&limit=40");
     const row = rows[0];
     if (!row) return;
+    SECRET_EXTRA = {
+      endsAt: finDelSecreto(row.ends_at, row.created_at),
+      hints: pistasValidas(row.hints),
+      past: secretosQueYaNoVuelven(rows),
+    };
     SIG_DATA.SIG05 = {
       base: row.base,
       prot: row.protein_id,

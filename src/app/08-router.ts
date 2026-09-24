@@ -600,6 +600,7 @@ function renderScreen(){
     case'p_orders':    h=sPOrders();break;
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_problema':  h=sAlgoSalioMal();break;
+    case'o_secreto':   h=sMenuSecreto();break;
     case'p_pago':      h=sPPago();break;
     case'p_avisos':    h=sPAvisos();break;
     case'p_profile':   h=sPProfile();break;

@@ -1148,6 +1148,51 @@ function PUERTA(o){
 // home viejo, asi que era inalcanzable desde cualquier otra pantalla y se perdia con el.
 // El contenido es el mismo que el dueno aprobo el 2026-09-17 (variantes A/B/D), palabra por
 // palabra: lo que cambia es que ahora tiene nombre y se puede colocar donde haga falta.
+// ── EL MENÚ SECRETO, PANTALLA PROPIA ────────────────────────────────────────────────────
+// Maquetas aprobadas: menu-secreto-estructura (qué va y en qué orden) y menu-secreto-fondo
+// (el bocado de cerca detrás). Solo se llega desbloqueado: la tarjeta bloqueada no trae acá.
+// Todo lo que dice sale de la base: el nombre, los días que le quedan (catalog.ts ·
+// finDelSecreto), las pistas que cargó el dueño y los que ya no vuelven.
+var MESES_LARGO=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function diasDelSecreto(endsAt:string|null,ahora?:number):string{
+  var fin=endsAt?Date.parse(endsAt):NaN;
+  if(!isFinite(fin))return'';
+  var d=Math.ceil((fin-(ahora||Date.now()))/86400000);
+  return d<=0?'':d===1?'Último día':d+' días';
+}
+function mesDeLima(ms:number,delta?:number):string{
+  var d=new Date(ms-5*3600000);
+  return MESES_LARGO[(d.getUTCMonth()+(delta||0)+12)%12];
+}
+function sMenuSecreto(){
+  var sig=SIGS.find(function(s){return s.secret;});
+  var desbloqueado=!!sig&&!!cust&&(cust.total_orders||0)>=sig.minOrders;
+  if(!sig||!desbloqueado){sndScreen='o_home';return sOHome();}
+  var fin=SECRET_EXTRA.endsAt?Date.parse(SECRET_EXTRA.endsAt):NaN;
+  var mes=isFinite(fin)?mesDeLima(fin):'';
+  var dias=diasDelSecreto(SECRET_EXTRA.endsAt);
+  var precio=SOLES_TXT+pz(sig.p15);
+  var foto=SIG_IMG[sig.id]||'';
+  return'<div class="msec fi">'
+    +(foto?'<div class="fo" aria-hidden="true"><img src="'+foto+'" alt=""></div>':'')+'<div class="velo"></div>'
+    +'<button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
+    +'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
+    +'<div class="cuerpo">'
+    +'<div class="cab">Lo desbloqueaste</div>'
+    +'<div class="nom"><b>'+esc(String(sig.n||'').toUpperCase())+'</b>'
+    +((mes||dias)?'<div class="mes"><s>'+(mes?'El secreto de '+esc(mes):'')+'</s><k>'+esc(dias)+'</k></div>':'')+'</div>'
+    +(SECRET_EXTRA.hints.length?'<div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>'
+      +SECRET_EXTRA.hints.map(function(h,i){return'<div class="p"><k>0'+(i+1)+'</k><div class="t"><b>'+esc(h.t)+'</b>'+(h.s?'<s>'+esc(h.s)+'</s>':'')+'</div></div>';}).join('')
+      +'</div>':'')
+    +(SECRET_EXTRA.past.length?'<div class="ant"><em>Los que ya no vuelven</em>'
+      +SECRET_EXTRA.past.slice(0,3).map(function(p){return'<div class="a"><i>'+esc(p.mes)+'</i><div class="t"><b>'+esc(p.name)+'</b>'+(p.blurb?'<s>'+esc(p.blurb)+'</s>':'')+'</div><p>SE FUE</p></div>';}).join('')
+      +'</div>'
+      +'<div class="adv">Cada uno duró un mes y no volvió.'+(isFinite(fin)?'<br>El de '+esc(mesDeLima(fin,1))+' será otro y no avisa.':'')+'</div>':'')
+    +'</div>'
+    +'<div class="pre"><em>15 cm</em><b>'+precio+'</b></div>'
+    +'<div class="go sw-barra"><button class="oro" onclick="startOrderWithSig(\''+sig.id+'\')">Pedirlo a ciegas</button><button class="cel" onclick="startOrderWithSig(\''+sig.id+'\')">'+precio+'</button></div>'
+    +'</div>';
+}
 function vaultSection(){
   var secretSig=SIGS.find(function(s){return s.secret;});
   if(!secretSig)return'';
@@ -1179,7 +1224,7 @@ function vaultSection(){
       // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
       // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
       return'<div style="margin:20px 0 16px">'+rot
-        +'<div onclick="startOrderWithSig(\''+secretSig.id+'\')" class="sw-revelar" '
+        +'<div onclick="sndScreen=\'o_secreto\';render()" class="sw-revelar" '
         +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
         +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
           +'" style="width:100%;height:100%;object-fit:cover">':'')

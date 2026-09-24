@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~346 KB que antes
+// de admin. Ningún cliente lo descarga: son ~348 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -1756,7 +1756,7 @@ async function saveAllCatalogChanges() {
 // fijo). Publicar un cambio INSERTA una fila nueva en `secret_signature` (nunca
 // actualiza in-place, ver actAdminSecretSignatureSet) — la fila de mayor id es la
 // vigente, así queda historial de sándwiches secretos anteriores gratis.
-var ssName = '', ssBase = '', ssProt = '', ssTops = [], ssSauces = [], ssVaultIds = [], ssP15 = '', ssP30 = '', ssMinOrders = '', ssImagePath = '', ssMsg = '', ssHistory = [];
+var ssName = '', ssBase = '', ssProt = '', ssTops = [], ssSauces = [], ssVaultIds = [], ssP15 = '', ssP30 = '', ssMinOrders = '', ssImagePath = '', ssMsg = '', ssHistory = [], ssEnds = '', ssBlurb = '', ssHints = [];
 async function loadSecretSignatureAdmin() {
     sndScreen = 'admin_secret';
     busy = true;
@@ -1775,6 +1775,9 @@ async function loadSecretSignatureAdmin() {
         ssP30 = cur ? String(cur.price_30) : '';
         ssMinOrders = cur ? String(cur.min_orders) : '5';
         ssImagePath = cur && cur.image_path ? cur.image_path : '';
+        ssEnds = cur && cur.ends_at ? String(cur.ends_at).slice(0, 10) : '';
+        ssBlurb = cur && cur.blurb ? cur.blurb : '';
+        ssHints = [0, 1, 2].map(function (i) { var h = cur && Array.isArray(cur.hints) ? cur.hints[i] : null; return { t: h && h.t || '', s: h && h.s || '' }; });
         ssHistory = r.history || [];
     }
     catch (e) {
@@ -1842,6 +1845,14 @@ function sAdminSecretSignature() {
             + '<div style="margin-bottom:14px">' + vaultChips + '</div>' : '')
         + '<div style="display:flex;gap:8px;margin-bottom:14px">' + cpNumField('ss-p15', '15CM', ssP15) + cpNumField('ss-p30', '30CM', ssP30) + cpNumField('ss-min', 'Pedidos mín.', ssMinOrders) + '</div>'
         + '<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Foto (ruta/URL, opcional)</div>' + INP('ss-img', 'ej. img/sig05.jpg', undefined, ssImagePath) + '</div>'
+        // Lo que la pantalla del secreto cuenta además de la receta (maquetas «estructura» y
+        // «fondo»): hasta cuándo dura, la reseña que queda en «los que ya no vuelven», y tres
+        // pistas. ⚠ Las pistas dicen CÓMO pega, nunca QUÉ lleva: nombrar un ingrediente rompe el secreto.
+        + '<div style="margin-bottom:14px">' + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Dura hasta (vacío = fin de mes)</div><input id="ss-ends" type="date" value="' + esc(ssEnds) + '" style="width:100%;box-sizing:border-box;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 14px;color:var(--sw-text,#FFFFFF);font-size:15px"></div>'
+        + '<div style="margin-bottom:14px">' + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Reseña para cuando se vaya (ej. «cabrito, culantro y zarandaja»)</div>' + INP('ss-blurb', 'Una línea', ssBlurb || undefined) + '</div>'
+        + '<div style="margin-bottom:18px">' + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Tres pistas: cómo pega, nunca qué lleva</div>'
+        + [0, 1, 2].map(function (i) { var h = ssHints[i] || { t: '', s: '' }; return '<div style="display:flex;gap:6px;margin-bottom:6px"><div style="flex:1">' + INP('ss-h' + i + 't', 'Pista ' + (i + 1) + ' (ej. Pica, y no de mentira)', h.t || undefined) + '</div><div style="flex:1">' + INP('ss-h' + i + 's', 'Detalle (opcional)', h.s || undefined) + '</div></div>'; }).join('')
+        + '</div>'
         + BTN('Publicar sándwich del mes //', 'saveSecretSignature()')
         + (ssHistory.length ? '<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
             + ssHistory.map(function (h) { return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + esc(h.name) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
@@ -1992,6 +2003,9 @@ async function saveSecretSignature() {
     ssP15 = gv('ss-p15');
     ssP30 = gv('ss-p30');
     ssMinOrders = gv('ss-min');
+    ssEnds = gv('ss-ends');
+    ssBlurb = gv('ss-blurb');
+    ssHints = [0, 1, 2].map(function (i) { return { t: gv('ss-h' + i + 't').trim(), s: gv('ss-h' + i + 's').trim() }; });
     if (!ssName.trim()) {
         showToast('Falta el nombre del sándwich del mes.');
         return;
@@ -2024,7 +2038,9 @@ async function saveSecretSignature() {
     busyMsg = 'Publicando...';
     render();
     try {
-        var pubRes = await api('admin-secret-signature-set', { token: token, name: ssName.trim(), base: ssBase, proteinId: ssProt, tops: ssTops, sauces: ssSauces, vaultOnlyIds: ssVaultIds, price15: p15, price30: p30, minOrders: minOrders, imagePath: ssImagePath.trim() || null });
+        var pubRes = await api('admin-secret-signature-set', { token: token, name: ssName.trim(), base: ssBase, proteinId: ssProt, tops: ssTops, sauces: ssSauces, vaultOnlyIds: ssVaultIds, price15: p15, price30: p30, minOrders: minOrders, imagePath: ssImagePath.trim() || null,
+            // El fin se toma a las 23:59 de Lima del día elegido; sin fecha, el servidor usa el fin de mes.
+            endsAt: ssEnds ? ssEnds + 'T23:59:59-05:00' : null, blurb: ssBlurb.trim() || null, hints: ssHints.filter(function (h) { return !!h.t; }) });
         await loadCatalogBackground();
         // El servidor avisa por push a quienes ya desbloquearon el menú secreto y devuelve a
         // cuántos les llegó. Se muestra el número porque el dueño no tiene otra forma de saber
