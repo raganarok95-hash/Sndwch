@@ -461,6 +461,28 @@ export async function actSetAdTracking(b: any) {
   return { success: true, customer: safeCustomer(rows[0]) };
 }
 
+// Tu cuenta · «Cómo pagas» y «Avisos». Solo se escribe lo que llega: tocar un interruptor
+// no borra el método de pago, ni al revés.
+export function preferenciasValidas(b: any): Record<string, unknown> {
+  const upd: Record<string, unknown> = {};
+  if (b.preferredPayment !== undefined) {
+    const m = String(b.preferredPayment);
+    if (m !== "yape" && m !== "culqi") throw new ApiError("Método de pago inválido.");
+    upd.preferred_payment = m;
+  }
+  if (b.notifPrefs !== undefined) {
+    const n = b.notifPrefs || {};
+    upd.notif_prefs = { pedido: n.pedido !== false, promo: n.promo !== false };
+  }
+  if (!Object.keys(upd).length) throw new ApiError("No hay nada que guardar.");
+  return upd;
+}
+export async function actSetPreferences(b: any) {
+  const s = await requireSession(b.token);
+  const rows = await sbUpdate("customers", `phone=eq.${encodeURIComponent(s.phone)}`, preferenciasValidas(b));
+  return { success: true, customer: safeCustomer(rows[0]) };
+}
+
 export async function actAddressesList(b: any) {
   const s = await requireSession(b.token);
   return { addresses: await sbGet("saved_addresses", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.asc`) };

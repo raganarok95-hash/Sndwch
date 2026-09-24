@@ -64,11 +64,40 @@ async function sendPushToSubs(subs: any[], payload: PushPayload) {
   }
 }
 
+// ── «Avisos» de Tu cuenta: qué quiere recibir el cliente ─────────────────────────────
+// Dos categorías, las mismas dos que ve en su pantalla: «pedido» (cuando sale, cuando
+// llega, un pago confirmado, lo que él mismo pidió que le avisemos) y «promo» (novedades y
+// recordatorios que manda el negocio por su cuenta). Se decide por la ETIQUETA del aviso,
+// que todos ya llevan. La lista de promo es explícita y lo desconocido cae en «pedido»: es
+// preferible que un recordatorio nuevo se cuele a que un «tu pedido salió» se calle.
+// ⚠ Un recordatorio nuevo de marketing tiene que entrar a esta lista el mismo día.
+const PROMO_TAGS = [
+  "sndwch-never-ordered", "sndwch-secret-drop", "sndwch-second-order", "sndwch-points-nudge",
+  "sndwch-peak", "sndwch-monthly-recap", "sndwch-lapsed", "sndwch-high-rank-winback",
+  "sndwch-challenge-reminder", "sndwch-cart-abandoned", "sndwch-post-cancel",
+  "sndwch-unused-credit", "sndwch-rank-up", "sndwch-weekly-marketing",
+];
+export function categoriaDelAviso(tag?: string): "pedido" | "promo" {
+  const t = String(tag || "");
+  return PROMO_TAGS.some((p) => t === p || t.startsWith(p + "-")) ? "promo" : "pedido";
+}
+export function avisoPermitido(prefs: unknown, tag?: string): boolean {
+  const p = (prefs && typeof prefs === "object") ? prefs as Record<string, unknown> : {};
+  return p[categoriaDelAviso(tag)] !== false;
+}
+
 export async function sendPushToPhone(
   phone: string,
   payload: PushPayload,
 ) {
   if (!VAPID_PRIVATE_KEY) return;
+  try {
+    const c = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=notif_prefs`);
+    if (c[0] && !avisoPermitido(c[0].notif_prefs, payload.tag)) return;
+  } catch {
+    // sin la preferencia se manda igual: callar un «tu pedido salió» por un fallo de lectura
+    // sería peor que mandar un recordatorio de más
+  }
   const subs = await sbGet("push_subscriptions", `customer_phone=eq.${encodeURIComponent(phone)}`);
   await sendPushToSubs(subs, payload);
 }

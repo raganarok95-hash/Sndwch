@@ -474,6 +474,11 @@ function sPProfile(){
     +pushHTML
     +sectionLabel('Retos y referidos //')+referralHTML+challengeHTML+discoveryHTML
     +sectionLabel('Tu saldo //')+balanceCompareHTML+creditHTML+(TARJETA_REGALO_ACTIVA?giftCardHTML:'')+(PLAN_SEMANAL_ACTIVO?weeklyPlanHTML:'')
+    +sectionLabel('Tus preferencias //')
+    // «Cómo pagas» y «Avisos» (filas de la maqueta de Tu cuenta), con su estado a la vista.
+    +[['p_pago','Cómo pagas',metodoPreferido()==='culqi'?'Tarjeta por defecto':'Yape por defecto'],
+      ['p_avisos','Avisos',avisosDe().pedido?(avisosDe().promo?'Tu pedido y novedades':'Solo tu pedido'):(avisosDe().promo?'Solo novedades':'Apagados')]]
+      .map(function(x){return'<div onclick="prefMsg=\'\';sndScreen=\''+x[0]+'\';render()" role="button" tabindex="0" style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px 18px;margin-bottom:8px;cursor:pointer"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+x[1]+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+x[2]+'</div></div><span style="color:'+GOLD+'">→</span></div>';}).join('')
     +sectionLabel('Privacidad //')
     // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
     // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se
@@ -1000,6 +1005,64 @@ async function toggleAdTracking(){
     adOptOutMsg=(e&&e.message)||'No se pudo guardar. Intenta de nuevo.';
   }
   render();
+}
+
+// ── TU CUENTA · «CÓMO PAGAS» Y «AVISOS» ──────────────────────────────────────────────
+// Las dos filas de la maqueta de Tu cuenta. Lo que se elige acá se guarda en el cliente
+// (set-preferences) y se cumple en otro lado: el método, en el checkout (metodoPreferido);
+// los avisos, en el servidor (push.ts · avisoPermitido), que es el único sitio donde apagar
+// un aviso lo apaga de verdad.
+var prefMsg='';
+function metodoPreferido():string{return cust&&(cust as any).preferred_payment==='culqi'?'culqi':'yape';}
+function avisosDe():{pedido:boolean,promo:boolean}{
+  var n=(cust&&(cust as any).notif_prefs)||{};
+  return{pedido:n.pedido!==false,promo:n.promo!==false};
+}
+async function guardarPreferencias(p:any){
+  if(!cust){prefMsg='Entra a tu cuenta para guardar esto.';render();return;}
+  var antes=cust;
+  cust=Object.assign({},cust,p.preferredPayment?{preferred_payment:p.preferredPayment}:{},p.notifPrefs?{notif_prefs:p.notifPrefs}:{});
+  prefMsg='';render();
+  try{
+    var r=await api('set-preferences',Object.assign({token:token},p));
+    if(r&&r.customer){cust=r.customer;cacheCust(cust,isAdmin);}
+    prefMsg='Guardado';
+  }catch(e:any){cust=antes;prefMsg=(e&&e.message)||'No se pudo guardar.';}
+  render();
+}
+function sPPago(){
+  var m=metodoPreferido();
+  var fila=function(id:string,t:string,s:string){
+    var on=m===id;
+    return'<button class="r'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="guardarPreferencias({preferredPayment:\''+id+'\'})"><span><b>'+t+'</b><s>'+s+'</s></span><span class="marca"></span></button>';
+  };
+  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_profile\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Tu cuenta</em><h1>CÓMO<br>PAGAS</h1>'
+    +'<p>Con esto abre el pago. Igual puedes cambiarlo en cada pedido.</p></div>'
+    +'<div class="lis" role="radiogroup" aria-label="Cómo pagas">'
+    +fila('yape','Yape','Sin comisión. Escaneas el QR y listo.')
+    +fila('culqi','Tarjeta','Con comisión sobre el envío. La procesa Culqi.')
+    +'</div><div class="ok">'+esc(prefMsg)+'</div></div>';
+}
+function sPAvisos(){
+  var a=avisosDe();
+  var fila=function(k:string,t:string,s:string){
+    var on=(a as any)[k];
+    var nuevo=Object.assign({},a);(nuevo as any)[k]=!on;
+    return'<button class="r'+(on?' on':'')+'" role="switch" aria-checked="'+on+'" onclick=\'guardarPreferencias({notifPrefs:'+JSON.stringify(nuevo)+'})\'><span><b>'+t+'</b><s>'+s+'</s></span><span class="llave"></span></button>';
+  };
+  var permiso=typeof Notification!=='undefined'?Notification.permission:'unsupported';
+  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_profile\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Tu cuenta</em><h1>AVISOS</h1>'
+    +'<p>Qué te avisamos a este celular.</p></div>'
+    +'<div class="lis">'
+    +fila('pedido','Tu pedido','Cuando sale y cuando llega.')
+    +fila('promo','Novedades y recordatorios','El sándwich del mes, tus puntos, lo que dejaste en el carrito.')
+    +'</div><div class="ok">'+esc(prefMsg)+'</div>'
+    +(permiso==='granted'?'':'<div class="nota">'+(permiso==='denied'
+      ?'<b>Este celular tiene los avisos bloqueados.</b> Actívalos desde los ajustes del navegador para que te lleguen.'
+      :'<b>Este celular todavía no recibe avisos.</b> Se activan la primera vez que haces un pedido.')+'</div>')
+    +'</div>';
 }
 
 // ── 35 · ALGO SALIÓ MAL ────────────────────────────────────────────────────────────────

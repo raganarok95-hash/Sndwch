@@ -174,3 +174,4 @@
 20260924051503  ventana_prometida_al_pagar
 20260924052027  algo_salio_mal_reporte_de_pedido
 20260924053325  direcciones_con_referencia_y_espera_por_zona
+20260924101817  preferencias_de_pago_y_avisos

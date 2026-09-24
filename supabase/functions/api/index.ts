@@ -27,7 +27,7 @@ import {
 } from "./actions/orders.ts";
 import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
-  actSetAdTracking,
+  actSetAdTracking, actSetPreferences,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
   actRecurringList, actRecurringAdd, actRecurringDelete, actRemindRecurringOrders, actRemindPointsNudge,
   actRemindMonthlyRecap,
@@ -105,6 +105,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "my-history": actMyHistory,
   // Derecho de oposición a la medición publicitaria (Ley 29733) — ver customer.ts.
   "set-ad-tracking": actSetAdTracking,
+  "set-preferences": actSetPreferences,
   "addresses-list": actAddressesList,
   "addresses-add": actAddressesAdd,
   "addresses-update": actAddressesUpdate,

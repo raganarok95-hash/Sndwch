@@ -450,6 +450,7 @@ function FICHA_OFF(etiqueta){
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito
 function sOItemConfirm(){
+  aplicarMetodoPreferido();
   var sig=SIGS.find(function(x){return x.id===sigId;}),pr=PROTS.find(function(x){return x.id===prot;});
   var bk=mode==='sig'?'o_sig':'o_build',rows=[];
   var dbl=dblProtRef();

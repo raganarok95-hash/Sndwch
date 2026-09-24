@@ -861,6 +861,14 @@ function payMethodBtn(id,label,enabled,badge){
 // escrito dentro del onclick: el cliente tocaba dos veces el crédito y salía pagando la
 // comisión de Culqi sin haber elegido la tarjeta. Si ya eligió a mano (payMethodChosen),
 // se respeta su elección.
+// El checkout abre con el método que el cliente eligió en Tu cuenta · «Cómo pagas», mientras
+// no haya tocado nada en este pedido (payMethodChosen). Tarjeta se marca como elegida para
+// que el recargo que ve sea el que de verdad va a pagar.
+function aplicarMetodoPreferido(){
+  if(payMethodChosen||useCredit||!cust)return;
+  if(metodoPreferido()==='culqi'){manualPayMethod=null;payMethodChosen=true;}
+  else manualPayMethod='yape';
+}
 function toggleCredit(){
   useCredit=!useCredit;
   if(useCredit)manualPayMethod=null;
@@ -1025,6 +1033,7 @@ function reciboHTML(base,total,combo,valle,organizador,recompensa){
   return h;
 }
 function sOCart(){
+  aplicarMetodoPreferido();
   var baseTotal=cartBaseTotal();
   var t=payableTotal();
   var empty=!cart.length;
