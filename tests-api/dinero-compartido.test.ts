@@ -15,6 +15,7 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 import { deriveCart, preciosVigentes, PROT_PRICE } from "../supabase/functions/api/catalog.ts";
 import { REGLAS, resolverCarrito, type LineaDelCarrito } from "../supabase/functions/_shared/dinero.ts";
 import { unaProteinaDelArmador, unaSalsaDelArmador, unSignature } from "./carta.ts";
+import { recompensaDeTipo } from "../supabase/functions/_shared/carta.ts";
 
 // Productos de la carta, no escritos (ver carta.ts).
 const UN_SIGNATURE = unSignature();
@@ -32,7 +33,7 @@ Deno.test("focaccia 15CM con «15CM gratis» (R06): el pan va dentro de lo que s
 
 Deno.test("focaccia 15CM con «sube a 30CM» (R03): se perdona también el salto del pan, hasta el tope", () => {
   const salto = (PROT.p30 + REGLAS.recargoPan.B03.p30) - (PROT.p15 + REGLAS.recargoPan.B03.p15);
-  const esperado = Math.round((PROT.p15 + REGLAS.recargoPan.B03.p15 - Math.min(salto, REGLAS.topeR03)) * 100) / 100;
+  const esperado = Math.round((PROT.p15 + REGLAS.recargoPan.B03.p15 - Math.min(salto, recompensaDeTipo("subir30")!.tope ?? Infinity)) * 100) / 100;
   assertEquals(cobra([byo("B03", "15")], "R03"), esperado);
 });
 

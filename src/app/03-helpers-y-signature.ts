@@ -646,7 +646,7 @@ function cartOffPeakDrinkDiscount(){return cartDesglose().valle;}
 // Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
 function itemSizeUpgradeDiff(it){var t=DINERO.tasar(it);return t?t.subir30/100:0;}
 // 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
-function isFreeSandwichEligible(it){var t=DINERO.tasar(it);return !!t&&t.elegible.R06;}
+function isFreeSandwichEligible(it){var t=DINERO.tasar(it);return !!t&&t.elegible.sandwich;}
 // Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
 function cartSandwichQty(){
   var n=0;cart.forEach(function(it){if(it.type!=='side')n+=it.qty;});return n;

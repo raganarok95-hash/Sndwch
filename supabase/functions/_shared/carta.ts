@@ -90,6 +90,28 @@ export type Signature = {
   secreto?: { minPedidos: number };
 };
 
+/**
+ * Qué perdona una recompensa. El dinero decide por esto, nunca por el código:
+ * · `salsa`    — el cargo de la salsa extra de una línea que ya la pidió.
+ * · `subir30`  — la diferencia de subir un 15CM a 30CM (con `tope`).
+ * · `doble`    — el recargo de doble proteína de una línea que ya lo pidió (con `tope`).
+ * · `bebida`   — una bebida (con `tope`).
+ * · `sandwich` — un 15CM entero, salvo el menú secreto.
+ */
+export type TipoRecompensa = "salsa" | "subir30" | "doble" | "bebida" | "sandwich";
+
+export type Recompensa = {
+  id: string;
+  tipo: TipoRecompensa;
+  /** Puntos que cuesta. SEMILLA: el valor real vive en `catalog_prices` (categoría reward). */
+  pts: number;
+  nombre: string;
+  sabor: string;
+  desc: string;
+  /** Máximo que perdona, en soles. Sin tope, perdona el monto entero. */
+  tope?: number;
+};
+
 export type Carta = {
   panes: Pan[];
   proteinas: Proteina[];
@@ -98,9 +120,20 @@ export type Carta = {
   salsas: Salsa[];
   bebidas: Bebida[];
   signatures: Signature[];
+  recompensas: Recompensa[];
 };
 
 export const CARTA: Carta = {
+  // Todas devuelven ~1.3-1.5% de lo que se gasta para conseguirlas: una tasa pareja, anclada en
+  // el 15CM gratis (ver docs/NEGOCIO.md). Los topes existen porque sin ellos elegir la proteína o
+  // la bebida más cara maximizaba el valor de los mismos puntos.
+  recompensas: [
+    { id: "R02", tipo: "salsa", pts: 20, nombre: "Salsa", sabor: "Extra", desc: "Perdona el cargo de la salsa extra" },
+    { id: "R04", tipo: "doble", pts: 160, nombre: "Doble", sabor: "Proteína", desc: "Doble proteína gratis", tope: 6 },
+    { id: "R05", tipo: "bebida", pts: 160, nombre: "Bebida", sabor: "Gratis", desc: "Bebida a elección", tope: 6 },
+    { id: "R03", tipo: "subir30", pts: 320, nombre: "Tamaño", sabor: "30CM", desc: "Tu sándwich 15CM sube a 30CM gratis", tope: 8 },
+    { id: "R06", tipo: "sandwich", pts: 400, nombre: "Sándwich", sabor: "Gratis", desc: "Sándwich 15CM gratis — no aplica al menú secreto" },
+  ],
   panes: [
     { id: "B01", nombre: "Classic", sabor: "White", desc: "Miga suave y corteza fina. No pelea con el relleno, lo sostiene." },
     { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa." },
@@ -196,6 +229,11 @@ export const ID_SECRETO: string = (() => {
 /** ¿Es el menú secreto? Por propiedad, nunca comparando con un código. */
 export function esSecreto(id: string, c: Carta = CARTA): boolean {
   return !!c.signatures.find((s) => s.id === id)?.secreto;
+}
+
+/** La recompensa de ese tipo en la carta (la primera, si hubiera más de una). */
+export function recompensaDeTipo(tipo: TipoRecompensa, c: Carta = CARTA): Recompensa | undefined {
+  return c.recompensas.find((r) => r.tipo === tipo);
 }
 
 const porId = <T extends { id: string }>(xs: T[]): Record<string, T> => Object.fromEntries(xs.map((x) => [x.id, x]));

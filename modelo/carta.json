@@ -1,5 +1,50 @@
 {
   "_generado": "NO SE EDITA A MANO. Sale de supabase/functions/_shared/carta.ts (node scripts/exportar-carta.mjs).",
+  "recompensas": [
+    {
+      "id": "R02",
+      "tipo": "salsa",
+      "pts": 20,
+      "nombre": "Salsa",
+      "sabor": "Extra",
+      "desc": "Perdona el cargo de la salsa extra"
+    },
+    {
+      "id": "R04",
+      "tipo": "doble",
+      "pts": 160,
+      "nombre": "Doble",
+      "sabor": "Proteína",
+      "desc": "Doble proteína gratis",
+      "tope": 6
+    },
+    {
+      "id": "R05",
+      "tipo": "bebida",
+      "pts": 160,
+      "nombre": "Bebida",
+      "sabor": "Gratis",
+      "desc": "Bebida a elección",
+      "tope": 6
+    },
+    {
+      "id": "R03",
+      "tipo": "subir30",
+      "pts": 320,
+      "nombre": "Tamaño",
+      "sabor": "30CM",
+      "desc": "Tu sándwich 15CM sube a 30CM gratis",
+      "tope": 8
+    },
+    {
+      "id": "R06",
+      "tipo": "sandwich",
+      "pts": 400,
+      "nombre": "Sándwich",
+      "sabor": "Gratis",
+      "desc": "Sándwich 15CM gratis — no aplica al menú secreto"
+    }
+  ],
   "panes": [
     {
       "id": "B01",

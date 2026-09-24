@@ -69,11 +69,11 @@ function rewardsPickerHTML(){
     // cuando el cliente SÍ tiene uno en el carrito, solo que ese producto no tiene nada
     // que perdonar (hallazgo de auditoría UX).
     var r03FlatPriceItem=cart.some(function(it){return it.type!=='side'&&it.size==='15'&&itemSizeUpgradeDiff(it)===0;});
-    var reqText=r.id==='R06'?' · agrega un sándwich 15CM para usarla'
-      :r.id==='R04'?' · agrega un sándwich con doble proteína para usarla'
-      :r.id==='R02'?' · agrega salsa extra a un sándwich para usarla'
-      :r.id==='R03'?(r03FlatPriceItem?' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar':' · agrega un sándwich 15CM para usarla')
-      :r.id==='R05'?' · agrega una bebida para usarla'
+    var reqText=r.tipo==='sandwich'?' · agrega un sándwich 15CM para usarla'
+      :r.tipo==='doble'?' · agrega un sándwich con doble proteína para usarla'
+      :r.tipo==='salsa'?' · agrega salsa extra a un sándwich para usarla'
+      :r.tipo==='subir30'?(r03FlatPriceItem?' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar':' · agrega un sándwich 15CM para usarla')
+      :r.tipo==='bebida'?' · agrega una bebida para usarla'
       :' · agrega algo a tu carrito para usarla';
     // SOLES (con <span>) es HTML pensado para insertarse crudo — pero `sub` entero pasa
     // por esc() más abajo, así que había que usar SOLES_TXT (texto plano) acá, no SOLES.

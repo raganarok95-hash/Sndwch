@@ -129,6 +129,18 @@ permisos, validación y código muerto.
   descontar el pedido). Los dos flujos de cancelación de `check:e2e` pasan por la función nueva.
   Con esto también desaparece el comentario desactualizado sobre «dos versiones vivas».
 
+## Avance del plan (2026-09-24)
+
+- **Paso 1 · carta única** — hecho: `_shared/carta.ts`, con la v4 cargada en la base.
+- **Paso 2 · recompensas como objeto** — hecho: cada una tiene un `tipo` (salsa, subir30, doble,
+  bebida, sandwich) y su `tope` en la carta; `dinero.ts` decide por el tipo. Se borraron
+  `rewardWaiver`, `findRewardTargetIndex` y las marcas `eligibleR0X` del servidor (la
+  elegibilidad sale de `dinero.ts`), y los topes sueltos del cliente.
+  **Defecto vivo encontrado de paso:** el regalo de vuelta (24-48 h tras el primer pedido) daba
+  120 puntos «para canjear una bebida» que cuesta 160 desde el 2026-09-05. Ahora sus puntos son
+  el precio vigente de la bebida. `tests-api/regalo-de-vuelta.test.ts`, vista fallar con el
+  valor anterior.
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

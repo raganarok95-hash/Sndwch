@@ -83,7 +83,7 @@ Si todo vuelve a este archivo, en tres meses volvemos a los 52 000 tokens.
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
 **Los precios de la carta (`supabase/functions/_shared/carta.ts`, de donde salen `PROT_PRICE`,
-`SIG_DATA` y `SIDE_PRICE`) y `REWARDS` de `catalog.ts` son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
+`SIG_DATA`, `SIDE_PRICE` y los puntos de `REWARDS`) son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
 tabla `catalog_prices`**, que `loadCatalogPrices()` carga encima de esos literales en cada
 llamada. Si un código tiene fila en esa tabla, el literal del archivo NUNCA se usa para
 cobrar.

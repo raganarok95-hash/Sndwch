@@ -735,6 +735,16 @@ body.kb-open #app{padding-bottom:0}
 (() => {
   // supabase/functions/_shared/carta.ts
   var CARTA = {
+    // Todas devuelven ~1.3-1.5% de lo que se gasta para conseguirlas: una tasa pareja, anclada en
+    // el 15CM gratis (ver docs/NEGOCIO.md). Los topes existen porque sin ellos elegir la proteína o
+    // la bebida más cara maximizaba el valor de los mismos puntos.
+    recompensas: [
+      { id: "R02", tipo: "salsa", pts: 20, nombre: "Salsa", sabor: "Extra", desc: "Perdona el cargo de la salsa extra" },
+      { id: "R04", tipo: "doble", pts: 160, nombre: "Doble", sabor: "Proteína", desc: "Doble proteína gratis", tope: 6 },
+      { id: "R05", tipo: "bebida", pts: 160, nombre: "Bebida", sabor: "Gratis", desc: "Bebida a elección", tope: 6 },
+      { id: "R03", tipo: "subir30", pts: 320, nombre: "Tamaño", sabor: "30CM", desc: "Tu sándwich 15CM sube a 30CM gratis", tope: 8 },
+      { id: "R06", tipo: "sandwich", pts: 400, nombre: "Sándwich", sabor: "Gratis", desc: "Sándwich 15CM gratis — no aplica al menú secreto" }
+    ],
     panes: [
       { id: "B01", nombre: "Classic", sabor: "White", desc: "Miga suave y corteza fina. No pelea con el relleno, lo sostiene." },
       { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa." }
@@ -957,6 +967,18 @@ body.kb-open #app{padding-bottom:0}
         ...x2.quesoOpcional ? { cheeseOptional: true } : {},
         ...x2.secreto ? { secret: true, minOrders: x2.secreto.minPedidos } : {}
       })),
+      // Recompensas con su `tipo` (qué perdonan): el código viejo decide por él, nunca por el id.
+      // `sizeOnly` sale del tipo: subir a 30CM y el sándwich gratis solo se aplican a una línea de
+      // 15CM (la misma regla de elegibilidad de `_shared/dinero.ts`).
+      RWDS: c2.recompensas.map((x2) => ({
+        id: x2.id,
+        tipo: x2.tipo,
+        pts: x2.pts,
+        n: x2.nombre,
+        s: x2.sabor,
+        d: x2.desc,
+        ...x2.tipo === "subir30" || x2.tipo === "sandwich" ? { sizeOnly: "15" } : {}
+      })),
       SIDES: c2.bebidas.map((x2) => ({ id: x2.id, l: x2.nombre, s: x2.sabor, p: x2.precio, d: x2.desc, icon: x2.icono })),
       SIG_IMG: foto(c2.signatures),
       PROT_IMG: foto(c2.proteinas),
@@ -972,15 +994,10 @@ body.kb-open #app{padding-bottom:0}
     /** Descuento por cada par sándwich + bebida. Bajado de S/2 a S/1 el 2026-08-22: a S/2 el
      *  combo se comía entre el 58% y el 118% de lo que deja una bebida (ver catalog.ts). */
     comboPorPar: 1,
-    /** Topes de las recompensas que perdonan un monto variable: sin tope, elegir la proteína o la
-     *  bebida más cara maximizaba el valor de los mismos puntos. */
-    topeR03: 8,
-    topeR04: 6,
-    topeR05: 6,
     /** Recargo de la salsa extra. Uno de los dos precios que NO viven en `catalog_prices`. */
     salsaExtra: 2,
     /** Recargo del pan por tamaño. El otro precio que no vive en `catalog_prices`. Solo la
-     *  focaccia lleva. Va DENTRO del precio base: así lo perdonan R06 y R03 enteros. */
+     *  focaccia lleva. Va DENTRO del precio base: así lo perdonan enteros el sándwich gratis y la subida a 30CM. */
     recargoPan: { B03: { p15: 0.5, p30: 1 } },
     /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
      *  del catálogo y se gamearía. */
@@ -992,6 +1009,9 @@ body.kb-open #app{padding-bottom:0}
     valleHorasLima: [],
     valleTope: 6
   };
+  function defDe(r2) {
+    return CARTA.recompensas.find((x2) => x2.id === r2);
+  }
   var cent = (soles2) => Math.round(soles2 * 100);
   var soles = (c2) => c2 / 100;
   function recargoPan(base, t3) {
@@ -1011,7 +1031,7 @@ body.kb-open #app{padding-bottom:0}
         doble: 0,
         salsa: 0,
         subir30: 0,
-        elegible: { R02: false, R03: false, R04: false, R05: true, R06: false }
+        elegible: { salsa: false, subir30: false, doble: false, bebida: true, sandwich: false }
       };
     }
     const t3 = it.size;
@@ -1049,25 +1069,19 @@ body.kb-open #app{padding-bottom:0}
       doble,
       salsa,
       subir30,
-      elegible: { R02: r02, R03: subir30 > 0, R04: !!it.doubleProt, R05: false, R06: t3 === "15" && !reserva }
+      elegible: { salsa: r02, subir30: subir30 > 0, doble: !!it.doubleProt, bebida: false, sandwich: t3 === "15" && !reserva }
     };
   }
   function lineaDeLaRecompensa(tasadas, r2) {
-    return tasadas.findIndex((x2) => !!x2 && x2.elegible[r2]);
+    const d2 = defDe(r2);
+    if (!d2) return -1;
+    return tasadas.findIndex((x2) => !!x2 && x2.elegible[d2.tipo]);
   }
   function perdonDe(r2, x2) {
-    switch (r2) {
-      case "R02":
-        return x2.salsa;
-      case "R03":
-        return Math.min(x2.subir30, cent(REGLAS.topeR03));
-      case "R04":
-        return Math.min(x2.doble, cent(REGLAS.topeR04));
-      case "R05":
-        return Math.min(x2.base, cent(REGLAS.topeR05));
-      case "R06":
-        return x2.base;
-    }
+    const d2 = defDe(r2);
+    if (!d2) return 0;
+    const monto = d2.tipo === "salsa" ? x2.salsa : d2.tipo === "subir30" ? x2.subir30 : d2.tipo === "doble" ? x2.doble : x2.base;
+    return d2.tope == null ? monto : Math.min(monto, cent(d2.tope));
   }
   function enHoraValle(ms) {
     const h2 = new Date(ms - 5 * 36e5).getUTCHours();
@@ -1081,16 +1095,17 @@ body.kb-open #app{padding-bottom:0}
     const rid = op.recompensa ?? null;
     const ri = rid ? lineaDeLaRecompensa(tasadas, rid) : -1;
     const objetivo = ri >= 0 ? tasadas[ri] : null;
+    const tipo = rid ? defDe(rid)?.tipo ?? null : null;
     let sandwiches = reales.filter(({ x: x2 }) => x2.tipo !== "side").reduce((s2, { x: x2 }) => s2 + x2.qty, 0);
     let bebidas = reales.filter(({ x: x2 }) => x2.tipo === "side").reduce((s2, { x: x2 }) => s2 + x2.qty, 0);
     const sandwichesPedidos = sandwiches;
-    if (rid === "R06" && objetivo && objetivo.tipo !== "side") sandwiches -= 1;
-    if (rid === "R05" && objetivo && objetivo.tipo === "side") bebidas -= 1;
+    if (tipo === "sandwich" && objetivo && objetivo.tipo !== "side") sandwiches -= 1;
+    if (tipo === "bebida" && objetivo && objetivo.tipo === "side") bebidas -= 1;
     let oi = -1;
     if (op.organizador && sandwichesPedidos >= REGLAS.organizadorDesde) {
       let mejor = Infinity;
       reales.forEach(({ x: x2, i: i3 }) => {
-        if (i3 === ri || !x2.elegible.R06) return;
+        if (i3 === ri || !x2.elegible.sandwich) return;
         if (x2.base < mejor) {
           mejor = x2.base;
           oi = i3;
@@ -1104,7 +1119,7 @@ body.kb-open #app{padding-bottom:0}
       const precios2 = [];
       reales.forEach(({ x: x2, i: i3 }) => {
         if (x2.tipo !== "side") return;
-        const n2 = rid === "R05" && i3 === ri ? x2.qty - 1 : x2.qty;
+        const n2 = tipo === "bebida" && i3 === ri ? x2.qty - 1 : x2.qty;
         for (let k2 = 0; k2 < n2; k2++) precios2.push(x2.unitario);
       });
       if (precios2.length) valle = Math.min(Math.min(...precios2), cent(REGLAS.valleTope));
@@ -2086,20 +2101,11 @@ var DRINK_IMG = CARTA_VIEJA.DRINK_IMG;
 // Un comentario con los números cambiados es peor que ninguno: el próximo que recalibre parte
 // de él. Salió del mismo día que el bono del invitado — la recalibración movió los valores y
 // no volvió a mirar lo que estaba escrito al lado.
-// DEBE coincidir con REWARDS en supabase/functions/api/catalog.ts — y ojo, esos puntos
-// también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
-// runtime: cambiar solo estos literales no cambia nada.
-var RWDS = [
-    // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
-    // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
-    // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
-    // comentario largo en REWARDS (catalog.ts) con la tabla completa.
-    { id: 'R02', pts: 20, n: 'Salsa', s: 'Extra', d: 'Perdona el cargo de salsa extra (S/2)' },
-    { id: 'R04', pts: 160, n: 'Doble', s: 'Proteína', d: 'Doble proteína gratis' },
-    { id: 'R05', pts: 160, n: 'Bebida', s: 'Gratis', d: 'Bebida a elección' },
-    { id: 'R03', pts: 320, n: 'Tamaño', s: '30CM', d: 'Tu sándwich 15CM sube a 30CM gratis', sizeOnly: '15' },
-    { id: 'R06', pts: 400, n: 'Sándwich', s: 'Gratis', d: 'Sándwich 15CM gratis — no aplica a Signatures Reserve', sizeOnly: '15' }
-];
+// Las recompensas salen de la carta (`_shared/carta.ts`), con su `tipo`: salsa, subir30, doble,
+// bebida o sandwich. La lógica pregunta por el tipo, nunca por el id. Los puntos son SEMILLA: los
+// reales vienen de `catalog_prices` (categoría 'reward') en get-catalog.
+var RWDS = CARTA_VIEJA.RWDS;
+function recompensaDeTipo(tipo) { return RWDS.filter(function (x) { return x.tipo === tipo; })[0]; }
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D08). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
@@ -2585,9 +2591,6 @@ function payableTotal() { return money(cartFinalTotal() + deliveryFeeAmount()); 
 // de siempre porque los textos de la app las interpolan («el combo te descuenta S/1»). El porqué
 // de cada valor está en supabase/functions/api/catalog.ts, junto a donde se cobra.
 var COMBO_DISCOUNT_PER_PAIR = REGLAS_DINERO.comboPorPar;
-var R03_FLAT_WAIVER = REGLAS_DINERO.topeR03;
-var R04_FLAT_WAIVER = REGLAS_DINERO.topeR04;
-var R05_FLAT_WAIVER = REGLAS_DINERO.topeR05;
 var RESERVE_SIGS = new Set(REGLAS_DINERO.reservas);
 // La bebida gratis de hora valle está RETIRADA (2026-09-05): su ventana es una lista vacía.
 var OFFPEAK_DRINK_PROMO_HOURS_LIMA = REGLAS_DINERO.valleHorasLima;
@@ -3073,7 +3076,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '3645284856';
+var APP_BUILD = '490583f1bd';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5037,7 +5040,7 @@ function cartOffPeakDrinkDiscount() { return cartDesglose().valle; }
 // Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
 function itemSizeUpgradeDiff(it) { var t = DINERO.tasar(it); return t ? t.subir30 / 100 : 0; }
 // 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
-function isFreeSandwichEligible(it) { var t = DINERO.tasar(it); return !!t && t.elegible.R06; }
+function isFreeSandwichEligible(it) { var t = DINERO.tasar(it); return !!t && t.elegible.sandwich; }
 // Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
 function cartSandwichQty() {
     var n = 0;
@@ -7188,11 +7191,11 @@ function rewardsPickerHTML() {
         // cuando el cliente SÍ tiene uno en el carrito, solo que ese producto no tiene nada
         // que perdonar (hallazgo de auditoría UX).
         var r03FlatPriceItem = cart.some(function (it) { return it.type !== 'side' && it.size === '15' && itemSizeUpgradeDiff(it) === 0; });
-        var reqText = r.id === 'R06' ? ' · agrega un sándwich 15CM para usarla'
-            : r.id === 'R04' ? ' · agrega un sándwich con doble proteína para usarla'
-                : r.id === 'R02' ? ' · agrega salsa extra a un sándwich para usarla'
-                    : r.id === 'R03' ? (r03FlatPriceItem ? ' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar' : ' · agrega un sándwich 15CM para usarla')
-                        : r.id === 'R05' ? ' · agrega una bebida para usarla'
+        var reqText = r.tipo === 'sandwich' ? ' · agrega un sándwich 15CM para usarla'
+            : r.tipo === 'doble' ? ' · agrega un sándwich con doble proteína para usarla'
+                : r.tipo === 'salsa' ? ' · agrega salsa extra a un sándwich para usarla'
+                    : r.tipo === 'subir30' ? (r03FlatPriceItem ? ' · ese sándwich ya cuesta igual en 30CM, no hay nada que perdonar' : ' · agrega un sándwich 15CM para usarla')
+                        : r.tipo === 'bebida' ? ' · agrega una bebida para usarla'
                             : ' · agrega algo a tu carrito para usarla';
         // SOLES (con <span>) es HTML pensado para insertarse crudo — pero `sub` entero pasa
         // por esc() más abajo, así que había que usar SOLES_TXT (texto plano) acá, no SOLES.
@@ -10293,7 +10296,7 @@ function badgesHTML(c) {
 // en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar, y encima 120 no cubría
 // NINGUNA recompensa salvo la salsa extra.
 function loQueGanaQuienInvita() {
-    var r = RWDS.filter(function (x) { return x.id === 'R06'; })[0];
+    var r = recompensaDeTipo('sandwich');
     return (r && REFERRER_REWARD_POINTS >= r.pts)
         ? 'un <b>sándwich 15CM GRATIS</b> (' + REFERRER_REWARD_POINTS + ' pts)'
         : '<b>' + REFERRER_REWARD_POINTS + ' pts</b> para tu próximo pedido';
@@ -10304,7 +10307,7 @@ function etiquetaDeEscalon(m) {
     return (!r || m.points >= necesita) ? m.label : (m.points + ' puntos para tu próximo pedido');
 }
 function loQueGanaElInvitado() {
-    var r05 = RWDS.filter(function (x) { return x.id === 'R05'; })[0];
+    var r05 = recompensaDeTipo('bebida');
     return (r05 && REFERRAL_BONUS_POINTS >= r05.pts)
         ? REFERRAL_BONUS_POINTS + ' pts — una bebida de la casa'
         : REFERRAL_BONUS_POINTS + ' pts para su primer pedido';

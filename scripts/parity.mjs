@@ -101,7 +101,6 @@ function clientObjArray(varName, idPrefix, fields) {
 // LA CARTA YA NO SE COMPARA ACÁ (2026-09-24): proteínas, bebidas, Signatures, nombres,
 // exclusividades, doble y el umbral del menú secreto salen de `supabase/functions/_shared/carta.ts`
 // en los dos lados (el cliente la recibe por el bundle nuevo). No hay dos copias que comparar.
-const cRew = need(clientObjArray('RWDS', 'R', ['pts']), 'RWDS (cliente)');
 
 const cZones = {};
 {
@@ -127,7 +126,11 @@ function serverRecord(src, name, fields) {
   return out;
 }
 
-const sRew = need(serverRecord(catalog, 'REWARDS', ['pts']), 'REWARDS (servidor)');
+// Las recompensas también salen de la carta (2026-09-24): se leen de su exportación a JSON, que
+// `check:carta` mantiene al día. Solo se usan para los invariantes del referido y la escalera.
+const carta = JSON.parse(readFileSync(join(ROOT, 'modelo/carta.json'), 'utf8'));
+const sRew = need(Object.fromEntries((carta.recompensas || []).map((x) => [x.id, { pts: x.pts, tipo: x.tipo }])), 'recompensas (modelo/carta.json)');
+const deTipo = (tipo) => Object.values(sRew).find((x) => x.tipo === tipo) || null;
 
 const sZones = {};
 {
@@ -137,9 +140,6 @@ const sZones = {};
 need(sZones, 'DELIVERY_ZONE_FEES (servidor)');
 
 // ---------- comparaciones ----------
-for (const id of new Set([...Object.keys(cRew), ...Object.keys(sRew)])) {
-  cmp(`Recompensa ${id} (REWARDS)`, cRew[id] ?? null, sRew[id] ?? null);
-}
 cmp('Zonas de delivery (DELIVERY_PRICE_ZONES ↔ DELIVERY_ZONE_FEES)', cZones, sZones);
 
 // ── LAS REGLAS DEL DINERO YA NO TIENEN DOS COPIAS (2026-09-24) ─────────────────────────────
@@ -289,9 +289,9 @@ cmp('REFERRAL_BONUS_POINTS (lo que recibe el invitado)',
 // como puntos, así que tiene que valer exactamente lo mismo que la recompensa R06. Si R06
 // se recalibra y este número se queda, el que invita recibe de más o de menos sin que
 // nadie lo note (ya pasó una vez: R06 bajó de 720 a 400 y hubo que seguirlo a mano).
-cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
+cmp('REFERRER_REWARD_POINTS debe valer lo mismo que el sándwich gratis (un 15CM)',
   scalar(env, 'REFERRER_REWARD_POINTS', /const REFERRER_REWARD_POINTS = (\d+)/, 'env.ts'),
-  sRew.R06 ? sRew.R06.pts : null);
+  deTipo('sandwich') ? deTipo('sandwich').pts : null);
 
 // ⚠ EL MISMO INVARIANTE DEL OTRO LADO, Y ESTE SÍ SE ROMPIÓ. Lo que recibe EL INVITADO es
 // "una bebida gratis" entregada como puntos, así que tiene que valer exactamente lo mismo
@@ -301,9 +301,9 @@ cmp('REFERRER_REWARD_POINTS debe valer lo mismo que R06 (un 15CM gratis)',
 // Instagram le prometieron al invitado una bebida que su bono no alcanzaba a pagar.
 // Y quedaba en tierra de nadie: por encima de la salsa extra (20) y por debajo de todo lo
 // demás (160), o sea sin NADA que canjear. Lo encontró una revisión a mano, no el CI.
-cmp('REFERRAL_BONUS_POINTS debe valer lo mismo que R05 (una bebida gratis)',
+cmp('REFERRAL_BONUS_POINTS debe valer lo mismo que la bebida gratis',
   scalar(env, 'REFERRAL_BONUS_POINTS', /const REFERRAL_BONUS_POINTS = (\d+)/, 'env.ts'),
-  sRew.R05 ? sRew.R05.pts : null);
+  deTipo('bebida') ? deTipo('bebida').pts : null);
 
 // #55 — La escalera de referidos vive en los dos lados: el servidor la PAGA y el cliente la
 // PINTA. Si se desincronizan, la pantalla le promete al cliente un premio que el servidor

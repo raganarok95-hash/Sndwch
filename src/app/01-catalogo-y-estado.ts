@@ -272,20 +272,11 @@ var DRINK_IMG:Record<string,string>=CARTA_VIEJA.DRINK_IMG;
 // Un comentario con los números cambiados es peor que ninguno: el próximo que recalibre parte
 // de él. Salió del mismo día que el bono del invitado — la recalibración movió los valores y
 // no volvió a mirar lo que estaba escrito al lado.
-// DEBE coincidir con REWARDS en supabase/functions/api/catalog.ts — y ojo, esos puntos
-// también viven en `catalog_prices` (categoría 'reward'), que es lo que de verdad manda en
-// runtime: cambiar solo estos literales no cambia nada.
-var RWDS=[
-  // Puntos recalibrados el 2026-09-05 para que las cinco devuelvan lo mismo (~1.5%). Antes
-  // había un factor 4.3 entre la más barata y la más cara PARA EL NEGOCIO, así que al cliente
-  // le convenía canjear siempre "subir a 30CM" y las otras cuatro eran decorado. Ver el
-  // comentario largo en REWARDS (catalog.ts) con la tabla completa.
-  {id:'R02',pts:20, n:'Salsa',    s:'Extra',  d:'Perdona el cargo de salsa extra (S/2)'},
-  {id:'R04',pts:160,n:'Doble',    s:'Proteína',d:'Doble proteína gratis'},
-  {id:'R05',pts:160,n:'Bebida',   s:'Gratis', d:'Bebida a elección'},
-  {id:'R03',pts:320,n:'Tamaño',   s:'30CM',   d:'Tu sándwich 15CM sube a 30CM gratis',sizeOnly:'15'},
-  {id:'R06',pts:400,n:'Sándwich', s:'Gratis', d:'Sándwich 15CM gratis — no aplica a Signatures Reserve',sizeOnly:'15'}
-];
+// Las recompensas salen de la carta (`_shared/carta.ts`), con su `tipo`: salsa, subir30, doble,
+// bebida o sandwich. La lógica pregunta por el tipo, nunca por el id. Los puntos son SEMILLA: los
+// reales vienen de `catalog_prices` (categoría 'reward') en get-catalog.
+var RWDS:{id:string;tipo:string;pts:number;n:string;s:string;d:string;sizeOnly?:string}[]=CARTA_VIEJA.RWDS;
+function recompensaDeTipo(tipo:string){return RWDS.filter(function(x){return x.tipo===tipo;})[0];}
 // BEBIDAS Y SIDES — solo el catálogo de bebidas de la casa (D06-D08). D01-D05
 // (chicha morada, inca kola, agua, papas, galleta) se retiraron a pedido del dueño:
 // eran solo reventa de botellas/paquetes, sin nada distinto a lo que vende cualquier
@@ -741,9 +732,6 @@ function payableTotal(){return money(cartFinalTotal()+deliveryFeeAmount());}
 // de siempre porque los textos de la app las interpolan («el combo te descuenta S/1»). El porqué
 // de cada valor está en supabase/functions/api/catalog.ts, junto a donde se cobra.
 var COMBO_DISCOUNT_PER_PAIR=REGLAS_DINERO.comboPorPar;
-var R03_FLAT_WAIVER=REGLAS_DINERO.topeR03;
-var R04_FLAT_WAIVER=REGLAS_DINERO.topeR04;
-var R05_FLAT_WAIVER=REGLAS_DINERO.topeR05;
 var RESERVE_SIGS=new Set(REGLAS_DINERO.reservas);
 // La bebida gratis de hora valle está RETIRADA (2026-09-05): su ventana es una lista vacía.
 var OFFPEAK_DRINK_PROMO_HOURS_LIMA:number[][]=REGLAS_DINERO.valleHorasLima;

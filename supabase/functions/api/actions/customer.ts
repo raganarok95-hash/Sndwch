@@ -16,6 +16,7 @@ import { cargarFranjas, cargasPorHora, horaLlena, siguienteLibreDelDia } from ".
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge, pointsFor, RESERVA_CONFIRMABLE } from "./orders.ts";
+import { recompensaDeTipo } from "../../_shared/carta.ts";
 
 // Freno de seguridad para TODOS los recordatorios que van al CLIENTE. Los ~21 crons de
 // retención corren en producción desde antes de abrir, sin verificar que el negocio ya
@@ -1185,13 +1186,28 @@ const SECOND_ORDER_MAX_DAYS = 10;
 // retorno SIN bajar el ticket promedio. Costo real de honrarlo ~S/1.80 contra un LTV de
 // S/35.67 por cliente — pero es un costo real y automático, así que vive en una constante
 // única y fácil de ajustar (ponerla en 0 desactiva el regalo sin tocar el resto).
-const BOUNCE_BACK_POINTS = 120;   // = R05 "BEBIDA // GRATIS" (bajó de 220 al recalibrar R05)
+//
+// ⚠ LOS PUNTOS NO SE ESCRIBEN: SON EL PRECIO VIGENTE DE LA BEBIDA (2026-09-24). Hasta hoy eran
+// 120 fijos con un comentario «= R05», y R05 vale 160 desde la recalibración del 2026-09-05: el
+// aviso prometía una bebida que el regalo no alcanzaba a pagar. Ahora se leen del precio en
+// runtime (catalog_prices, editable desde el panel) de la recompensa de tipo bebida.
+// `BOUNCE_BACK_ACTIVO = false` apaga el regalo sin tocar el resto.
+const BOUNCE_BACK_ACTIVO = true;
+export function regaloDeVuelta(): { puntos: number; aviso: string } {
+  const d = recompensaDeTipo("bebida");
+  const puntos = BOUNCE_BACK_ACTIVO && d && REWARDS[d.id] ? REWARDS[d.id].pts : 0;
+  return { puntos, aviso: "Te sumamos puntos suficientes para canjear una bebida de la casa. Entra a Recompensas y es tuya." };
+}
 const BOUNCE_BACK_MIN_HOURS = 20;
 const BOUNCE_BACK_MAX_HOURS = 48;
 
 export async function actBounceBackFirstOrder(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  // Con los precios de la base cargados: la bebida puede haberse movido desde el panel.
+  await loadCatalogPrices();
+  const regalo = regaloDeVuelta();
+  if (regalo.puntos <= 0) return { success: true, skipped: "regalo de vuelta apagado" };
   const touchedToday = await phonesTouchedToday();
   const now = Date.now();
   const from = new Date(now - BOUNCE_BACK_MAX_HOURS * 3600000).toISOString();
@@ -1222,14 +1238,14 @@ export async function actBounceBackFirstOrder(b: any) {
       if (touchedToday.has(String(c.phone))) continue;
       const withinLimit = await rpc("check_rate_limit", { p_key: `bounce-back:${c.phone}`, p_limit: 1, p_window_minutes: 60 * 24 * 365 });
       if (!withinLimit) continue;
-      if (BOUNCE_BACK_POINTS > 0) {
-        await rpc("increment_customer_points", { p_phone: c.phone, p_delta: BOUNCE_BACK_POINTS });
+      if (regalo.puntos > 0) {
+        await rpc("increment_customer_points", { p_phone: c.phone, p_delta: regalo.puntos });
         // Mismo criterio que el bono de bienvenida: todo ingreso de puntos deja rastro en
         // el historial del cliente, nunca se suma en silencio.
         await sbInsert("transactions", {
           customer_phone: c.phone,
           type: "earn_confirmed",
-          points: BOUNCE_BACK_POINTS,
+          points: regalo.puntos,
           description: "Gracias por tu primer pedido — bebida de cortesía",
           confirmed: true,
         });
@@ -1239,7 +1255,7 @@ export async function actBounceBackFirstOrder(b: any) {
         // "Va por nosotros" decía regalo y "canjear en tus puntos" decía que paga con su
         // saldo — una de las dos era mentira. Lo que de verdad pasa es que le sumamos
         // los puntos y él canjea, así que el texto lo dice tal cual.
-        body: "Te sumamos puntos suficientes para canjear una bebida de la casa. Entra a Recompensas y es tuya.",
+        body: regalo.aviso,
         url: "./index.html",
         tag: "sndwch-bounce-back",
       });

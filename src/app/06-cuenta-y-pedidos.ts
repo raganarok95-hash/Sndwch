@@ -401,7 +401,7 @@ function badgesHTML(c){
 // en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar, y encima 120 no cubría
 // NINGUNA recompensa salvo la salsa extra.
 function loQueGanaQuienInvita(){
-  var r=RWDS.filter(function(x){return x.id==='R06';})[0];
+  var r=recompensaDeTipo('sandwich');
   return (r&&REFERRER_REWARD_POINTS>=r.pts)
     ? 'un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts)'
     : '<b>'+REFERRER_REWARD_POINTS+' pts</b> para tu próximo pedido';
@@ -412,7 +412,7 @@ function etiquetaDeEscalon(m){
   return (!r||m.points>=necesita)?m.label:(m.points+' puntos para tu próximo pedido');
 }
 function loQueGanaElInvitado(){
-  var r05=RWDS.filter(function(x){return x.id==='R05';})[0];
+  var r05=recompensaDeTipo('bebida');
   return (r05&&REFERRAL_BONUS_POINTS>=r05.pts)
     ? REFERRAL_BONUS_POINTS+' pts — una bebida de la casa'
     : REFERRAL_BONUS_POINTS+' pts para su primer pedido';
