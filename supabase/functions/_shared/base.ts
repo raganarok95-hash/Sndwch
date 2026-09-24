@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924183412
+// generado-contra-migracion: 20260924185004
 export type Json =
   | string
   | number
@@ -937,7 +937,6 @@ export type Database = {
           alerted_scheduled_reminder: boolean
           alerted_stuck: boolean
           alerted_stuck_progress: boolean
-          build: Json | null
           cancel_reason: string | null
           contact_phone: string | null
           created_at: string
@@ -959,12 +958,10 @@ export type Database = {
           items: Json
           lat: number | null
           lon: number | null
-          mode: string | null
           notes: string | null
           payment_id: string | null
           payment_method: string | null
           payment_status: string | null
-          product_key: string | null
           promised_from: string | null
           promised_to: string | null
           receipt_hash: string | null
@@ -976,7 +973,6 @@ export type Database = {
           redeemed_reward_pts: number | null
           ref: string
           reminded_customer_scheduled: boolean
-          size: string | null
           status: string | null
           status_changed_at: string | null
           summary: string | null
@@ -987,7 +983,6 @@ export type Database = {
           alerted_scheduled_reminder?: boolean
           alerted_stuck?: boolean
           alerted_stuck_progress?: boolean
-          build?: Json | null
           cancel_reason?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -1009,12 +1004,10 @@ export type Database = {
           items?: Json
           lat?: number | null
           lon?: number | null
-          mode?: string | null
           notes?: string | null
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
-          product_key?: string | null
           promised_from?: string | null
           promised_to?: string | null
           receipt_hash?: string | null
@@ -1026,7 +1019,6 @@ export type Database = {
           redeemed_reward_pts?: number | null
           ref: string
           reminded_customer_scheduled?: boolean
-          size?: string | null
           status?: string | null
           status_changed_at?: string | null
           summary?: string | null
@@ -1037,7 +1029,6 @@ export type Database = {
           alerted_scheduled_reminder?: boolean
           alerted_stuck?: boolean
           alerted_stuck_progress?: boolean
-          build?: Json | null
           cancel_reason?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -1059,12 +1050,10 @@ export type Database = {
           items?: Json
           lat?: number | null
           lon?: number | null
-          mode?: string | null
           notes?: string | null
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
-          product_key?: string | null
           promised_from?: string | null
           promised_to?: string | null
           receipt_hash?: string | null
@@ -1076,7 +1065,6 @@ export type Database = {
           redeemed_reward_pts?: number | null
           ref?: string
           reminded_customer_scheduled?: boolean
-          size?: string | null
           status?: string | null
           status_changed_at?: string | null
           summary?: string | null

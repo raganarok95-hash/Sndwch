@@ -181,3 +181,4 @@
 20260924173551  crear_pedido_transaccional
 20260924182608  confirmar_pago_manual_transaccional
 20260924183412  esquema_de_pedidos
+20260924185004  quitar_columnas_viejas_de_orders
