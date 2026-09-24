@@ -2372,7 +2372,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '6810c385ed';
+var APP_BUILD = '2debb08640';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -8937,7 +8937,7 @@ function openMap(lat, lon, approx) {
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_lmap);
                 // Escribía en `maddr`, un elemento que el mapa rehecho del 2026-09-17 ya no tiene: el
                 // «Buscando…» nunca aparecía y la referencia vieja quedaba debajo de un pin ya movido.
-                _lmap.on('move', function () { var h = document.getElementById('maddr'); if (h)
+                _lmap.on('move', function () { var h = document.getElementById('maddr-hint'); if (h)
                     h.textContent = 'Buscando…'; if (_mTimer)
                     clearTimeout(_mTimer); });
                 _lmap.on('moveend', function () { var c = _lmap.getCenter(); if (_mTimer)
