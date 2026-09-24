@@ -1149,3 +1149,8 @@ pegado al nombre de la tabla y se le escapaban tres de las cuatro consultas que 
 romper (había comentarios entre medio y consultas armadas con `+`). Se vio simulando el borrado en
 la foto; ahora lee el argumento entero. `-- --probar` le inyecta una columna que no existe.
 
+
+**Cerrado el mismo día, tras el merge a `main`**: el deploy del api nuevo terminó con su prueba de
+humo en verde y recién ahí se aplicó el borrado (migración 20260924185004). Antes se buscó en la
+base quién más nombraba esas columnas: solo `retention_report`, y era un falso positivo —lee
+`size` DENTRO de `items`, no la columna—. Los 7 flujos e2e corren ya contra el esquema sin ellas.
