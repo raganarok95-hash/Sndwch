@@ -187,3 +187,4 @@
 20260924212826  cancelar_pedido_transaccional
 20260924221018  carta_v4_clasicos_usa
 20260924230134  crear_cuenta_con_bono
+20260924231828  fotos_sig10_sig12
