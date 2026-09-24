@@ -1046,6 +1046,19 @@ function deliveryKmNow(){
 function deliveryFeeForKm(km){
   return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
 }
+// Los km cobrables y el envío a una dirección GUARDADA (con pin), con la misma fórmula que el
+// checkout y sin la comisión de tarjeta (Yape es el método por defecto). null si no tiene pin
+// o queda fuera de cobertura. Lo usan el grupal («envío 4.3 km») y el pedido fijo («te sale»):
+// antes de existir, cada pantalla habría tenido su propia copia de la cuenta.
+function kmADireccion(a:any):number|null{
+  if(!a||typeof a.lat!=='number'||typeof a.lon!=='number')return null;
+  var km=Math.round(haversineKm(a.lat,a.lon,STORE_LAT,STORE_LON)*DELIVERY_ROAD_FACTOR*100)/100;
+  return isFinite(km)&&km<=DELIVERY_MAX_KM?km:null;
+}
+function envioADireccion(a:any):number|null{
+  var km=kmADireccion(a);
+  return km==null?null:deliveryFeeForKm(km);
+}
 function deliveryFeeBase(){
   var km=deliveryKmNow();
   if(km===null){
@@ -1254,12 +1267,22 @@ var storePausedUntil=null;
 // deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
 // que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
 var fullHours=[],queueAhead=0,queueMinutesPerOrder=5,maxPerHour=10;
+// Carga de cada hora (pedidos + lugares apartados por pedidos fijos), la misma cuenta con la
+// que el servidor rechaza. Hace falta además de `fullHours` por un solo caso: la hora que le
+// estamos GUARDANDO a este cliente. El servidor no le cuenta su propio lugar, así que para él
+// esa hora solo está llena si lo está sin su lugar.
+var cargaPorHora:Record<string,number>={};
+// El pedido fijo del que sale el carrito actual, y la hora (ISO, inicio de hora) que ese fijo
+// tiene apartada. Los pone pedirFijoAhora(); se limpian con el carrito.
+var pendingRecurringId:string|null=null,miHoraApartada:string|null=null;
 // ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
 // como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
 function hourIsFull(d){
-  if(!fullHours.length)return false;
   var h=new Date(d);h.setMinutes(0,0,0);
-  return fullHours.indexOf(h.toISOString())>=0;
+  var k=h.toISOString();
+  if(miHoraApartada&&k===miHoraApartada&&typeof cargaPorHora[k]==='number')return cargaPorHora[k]-1>=maxPerHour;
+  if(!fullHours.length)return false;
+  return fullHours.indexOf(k)>=0;
 }
 function initMetaPixel(id){
   if(_metaPixelLoaded||!id)return;
@@ -1294,7 +1317,10 @@ function fbTrack(event,params?,eventId?){
 // sin origen y no puede optimizar).
 function metaAttribution(){
   var get=function(n){var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():'';};
-  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||''};
+  // `recurringId`: el pedido fijo del que sale este carrito. Viaja por acá porque este objeto
+  // ya llega a los TRES caminos de cobro (Yape/crédito, reserva con tarjeta y su confirmación);
+  // un campo suelto en uno solo dejaría al otro sin gastar el lugar apartado.
+  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||'',recurringId:pendingRecurringId||''};
 }
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
@@ -1661,6 +1687,11 @@ var recPhone='',recDni='',recBday='';
 var recPinRevealed=false;
 function togglePinReveal(){recPinRevealed=!recPinRevealed;render();}
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
+// LOS IDS DE DIRECCIÓN SON NÚMEROS (bigint en `saved_addresses`), pero viajan como TEXTO en
+// cada onclick (`pickAddr('5')`). Comparados con === nunca coinciden: elegir una dirección
+// guardada no hacía nada, y ninguna prueba lo veía porque todas simulaban ids de texto.
+// Toda comparación de un id que pasó por el HTML va por acá.
+function mismoId(a:any,b:any):boolean{return a!=null&&b!=null&&String(a)===String(b);}
 var wPhone='',wAmt='',wMsg='';
 var gcPhone='',gcAmt='',gcMsg='';
 // Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
@@ -1692,7 +1723,12 @@ var legalFromUrl=null;
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
 // entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
 var wantsNewGroup=false;
+// ?fijo=ID[&franja=HH:MM] — el aviso del pedido fijo lleva acá. `franja` es la hora que el
+// aviso ofreció cuando la de siempre se llenó: se respeta, para que el toque haga lo que el
+// aviso dijo.
+var fijoFromUrl:string|null=null,franjaFromUrl:string|null=null;
 (function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();
+  var fj=qp.get('fijo');if(fj)fijoFromUrl=fj.trim();var fr=qp.get('franja');if(fr&&/^[0-2][0-9]:[0-5][0-9]$/.test(fr))franjaFromUrl=fr;
   // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.

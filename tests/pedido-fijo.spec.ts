@@ -95,11 +95,13 @@ test('la pantalla lista los pedidos fijos y permite quitarlos', async ({ page })
   await entrarConTelefono(page, CLIENTE.phone, '1234');
   await page.locator('[onclick*="goRecurring()"]').click();
 
-  await expect(page.locator('text=MI PEDIDO FIJO')).toBeVisible();
-  await expect(page.locator('text=/Viernes · 19:30/')).toBeVisible();
+  await expect(page.getByText('Tu pedido fijo', { exact: true })).toBeVisible();
+  await expect(page.locator('.mfj .tx')).toContainText(/fijo los viernes · 7:30 p\.m\./i);
   // La misma promesa, también acá: es la pantalla donde el cliente vuelve a mirar qué dejó
   // configurado, y es donde más fácil sería creer que se cobra solo.
-  await expect(page.locator('text=/nunca te cobramos sin que confirmes/i')).toBeVisible();
+  await expect(page.locator('text=/No te cobramos sin que confirmes/i')).toBeVisible();
+  // Y lo que la maqueta aprobada decía y el dueño descartó: el fijo no se manda solo.
+  await expect(page.getByText(/lo mandamos solo/i)).toHaveCount(0);
 
   // La app usa su propio modal (showConfirm), no el diálogo nativo del navegador.
   await page.locator('[onclick*="doDeleteRecurring"]').click();

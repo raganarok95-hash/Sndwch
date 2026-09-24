@@ -456,6 +456,39 @@ body.kb-open #app{padding-bottom:0}
 .mct .nota b{color:#33230F}
 .mct .ok{margin-top:14px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A6B2E;text-transform:uppercase;min-height:10px}
 @media (prefers-reduced-motion: reduce){.mct .llave::after{transition:none}}
+/* TU PEDIDO FIJO — docs/maquetas/aprobadas/tu-pedido-fijo.png (u2.html #P). CSS copiado de la
+   fuente; los bloques van en flujo porque el nombre del pedido y la caja cambian de largo. */
+.mfj{position:relative;min-height:100dvh;box-sizing:border-box;background:#12212B;color:#F2F6F8;padding:0 0 110px;overflow:hidden}
+.mfj em,.mfj s{text-decoration:none;font-style:normal;display:block}
+.mfj .hero{position:absolute;left:0;right:0;top:0;height:352px;z-index:1;overflow:hidden}
+.mfj .hero img{width:100%;height:100%;object-fit:cover;display:block}
+.mfj .hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,16,22,.5) 0 16%,transparent 38%,#12212B 97%)}
+.mfj .hero.vacio{background:radial-gradient(90% 60% at 50% 30%,rgba(140,200,236,.16),transparent 70%)}
+.mfj .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#fff}
+.mfj .cuerpo{position:relative;z-index:6;padding:236px 24px 0}
+.mfj .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+.mfj .tx b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.9;color:#F2F6F8;margin-top:10px;letter-spacing:-.02em;text-transform:uppercase}
+.mfj .tx s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC;margin-top:10px;line-height:1.7;text-transform:uppercase}
+.mfj .vec{display:flex;gap:9px;margin-top:18px}
+.mfj .vec div{flex:1;min-width:0;border:1px solid #27455A;padding:12px 10px}
+.mfj .vec div s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#6E90A4;text-transform:uppercase}
+.mfj .vec div b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:24px;line-height:1.05;color:#F2F6F8;margin-top:7px}
+.mfj .prog{all:unset;box-sizing:border-box;display:block;width:100%;border:1px dashed #2F5266;padding:14px 15px}
+.mfj button.prog{cursor:pointer}
+.mfj .prog b{display:block;font:800 14px/1.15 Archivo,sans-serif;color:#D6E6EF}
+.mfj .prog s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7FA6BC;margin-top:7px;line-height:1.7;text-transform:uppercase}
+.mfj .prog .acc{display:flex;gap:18px;margin-top:10px}
+.mfj .prog .acc button{all:unset;cursor:pointer;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#8CC8EC;text-transform:uppercase;padding:4px 0}
+.mfj .otros{margin-top:34px}
+.mfj .otros em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E90A4;text-transform:uppercase;margin-bottom:4px}
+.mfj .o{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid #1E3E50}
+.mfj .o b{font:700 13px/1.2 Archivo,sans-serif;color:#D6E6EF}
+.mfj .o p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC;flex:0 0 auto}
+.mfj .go{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:0;height:74px;z-index:45;display:flex}
+.mfj .go button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.mfj .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.mfj .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.mfj button:focus-visible{outline:2px solid #F2F6F8;outline-offset:-4px}
 /* PEDIDO GRUPAL — docs/maquetas/aprobadas/pedido-grupal.png (k1.html #GR). CSS copiado de la
    fuente; las filas van en flujo porque la gente del grupo puede ser una o doce. */
 .mgr{position:relative;min-height:100dvh;box-sizing:border-box;padding:80px 26px 110px;color:#33230F;background:#C6A579;
@@ -1752,6 +1785,20 @@ function deliveryKmNow() {
 function deliveryFeeForKm(km) {
     return Math.ceil(Math.max(DELIVERY_MIN_FEE, km * DELIVERY_KM_RATE) * 2) / 2;
 }
+// Los km cobrables y el envío a una dirección GUARDADA (con pin), con la misma fórmula que el
+// checkout y sin la comisión de tarjeta (Yape es el método por defecto). null si no tiene pin
+// o queda fuera de cobertura. Lo usan el grupal («envío 4.3 km») y el pedido fijo («te sale»):
+// antes de existir, cada pantalla habría tenido su propia copia de la cuenta.
+function kmADireccion(a) {
+    if (!a || typeof a.lat !== 'number' || typeof a.lon !== 'number')
+        return null;
+    var km = Math.round(haversineKm(a.lat, a.lon, STORE_LAT, STORE_LON) * DELIVERY_ROAD_FACTOR * 100) / 100;
+    return isFinite(km) && km <= DELIVERY_MAX_KM ? km : null;
+}
+function envioADireccion(a) {
+    var km = kmADireccion(a);
+    return km == null ? null : deliveryFeeForKm(km);
+}
 function deliveryFeeBase() {
     var km = deliveryKmNow();
     if (km === null) {
@@ -1966,14 +2013,25 @@ var storePausedUntil = null;
 // deshabilita ninguna franja ni se infla ningún estimado — el servidor sigue rechazando lo
 // que no puede cumplir, así que el peor caso acá es volver al comportamiento anterior.
 var fullHours = [], queueAhead = 0, queueMinutesPerOrder = 5, maxPerHour = 10;
+// Carga de cada hora (pedidos + lugares apartados por pedidos fijos), la misma cuenta con la
+// que el servidor rechaza. Hace falta además de `fullHours` por un solo caso: la hora que le
+// estamos GUARDANDO a este cliente. El servidor no le cuenta su propio lugar, así que para él
+// esa hora solo está llena si lo está sin su lugar.
+var cargaPorHora = {};
+// El pedido fijo del que sale el carrito actual, y la hora (ISO, inicio de hora) que ese fijo
+// tiene apartada. Los pone pedirFijoAhora(); se limpian con el carrito.
+var pendingRecurringId = null, miHoraApartada = null;
 // ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
 // como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
 function hourIsFull(d) {
-    if (!fullHours.length)
-        return false;
     var h = new Date(d);
     h.setMinutes(0, 0, 0);
-    return fullHours.indexOf(h.toISOString()) >= 0;
+    var k = h.toISOString();
+    if (miHoraApartada && k === miHoraApartada && typeof cargaPorHora[k] === 'number')
+        return cargaPorHora[k] - 1 >= maxPerHour;
+    if (!fullHours.length)
+        return false;
+    return fullHours.indexOf(k) >= 0;
 }
 function initMetaPixel(id) {
     if (_metaPixelLoaded || !id)
@@ -2027,7 +2085,10 @@ function fbTrack(event, params, eventId) {
 // sin origen y no puede optimizar).
 function metaAttribution() {
     var get = function (n) { var m = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)'); return m ? m.pop() : ''; };
-    return { fbp: get('_fbp') || '', fbc: get('_fbc') || '', ua: navigator.userAgent || '', groupCode: pendingGroupCode || '' };
+    // `recurringId`: el pedido fijo del que sale este carrito. Viaja por acá porque este objeto
+    // ya llega a los TRES caminos de cobro (Yape/crédito, reserva con tarjeta y su confirmación);
+    // un campo suelto en uno solo dejaría al otro sin gastar el lugar apartado.
+    return { fbp: get('_fbp') || '', fbc: get('_fbc') || '', ua: navigator.userAgent || '', groupCode: pendingGroupCode || '', recurringId: pendingRecurringId || '' };
 }
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).
@@ -2311,7 +2372,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4541086598';
+var APP_BUILD = '80ab4144fa';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -2424,6 +2485,11 @@ var recPhone = '', recDni = '', recBday = '';
 var recPinRevealed = false;
 function togglePinReveal() { recPinRevealed = !recPinRevealed; render(); }
 var myAddresses = [], myFavorites = [], pickedAddrId = null;
+// LOS IDS DE DIRECCIÓN SON NÚMEROS (bigint en `saved_addresses`), pero viajan como TEXTO en
+// cada onclick (`pickAddr('5')`). Comparados con === nunca coinciden: elegir una dirección
+// guardada no hacía nada, y ninguna prueba lo veía porque todas simulaban ids de texto.
+// Toda comparación de un id que pasó por el HTML va por acá.
+function mismoId(a, b) { return a != null && b != null && String(a) === String(b); }
 var wPhone = '', wAmt = '', wMsg = '';
 var gcPhone = '', gcAmt = '', gcMsg = '';
 // Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
@@ -2455,6 +2521,10 @@ var legalFromUrl = null;
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
 // entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
 var wantsNewGroup = false;
+// ?fijo=ID[&franja=HH:MM] — el aviso del pedido fijo lleva acá. `franja` es la hora que el
+// aviso ofreció cuando la de siempre se llenó: se respeta, para que el toque haga lo que el
+// aviso dijo.
+var fijoFromUrl = null, franjaFromUrl = null;
 (function () {
     try {
         var qp = new URLSearchParams(location.search);
@@ -2470,6 +2540,12 @@ var wantsNewGroup = false;
         var dt = qp.get('entrega');
         if (dt)
             deliveryTokenFromUrl = dt.trim();
+        var fj = qp.get('fijo');
+        if (fj)
+            fijoFromUrl = fj.trim();
+        var fr = qp.get('franja');
+        if (fr && /^[0-2][0-9]:[0-5][0-9]$/.test(fr))
+            franjaFromUrl = fr;
         // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
         // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
         // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
@@ -2679,8 +2755,9 @@ function renderOverlays() {
     // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
     // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
     // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
-    // aprobada la burbuja caía encima del total y de la barra de cierre.
-    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build' && sndScreen !== 'p_problema' && sndScreen !== 'o_secreto' && sndScreen !== 'group_order' && sndScreen !== 'group_split') {
+    // aprobada la burbuja caía encima del total y de la barra de cierre. p_recurring (tu pedido
+    // fijo): es una pantalla de UN toque, y la burbuja tapaba justo el precio de ese toque.
+    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build' && sndScreen !== 'p_problema' && sndScreen !== 'o_secreto' && sndScreen !== 'group_order' && sndScreen !== 'group_split' && sndScreen !== 'p_recurring') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, 'var(--sw-on-gold,#241a08)') + '</a>';
     }
@@ -3072,6 +3149,7 @@ async function loadStoreHoursBackground() {
         // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
         // cocina por delante ahora mismo.
         fullHours = Array.isArray(r.fullHours) ? r.fullHours : [];
+        cargaPorHora = r.cargaPorHora && typeof r.cargaPorHora === 'object' ? r.cargaPorHora : {};
         queueAhead = typeof r.queueAhead === 'number' ? r.queueAhead : 0;
         if (typeof r.queueMinutesPerOrder === 'number')
             queueMinutesPerOrder = r.queueMinutesPerOrder;
@@ -4624,7 +4702,7 @@ function cartRemove(idx) {
 // groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
 // cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
 // regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
-function clearCart() { cart = []; appliedReward = null; appliedPromo = null; promoStatus = ''; pendingGroupCode = null; saveCart(); go('o_home'); }
+function clearCart() { cart = []; appliedReward = null; appliedPromo = null; promoStatus = ''; pendingGroupCode = null; pendingRecurringId = null; miHoraApartada = null; saveCart(); go('o_home'); }
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 //
@@ -5431,12 +5509,8 @@ function envioEstimadoGrupo(g) {
     if (!g.isOrganizer)
         return null;
     var a = myAddresses.find(function (x) { return typeof x.lat === 'number' && typeof x.lon === 'number'; });
-    if (!a)
-        return null;
-    var km = Math.round(haversineKm(a.lat, a.lon, STORE_LAT, STORE_LON) * DELIVERY_ROAD_FACTOR * 100) / 100;
-    if (!isFinite(km) || km > DELIVERY_MAX_KM)
-        return null;
-    return { km: km, fee: deliveryFeeForKm(km) };
+    var km = kmADireccion(a);
+    return km == null ? null : { km: km, fee: deliveryFeeForKm(km) };
 }
 // Las cifras de esta pantalla van con dos decimales y en columna, como en la maqueta (7.00).
 function d2(n) { return (Math.round(n * 100) / 100).toFixed(2); }
@@ -5557,7 +5631,7 @@ function sGroupSplit() {
             + '<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
     }
     h += '<div class="gente" role="radiogroup" aria-label="Dirección">' + conPin.map(function (a) {
-        var on = repartoAddrId === a.id;
+        var on = mismoId(repartoAddrId, a.id);
         return '<button class="dir' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" onclick="repartoAddrId=\'' + a.id + '\';render()"><b>' + esc(a.label) + '</b><s>' + esc(a.address) + (a.reference ? ' · ' + esc(a.reference) : '') + '</s></button>';
     }).join('') + '</div>';
     h += '<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="' + esc(repartoPhone) + '"></div>';
@@ -5565,7 +5639,7 @@ function sGroupSplit() {
 }
 var GROUP_SPLIT_MINUTES_CLIENT = 20;
 async function doSplitGroupOrder() {
-    var a = myAddresses.find(function (x) { return x.id === repartoAddrId; });
+    var a = myAddresses.find(function (x) { return mismoId(x.id, repartoAddrId); });
     if (!a) {
         showToast('Elige la dirección.');
         return;
@@ -6657,7 +6731,7 @@ async function applyPromoCode() {
 }
 function removePromoCode() { appliedPromo = null; promoStatus = ''; confirmRerender(); }
 function pickAddr(id) {
-    var a = myAddresses.find(function (x) { return x.id === id; });
+    var a = myAddresses.find(function (x) { return mismoId(x.id, id); });
     if (!a)
         return;
     syncConfirmFields();
@@ -6929,7 +7003,7 @@ function checkoutExtrasHTML() {
         // obligatorio queda oculto), pero el cliente puede colapsarlos una vez completados
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
-        + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = pickedAddrId === a.id; return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? GOLD : '#2C3228') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#9DA096') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
+        + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = mismoId(pickedAddrId, a.id); return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? GOLD : '#2C3228') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#9DA096') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
         // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
         // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
         // sesión no lo ve — sería ruido en el paso de pagar.
@@ -7712,7 +7786,7 @@ function sOCart() {
         // cobro automático que Culqi no permite (el token es de un solo uso) sería la clase de
         // promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
         + (cart.length && cust ? '<details style="margin-top:18px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">↻ Dejarlo fijo cada semana //</summary>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Te avisamos una hora antes con este mismo carrito armado. <b style="color:var(--sw-text-body,#EFEDE4)">No te cobramos sin que confirmes.</b></div>'
+            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Te avisamos antes, con este mismo carrito armado, y confirmas en un toque. Cuando se vuelva costumbre, te guardamos el lugar a esa hora. <b style="color:var(--sw-text-body,#EFEDE4)">No te cobramos sin que confirmes.</b></div>'
             + '<div style="display:flex;gap:8px;margin-top:12px">'
             + '<select id="rec-day" style="flex:1;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:15px;font-family:\'EB Garamond\',serif">'
             + DIAS_SEMANA.map(function (d, i) { return '<option value="' + i + '"' + (i === new Date().getDay() ? ' selected' : '') + '>' + d + '</option>'; }).join('')
@@ -8207,6 +8281,8 @@ function finalizeOrderSuccess(res, po, chargeId) {
     receiptUploadState = null;
     cart = [];
     pendingGroupCode = null;
+    pendingRecurringId = null;
+    miHoraApartada = null;
     resetBuilder();
     mode = null;
     useCredit = false;
@@ -10198,6 +10274,8 @@ function doLogout() {
     // la próxima cuenta creada en este mismo equipo se quedaba con un correo ajeno.
     limpiarLoginPorCorreo();
     pendingGroupCode = null;
+    pendingRecurringId = null;
+    miHoraApartada = null;
     localStorage.removeItem('sw_ph');
     localStorage.removeItem('sw_tok');
     cacheCust(null);
@@ -10648,47 +10726,239 @@ function sAlgoSalioMal() {
 // "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
 // falta a un negocio nuevo.
 //
-// ⚠ NO SE COBRA SOLO, Y LA PANTALLA LO DICE. El token de tarjeta de Culqi es de un solo uso
-// y vive 5 minutos, así que no hay forma de volver a cobrar sin que el cliente ponga una
-// tarjeta otra vez. Prometerle "se cobra solo" y después pedirle que confirme sería la clase
-// de promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
+// ⚠ NO SE MANDA NI SE COBRA SOLO, Y LA PANTALLA LO DICE. El token de tarjeta de Culqi es de
+// un solo uso y vive 5 minutos, así que no hay forma de volver a cobrar sin que el cliente
+// ponga una tarjeta otra vez; y el dueño decidió el 2026-09-23 que el fijo NO es una
+// suscripción. La maqueta aprobada (tu-pedido-fijo.png) decía «LO MANDAMOS SOLO, A LA HORA DE
+// SIEMPRE»: es lo único de ella que no se copia, porque es falso. Lo que la pantalla sí puede
+// prometer —y la maqueta no podía— es el LUGAR GUARDADO: desde que el hábito está probado, su
+// hora queda apartada desde el día antes (servidor: franja.ts).
 var myRecurring = [];
 var DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-function sPRecurring() {
-    var h = H('MI PEDIDO FIJO', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-    h += '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#EFEDE4)">nunca te cobramos sin que confirmes</b>.</div>';
-    if (!myRecurring.length) {
-        h += VACIO('Sin pedidos fijos', 'Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.', '', 'mira');
-    }
-    else {
-        h += myRecurring.map(function (r) {
-            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px">'
-                + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
-                + '<span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(DIAS_SEMANA[r.weekday] || '') + ' · ' + esc(r.slot) + '</span>'
-                + '<button onclick="doDeleteRecurring(\'' + r.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Quitar</button>'
-                + '</div>'
-                + (r.label ? '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px">' + esc(r.label) + '</div>' : '')
-                + '<button onclick="loadCart(' + JSON.stringify(r.items || []).replace(/"/g, '&quot;') + ')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedirlo ahora //</button>'
-                + '</div>';
-        }).join('');
-    }
-    h += '</div>' + NAV();
-    return h;
+// Lo que más pide quien todavía no tiene un fijo (lo calcula el servidor del historial), y
+// desde cuántas confirmaciones se aparta lugar. Los dos llegan en recurring-list: la cifra no
+// se escribe acá para que no se desincronice del servidor.
+var fijoSugerido = null, fijoDesdeConfirmados = null, fijoSel = null;
+function diasPlural(w) { var d = (DIAS_SEMANA[w] || '').toLowerCase(); return /s$/.test(d) ? d : d + 's'; }
+// "19:30" → "7:30 p.m." y "19:00" → "7 p.m.", como horaLima: el fijo se guarda en 24 h y se lee
+// como lo dice la gente.
+function hhmmATexto(hhmm) {
+    var p = String(hhmm || '').split(':'), hh = Number(p[0]), mm = Number(p[1]);
+    if (!isFinite(hh) || !isFinite(mm))
+        return '';
+    return (hh % 12 || 12) + (mm ? ':' + String(mm).padStart(2, '0') : '') + (hh < 12 ? ' a.m.' : ' p.m.');
 }
-async function goRecurring() {
+function fijoActual() {
+    return myRecurring.find(function (r) { return r.id === fijoSel; }) || myRecurring[0] || null;
+}
+// A dónde va: la dirección guardada con el fijo, o si no tiene, la primera marcada en el mapa
+// (la misma de la que el checkout calcula el envío).
+function direccionDelFijo(r) {
+    var a = r && r.addressId != null ? myAddresses.find(function (x) { return mismoId(x.id, r.addressId); }) : null;
+    return a || myAddresses.find(function (x) { return typeof x.lat === 'number' && typeof x.lon === 'number'; }) || null;
+}
+function imagenDelPedido(items) {
+    for (var i = 0; i < (items || []).length; i++) {
+        var it = items[i];
+        if (it.sigId && SIG_IMG[it.sigId])
+            return SIG_IMG[it.sigId];
+        if (it.type !== 'side' && it.prot && PROT_IMG[it.prot])
+            return PROT_IMG[it.prot];
+    }
+    return '';
+}
+// «Te sale»: la comida a precio de hoy (servidor) más el envío a SU dirección con la misma
+// tarifa del checkout. Sin dirección con pin, solo la comida no sería «lo que te sale».
+function totalDelFijo(o) {
+    if (!o || typeof o.precio !== 'number')
+        return null;
+    var envio = envioADireccion(direccionDelFijo(o));
+    return envio == null ? null : o.precio + envio;
+}
+// La caja punteada de la maqueta («¿Lo dejamos fijo los jueves?»). Dice lo que es cierto
+// AHORA para este fijo: si su lugar está guardado y hasta cuándo, si ya se soltó, si ya lo
+// pidió. Cada hora sale del servidor; ninguna está escrita.
+function cajaDelFijo(r, sg) {
+    var nunca = ' No te cobramos sin que confirmes.';
+    if (!r) {
+        if (sg.weekday == null || !sg.slot) {
+            return '<div class="prog"><b>¿Lo dejamos fijo?</b><s>Guárdalo desde el carrito eligiendo el día y la hora. Nada se manda solo.' + nunca + '</s></div>';
+        }
+        return '<button class="prog" onclick="dejarFijoSugerido()"><b>¿Lo dejamos fijo los ' + diasPlural(sg.weekday) + '?</b>'
+            + '<s>Te avisamos antes de la hora de siempre y confirmas en un toque. Nada se manda solo.' + nunca + ' Se quita desde acá, sin llamar a nadie.</s></button>';
+    }
+    var dia = (DIAS_SEMANA[r.weekday] || '').toLowerCase(), hora = hhmmATexto(r.slot), b = '', s = '';
+    switch (r.estado) {
+        case 'apartada':
+            b = 'Tu ' + dia + ' de las ' + hora + ' está guardado';
+            // horaLima ya termina en «p.m.»: un punto más quedaba «6 p.m..».
+            s = 'Hasta las ' + horaLima(Date.parse(r.sueltaA)) + '; si no lo confirmas, se suelta solo para otro.';
+            break;
+        case 'soltada':
+            b = 'Tu lugar de hoy ya se soltó';
+            s = 'Si todavía hay lugar a esa hora, puedes pedirlo igual.';
+            break;
+        case 'saltada':
+            b = 'Esta semana no va';
+            s = 'El ' + dia + ' que viene te avisamos otra vez.';
+            break;
+        case 'usada':
+            b = 'Ya está pedido';
+            s = 'El ' + dia + ' que viene te avisamos otra vez.';
+            break;
+        case 'cerrado':
+            b = 'Ese ' + dia + ' no atendemos a las ' + hora;
+            s = 'Quítalo y guárdalo de nuevo con otra hora.';
+            break;
+        case 'faltan-confirmaciones':
+            b = 'Fijo los ' + diasPlural(r.weekday) + ' · ' + hora;
+            s = 'Te avisamos una hora antes y confirmas en un toque.'
+                + (fijoDesdeConfirmados ? ' Cuando lo hayas pedido ' + fijoDesdeConfirmados + ' veces desde acá, te guardamos el lugar' + (r.confirmados ? ' (vas ' + r.confirmados + ')' : '') + '.' : '');
+            break;
+        default:
+            b = 'Fijo los ' + diasPlural(r.weekday) + ' · ' + hora;
+            s = 'Desde el día antes te guardamos el lugar, y te avisamos antes de soltarlo.';
+    }
+    var acc = '<div class="acc">'
+        + (r.estado === 'saltada' ? '<button onclick="saltarFijo(\'' + r.id + '\',true)">Mejor sí va</button>'
+            : (r.estado !== 'usada' ? '<button onclick="saltarFijo(\'' + r.id + '\')">Esta semana no</button>' : ''))
+        + '<button onclick="doDeleteRecurring(\'' + r.id + '\')">Quitar el fijo</button></div>';
+    return '<div class="prog"><b>' + esc(b) + '</b><s>' + esc(s + nunca) + '</s>' + acc + '</div>';
+}
+// «Otros guardados»: los demás fijos, en una fila cada uno. Tocar uno lo pone al frente.
+function otrosFijos(r) {
+    var otros = myRecurring.filter(function (x) { return !r || x.id !== r.id; });
+    if (!r || !otros.length)
+        return '';
+    return '<div class="otros"><em>Otros guardados</em>' + otros.map(function (x) {
+        var t = totalDelFijo(x);
+        return '<button class="o" onclick="fijoSel=\'' + x.id + '\';render()"><b>' + esc(x.label || '') + '</b><p>' + (t != null ? SOLES_TXT + pz(t) : esc(diasPlural(x.weekday) + ' · ' + hhmmATexto(x.slot))) + '</p></button>';
+    }).join('') + '</div>';
+}
+function sPRecurring() {
+    var bk = "sndScreen='p_home';render()";
+    var r = fijoActual(), sg = r ? null : fijoSugerido;
+    if (!r && !sg) {
+        return H('TU PEDIDO FIJO', bk) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
+            + VACIO('Sin pedido fijo', 'Cuando repitas un pedido te ofrecemos dejarlo fijo, o guárdalo desde el carrito.', '', 'mira') + '</div>' + NAV();
+    }
+    var o = r || sg, wd = r ? r.weekday : sg.weekday, slot = r ? r.slot : sg.slot;
+    var a = direccionDelFijo(r);
+    var total = totalDelFijo(o);
+    var foto = imagenDelPedido(o.items || []);
+    var pedir = r ? "pedirFijoAhora('" + r.id + "')" : 'pedirSugerido()';
+    var franja = r && fijoFromUrl === r.id && franjaFromUrl ? franjaFromUrl : null;
+    var precio = total != null ? SOLES_TXT + pz(total) : (typeof o.precio === 'number' ? SOLES_TXT + pz(o.precio) : '—');
+    return '<div class="mfj fi">'
+        + (foto ? '<div class="hero" aria-hidden="true"><img src="' + foto + '" alt=""><div class="v"></div></div>' : '<div class="hero vacio" aria-hidden="true"></div>')
+        + '<button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>'
+        + '<div class="cuerpo">'
+        + '<div class="tx"><em>' + (r ? 'Tu pedido fijo' : 'Lo que más pides') + '</em>'
+        + '<b>' + String(o.label || '').split(' + ').map(esc).join('<br>+ ') + '</b>'
+        + '<s>' + (wd != null && slot ? (r ? 'Fijo los ' : 'Lo pides los ') + diasPlural(wd) + ' · ' + hhmmATexto(slot) : '')
+        + (a ? '<br>' + esc(a.address) + (a.reference ? ', ' + esc(a.reference) : '') : '') + '</s></div>'
+        + '<div class="vec">'
+        + '<div><s>Lo pediste</s><b>' + (o.veces ? o.veces + (o.veces === 1 ? ' vez' : ' veces') : 'Aún no') + '</b></div>'
+        + '<div><s>Siempre a las</s><b>' + (o.horaHabitual ? hhmmATexto(o.horaHabitual) : (slot ? hhmmATexto(slot) : '—')) + '</b></div>'
+        + '<div><s>Te sale</s><b>' + precio + '</b></div>'
+        + '</div>'
+        + cajaDelFijo(r, sg)
+        + otrosFijos(r)
+        + '</div>'
+        + '<div class="go sw-barra"><button class="oro" onclick="' + pedir + '">' + (franja ? 'Pedirlo a las ' + hhmmATexto(franja) : 'Pedirlo ahora') + '</button>'
+        + '<button class="cel" onclick="' + pedir + '">' + precio + '</button></div>'
+        + '</div>';
+}
+async function goRecurring(id) {
     sndScreen = 'p_recurring';
     busy = true;
     busyMsg = 'Cargando...';
     render();
     try {
-        var r = await api('recurring-list', { token: token });
+        // Las direcciones hacen falta para «Te sale» (envío) y para dejar el pedido listo con la
+        // suya: quien llega por el aviso no pasó por el perfil.
+        var res = await Promise.all([
+            api('recurring-list', { token: token }),
+            myAddresses.length ? Promise.resolve(null) : api('addresses-list', { token: token }).catch(function () { return null; }),
+        ]);
+        var r = res[0];
         myRecurring = Array.isArray(r.recurring) ? r.recurring : [];
+        fijoSugerido = r.sugerido || null;
+        fijoDesdeConfirmados = typeof r.desdeConfirmados === 'number' ? r.desdeConfirmados : null;
+        if (res[1] && Array.isArray(res[1].addresses))
+            myAddresses = res[1].addresses;
     }
     catch (e) {
         myRecurring = [];
+        fijoSugerido = null;
     }
+    fijoSel = id && myRecurring.some(function (x) { return x.id === id; }) ? id : (myRecurring[0] ? myRecurring[0].id : null);
     busy = false;
     render();
+}
+function inicioDeHoraIso(ms) { var d = new Date(ms); d.setMinutes(0, 0, 0); return d.toISOString(); }
+// «Pedirlo ahora» deja el carrito listo para pagar: los ítems, SU dirección, y la hora del fijo
+// si toca hoy o mañana y todavía hay lugar. El carrito lleva el id del fijo (metaAttribution),
+// así el servidor le gasta su lugar apartado y lo cuenta como una confirmación.
+function pedirFijoAhora(id) {
+    var r = myRecurring.find(function (x) { return x.id === id; });
+    if (!r)
+        return;
+    var franja = fijoFromUrl === id && franjaFromUrl ? franjaFromUrl : r.slot;
+    loadCart(r.items);
+    if (!cart.length || sndScreen !== 'o_cart')
+        return;
+    pendingRecurringId = r.id;
+    miHoraApartada = r.apartada && r.vez ? inicioDeHoraIso(Date.parse(r.vez)) : null;
+    var a = direccionDelFijo(r);
+    if (a)
+        pickAddr(a.id);
+    var vez = r.vez ? Date.parse(r.vez) : NaN;
+    if (isFinite(vez)) {
+        var d = new Date(vez).toDateString(), hoy = new Date(), man = new Date();
+        man.setDate(man.getDate() + 1);
+        var dia = d === hoy.toDateString() ? 'today' : d === man.toDateString() ? 'tomorrow' : null;
+        if (dia && schedSlots(dia).indexOf(franja) >= 0) {
+            scheduleMode = 'later';
+            schedDay = dia;
+            schedSlot = franja;
+        }
+    }
+    confirmRerender();
+}
+function pedirSugerido() { if (fijoSugerido)
+    loadCart(fijoSugerido.items); }
+async function dejarFijoSugerido() {
+    var sg = fijoSugerido;
+    if (!sg || sg.weekday == null || !sg.slot)
+        return;
+    var a = direccionDelFijo(null);
+    busy = true;
+    busyMsg = 'Dejándolo fijo...';
+    render();
+    try {
+        await api('recurring-add', { token: token, items: sg.items, weekday: sg.weekday, slot: sg.slot, addressId: a ? a.id : null });
+        showToast('Listo: fijo los ' + diasPlural(sg.weekday) + ' a las ' + hhmmATexto(sg.slot) + '. Te avisamos antes.');
+        await goRecurring();
+    }
+    catch (e) {
+        busy = false;
+        render();
+        showToast('No se pudo guardar: ' + e.message);
+    }
+}
+// «Esta semana no» suelta el lugar de la próxima vez sin quitar el fijo; «Mejor sí va» lo
+// vuelve a poner.
+async function saltarFijo(id, deshacer) {
+    try {
+        await api('recurring-skip', { token: token, id: id, deshacer: !!deshacer });
+    }
+    catch (e) {
+        showToast('No se pudo: ' + e.message);
+        return;
+    }
+    showToast(deshacer ? 'Listo, esta semana sí va.' : 'Listo: esta semana no va. La próxima te avisamos.');
+    goRecurring(id);
 }
 async function doDeleteRecurring(id) {
     if (!(await showConfirm('¿Quitar este pedido fijo? Dejaremos de avisarte.')))
@@ -10696,6 +10966,8 @@ async function doDeleteRecurring(id) {
     // Optimista, igual que favoritos: se quita al instante y se reinserta si el borrado falla.
     var idx = myRecurring.findIndex(function (r) { return r.id === id; });
     var removed = idx >= 0 ? myRecurring.splice(idx, 1)[0] : null;
+    if (fijoSel === id)
+        fijoSel = myRecurring[0] ? myRecurring[0].id : null;
     render();
     try {
         await api('recurring-delete', { token: token, id: id });
@@ -10727,7 +10999,9 @@ async function saveCartAsRecurring() {
     busyMsg = 'Guardando tu pedido fijo...';
     render();
     try {
-        await api('recurring-add', { token: token, items: cart, weekday: dia, slot: sl.value, label: cart.length + ' ítem' + (cart.length === 1 ? '' : 's') });
+        // Con la dirección elegida en el carrito, para que cada semana llegue listo a la misma. El
+        // nombre del fijo lo pone el servidor con la carta vigente.
+        await api('recurring-add', { token: token, items: cart, weekday: dia, slot: sl.value, addressId: pickedAddrId });
         busy = false;
         render();
         showToast('Listo — te avisamos cada ' + DIAS_SEMANA[dia].toLowerCase() + ' a las ' + sl.value + '.');
@@ -10809,11 +11083,11 @@ async function loadAddresses() {
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId = null;
 function sPAddresses() {
-    var editing = editingAddrId ? myAddresses.find(function (a) { return a.id === editingAddrId; }) : null;
+    var editing = editingAddrId ? myAddresses.find(function (a) { return mismoId(a.id, editingAddrId); }) : null;
     var h = H('MIS DIRECCIONES', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
     if (myAddresses.length) {
         h += myAddresses.map(function (a) {
-            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (editingAddrId === a.id ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.address) + '</div>' + (a.reference ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.reference) + '</div>' : '') + '</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
+            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (mismoId(editingAddrId, a.id) ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.address) + '</div>' + (a.reference ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.reference) + '</div>' : '') + '</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
         }).join('');
     }
     else {
@@ -10851,7 +11125,7 @@ async function doSaveAddress() {
 async function doDeleteAddress(id) {
     if (!(await showConfirm('¿Eliminar esta dirección?')))
         return;
-    if (editingAddrId === id)
+    if (mismoId(editingAddrId, id))
         editingAddrId = null;
     var idx = myAddresses.findIndex(function (a) { return a.id == id; });
     var removed = idx >= 0 ? myAddresses.splice(idx, 1)[0] : null;
@@ -11348,6 +11622,60 @@ function sPRecover() {
                 + BTN('Recuperar mi PIN //', 'doRecover()'))
         + '</div>';
 }
+// ⚠ ESTO VIVÍA EN EL PANEL (10-*) hasta el 2026-09-24. La pantalla de arriba ya se había
+// sacado de ahí, pero su botón no: con el panel fuera del bundle del cliente, «Recuperar mi
+// PIN» no hacía nada para quien no es el dueño — justo la persona que perdió su acceso. Nada
+// lo avisaba porque `check:cliente` solo miraba el código fuera de los strings, y un onclick
+// ES un string. Ahora también los mira.
+async function doRecover() {
+    var phone = gv('rec-phone').trim();
+    var dni = gv('rec-dni').trim();
+    var bdayRaw = gv('rec-bday').trim();
+    recPhone = phone;
+    recDni = dni;
+    recBday = bdayRaw;
+    var msg = document.getElementById('rec-msg');
+    if (!phone || !dni || !bdayRaw) {
+        if (msg)
+            msg.textContent = 'Completa teléfono, DNI y fecha de nacimiento.';
+        return;
+    }
+    var bday = parseBdayDDMMYYYY(bdayRaw);
+    if (!bday) {
+        if (msg)
+            msg.textContent = 'Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';
+        return;
+    }
+    busy = true;
+    busyMsg = 'Verificando...';
+    render();
+    try {
+        var r = await api('recover', { phone: phone, dni: dni, bday: bday });
+        if (r.emailSent) {
+            recNewPin = null;
+            recEmailMasked = r.emailMasked;
+        }
+        else {
+            recNewPin = r.newPin;
+            recEmailMasked = null;
+            recPinRevealed = false;
+        }
+        // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
+        // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
+        savedPh = phone;
+        busy = false;
+        sndScreen = 'p_recover';
+        render();
+    }
+    catch (e) {
+        busy = false;
+        sndScreen = 'p_recover';
+        render();
+        var m2 = document.getElementById('rec-msg');
+        if (m2)
+            m2.textContent = e.message;
+    }
+}
 function sDeliveryConfirm() {
     var d = deliveryConfirmState || {};
     var caja = function (inner) {
@@ -11811,6 +12139,18 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
             sndScreen = 'p_home';
             sndTab = 'points';
             showToast('Inicia sesión para organizar el pedido de tu oficina.');
+            render();
+        }
+    }
+    // ?fijo=ID — el aviso del pedido fijo. Lleva a SU pantalla con ese fijo al frente, a un
+    // toque de pedirlo. Sin sesión no hay fijo que mostrar: se pide entrar primero.
+    if (fijoFromUrl) {
+        if (cust)
+            goRecurring(fijoFromUrl);
+        else {
+            sndScreen = 'p_home';
+            sndTab = 'points';
+            showToast('Inicia sesión para ver tu pedido fijo.');
             render();
         }
     }

@@ -1879,31 +1879,6 @@ async function doRespondComplaint(id){
   }catch(e){showToast(e.message,'error');}
 }
 
-async function doRecover(){
-  var phone=gv('rec-phone').trim();
-  var dni=gv('rec-dni').trim();
-  var bdayRaw=gv('rec-bday').trim();
-  recPhone=phone;recDni=dni;recBday=bdayRaw;
-  var msg=(document.getElementById('rec-msg') as HTMLInputElement | null);
-  if(!phone||!dni||!bdayRaw){if(msg)msg.textContent='Completa teléfono, DNI y fecha de nacimiento.';return;}
-  var bday=parseBdayDDMMYYYY(bdayRaw);
-  if(!bday){if(msg)msg.textContent='Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';return;}
-  busy=true;busyMsg='Verificando...';render();
-  try{
-    var r=await api('recover',{phone:phone,dni:dni,bday:bday});
-    if(r.emailSent){recNewPin=null;recEmailMasked=r.emailMasked;}
-    else{recNewPin=r.newPin;recEmailMasked=null;recPinRevealed=false;}
-    // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
-    // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
-    savedPh=phone;
-    busy=false;sndScreen='p_recover';render();
-  }catch(e){
-    busy=false;sndScreen='p_recover';render();
-    var m2=(document.getElementById('rec-msg') as HTMLInputElement | null);
-    if(m2)m2.textContent=e.message;
-  }
-}
-
 
 
 

@@ -163,7 +163,7 @@ async function applyPromoCode(){
 }
 function removePromoCode(){appliedPromo=null;promoStatus='';confirmRerender();}
 function pickAddr(id){
-  var a=myAddresses.find(function(x){return x.id===id;});
+  var a=myAddresses.find(function(x){return mismoId(x.id,id);});
   if(!a)return;
   syncConfirmFields();
   pickedAddrId=id;addrText=a.address;
@@ -421,7 +421,7 @@ function checkoutExtrasHTML(){
     // obligatorio queda oculto), pero el cliente puede colapsarlos una vez completados
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
-    +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=pickedAddrId===a.id;return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#9DA096')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
+    +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=mismoId(pickedAddrId,a.id);return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#9DA096')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
     // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
     // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
     // sesión no lo ve — sería ruido en el paso de pagar.
@@ -1060,7 +1060,7 @@ function sOCart(){
     // cobro automático que Culqi no permite (el token es de un solo uso) sería la clase de
     // promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
     +(cart.length&&cust?'<details style="margin-top:18px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">↻ Dejarlo fijo cada semana //</summary>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Te avisamos una hora antes con este mismo carrito armado. <b style="color:var(--sw-text-body,#EFEDE4)">No te cobramos sin que confirmes.</b></div>'
+      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Te avisamos antes, con este mismo carrito armado, y confirmas en un toque. Cuando se vuelva costumbre, te guardamos el lugar a esa hora. <b style="color:var(--sw-text-body,#EFEDE4)">No te cobramos sin que confirmes.</b></div>'
       +'<div style="display:flex;gap:8px;margin-top:12px">'
       +'<select id="rec-day" style="flex:1;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:15px;font-family:\'EB Garamond\',serif">'
       +DIAS_SEMANA.map(function(d,i){return'<option value="'+i+'"'+(i===new Date().getDay()?' selected':'')+'>'+d+'</option>';}).join('')
@@ -1439,7 +1439,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   window._lVentana=ventanaDelPedido(res.order);
   receiptUploadState=null;
   cart=[];
-  pendingGroupCode=null;
+  pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;
   resetBuilder();mode=null;
   useCredit=false;manualPayMethod='yape';payMethodChosen=false;scheduleMode='now';schedDay='today';schedSlot=null;pickedAddrId=null;addrText='';
   confNom='';confEmail='';confNotes='';checkoutLocked=false;lockedMsg='';_payingInProgress=false;

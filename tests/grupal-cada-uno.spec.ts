@@ -26,13 +26,16 @@ const REPARTIDO = {
     { ref: 'ORD-GABC123-1QW', name: 'Beto', total: 24.4, envio: 3.5, paid: true, cancelled: false },
   ],
 };
-const DIRECCION = { id: 'd1', label: 'Oficina', address: 'Av. España 123', reference: 'Piso 3', lat: -8.11, lon: -79.03 };
+// Ids NUMÉRICOS, como los manda la base (saved_addresses.id es bigint): con ids de texto la
+// comparación === pasaba en la prueba y fallaba en producción.
+const DIRECCION = { id: 7, label: 'Oficina', address: 'Av. España 123', reference: 'Piso 3', lat: -8.11, lon: -79.03 };
+const CASA = { id: 8, label: 'Casa', address: 'Jr. Pizarro 500', lat: -8.115, lon: -79.035 };
 
 test('«Cerrar y pagar» reparte desde la dirección con pin y cada parte se paga sola', async ({ page }) => {
   let repartido = false;
   const calls = await gotoApp(page, {
     login: { customer: ANA, isAdmin: false, token: 'tok-ana' },
-    'addresses-list': { addresses: [DIRECCION] },
+    'addresses-list': { addresses: [CASA, DIRECCION] },
     'get-group-order': () => (repartido ? REPARTIDO : ABIERTO),
     'split-group-order': () => { repartido = true; return { success: true }; },
     'close-group-order': { success: true, items: [] },
@@ -46,6 +49,8 @@ test('«Cerrar y pagar» reparte desde la dirección con pin y cada parte se pag
   await page.getByRole('button', { name: /cerrar y pagar/i }).first().click();
   await expect(page.getByText('Cerrar y pagar · #ABC123')).toBeVisible();
   await expect(page.getByText('Av. España 123')).toBeVisible();
+  // La primera (Casa) viene elegida; se cambia a la Oficina.
+  await page.getByRole('radio', { name: /Oficina/ }).click();
   await page.getByRole('button', { name: /repartir y cobrar/i }).click();
 
   await expect.poll(() => calls.some((c) => c.action === 'split-group-order'), { timeout: 10000 }).toBe(true);

@@ -3,46 +3,200 @@
 // "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
 // falta a un negocio nuevo.
 //
-// ⚠ NO SE COBRA SOLO, Y LA PANTALLA LO DICE. El token de tarjeta de Culqi es de un solo uso
-// y vive 5 minutos, así que no hay forma de volver a cobrar sin que el cliente ponga una
-// tarjeta otra vez. Prometerle "se cobra solo" y después pedirle que confirme sería la clase
-// de promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
-var myRecurring=[];
+// ⚠ NO SE MANDA NI SE COBRA SOLO, Y LA PANTALLA LO DICE. El token de tarjeta de Culqi es de
+// un solo uso y vive 5 minutos, así que no hay forma de volver a cobrar sin que el cliente
+// ponga una tarjeta otra vez; y el dueño decidió el 2026-09-23 que el fijo NO es una
+// suscripción. La maqueta aprobada (tu-pedido-fijo.png) decía «LO MANDAMOS SOLO, A LA HORA DE
+// SIEMPRE»: es lo único de ella que no se copia, porque es falso. Lo que la pantalla sí puede
+// prometer —y la maqueta no podía— es el LUGAR GUARDADO: desde que el hábito está probado, su
+// hora queda apartada desde el día antes (servidor: franja.ts).
+var myRecurring:any[]=[];
 var DIAS_SEMANA=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+// Lo que más pide quien todavía no tiene un fijo (lo calcula el servidor del historial), y
+// desde cuántas confirmaciones se aparta lugar. Los dos llegan en recurring-list: la cifra no
+// se escribe acá para que no se desincronice del servidor.
+var fijoSugerido:any=null,fijoDesdeConfirmados:number|null=null,fijoSel:string|null=null;
+
+function diasPlural(w:number):string{var d=(DIAS_SEMANA[w]||'').toLowerCase();return /s$/.test(d)?d:d+'s';}
+// "19:30" → "7:30 p.m." y "19:00" → "7 p.m.", como horaLima: el fijo se guarda en 24 h y se lee
+// como lo dice la gente.
+function hhmmATexto(hhmm:string):string{
+  var p=String(hhmm||'').split(':'),hh=Number(p[0]),mm=Number(p[1]);
+  if(!isFinite(hh)||!isFinite(mm))return'';
+  return (hh%12||12)+(mm?':'+String(mm).padStart(2,'0'):'')+(hh<12?' a.m.':' p.m.');
+}
+function fijoActual():any{
+  return myRecurring.find(function(r){return r.id===fijoSel;})||myRecurring[0]||null;
+}
+// A dónde va: la dirección guardada con el fijo, o si no tiene, la primera marcada en el mapa
+// (la misma de la que el checkout calcula el envío).
+function direccionDelFijo(r:any):any{
+  var a=r&&r.addressId!=null?myAddresses.find(function(x:any){return mismoId(x.id,r.addressId);}):null;
+  return a||myAddresses.find(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';})||null;
+}
+function imagenDelPedido(items:any[]):string{
+  for(var i=0;i<(items||[]).length;i++){
+    var it=items[i];
+    if(it.sigId&&SIG_IMG[it.sigId])return SIG_IMG[it.sigId];
+    if(it.type!=='side'&&it.prot&&PROT_IMG[it.prot])return PROT_IMG[it.prot];
+  }
+  return'';
+}
+// «Te sale»: la comida a precio de hoy (servidor) más el envío a SU dirección con la misma
+// tarifa del checkout. Sin dirección con pin, solo la comida no sería «lo que te sale».
+function totalDelFijo(o:any):number|null{
+  if(!o||typeof o.precio!=='number')return null;
+  var envio=envioADireccion(direccionDelFijo(o));
+  return envio==null?null:o.precio+envio;
+}
+
+// La caja punteada de la maqueta («¿Lo dejamos fijo los jueves?»). Dice lo que es cierto
+// AHORA para este fijo: si su lugar está guardado y hasta cuándo, si ya se soltó, si ya lo
+// pidió. Cada hora sale del servidor; ninguna está escrita.
+function cajaDelFijo(r:any,sg:any):string{
+  var nunca=' No te cobramos sin que confirmes.';
+  if(!r){
+    if(sg.weekday==null||!sg.slot){
+      return'<div class="prog"><b>¿Lo dejamos fijo?</b><s>Guárdalo desde el carrito eligiendo el día y la hora. Nada se manda solo.'+nunca+'</s></div>';
+    }
+    return'<button class="prog" onclick="dejarFijoSugerido()"><b>¿Lo dejamos fijo los '+diasPlural(sg.weekday)+'?</b>'
+      +'<s>Te avisamos antes de la hora de siempre y confirmas en un toque. Nada se manda solo.'+nunca+' Se quita desde acá, sin llamar a nadie.</s></button>';
+  }
+  var dia=(DIAS_SEMANA[r.weekday]||'').toLowerCase(),hora=hhmmATexto(r.slot),b='',s='';
+  switch(r.estado){
+    case'apartada':
+      b='Tu '+dia+' de las '+hora+' está guardado';
+      // horaLima ya termina en «p.m.»: un punto más quedaba «6 p.m..».
+      s='Hasta las '+horaLima(Date.parse(r.sueltaA))+'; si no lo confirmas, se suelta solo para otro.';break;
+    case'soltada':b='Tu lugar de hoy ya se soltó';s='Si todavía hay lugar a esa hora, puedes pedirlo igual.';break;
+    case'saltada':b='Esta semana no va';s='El '+dia+' que viene te avisamos otra vez.';break;
+    case'usada':b='Ya está pedido';s='El '+dia+' que viene te avisamos otra vez.';break;
+    case'cerrado':b='Ese '+dia+' no atendemos a las '+hora;s='Quítalo y guárdalo de nuevo con otra hora.';break;
+    case'faltan-confirmaciones':
+      b='Fijo los '+diasPlural(r.weekday)+' · '+hora;
+      s='Te avisamos una hora antes y confirmas en un toque.'
+        +(fijoDesdeConfirmados?' Cuando lo hayas pedido '+fijoDesdeConfirmados+' veces desde acá, te guardamos el lugar'+(r.confirmados?' (vas '+r.confirmados+')':'')+'.':'');
+      break;
+    default:
+      b='Fijo los '+diasPlural(r.weekday)+' · '+hora;
+      s='Desde el día antes te guardamos el lugar, y te avisamos antes de soltarlo.';
+  }
+  var acc='<div class="acc">'
+    +(r.estado==='saltada'?'<button onclick="saltarFijo(\''+r.id+'\',true)">Mejor sí va</button>'
+      :(r.estado!=='usada'?'<button onclick="saltarFijo(\''+r.id+'\')">Esta semana no</button>':''))
+    +'<button onclick="doDeleteRecurring(\''+r.id+'\')">Quitar el fijo</button></div>';
+  return'<div class="prog"><b>'+esc(b)+'</b><s>'+esc(s+nunca)+'</s>'+acc+'</div>';
+}
+// «Otros guardados»: los demás fijos, en una fila cada uno. Tocar uno lo pone al frente.
+function otrosFijos(r:any):string{
+  var otros=myRecurring.filter(function(x){return!r||x.id!==r.id;});
+  if(!r||!otros.length)return'';
+  return'<div class="otros"><em>Otros guardados</em>'+otros.map(function(x){
+    var t=totalDelFijo(x);
+    return'<button class="o" onclick="fijoSel=\''+x.id+'\';render()"><b>'+esc(x.label||'')+'</b><p>'+(t!=null?SOLES_TXT+pz(t):esc(diasPlural(x.weekday)+' · '+hhmmATexto(x.slot)))+'</p></button>';
+  }).join('')+'</div>';
+}
 
 function sPRecurring(){
-  var h=H('MI PEDIDO FIJO',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px;line-height:1.5">Deja tu pedido de siempre armado para un día y una hora. Te avisamos una hora antes y lo confirmas en un toque — <b style="color:var(--sw-text-body,#EFEDE4)">nunca te cobramos sin que confirmes</b>.</div>';
-  if(!myRecurring.length){
-    h+=VACIO('Sin pedidos fijos','Arma tu carrito y guárdalo como fijo desde la pantalla del carrito.','','mira');
-  }else{
-    h+=myRecurring.map(function(r){
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
-        +'<span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(DIAS_SEMANA[r.weekday]||'')+' · '+esc(r.slot)+'</span>'
-        +'<button onclick="doDeleteRecurring(\''+r.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Quitar</button>'
-        +'</div>'
-        +(r.label?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px">'+esc(r.label)+'</div>':'')
-        +'<button onclick="loadCart('+JSON.stringify(r.items||[]).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedirlo ahora //</button>'
-        +'</div>';
-    }).join('');
+  var bk="sndScreen='p_home';render()";
+  var r=fijoActual(),sg=r?null:fijoSugerido;
+  if(!r&&!sg){
+    return H('TU PEDIDO FIJO',bk)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
+      +VACIO('Sin pedido fijo','Cuando repitas un pedido te ofrecemos dejarlo fijo, o guárdalo desde el carrito.','','mira')+'</div>'+NAV();
   }
-  h+='</div>'+NAV();
-  return h;
+  var o=r||sg,wd=r?r.weekday:sg.weekday,slot=r?r.slot:sg.slot;
+  var a=direccionDelFijo(r);
+  var total=totalDelFijo(o);
+  var foto=imagenDelPedido(o.items||[]);
+  var pedir=r?"pedirFijoAhora('"+r.id+"')":'pedirSugerido()';
+  var franja=r&&fijoFromUrl===r.id&&franjaFromUrl?franjaFromUrl:null;
+  var precio=total!=null?SOLES_TXT+pz(total):(typeof o.precio==='number'?SOLES_TXT+pz(o.precio):'—');
+  return'<div class="mfj fi">'
+    +(foto?'<div class="hero" aria-hidden="true"><img src="'+foto+'" alt=""><div class="v"></div></div>':'<div class="hero vacio" aria-hidden="true"></div>')
+    +'<button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +'<div class="cuerpo">'
+    +'<div class="tx"><em>'+(r?'Tu pedido fijo':'Lo que más pides')+'</em>'
+    +'<b>'+String(o.label||'').split(' + ').map(esc).join('<br>+ ')+'</b>'
+    +'<s>'+(wd!=null&&slot?(r?'Fijo los ':'Lo pides los ')+diasPlural(wd)+' · '+hhmmATexto(slot):'')
+    +(a?'<br>'+esc(a.address)+(a.reference?', '+esc(a.reference):''):'')+'</s></div>'
+    +'<div class="vec">'
+    +'<div><s>Lo pediste</s><b>'+(o.veces?o.veces+(o.veces===1?' vez':' veces'):'Aún no')+'</b></div>'
+    +'<div><s>Siempre a las</s><b>'+(o.horaHabitual?hhmmATexto(o.horaHabitual):(slot?hhmmATexto(slot):'—'))+'</b></div>'
+    +'<div><s>Te sale</s><b>'+precio+'</b></div>'
+    +'</div>'
+    +cajaDelFijo(r,sg)
+    +otrosFijos(r)
+    +'</div>'
+    +'<div class="go sw-barra"><button class="oro" onclick="'+pedir+'">'+(franja?'Pedirlo a las '+hhmmATexto(franja):'Pedirlo ahora')+'</button>'
+    +'<button class="cel" onclick="'+pedir+'">'+precio+'</button></div>'
+    +'</div>';
 }
-async function goRecurring(){
+async function goRecurring(id?:string){
   sndScreen='p_recurring';busy=true;busyMsg='Cargando...';render();
   try{
-    var r=await api('recurring-list',{token:token});
+    // Las direcciones hacen falta para «Te sale» (envío) y para dejar el pedido listo con la
+    // suya: quien llega por el aviso no pasó por el perfil.
+    var res=await Promise.all([
+      api('recurring-list',{token:token}),
+      myAddresses.length?Promise.resolve(null):api('addresses-list',{token:token}).catch(function(){return null;}),
+    ]);
+    var r=res[0];
     myRecurring=Array.isArray(r.recurring)?r.recurring:[];
-  }catch(e){myRecurring=[];}
+    fijoSugerido=r.sugerido||null;
+    fijoDesdeConfirmados=typeof r.desdeConfirmados==='number'?r.desdeConfirmados:null;
+    if(res[1]&&Array.isArray(res[1].addresses))myAddresses=res[1].addresses;
+  }catch(e){myRecurring=[];fijoSugerido=null;}
+  fijoSel=id&&myRecurring.some(function(x){return x.id===id;})?id:(myRecurring[0]?myRecurring[0].id:null);
   busy=false;render();
+}
+function inicioDeHoraIso(ms:number):string{var d=new Date(ms);d.setMinutes(0,0,0);return d.toISOString();}
+// «Pedirlo ahora» deja el carrito listo para pagar: los ítems, SU dirección, y la hora del fijo
+// si toca hoy o mañana y todavía hay lugar. El carrito lleva el id del fijo (metaAttribution),
+// así el servidor le gasta su lugar apartado y lo cuenta como una confirmación.
+function pedirFijoAhora(id:string){
+  var r=myRecurring.find(function(x){return x.id===id;});
+  if(!r)return;
+  var franja=fijoFromUrl===id&&franjaFromUrl?franjaFromUrl:r.slot;
+  loadCart(r.items);
+  if(!cart.length||sndScreen!=='o_cart')return;
+  pendingRecurringId=r.id;
+  miHoraApartada=r.apartada&&r.vez?inicioDeHoraIso(Date.parse(r.vez)):null;
+  var a=direccionDelFijo(r);
+  if(a)pickAddr(a.id);
+  var vez=r.vez?Date.parse(r.vez):NaN;
+  if(isFinite(vez)){
+    var d=new Date(vez).toDateString(),hoy=new Date(),man=new Date();man.setDate(man.getDate()+1);
+    var dia=d===hoy.toDateString()?'today':d===man.toDateString()?'tomorrow':null;
+    if(dia&&schedSlots(dia).indexOf(franja)>=0){scheduleMode='later';schedDay=dia;schedSlot=franja;}
+  }
+  confirmRerender();
+}
+function pedirSugerido(){if(fijoSugerido)loadCart(fijoSugerido.items);}
+async function dejarFijoSugerido(){
+  var sg=fijoSugerido;
+  if(!sg||sg.weekday==null||!sg.slot)return;
+  var a=direccionDelFijo(null);
+  busy=true;busyMsg='Dejándolo fijo...';render();
+  try{
+    await api('recurring-add',{token:token,items:sg.items,weekday:sg.weekday,slot:sg.slot,addressId:a?a.id:null});
+    showToast('Listo: fijo los '+diasPlural(sg.weekday)+' a las '+hhmmATexto(sg.slot)+'. Te avisamos antes.');
+    await goRecurring();
+  }catch(e){busy=false;render();showToast('No se pudo guardar: '+e.message);}
+}
+// «Esta semana no» suelta el lugar de la próxima vez sin quitar el fijo; «Mejor sí va» lo
+// vuelve a poner.
+async function saltarFijo(id:string,deshacer?:boolean){
+  try{await api('recurring-skip',{token:token,id:id,deshacer:!!deshacer});}
+  catch(e){showToast('No se pudo: '+e.message);return;}
+  showToast(deshacer?'Listo, esta semana sí va.':'Listo: esta semana no va. La próxima te avisamos.');
+  goRecurring(id);
 }
 async function doDeleteRecurring(id){
   if(!(await showConfirm('¿Quitar este pedido fijo? Dejaremos de avisarte.')))return;
   // Optimista, igual que favoritos: se quita al instante y se reinserta si el borrado falla.
   var idx=myRecurring.findIndex(function(r){return r.id===id;});
   var removed=idx>=0?myRecurring.splice(idx,1)[0]:null;
+  if(fijoSel===id)fijoSel=myRecurring[0]?myRecurring[0].id:null;
   render();
   try{
     await api('recurring-delete',{token:token,id:id});
@@ -63,7 +217,9 @@ async function saveCartAsRecurring(){
   var dia=parseInt(wd.value,10);
   busy=true;busyMsg='Guardando tu pedido fijo...';render();
   try{
-    await api('recurring-add',{token:token,items:cart,weekday:dia,slot:sl.value,label:cart.length+' ítem'+(cart.length===1?'':'s')});
+    // Con la dirección elegida en el carrito, para que cada semana llegue listo a la misma. El
+    // nombre del fijo lo pone el servidor con la carta vigente.
+    await api('recurring-add',{token:token,items:cart,weekday:dia,slot:sl.value,addressId:pickedAddrId});
     busy=false;render();
     showToast('Listo — te avisamos cada '+DIAS_SEMANA[dia].toLowerCase()+' a las '+sl.value+'.');
   }catch(e){
@@ -122,11 +278,11 @@ async function loadAddresses(){
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId=null;
 function sPAddresses(){
-  var editing=editingAddrId?myAddresses.find(function(a){return a.id===editingAddrId;}):null;
+  var editing=editingAddrId?myAddresses.find(function(a){return mismoId(a.id,editingAddrId);}):null;
   var h=H('MIS DIRECCIONES',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
   if(myAddresses.length){
     h+=myAddresses.map(function(a){
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(editingAddrId===a.id?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div>'+(a.reference?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.reference)+'</div>':'')+'</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
+      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(mismoId(editingAddrId,a.id)?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div>'+(a.reference?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.reference)+'</div>':'')+'</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
     }).join('');
   }else{
     h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.','','mira');
@@ -153,7 +309,7 @@ async function doSaveAddress(){
 }
 async function doDeleteAddress(id){
   if(!(await showConfirm('¿Eliminar esta dirección?')))return;
-  if(editingAddrId===id)editingAddrId=null;
+  if(mismoId(editingAddrId,id))editingAddrId=null;
   var idx=myAddresses.findIndex(function(a){return a.id==id;});
   var removed=idx>=0?myAddresses.splice(idx,1)[0]:null;
   render();
@@ -551,6 +707,35 @@ function sPRecover(){
         +'<div id="rec-msg" style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-bottom:12px;text-align:center"></div>'
         +BTN('Recuperar mi PIN //','doRecover()'))
     +'</div>';
+}
+// ⚠ ESTO VIVÍA EN EL PANEL (10-*) hasta el 2026-09-24. La pantalla de arriba ya se había
+// sacado de ahí, pero su botón no: con el panel fuera del bundle del cliente, «Recuperar mi
+// PIN» no hacía nada para quien no es el dueño — justo la persona que perdió su acceso. Nada
+// lo avisaba porque `check:cliente` solo miraba el código fuera de los strings, y un onclick
+// ES un string. Ahora también los mira.
+async function doRecover(){
+  var phone=gv('rec-phone').trim();
+  var dni=gv('rec-dni').trim();
+  var bdayRaw=gv('rec-bday').trim();
+  recPhone=phone;recDni=dni;recBday=bdayRaw;
+  var msg=(document.getElementById('rec-msg') as HTMLInputElement | null);
+  if(!phone||!dni||!bdayRaw){if(msg)msg.textContent='Completa teléfono, DNI y fecha de nacimiento.';return;}
+  var bday=parseBdayDDMMYYYY(bdayRaw);
+  if(!bday){if(msg)msg.textContent='Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';return;}
+  busy=true;busyMsg='Verificando...';render();
+  try{
+    var r=await api('recover',{phone:phone,dni:dni,bday:bday});
+    if(r.emailSent){recNewPin=null;recEmailMasked=r.emailMasked;}
+    else{recNewPin=r.newPin;recEmailMasked=null;recPinRevealed=false;}
+    // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
+    // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
+    savedPh=phone;
+    busy=false;sndScreen='p_recover';render();
+  }catch(e){
+    busy=false;sndScreen='p_recover';render();
+    var m2=(document.getElementById('rec-msg') as HTMLInputElement | null);
+    if(m2)m2.textContent=e.message;
+  }
 }
 function sDeliveryConfirm(){
   var d=deliveryConfirmState||{};

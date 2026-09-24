@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~348 KB que antes
+// de admin. Ningún cliente lo descarga: son ~347 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -3323,55 +3323,6 @@ async function doRespondComplaint(id) {
     }
     catch (e) {
         showToast(e.message, 'error');
-    }
-}
-async function doRecover() {
-    var phone = gv('rec-phone').trim();
-    var dni = gv('rec-dni').trim();
-    var bdayRaw = gv('rec-bday').trim();
-    recPhone = phone;
-    recDni = dni;
-    recBday = bdayRaw;
-    var msg = document.getElementById('rec-msg');
-    if (!phone || !dni || !bdayRaw) {
-        if (msg)
-            msg.textContent = 'Completa teléfono, DNI y fecha de nacimiento.';
-        return;
-    }
-    var bday = parseBdayDDMMYYYY(bdayRaw);
-    if (!bday) {
-        if (msg)
-            msg.textContent = 'Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';
-        return;
-    }
-    busy = true;
-    busyMsg = 'Verificando...';
-    render();
-    try {
-        var r = await api('recover', { phone: phone, dni: dni, bday: bday });
-        if (r.emailSent) {
-            recNewPin = null;
-            recEmailMasked = r.emailMasked;
-        }
-        else {
-            recNewPin = r.newPin;
-            recEmailMasked = null;
-            recPinRevealed = false;
-        }
-        // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
-        // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
-        savedPh = phone;
-        busy = false;
-        sndScreen = 'p_recover';
-        render();
-    }
-    catch (e) {
-        busy = false;
-        sndScreen = 'p_recover';
-        render();
-        var m2 = document.getElementById('rec-msg');
-        if (m2)
-            m2.textContent = e.message;
     }
 }
 // ── #9 / #3 / #4: RECETAS DE PRODUCCIÓN ────────────────────────────────────────────────

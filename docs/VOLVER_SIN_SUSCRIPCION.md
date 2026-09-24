@@ -131,13 +131,13 @@ diga lo que es: crédito, no almuerzos.
 
 ## 6 · Qué hacer, en orden
 
-| # | qué | cuánto |
+| # | qué | estado |
 |---|---|---|
-| 1 | La pantalla del pedido fijo deja de decir «lo mandamos solo» y dice lo que pasa: avisamos y confirmas | 30 min |
-| 2 | El aviso registra su toque, para que las promociones no se le encimen ese día | 1 hora |
-| 3 | El aviso consulta la capacidad y, si la franja está llena, ofrece la siguiente | media jornada |
-| 4 | Apartar la franja del pedido fijo, con suelta a los 90 min y solo desde el 2º confirmado | 1-2 días |
-| 5 | Decidir el Plan Semanal: se retira, o la pantalla pasa a decir «crédito» | decisión del dueño |
+| 1 | La pantalla del pedido fijo deja de decir «lo mandamos solo» y dice lo que pasa: avisamos y confirmas | ✅ 2026-09-24 |
+| 2 | El aviso registra su toque, para que las promociones no se le encimen ese día | ✅ 2026-09-23 |
+| 3 | El aviso consulta la capacidad y, si la franja está llena, ofrece la siguiente | ✅ 2026-09-24 |
+| 4 | Apartar la franja del pedido fijo, con suelta a los 90 min y solo desde el 2º confirmado | ✅ 2026-09-24 (`franja.ts`, `capacidad.ts`) |
+| 5 | Decidir el Plan Semanal: se retira, o la pantalla pasa a decir «crédito» | ✅ se retira para la apertura |
 
 Los puntos 1 y 2 son los que hay que hacer sí o sí antes de abrir. El 3 y el 4 valen mucho más
 que cualquier suscripción y no comprometen al negocio con nadie.

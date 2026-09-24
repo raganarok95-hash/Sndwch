@@ -33,7 +33,12 @@ en la base real. Las cifras y nombres de muestra no cuentan: salen del código.
    estimada solo se fija cuando el pedido pasa a EN CAMINO. Al pagar no hay ninguna ventana
    que mostrar. Hace falta calcularla al hacer el pedido (preparación + km) y guardarla, para
    que el «prometimos» del detalle sea lo que de verdad se prometió.
-2. **Tu pedido fijo: «lo mandamos solo, a la hora de siempre»**. Hoy `recurring_orders` solo
+2. **Tu pedido fijo: «lo mandamos solo, a la hora de siempre»**. ✅ **Hecho el 2026-09-24**
+   como lo decidió el dueño: NO se manda solo (la pantalla ya no lo dice), pero desde el 2.º
+   día pagado desde el fijo le **guarda el lugar** en su hora desde el día antes hasta 90 min
+   antes (`franja.ts`, `capacidad.ts`); «lo pediste 9 veces · siempre a las 7:20» sale del
+   historial; «¿Lo dejamos fijo los jueves?» se ofrece a quien repite; «Esta semana no»
+   suelta el lugar. Lo que sigue es el texto previo: Hoy `recurring_orders` solo
    **recuerda**: no manda nada solo. Ya decidiste «apartar la franja sin cobrarla» (tarea
    #61). Los datos «lo pediste 9 veces · siempre a las 7:20» sí se pueden sacar del historial.
 3. **Direcciones con referencia** («Urb. San Andrés · timbre 302, portón negro»). La tabla

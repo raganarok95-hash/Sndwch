@@ -832,7 +832,7 @@ function doLogout(){
   // memoria `authProof`, la prueba de que SU correo ya se verificó: el registro la manda, y
   // la próxima cuenta creada en este mismo equipo se quedaba con un correo ajeno.
   limpiarLoginPorCorreo();
-  pendingGroupCode=null;
+  pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;
   localStorage.removeItem('sw_ph');localStorage.removeItem('sw_tok');cacheCust(null);
   myOrders=[];myAddresses=[];myFavorites=[];pickedAddrId=null;editingAddrId=null;
   custDetail=null;custDetailPhone='';custDetailErr='';

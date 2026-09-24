@@ -348,6 +348,12 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     if(cust)doCreateGroupOrder();
     else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para organizar el pedido de tu oficina.');render();}
   }
+  // ?fijo=ID — el aviso del pedido fijo. Lleva a SU pantalla con ese fijo al frente, a un
+  // toque de pedirlo. Sin sesión no hay fijo que mostrar: se pide entrar primero.
+  if(fijoFromUrl){
+    if(cust)goRecurring(fijoFromUrl);
+    else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para ver tu pedido fijo.');render();}
+  }
   // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
   // único que importa de esta visita y se lleva la pantalla entera.
   if(deliveryTokenFromUrl){

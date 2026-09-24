@@ -881,3 +881,43 @@ anotado dos veces por regalo, y tres pruebas propias que pasaban con el defecto 
 
 El detalle completo, clase por clase, con lo que no se tocó y por qué, está en
 `docs/AUDITORIA_CLASES_DE_ERROR.md`.
+
+## El pedido fijo guarda el lugar, y la capacidad se cuenta en un solo sitio (2026-09-24)
+
+El dueño aprobó el 2026-09-23 «apartar la franja» en vez de una suscripción: el fijo **no se
+manda ni se cobra solo**, pero desde que el hábito está probado (2 días distintos pagados desde
+el fijo, en los últimos 120) le guarda un lugar en el tope de su hora **desde la medianoche del
+día antes hasta 90 minutos antes**. El aviso sale una hora antes de soltarlo y puede decir
+«tu jueves está guardado hasta las 12:00»; sin lugar, sale una hora antes de la entrega y, si
+la hora se llenó, ofrece la siguiente media hora libre en vez de prometer un toque que va a
+chocar contra el tope.
+
+**El lugar no se guarda: se calcula** (`supabase/functions/api/franja.ts`), a partir del fijo y
+de los pedidos que salieron de él (`orders.recurring_id`). Un «apartado: sí» guardado es algo
+que un cron tiene que acordarse de soltar; el día que ese cron falla, la cocina pierde un lugar
+que nadie usa. Calculado, se suelta solo por construcción — el mismo criterio que la pausa de
+la tienda y las horas llenas.
+
+**Lo que obligó a tocar dos archivos que no eran del fijo.** La cuenta de «pedidos en esta
+hora» estaba escrita dos veces: en `assertHourCapacity` (rechaza) y en `capacidad()` de
+`get-store-hours` (tacha horas en el cliente). Sumar los lugares apartados a una y no a la otra
+habría dejado al cliente viendo libre una hora que después le rechazan. Ahora las dos preguntan
+a `capacidad.ts`. Y el cliente recibe también la carga de cada hora (`cargaPorHora`), porque
+la hora que le guardamos a alguien no puede tachársele a él: el servidor no le cuenta su propio
+lugar, y el cliente tiene que hacer la misma resta.
+
+**Dos defectos que salieron al construirlo**, los dos silenciosos:
+
+- **Los ids de dirección son números** (`saved_addresses.id` es bigint) y los botones los
+  mandan como texto: `pickAddr('12')` comparaba `12 === '12'` y elegir una dirección guardada
+  en el checkout no hacía nada. Las pruebas simulaban ids de texto y pasaban. Ahora toda
+  comparación de un id que pasó por el HTML va por `mismoId()`.
+- **«Recuperar mi PIN» no funcionaba para ningún cliente.** Su función (`doRecover`) seguía en
+  el panel, que solo se descarga cuando lo abre el dueño. `check:cliente` no lo veía porque
+  quita los strings antes de buscar, y un `onclick` ES un string; además lo tapaba una
+  casualidad: dos regex `/"/g` en 07-* desbalanceaban las comillas y se anulaban entre sí. Al
+  reescribir el fijo quedó una sola y el chequeo empezó a quejarse de lo que no era. Ahora
+  ignora los literales de regex y revisa también las llamadas dentro de strings.
+
+Y uno más, pequeño: el máximo de 3 fijos contaba también los QUITADOS (`active=false`), así que
+quien quitó tres ya no podía armar ninguno.

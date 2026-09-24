@@ -128,8 +128,9 @@ function renderOverlays(){
   // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
   // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
   // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
-  // aprobada la burbuja caía encima del total y de la barra de cierre.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'){
+  // aprobada la burbuja caía encima del total y de la barra de cierre. p_recurring (tu pedido
+  // fijo): es una pantalla de UN toque, y la burbuja tapaba justo el precio de ese toque.
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'&&sndScreen!=='p_recurring'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }
@@ -446,6 +447,7 @@ async function loadStoreHoursBackground(){
     // Capacidad (#23/#24/#16): qué franjas ya están llenas y cuántos pedidos tiene la
     // cocina por delante ahora mismo.
     fullHours=Array.isArray(r.fullHours)?r.fullHours:[];
+    cargaPorHora=r.cargaPorHora&&typeof r.cargaPorHora==='object'?r.cargaPorHora:{};
     queueAhead=typeof r.queueAhead==='number'?r.queueAhead:0;
     if(typeof r.queueMinutesPerOrder==='number')queueMinutesPerOrder=r.queueMinutesPerOrder;
     if(typeof r.maxPerHour==='number')maxPerHour=r.maxPerHour;

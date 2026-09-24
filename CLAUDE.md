@@ -187,6 +187,12 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   los que el paso es legítimo**, no solo el del camino feliz. Dos veces el mismo defecto: el
   grupo vencido pasaba a `closed` y pagar exigía `open`; la reserva cobrada quedaba en
   `charging` y confirmar exigía `pending`. Ver `RESERVA_CONFIRMABLE` en `orders.ts`.
+- **La carga de una hora se cuenta SOLO en `capacidad.ts`** (pedidos + lugares apartados por
+  pedidos fijos). Rechazar (`assertHourCapacity`) y tachar horas (`get-store-hours`) preguntan
+  ahí; una segunda copia de la cuenta deja al cliente viendo libre lo que el servidor rechaza.
+- **Un id que pasó por el HTML se compara con `mismoId()`, nunca con `===`.** Los ids de
+  dirección son números y el onclick los devuelve como texto: `12 === '12'` es falso y el
+  botón no hace nada. Las pruebas simulan ids numéricos, como la base.
 - **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
   vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
 - **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23

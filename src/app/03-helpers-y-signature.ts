@@ -948,7 +948,7 @@ function cartRemove(idx){
 // groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
 // cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
 // regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
-function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;saveCart();go('o_home');}
+function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 //
@@ -1662,10 +1662,8 @@ function gentePorPersona(g:any):{name:string,labels:string[],suma:number}[]{
 function envioEstimadoGrupo(g:any):{km:number,fee:number}|null{
   if(!g.isOrganizer)return null;
   var a=myAddresses.find(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';});
-  if(!a)return null;
-  var km=Math.round(haversineKm(a.lat,a.lon,STORE_LAT,STORE_LON)*DELIVERY_ROAD_FACTOR*100)/100;
-  if(!isFinite(km)||km>DELIVERY_MAX_KM)return null;
-  return{km:km,fee:deliveryFeeForKm(km)};
+  var km=kmADireccion(a);
+  return km==null?null:{km:km,fee:deliveryFeeForKm(km)};
 }
 // Las cifras de esta pantalla van con dos decimales y en columna, como en la maqueta (7.00).
 function d2(n:number):string{return(Math.round(n*100)/100).toFixed(2);}
@@ -1778,7 +1776,7 @@ function sGroupSplit(){
       +'<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
   }
   h+='<div class="gente" role="radiogroup" aria-label="Dirección">'+conPin.map(function(a:any){
-    var on=repartoAddrId===a.id;
+    var on=mismoId(repartoAddrId,a.id);
     return'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>';
   }).join('')+'</div>';
   h+='<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="'+esc(repartoPhone)+'"></div>';
@@ -1786,7 +1784,7 @@ function sGroupSplit(){
 }
 var GROUP_SPLIT_MINUTES_CLIENT=20;
 async function doSplitGroupOrder(){
-  var a=myAddresses.find(function(x:any){return x.id===repartoAddrId;});
+  var a=myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
   if(!a){showToast('Elige la dirección.');return;}
   var tel=gv('grp-phone').trim()||repartoPhone;
   busy=true;busyMsg='Repartiendo...';render();

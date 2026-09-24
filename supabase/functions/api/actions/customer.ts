@@ -4,8 +4,13 @@
 import { sbGet, sbInsert, sbUpdate, sbDelete, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, safeCustomer, verifyCronSecret, verifyActiveSession } from "../session.ts";
-import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts } from "../catalog.ts";
-import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, limaFields, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA } from "../env.ts";
+import { loadCatalogPrices, deriveOrder, buildFromOrder, SIG_DATA, sigGateError, priceCartItem, REWARDS, buildTopProducts, deriveCart } from "../catalog.ts";
+import { limaMonthKey, limaMonthStartIso, limaDayStartIso, limaPrevMonthRange, limaFields, computeRankName, WELCOME_BONUS_POINTS, MAX_PUSH_PER_RUN, PLAN_SEMANAL_ACTIVO, TARJETA_REGALO_ACTIVA, loadStoreHours, STORE_HOURS } from "../env.ts";
+import {
+  FRANJA_DESDE_CONFIRMADOS, FRANJA_SUELTA_MIN, fechaLima, franjaSugerida, habitoDe, momentoDelAviso, proximaVez,
+  slotMinutos, textoAvisoFijo, type EstadoDeFranja,
+} from "../franja.ts";
+import { cargarFranjas, cargasPorHora, horaLlena, siguienteLibreDelDia } from "../capacidad.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { debugLog } from "../logging.ts";
 import { verifyCulqiCharge, pointsFor, RESERVA_CONFIRMABLE } from "./orders.ts";
@@ -115,38 +120,165 @@ async function assertUnderLimit(table: string, phone: string, max: number, label
   if (existing.length >= max) throw new ApiError(`Ya tienes el máximo de ${label} (${max}).`, 400);
 }
 
-// ── #60: pedido recurrente ──────────────────────────────────────────────────────────────
+// ── #60 / #61: el pedido fijo ───────────────────────────────────────────────────────────
 //
 // "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
 // falta a un negocio nuevo.
 //
-// ⚠ NO COBRA SOLO, Y NO PUEDE. El token de tarjeta de Culqi es de un solo uso y vive 5
-// minutos, así que el servidor no puede volver a cobrar sin que el cliente ponga una tarjeta
-// otra vez; hacerlo exigiría guardar la tarjeta (One Click), o sea decidir guardar medios de
-// pago de los clientes — decisión del dueño. Y tampoco cobra solo contra el crédito interno,
-// aunque técnicamente se podría: sacarle plata a alguien sin una decisión fresca suya es la
-// clase de sorpresa que cuesta el cliente entero.
+// ⚠ NO SE MANDA NI SE COBRA SOLO, Y NO PUEDE. El token de tarjeta de Culqi es de un solo uso
+// y vive 5 minutos, así que el servidor no puede volver a cobrar sin que el cliente ponga una
+// tarjeta otra vez; hacerlo exigiría guardar la tarjeta (One Click), o sea decidir guardar
+// medios de pago de los clientes — decisión del dueño. Y tampoco cobra solo contra el crédito
+// interno, aunque técnicamente se podría: sacarle plata a alguien sin una decisión fresca suya
+// es la clase de sorpresa que cuesta el cliente entero. El dueño lo confirmó el 2026-09-23:
+// el pedido fijo NO es una suscripción.
 //
 // Lo que sí hace: a la hora elegida le llega el aviso con el carrito ya armado y confirma en
-// un toque.
+// un toque. Y desde que el hábito está probado, le GUARDA EL LUGAR en el tope de su hora
+// (franja.ts, capacidad.ts): el aviso puede decir «tu jueves está guardado hasta las 12:00».
 const MAX_RECURRING = 3;
+// Desde cuántas veces pedido lo mismo la pantalla ofrece dejarlo fijo. Una vez es un pedido;
+// dos ya es una costumbre que vale la pena ofrecerle guardar.
+const SUGERIR_FIJO_DESDE_VECES = 2;
+const UUID_FIJO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Un ítem sin las claves que no cambian qué es (qty) y con todo ordenado, para que el mismo
+// pedido armado en otro orden sea el mismo.
+function ordenado(v: unknown): unknown {
+  if (Array.isArray(v)) {
+    const xs = v.map(ordenado);
+    return xs.every((x) => typeof x !== "object" || x === null) ? [...xs].sort() : xs;
+  }
+  if (v && typeof v === "object") {
+    const o: Record<string, unknown> = {};
+    for (const k of Object.keys(v as object).sort()) if (k !== "qty") o[k] = ordenado((v as Record<string, unknown>)[k]);
+    return o;
+  }
+  return v;
+}
+
+/** Qué pedido es, sin importar el orden de las líneas ni si «2 iguales» vino en una línea o en
+ *  dos. Sirve para contar «lo pediste 9 veces». null si algún ítem ya no existe en la carta. */
+export function firmaDeItems(items: unknown): string | null {
+  if (!Array.isArray(items) || !items.length) return null;
+  try {
+    const partes: string[] = [];
+    for (const it of items) {
+      const p = priceCartItem(it);
+      const f = JSON.stringify(ordenado(p.item));
+      for (let i = 0; i < p.qty; i++) partes.push(f);
+    }
+    return partes.sort().join("|");
+  } catch {
+    return null;
+  }
+}
+
+/** «The Original 15CM + The Midnight»: con los nombres de la carta vigente, nunca con la
+ *  etiqueta que mandó el cliente al guardarlo («2 ítems» no le dice nada a nadie). */
+export function nombreDeItems(items: unknown): string {
+  try {
+    const partes = (items as unknown[]).map((it) => {
+      const p = priceCartItem(it);
+      return p.label + (p.qty > 1 ? " ×" + p.qty : "");
+    });
+    return partes.join(" + ") || "Tu pedido fijo";
+  } catch {
+    return "Tu pedido fijo";
+  }
+}
+
+/** Cuánto sale HOY la comida (con el combo), con los precios vigentes. Sin envío: depende
+ *  de la dirección y lo suma el cliente con la misma tarifa que cobra el checkout. */
+export function precioDeItems(items: unknown): number | null {
+  try {
+    return deriveCart(items, null, null).expectedTotal;
+  } catch {
+    return null;
+  }
+}
+
+function isoONull(ms: number): string | null {
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
 
 export async function actRecurringList(b: any) {
   const s = await requireSession(b.token);
-  return {
-    recurring: await sbGet(
-      "recurring_orders",
-      `customer_phone=eq.${encodeURIComponent(s.phone)}&active=eq.true&select=id,items,weekday,slot,label,last_notified_at&order=weekday.asc,slot.asc&limit=${MAX_RECURRING * 2}`,
+  await Promise.all([loadCatalogPrices(), loadStoreHours()]);
+  const enc = encodeURIComponent(s.phone);
+  const [franjas, historial] = await Promise.all([
+    cargarFranjas(Date.now(), `&customer_phone=eq.${enc}`),
+    sbGet(
+      "orders",
+      `customer_phone=eq.${enc}&payment_status=eq.paid&status=neq.CANCELADO&select=items,created_at,delivery_time&order=created_at.desc&limit=200`,
     ),
-  };
+  ]);
+  // «Lo pediste 9 veces · siempre a las 7:20 p.m.» (maqueta tu-pedido-fijo): sale del
+  // historial pagado del cliente, agrupado por qué pidió — no de un contador aparte que
+  // habría que acordarse de mantener.
+  const porFirma = new Map<string, any[]>();
+  for (const o of historial) {
+    const f = firmaDeItems(o.items);
+    if (!f) continue;
+    const l = porFirma.get(f) || [];
+    l.push(o);
+    porFirma.set(f, l);
+  }
+  const recurring = franjas
+    .sort((x, y) => x.franja.vez - y.franja.vez)
+    .map(({ fila, franja }) => {
+      const firma = firmaDeItems(fila.items);
+      const hab = habitoDe(firma ? porFirma.get(firma) || [] : []);
+      return {
+        id: fila.id,
+        items: fila.items,
+        weekday: fila.weekday,
+        slot: fila.slot,
+        addressId: fila.address_id,
+        label: nombreDeItems(fila.items),
+        valido: firma !== null,
+        precio: precioDeItems(fila.items),
+        veces: hab.veces,
+        horaHabitual: hab.hora,
+        vez: isoONull(franja.vez),
+        estado: franja.estado,
+        apartada: franja.apartada,
+        sueltaA: isoONull(franja.sueltaA),
+        confirmados: franja.confirmados,
+      };
+    });
+  // Quien todavía no tiene un fijo pero repite: la pantalla le ofrece dejarlo fijo el día y
+  // a la hora en que ya lo pide, sin que tenga que elegir nada.
+  let sugerido = null;
+  if (!recurring.length) {
+    let mejor: any[] | null = null;
+    for (const l of porFirma.values()) {
+      if (l.length >= SUGERIR_FIJO_DESDE_VECES && (!mejor || l.length > mejor.length)) mejor = l;
+    }
+    if (mejor) {
+      const hab = habitoDe(mejor);
+      const slot = hab.weekday === null || hab.minutos === null ? null : franjaSugerida(hab.minutos, STORE_HOURS[hab.weekday]);
+      sugerido = {
+        items: mejor[0].items,
+        label: nombreDeItems(mejor[0].items),
+        precio: precioDeItems(mejor[0].items),
+        veces: hab.veces,
+        horaHabitual: hab.hora,
+        weekday: slot ? hab.weekday : null,
+        slot,
+      };
+    }
+  }
+  return { recurring, sugerido, desdeConfirmados: FRANJA_DESDE_CONFIRMADOS, sueltaMin: FRANJA_SUELTA_MIN };
 }
 
 export async function actRecurringAdd(b: any) {
   const s = await requireSession(b.token);
+  const enc = encodeURIComponent(s.phone);
   const weekday = Math.floor(Number(b.weekday));
   if (!Number.isFinite(weekday) || weekday < 0 || weekday > 6) throw new ApiError("Elige un día de la semana.");
   const slot = String(b.slot || "").trim();
-  if (!/^[0-2][0-9]:[0-5][0-9]$/.test(slot)) throw new ApiError("Elige una hora válida.");
+  if (slotMinutos(slot) === null) throw new ApiError("Elige una hora válida.");
   const items = Array.isArray(b.items) ? b.items : [];
   if (!items.length) throw new ApiError("Tu carrito está vacío — arma el pedido antes de dejarlo fijo.");
 
@@ -157,19 +289,33 @@ export async function actRecurringAdd(b: any) {
   await loadCatalogPrices();
   for (const it of items) priceCartItem(it);
 
-  await assertUnderLimit("recurring_orders", s.phone, MAX_RECURRING, "pedidos fijos");
-  const existing = await sbGet(
-    "recurring_orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&weekday=eq.${weekday}&slot=eq.${encodeURIComponent(slot)}&active=eq.true&select=id`,
-  );
-  if (existing.length) throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
+  // Solo los ACTIVOS cuentan para el máximo. «Quitar» apaga la fila (active=false) sin
+  // borrarla, y el límite genérico las contaba todas: quien quitó tres fijos ya no podía
+  // armar ninguno nuevo, y nada lo decía.
+  const activos = await sbGet("recurring_orders", `customer_phone=eq.${enc}&active=eq.true&select=id,weekday,slot`);
+  if (activos.length >= MAX_RECURRING) throw new ApiError(`Ya tienes el máximo de pedidos fijos (${MAX_RECURRING}).`, 400);
+  if (activos.some((r: any) => Number(r.weekday) === weekday && r.slot === slot)) {
+    throw new ApiError("Ya tienes un pedido fijo para ese día y esa hora.");
+  }
+
+  // A dónde va: sin esto, confirmar cada semana obligaba a volver a elegir la dirección, y
+  // «un toque» eran cuatro.
+  let addressId: number | null = null;
+  const rawAddr = b.addressId === undefined || b.addressId === null ? "" : String(b.addressId).trim();
+  if (rawAddr) {
+    if (!/^\d+$/.test(rawAddr)) throw new ApiError("Esa dirección no es válida.");
+    const rows = await sbGet("saved_addresses", `id=eq.${rawAddr}&customer_phone=eq.${enc}&select=id`);
+    if (!rows.length) throw new ApiError("Esa dirección ya no está entre las tuyas.");
+    addressId = Number(rows[0].id);
+  }
 
   await sbInsert("recurring_orders", {
     customer_phone: s.phone,
     items,
     weekday,
     slot,
-    label: String(b.label || "").trim().slice(0, 40) || null,
+    address_id: addressId,
+    label: nombreDeItems(items).slice(0, 80),
   });
   return { success: true };
 }
@@ -188,64 +334,76 @@ export async function actRecurringDelete(b: any) {
   return { success: true };
 }
 
-// Cuánto antes de la hora elegida llega el aviso. Una hora: suficiente para decidir y para
-// que el pedido entre a una franja que todavía tiene lugar, sin ser tan temprano que se
-// olvide.
-const RECURRING_LEAD_MINUTES = 60;
+// «Esta semana no»: suelta el lugar de la PRÓXIMA vez sin quitar el fijo. Sin esto, quien no
+// iba a pedir ese jueves solo podía esperar a que se soltara solo 90 minutos antes — un lugar
+// que otro pudo haber usado desde la mañana. `deshacer` lo vuelve a poner.
+export async function actRecurringSkip(b: any) {
+  const s = await requireSession(b.token);
+  const id = String(b.id || "").trim();
+  if (!UUID_FIJO.test(id)) throw new ApiError("Falta el pedido fijo.");
+  const enc = encodeURIComponent(s.phone);
+  const rows = await sbGet("recurring_orders", `id=eq.${id}&customer_phone=eq.${enc}&active=eq.true&select=id,weekday,slot`);
+  if (!rows.length) throw new ApiError("Ese pedido fijo ya no existe.", 404);
+  const skipOn = b.deshacer ? null : fechaLima(proximaVez(rows[0], Date.now()));
+  await sbUpdate("recurring_orders", `id=eq.${id}&customer_phone=eq.${enc}`, { skip_on: skipOn });
+  return { success: true, skipOn };
+}
+
+// Cada cuánto corre el cron (`sndwch-remind-recurring-orders`: '5,35 * * * *'). El aviso de
+// cada fijo cae en una ventana de este ancho, así sale en UNA sola corrida.
+const VENTANA_DEL_CRON_MIN = 30;
+// Estados en los que todavía se avisa: en los demás ya se pidió, se saltó, la tienda no
+// atiende a esa hora, o el fijo se quitó.
+const SE_AVISA: EstadoDeFranja[] = ["apartada", "faltan-confirmaciones", "aun-no-toca", "soltada"];
 
 export async function actRemindRecurringOrders(b: any) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
+  await Promise.all([loadCatalogPrices(), loadStoreHours()]);
 
-  // La franja objetivo es la de dentro de una hora, en hora de LIMA — la recurrencia la
-  // eligió el cliente sobre el mismo reloj con el que ve el horario de la tienda.
-  const objetivo = new Date(Date.now() + RECURRING_LEAD_MINUTES * 60000);
-  const enLima = new Date(objetivo.toLocaleString("en-US", { timeZone: "America/Lima" }));
-  const weekday = enLima.getDay();
-  const hh = String(enLima.getHours()).padStart(2, "0");
-  // Se buscan las dos franjas de media hora que caen dentro de esta hora, porque el cron
-  // corre cada 30 minutos y las recurrencias se guardan en :00 o :30.
-  const slots = [`${hh}:00`, `${hh}:30`];
+  // Antes se buscaban los fijos cuya hora caía dentro de una hora exacta. Ahora cada fijo
+  // tiene SU momento de aviso (franja.ts · momentoDelAviso): una hora antes de la entrega, o
+  // —si tiene el lugar apartado— una hora antes de SOLTARLO, porque avisar después de soltar
+  // sería prometer un lugar que ya no tiene.
+  const now = Date.now();
+  const franjas = await cargarFranjas(now);
+  const tocan = franjas.filter(({ fila, franja }) => {
+    if (!SE_AVISA.includes(franja.estado)) return false;
+    const t = momentoDelAviso(franja);
+    if (!(now >= t && now < t + VENTANA_DEL_CRON_MIN * 60000)) return false;
+    // Una vez por semana por fijo, aunque una corrida se repita.
+    const last = fila.last_notified_at ? Date.parse(fila.last_notified_at) : 0;
+    return now - last >= 20 * 3600 * 1000;
+  }).slice(0, MAX_PUSH_PER_RUN);
 
-  const rows = await sbGet(
-    "recurring_orders",
-    `active=eq.true&weekday=eq.${weekday}&slot=in.(${slots.join(",")})&select=id,customer_phone,items,slot,label,last_notified_at&limit=${MAX_PUSH_PER_RUN}`,
-  );
+  // La carga de las horas que vienen, UNA vez para todos los avisos de esta corrida. Es la
+  // misma cuenta con la que el servidor rechaza al pagar (capacidad.ts), así que el aviso no
+  // puede prometer una hora que el checkout después no acepta.
+  const carga = tocan.length ? await cargasPorHora(now - 3600000, now + 36 * 3600000, { franjas }) : null;
   let avisados = 0;
-  for (const r of rows) {
+  for (const { fila, franja } of tocan) {
     try {
-      // Una vez por semana por recurrencia: el cron corre cada media hora y sin esto
-      // mandaría el mismo aviso varias veces en la misma tarde.
-      const last = r.last_notified_at ? new Date(r.last_notified_at).getTime() : 0;
-      if (Date.now() - last < 20 * 3600 * 1000) continue;
-      await sendPushToPhone(String(r.customer_phone), {
-        title: "¿Va lo de siempre? 🥪",
-        body: `${r.label || "Tu pedido fijo"} para las ${r.slot} — ya está armado, confirmas en un toque.`,
-        url: "./index.html",
-        tag: "sndwch-recurring-" + r.id,
-      });
-      await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(r.id))}`, { last_notified_at: new Date().toISOString() });
+      // Quien tiene el lugar apartado tiene el suyo aunque la hora esté llena. Para el resto se
+      // mira la hora ANTES de prometerla: si se llenó, el aviso ofrece la siguiente libre en vez
+      // de decir «confirmas en un toque» y que el toque choque contra el tope.
+      const llena = !franja.apartada && !!carga && horaLlena(carga, franja.vez);
+      const alternativa = llena && carga ? siguienteLibreDelDia(carga, franja.vez) : null;
+      const aviso = textoAvisoFijo({ id: fila.id, nombre: nombreDeItems(fila.items), franja, llena, alternativa });
+      await sendPushToPhone(String(fila.customer_phone), { ...aviso, tag: "sndwch-recurring-" + fila.id });
+      await sbUpdate("recurring_orders", `id=eq.${encodeURIComponent(String(fila.id))}`, { last_notified_at: new Date().toISOString() });
       // DEJA RASTRO, AUNQUE NO SE FRENE POR ÉL (2026-09-23). Este aviso es el único de los
       // quince que el cliente PIDIÓ: lo configuró él al guardar su pedido fijo. Por eso NO
       // consulta `phonesTouchedToday()` — un servicio que alguien pidió no puede quedarse
-      // sin salir porque ese día ya le llegó una promoción.
-      //
-      // Pero hasta hoy tampoco REGISTRABA, y esa mitad sí estaba mal: sin fila en
-      // `marketing_touches`, los ocho crones que sí respetan el tope de uno por día no
-      // sabían que este cliente ya había sido tocado, y el mismo jueves le podía llegar
-      // además "te faltan 30 puntos" o "hace mucho que no pides". El único aviso que el
-      // cliente pidió terminaba compitiendo con los que no pidió.
-      //
-      // Con esta línea el aviso sigue saliendo siempre y son las promociones las que se
-      // corren. Va DESPUÉS del push y es best-effort: que falle el log nunca puede afectar
-      // un aviso que ya salió.
-      await logMarketingTouch(String(r.customer_phone), "pedido-fijo");
+      // sin salir porque ese día ya le llegó una promoción. Pero sí REGISTRA, para que los
+      // crones de marketing que respetan el tope de uno por día se corran ese día. Va DESPUÉS
+      // del push y es best-effort: que falle el log nunca puede afectar un aviso que ya salió.
+      await logMarketingTouch(String(fila.customer_phone), "pedido-fijo");
       avisados++;
     } catch (e) {
-      console.error("remind-recurring-orders failed for", r.id, e);
+      console.error("remind-recurring-orders failed for", fila.id, e);
     }
   }
-  return { success: true, avisados, revisadas: rows.length };
+  return { success: true, avisados, revisadas: franjas.length };
 }
 
 // ── #64: "te faltan N puntos" ───────────────────────────────────────────────────────────

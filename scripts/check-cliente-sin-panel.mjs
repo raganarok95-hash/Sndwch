@@ -45,10 +45,17 @@ for (const f of panel) {
 
 // Quita comentarios y literales: lo que va dentro de un string es un `onclick` que solo
 // corre si alguien lo toca, y eso se juzga aparte (ver ADMIN_ONLY abajo).
+// ⚠ Los literales de EXPRESIÓN REGULAR se quitan antes que los strings. `.replace(/"/g,…)`
+// tiene una comilla suelta: sin este paso, esa comilla abría un "string" que se tragaba media
+// parte y dejaba fuera de comillas un `onclick` cualquiera. Hasta el 2026-09-24 el archivo
+// 07-* tenía DOS de esas y se anulaban por casualidad; al quitar una, `doRecover()` (un
+// onclick) apareció como código y el chequeo reportó una dependencia que no existe. Solo se
+// reconocen tras `(`, `,`, `=` o `:`, que es donde puede empezar una regex y no una división.
 function soloCodigo(src) {
   return src
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/[^\n]*$/gm, ' ')
+    .replace(/([(,=:]\s*)\/(?![/*])(?:\\.|\[(?:\\.|[^\]\\\n])*\]|[^/\\\n[])+\/[dgimsuy]*/g, '$1/r/')
     .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, '""');
 }
 
@@ -71,6 +78,18 @@ for (const f of cliente) {
     if (vistos.has(n) || !declaradoEnPanel.has(n) || ADMIN_ONLY[n]) continue;
     vistos.add(n);
     problems.push(`${f} usa \`${n}\`, que se declara en ${declaradoEnPanel.get(n)}`);
+  }
+  // Y LAS LLAMADAS DENTRO DE UN STRING. Un `onclick="doRecover()"` o `BTN('…','doRecover()')`
+  // es código que corre en el celular del cliente en cuanto toca el botón. El paso de arriba
+  // los ignora a propósito (quita los strings), y así «Recuperar mi PIN» quedó apuntando a una
+  // función del panel sin que nada lo notara (2026-09-24). Se buscan llamadas `nombre(`: un
+  // nombre suelto dentro de un texto puede ser prosa; uno con paréntesis es una llamada.
+  const sinComentarios = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/[^\n]*$/gm, ' ');
+  for (const m of sinComentarios.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const n = m[1];
+    if (vistos.has(n) || !declaradoEnPanel.has(n) || ADMIN_ONLY[n]) continue;
+    vistos.add(n);
+    problems.push(`${f} llama a \`${n}()\` (en un onclick o un botón), que se declara en ${declaradoEnPanel.get(n)}`);
   }
 }
 

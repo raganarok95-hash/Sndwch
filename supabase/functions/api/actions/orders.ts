@@ -6,7 +6,7 @@ import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
   DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
-  CULQI_FEE_RATE, MAX_ORDERS_PER_HOUR, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
+  CULQI_FEE_RATE, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
   ventanaPrometida,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
@@ -19,6 +19,7 @@ import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
+import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -176,25 +177,17 @@ async function assertBusinessLaunched(): Promise<void> {
   }
 }
 
-// Cuenta los pedidos vivos (no cancelados) cuya entrega cae en la misma hora que `when`, y
-// rechaza si ya se llegó al tope. `scheduled_for` manda cuando existe; si no, la hora de
-// creación es la hora de entrega efectiva (pedido "AHORA").
-async function assertHourCapacity(when: Date): Promise<void> {
+// Rechaza si la hora en que cae `when` ya llegó al tope. La carga es la de capacidad.ts:
+// pedidos vivos (`delivery_time` si es programado, si no la hora de creación) MÁS los lugares
+// que los pedidos fijos tienen apartados en esa hora. `excluirFijo` es el fijo de quien está
+// pidiendo, ya verificado como suyo (fijoPropio): su propio lugar no puede cerrarle la hora a
+// él, es justamente el que viene a usar.
+async function assertHourCapacity(when: Date, excluirFijo: string | null = null): Promise<void> {
   const hourStart = new Date(when);
   hourStart.setMinutes(0, 0, 0);
-  const hourEnd = new Date(hourStart.getTime() + 3600000);
-  const from = encodeURIComponent(hourStart.toISOString());
-  const to = encodeURIComponent(hourEnd.toISOString());
   try {
-    const [scheduled, immediate] = await Promise.all([
-      // La columna se llama `delivery_time`, NO `scheduled_for` (verificado contra
-      // information_schema: `orders` no tiene `scheduled_for`; ese nombre solo existe en
-      // `pending_charges`). Con el nombre equivocado PostgREST devolvía 42703, el catch de
-      // abajo se lo tragaba, y el tope NUNCA se aplicó desde que se introdujo.
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=gte.${from}&delivery_time=lt.${to}&select=id&limit=100`),
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=id&limit=100`),
-    ]);
-    if (scheduled.length + immediate.length >= MAX_ORDERS_PER_HOUR) {
+    const carga = await cargasPorHora(hourStart.getTime(), hourStart.getTime() + 3600000, { excluirFijo });
+    if (horaLlena(carga, hourStart.getTime())) {
       throw new ApiError(
         "Esa hora ya está llena — la cocina no da abasto para más pedidos en esa franja. Elige otra hora, por favor.",
         409,
@@ -265,6 +258,9 @@ export type FinalizeOrderParams = {
   /** Código del pedido grupal del que salió este pedido, si vino de uno. Solo sirve para
    *  poder medir cuánta venta genera ese canal (una entrega, varios sándwiches). */
   groupCode?: string | null;
+  /** Pedido fijo del que salió este pedido, ya verificado como del cliente (fijoPropio). Gasta
+   *  el lugar apartado de ese día y, pagado, cuenta como una confirmación (franja.ts). */
+  recurringId?: string | null;
 };
 
 // Coordenadas del pin que el cliente confirmó en el mapa del checkout. Se sanean acá y
@@ -512,6 +508,7 @@ export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ 
       lat: p.lat,
       lon: p.lon,
       group_code: p.groupCode || null,
+      recurring_id: p.recurringId || null,
       summary: p.summary || "",
       notes: p.notes,
       total: p.total,
@@ -943,8 +940,10 @@ export async function actPrepareOrder(b: any) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
   // Techo de capacidad de la franja (ver assertHourCapacity) — va DESPUÉS de validar el
-  // horario y ANTES de reservar inventario o cobrar nada.
-  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
+  // horario y ANTES de reservar inventario o cobrar nada. Si el pedido sale de un pedido
+  // fijo del cliente, su propio lugar apartado no cuenta en su contra.
+  const recurringId = await fijoPropio(b.recurringId, b.token);
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
@@ -1065,6 +1064,7 @@ export async function actPrepareOrder(b: any) {
         expires_at: expiresAt,
         promo_code_id: promoCodeId,
         promo_discount: promoDiscount,
+        recurring_id: recurringId,
         ...readCoords(b),
         ...readMetaAttribution(b),
       });
@@ -1201,6 +1201,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recup
       useCredit: false,
       lat: pc.lat ?? null,
       lon: pc.lon ?? null,
+      recurringId: pc.recurring_id || null,
     });
     orderInserted = true;
     // El código promocional (si se usó uno) ya quedó reclamado de forma atómica desde
@@ -1324,7 +1325,8 @@ export async function actPlaceOrder(b: any) {
     throw new ApiError("Estamos cerrados ahora mismo. Programa tu pedido para más tarde.", 400);
   }
   // Mismo techo de capacidad por franja que actPrepareOrder (ver assertHourCapacity).
-  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date());
+  const recurringId = await fijoPropio(b.recurringId, b.token);
+  await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   const deliveryZone = String(b.deliveryZone || "");
   const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFee(b.lat, b.lon, deliveryZone);
@@ -1428,7 +1430,7 @@ export async function actPlaceOrder(b: any) {
         summary: b.summary || "", notes: b.notes || null, total,
         deliveryFee, deliveryKm, deliveryZone,
         paymentStatus, paymentId: null, paymentMethod,
-        items: sanitizedItems, scheduledFor, reward, useCredit,
+        items: sanitizedItems, scheduledFor, reward, useCredit, recurringId,
         ...readCoords(b),
         ...readMetaAttribution(b),
       });

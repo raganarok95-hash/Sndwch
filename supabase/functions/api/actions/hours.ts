@@ -6,6 +6,7 @@ import { sbGet, sbUpdate, sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
+import { cargasPorHora, cargaDe } from "../capacidad.ts";
 
 // businessLaunched viene de app_settings (tabla singleton, fila única id=true) — la
 // tarjeta "Avísame cuando abramos" del Home se condiciona a esta bandera real en vez de
@@ -94,32 +95,28 @@ export async function actGetStoreHours(_b: any) {
 // "cerrado" que después hay que apagar.
 const CAPACITY_WINDOW_HOURS = 48;
 
-async function capacidad(): Promise<{ fullHours: string[]; queueAhead: number; maxPerHour: number; queueMinutesPerOrder: number }> {
-  const base = { fullHours: [] as string[], queueAhead: 0, maxPerHour: MAX_ORDERS_PER_HOUR, queueMinutesPerOrder: QUEUE_MINUTES_PER_ORDER };
+async function capacidad(): Promise<{ fullHours: string[]; cargaPorHora: Record<string, number>; queueAhead: number; maxPerHour: number; queueMinutesPerOrder: number }> {
+  const base = { fullHours: [] as string[], cargaPorHora: {} as Record<string, number>, queueAhead: 0, maxPerHour: MAX_ORDERS_PER_HOUR, queueMinutesPerOrder: QUEUE_MINUTES_PER_ORDER };
   try {
     const desde = new Date();
     desde.setMinutes(0, 0, 0);
     const hasta = new Date(desde.getTime() + CAPACITY_WINDOW_HOURS * 3600000);
-    const from = encodeURIComponent(desde.toISOString());
-    const to = encodeURIComponent(hasta.toISOString());
-    const [programados, inmediatos, enCola] = await Promise.all([
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=not.is.null&delivery_time=gte.${from}&delivery_time=lt.${to}&select=delivery_time&limit=1000`),
-      sbGet("orders", `status=neq.CANCELADO&delivery_time=is.null&created_at=gte.${from}&created_at=lt.${to}&select=created_at&limit=1000`),
+    const [carga, enCola] = await Promise.all([
+      // Pedidos + lugares apartados por pedidos fijos, la MISMA cuenta con la que
+      // assertHourCapacity rechaza (capacidad.ts). Si el cliente tachara con otra cuenta,
+      // vería libre una hora que después le rechazan al pagar.
+      cargasPorHora(desde.getTime(), hasta.getTime()),
       // Lo que la cocina tiene por delante AHORA. "EN CAMINO" no cuenta: ese pedido ya
       // salió y no compite por el tiempo de armado del que está por entrar.
       sbGet("orders", `status=in.(RECIBIDO,PREPARANDO)&select=id&limit=200`),
     ]);
-    const porHora = new Map<string, number>();
-    const sumar = (iso: string) => {
-      const d = new Date(iso);
-      if (!Number.isFinite(d.getTime())) return;
-      d.setMinutes(0, 0, 0);
-      const k = d.toISOString();
-      porHora.set(k, (porHora.get(k) || 0) + 1);
-    };
-    for (const o of programados) sumar(o.delivery_time);
-    for (const o of inmediatos) sumar(o.created_at);
-    base.fullHours = [...porHora.entries()].filter(([, n]) => n >= MAX_ORDERS_PER_HOUR).map(([k]) => k).sort();
+    const horas = new Set([...carga.pedidos.keys(), ...carga.apartados.keys()]);
+    base.fullHours = [...horas].filter((k) => cargaDe(carga, k) >= MAX_ORDERS_PER_HOUR).sort();
+    // La carga de cada hora, además de la lista de llenas: quien tiene SU lugar apartado en
+    // una hora que llegó al tope no la tiene llena para él, porque el servidor no le cuenta
+    // su propio lugar (assertHourCapacity). Con solo `fullHours` el cliente le tacharía
+    // justo la hora que le estamos guardando.
+    base.cargaPorHora = Object.fromEntries([...horas].map((k) => [k, cargaDe(carga, k)]));
     base.queueAhead = enCola.length;
   } catch (e) {
     // La capacidad es información de apoyo: si falla, el cliente ve el horario igual y el

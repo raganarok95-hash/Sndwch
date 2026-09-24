@@ -29,7 +29,7 @@ import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
   actSetAdTracking, actSetPreferences,
   actFavoritesList, actFavoritesAdd, actFavoritesDelete,
-  actRecurringList, actRecurringAdd, actRecurringDelete, actRemindRecurringOrders, actRemindPointsNudge,
+  actRecurringList, actRecurringAdd, actRecurringDelete, actRecurringSkip, actRemindRecurringOrders, actRemindPointsNudge,
   actRemindMonthlyRecap,
   actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
@@ -118,6 +118,7 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "recurring-list": actRecurringList,
   "recurring-add": actRecurringAdd,
   "recurring-delete": actRecurringDelete,
+  "recurring-skip": actRecurringSkip,
   "remind-recurring-orders": actRemindRecurringOrders,
   // #64 — Empuja solo a quien está CERCA de una recompensa. Al que le faltan 300 puntos no
   // le sirve saberlo; al que le faltan 30, sí.
