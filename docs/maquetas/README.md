@@ -32,7 +32,7 @@ vive en el chat o en `/tmp`, no existe.
 | 29 · estado B · él llega | `29-estado-b-el-llega.png` | `w1.html` #2 | la animación de la 29 |
 | 29 · estado C · sellada | `29-estado-c-sellada.png` | `w1.html` #3 | la animación de la 29 |
 | 30 G · el carrito | `30G-el-carrito.png` | `h1.html` #1 | «Me encantó la pantalla 30 G» |
-| 30 G2 · con la franja | `30G2-el-carrito-con-la-franja.png` | `y1.html` #3 | «con la franja aprobado pero con una mejor frase entre los hermanos» (2026-09-24) — **la vigente**, pendiente solo la frase de la franja |
+| 30 G2 · con la franja | `30G2-el-carrito-con-la-franja.png` | `y1.html` #3 | «con la franja aprobado pero con una mejor frase entre los hermanos» (2026-09-24) — **la vigente**; frase de la franja elegida: «Nosotros ya estamos. Falta tu sí» |
 | 31 · Pagar con Yape | `31-pagar-con-yape.png` | `e1.html` #4 | «es la 31 código rehecho» (2026-09-24) — la cifra «son S/2.79 más» es de muestra y se calcula; el QR será el QR de Yape del dueño |
 | 31 · Pago con tarjeta | `31-pago-con-tarjeta.png` | `y1.html` #4 | «las instrucciones de la tarjeta igual, están bien» + el pulgar |
 | 32 · En camino | `32-en-camino.png` | perdida — recorte de captura | «22, aprobada» (era la 32) |
@@ -61,8 +61,7 @@ vive en el chat o en `/tmp`, no existe.
 
 ## Lo que todavía no tiene maqueta aprobada
 
-- **La frase de la franja de la 30 G2** — el dueño aprobó la pantalla pero pidió una frase
-  mejor que «Lo vemos salir los dos».
+- Nada por ahora: todo lo mostrado está decidido.
 
 ## Datos de muestra dentro de las maquetas
 
