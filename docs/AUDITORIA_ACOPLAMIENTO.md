@@ -113,6 +113,13 @@ permisos, validación y código muerto.
   solo la diferencia sacada del Postgres local, y la definición se comparó por hash contra
   producción: idéntica.
 
+- **A2** (2026-09-24): `vincular_pedido_de_invitado` (migración `20260924212333`) reclama el
+  pedido y, si está pagado, lo acredita por `aplicar_pedido_a_la_cuenta` en una transacción. El
+  registro ya no escribe `transactions` a mano ni decide el bono. `tests-db/vincular-pedido-de-
+  invitado.sql`, vista fallar sin la función y con dos defectos inyectados (sin el filtro de
+  reclamo, acreditando un pendiente). El flujo nuevo de `check:e2e` pasa también con el código
+  anterior —el camino feliz no rompía—: es red para el recorrido completo, no la prueba del defecto.
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

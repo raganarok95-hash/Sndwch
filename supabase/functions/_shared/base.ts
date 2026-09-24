@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924211810
+// generado-contra-migracion: 20260924212333
 export type Json =
   | string
   | number
@@ -2111,6 +2111,10 @@ export type Database = {
         Returns: boolean
       }
       verify_pin: { Args: { p_phone: string; plain: string }; Returns: boolean }
+      vincular_pedido_de_invitado: {
+        Args: { p_cuenta: Json; p_phone: string; p_rangos?: Json; p_ref: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

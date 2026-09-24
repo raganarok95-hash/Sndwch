@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924211810
+-- foto-tomada-tras-migracion: 20260924212333
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -2071,6 +2071,34 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_ord public.orders;
+begin
+  -- El filtro `customer_phone is null` es el reclamo: dos registros a la vez contra el mismo
+  -- pedido, y solo el primero afecta una fila.
+  update public.orders set customer_phone = p_phone
+   where ref = p_ref and customer_phone is null
+  returning * into v_ord;
+  if not found then
+    return jsonb_build_object('vinculado', false);
+  end if;
+  -- Solo lo que ya se cobró da puntos. Un Yape pendiente queda vinculado y los gana cuando el
+  -- dueño lo confirme (confirmar_pago_manual ya sabe a qué cuenta va).
+  if v_ord.payment_status = 'paid' and v_ord.status <> 'CANCELADO' and p_cuenta is not null then
+    return public.aplicar_pedido_a_la_cuenta(p_cuenta || jsonb_build_object('phone', p_phone), v_ord.ref, p_rangos)
+           || jsonb_build_object('vinculado', true, 'acreditado', true);
+  end if;
+  return jsonb_build_object('vinculado', true, 'acreditado', false);
+end;
+$function$
+;
+
 revoke all on function public.add_gifted_credit(p_to_phone text, p_amount numeric) from public; grant execute on function public.add_gifted_credit(p_to_phone text, p_amount numeric) to postgres; grant execute on function public.add_gifted_credit(p_to_phone text, p_amount numeric) to service_role;
 
 revoke all on function public.adjust_credit_balance(p_phone text, p_delta numeric) from public; grant execute on function public.adjust_credit_balance(p_phone text, p_delta numeric) to postgres; grant execute on function public.adjust_credit_balance(p_phone text, p_delta numeric) to service_role;
@@ -2148,6 +2176,8 @@ revoke all on function public.verify_cron_secret(p_secret text) from public; gra
 revoke all on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) from public; grant execute on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) to postgres; grant execute on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) to service_role;
 
 revoke all on function public.verify_pin(p_phone text, plain text) from public; grant execute on function public.verify_pin(p_phone text, plain text) to postgres; grant execute on function public.verify_pin(p_phone text, plain text) to service_role;
+
+revoke all on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) to service_role;
 
 CREATE TRIGGER catalog_items_append_only BEFORE DELETE OR UPDATE ON public.catalog_items FOR EACH ROW EXECUTE FUNCTION forbid_update_delete();
 

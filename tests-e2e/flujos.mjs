@@ -192,4 +192,26 @@ export const FLUJOS = {
     afirmar(valor(s, `select count(*) from inventory where product_code in ('${cod}', 'E2E-NUEVO') and batch_cooked_at is not null`) === '2', 'no se anotó la fecha de la tanda');
     afirmar(JSON.stringify(r.applied || []).includes('"from":4'), 'la respuesta no dice desde cuánto subió: ' + JSON.stringify(r).slice(0, 200));
   },
+
+  async 'crear la cuenta desde un pedido de invitado pagado lo vincula con sus puntos y el bono, una sola vez'(s) {
+    const quienInvita = await registrarYEntrar(s);
+    s.sql(`update customers set referral_code = 'E2EREF' where phone = '${quienInvita.phone}'`);
+    const puntosInvitaAntes = Number(valor(s, `select points from customers where phone = '${quienInvita.phone}'`));
+    s.sql(`insert into orders (id, ref, customer_phone, contact_phone, customer_name, customer_address, total, delivery_fee, payment_status, payment_method, items)
+           values ('00000000-0000-4000-8000-0000000e2e01', 'E2E-INV', null, 'x', 'Invitado', 'Av. España 123', 30, 5, 'paid', 'card', '[]')`);
+    s.sql(`delete from rate_limits`);
+    n++;
+    const phone = '9' + String(10000000 + n * 7919).slice(-8);
+    const r = await s.llamar('register', { name: 'Invitado', phone, pin: '4321', dni: String(40000000 + n * 13), bday: '1995-05-05', referredBy: 'E2EREF', claimOrderRef: 'E2E-INV' });
+    afirmar(r.status === 200, `registro: ${r.status} ${r.error || ''}`);
+    afirmar(valor(s, `select customer_phone from orders where ref = 'E2E-INV'`) === phone, 'el pedido no quedó vinculado a la cuenta');
+    afirmar(valor(s, `select count(*) from transactions where order_ref = 'E2E-INV' and customer_phone = '${phone}'`) === '1', 'el pedido no quedó en el historial');
+    // Los puntos de la cuenta son exactamente los de su historial: nada se sumó sin anotarse.
+    const puntos = valor(s, `select points from customers where phone = '${phone}'`);
+    const historial = valor(s, `select coalesce(sum(points), 0) from transactions where customer_phone = '${phone}'`);
+    afirmar(puntos === historial, `puntos ${puntos} y su historial ${historial} no cuadran`);
+    afirmar(valor(s, `select total_orders from customers where phone = '${phone}'`) === '1', 'no se contó el pedido');
+    const ganoInvita = Number(valor(s, `select points from customers where phone = '${quienInvita.phone}'`)) - puntosInvitaAntes;
+    afirmar(ganoInvita > 0 && String(ganoInvita) === valor(s, `select coalesce(sum(points), 0) from transactions where customer_phone = '${quienInvita.phone}' and description like 'Sándwich gratis por invitar%'`), 'quien invitó no recibió su bono anotado');
+  },
 };
