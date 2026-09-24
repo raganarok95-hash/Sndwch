@@ -30,12 +30,12 @@ function bulkBar(){
 // pedido pagado con tarjeta de uno pagado con crédito o recompensa (hallazgo de la
 // re-auditoría del panel admin).
 var PAYMENT_METHOD_BADGE={
-  culqi:iconTxt('card','Tarjeta','#8BAF9A'),
-  credit:iconTxt('coin','Crédito','#8BAF9A'),
-  reward:iconTxt('gift','Recompensa','#8BAF9A'),
-  yape:iconTxt('check','Yape/Plin','#8BAF9A'),
-  plin:iconTxt('check','Yape/Plin','#8BAF9A'),
-  cod:iconTxt('cash','Contra entrega','#8BAF9A'),
+  culqi:iconTxt('card','Tarjeta','#868A7E'),
+  credit:iconTxt('coin','Crédito','#868A7E'),
+  reward:iconTxt('gift','Recompensa','#868A7E'),
+  yape:iconTxt('check','Yape/Plin','#868A7E'),
+  plin:iconTxt('check','Yape/Plin','#868A7E'),
+  cod:iconTxt('cash','Contra entrega','#868A7E'),
 };
 function minutesAgo(iso){
   if(!iso)return null;
@@ -514,7 +514,7 @@ function addressFlagsBanner(){
     +servicioRapidoHTML()
 
     +'<div onclick="loadDashboard()" style="background:var(--sw-card2,#171A14);border:1px solid '+GOLD+';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:'+SHADOW_SM+'">'
-    +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
+    +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
     +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">Ver →</span></div>'
     +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
 
@@ -582,7 +582,7 @@ function addressFlagsBanner(){
         +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
         +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
         +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
-        +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#8BAF9A);margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
+        +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#868A7E);margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
         // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
         // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
         +(o.receipt_path?'<button onclick="viewReceipt(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px;margin-bottom:8px">'+iconTxt('clip','Ver comprobante','#9DA096')+'</button>':'')
@@ -605,7 +605,7 @@ function addressFlagsBanner(){
         // ya, tarjeta por tarjeta, sin ese rediseño más grande.
         +(manualPending
           ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
-            +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
+            +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
           :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,15,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:8px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
         // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
         // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
@@ -797,7 +797,7 @@ function sAdminFocus(){
       :'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-top:8px">Referencia: '+esc(o.notes)+'</div>'):'')
     +(o.status==='EN CAMINO'&&o.eta_minutes?'<div onclick="event.stopPropagation();editEta(\''+o.id+'\','+o.eta_minutes+')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">'+icon('moto',16,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min · editar</span></div>':'')
     +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-top:12px;display:flex;align-items:center;gap:8px">'+icon('cash',16,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
-    +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
+    +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:var(--sw-text-muted2,#868A7E);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:12px">'+esc(o.date)+' · '+esc(o.summary)+'</div>'
     +'<div style="display:flex;gap:10px;margin-top:22px">'
     +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('printer','Ticket','#9DA096')+'</button>'
@@ -829,7 +829,7 @@ function sAdminFocus(){
         // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
         // WCAG 2.5.5 (medía 20 px de alto), y está pegada al botón grande — errarle significa
         // tocar "confirmar y preparar" sin querer, que avanza el pedido.
-        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
+        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
       :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:10px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
     +'</div>';
   // Sin `topBar`: `nav` ya lleva el botón de salir. Las dos juntas eran justamente los

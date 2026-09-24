@@ -20,6 +20,7 @@
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { loadCatalogPrices, SIG_DATA, SIG_GATES, SIG_LABEL, PROT_LABEL, TOP_LABEL, SAUCE_LABEL, BASE_LABEL } from "../catalog.ts";
+import { PALETA } from "../../_shared/paleta.ts";
 
 // Los 8 segundos son el tope duro de Veo en Flow, no una decisión nuestra: el guion se
 // escribe para ese largo porque es el que el dueño va a poder generar.
@@ -34,7 +35,7 @@ const BREAD_RULE =
   "The sandwich is ALWAYS a long sub/hoagie roll (Subway-style elongated bread), " +
   "never sliced loaf bread, never flatbread, never a square focaccia slab";
 const BRAND_RULE =
-  "Deep forest green (#1E3932) and warm gold (#CBA258) color grading, matte finish, " +
+  `Near-black forest green (${PALETA.bg}) and warm gold (${PALETA.oro}) color grading, matte finish, ` +
   "no glossy plastic look";
 
 // ── LA FICHA DE PERSONAJE, CONGELADA (2026-09-07) ─────────────────────────────────────

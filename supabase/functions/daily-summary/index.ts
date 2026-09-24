@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -56,7 +57,7 @@ Deno.serve(async (req: Request) => {
     for (const r of recentErrorRows) errorsBySource.set(r.source, (errorsBySource.get(r.source) || 0) + 1);
 
     const row = (label: string, value: string) =>
-      `<tr><td style="padding:6px 0;color:#A8C8B0;font-size:13px">${label}</td><td style="padding:6px 0;color:#fff;font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
+      `<tr><td style="padding:6px 0;color:${C["text-muted"]};font-size:13px">${label}</td><td style="padding:6px 0;color:${C.text};font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
 
     const alerts: string[] = [];
     if (stillOpen.length) alerts.push(`${stillOpen.length} pedido(s) siguen sin marcarse ENTREGADO`);
@@ -77,11 +78,11 @@ Deno.serve(async (req: Request) => {
       </table>
       ${alerts.length
         ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
-            <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">ALERTAS //</div>
-            ${alerts.map((a) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">⚠ ${a}</div>`).join("")}
+            <div style="font-size:11px;color:${C.warn};letter-spacing:.1em;margin-bottom:6px">ALERTAS //</div>
+            ${alerts.map((a) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">⚠ ${a}</div>`).join("")}
           </div>`
-        : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Sin pendientes ni alertas.</div>`}
-      <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
+        : `<div style="margin-top:18px;font-size:12px;color:${C.ok}">✓ Sin pendientes ni alertas.</div>`}
+      <p style="font-size:11px;color:${C["text-muted2"]};margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
     `);
 
     const r = await fetch("https://api.resend.com/emails", {

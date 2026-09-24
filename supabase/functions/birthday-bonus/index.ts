@@ -9,6 +9,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { sbGet, sbInsert, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -47,11 +48,11 @@ function birthdayCode(): string {
 async function sendBirthdayEmail(to: string, name: string, code: string, vence: string) {
   if (!RESEND_API_KEY) return { ok: false, data: { skipped: true } };
   const html = emailShell("FELIZ CUMPLEAÑOS //", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${name},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Para celebrar, tu sándwich lleva <b style="color:#CBA258">S/${BIRTHDAY_COUPON_SOLES} de descuento</b>.</p>
-    <p style="font-size:28px;font-weight:900;color:#CBA258;margin:16px 0;letter-spacing:2px">${code}</p>
-    <p style="font-size:13px;color:#F2F0EB;line-height:1.6">Úsalo en el checkout antes del <b>${vence}</b>. Es tuyo y de un solo uso.</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:10px">Pide en sndwch.app 🎂</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${name},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Para celebrar, tu sándwich lleva <b style="color:${C.oro}">S/${BIRTHDAY_COUPON_SOLES} de descuento</b>.</p>
+    <p style="font-size:28px;font-weight:900;color:${C.oro};margin:16px 0;letter-spacing:2px">${code}</p>
+    <p style="font-size:13px;color:${C["text-body"]};line-height:1.6">Úsalo en el checkout antes del <b>${vence}</b>. Es tuyo y de un solo uso.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:10px">Pide en sndwch.app 🎂</p>
   `);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",

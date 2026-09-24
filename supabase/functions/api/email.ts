@@ -2,6 +2,7 @@
 // Envío del PIN de recuperación de cuenta por correo (Resend).
 import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME } from "./env.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 export function maskEmail(email: string): string {
   const [user, domain] = email.split("@");
   if (!domain) return email;
@@ -23,10 +24,10 @@ async function sendResend(to: string[], subject: string, html: string): Promise<
 }
 export async function sendRecoveryEmail(to: string, name: string, newPin: string): Promise<boolean> {
   const html = emailShell("RECUPERACIÓN DE CUENTA", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Pediste recuperar tu PIN. Este es tu nuevo PIN:</p>
-    <p style="font-size:34px;font-weight:900;color:#CBA258;letter-spacing:.1em;margin:16px 0">${newPin}</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Si no fuiste tú, contáctanos de inmediato.</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Pediste recuperar tu PIN. Este es tu nuevo PIN:</p>
+    <p style="font-size:34px;font-weight:900;color:${C.oro};letter-spacing:.1em;margin:16px 0">${newPin}</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Si no fuiste tú, contáctanos de inmediato.</p>
   `);
   return sendResend([to], "SND//WCH — Tu nuevo PIN", html);
 }
@@ -44,19 +45,19 @@ export async function sendRecoveryEmail(to: string, name: string, newPin: string
 // justo por donde entra la suplantación.
 export async function sendLoginCodeEmail(to: string, code: string, ttlMinutes: number): Promise<boolean> {
   const html = emailShell("TU CÓDIGO PARA ENTRAR", `
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Escribe este código en la app:</p>
-    <p style="font-size:38px;font-weight:900;color:#CBA258;letter-spacing:.22em;margin:18px 0">${escHtml(code)}</p>
-    <p style="font-size:12px;color:#8BAF9A;line-height:1.6">Vence en ${ttlMinutes} minutos y sirve una sola vez.</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:18px">Si no lo pediste, ignora este correo: sin el código nadie entra a tu cuenta.</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Escribe este código en la app:</p>
+    <p style="font-size:38px;font-weight:900;color:${C.oro};letter-spacing:.22em;margin:18px 0">${escHtml(code)}</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};line-height:1.6">Vence en ${ttlMinutes} minutos y sirve una sola vez.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:18px">Si no lo pediste, ignora este correo: sin el código nadie entra a tu cuenta.</p>
   `);
   return sendResend([to], `SND//WCH — ${code} es tu código`, html);
 }
 
 export async function sendOrderConfirmationEmail(to: string, name: string, ref: string, total: number): Promise<boolean> {
   const html = emailShell("TU PEDIDO FUE RECIBIDO //", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Recibimos tu pedido <b style="color:#fff">${escHtml(ref)}</b> por un total de <b style="color:#CBA258">S/${total.toFixed(2)}</b>.</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Recibimos tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> por un total de <b style="color:${C.oro}">S/${total.toFixed(2)}</b>.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
   `);
   return sendResend([to], `SND//WCH — Recibimos tu pedido (${ref})`, html);
 }
@@ -78,13 +79,13 @@ export async function sendOrderStatusEmail(to: string, name: string, ref: string
   const title = STATUS_EMAIL_COPY[status];
   if (!title) return false;
   const etaLine = (status === "EN CAMINO" && etaMinutes)
-    ? `<p style="font-size:20px;font-weight:900;color:#CBA258;margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
+    ? `<p style="font-size:20px;font-weight:900;color:${C.oro};margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
     : "";
   const html = emailShell(`${escHtml(title.toUpperCase())} //`, `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Tu pedido <b style="color:#fff">${escHtml(ref)}</b> ahora está: <b style="color:#CBA258">${escHtml(status)}</b></p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> ahora está: <b style="color:${C.oro}">${escHtml(status)}</b></p>
     ${etaLine}
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
   `);
   return sendResend([to], `SND//WCH — ${title} (${ref})`, html);
 }
@@ -95,10 +96,10 @@ export async function sendOrderStatusEmail(to: string, name: string, ref: string
 export async function sendComplaintConfirmation(to: string, name: string, claimCode: string, kind: string): Promise<boolean> {
   const kindLabel = kind === "queja" ? "queja" : "reclamo";
   const html = emailShell("LIBRO DE RECLAMACIONES", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Registramos tu ${kindLabel}. Este es tu código:</p>
-    <p style="font-size:28px;font-weight:900;color:#CBA258;letter-spacing:.05em;margin:16px 0">${claimCode}</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 15 días hábiles siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Registramos tu ${kindLabel}. Este es tu código:</p>
+    <p style="font-size:28px;font-weight:900;color:${C.oro};letter-spacing:.05em;margin:16px 0">${claimCode}</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 15 días hábiles siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
   `);
   return sendResend([to], `SND//WCH — Constancia de tu ${kindLabel} (${claimCode})`, html);
 }
@@ -113,10 +114,10 @@ export async function sendComplaintResponse(
 ): Promise<boolean> {
   const kindLabel = kind === "queja" ? "queja" : "reclamo";
   const html = emailShell("RESPUESTA A TU RECLAMO", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${escHtml(name)},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Esta es nuestra respuesta a tu ${kindLabel} <b style="color:#CBA258">${escHtml(claimCode)}</b>:</p>
-    <div style="background:#1A3028;border-left:3px solid #CBA258;padding:14px 16px;margin:16px 0;font-size:14px;color:#F2F0EB;line-height:1.7;white-space:pre-wrap">${escHtml(response)}</div>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Si no estás conforme con esta respuesta, puedes acudir a INDECOPI. Conserva tu código de reclamo para cualquier trámite.</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Esta es nuestra respuesta a tu ${kindLabel} <b style="color:${C.oro}">${escHtml(claimCode)}</b>:</p>
+    <div style="background:${C.card2};border-left:3px solid ${C.oro};padding:14px 16px;margin:16px 0;font-size:14px;color:${C["text-body"]};line-height:1.7;white-space:pre-wrap">${escHtml(response)}</div>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Si no estás conforme con esta respuesta, puedes acudir a INDECOPI. Conserva tu código de reclamo para cualquier trámite.</p>
   `);
   return sendResend([to], `SND//WCH — Respuesta a tu ${kindLabel} (${claimCode})`, html);
 }
@@ -129,14 +130,14 @@ export async function sendComplaintNotification(
 ): Promise<boolean> {
   const kindLabel = kind === "queja" ? "QUEJA" : "RECLAMO";
   const html = emailShell(`NUEVO ${kindLabel} — ${claimCode}`, `
-    <p style="font-size:13px;color:#F2F0EB;line-height:1.7">
+    <p style="font-size:13px;color:${C["text-body"]};line-height:1.7">
       <b>Consumidor:</b> ${escHtml(consumerName)}<br>
       <b>Correo:</b> ${escHtml(consumerEmail)}<br>
       <b>Teléfono:</b> ${escHtml(consumerPhone)}
     </p>
-    <p style="font-size:13px;color:#A8C8B0;line-height:1.6;margin-top:14px"><b>Detalle:</b><br>${escHtml(detail)}</p>
-    <p style="font-size:13px;color:#A8C8B0;line-height:1.6;margin-top:10px"><b>Pide:</b><br>${escHtml(consumerRequest)}</p>
-    <p style="font-size:11px;color:#ff8888;margin-top:20px">Tienes 15 días hábiles para responder. Hazlo desde el panel admin, sección Reclamaciones.</p>
+    <p style="font-size:13px;color:${C["text-muted"]};line-height:1.6;margin-top:14px"><b>Detalle:</b><br>${escHtml(detail)}</p>
+    <p style="font-size:13px;color:${C["text-muted"]};line-height:1.6;margin-top:10px"><b>Pide:</b><br>${escHtml(consumerRequest)}</p>
+    <p style="font-size:11px;color:${C.danger};margin-top:20px">Tienes 15 días hábiles para responder. Hazlo desde el panel admin, sección Reclamaciones.</p>
   `, { maxWidth: 520, wordmarkSize: 22 });
   return sendResend([CONTACT_EMAIL], `[${kindLabel}] ${claimCode} — ${BUSINESS_LEGAL_NAME}`, html);
 }
@@ -159,10 +160,10 @@ export async function sendRetentionEmail(
 ): Promise<boolean> {
   const fila = (etiqueta: string, valor: string, nota: string) => `
     <tr>
-      <td style="padding:7px 0;font-size:12px;color:#8BAF9A">${escHtml(etiqueta)}</td>
-      <td style="padding:7px 0;font-size:15px;color:#F2F0EB;text-align:right;white-space:nowrap"><b>${escHtml(valor)}</b></td>
+      <td style="padding:7px 0;font-size:12px;color:${C["text-muted2"]}">${escHtml(etiqueta)}</td>
+      <td style="padding:7px 0;font-size:15px;color:${C["text-body"]};text-align:right;white-space:nowrap"><b>${escHtml(valor)}</b></td>
     </tr>
-    <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:#6E8A7A;line-height:1.5">${escHtml(nota)}</td></tr>`;
+    <tr><td colspan="2" style="padding:0 0 8px;font-size:11px;color:${C["text-muted3"]};line-height:1.5">${escHtml(nota)}</td></tr>`;
   // Un guion, nunca un 0. Un 0 se lee como "medimos y dio cero"; el guion dice "no hay dato".
   const n = (v: number | null, suf = "") => (v === null ? "—" : `${v}${suf}`);
 
@@ -174,15 +175,15 @@ export async function sendRetentionEmail(
 
   const filasCohorte = (Array.isArray(cohorts) ? cohorts : []).map((c) => `
     <tr>
-      <td style="padding:5px 0;font-size:12px;color:#A8C8B0">${escHtml(String(c.month || ""))}</td>
-      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.customers ?? 0))}</td>
-      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.secondPct ?? 0))}%</td>
-      <td style="padding:5px 0;font-size:12px;color:#F2F0EB;text-align:right">${escHtml(String(c.avgOrders ?? 0))}</td>
+      <td style="padding:5px 0;font-size:12px;color:${C["text-muted"]}">${escHtml(String(c.month || ""))}</td>
+      <td style="padding:5px 0;font-size:12px;color:${C["text-body"]};text-align:right">${escHtml(String(c.customers ?? 0))}</td>
+      <td style="padding:5px 0;font-size:12px;color:${C["text-body"]};text-align:right">${escHtml(String(c.secondPct ?? 0))}%</td>
+      <td style="padding:5px 0;font-size:12px;color:${C["text-body"]};text-align:right">${escHtml(String(c.avgOrders ?? 0))}</td>
     </tr>`).join("");
 
   const html = emailShell("RETENCIÓN DEL MES", `
     ${aviso}
-    <p style="font-size:15px;color:#F2F0EB;line-height:1.6;margin:0 0 18px">${escHtml(digest.headline)}</p>
+    <p style="font-size:15px;color:${C["text-body"]};line-height:1.6;margin:0 0 18px">${escHtml(digest.headline)}</p>
     <table style="width:100%;border-collapse:collapse">
       ${fila("Clientes con al menos un pedido", String(digest.customers), "La base sobre la que se calcula todo lo demás.")}
       ${fila("Hicieron un segundo pedido", n(digest.repeatRatePct, "%"), "El número que decide si el negocio funciona: adquirir sale caro, el segundo pedido es donde se recupera.")}
@@ -192,17 +193,17 @@ export async function sendRetentionEmail(
       ${fila("Clientes en riesgo de fuga", String(digest.atRisk), "Compraron y llevan entre 30 y 60 días sin volver. Todavía se pueden recuperar.")}
     </table>
     ${filasCohorte ? `
-    <p style="font-size:12px;color:#8BAF9A;margin:22px 0 6px"><b>Por mes de primera compra</b></p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin:22px 0 6px"><b>Por mes de primera compra</b></p>
     <table style="width:100%;border-collapse:collapse">
       <tr>
-        <td style="font-size:11px;color:#6E8A7A;padding-bottom:4px">Mes</td>
-        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">Clientes</td>
-        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">2do pedido</td>
-        <td style="font-size:11px;color:#6E8A7A;text-align:right;padding-bottom:4px">Pedidos/cliente</td>
+        <td style="font-size:11px;color:${C["text-muted3"]};padding-bottom:4px">Mes</td>
+        <td style="font-size:11px;color:${C["text-muted3"]};text-align:right;padding-bottom:4px">Clientes</td>
+        <td style="font-size:11px;color:${C["text-muted3"]};text-align:right;padding-bottom:4px">2do pedido</td>
+        <td style="font-size:11px;color:${C["text-muted3"]};text-align:right;padding-bottom:4px">Pedidos/cliente</td>
       </tr>
       ${filasCohorte}
     </table>` : ""}
-    <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Detalle completo → sndwch.app → PUNTOS → PANEL ADMIN → RETENCIÓN</p>
+    <p style="font-size:11px;color:${C["text-muted2"]};margin-top:20px">Detalle completo → sndwch.app → PUNTOS → PANEL ADMIN → RETENCIÓN</p>
   `, { maxWidth: 560, wordmarkSize: 22 });
   return sendResend([CONTACT_EMAIL], `SND//WCH — Retención del mes: ${digest.headline}`, html);
 }

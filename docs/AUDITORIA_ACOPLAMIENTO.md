@@ -83,6 +83,21 @@ permisos, validación y código muerto.
 | A5 | **La hora programada se interpreta en la zona del teléfono** | `schedInputValue`/`effectiveOrderDate` (01-*) | Las horas son de la tienda en Lima, pero se arman con `setHours` y `new Date("AAAA-MM-DDTHH:mm")`, que usan la zona del dispositivo. Quien pide desde un teléfono con otra zona (un familiar desde el extranjero) programa corrido por la diferencia. |
 | A6 | **El correo al cliente usa la paleta retirada** | `email.ts` (21 usos de `#A8C8B0`/`#1E3932`…) | `check:colores` no mira ese archivo. |
 
+### Cerrados
+
+- **A4** (2026-09-24): si el servidor falla, la sesión local queda abierta y el cliente ve el
+  motivo. `tests/cerrar-todas-las-sesiones.spec.ts`, vista fallar sin el arreglo.
+- **A6** (2026-09-24): era más grande de lo medido. Los correos de las **siete** funciones, el
+  prompt de video y la página legal estática seguían en la paleta anterior, y `check:colores`
+  tenía además un punto ciego propio: daba por comentario cualquier línea con un `//` antes del
+  color — o sea todo HTML que dijera «SND//WCH» o «ALERTAS //». Detrás de ese punto ciego había
+  139 respaldos y colores sueltos de la paleta vieja en el propio cliente. Ahora los correos leen
+  `_shared/paleta.ts`, el chequeo la compara token por token contra el `:root` de `shell.html`,
+  mira `supabase/functions/**` y el generador legal, y solo cuenta como comentario el `//` que
+  abre la línea o sigue a código. Visto fallar con los dos defectos inyectados.
+  ⚠ `send-order-email`, `daily-summary`, `birthday-bonus` y `winback-campaign` no están en el
+  deploy automático: sus correos siguen viejos en producción hasta desplegarlas a mano.
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

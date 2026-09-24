@@ -11,6 +11,8 @@
 // seguridad, CRÍTICO: inyección de HTML en un correo que sale firmado por el dominio real
 // del negocio). Cualquier función que arme HTML de correo con datos que vengan del
 // cliente/base de datos DEBE pasar por acá primero.
+import { PALETA as C } from "./paleta.ts";
+
 export function escHtml(s: string): string {
   return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -19,10 +21,10 @@ export function emailShell(eyebrow: string, bodyHtml: string, opts?: { maxWidth?
   const maxWidth = opts?.maxWidth ?? 420;
   const wordmarkSize = opts?.wordmarkSize ?? 26;
   return `
-    <div style="font-family:Arial,sans-serif;background:#1E3932;padding:32px;color:#fff">
-      <div style="max-width:${maxWidth}px;margin:0 auto;background:#2D5246;border-radius:14px;padding:28px">
-        <div style="font-size:${wordmarkSize}px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:#CBA258">//</span>WCH</div>
-        <div style="font-size:11px;color:#CBA258;letter-spacing:.2em;margin-bottom:20px">${eyebrow}</div>
+    <div style="font-family:Arial,sans-serif;background:${C.bg};padding:32px;color:${C.text}">
+      <div style="max-width:${maxWidth}px;margin:0 auto;background:${C.card};border-radius:14px;padding:28px">
+        <div style="font-size:${wordmarkSize}px;font-weight:900;letter-spacing:.06em;margin-bottom:4px">SND<span style="color:${C.oro}">/</span><span style="color:${C.sky}">/</span>WCH</div>
+        <div style="font-size:11px;color:${C.oro};letter-spacing:.2em;margin-bottom:20px">${eyebrow}</div>
         ${bodyHtml}
       </div>
     </div>

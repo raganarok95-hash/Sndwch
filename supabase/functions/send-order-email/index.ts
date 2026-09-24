@@ -5,6 +5,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // correos desde el dominio del negocio). Configúrala con: supabase secrets set RESEND_API_KEY=...
 import { debugLog } from "../_shared/sb.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -74,14 +75,14 @@ Deno.serve(async (req: Request) => {
   const safeRef = escHtml(orderRef);
   const nameLine = safeName ? `Hola ${safeName},` : "Hola,";
   const etaLine = (status === "EN CAMINO" && etaMinutes)
-    ? `<p style="font-size:20px;font-weight:900;color:#CBA258;margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
+    ? `<p style="font-size:20px;font-weight:900;color:${C.oro};margin:16px 0">Tiempo estimado: ${Number(etaMinutes) || 0} minutos</p>`
     : "";
 
   const html = emailShell(`${escHtml(copy.title.toUpperCase())} //`, `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">${nameLine}</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Tu pedido <b style="color:#fff">${safeRef}</b> ahora está: <b style="color:#CBA258">${escHtml(status)}</b></p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">${nameLine}</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Tu pedido <b style="color:${C.text}">${safeRef}</b> ahora está: <b style="color:${C.oro}">${escHtml(status)}</b></p>
     ${etaLine}
-    <p style="font-size:12px;color:#8BAF9A;margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
   `);
 
   try {

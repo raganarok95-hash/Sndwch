@@ -73,7 +73,7 @@ function contactFooterHTML(){
     +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
     +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#9DA096')+'Delivery — '+BIZ_CITY+'</div>'
     +'<div style="display:flex;align-items:center;gap:7px">'+icon('mail',13,'#9DA096')+'<a href="mailto:'+BIZ_EMAIL+'" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">'+BIZ_EMAIL+'</a></div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#A8C8B0);text-decoration:none">+51 930 957 640</a></div>'
+    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">+51 930 957 640</a></div>'
     +'</div>'
     +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+GOLD+'">'+igIcon+'</a>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
@@ -182,7 +182,7 @@ function googleCtaHTML(texto?){
     +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
     +'</div>';
 }
-function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
+function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
 // la mayoría de teléfonos de los clientes.
@@ -1709,7 +1709,7 @@ function sOSig(){
   // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?lastOrdSig.items:null;
-  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
+  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
   // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
   // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
   // el repo está en comentarios, que nombran el modo por su nombre viejo y no los ve nadie).
@@ -1725,7 +1725,7 @@ function sOSig(){
       var myTotal=cust.total_orders||0;
       if(myTotal<s.minOrders){
         var missing=s.minOrders-myTotal;
-        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
       }
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
@@ -1747,7 +1747,7 @@ function sOSig(){
     var priceSub=size||s.p30<=s.p15?'':'30CM '+SOLES+pz(s.p30);
     if(!av){
       var notifyRequested=restockNotified.indexOf(s.id)>=0;
-      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
+      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
         // Antes esto desaparecía sin dejar rastro para un invitado sin cuenta — parecía un
         // callejón sin salida en vez de una invitación a registrarse (hallazgo de auditoría
         // UX, MEDIO).
@@ -1909,7 +1909,7 @@ function sigPreviewOverlayHTML(){
     // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
     // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
     +(s.secret
-      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
+      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
       :'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
       +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.8">'
       +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
