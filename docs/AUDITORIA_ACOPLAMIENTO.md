@@ -151,6 +151,14 @@ permisos, validación y código muerto.
   De paso: `como-pagas-y-avisos.spec.ts` fallaba 2 de cada 30 corridas (forzaba la pantalla desde
   fuera y leía la llamada antes de que saliera); ahora pasa 45 de 45.
 
+- **Paso 4 · chequeos contra la base** — hecho: `check:rpc` y `check:doble-escritura` leen `pg_proc`
+  de un Postgres local con la foto del esquema, en vez de reconstruir las funciones desde las
+  migraciones con regex. Los dos traen `--probar`. El de doble escritura ahora sigue las llamadas
+  entre funciones, y con eso encontró un paso suelto real: el registro creaba la cuenta con los
+  puntos del bono de bienvenida y anotaba su historial aparte. Ahora es `crear_cuenta` (migración
+  `20260924230134`), una transacción; `tests-db/crear-cuenta.sql`, vista fallar sin la función y
+  con un defecto inyectado (el bono anotado dos veces).
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924221018
+-- foto-tomada-tras-migracion: 20260924230134
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -1176,6 +1176,33 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.crear_cuenta(p_cliente jsonb, p_bono integer)
+ RETURNS customers
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v public.customers;
+begin
+  insert into public.customers
+    (phone, name, pin, email, dni, birthday, points, pending_points, total_orders, total_redeemed,
+     referral_code, referred_by, acquisition_source, google_id)
+  values
+    (p_cliente->>'phone', p_cliente->>'name', p_cliente->>'pin', nullif(p_cliente->>'email', ''),
+     nullif(p_cliente->>'dni', ''), nullif(p_cliente->>'birthday', ''), greatest(coalesce(p_bono, 0), 0), 0, 0, 0,
+     p_cliente->>'referral_code', nullif(p_cliente->>'referred_by', ''),
+     nullif(p_cliente->>'acquisition_source', ''), nullif(p_cliente->>'google_id', ''))
+  returning * into v;
+  if coalesce(p_bono, 0) > 0 then
+    insert into public.transactions (customer_phone, type, points, description, confirmed)
+    values (v.phone, 'earn_confirmed', p_bono, 'Bono de bienvenida', true);
+  end if;
+  return v;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.crear_pedido(p_pedido jsonb, p_cuenta jsonb DEFAULT NULL::jsonb, p_rangos jsonb DEFAULT '[]'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2178,6 +2205,8 @@ revoke all on function public.cleanup_old_rate_limits() from public; grant execu
 revoke all on function public.confirm_weekly_plan_credit(p_plan_id uuid) from public; grant execute on function public.confirm_weekly_plan_credit(p_plan_id uuid) to postgres; grant execute on function public.confirm_weekly_plan_credit(p_plan_id uuid) to service_role;
 
 revoke all on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) to service_role;
+
+revoke all on function public.crear_cuenta(p_cliente jsonb, p_bono integer) from public; grant execute on function public.crear_cuenta(p_cliente jsonb, p_bono integer) to postgres; grant execute on function public.crear_cuenta(p_cliente jsonb, p_bono integer) to service_role;
 
 revoke all on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) to service_role;
 

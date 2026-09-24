@@ -5,7 +5,7 @@ import {
   REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID,
   LOGIN_CODE_TTL_MINUTES, LOGIN_CODE_MAX_ATTEMPTS, LOGIN_CODE_COOLDOWN_SECONDS, RANKS,
 } from "../env.ts";
-import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
+import { sbGet, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import {
   signToken, safeCustomer, verifyToken, verifyActiveSession, requireSession, fetchIsAdmin,
@@ -205,36 +205,30 @@ export async function actRegister(b: any) {
   const welcomeBonus = tombstones.length ? 0 : WELCOME_BONUS_POINTS;
 
   const hashed = await rpc("hash_pin", { plain: pin });
-  const rows = await sbInsert("customers", {
-    phone,
-    name,
-    pin: hashed,
-    email,
-    // null y no "": una cadena vacía chocaría con la UNIQUE del DNI en cuanto hubiera dos
-    // cuentas de Google, y además haría que actRecover encontrara coincidencia con quien no
-    // escriba nada en ese campo.
-    dni: dni || null,
-    birthday: bday || null,
-    points: welcomeBonus,
-    pending_points: 0,
-    total_orders: 0,
-    total_redeemed: 0,
-    referral_code: phone,
-    referred_by: referredByValid,
-    acquisition_source: acquisitionSource,
-    google_id: googleId,
+  // La cuenta y su bono de bienvenida se crean en UNA transacción (`crear_cuenta`, 2026-09-24):
+  // antes eran dos inserciones sueltas y, si la segunda fallaba, la cuenta quedaba con puntos
+  // que su historial no explicaba. El bono es para TODO registro nuevo que no haya recibido uno
+  // antes (ver welcomeBonus arriba).
+  const creada = await rpc("crear_cuenta", {
+    p_cliente: {
+      phone,
+      name,
+      pin: hashed,
+      email,
+      // null y no "": una cadena vacía chocaría con la UNIQUE del DNI en cuanto hubiera dos
+      // cuentas de Google, y además haría que actRecover encontrara coincidencia con quien no
+      // escriba nada en ese campo. (La función de la base también convierte "" en null.)
+      dni: dni || null,
+      birthday: bday || null,
+      referral_code: phone,
+      referred_by: referredByValid,
+      acquisition_source: acquisitionSource,
+      google_id: googleId,
+    },
+    p_bono: welcomeBonus,
   });
-  let customer = safeCustomer(rows[0]);
-  // Bono de bienvenida para TODO registro nuevo que no haya recibido uno antes (ver
-  // welcomeBonus arriba) — se registra en el historial igual que cualquier otro ingreso de
-  // puntos, no solo se suma en silencio.
-  if (welcomeBonus > 0) await sbInsert("transactions", {
-    customer_phone: phone,
-    type: "earn_confirmed",
-    points: welcomeBonus,
-    description: "Bono de bienvenida",
-    confirmed: true,
-  });
+  const rows = [creada];
+  let customer = safeCustomer(creada);
 
   // Vincula el pedido de invitado que originó este registro (botón "CREAR CUENTA Y GANAR
   // PUNTOS POR ESTE PEDIDO" en la confirmación) — antes esto solo creaba la cuenta sin

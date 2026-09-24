@@ -273,12 +273,9 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    pregunta si un número **puede justificarse** — la clase de error que el empaque tuvo dos
    meses sin que nada lo notara.
 5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
-   Fue el séptimo caso del mismo defecto en este repo; ahora hay algo que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
-   normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,
-   y sin comparar la firma el drop de la sobrecarga vieja daba por muerta a la que está viva —
-   cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
-   script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
-   verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+   Fue el séptimo caso del mismo defecto en este repo. Desde el 2026-09-24 le pregunta a `pg_proc`
+   de un Postgres local con la foto del esquema (antes leía las migraciones con regex y tuvo un
+   punto ciego con las sobrecargas). `-- --probar` crea una función sin revoke y exige detectarla.
 5h. `npm run check:e2e` — flujos de punta a punta contra el backend REAL levantado en local:
    el `api` en Deno + PostgREST + Postgres con el esquema real (`scripts/e2e/servidor-local.mjs`).
    Cada flujo (`tests-e2e/flujos.mjs`) entra por la API y después mira la base. Es lo único que
@@ -294,7 +291,7 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    `adminToolsSections()`, no del test: una herramienta nueva entra sola. Corre dentro de
    `npm test`.
 5f-ter. `npm run check:doble-escritura` — que ninguna función inserte en una tabla que la RPC
-   que llama ya inserta (lee la última definición de cada RPC de las migraciones). Cada regalo
+   que llama ya inserta, también a través de otra función (lee `pg_proc` de la base local). Cada regalo
    de crédito quedaba anotado dos veces en `credit_ledger`. `-- --probar` le inyecta ese caso.
 6. `npm run test:estado` — la suite entera comparada contra `tests/ROJAS_CONOCIDAS.txt`: falla
    si aparece una roja NUEVA o si una conocida ya pasa (hay que borrarla de la lista). Mientras
