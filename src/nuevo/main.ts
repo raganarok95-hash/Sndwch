@@ -5,6 +5,7 @@
 // router viejo le pregunta si una pantalla ya migró y, si es así, le entrega un contenedor para
 // que la pinte. También deja el DINERO: el cliente viejo calcula precios con el mismo módulo
 // que el servidor (ver dinero.ts). Nada más de lo nuevo es global.
+import { cartaVieja } from './carta';
 import { dinero } from './dinero';
 import { abrir as abrirFijo, pantallaFijo } from './pantallas/fijo';
 
@@ -14,10 +15,13 @@ const registro: {
   pantallas: Record<string, PantallaNueva>;
   fijo: { abrir: (id?: string) => Promise<void> };
   dinero: typeof dinero;
+  carta: ReturnType<typeof cartaVieja>;
 } = {
   pantallas: { p_recurring: pantallaFijo },
   fijo: { abrir: abrirFijo },
   dinero,
+  // La carta, ya en la forma del código viejo: `src/app/01-*` arma PROTS, SIGS… con esto.
+  carta: cartaVieja(),
 };
 
 (window as unknown as { __sndNuevo: typeof registro }).__sndNuevo = registro;

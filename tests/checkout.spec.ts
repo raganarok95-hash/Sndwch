@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, cartaDeLaApp, soles, type Carta } from './helpers';
 
 // Flujo prioritario #1: invitado arma un Signature, va al carrito, paga con Yape/Plin
 // (el único método 100% mockeable sin el widget externo de Culqi) y ve la confirmación.
@@ -53,12 +53,18 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
 // completar el pago funcione. Existe por un bug real: hasta el 2026-08-15 THE CHICAGO
 // cobraba S/25 en AMBOS tamaños — el cliente pedía el doble de sándwich sin pagar nada
 // extra, y la tarjeta de upsell ni se mostraba porque el delta era cero.
-// Usaba SIG07 THE CHICAGO, el producto donde ocurrió ese bug; se retiró del catálogo el
-// 2026-08-22 (ver el comentario del retiro en SIGS de src/app.ts). Ahora usa SIG03 THE
-// SMOKE, elegido porque su precio de 15CM (S/21.90) es único en el catálogo — así, si el
-// clic en el Signature fallara, la aserción de precio no puede pasar por accidente con el
-// Signature que quedó seleccionado por defecto.
-test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el precio', async ({ page }) => {
+// El Signature se elige de la carta que la app tiene cargada, con dos condiciones: que NO sea
+// el que viene seleccionado por defecto y que su precio de 15CM no lo comparta ningún otro. Así,
+// si el clic en el Signature fallara, la aserción de precio no puede pasar por accidente con
+// el que quedó seleccionado. Antes se escribía un código a mano (SIG07, después SIG03) y cada
+// cambio de carta rompía esta prueba sin que nada del checkout hubiera cambiado.
+function signatureDePrecioUnico(c: Carta): string {
+  const id = c.signatures.find((x) => x !== c.signature(0) && c.signatures.filter((y) => c.p15[y] === c.p15[x]).length === 1);
+  if (!id) throw new Error('La carta no tiene un Signature de precio único distinto del primero: la prueba no puede armarse.');
+  return id;
+}
+
+test('invitado pide un Signature y el cambio de tamaño sí cambia el precio', async ({ page }) => {
   const calls = await gotoApp(page, {
     'place-order': (body: any) => ({
       success: true,
@@ -70,15 +76,17 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
+  const c = await cartaDeLaApp(page);
+  const sig = signatureDePrecioUnico(c);
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
-  await expect(page.locator('text=S/23.9').first()).toBeVisible();
+  await page.locator(`[onclick^="sigId='${sig}'"]`).click();
+  await expect(page.locator(`text=${await soles(page, c.p15[sig]!)}`).first()).toBeVisible();
 
-  // Cambiar a 30CM sube el precio (S/23.90 → S/34.90) sin desmarcar el Signature elegido —
+  // Cambiar a 30CM sube el precio sin desmarcar el Signature elegido —
   // el bug original dejaba ambos tamaños al mismo precio, y esa fuga es lo que este test
   // evita que vuelva.
   await page.locator('[onclick*="size=\'30\'"]').click();
-  await expect(page.locator('text=S/34.9').first()).toBeVisible();
+  await expect(page.locator(`text=${await soles(page, c.p30[sig]!)}`).first()).toBeVisible();
 
   // Vuelve a 15CM antes de continuar, para no depender de cuál tamaño quedó seleccionado.
   await page.locator('[onclick*="size=\'15\'"]').click();
@@ -103,10 +111,10 @@ test('invitado pide un Signature (SIG03) y el cambio de tamaño sí cambia el pr
   const placeOrderCall2 = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall2).toBeTruthy();
   expect(placeOrderCall2!.body.items).toHaveLength(1);
-  expect(placeOrderCall2!.body.items[0].sigId).toBe('SIG03');
+  expect(placeOrderCall2!.body.items[0].sigId).toBe(sig);
   expect(placeOrderCall2!.body.items[0].size).toBe('15');
-  // SIG03 15CM (S/23.90) + delivery por defecto (zona 'media', S/8) = S/31.90.
-  expect(placeOrderCall2!.body.total).toBe(31.9);
+  // 15CM + delivery por defecto (zona 'media', S/8).
+  expect(placeOrderCall2!.body.total).toBe(Math.round((c.p15[sig]! + 8) * 100) / 100);
 });
 
 // Regresión de un bug crítico real: cuando un pedido sale por Culqi, el servidor SIEMPRE
@@ -130,8 +138,10 @@ test('elegir tarjeta manda a prepare-order el total con el recargo que el servid
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await expect(page.locator('text=SIGNATURES')).toBeVisible();
 
+  const c = await cartaDeLaApp(page);
+  const sig = signatureDePrecioUnico(c);
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG03\'"]').click();
+  await page.locator(`[onclick^="sigId='${sig}'"]`).click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
@@ -147,9 +157,9 @@ test('elegir tarjeta manda a prepare-order el total con el recargo que el servid
     .poll(() => calls.find((c) => c.action === 'prepare-order'), { timeout: 10000 })
     .toBeTruthy();
   const prepareOrderCall = calls.find((c) => c.action === 'prepare-order')!;
-  // SIG03 15CM = S/23.90, delivery real S/8 (el pin de los tests da 4 km exactos), pero
-  // engordado para tarjeta: 8/(1-0.055) = 8.47 → total = 32.37, no 31.90.
-  expect(prepareOrderCall.body.total).toBe(32.37);
+  // El 15CM + delivery real S/8 (el pin de los tests da 4 km exactos), pero engordado para
+  // tarjeta: 8/(1-0.055) = 8.47, no 8.
+  expect(prepareOrderCall.body.total).toBe(Math.round((c.p15[sig]! + 8.47) * 100) / 100);
   expect(prepareOrderCall.body.deliveryZone).toBe('media');
 });
 

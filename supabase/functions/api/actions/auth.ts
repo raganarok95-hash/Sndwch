@@ -3,7 +3,7 @@
 // borrado de cuenta y recuperación de PIN.
 import {
   REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, WELCOME_BONUS_POINTS, TOKEN_TTL_SECONDS, GOOGLE_CLIENT_ID,
-  LOGIN_CODE_TTL_MINUTES, LOGIN_CODE_MAX_ATTEMPTS, LOGIN_CODE_COOLDOWN_SECONDS,
+  LOGIN_CODE_TTL_MINUTES, LOGIN_CODE_MAX_ATTEMPTS, LOGIN_CODE_COOLDOWN_SECONDS, RANKS,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
@@ -247,75 +247,46 @@ export async function actRegister(b: any) {
     try {
       const orderRows = await sbGet(
         "orders",
-        `ref=eq.${encodeURIComponent(claimOrderRef)}&customer_phone=is.null&select=id,ref,total,delivery_fee,payment_status,customer_address`,
+        `ref=eq.${encodeURIComponent(claimOrderRef)}&customer_phone=is.null&select=ref,total,delivery_fee,customer_address`,
       );
       const order = orderRows[0];
       if (order) {
-        // Reclamo atómico (mismo patrón que pending_charges/pending_weekly_plans, ver
-        // culqi-claim.ts): el filtro repite customer_phone=is.null además del id, así que
-        // si dos registros concurrentes (dos teléfonos distintos) apuntan al mismo
-        // claimOrderRef, solo el primer UPDATE afecta una fila — el segundo devuelve 0 filas
-        // y no otorga puntos, evitando duplicar el bono del mismo pedido de invitado en dos
-        // cuentas (hallazgo de auditoría de código, MEDIO — el SELECT+UPDATE anterior no era
-        // atómico).
-        const claim = await sbUpdate(
-          "orders",
-          `id=eq.${encodeURIComponent(order.id)}&customer_phone=is.null`,
-          { customer_phone: phone },
-        );
-        if (claim.length && order.payment_status === "paid") {
-          // El pedido de invitado ya estaba pagado (tarjeta) y nunca pasó por
-          // finalize_order_customer_update en su momento (no había phone/custRow) — se
-          // otorgan los puntos retroactivamente ahora que se sabe a quién pertenece. Si en
-          // cambio quedó "pending" (Yape/Plin), basta con haber asignado customer_phone:
-          // confirmManualPayment ya funciona sola cuando el admin confirme el pago.
-          const updated = await rpc("finalize_order_customer_update", {
-            p_phone: phone,
-            // Los puntos NUNCA se ganan sobre el delivery: es pass-through al motorizado,
-            // el negocio no se queda con ese margen. Este camino (vincular un pedido de
-            // invitado ya pagado al crear la cuenta) usaba `order.total` completo y ni
-            // siquiera traía `delivery_fee` en el select, así que regalaba el monto del
-            // reparto en puntos — S/6 a S/15 según zona — en cada conversión de
-            // invitado a cuenta. Se detectó al revisar por qué `pointsFor` no se estaba
-            // usando en todos los sitios que calculan puntos desde un total.
-            p_points_delta: pointsFor(order.total, order.delivery_fee),
-            p_credit_delta: 0,
-            p_total_orders_delta: 1,
-            p_last_address: order.customer_address,
-            p_total_redeemed_delta: 0,
-            p_referrer_phone: referredByValid,
-            p_referral_bonus: referredByValid ? REFERRAL_BONUS_POINTS : 0,
-            p_referrer_bonus: referredByValid ? REFERRER_REWARD_POINTS : 0,
-          });
-          customer = safeCustomer(updated);
-          const claimAuditInserts: Promise<unknown>[] = [
-            sbInsert("transactions", {
-              customer_phone: phone,
-              type: "earn_confirmed",
-              // Mismo criterio que el delta de arriba, y además `transactions.points` es
-              // `integer`: con un total decimal esto reventaba con 22P02.
-              points: pointsFor(order.total, order.delivery_fee),
-              description: "Pedido SND//WCH (vinculado tras crear cuenta)",
-              order_ref: order.ref,
-              confirmed: true,
-            }),
-          ];
-          if (referredByValid) {
-            claimAuditInserts.push(sbInsert("transactions", { customer_phone: phone, type: "earn_confirmed", points: REFERRAL_BONUS_POINTS, description: "Bono por referido", confirmed: true }));
-            claimAuditInserts.push(sbInsert("transactions", { customer_phone: referredByValid, type: "earn_confirmed", points: REFERRER_REWARD_POINTS, description: "Sándwich gratis por invitar a " + name, confirmed: true }));
-          }
-          await Promise.all(claimAuditInserts);
-          // Este tercer camino de otorgamiento (vincular un pedido de invitado ya pagado al
-          // crear la cuenta) era el ÚNICO que nunca avisaba a quien invitó: los otros dos
-          // llaman a rewardReferrer desde orders.ts y este se quedó fuera desde que se
-          // agregó el push. El referidor ganaba su sándwich y se enteraba solo si abría la
-          // app. Desde #55 además es el punto donde se paga el escalón, así que dejarlo
-          // fuera significaba también saltarse el premio.
-          if (referredByValid) await rewardReferrer(referredByValid, name);
+        // Reclamar y acreditar pasa en UNA transacción de la base (A2, migración
+        // 20260924212333), por el mismo `aplicar_pedido_a_la_cuenta` que crear y confirmar. Antes
+        // eran cuatro llamadas sueltas: si una fallaba el pedido quedaba de la cuenta y sin sus
+        // puntos, el bono de referido se anotaba aunque la base no lo hubiera otorgado, y si
+        // quien invitó había borrado su cuenta la clave foránea lo rompía a medias.
+        // El reclamo sigue siendo el filtro `customer_phone is null`, ahora dentro de la base:
+        // dos registros contra el mismo pedido y solo el primero lo gana. Si el pedido no está
+        // pagado (Yape pendiente) solo se vincula; los puntos llegan al confirmarse el pago.
+        // Puntos solo sobre la comida, nunca sobre el delivery (pass-through al motorizado).
+        const puntos = pointsFor(order.total, order.delivery_fee);
+        const r = await rpc("vincular_pedido_de_invitado", {
+          p_ref: order.ref,
+          p_phone: phone,
+          p_cuenta: {
+            points_delta: puntos,
+            credit_delta: 0,
+            redeemed_delta: 0,
+            last_address: order.customer_address,
+            referrer_phone: referredByValid || null,
+            referral_bonus: referredByValid ? REFERRAL_BONUS_POINTS : 0,
+            referrer_bonus: referredByValid ? REFERRER_REWARD_POINTS : 0,
+            base_points: puntos,
+            descripcion: "Pedido SND//WCH (vinculado tras crear cuenta)",
+            nombre: name,
+          },
+          p_rangos: RANKS.map((x) => ({ min: x.minOrders, name: x.name })),
+        });
+        if (r?.acreditado) {
+          customer = safeCustomer(r.customer);
+          // Avisarle a quien invitó (y pagarle el escalón, #55) solo si la base dio el bono.
+          if (r.bono_referido && referredByValid) await rewardReferrer(referredByValid, name);
         }
       }
     } catch (e) {
-      // Vincular el pedido es un plus — nunca debe hacer fallar la creación de la cuenta.
+      // Vincular el pedido es un plus — nunca debe hacer fallar la creación de la cuenta. Y como
+      // ahora es una sola transacción, si falla no queda nada a medias.
       console.error("claimOrderRef failed:", e);
     }
   }

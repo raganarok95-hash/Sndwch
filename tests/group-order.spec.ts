@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp } from './helpers';
 
 // Pedido grupal: quien organiza necesita cuenta (crea/cierra), pero contribuir NO
 // (solo un nombre) — dos flujos separados que valen la pena cubrir por separado.
@@ -63,10 +63,9 @@ test('el organizador también puede agregar su propio sándwich al pedido grupal
 });
 
 test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', async ({ page }) => {
-  const groupItems = [
-    { type: 'sig', sigId: 'SIG01', size: '15', doubleProt: false, extraSauce: false, qty: 1 },
-    { type: 'sig', sigId: 'SIG02', size: '15', doubleProt: false, extraSauce: false, qty: 1 },
-  ];
+  // Lo que devuelve el servidor al cerrar el grupo: dos Signatures de la carta que la app tiene
+  // cargada (se responde recién cuando la app lo pide, y para entonces ya se leyó).
+  let groupItems: any[] = [];
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Ana Cliente', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok-ana' },
     'create-group-order': { success: true, code: 'ABC123', expiresAt: new Date(Date.now() + 3600000).toISOString() },
@@ -78,13 +77,17 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
       ],
       total: 37, isOrganizer: true,
     },
-    'close-group-order': { success: true, items: groupItems },
+    'close-group-order': () => ({ success: true, items: groupItems }),
     'place-order': (body: any) => ({
       success: true,
       order: { id: 'ord-1', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total },
       customer: null,
     }),
   });
+
+  const c = await cartaDeLaApp(page);
+  const [a, b] = [c.signature(0), c.signature(1)];
+  groupItems = [a, b].map((sigId) => ({ type: 'sig', sigId, size: '15', doubleProt: false, extraSauce: false, qty: 1 }));
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000001', '1234');
@@ -102,11 +105,12 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   // De aquí en adelante es el checkout normal — confirma que el carrito trae los 2 items
   // del grupo, no que reimplemente el pago (eso ya lo cubre checkout.spec.ts).
   await expect(page.locator('text=TU CARRITO')).toBeVisible();
-  // S/42.80 de comida (SIG01 20.90 + SIG02 21.90, ambos 15CM) + S/8 de delivery = S/50.80.
+  // La comida (los dos 15CM a precio de carta) + S/8 de delivery.
   // El delivery va SIN engordar porque desde el 2026-09-03 el método por defecto es Yape/Plin,
   // que no paga comisión de Culqi. Hasta esa fecha este número era S/51.27 (fee de 8.47): el
   // cliente que no tocaba el selector pagaba S/0.47 de más sin haber elegido la tarjeta.
-  await expect(page.locator('text=S/50.80').first()).toBeVisible();
+  const total = await page.evaluate((n) => (window as any).SOLES_TXT + (window as any).pz(n), Math.round((c.p15[a]! + c.p15[b]! + 8) * 100) / 100);
+  await expect(page.locator(`text=${total}`).first()).toBeVisible();
 
   await page.locator('#o-nom').fill('Ana Cliente');
   await page.locator('#o-phone').fill('900000001');

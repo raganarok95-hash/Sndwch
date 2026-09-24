@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~347 KB que antes
+// de admin. Ningún cliente lo descarga: son ~348 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // ADMIN HOME
 // Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
@@ -35,12 +35,12 @@ function bulkBar() {
 // pedido pagado con tarjeta de uno pagado con crédito o recompensa (hallazgo de la
 // re-auditoría del panel admin).
 var PAYMENT_METHOD_BADGE = {
-    culqi: iconTxt('card', 'Tarjeta', '#8BAF9A'),
-    credit: iconTxt('coin', 'Crédito', '#8BAF9A'),
-    reward: iconTxt('gift', 'Recompensa', '#8BAF9A'),
-    yape: iconTxt('check', 'Yape/Plin', '#8BAF9A'),
-    plin: iconTxt('check', 'Yape/Plin', '#8BAF9A'),
-    cod: iconTxt('cash', 'Contra entrega', '#8BAF9A'),
+    culqi: iconTxt('card', 'Tarjeta', '#868A7E'),
+    credit: iconTxt('coin', 'Crédito', '#868A7E'),
+    reward: iconTxt('gift', 'Recompensa', '#868A7E'),
+    yape: iconTxt('check', 'Yape/Plin', '#868A7E'),
+    plin: iconTxt('check', 'Yape/Plin', '#868A7E'),
+    cod: iconTxt('cash', 'Contra entrega', '#868A7E'),
 };
 function minutesAgo(iso) {
     if (!iso)
@@ -156,7 +156,7 @@ function sAdminHealth() {
             + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px;line-height:1.4">' + esc(sg.hint) + (clickable ? ' →' : '') + '</div>'
             + '</div>';
     }).join('');
-    h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Revisado: ' + esc(new Date(healthData.checkedAt).toLocaleString('es-PE')) + '</div>';
+    h += '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Revisado: ' + esc(new Date(healthData.checkedAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })) + '</div>';
     h += '<div style="margin-top:14px">' + BTN('Volver a revisar //', 'loadHealth()', true) + '</div>';
     return h + '</div>';
 }
@@ -253,9 +253,16 @@ var vidScript = null, vidSigId = '', vidAngle = '', vidFormato = '', vidErr = ''
 async function loadVideoScript() {
     sndScreen = 'admin_video';
     vidErr = '';
+    // Sin carta no hay guion que pedir: se dice, en vez de pedirlo para un código escrito a mano
+    // ('SIG01' hasta el 2026-09-24, que la carta v4 retiró — el pedido habría fallado igual).
     if (!vidSigId) {
         var first = SIGS.find(function (x) { return !x.secret; });
-        vidSigId = first ? first.id : 'SIG01';
+        if (!first) {
+            vidErr = 'La carta no tiene ningún Signature para armar un guion.';
+            render();
+            return;
+        }
+        vidSigId = first.id;
     }
     busy = true;
     busyMsg = 'Armando el guion...';
@@ -569,7 +576,7 @@ function sAdminHome() {
         // se construyó porque el reloj ya la resuelve.
         + servicioRapidoHTML()
         + '<div onclick="loadDashboard()" style="background:var(--sw-card2,#171A14);border:1px solid ' + GOLD + ';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:' + SHADOW_SM + '">'
-        + '<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:' + GOLD + '"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
+        + '<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:' + GOLD + '"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
         + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">Ver →</span></div>'
         + '<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
         // Grid de accesos rápidos movido ARRIBA de "Pedidos activos" — antes quedaba
@@ -619,7 +626,7 @@ function sAdminHome() {
                 + '<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(o.customer_name) + '</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(o.customer_address) + '</div>'
                 + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + (isStale ? STATUSES.RECIBIDO.c : 'var(--sw-text-muted,#9DA096)') + ';margin-top:4px;display:flex;align-items:center;gap:5px">' + (isStale ? '<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:' + STATUSES.RECIBIDO.c + ';display:inline-block;flex-shrink:0"></span>' : '') + '<span>' + esc(o.ref) + ' · ' + SOLES + pz(o.total) + ' · ' + esc(o.date) + (mins !== null ? ' · hace ' + mins + ' min' : '') + '</span></div>'
-                + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('horario', 12, GOLD) + '<span>programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
+                + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';margin-top:2px;display:flex;align-items:center;gap:5px">' + icon('horario', 12, GOLD) + '<span>programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
                 // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
                 // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
                 // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
@@ -634,7 +641,7 @@ function sAdminHome() {
                 + (o.redeemed_reward ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366);margin-bottom:10px;display:flex;align-items:center;gap:5px">' + icon('gift', 12, 'var(--sw-ok,#25D366)') + '<span>' + esc(o.redeemed_reward) + '</span></div>' : '')
                 + (o.payment_method === 'cod' && o.payment_status !== 'paid' ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:10px;display:flex;align-items:center;gap:5px">' + icon('cash', 12, 'var(--sw-warn,#ffa500)') + '<span>Cobrar ' + SOLES + pz(o.total) + ' al entregar</span></div>' : '')
                 + (manualPending ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('warning', 12, 'var(--sw-warn,#ffa500)') + '<span>Pago ' + manualLabel + ' sin confirmar — revisa tu app antes de continuar</span></div>' : '')
-                + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#8BAF9A);margin-bottom:10px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
+                + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#868A7E);margin-bottom:10px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
                 // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
                 // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
                 + (o.receipt_path ? '<button onclick="viewReceipt(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px;margin-bottom:8px">' + iconTxt('clip', 'Ver comprobante', '#9DA096') + '</button>' : '')
@@ -657,7 +664,7 @@ function sAdminHome() {
                 // ya, tarjeta por tarjeta, sin ese rediseño más grande.
                 + (manualPending
                     ? '<button onclick="confirmAndAdvance(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center;margin-bottom:6px">' + iconTxt('check', 'Confirmar pago y preparar', '#000') + '</button>'
-                        + '<button onclick="confirmOrderPayment(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
+                        + '<button onclick="confirmOrderPayment(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
                     : (s.next ? '<button onclick="updateStatus(\'' + o.id + '\',\'' + s.next + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + STATUSES[s.next].c + ';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">' + (STATUSES[s.next].icon && ICONS[STATUSES[s.next].icon] ? icon(STATUSES[s.next].icon, 15, '#000') + ' ' : '') + 'Marcar como ' + STATUSES[s.next].label.toLowerCase() + ' →</button>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:8px">' + iconTxt('check', 'Completado', 'var(--sw-ok,#25D366)') + '</div>'))
                 // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
                 // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
@@ -837,7 +844,7 @@ function sAdminFocus() {
         + '</div>'
         // La receta, en escala de cocina, arriba de todo lo demás.
         + orderRecipeHTML(o.items, true)
-        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('horario', 16, GOLD) + '<span>Programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
+        + (isScheduledAhead ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('horario', 16, GOLD) + '<span>Programado para ' + esc(new Date(o.delivery_time).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' })) + '</span></div>' : '')
         + (manualPending ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('warning', 16, 'var(--sw-warn,#ffa500)') + '<span>Pago ' + manualLabel + ' sin confirmar — revisa tu app antes de continuar</span></div>' : '')
         + (o.redeemed_reward ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-ok,#25D366);margin-bottom:14px;display:flex;align-items:center;gap:8px">' + icon('gift', 16, 'var(--sw-ok,#25D366)') + '<span>' + esc(o.redeemed_reward) + '</span></div>' : '')
         + '<div style="height:1px;background:var(--sw-border,#2C3228);margin:18px 0"></div>'
@@ -865,7 +872,7 @@ function sAdminFocus() {
             : '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:' + GOLD + ';margin-top:8px">Referencia: ' + esc(o.notes) + '</div>') : '')
         + (o.status === 'EN CAMINO' && o.eta_minutes ? '<div onclick="event.stopPropagation();editEta(\'' + o.id + '\',' + o.eta_minutes + ')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">' + icon('moto', 16, '#3A86FF') + '<span>ETA ~' + o.eta_minutes + ' min · editar</span></div>' : '')
         + (o.payment_method === 'cod' && o.payment_status !== 'paid' ? '<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-top:12px;display:flex;align-items:center;gap:8px">' + icon('cash', 16, 'var(--sw-warn,#ffa500)') + '<span>Cobrar ' + SOLES + pz(o.total) + ' al entregar</span></div>' : '')
-        + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:var(--sw-text-muted2,#8BAF9A);margin-top:12px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
+        + (o.payment_status === 'paid' && PAYMENT_METHOD_BADGE[o.payment_method] ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:var(--sw-text-muted2,#868A7E);margin-top:12px">' + PAYMENT_METHOD_BADGE[o.payment_method] + '</div>' : '')
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:12px">' + esc(o.date) + ' · ' + esc(o.summary) + '</div>'
         + '<div style="display:flex;gap:10px;margin-top:22px">'
         + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#9DA096') + '</button>'
@@ -897,7 +904,7 @@ function sAdminFocus() {
                 // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
                 // WCAG 2.5.5 (medía 20 px de alto), y está pegada al botón grande — errarle significa
                 // tocar "confirmar y preparar" sin querer, que avanza el pedido.
-                + '<button onclick="confirmOrderPayment(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#8BAF9A);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
+                + '<button onclick="confirmOrderPayment(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
             : (s.next ? '<button onclick="updateStatus(\'' + o.id + '\',\'' + s.next + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + STATUSES[s.next].c + ';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">' + (STATUSES[s.next].icon && ICONS[STATUSES[s.next].icon] ? icon(STATUSES[s.next].icon, 16, '#000') + ' ' : '') + 'Marcar como ' + STATUSES[s.next].label.toLowerCase() + ' →</button>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:10px">' + iconTxt('check', 'Completado', 'var(--sw-ok,#25D366)') + '</div>'))
         + '</div>';
     // Sin `topBar`: `nav` ya lleva el botón de salir. Las dos juntas eran justamente los
@@ -1004,7 +1011,7 @@ function sAdminDashboard() {
             + '</div></div>';
     }
     if (d.codPending && d.codPending.count > 0) {
-        h += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:2px">' + d.codPending.count + ' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-warn,#ffa500)">' + SOLES + pz(d.codPending.total) + '</div></div>';
+        h += '<div style="background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.15em">Por cobrar · contra entrega //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + d.codPending.count + ' pedido(s) sin cobrar todavía</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-warn,#ffa500)">' + SOLES + pz(d.codPending.total) + '</div></div>';
     }
     // Tendencia 14 días
     if (d.trend && d.trend.length) {
@@ -1079,7 +1086,7 @@ function sAdminDashboard() {
     // pago manual sin confirmar).
     if (d.yapePlin && d.yapePlin.total > 0) {
         var ypRate = Math.round((d.yapePlin.confirmed / d.yapePlin.total) * 100);
-        h += '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:14px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Yape/Plin — confirmados vs. abandonados //</div><div style="display:flex;gap:8px"><div style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-ok,#25D366)">' + d.yapePlin.confirmed + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.05em">Confirmados</div></div><div style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-danger-strong,#ff5555)">' + d.yapePlin.abandoned + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.05em">Abandonados</div></div><div style="flex:1;text-align:center;background:var(--sw-card2,#1A3028);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + GOLD + '">' + ypRate + '%</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#A8C8B0);letter-spacing:.05em">Tasa confirm.</div></div></div></div>';
+        h += '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:14px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Yape/Plin — confirmados vs. abandonados //</div><div style="display:flex;gap:8px"><div style="flex:1;text-align:center;background:var(--sw-card2,#122019);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-ok,#25D366)">' + d.yapePlin.confirmed + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);letter-spacing:.05em">Confirmados</div></div><div style="flex:1;text-align:center;background:var(--sw-card2,#122019);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-danger-strong,#ff5555)">' + d.yapePlin.abandoned + '</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);letter-spacing:.05em">Abandonados</div></div><div style="flex:1;text-align:center;background:var(--sw-card2,#122019);border-radius:8px;padding:8px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + GOLD + '">' + ypRate + '%</div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);letter-spacing:.05em">Tasa confirm.</div></div></div></div>';
     }
     // Origen de campaña (?src=... en el link del anuncio) — sin esto no hay forma de saber
     // si una campaña paga se está pagando sola. "convertidos" cuenta solo a quien ya hizo al
@@ -1300,7 +1307,7 @@ function batchLine(code) {
         return null;
     var limite = cocinado + (b.shelfLifeDays || invDefaultDays) * 24 * 3600 * 1000;
     var horas = Math.round((limite - Date.now()) / 3600000);
-    var f = new Date(cocinado).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+    var f = new Date(cocinado).toLocaleDateString('es-PE', { timeZone: 'America/Lima', day: '2-digit', month: '2-digit' });
     if (b.estado === 'vencida')
         return { c: 'var(--sw-danger,#ff8888)', t: 'Tanda del ' + f + ' — VENCIDA hace ' + Math.abs(horas) + ' h. No usar.' };
     if (b.estado === 'por-vencer')
@@ -1855,7 +1862,7 @@ function sAdminSecretSignature() {
         + '</div>'
         + BTN('Publicar sándwich del mes //', 'saveSecretSignature()')
         + (ssHistory.length ? '<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-            + ssHistory.map(function (h) { return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + esc(h.name) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
+            + ssHistory.map(function (h) { return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + esc(h.name) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) + '</div>'; }).join('') : '')
         + '</div>';
 }
 // ── Signatures editables desde el panel (2026-08-27) ──────────────────────────────────
@@ -1968,7 +1975,7 @@ function sAdminCatalogItems() {
             + BTN('Publicar cambios //', 'saveCatalogItem()')
             : '<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096)">No hay Signatures publicados todavía.</p>')
         + (ciHistory.length ? '<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-            + ciHistory.map(function (h) { return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + esc(h.item_id) + ' · ' + esc(h.name) + ' · ' + SOLES_TXT + pz(h.price_15) + '/' + SOLES_TXT + pz(h.price_30) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE') + '</div>'; }).join('') : '')
+            + ciHistory.map(function (h) { return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + esc(h.item_id) + ' · ' + esc(h.name) + ' · ' + SOLES_TXT + pz(h.price_15) + '/' + SOLES_TXT + pz(h.price_30) + ' · ' + new Date(h.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' }) + '</div>'; }).join('') : '')
         + '</div>';
 }
 async function saveCatalogItem() {
@@ -2201,7 +2208,7 @@ function sAdminAudit() {
         return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px 14px;margin-bottom:8px">'
             + '<div style="display:flex;justify-content:space-between"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(AUDIT_ACTION_LABEL[l.action] || l.action) + '</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">' + esc(l.actor_phone) + '</span></div>'
             + (l.target ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px;word-break:break-all">' + esc(String(l.target)) + '</div>' : '')
-            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:4px">' + esc(new Date(l.created_at).toLocaleString('es-PE')) + '</div>'
+            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:4px">' + esc(new Date(l.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })) + '</div>'
             + '</div>';
     }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;padding:20px 0">Sin registros aún //</div>';
     h += '</div>';
@@ -2236,7 +2243,7 @@ async function pauseStore(minutes) {
     try {
         var r = await api('admin-pause-store', { token: token, minutes: minutes });
         storePausedUntil = r.pausedUntil || null;
-        storeHoursMsg = minutes > 0 ? 'Pausado. Volvemos solos a las ' + new Date(r.pausedUntil).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) + '.' : 'Pedidos reactivados.';
+        storeHoursMsg = minutes > 0 ? 'Pausado. Volvemos solos a las ' + new Date(r.pausedUntil).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' }) + '.' : 'Pedidos reactivados.';
         render();
         setTimeout(function () { storeHoursMsg = ''; if (sndScreen === 'admin_hours')
             render(); }, 3500);
@@ -2314,7 +2321,7 @@ function sAdminHours() {
     h += '<div style="background:' + (pausaActiva ? 'rgba(255,170,0,.12)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (pausaActiva ? 'rgba(255,170,0,.5)' : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:18px">'
         + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + (pausaActiva ? 'Pedidos en pausa //' : 'Pausa temporal //') + '</div>'
         + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;margin-bottom:10px">'
-        + (pausaActiva ? 'Se reactivan solos a las ' + new Date(storePausedUntil).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) + '. No tienes que hacer nada.' : 'Si te quedaste sin insumos o no puedes atender un rato. Se reabre sola.') + '</div>'
+        + (pausaActiva ? 'Se reactivan solos a las ' + new Date(storePausedUntil).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' }) + '. No tienes que hacer nada.' : 'Si te quedaste sin insumos o no puedes atender un rato. Se reabre sola.') + '</div>'
         + (pausaActiva
             ? '<button onclick="pauseStore(0)" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:11px;border-radius:8px;text-align:center;min-height:44px">Reactivar ahora</button>'
             : '<div style="display:flex;gap:8px">' + [[30, '30 min'], [60, '1 hora'], [180, '3 horas'], [600, 'Resto del día']].map(function (x) {
@@ -2435,7 +2442,7 @@ function sAdminRatings() {
             // auditoría de diseño admin, MEDIO). customer_phone puede venir null si la cuenta
             // ya se borró (anonimización, ver actDeleteAccount) — se omite en ese caso.
             + (r.customer_phone ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:' + GOLD + ';margin-top:6px">' + esc(r.customer_phone) + '</div>' : '')
-            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(new Date(r.created_at).toLocaleDateString('es-PE')) + '</div>'
+            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(new Date(r.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })) + '</div>'
             + '</div>';
     }).join('') : '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;padding:20px 0">Sin calificaciones //</div>';
     h += '</div>';
@@ -2499,7 +2506,7 @@ function sAdminPrepList() {
         h += '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px;line-height:1.5">Calculado hacia atrás desde cada hora de entrega, contando ' + (d.minutesPerOrder || 5) + ' min por sándwich y que los armas uno tras otro.</div>';
         var plan = (d.assembly && d.assembly.length) ? d.assembly : d.orders.map(function (o) { return { ref: o.ref, customerName: o.customerName, deliveryTime: o.deliveryTime, startBy: null, late: false }; });
         h += plan.map(function (o) {
-            var hora = function (t) { return t ? new Date(t).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '—'; };
+            var hora = function (t) { return t ? new Date(t).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' }) : '—'; };
             return '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#1B1F18);border:1px solid ' + (o.late ? 'rgba(255,85,85,.45)' : '#2C3228') + ';border-radius:8px;padding:10px 14px;margin-bottom:6px">'
                 + '<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(o.ref) + ' · ' + esc(o.customerName) + '</div>'
                 + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">Entrega ' + esc(hora(o.deliveryTime)) + (o.late ? ' · ya vas tarde' : '') + '</div></div>'
@@ -2962,7 +2969,7 @@ function sAdminCalendar() {
     h += '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px;line-height:1.5">Planea fechas y canales reales. Instagram y Facebook sí se pueden publicar de verdad desde acá (sube una foto/video y toca "Publicar ahora", o déjalo programado y sale solo el día que le toca) — el resto de canales sigue siendo copiar el texto a mano.</div>';
     // El botón va ARRIBA del formulario manual a propósito: crear una entrada a mano es el
     // camino largo, y hasta #50 era el único que había.
-    h += '<div style="margin-bottom:20px"><button onclick="generateCalendar()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:8px;text-align:center">Generar las próximas 4 semanas //</button><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#A8C8B0);margin-top:6px;line-height:1.5">Deja los borradores escritos (caption, texto de WhatsApp e idea de foto) en las fechas que todavía estén libres. No toca ninguna entrada que ya exista.</div></div>';
+    h += '<div style="margin-bottom:20px"><button onclick="generateCalendar()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:8px;text-align:center">Generar las próximas 4 semanas //</button><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:6px;line-height:1.5">Deja los borradores escritos (caption, texto de WhatsApp e idea de foto) en las fechas que todavía estén libres. No toca ninguna entrada que ya exista.</div></div>';
     h += '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + GOLD + ';border-radius:10px;padding:16px;margin-bottom:20px">';
     h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">Clips de la semana //</div>';
     // Copy corregida (auditoría UX, P2): antes prometía "sin que tengas que volver a tocar
@@ -2980,7 +2987,7 @@ function sAdminCalendar() {
         // distinguir "recién subido, normal" de "lleva 3 semanas esperando, algo se
         // atascó" (auditoría UX, P2).
         var oldestUpload = rawUploads.reduce(function (a, b) { return new Date(a.uploaded_at) < new Date(b.uploaded_at) ? a : b; });
-        var oldestDate = new Date(oldestUpload.uploaded_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+        var oldestDate = new Date(oldestUpload.uploaded_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima', day: '2-digit', month: 'short' });
         h += '<div style="margin-top:10px;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">' + rawUploads.length + ' clip' + (rawUploads.length === 1 ? '' : 's') + ' esperando — el más antiguo desde el ' + oldestDate + '.</div>';
     }
     h += '</div>';
@@ -3303,7 +3310,7 @@ function sAdminComplaints() {
             + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);margin-top:8px;line-height:1.5"><b>Detalle:</b> ' + esc(c.detail) + '</div>'
             + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:4px;line-height:1.5"><b>Pide:</b> ' + esc(c.consumer_request) + '</div>'
             + (c.order_ref ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">Pedido: ' + esc(c.order_ref) + '</div>' : '')
-            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(new Date(c.created_at).toLocaleDateString('es-PE')) + '</div>'
+            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(new Date(c.created_at).toLocaleDateString('es-PE', { timeZone: 'America/Lima' })) + '</div>'
             + (c.provider_response ? '<div style="background:var(--sw-card2,#171A14);border-radius:8px;padding:10px 12px;margin-top:10px;font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)"><b style="color:' + GOLD + '">Respuesta:</b> ' + esc(c.provider_response) + '</div>'
                 : (openId
                     ? '<div style="margin-top:10px"><textarea id="cq-resp-' + c.id + '" placeholder="Escribe tu respuesta al consumidor" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;font-family:EB Garamond,serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint(' + Number(c.id) + ')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">Guardar respuesta //</button></div>'
@@ -3491,7 +3498,7 @@ function printRecipeLabels(code) {
     if (!r)
         return;
     var hoy = new Date();
-    var f = function (d) { return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', ''); };
+    var f = function (d) { return d.toLocaleDateString('es-PE', { timeZone: 'America/Lima', day: '2-digit', month: 'short' }).toUpperCase().replace('.', ''); };
     var vence = r.shelfLifeDays > 0 ? new Date(hoy.getTime() + r.shelfLifeDays * 86400000) : null;
     var g = r.portion_grams ? r.portion_grams + 'g' : '';
     // Se imprimen varias iguales: una tanda son muchas bolsas, y rotular a mano una por una es

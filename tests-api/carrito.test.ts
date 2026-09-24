@@ -29,20 +29,21 @@ function assertSoles(actual: number, expected: number, msg?: string) {
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
 }
-import { deriveCart, SIDE_PRICE } from "../supabase/functions/api/catalog.ts";
+import { deriveCart, SIDE_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
+import { unSignature } from "./carta.ts";
 
-// Precios de la semilla del catálogo (los mismos literales que carga loadCatalogPrices
-// por encima en producción): THE ORIGINAL 15CM S/20.90, THE MIDNIGHT S/5, THE BLOOM S/6.
-//
-// D09 (THE SPICE // CHAI, S/9) salió del menú el 2026-09-06 y era la bebida que estas
-// pruebas usaban para ejercer el TOPE de R05: a S/9 con tope de S/6 el cliente pagaba la
-// diferencia. Con el chai fuera, D06 a S/6 es la más cara del catálogo y el tope queda
-// EXACTAMENTE en el techo — ver la prueba del tope más abajo, que ahora fija esa frontera.
-const SIG15 = 20.9;
-const D07 = 5;
-const D06 = 6;
+// Los productos salen de la carta, no se escriben (ver tests-api/carta.ts): un Signature vigente
+// cualquiera, la bebida más barata y la más cara. Estas pruebas fijan REGLAS de dinero —combo,
+// recompensas, organizador—, que no dependen de qué sándwich o qué bebida haya este mes.
+const UN_SIGNATURE = unSignature();
+const SIG15 = SIG_DATA[UN_SIGNATURE]!.p15;
+const bebidasPorPrecio = Object.keys(SIDE_PRICE).sort((x, y) => SIDE_PRICE[x]! - SIDE_PRICE[y]!);
+const BEBIDA = bebidasPorPrecio[0]!;
+const BEBIDA_CARA = bebidasPorPrecio[bebidasPorPrecio.length - 1]!;
+const PRECIO_BEBIDA = SIDE_PRICE[BEBIDA]!;
+const PRECIO_BEBIDA_CARA = SIDE_PRICE[BEBIDA_CARA]!;
 
-const sig15 = () => ({ type: "sig", sigId: "SIG01", size: "15", qty: 1 });
+const sig15 = () => ({ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 });
 const bebida = (code: string) => ({ type: "side", code, qty: 1 });
 
 // Horas fijas y explícitas: la promo de hora valle mira la hora de PREPARACIÓN, así que
@@ -51,8 +52,8 @@ const HORA_VALLE = "2026-09-10T21:00:00.000Z"; // 16:00 en Lima, dentro de 15-18
 const HORA_NORMAL = "2026-09-10T01:00:00.000Z"; // 20:00 en Lima, fuera de la ventana
 
 Deno.test("combo: sándwich + bebida descuenta S/1 una vez por par", () => {
-  const r = deriveCart([sig15(), bebida("D07")], null, HORA_NORMAL);
-  assertSoles(r.expectedTotal, SIG15 + D07 - 1);
+  const r = deriveCart([sig15(), bebida(BEBIDA)], null, HORA_NORMAL);
+  assertSoles(r.expectedTotal, SIG15 + PRECIO_BEBIDA - 1);
 });
 
 // ── LA BEBIDA GRATIS DE HORA VALLE SE RETIRÓ EL 2026-09-05 ────────────────────────────
@@ -68,24 +69,24 @@ Deno.test("combo: sándwich + bebida descuenta S/1 una vez por par", () => {
 Deno.test("en la que era la ventana de hora valle ya no se regala la bebida", () => {
   // Mismo carrito y misma hora que antes daban SIG15 pelado (la bebida iba gratis). Ahora
   // solo queda el combo de S/1, exactamente igual que fuera de la ventana.
-  const r = deriveCart([sig15(), bebida("D07")], null, HORA_VALLE);
-  assertSoles(r.expectedTotal, SIG15 + D07 - 1);
+  const r = deriveCart([sig15(), bebida(BEBIDA)], null, HORA_VALLE);
+  assertSoles(r.expectedTotal, SIG15 + PRECIO_BEBIDA - 1);
 });
 
 Deno.test("la hora valle da el mismo total que cualquier otra hora", () => {
   // La prueba más fuerte de que la promo está apagada: la hora dejó de mover el precio.
-  const valle = deriveCart([sig15(), bebida("D06")], null, HORA_VALLE);
-  const normal = deriveCart([sig15(), bebida("D06")], null, HORA_NORMAL);
+  const valle = deriveCart([sig15(), bebida(BEBIDA_CARA)], null, HORA_VALLE);
+  const normal = deriveCart([sig15(), bebida(BEBIDA_CARA)], null, HORA_NORMAL);
   assertSoles(valle.expectedTotal, normal.expectedTotal);
-  assertSoles(valle.expectedTotal, SIG15 + D06 - 1);
+  assertSoles(valle.expectedTotal, SIG15 + PRECIO_BEBIDA_CARA - 1);
 });
 
 Deno.test("R06 (sándwich gratis) no regala además la bebida del combo", () => {
   // El sándwich regalado sale del conteo de combo. Si siguiera contando, el combo
   // descontaría también sobre la bebida emparejada con algo que ya es gratis — el
   // defecto que se detectó en vivo el día que se reestructuraron R02-R06.
-  const r = deriveCart([sig15(), bebida("D07")], "R06", HORA_NORMAL);
-  assertSoles(r.expectedTotal, D07);
+  const r = deriveCart([sig15(), bebida(BEBIDA)], "R06", HORA_NORMAL);
+  assertSoles(r.expectedTotal, PRECIO_BEBIDA);
 });
 
 Deno.test("R05 (bebida gratis) cubre entera la bebida más cara que hoy existe", () => {
@@ -128,9 +129,9 @@ Deno.test("el tope de R05 sigue vivo aunque hoy ninguna bebida lo pase", () => {
 });
 
 Deno.test("R05 tampoco deja que la bebida regalada arrastre un combo", () => {
-  const r = deriveCart([sig15(), bebida("D07")], "R05", HORA_NORMAL);
+  const r = deriveCart([sig15(), bebida(BEBIDA)], "R05", HORA_NORMAL);
   // La bebida sale del conteo: no queda ningún par, así que no hay S/1 de combo.
-  assertSoles(r.expectedTotal, SIG15 + D07 - D07);
+  assertSoles(r.expectedTotal, SIG15 + PRECIO_BEBIDA - PRECIO_BEBIDA);
 });
 
 Deno.test("una recompensa sin producto elegible en el carrito se rechaza", () => {
@@ -169,10 +170,10 @@ Deno.test("organizador: el sándwich regalado sale del conteo de combo", () => {
   // contara, el combo regalaría también la bebida emparejada con un sándwich gratis.
   const carrito = [
     sig15(), sig15(), sig15(), sig15(), sig15(),
-    bebida("D07"), bebida("D07"), bebida("D07"), bebida("D07"), bebida("D07"),
+    bebida(BEBIDA), bebida(BEBIDA), bebida(BEBIDA), bebida(BEBIDA), bebida(BEBIDA),
   ];
   const r = deriveCart(carrito, null, HORA_NORMAL, true);
-  assertSoles(r.expectedTotal, SIG15 * 5 + D07 * 5 - 4 - SIG15);
+  assertSoles(r.expectedTotal, SIG15 * 5 + PRECIO_BEBIDA * 5 - 4 - SIG15);
 });
 
 Deno.test("sin la verificación del grupo, declarar el descuento no basta", () => {
@@ -198,7 +199,7 @@ Deno.test("el total nunca baja de cero por acumulación de descuentos", () => {
   // Antes esto se probaba con la bebida gratis de hora valle, que igualaba exactamente el
   // precio de una bebida sola. Retirada esa promo, el caso que queda es R05: regala la
   // bebida entera, así que una bebida sola con R05 tiene que dar 0 y no un negativo.
-  const r = deriveCart([bebida("D07")], "R05", HORA_NORMAL);
+  const r = deriveCart([bebida(BEBIDA)], "R05", HORA_NORMAL);
   assertSoles(r.expectedTotal, 0);
   assertEquals(r.expectedTotal >= 0, true);
 });

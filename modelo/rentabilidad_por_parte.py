@@ -61,8 +61,6 @@ RECARGO_PAN = {"B03": (0.50, 1.00)}   # lo que SE COBRA por la focaccia
 
 # Costo por porción YA CON MERMA DE COCCIÓN (res 0.54, pollo 0.64-0.69)
 PROT = {
-    "P01": (3.15, 6.30, "[COTIZADO] res ~S/20/kg, rendimiento 0.54"),
-    "P02": (2.47, 4.95, "[COTIZADO] pollo ~S/17/kg, rendimiento 0.64-0.69"),
     "P03": (2.49, 4.97, "[COTIZADO] pollo cajún, mismo rendimiento"),
     "P04": (3.25, 6.50, "[COTIZADO 2026-09-04] atún S/4 la lata de 140 g neto = S/43.96/kg"),
     "P05": (4.29, 8.59, "[ESTIMADO] embutido S/48/kg confirmado por el dueño, porción sin cotizar"),
@@ -71,27 +69,45 @@ PROT = {
     # porción es literalmente el precio del kilo por el gramaje, sin el ~1.85x de merma que
     # llevan las que sí pasan por la olla.
     "P08": (3.76, 7.51, "[WEB] pavo S/44.20/kg (retail Braedt S/43.75) — sin merma, rendimiento 1.00"),
+    # P09 entra con la carta v4 (2026-09-24): la res del Philly, laminada en frío y salteada.
+    # Rendimiento 0.70 SUPUESTO — hay que medirlo en la primera tanda (ver insumos.py).
+    "P09": (2.43, 4.86, "[COTIZADO] res ~S/20/kg laminada en frío, rendimiento 0.70 SUPUESTO"),
 }
-PROT_NOM = {"P01": "Res asada", "P02": "Pollo teriyaki", "P03": "Pollo cajún",
-            "P04": "Atún", "P05": "Embutido", "P06": "Albóndiga", "P08": "Pavo"}
-# Quién se puede armar DE VERDAD en ARMA EL TUYO. P01 y P05 salieron el 2026-09-05 por
-# rentabilidad (siguen en sus Signatures) y P03 es exclusiva del menú secreto. Se siguen
-# imprimiendo sus filas —el número es real y sirve para decidir si vuelven— pero NO cuentan
-# contra el techo: reportar como problema abierto algo que ya se cerró hace que la lista
-# final deje de leerse, que es la forma en que un tablero de control se muere.
-FUERA_DEL_ARMADOR = {"P01", "P05", "P03"}
+# Las que salieron con la carta v4 (2026-09-24): ya no se preparan. Se guardan SOLO para poder
+# costear la carta de apertura en comparaciones históricas (SIG_APERTURA, abajo).
+PROT_RETIRADA = {
+    "P01": (3.15, 6.30, "[COTIZADO] res ~S/20/kg, rendimiento 0.54"),
+    "P02": (2.47, 4.95, "[COTIZADO] pollo ~S/17/kg, rendimiento 0.64-0.69"),
+}
+# ── LA CARTA SALE DE modelo/carta.json (2026-09-24) ───────────────────────────────────
+# Que a su vez sale de supabase/functions/_shared/carta.ts, la misma que usan el cliente y el
+# servidor (`npm run exportar:carta` la regenera y `check:carta` falla si quedó vieja). Hasta hoy
+# este archivo tenía su propia copia —BYO, SIG, BEBIDA, los nombres y quién queda fuera del
+# armador— que check_costos.py comparaba con el servidor por regex.
+# ⚠ Es la SEMILLA de la carta: en producción mandan `catalog_prices` y `catalog_items`, y un
+# cambio de precio no está terminado hasta que la base lo refleje (ver CLAUDE.md).
+import json as _json
+_CARTA = _json.load(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "carta.json"), encoding="utf-8"))
+PROT_NOM = {p["id"]: f'{p["nombre"]} // {p["sabor"]}' for p in _CARTA["proteinas"]}
+# Quién NO se puede armar en ARMA EL TUYO: lo que la carta marca como exclusivo de un Signature
+# o del menú secreto. Se siguen imprimiendo sus filas —el número es real y sirve para decidir si
+# vuelven— pero NO cuentan contra el techo.
+FUERA_DEL_ARMADOR = {p["id"] for p in _CARTA["proteinas"] if p.get("soloEnSignature") or p.get("soloSecreto")}
 
 # Gramaje de toppings — estándar Subway desde 2026-09-04
-TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21}
+# T10 (cebolla blanca salteada, solo Philly): 70 g crudos que quedan en ~40 g. Se costea al
+# promedio de vegetales (S/4/kg) y no a su S/3/kg: sobreestima unos centavos, del lado seguro.
+TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21, "T10": 70}
 
-# ── PRECIOS REALES, leídos de la base 2026-09-05 ──────────────────────────────────────
-BYO = {  # catalog_prices, category='protein'
-    "P01": (14.90, 24.90, 7.00, 14.00), "P02": (13.90, 23.90, 6.00, 11.00),
-    "P03": (13.90, 23.90, 6.00, 11.00), "P04": (16.90, 32.90, 10.90, 21.90),
-    "P05": (16.90, 32.90, 9.90, 19.90), "P06": (14.90, 26.90, 6.00, 12.00),
-    "P08": (15.90, 28.90, 9.00, 17.00),
-}
-SIG = {  # catalog_items, fila vigente por item_id
+# ── PRECIOS: los de la carta (proteínas del armador y Signatures públicos) ─────────────
+BYO = {p["id"]: (p["p15"], p["p30"], p["dbl15"], p["dbl30"]) for p in _CARTA["proteinas"]}
+# (nombre, pan, proteína, vegetales, cuántas salsas, queso, precio 15CM, precio 30CM), en el
+# orden de la carta y sin el menú secreto, que cambia cada mes desde la base.
+SIG = {s["id"]: (s["nombre"], s["pan"], s["prot"], list(s["vegetales"]), len(s["salsas"]), s.get("queso"), s["p15"], s["p30"])
+       for s in sorted(_CARTA["signatures"], key=lambda x: x["orden"]) if not s.get("secreto")}
+# La carta de APERTURA, retirada el 2026-09-24. No se cobra: queda para comparar (la usa
+# menu_clasicos_usa.py como «el menú de hoy» de su análisis).
+SIG_APERTURA = {  # catalog_items, fila vigente por item_id
     "SIG01": ("The Original", "B01", "P01", ["T01", "T02", "T03"], 2, None, 20.90, 26.90),
     "SIG02": ("The Marinara", "B01", "P06", ["T01", "T03", "T05"], 1, "C01", 21.90, 28.90),
     "SIG03": ("The Smoke",    "B03", "P05", ["T03", "T02", "T01"], 1, "C02", 23.90, 34.90),
@@ -99,13 +115,10 @@ SIG = {  # catalog_items, fila vigente por item_id
     "SIG04": ("The Fresh",    "B01", "P04", [],                     0, None, 20.90, 34.90),
     "SIG06": ("The Teriyaki", "B01", "P02", ["T01", "T06"],        2, None, 19.90, 25.90),
 }
-BEBIDA = {  # catalog_prices, category='side'
-    "D06": ("The Bloom // Hibiscus", 6.0), "D07": ("The Midnight // Brew", 5.0),
-    "D08": ("The Cool // Mint", 6.0),
-    # D09 (The Spice // Chai) retirado el 2026-09-06: a medio litro quedaba en 42.5% de costo
-    # contra 19-32% de las tres infusiones, porque media botella de chai es media botella de
-    # LECHE (un insumo que se compra) mientras que en las otras el volumen es agua.
-}
+BEBIDA = {b["id"]: (f'{b["nombre"]} // {b["sabor"]}', float(b["precio"])) for b in _CARTA["bebidas"]}
+# D09 (The Spice // Chai) retirado el 2026-09-06: a medio litro quedaba en 42.5% de costo
+# contra 19-32% de las tres infusiones, porque media botella de chai es media botella de
+# LECHE (un insumo que se compra) mientras que en las otras el volumen es agua.
 # ── COSTO DE LAS BEBIDAS ──────────────────────────────────────────────────────────────
 #
 # ENVASE: [COTIZADO por el dueño 2026-09-05] S/138 por 200 unidades = **S/0.69 la botella**.
@@ -158,9 +171,9 @@ def veg(gramos, i):
     return (gramos if i == 0 else gramos * 2) / 1000 * TOPS_KG
 
 
-def costo_sig(sid, i):
-    _n, base, p, tops, ns, queso, _p15, _p30 = SIG[sid]
-    c = PROT[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg(sum(TOPS_G[t] for t in tops), i)
+def costo_sig(sid, i, carta=None):
+    _n, base, p, tops, ns, queso, _p15, _p30 = (carta or SIG)[sid]
+    c = {**PROT_RETIRADA, **PROT}[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg(sum(TOPS_G[t] for t in tops), i)
     if queso:
         c += QUESO[i]
     return c
@@ -300,10 +313,12 @@ if __name__ == "__main__":
 
     costo_r = {
         "R02": SALSA[0],
-        "R03": costo_byo("P01", 1) - costo_byo("P01", 0),
-        "R04": PROT["P01"][0],
-        "R05": costo_bebida("D06"),   # el tope de S/6 cubre entero a D06/D08
-        "R06": costo_byo("P02", 0),
+        # Peor caso sobre las proteínas del armador de HOY, no sobre una escrita a mano: la que
+        # más cuesta honrar es la que decide si la recompensa sale cara.
+        "R03": max(costo_byo(p, 1) - costo_byo(p, 0) for p in BYO if p not in FUERA_DEL_ARMADOR),
+        "R04": max(PROT[p][0] for p in BYO if p not in FUERA_DEL_ARMADOR),
+        "R05": max(costo_bebida(c) for c in BEBIDA_INSUMO),   # la bebida más cara de costear
+        "R06": max(costo_byo(p, 0) for p in BYO if p not in FUERA_DEL_ARMADOR),
     }
     for r, (pts, desc) in RECOMPENSA.items():
         c = costo_r[r]

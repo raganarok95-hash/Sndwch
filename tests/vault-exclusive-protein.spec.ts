@@ -8,7 +8,7 @@ import { gotoApp, irAlArmador, siguientePaso } from './helpers';
 // (ARMA EL TUYO es el nombre en español de lo que el código interno sigue llamando "byo"/
 // BUILD YOUR OWN — renombrado en la pasada de identidad visual "Prada Caffè".)
 
-test('POLLO CAJÚN (proteína exclusiva del menú secreto) no aparece en ARMA EL TUYO', async ({ page }) => {
+test('la proteína exclusiva del menú secreto no aparece en ARMA EL TUYO', async ({ page }) => {
   await gotoApp(page, {});
 
   // El armador es el lado de WICHO (se entra por la puerta) y arranca en el TAMAÑO; el paso
@@ -20,8 +20,18 @@ test('POLLO CAJÚN (proteína exclusiva del menú secreto) no aparece en ARMA EL
   await siguientePaso(page);
   await expect(page.locator('[aria-label="PROTEÍNA (aquí)"]')).toHaveCount(1);
 
-  // Otras proteínas del catálogo siguen disponibles normalmente.
-  await expect(page.locator('text=TERIYAKI').first()).toBeVisible();
-  // CAJUN es exclusiva del menú secreto (semilla actual, ver secret_signature) — no debe listarse como opción de ARMA EL TUYO.
-  await expect(page.locator('text=CAJUN')).not.toBeVisible();
+  // Qué es exclusivo del secreto y qué es del armador se pregunta a la carta de la app, no se
+  // escribe: el menú secreto rota cada mes y el armador cambia con la carta.
+  const { exclusivas, delArmador } = await page.evaluate(() => {
+    const w = window as any;
+    return {
+      exclusivas: w.PROTS.filter((p: any) => p.vaultOnly).map((p: any) => p.id),
+      delArmador: w.PROTS.filter((p: any) => !p.vaultOnly && !p.sigOnly).map((p: any) => p.id),
+    };
+  });
+  expect(exclusivas.length, 'la carta no marca ninguna proteína como exclusiva del secreto').toBeGreaterThan(0);
+  // Las del armador siguen disponibles normalmente…
+  for (const id of delArmador) await expect(page.locator(`[onclick^="prot='${id}'"]`).first()).toBeVisible();
+  // …y la del secreto no se lista como opción de ARMA EL TUYO.
+  for (const id of exclusivas) await expect(page.locator(`[onclick^="prot='${id}'"]`)).toHaveCount(0);
 });

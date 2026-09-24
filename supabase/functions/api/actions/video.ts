@@ -20,6 +20,8 @@
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { loadCatalogPrices, SIG_DATA, SIG_GATES, SIG_LABEL, PROT_LABEL, TOP_LABEL, SAUCE_LABEL, BASE_LABEL } from "../catalog.ts";
+import { PALETA } from "../../_shared/paleta.ts";
+import { ID_SECRETO, esSecreto } from "../../_shared/carta.ts";
 
 // Los 8 segundos son el tope duro de Veo en Flow, no una decisión nuestra: el guion se
 // escribe para ese largo porque es el que el dueño va a poder generar.
@@ -34,7 +36,7 @@ const BREAD_RULE =
   "The sandwich is ALWAYS a long sub/hoagie roll (Subway-style elongated bread), " +
   "never sliced loaf bread, never flatbread, never a square focaccia slab";
 const BRAND_RULE =
-  "Deep forest green (#1E3932) and warm gold (#CBA258) color grading, matte finish, " +
+  `Near-black forest green (${PALETA.bg}) and warm gold (${PALETA.oro}) color grading, matte finish, ` +
   "no glossy plastic look";
 
 // ── LA FICHA DE PERSONAJE, CONGELADA (2026-09-07) ─────────────────────────────────────
@@ -202,11 +204,11 @@ export function buildFlowPrompt(sigId: string, fmt: VideoFormato, angle: VideoAn
 export function flowPromptSemanal(videoIdea: string, semana: number): string {
   const letra = (String(videoIdea || "").trim()[0] || "").toUpperCase();
   const fmt = FORMATOS.find((f) => f.letra === letra) || FORMATOS[0];
-  const publicos = Object.keys(SIG_DATA).filter((id) => id !== "SIG05" && !SIG_GATES[id]);
+  const publicos = Object.keys(SIG_DATA).filter((id) => !esSecreto(id) && !SIG_GATES[id]);
   if (!publicos.length) return "";
   const n = Math.floor(Number(semana) || 0);
   const sigId = fmt.key === "secreto"
-    ? (SIG_DATA["SIG05"] ? "SIG05" : publicos[0])
+    ? (SIG_DATA[ID_SECRETO] ? ID_SECRETO : publicos[0])
     : publicos[((n % publicos.length) + publicos.length) % publicos.length];
   const angle = ANGLES[((n % ANGLES.length) + ANGLES.length) % ANGLES.length];
   return buildFlowPrompt(sigId, fmt, angle);

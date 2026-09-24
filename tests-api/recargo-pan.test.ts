@@ -19,12 +19,18 @@ import { priceCartItem } from "../supabase/functions/api/catalog.ts";
 import { BASE_SURCHARGE } from "../supabase/functions/api/env.ts";
 import { preciosVigentes } from "../supabase/functions/api/catalog.ts";
 import { tasarLinea } from "../supabase/functions/_shared/dinero.ts";
+import { unaProteinaDelArmador, unaSalsaDelArmador, unSignature } from "./carta.ts";
+
+// Productos de la carta, no escritos: la regla del pan no depende de qué sándwich haya este mes.
+const UN_SIGNATURE = unSignature();
+const UNA_PROTEINA = unaProteinaDelArmador();
+const UNA_SALSA = unaSalsaDelArmador();
 
 // El recargo se mide por el camino REAL de cobro: lo que cuesta el mismo sándwich con este pan
 // menos lo que cuesta con el pan clásico (B01). Una copia de la fórmula dentro de la prueba
 // coincidiría consigo misma aunque el cobro dejara de sumarlo.
 function baseSurcharge(base: string, size: "15" | "30"): number {
-  const precio = (b: string) => tasarLinea({ type: "byo", base: b, prot: "P02", sauces: [], size, qty: 1 }, preciosVigentes())!.base;
+  const precio = (b: string) => tasarLinea({ type: "byo", base: b, prot: UNA_PROTEINA, sauces: [], size, qty: 1 }, preciosVigentes())!.base;
   return (precio(base) - precio("B01")) / 100;
 }
 
@@ -37,7 +43,7 @@ const COSTO_SUB = { p15: 1.0, p30: 2.0 };
 // rentabilidad) y el servidor rechaza armarla por BYO. Esta prueba mide el RECARGO DEL PAN,
 // que no depende de la proteína — lo único que hacía falta era una que siga en el armador.
 const byo = (base: string, size: "15" | "30") => priceCartItem({
-  type: "byo", base, prot: "P02", tops: [], sauces: ["S01"], size, qty: 1,
+  type: "byo", base, prot: UNA_PROTEINA, tops: [], sauces: [UNA_SALSA], size, qty: 1,
 });
 
 Deno.test("el pan sub no cobra nada extra", () => {
@@ -94,7 +100,7 @@ Deno.test("R03 (subir a 30CM gratis) también perdona el salto del pan", () => {
 });
 
 Deno.test("el recargo se multiplica por la cantidad, como cualquier precio", () => {
-  const tres = priceCartItem({ type: "byo", base: "B03", prot: "P02", tops: [], sauces: ["S01"], size: "15", qty: 3 });
+  const tres = priceCartItem({ type: "byo", base: "B03", prot: UNA_PROTEINA, tops: [], sauces: [UNA_SALSA], size: "15", qty: 3 });
   const uno = byo("B03", "15");
   assertEquals(Math.round((tres.unitPrice - uno.unitPrice) * 100), 0, "el unitario no cambia con la cantidad");
   assertEquals(tres.qty, 3);
@@ -103,7 +109,7 @@ Deno.test("el recargo se multiplica por la cantidad, como cualquier precio", () 
 Deno.test("un Signature no lleva recargo de pan, elija lo que elija el cliente", () => {
   // En un Signature la receta fija el pan: el cliente no lo elige, así que no hay nada que
   // recargar. Mandar un `base` en el cuerpo del pedido no debe cambiar el precio.
-  const a = priceCartItem({ type: "sig", sigId: "SIG01", size: "15", qty: 1 });
-  const b = priceCartItem({ type: "sig", sigId: "SIG01", size: "15", qty: 1, base: "B03" });
+  const a = priceCartItem({ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 });
+  const b = priceCartItem({ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1, base: "B03" });
   assertEquals(a.unitPrice, b.unitPrice);
 });

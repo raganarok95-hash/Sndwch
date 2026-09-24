@@ -99,45 +99,34 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
   expect(JSON.stringify(po.body.items)).toContain('T09');
 });
 
-// EL APIO (T08) YA NO EXISTE EN EL CATÁLOGO — retirado el 2026-09-12 (decisión del dueño).
+// LO MARCADO `sigOnly` NO SE OFRECE EN EL ARMADOR, PERO SIGUE EN SUS SIGNATURES.
 //
-// Llevaba una semana en un estado imposible: `sigOnly` desde el 2026-09-04 porque THE FRESH
-// lo llevaba, y el 2026-09-05 esa receta pasó a atún escurrido + mayonesa + pimienta con
-// `tops:[]`. Desde ese día era un insumo que había que comprar, lavar y picar al momento
-// para CERO pedidos posibles, y nada avisaba: un ingrediente inalcanzable no produce ningún
-// error. Se retiró entero, como se retiró T07 (giardiniera) con THE CHICAGO.
-//
-// LA PRUEBA SIGUE, y ahora protege dos cosas distintas:
-//   a) que el mecanismo `sigOnly` siga funcionando — de él dependen T02 (Pepinillo),
-//      P01 (Res) y P05 (Embutido), y esos tres SÍ tienen consumidor;
-//   b) que nadie devuelva T08 al catálogo sin darle un consumidor. Volver a marcarlo
-//      `sigOnly` sin ponerlo en ninguna receta recrea exactamente el mismo agujero.
+// Preguntado a la carta de la app, nunca con códigos escritos: la carta cambia (la v4 del
+// 2026-09-24 retiró el pepinillo y dos proteínas, y agregó la cebolla salteada del Philly).
 //
 // Su modo de fallo es SILENCIO: si el filtro `!x.sigOnly` del armador se rompe, el cliente
-// vuelve a poder armar res y embutido por BYO —las dos que salieron por rentabilidad— sin que
-// nada falle, sin que ningún tipo se queje, y con el margen sangrando otra vez.
+// puede armar lo que solo existe dentro de un Signature —a un precio que el armador no está
+// hecho para cobrar— sin que nada falle ni ningún tipo se queje.
 test('lo marcado como sigOnly no aparece en ARMA EL TUYO, pero sigue en sus Signatures', async ({ page }) => {
   await gotoApp(page, {});
+  const { vegetales, deSignature } = await page.evaluate(() => {
+    const w = window as any;
+    const exclusivos = w.TOPS.filter((t: any) => t.sigOnly).map((t: any) => t.id);
+    return {
+      vegetales: { exclusivos, delArmador: w.TOPS.filter((t: any) => !t.sigOnly && !t.vaultOnly).map((t: any) => t.id) },
+      deSignature: exclusivos.map((id: string) => w.SIGS.some((s: any) => !s.secret && (s.tops || []).includes(id))),
+    };
+  });
 
-  // 1) No se ofrecen en el armador: ni apio, ni pepinillo.
+  // 1) No se ofrecen en el armador.
   await hastaLosVegetales(page);
-  // T08 ya no está en ninguna parte del catálogo; T02 sí existe, pero solo dentro de sus
-  // Signatures. Los dos tienen que dar cero acá, por motivos distintos.
-  await expect(page.locator('[onclick*="\'T08\'"]')).toHaveCount(0);
-  await expect(page.locator('[onclick*="\'T02\'"]')).toHaveCount(0);
-  // La lechuga sí, para confirmar que estamos mirando el paso correcto — y porque es
-  // justamente la que el dueño puso EN LUGAR del pepinillo.
-  await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
+  for (const id of vegetales.exclusivos) await expect(page.locator(`[onclick*="'${id}'"]`)).toHaveCount(0);
+  // Uno del armador sí, para confirmar que estamos mirando el paso correcto.
+  await expect(page.locator(`[onclick*="'${vegetales.delArmador[0]}'"]`).first()).toBeVisible();
 
-  // 2) Pero el pepinillo sigue vivo en las recetas que lo usan: si alguien lo borra del
-  //    catálogo en vez de marcarlo, THE ORIGINAL y THE SMOKE cambian de sabor en silencio.
-  const pepinilloEnRecetas = await page.evaluate(
-    () => (window as any).SIGS
-      .filter((s: any) => (s.tops || []).includes('T02'))
-      .map((s: any) => s.id),
-  );
-  expect(pepinilloEnRecetas).toContain('SIG01');
-  expect(pepinilloEnRecetas).toContain('SIG03');
+  // 2) Pero siguen vivos en las recetas que los usan: si alguien los borra del catálogo en
+  //    vez de marcarlos, esos Signatures cambian de sabor en silencio.
+  expect(deSignature.every(Boolean), 'un vegetal exclusivo ya no lo lleva ningún Signature').toBe(true);
 });
 
 // Un ingrediente marcado `sigOnly` que ningún Signature usa no restringe nada: lo vuelve

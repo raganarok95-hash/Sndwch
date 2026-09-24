@@ -21,12 +21,16 @@ function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
 import { buildFlowPrompt, FORMATOS, ANGLES } from "../supabase/functions/api/actions/video.ts";
+import { unSignature } from "./carta.ts";
+
+// Un Signature vigente cualquiera: estas reglas del prompt valen para cualquier sándwich.
+const UN_SIGNATURE = unSignature();
 
 const fmt = (k: string) => FORMATOS.find((f) => f.key === k)!;
 const prompt = (sigId: string, k: string) => buildFlowPrompt(sigId, fmt(k), ANGLES[0]);
 
 Deno.test("el prompt ancla a los dos hermanos, y los ancla PRIMERO", () => {
-  const p = prompt("SIG01", "pleito");
+  const p = prompt(UN_SIGNATURE, "pleito");
   assert(/CALM BROTHER/.test(p), "el prompt no nombra al hermano calmado");
   assert(/WILD BROTHER/.test(p), "el prompt no nombra al hermano alocado");
   // EL ORDEN ES LA PRUEBA: si la escena va antes que el personaje, la escena moldea al
@@ -40,7 +44,7 @@ Deno.test("el prompt ancla a los dos hermanos, y los ancla PRIMERO", () => {
 Deno.test("los hermanos nunca comparten primer plano ni se tocan", () => {
   // Está reportado que la identidad se degrada en Flow cuando dos personajes comparten primer
   // plano o se tocan. La regla vive en el prompt, no en la cabeza de quien lo pega.
-  const p = prompt("SIG01", "pleito");
+  const p = prompt(UN_SIGNATURE, "pleito");
   assert(/must not share a tight close-up/i.test(p), "falta la regla de no compartir primer plano");
   assert(/must not touch/i.test(p), "falta la regla de no tocarse");
 });
@@ -48,7 +52,7 @@ Deno.test("los hermanos nunca comparten primer plano ni se tocan", () => {
 Deno.test("EL SECRETO no le manda los ingredientes al modelo", () => {
   // No alcanza con decir "no muestres el producto": mandarle la receta es la forma más fácil
   // de que aparezca en cuadro igual y queme el menú secreto.
-  const p = prompt("SIG01", "secreto");
+  const p = prompt(UN_SIGNATURE, "secreto");
   assert(/never revealed on camera/i.test(p), "EL SECRETO no advierte que el producto no se muestra");
   assert(!/The sandwich is/i.test(p), "EL SECRETO le está mandando los ingredientes al modelo");
 });
@@ -57,7 +61,7 @@ Deno.test("el pan siempre es sub, y la marca entra en el cierre", () => {
   // La del pan es FACTUAL, no estética: los nombres de los panes describen sabor, no forma —
   // un modelo que lea "focaccia" sin esto devuelve un pan plano cuadrado. La del "//" junto a
   // la cara es la mitigación medida del efecto vampiro (que el personaje se robe la marca).
-  const p = prompt("SIG04", "receta");
+  const p = prompt(UN_SIGNATURE, "receta");
   assert(/sub\/hoagie roll/i.test(p), "falta la regla del pan sub");
   assert(/never sliced loaf bread/i.test(p), "el prompt no prohíbe el pan de molde");
   assert(/"\/\/" mark/.test(p), "el cierre no lleva el // junto a los personajes");

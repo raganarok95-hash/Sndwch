@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924185004
+-- foto-tomada-tras-migracion: 20260924221018
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -981,6 +981,64 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_ord public.orders;
+  v_cli public.customers;
+  v_phone text := p_deshacer->>'phone';
+  v_puntos int := coalesce((p_deshacer->>'points_delta')::int, 0);
+  v_credito numeric := coalesce((p_deshacer->>'credit_delta')::numeric, 0);
+  v_invita text;
+begin
+  update public.orders set status = 'CANCELADO', cancel_reason = p_motivo
+   where id = p_order_id
+     and case when p_desde is null then status not in ('ENTREGADO', 'CANCELADO') else status = any(p_desde) end
+  returning * into v_ord;
+  if not found then
+    return jsonb_build_object('cancelado', false);
+  end if;
+
+  perform public.restock_inventory(p_codes, p_qtys);
+
+  if v_phone is not null then
+    select * into v_cli from public.customers where phone = v_phone for update;
+    if found and coalesce((p_deshacer->>'pagado')::boolean, false) and v_cli.referral_bonus_granted
+       and v_cli.total_orders = 1 and v_cli.referred_by is not null
+       and exists (select 1 from public.customers where phone = v_cli.referred_by) then
+      v_invita := v_cli.referred_by;
+    end if;
+
+    perform public.finalize_order_customer_update(
+      v_phone, v_puntos, v_credito,
+      coalesce((p_deshacer->>'total_orders_delta')::int, 0), null,
+      coalesce((p_deshacer->>'redeemed_delta')::int, 0), null, 0, 0);
+
+    if v_puntos <> 0 then
+      insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
+      values (v_phone, 'cancel_reversal', v_puntos, p_deshacer->>'desc_puntos', v_ord.ref, true);
+    end if;
+    if v_credito > 0 then
+      insert into public.credit_ledger (customer_phone, delta, reason)
+      values (v_phone, v_credito, p_deshacer->>'desc_credito');
+    end if;
+    if v_invita is not null then
+      perform public.reverse_referral_bonus(v_phone, v_invita, (p_deshacer->>'referral_bonus')::int, (p_deshacer->>'referrer_bonus')::int);
+      insert into public.transactions (customer_phone, type, points, description, confirmed)
+      values (v_phone, 'cancel_reversal', -(p_deshacer->>'referral_bonus')::int, p_deshacer->>'desc_bono', true),
+             (v_invita, 'cancel_reversal', -(p_deshacer->>'referrer_bonus')::int, p_deshacer->>'desc_bono', true);
+    end if;
+  end if;
+
+  return jsonb_build_object('cancelado', true, 'order', to_jsonb(v_ord), 'bono_revertido', v_invita is not null);
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -1642,6 +1700,42 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.reponer_tanda(p_items jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  it jsonb;
+  v_code text;
+  v_add int;
+  v_to int;
+  out jsonb := '[]'::jsonb;
+begin
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'reponer_tanda: no hay insumos';
+  end if;
+  for it in select * from jsonb_array_elements(p_items) loop
+    v_code := nullif(trim(it->>'code'), '');
+    v_add := (it->>'add')::int;
+    if v_code is null then raise exception 'reponer_tanda: falta el código de un insumo'; end if;
+    -- Solo suma: bajar un número es la edición normal de stock, que fija el valor exacto.
+    if v_add is null or v_add <= 0 then raise exception 'reponer_tanda: la cantidad de % debe ser mayor a 0', v_code; end if;
+    insert into public.inventory as inv (product_code, product_name, stock_qty, in_stock, batch_cooked_at)
+    values (v_code, nullif(trim(it->>'name'), ''), v_add, true, now())
+    on conflict (product_code) do update
+      set stock_qty = coalesce(inv.stock_qty, 0) + v_add,
+          in_stock = true,
+          batch_cooked_at = now()
+    returning inv.stock_qty into v_to;
+    out := out || jsonb_build_array(jsonb_build_object('code', v_code, 'from', v_to - v_add, 'to', v_to));
+  end loop;
+  return out;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.reserve_inventory(p_codes text[], p_qtys integer[])
  RETURNS void
  LANGUAGE plpgsql
@@ -2035,6 +2129,34 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_ord public.orders;
+begin
+  -- El filtro `customer_phone is null` es el reclamo: dos registros a la vez contra el mismo
+  -- pedido, y solo el primero afecta una fila.
+  update public.orders set customer_phone = p_phone
+   where ref = p_ref and customer_phone is null
+  returning * into v_ord;
+  if not found then
+    return jsonb_build_object('vinculado', false);
+  end if;
+  -- Solo lo que ya se cobró da puntos. Un Yape pendiente queda vinculado y los gana cuando el
+  -- dueño lo confirme (confirmar_pago_manual ya sabe a qué cuenta va).
+  if v_ord.payment_status = 'paid' and v_ord.status <> 'CANCELADO' and p_cuenta is not null then
+    return public.aplicar_pedido_a_la_cuenta(p_cuenta || jsonb_build_object('phone', p_phone), v_ord.ref, p_rangos)
+           || jsonb_build_object('vinculado', true, 'acreditado', true);
+  end if;
+  return jsonb_build_object('vinculado', true, 'acreditado', false);
+end;
+$function$
+;
+
 revoke all on function public.add_gifted_credit(p_to_phone text, p_amount numeric) from public; grant execute on function public.add_gifted_credit(p_to_phone text, p_amount numeric) to postgres; grant execute on function public.add_gifted_credit(p_to_phone text, p_amount numeric) to service_role;
 
 revoke all on function public.adjust_credit_balance(p_phone text, p_delta numeric) from public; grant execute on function public.adjust_credit_balance(p_phone text, p_delta numeric) to postgres; grant execute on function public.adjust_credit_balance(p_phone text, p_delta numeric) to service_role;
@@ -2042,6 +2164,8 @@ revoke all on function public.adjust_credit_balance(p_phone text, p_delta numeri
 revoke all on function public.admin_adjust_credit(p_phone text, p_delta numeric) from public; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to postgres; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to service_role;
 
 revoke all on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) from public; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to postgres; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to service_role;
+
+revoke all on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) from public; grant execute on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) to postgres; grant execute on function public.cancelar_pedido(p_order_id text, p_desde text[], p_motivo text, p_codes text[], p_qtys integer[], p_deshacer jsonb) to service_role;
 
 revoke all on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) from public; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to postgres; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to service_role;
 
@@ -2093,6 +2217,8 @@ revoke all on function public.register_login_failure(p_phone text, p_max_attempt
 
 revoke all on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) from public; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to postgres; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to service_role;
 
+revoke all on function public.reponer_tanda(p_items jsonb) from public; grant execute on function public.reponer_tanda(p_items jsonb) to postgres; grant execute on function public.reponer_tanda(p_items jsonb) to service_role;
+
 revoke all on function public.reserve_inventory(p_codes text[], p_qtys integer[]) from public; grant execute on function public.reserve_inventory(p_codes text[], p_qtys integer[]) to postgres; grant execute on function public.reserve_inventory(p_codes text[], p_qtys integer[]) to service_role;
 
 revoke all on function public.reset_login_attempts(p_phone text) from public; grant execute on function public.reset_login_attempts(p_phone text) to postgres; grant execute on function public.reset_login_attempts(p_phone text) to service_role;
@@ -2110,6 +2236,8 @@ revoke all on function public.verify_cron_secret(p_secret text) from public; gra
 revoke all on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) from public; grant execute on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) to postgres; grant execute on function public.verify_login_code(p_email text, p_code text, p_max_attempts integer) to service_role;
 
 revoke all on function public.verify_pin(p_phone text, plain text) from public; grant execute on function public.verify_pin(p_phone text, plain text) to postgres; grant execute on function public.verify_pin(p_phone text, plain text) to service_role;
+
+revoke all on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.vincular_pedido_de_invitado(p_ref text, p_phone text, p_cuenta jsonb, p_rangos jsonb) to service_role;
 
 CREATE TRIGGER catalog_items_append_only BEFORE DELETE OR UPDATE ON public.catalog_items FOR EACH ROW EXECUTE FUNCTION forbid_update_delete();
 

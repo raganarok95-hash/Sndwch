@@ -27,9 +27,13 @@ function assertThrows(fn: () => unknown, texto: string, status?: number) {
 import { validarEntrada } from "../supabase/functions/api/entrada.ts";
 import { CONTRATO } from "../supabase/functions/_shared/contrato.ts";
 import * as e from "../supabase/functions/_shared/esquema.ts";
+import { unSignature } from "./carta.ts";
+
+// Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
+const UN_SIGNATURE = unSignature();
 
 const UUID = "0b7e3f6a-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
-const ITEM = { type: "sig", sigId: "SIG01", size: "15", qty: 1 };
+const ITEM = { type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 };
 
 Deno.test("el id de dirección llega como texto o como número y adentro es SIEMPRE número", () => {
   const base = { token: "t", items: [ITEM], weekday: 4, slot: "19:00" };

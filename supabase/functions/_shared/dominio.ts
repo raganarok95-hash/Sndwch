@@ -67,3 +67,10 @@ export type FijoSugerido = {
   weekday: number | null;
   slot: string | null;
 };
+
+/** Un pedido como lo ve su dueño en «Tus pedidos» (my-orders). Solo lo que la pantalla usa; con
+ *  referencia de invitado el servidor manda menos columnas, y `items` puede no venir. */
+export type PedidoDelCliente = Pick<
+  Fila<'orders'>,
+  'id' | 'ref' | 'summary' | 'total' | 'status' | 'payment_status' | 'created_at' | 'delivered_at'
+> & { items?: ItemCarrito[] | null };

@@ -489,6 +489,33 @@ body.kb-open #app{padding-bottom:0}
 .mfj .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .mfj .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .mfj button:focus-visible{outline:2px solid #F2F6F8;outline-offset:-4px}
+/* TUS PEDIDOS · LOS SELLOS (maqueta tus-pedidos-los-sellos.png, fuente v2.html #2). */
+.mtp{position:relative;min-height:100dvh;box-sizing:border-box;background:#EFE9DC;color:#2B2A20;padding:0 0 40px;overflow:hidden}
+.mtp em,.mtp s,.mtp n{text-decoration:none;font-style:normal;display:block}
+.mtp .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#fff}
+.mtp .ult{all:unset;cursor:pointer;display:block;position:relative;width:100%;height:282px;overflow:hidden;background:#20261C}
+.mtp .ult img{width:100%;height:100%;object-fit:cover;display:block}
+.mtp .ult .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,12,.4) 0 20%,transparent 44%,rgba(10,16,12,.92))}
+.mtp .ult .tx{position:absolute;left:24px;right:24px;bottom:15px}
+.mtp .ult .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+.mtp .ult .tx b{display:block;font:800 20px/1.15 Archivo,sans-serif;color:#fff;margin-top:7px}
+.mtp .ult .tx s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#C4CBD0;margin-top:6px;text-transform:uppercase}
+.mtp .rep{all:unset;box-sizing:border-box;cursor:pointer;width:100%;height:54px;background:#20261C;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.mtp .rep span{font:700 12px/1 Archivo,sans-serif;letter-spacing:.2em;color:#EFE9DC;text-transform:uppercase}
+.mtp .rep b{font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:13px;color:#CBA258}
+.mtp .cuerpo{padding:26px 24px 0}
+.mtp .cont{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #DCD3BE;padding-bottom:13px}
+.mtp .cont em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8B8270;text-transform:uppercase;padding-bottom:7px}
+.mtp .cont b{font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.82;color:#2B2A20}
+.mtp .sellos{margin-top:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.mtp .se{all:unset;box-sizing:border-box;cursor:pointer;aspect-ratio:1;border:1px solid #CFC5AC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#F7F2E5}
+.mtp .se s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#A79C86}
+.mtp .se n{font:800 13px/1 Archivo,sans-serif;color:#2B2A20}
+.mtp .se.hoy{background:#20261C;border-color:#20261C}
+.mtp .se.hoy s{color:#9AA48E}.mtp .se.hoy n{color:#EFE9DC}
+.mtp .pie{margin:56px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8B8270;line-height:1.85;text-transform:uppercase}
+.mtp button:focus-visible{outline:2px solid #20261C;outline-offset:2px}
+.mtp .ult:focus-visible,.mtp .rep:focus-visible{outline-color:#8CC8EC;outline-offset:-4px}
 /* PEDIDO GRUPAL — docs/maquetas/aprobadas/pedido-grupal.png (k1.html #GR). CSS copiado de la
    fuente; las filas van en flujo porque la gente del grupo puede ser una o doce. */
 .mgr{position:relative;min-height:100dvh;box-sizing:border-box;padding:80px 26px 110px;color:#33230F;background:#C6A579;

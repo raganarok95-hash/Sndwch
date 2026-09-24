@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, entrarConTelefono, cartaDeLaApp } from './helpers';
 
 // C7 — El dueño cocina por tandas 1-2 veces por semana. Al terminar sabe cuánto PRODUJO,
 // no cuánto suma eso con lo que sobró: hacer esa cuenta a mano por cada insumo, recién
@@ -25,8 +25,15 @@ const MOCK_ORDER = {
   created_at: new Date().toISOString(),
 };
 
-// P01 arranca con 4 porciones en stock: es lo que sobró de la tanda anterior.
-const INVENTARIO = { P01: { inStock: true, qty: 4 } };
+// Una proteína de la carta que la app tiene cargada (se lee tras cargarla, ver cadaTest): no se
+// escribe ningún código porque la carta cambia. Arranca con 4 porciones en stock: lo que sobró
+// de la tanda anterior. `loadInventory` pide el catálogo recién al abrirse, así que la respuesta
+// ya sale con la proteína leída.
+let PROT = '';
+const INVENTARIO = () => ({ inventory: { [PROT]: { inStock: true, qty: 4 } } });
+async function leerProteina(page: any) {
+  PROT = (await cartaDeLaApp(page)).proteina();
+}
 
 async function abrirInventario(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
@@ -41,31 +48,36 @@ test('registrar una tanda suma lo producido en vez de reemplazar el stock', asyn
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000000', name: 'Admin' }, isAdmin: true, token: 'tok-admin' },
     'admin-orders': () => ({ orders: [MOCK_ORDER], truncated: false }),
-    'get-catalog': { inventory: INVENTARIO },
+    'get-catalog': INVENTARIO,
     'admin-inventory-restock': (body: any) => ({
       success: true,
       applied: body.items.map((it: any) => ({ code: it.code, from: 4, to: 4 + it.add })),
     }),
   });
+  await leerProteina(page);
   await abrirInventario(page);
 
   // En modo "Fijar cantidad" (el de siempre) el campo trae el stock actual.
-  await expect(page.locator('#qty-P01')).toHaveValue('4');
+  await expect(page.locator(`#qty-${PROT}`)).toHaveValue('4');
 
   await page.getByText('Sumar tanda', { exact: true }).click();
   // Vacío a propósito: si mostrara "4", escribir 30 encima significaría "fija 30" para el
   // ojo y "suma 30 a los 4" para el sistema.
-  await expect(page.locator('#qty-P01')).toHaveValue('');
+  await expect(page.locator(`#qty-${PROT}`)).toHaveValue('');
   await expect(page.locator('text=/Se suma a lo que quedaba/')).toBeVisible();
 
-  await page.locator('#qty-P01').fill('30');
+  await page.locator(`#qty-${PROT}`).fill('30');
   await page.getByRole('button', { name: 'Registrar la tanda //' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
   await expect.poll(() => calls.filter((c) => c.action === 'admin-inventory-restock').length).toBeGreaterThan(0);
   const call = calls.find((c) => c.action === 'admin-inventory-restock')!;
   // Va lo PRODUCIDO, no el total: el servidor lee la fila fresca y suma.
-  expect(call.body.items).toEqual([{ code: 'P01', name: 'Res // Asado', add: 30 }]);
+  const nombre = await page.evaluate((id: string) => {
+    const p = (window as any).PROTS.find((x: any) => x.id === id);
+    return p.s ? p.l + ' // ' + p.s : p.l;
+  }, PROT);
+  expect(call.body.items).toEqual([{ code: PROT, name: nombre, add: 30 }]);
   // Una sola llamada para toda la tanda.
   expect(calls.filter((c) => c.action === 'admin-inventory-restock').length).toBe(1);
   // Y la pantalla muestra el resultado que devolvió el servidor, no un cálculo local.
@@ -76,9 +88,10 @@ test('una tanda sin ninguna cantidad escrita no llama al servidor', async ({ pag
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000000', name: 'Admin' }, isAdmin: true, token: 'tok-admin' },
     'admin-orders': () => ({ orders: [MOCK_ORDER], truncated: false }),
-    'get-catalog': { inventory: INVENTARIO },
+    'get-catalog': INVENTARIO,
     'admin-inventory-restock': () => ({ success: true, applied: [] }),
   });
+  await leerProteina(page);
   await abrirInventario(page);
   await page.getByText('Sumar tanda', { exact: true }).click();
   await page.getByRole('button', { name: 'Registrar la tanda //' }).click();
@@ -91,15 +104,16 @@ test('una tanda no acepta cantidades en cero o negativas', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: { customer: { phone: '900000000', name: 'Admin' }, isAdmin: true, token: 'tok-admin' },
     'admin-orders': () => ({ orders: [MOCK_ORDER], truncated: false }),
-    'get-catalog': { inventory: INVENTARIO },
+    'get-catalog': INVENTARIO,
     'admin-inventory-restock': () => ({ success: true, applied: [] }),
   });
+  await leerProteina(page);
   await abrirInventario(page);
   await page.getByText('Sumar tanda', { exact: true }).click();
 
   // Una tanda solo SUMA: para bajar un número está la edición normal, que fija el valor
   // exacto. Aceptar un negativo acá convertiría "reponer" en un descuento silencioso.
-  await page.locator('#qty-P01').fill('-5');
+  await page.locator(`#qty-${PROT}`).fill('-5');
   await page.getByRole('button', { name: 'Registrar la tanda //' }).click();
   await expect(page.locator('text=/Una tanda solo suma/')).toBeVisible();
   expect(calls.find((c) => c.action === 'admin-inventory-restock')).toBeFalsy();

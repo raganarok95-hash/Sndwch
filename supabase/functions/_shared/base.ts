@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924185004
+// generado-contra-migracion: 20260924221018
 export type Json =
   | string
   | number
@@ -1804,6 +1804,17 @@ export type Database = {
         Args: { p_cuenta: Json; p_rangos?: Json; p_ref: string }
         Returns: Json
       }
+      cancelar_pedido: {
+        Args: {
+          p_codes: string[]
+          p_desde: string[]
+          p_deshacer: Json
+          p_motivo: string
+          p_order_id: string
+          p_qtys: number[]
+        }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_minutes: number }
         Returns: boolean
@@ -2070,6 +2081,7 @@ export type Database = {
         Args: { p_order_ref: string; p_phone: string; p_promo_id: string }
         Returns: undefined
       }
+      reponer_tanda: { Args: { p_items: Json }; Returns: Json }
       reserve_inventory: {
         Args: { p_codes: string[]; p_qtys: number[] }
         Returns: undefined
@@ -2110,6 +2122,10 @@ export type Database = {
         Returns: boolean
       }
       verify_pin: { Args: { p_phone: string; plain: string }; Returns: boolean }
+      vincular_pedido_de_invitado: {
+        Args: { p_cuenta: Json; p_phone: string; p_rangos?: Json; p_ref: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

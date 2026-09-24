@@ -14,9 +14,10 @@
 // sí promete es el LUGAR GUARDADO (servidor: franja.ts).
 import { html, nothing, render, type TemplateResult } from 'lit-html';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
-import type { Direccion, FijoDelCliente, FijoSugerido, ItemCarrito } from '../../../supabase/functions/_shared/dominio.ts';
+import type { Direccion, FijoDelCliente, FijoSugerido } from '../../../supabase/functions/_shared/dominio.ts';
 import { llamar } from '../api';
 import { legado } from '../legado';
+import { diaMinuscula, diasPlural, direccionConMapa, imagenDe } from './comun';
 
 type Fijo = FijoDelCliente;
 type Sugerido = FijoSugerido;
@@ -37,13 +38,6 @@ function cambiar(parcial: Partial<Estado>): void {
 }
 
 // ── Texto ─────────────────────────────────────────────────────────────────────────────
-function diaMinuscula(w: number): string {
-  return (legado.diasSemana[w] || '').toLowerCase();
-}
-function diasPlural(w: number): string {
-  const d = diaMinuscula(w);
-  return /s$/.test(d) ? d : d + 's';
-}
 /** "19:30" → "7:30 p.m." y "19:00" → "7 p.m.", como horaLima. */
 export function hhmmATexto(hhmm: string | null): string {
   const [h, m] = String(hhmm || '').split(':').map(Number);
@@ -59,26 +53,13 @@ function actual(): Fijo | null {
 function direccionDe(f: Fijo | null): Direccion | null {
   const dirs = legado.direcciones;
   const suya = f && f.addressId != null ? dirs.find((d) => d.id === f.addressId) : undefined;
-  return suya || dirs.find((d) => typeof d.lat === 'number' && typeof d.lon === 'number') || null;
+  return suya || direccionConMapa();
 }
 /** «Te sale»: la comida a precio de hoy más el envío a SU dirección, con la tarifa del checkout. */
 function totalDe(precio: number | null, f: Fijo | null): number | null {
   if (precio == null) return null;
   const envio = legado.envioA(direccionDe(f));
   return envio == null ? null : precio + envio;
-}
-function imagenDe(items: ItemCarrito[]): string {
-  for (const it of items) {
-    if (it.sigId) {
-      const img = legado.imagenSignature(it.sigId);
-      if (img) return img;
-    }
-    if (it.type !== 'side' && it.prot) {
-      const img = legado.imagenProteina(it.prot);
-      if (img) return img;
-    }
-  }
-  return '';
 }
 function inicioDeHoraIso(ms: number): string {
   const d = new Date(ms);

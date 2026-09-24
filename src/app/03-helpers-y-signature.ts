@@ -73,7 +73,7 @@ function contactFooterHTML(){
     +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
     +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#9DA096')+'Delivery — '+BIZ_CITY+'</div>'
     +'<div style="display:flex;align-items:center;gap:7px">'+icon('mail',13,'#9DA096')+'<a href="mailto:'+BIZ_EMAIL+'" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">'+BIZ_EMAIL+'</a></div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#A8C8B0);text-decoration:none">+51 930 957 640</a></div>'
+    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">+51 930 957 640</a></div>'
     +'</div>'
     +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+GOLD+'">'+igIcon+'</a>'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
@@ -182,7 +182,7 @@ function googleCtaHTML(texto?){
     +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
     +'</div>';
 }
-function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:5px">'+s+'</p>':'')+'</div>';}
+function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
 // la mayoría de teléfonos de los clientes.
@@ -502,19 +502,23 @@ function confirmRerender(){syncConfirmFields();render();}
 // sobre S/23.90. A 15CM porque es el 80% del negocio según la hipótesis del dueño.
 // Números de `modelo/rentabilidad_por_parte.py`, que lee `catalog_prices` y
 // `catalog_items` (la base), nunca los literales del código:
-//   SIG02 Marinara S/17.43 · SIG03 Smoke S/16.14 · SIG04 Fresh S/15.35
-//   SIG01 Original S/14.70 · SIG06 Teriyaki S/14.43
+//   carta v4 (2026-09-24), `deja` a 15CM de modelo/menu_clasicos_usa.py:
+//   SIG09 Philly S/17.48 · SIG02 Meatball S/17.43 · SIG10 Turkey S/17.28
+//   SIG12 Tuna Melt S/16.96 · SIG11 Hoagie S/16.37 · SIG04 Classic Tuna S/15.35
 //
 // NO es menu engineering completo: la matriz de Kasavana & Smith cruza margen con
 // POPULARIDAD, y popularidad todavía no existe — el negocio no ha abierto. Esto ordena por
 // la única de las dos dimensiones que hoy se puede medir, y habrá que rehacerlo con ventas
 // reales. Un Signature que se venda el triple puede merecer la primera fila aunque deje
 // S/1 menos.
-var SIG_DISPLAY_ORDER=['SIG02','SIG03','SIG04','SIG01','SIG06'];
+//
+// El orden vive en la carta (`orden` de cada Signature en `_shared/carta.ts`), no acá: antes era
+// una lista de códigos que se quedaba atrás cada vez que la carta cambiaba. Un Signature que la
+// base agrega sin estar en la carta va al final.
 function sigsEnOrden(lista){
+  var o=CARTA_VIEJA.ORDEN;
   return lista.slice().sort(function(a,b){
-    var ia=SIG_DISPLAY_ORDER.indexOf(a.id),ib=SIG_DISPLAY_ORDER.indexOf(b.id);
-    return (ia<0?99:ia)-(ib<0?99:ib);
+    return (o[a.id]!=null?o[a.id]:999)-(o[b.id]!=null?o[b.id]:999);
   });
 }
 function lastPaidOrder(){
@@ -1708,7 +1712,7 @@ function sOSig(){
   // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
   var lastOrdSig=cust?lastPaidOrder():null;
   var recoItemsSig=lastOrdSig?lastOrdSig.items:null;
-  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
+  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
   // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
   // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
   // el repo está en comentarios, que nombran el modo por su nombre viejo y no los ve nadie).
@@ -1724,7 +1728,7 @@ function sOSig(){
       var myTotal=cust.total_orders||0;
       if(myTotal<s.minOrders){
         var missing=s.minOrders-myTotal;
-        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
+        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
       }
     }
     var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
@@ -1746,7 +1750,7 @@ function sOSig(){
     var priceSub=size||s.p30<=s.p15?'':'30CM '+SOLES+pz(s.p30);
     if(!av){
       var notifyRequested=restockNotified.indexOf(s.id)>=0;
-      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
+      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
         // Antes esto desaparecía sin dejar rastro para un invitado sin cuenta — parecía un
         // callejón sin salida en vez de una invitación a registrarse (hallazgo de auditoría
         // UX, MEDIO).
@@ -1908,7 +1912,7 @@ function sigPreviewOverlayHTML(){
     // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
     // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
     +(s.secret
-      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#A8C8B0);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
+      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
       :'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
       +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.8">'
       +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'

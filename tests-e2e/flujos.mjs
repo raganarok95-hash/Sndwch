@@ -53,10 +53,10 @@ export const FLUJOS = {
     afirmar(valor(s, `select pin = '4321' from customers where phone = '${phone}'`) === 'f', 'el PIN quedó guardado en texto plano');
   },
 
-  async 'pedir pagando con crédito: se cobra el total justo y queda saldo, pedido e historial'(s, precios) {
+  async 'pedir pagando con crédito: se cobra el total justo y queda saldo, pedido e historial'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
     s.sql(`update customers set credit_balance = 100 where phone = '${phone}'`);
-    const items = [{ type: 'sig', sigId: 'SIG01', size: '15', qty: 1 }, { type: 'side', code: 'D07', qty: 1 }];
+    const items = [{ type: 'sig', sigId: carta.signature(0), size: '15', qty: 1 }, { type: 'side', code: carta.bebida(0), qty: 1 }];
     const comida = resolverCarrito(items, {}, precios).total;
     const total = Math.round((comida + ENVIO_MINIMO) * 100) / 100;
     const r = await s.llamar('place-order', {
@@ -76,10 +76,10 @@ export const FLUJOS = {
       valor(s, `select string_agg(type || ':' || points || ':' || coalesce(description,''), ' | ') from transactions where customer_phone = '${phone}'`));
   },
 
-  async 'un total manipulado se rechaza y no toca nada'(s, precios) {
+  async 'un total manipulado se rechaza y no toca nada'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
     s.sql(`update customers set credit_balance = 100 where phone = '${phone}'`);
-    const items = [{ type: 'sig', sigId: 'SIG02', size: '30', qty: 1 }];
+    const items = [{ type: 'sig', sigId: carta.signature(1), size: '30', qty: 1 }];
     const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO - 1;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-TRAMPA', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
@@ -90,11 +90,11 @@ export const FLUJOS = {
     afirmar(valor(s, `select credit_balance from customers where phone = '${phone}'`) === '100.00', 'el crédito cambió con un pedido rechazado');
   },
 
-  async 'Yape: queda pendiente, reserva stock y la cancelación lo devuelve'(s, precios) {
+  async 'Yape: queda pendiente, reserva stock y la cancelación lo devuelve'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
-    s.sql(`insert into inventory (product_code, stock_qty) values ('D08', 5) on conflict (product_code) do update set stock_qty = 5`);
+    s.sql(`insert into inventory (product_code, stock_qty) values ('${carta.bebida(1)}', 5) on conflict (product_code) do update set stock_qty = 5`);
     const puntosAntes = valor(s, `select points from customers where phone = '${phone}'`);
-    const items = [{ type: 'side', code: 'D08', qty: 2 }];
+    const items = [{ type: 'side', code: carta.bebida(1), qty: 2 }];
     const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-YAPE', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
@@ -102,22 +102,22 @@ export const FLUJOS = {
     });
     afirmar(r.status === 200, `place-order yape: ${r.status} ${r.error || ''}`);
     afirmar(valor(s, `select payment_status from orders where ref = 'E2E-YAPE'`) === 'pending', 'el pedido Yape no quedó pendiente');
-    afirmar(valor(s, `select stock_qty from inventory where product_code = 'D08'`) === '3', 'no se reservó el stock: ' + valor(s, `select stock_qty from inventory where product_code = 'D08'`));
+    afirmar(valor(s, `select stock_qty from inventory where product_code = '${carta.bebida(1)}'`) === '3', 'no se reservó el stock: ' + valor(s, `select stock_qty from inventory where product_code = '${carta.bebida(1)}'`));
     afirmar(valor(s, `select points from customers where phone = '${phone}'`) === puntosAntes, 'un pedido sin pagar dio puntos');
     const id = valor(s, `select id from orders where ref = 'E2E-YAPE'`);
     const c = await s.llamar('cancel-my-order', { token, orderId: id, id, ref: 'E2E-YAPE' });
     afirmar(c.status === 200, `cancel-my-order: ${c.status} ${c.error || ''}`);
     afirmar(valor(s, `select status from orders where ref = 'E2E-YAPE'`) === 'CANCELADO', 'el pedido no quedó cancelado');
-    afirmar(valor(s, `select stock_qty from inventory where product_code = 'D08'`) === '5', 'cancelar no devolvió el stock');
+    afirmar(valor(s, `select stock_qty from inventory where product_code = '${carta.bebida(1)}'`) === '5', 'cancelar no devolvió el stock');
   },
 
-  async 'el dueño confirma el Yape: recién ahí se ganan los puntos, y el historial cuadra'(s, precios) {
+  async 'el dueño confirma el Yape: recién ahí se ganan los puntos, y el historial cuadra'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
     const dueno = await registrarYEntrar(s);
     s.sql(`insert into admin_accounts (phone, name) values ('${dueno.phone}', 'Dueño')`);
     const admin = await s.llamar('login', { phone: dueno.phone, pin: '4321' });
     afirmar(admin.token && admin.isAdmin, 'el dueño no entró como admin');
-    const items = [{ type: 'sig', sigId: 'SIG03', size: '15', qty: 1 }];
+    const items = [{ type: 'sig', sigId: carta.signature(2), size: '15', qty: 1 }];
     const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-CONF', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
@@ -138,11 +138,11 @@ export const FLUJOS = {
     afirmar(Number(valor(s, `select points from customers where phone = '${phone}'`)) === despues, 'confirmar dos veces dio los puntos dos veces');
   },
 
-  async 'cancelar un pedido pagado con crédito devuelve el crédito y quita los puntos'(s, precios) {
+  async 'cancelar un pedido pagado con crédito devuelve el crédito y quita los puntos'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
     s.sql(`update customers set credit_balance = 80 where phone = '${phone}'`);
     const antes = valor(s, `select points || '|' || credit_balance || '|' || total_orders from customers where phone = '${phone}'`);
-    const items = [{ type: 'sig', sigId: 'SIG06', size: '30', qty: 1 }];
+    const items = [{ type: 'sig', sigId: carta.signature(3), size: '30', qty: 1 }];
     const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_MINIMO) * 100) / 100;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-CANC', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
@@ -158,13 +158,13 @@ export const FLUJOS = {
       Number(valor(s, `select coalesce(sum(delta),0) from credit_ledger where customer_phone = '${phone}'`)) === 0, 'el libro de crédito no cuadra en cero');
   },
 
-  async 'un pedido programado guarda su hora como fecha y ocupa su hora en la capacidad'(s, precios) {
+  async 'un pedido programado guarda su hora como fecha y ocupa su hora en la capacidad'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
     s.sql(`update customers set credit_balance = 100 where phone = '${phone}'`);
     // Mañana a las 15:00 hora Lima (20:00 UTC), dentro del horario abierto de la semilla.
     const d = new Date(Date.now() + 86400000);
     const cuando = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 20, 0, 0)).toISOString();
-    const items = [{ type: 'sig', sigId: 'SIG04', size: '15', qty: 1 }];
+    const items = [{ type: 'sig', sigId: carta.signature(4), size: '15', qty: 1 }];
     const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_MINIMO) * 100) / 100;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-PROG', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
@@ -176,5 +176,42 @@ export const FLUJOS = {
     const h = await s.llamar('get-store-hours', {});
     const k = new Date(Date.parse(cuando)).toISOString();
     afirmar(h.cargaPorHora && Number(h.cargaPorHora[k] || 0) >= 1, `la hora programada no ocupa su lugar en la capacidad: ${JSON.stringify(h.cargaPorHora || {}).slice(0, 200)}`);
+  },
+
+  async 'registrar una tanda suma sobre el stock, anota la fecha y crea el insumo que faltaba'(s, precios, carta) {
+    const dueno = await registrarYEntrar(s);
+    s.sql(`insert into admin_accounts (phone, name) values ('${dueno.phone}', 'Dueño')`);
+    const admin = await s.llamar('login', { phone: dueno.phone, pin: '4321' });
+    const cod = carta.bebida(2);
+    s.sql(`insert into inventory (product_code, product_name, stock_qty, in_stock) values ('${cod}', 'x', 4, true)
+           on conflict (product_code) do update set stock_qty = 4, in_stock = true, batch_cooked_at = null`);
+    const r = await s.llamar('admin-inventory-restock', { token: admin.token, items: [{ code: cod, add: 10 }, { code: 'E2E-NUEVO', name: 'Nuevo', add: 5 }] });
+    afirmar(r.status === 200, `admin-inventory-restock: ${r.status} ${r.error || ''}`);
+    afirmar(valor(s, `select stock_qty from inventory where product_code = '${cod}'`) === '14', 'la tanda no sumó sobre el stock');
+    afirmar(valor(s, `select stock_qty from inventory where product_code = 'E2E-NUEVO'`) === '5', 'no se creó el insumo nuevo');
+    afirmar(valor(s, `select count(*) from inventory where product_code in ('${cod}', 'E2E-NUEVO') and batch_cooked_at is not null`) === '2', 'no se anotó la fecha de la tanda');
+    afirmar(JSON.stringify(r.applied || []).includes('"from":4'), 'la respuesta no dice desde cuánto subió: ' + JSON.stringify(r).slice(0, 200));
+  },
+
+  async 'crear la cuenta desde un pedido de invitado pagado lo vincula con sus puntos y el bono, una sola vez'(s) {
+    const quienInvita = await registrarYEntrar(s);
+    s.sql(`update customers set referral_code = 'E2EREF' where phone = '${quienInvita.phone}'`);
+    const puntosInvitaAntes = Number(valor(s, `select points from customers where phone = '${quienInvita.phone}'`));
+    s.sql(`insert into orders (id, ref, customer_phone, contact_phone, customer_name, customer_address, total, delivery_fee, payment_status, payment_method, items)
+           values ('00000000-0000-4000-8000-0000000e2e01', 'E2E-INV', null, 'x', 'Invitado', 'Av. España 123', 30, 5, 'paid', 'card', '[]')`);
+    s.sql(`delete from rate_limits`);
+    n++;
+    const phone = '9' + String(10000000 + n * 7919).slice(-8);
+    const r = await s.llamar('register', { name: 'Invitado', phone, pin: '4321', dni: String(40000000 + n * 13), bday: '1995-05-05', referredBy: 'E2EREF', claimOrderRef: 'E2E-INV' });
+    afirmar(r.status === 200, `registro: ${r.status} ${r.error || ''}`);
+    afirmar(valor(s, `select customer_phone from orders where ref = 'E2E-INV'`) === phone, 'el pedido no quedó vinculado a la cuenta');
+    afirmar(valor(s, `select count(*) from transactions where order_ref = 'E2E-INV' and customer_phone = '${phone}'`) === '1', 'el pedido no quedó en el historial');
+    // Los puntos de la cuenta son exactamente los de su historial: nada se sumó sin anotarse.
+    const puntos = valor(s, `select points from customers where phone = '${phone}'`);
+    const historial = valor(s, `select coalesce(sum(points), 0) from transactions where customer_phone = '${phone}'`);
+    afirmar(puntos === historial, `puntos ${puntos} y su historial ${historial} no cuadran`);
+    afirmar(valor(s, `select total_orders from customers where phone = '${phone}'`) === '1', 'no se contó el pedido');
+    const ganoInvita = Number(valor(s, `select points from customers where phone = '${quienInvita.phone}'`)) - puntosInvitaAntes;
+    afirmar(ganoInvita > 0 && String(ganoInvita) === valor(s, `select coalesce(sum(points), 0) from transactions where customer_phone = '${quienInvita.phone}' and description like 'Sándwich gratis por invitar%'`), 'quien invitó no recibió su bono anotado');
   },
 };

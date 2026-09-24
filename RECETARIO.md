@@ -1,6 +1,18 @@
 # SND//WCH — RECETARIO DE PRODUCCIÓN
 
-**Versión 3 · 2026-08-22 · para arrancar tandas de prueba antes de la apertura (lun 7 sep 2026)**
+**Versión 4 · 2026-09-24 · carta v4, los clásicos de USA**
+
+> **Cambio de la v4 (2026-09-24): carta nueva y NO HAY PLANCHA.**
+> - La carta vigente es la de `supabase/functions/_shared/carta.ts` (la misma que cobra el
+>   servidor): **Philly Cheesesteak, Meatball Marinara, Turkey, Tuna Melt, Italian Hoagie y
+>   Classic Tuna**, más el menú secreto. Su armado está en la tabla «Armado de la carta v4», abajo.
+> - **Salen The Original (SIG01), The Smoke (SIG03) y The Teriyaki (SIG06)**, y con ellos la
+>   res mechada (P01) y el pollo teriyaki (P02). Sus secciones se quedan en este documento para
+>   cuando vuelvan, pero **no se cocinan**: están marcadas como retiradas.
+> - **Entran la res laminada (P09) y la cebolla blanca salteada (T10)** del Philly. Su receta
+>   está en la PARTE 1 y en el panel (Admin → Recetas), que es la que manda en cocina.
+> - **No hay plancha** (dueño, 2026-09-24). Todo lo que se sella, saltea o tuesta al pedido va
+>   en una **sartén grande**. Donde este documento decía «plancha», ahora dice sartén.
 
 > **Cambio de la v3:** subida de margen — los 5 Signatures suben S/2 (ambos tamaños), las
 > bebidas suben S/2 (el chai S/3) y el recargo de doble proteína deja de ser plano
@@ -43,7 +55,44 @@ En hora de servicio no se cocina: solo se **arma**.
 
 # PARTE 1 — PROTEÍNAS
 
-## P01 · RES // ASADO (mechado) — SIG01 The Original
+## P09 · RES // LAMINADA — SIG09 Philly Cheesesteak (carta v4)
+
+**PRIMERA VERSIÓN (2026-09-24).** La misma receta está cargada en el panel (Admin → Recetas),
+que es la que manda: si cambia allá, esta sección queda vieja.
+
+**Tanda de 5 kg de res limpia (el corte cotizado a ~S/20/kg) → 40 porciones.** Sal 50 g,
+pimienta negra molida 10 g, y ~100 ml de aceite para la sartén a lo largo del servicio.
+
+1. Limpiar grasa dura y nervio; cortar en bloques de 1 kg (20 min).
+2. **Congelar los bloques hasta que estén firmes, no duros** (90 min): es lo que deja laminar
+   fino a cuchillo.
+3. Laminar contra la fibra, lo más fino que salga: objetivo 2-3 mm (30 min).
+4. **Porcionar en 115 g limpios crudos** (quedan ~85 g salteados) y guardar en frío, **sin sal**.
+5. **Al pedido, en sartén grande muy caliente** con un hilo de aceite: la porción extendida en una
+   sola capa, sal y pimienta al caer (2 min).
+6. Voltear, separar con la espátula, juntar con la cebolla (T10) y el pimiento, y el cheddar
+   encima hasta que se funda (1 min).
+
+- **La sal va recién en la sartén**: salada antes suelta agua y se cuece en vez de sellar.
+- **Nunca más de dos porciones a la vez** en la misma sartén: baja la temperatura y la res se
+  hierve en su jugo.
+- **Rendimiento 0.70 SUPUESTO** (limpieza 8% + salteado 24%). Pesa lo que sale en la primera
+  tanda y corrige rendimiento y porciones en el panel y en `modelo/insumos.py`.
+
+## T10 · CEBOLLA // SALTEADA — solo en el Philly (carta v4)
+
+**Tanda: 2.8 kg de cebolla blanca → 40 porciones** (70 g crudos quedan en ~40 g). Aceite 60 ml,
+sal 10 g.
+
+1. Pelar y cortar en juliana gruesa, 5 mm (20 min).
+2. **Saltear en sartén grande a fuego medio-alto**, moviendo, hasta que se dore en los bordes y
+   quede blanda (15 min).
+3. Salar al final, enfriar extendida y guardar tapada en frío (10 min).
+
+No es la cebolla morada en juliana del resto de la carta (T03): esta va cocida. Al pedido se
+recalienta en la misma sartén que la res.
+
+## P01 · RES // ASADO (mechado) — SIG01 The Original · ⛔ RETIRADA en la carta v4 (2026-09-24)
 
 **Corte: PUNTA DE PECHO** (pídelo así en el mercado; es el *brisket*). Alternativas: falda o asado
 de tira sin hueso. **Nunca** lomo, cadera ni bola de lomo: sin colágeno, la cocción larga los
@@ -149,7 +198,7 @@ Con una sola cocina, la olla a presión no es lujo: es lo que hace que la tanda 
 
 ---
 
-## P02 · POLLO // TERIYAKI — SIG06 The Teriyaki
+## P02 · POLLO // TERIYAKI — SIG06 The Teriyaki · ⛔ RETIRADA en la carta v4 (2026-09-24)
 
 **Corte: MUSLO / PIERNA DESHUESADA SIN PIEL**, en tiras de 1.5 × 6 cm. **No pechuga.**
 El teriyaki japonés clásico se hace con muslo, y sobre todo: **el muslo sobrevive el ciclo
@@ -292,7 +341,7 @@ martes ya no cruje y perdiste justo lo que fuiste a buscar.
 
 ---
 
-## P05 · EMBUTIDO // ITALIANO — SIG03 The Smoke
+## P05 · EMBUTIDO // ITALIANO — hoy en SIG11 Italian Hoagie (antes en SIG03 The Smoke, retirado)
 
 **No se cocina. Se lamina y se pesa.** Son tres fiambres, y la proporción define el costo:
 
@@ -371,7 +420,7 @@ un meatball sub en delivery.**
 ### ⚠ SIG02 es el sándwich con más riesgo de pan empapado del catálogo
 
 Salsa caliente + queso derretido + vinagreta + viaje en moto. Cuatro cosas concretas:
-1. **Tuesta la cara interna del pan** en plancha o sartén, 30-40 s. Una capa seca y dorada es una
+1. **Tuesta la cara interna del pan** en sartén, 30-40 s. Una capa seca y dorada es una
    barrera física real.
 2. **La mozzarella va DEBAJO de las albóndigas, sobre el pan**, no encima. Además de derretir con
    el calor de la salsa, hace de segunda barrera. (Si va arriba se ve mejor en foto, pero el pan se
@@ -531,7 +580,7 @@ Como salsa suelta va más espesa: reduce 3-4 min más.
 **ají limo sin venas, molido 25 g** · ají panca molido 15 g · vinagre de vino tinto 100 ml ·
 aceite 250 ml · orégano seco 8 g · sal 15 g · comino una pizca.
 
-**La piña va ASADA**, en rodajas gruesas a la plancha hasta que tenga marcas oscuras — eso convierte
+**La piña va ASADA**, en rodajas gruesas en sartén bien caliente hasta que tenga marcas oscuras — eso convierte
 el dulce plano de la piña cruda en dulce-ahumado, que es lo que promete el nombre. Cruda, la salsa
 sabe a ensalada de frutas.
 **Ají limo (15,000-30,000 SHU) sin venas ni semillas.** Es picante de verdad pero manejable; el
@@ -587,8 +636,9 @@ stockear** (pierde textura en 1-2 días), así que tendrías que hornear casi a 
 **Dos cosas que hacen tú, no la panadería:**
 - **Corte "bisagra" (hinge cut): no separes las dos mitades.** Un pan cortado en dos se abre en la
   moto y el relleno se sale. La bisagra lo mantiene cerrado.
-- **Tuesta la cara interna** 30-40 s en plancha antes de armar, **obligatorio en SIG02, SIG03 y
-  SIG06** (los tres de mayor riesgo de humedad). Es la barrera más barata que existe.
+- **Tuesta la cara interna** 30-40 s en sartén antes de armar, **obligatorio en SIG02** (el de
+  mayor riesgo de humedad de la carta v4; en la de apertura también lo era en SIG03 y SIG06, hoy
+  retirados). Es la barrera más barata que existe.
 
 ## Quesos
 | id | Queso | Va en | Gramaje 15CM / 30CM |
@@ -732,6 +782,23 @@ Es distinto del orden en que el cliente elige en pantalla, y no tiene por qué c
 
 **Para pedidos de varios ítems: recorrido por lote.** Pon el queso en TODOS los panes, después la
 proteína en todos, después los toppings. Reduce de 5×N pasadas a 5 pasadas totales.
+
+### Armado de la carta v4 (vigente)
+
+Generada desde `supabase/functions/_shared/carta.ts` el 2026-09-24: si la carta cambia, esta tabla
+queda vieja y manda la carta. Los gramajes de vegetales son los estándar de `modelo/`
+(`TOPS_G` en `rentabilidad_por_parte.py`); la proteína, 85 g en 15CM y 170 g en 30CM.
+
+| Signature | Pan | Queso | Proteína | Vegetales | Salsa |
+|---|---|---|---|---|---|
+| **SIG09** Philly Cheesesteak | B01 | **C02 Cheddar fijo** | P09 Res laminada | T10 Cebolla salteada · T06 Pimiento curado | ninguna |
+| **SIG02** Meatball Marinara | B01 | **C01 Mozzarella fijo** | P06 Albóndiga marinara | T01 Tomate fresco · T03 Cebolla morada juliana · T05 Aceituna negra en rodajas | S06 Oil & Vinegar classic |
+| **SIG10** Turkey | B01 | — | P08 Pavo horneado | T09 Lechuga fresca · T01 Tomate fresco · T03 Cebolla morada juliana · T06 Pimiento curado | S06 Oil & Vinegar classic |
+| **SIG12** Tuna Melt | B01 | **C02 Cheddar fijo** | P04 Atún house | ninguno | ninguna |
+| **SIG11** Italian Hoagie | B01 | **C01 Mozzarella fijo** | P05 Embutido italiano | T09 Lechuga fresca · T01 Tomate fresco · T03 Cebolla morada juliana · T06 Pimiento curado | S06 Oil & Vinegar classic |
+| **SIG04** Classic Tuna | B01 | — | P04 Atún house | ninguno | ninguna |
+
+### Armado de la carta de APERTURA (retirada el 2026-09-24, se conserva para cuando vuelva)
 
 | Signature | Pan | Queso | Proteína 15/30 | Toppings 15CM | Salsa 15/30 | Riesgo específico |
 |---|---|---|---|---|---|---|

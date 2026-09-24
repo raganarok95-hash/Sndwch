@@ -210,3 +210,76 @@ export async function irAlArmador(page: Page) {
 export async function siguientePaso(page: Page) {
   await page.locator('button[onclick="byoStepNext()"]').click();
 }
+
+// ── LA CARTA, PREGUNTADA A LA APP (2026-09-24) ──────────────────────────────────────────────
+//
+// Una prueba necesita «un Signature que se pueda pedir», «una bebida» o «una proteína del
+// armador», nunca «The Original». Escribir el código de un producto ata la prueba a una carta
+// que cambia: la v4 del 2026-09-24 retiró tres Signatures de una vez y rompió decenas de
+// pruebas sin que ninguna regla hubiera cambiado. Esto lee la carta que la app tiene cargada
+// (los mismos arrays con los que pinta y cobra), así que sirve para cualquier carta.
+//
+// `signature(i)` / `bebida(i)` / `proteina(i)` dan uno distinto por índice cuando hay varios,
+// y dan vueltas si hay menos: una prueba que necesita dos DISTINTOS los pide con 0 y 1 y
+// comprueba antes el largo de la lista.
+export type Carta = {
+  signatures: string[];
+  bebidas: string[];
+  armador: string[];
+  /** Proteínas y vegetales que existen pero solo dentro de un Signature (sigOnly). */
+  protExclusivas: string[];
+  topsExclusivos: string[];
+  /** El id del menú secreto, o null si la carta no tiene. */
+  secreto: string | null;
+  panes: string[];
+  topsDelArmador: string[];
+  salsasDelArmador: string[];
+  /** Precio de carta de cada Signature (15CM y 30CM) y de cada bebida, y el nombre de la bebida
+   *  como lo escribe el carrito («The Midnight // Brew»). */
+  p15: Record<string, number>;
+  p30: Record<string, number>;
+  precioBebida: Record<string, number>;
+  nombreBebida: Record<string, string>;
+  signature: (i?: number) => string;
+  bebida: (i?: number) => string;
+  proteina: (i?: number) => string;
+  pan: (i?: number) => string;
+  top: (i?: number) => string;
+  salsa: (i?: number) => string;
+};
+export async function cartaDeLaApp(page: Page): Promise<Carta> {
+  const c = await page.evaluate(() => {
+    const w = window as any;
+    return {
+      signatures: (w.sigsEnOrden ? w.sigsEnOrden(w.SIGS) : w.SIGS).filter((s: any) => !s.secret && !s.retired).map((s: any) => s.id),
+      bebidas: w.SIDES.map((d: any) => d.id),
+      armador: w.PROTS.filter((p: any) => !p.sigOnly && !p.vaultOnly).map((p: any) => p.id),
+      protExclusivas: w.PROTS.filter((p: any) => p.sigOnly).map((p: any) => p.id),
+      topsExclusivos: w.TOPS.filter((t: any) => t.sigOnly).map((t: any) => t.id),
+      secreto: (w.SIGS.find((s: any) => s.secret) || { id: null }).id,
+      panes: w.BASES.map((b: any) => b.id),
+      topsDelArmador: w.TOPS.filter((t: any) => !t.sigOnly && !t.vaultOnly).map((t: any) => t.id),
+      salsasDelArmador: w.SAUCES.filter((x: any) => !x.sigOnly && !x.vaultOnly).map((x: any) => x.id),
+      p15: Object.fromEntries(w.SIGS.map((s: any) => [s.id, s.p15])),
+      p30: Object.fromEntries(w.SIGS.map((s: any) => [s.id, s.p30])),
+      precioBebida: Object.fromEntries(w.SIDES.map((d: any) => [d.id, d.p])),
+      nombreBebida: Object.fromEntries(w.SIDES.map((d: any) => [d.id, d.s ? d.l + ' // ' + d.s : d.l])),
+    };
+  });
+  for (const k of ['signatures', 'bebidas', 'armador', 'panes', 'topsDelArmador', 'salsasDelArmador'] as const) if (!c[k].length) throw new Error(`La app no tiene ${k}: la prueba no puede armarse.`);
+  const vuelta = (l: string[]) => (i = 0) => l[i % l.length]!;
+  return {
+    ...c,
+    signature: vuelta(c.signatures),
+    bebida: vuelta(c.bebidas),
+    proteina: vuelta(c.armador),
+    pan: vuelta(c.panes),
+    top: vuelta(c.topsDelArmador),
+    salsa: vuelta(c.salsasDelArmador),
+  };
+}
+
+/** Un monto como lo escribe la app («S/23.90»), con su propio formateador. */
+export async function soles(page: Page, n: number): Promise<string> {
+  return page.evaluate((x) => (window as any).SOLES_TXT + (window as any).pz(x), Math.round(n * 100) / 100);
+}

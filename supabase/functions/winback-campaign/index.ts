@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { sbGet, sbInsert, sbUpdate, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -17,9 +18,9 @@ const SOURCE = "winback-campaign";
 async function sendWinbackEmail(to: string, name: string, points: number) {
   if (!RESEND_API_KEY) return { ok: false, data: { skipped: true } };
   const html = emailShell("TE EXTRAÑAMOS //", `
-    <p style="font-size:14px;color:#F2F0EB;line-height:1.6">Hola ${name},</p>
-    <p style="font-size:14px;color:#A8C8B0;line-height:1.6">Hace tiempo no te vemos por SND//WCH. Todavía tienes <b style="color:#CBA258">${points} puntos</b> esperando ser canjeados, y seguimos con las mismas builds de siempre.</p>
-    <p style="font-size:12px;color:#8BAF9A;margin-top:16px">Pide de nuevo en sndwch.app 🥪</p>
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${name},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Hace tiempo no te vemos por SND//WCH. Todavía tienes <b style="color:${C.oro}">${points} puntos</b> esperando ser canjeados, y seguimos con las mismas builds de siempre.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:16px">Pide de nuevo en sndwch.app 🥪</p>
   `);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",

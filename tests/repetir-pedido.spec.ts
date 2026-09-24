@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { cartaDeLaApp, gotoApp, type Carta } from './helpers';
 
 // REPETIR PEDIDO — que "pedir lo mismo" no sea una promesa rota (2026-09-12).
 //
@@ -32,28 +32,39 @@ const pedido = (items: any[], summary: string) => ({
   summary, items,
 });
 
-const BYO_RES = { type: 'byo', base: 'B01', prot: 'P01', tops: ['T01'], sauces: ['S01'], size: '15', qty: 1 };
-// T02 pepinillo pasó a `sigOnly` el 2026-09-04 (lo reemplazó la lechuga en el armador). La
-// proteína de este armado es perfectamente pedible: lo que el servidor rechaza es el TOPPING.
-// La primera versión del filtro solo miraba la proteína y dejaba pasar este caso entero.
-const BYO_CON_PEPINILLO = { type: 'byo', base: 'B01', prot: 'P02', tops: ['T01', 'T02'], sauces: ['S01'], size: '15', qty: 1 };
-const BYO_POLLO = { type: 'byo', base: 'B01', prot: 'P02', tops: ['T01'], sauces: ['S01'], size: '15', qty: 1 };
-const SIG_SECRETO = { type: 'sig', sigId: 'SIG05', size: '15', qty: 1 };
-const SIG_NORMAL = { type: 'sig', sigId: 'SIG02', size: '15', qty: 1 };
+// Los pedidos se arman con la carta que la app tiene cargada (cartaDeLaApp), nunca con códigos
+// de producto escritos: la carta cambia y lo que se prueba es la REGLA —lo que salió de la
+// carta no entra—, no un producto en particular.
+const armado = (c: Carta, prot: string, tops: string[]) =>
+  ({ type: 'byo', base: c.pan(), prot, tops, sauces: [c.salsa()], size: '15', qty: 1 });
+// Una proteína que solo existe dentro de un Signature: el servidor rechaza armarla.
+const armadoConProteinaExclusiva = (c: Carta) => armado(c, c.protExclusivas[0]!, [c.top()]);
+// La proteína es perfectamente pedible: lo que el servidor rechaza es el VEGETAL exclusivo. La
+// primera versión del filtro solo miraba la proteína y dejaba pasar este caso entero.
+const armadoConVegetalExclusivo = (c: Carta) => armado(c, c.proteina(), [c.top(), c.topsExclusivos[0]!]);
+const armadoPedible = (c: Carta) => armado(c, c.proteina(), [c.top()]);
+const signaturePedible = (c: Carta) => ({ type: 'sig', sigId: c.signature(), size: '15', qty: 1 });
+const menuSecreto = (c: Carta) => ({ type: 'sig', sigId: c.secreto!, size: '15', qty: 1 });
 
-async function entrarConUltimoPedido(page: any, items: any[], summary = '1x algo') {
+async function entrarConUltimoPedido(page: any, hacerItems: (c: Carta) => any[], summary = '1x algo'): Promise<Carta> {
+  // `my-orders` se responde recién cuando la app lo pide (loadUserExtras, abajo), y para
+  // entonces la carta ya está leída: el pedido sale de la carta real de la app.
+  let items: any[] = [];
   await gotoApp(page, {
     login: { customer: CLIENTE, isAdmin: false, token: 'tok' },
     'session-check': { valid: true, customer: CLIENTE },
-    'my-orders': { orders: [pedido(items, summary)] },
+    'my-orders': () => ({ orders: [pedido(items, summary)] }),
     'addresses-list': { addresses: [] },
     'favorites-list': { favorites: [] },
   });
+  const carta = await cartaDeLaApp(page);
+  items = hacerItems(carta);
   await page.evaluate(() => {
     (window as any).token = 'tok';
     (window as any).cust = { phone: '900000001', name: 'Ana', total_orders: 4 };
   });
   await page.evaluate(async () => { await (window as any).loadUserExtras(); });
+  return carta;
 }
 
 // ⚠ LA ENTRADA A «PEDIR LO MISMO» NO EXISTE HOY (2026-09-24). Se perdió en el rediseño del
@@ -74,19 +85,19 @@ async function repetir(page: any) {
 const carrito = (page: any) => page.evaluate(() => (window as any).cart.map((c: any) => c.prot || c.sigId || c.code));
 
 test('el inicio ofrece «Pedir lo mismo» con el último pedido (se construye en la tarea #69)', async ({ page }) => {
-  await entrarConUltimoPedido(page, [BYO_POLLO], '1x Pollo');
+  await entrarConUltimoPedido(page, (c) => [armadoPedible(c)]);
   await expect(page.getByRole('button', { name: /Pedir lo mismo/ })).toBeVisible();
 });
 
 test.describe('repetir pedido', () => {
   test('un pedido sano se repite entero y llega al carrito tal cual', async ({ page }) => {
-    await entrarConUltimoPedido(page, [BYO_POLLO, SIG_NORMAL], '1x Pollo + 1x The Marinara');
+    const c = await entrarConUltimoPedido(page, (c) => [armadoPedible(c), signaturePedible(c)]);
     await repetir(page);
-    expect(await carrito(page)).toEqual(['P02', 'SIG02']);
+    expect(await carrito(page)).toEqual([c.proteina(), c.signature()]);
   });
 
-  test('una proteína que salió de ARMA EL TUYO no entra al carrito — el servidor la rechazaría', async ({ page }) => {
-    await entrarConUltimoPedido(page, [BYO_RES], '1x Arma el tuyo (Res) 15CM');
+  test('una proteína que solo existe dentro de un Signature no entra al carrito — el servidor la rechazaría', async ({ page }) => {
+    await entrarConUltimoPedido(page, (c) => [armadoConProteinaExclusiva(c)]);
     await repetir(page);
     expect(await carrito(page)).toEqual([]);
     // Sin nada repetible no se manda a un carrito vacío sin explicación.
@@ -94,26 +105,26 @@ test.describe('repetir pedido', () => {
   });
 
   test('si solo parte del pedido sigue en la carta, se repite esa parte Y se dice qué falta', async ({ page }) => {
-    await entrarConUltimoPedido(page, [BYO_RES, BYO_POLLO], '1x Res + 1x Pollo');
+    const c = await entrarConUltimoPedido(page, (c) => [armadoConProteinaExclusiva(c), armadoPedible(c)]);
     await repetir(page);
-    expect(await carrito(page)).toEqual(['P02']);
+    expect(await carrito(page)).toEqual([c.proteina()]);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });
 
-  test('un TOPPING que salió del armador también frena la repetición, no solo la proteína', async ({ page }) => {
-    await entrarConUltimoPedido(page, [BYO_CON_PEPINILLO, BYO_POLLO], '1x Pollo con pepinillo + 1x Pollo');
-    // Las dos líneas son de pollo, así que la proteína no descarta nada: si el filtro solo
-    // mirara `prot`, este pedido pasaría entero y el servidor lo rechazaría al pagar.
+  test('un VEGETAL exclusivo de Signature también frena la repetición, no solo la proteína', async ({ page }) => {
+    // Las dos líneas llevan una proteína pedible, así que la proteína no descarta nada: si el
+    // filtro solo mirara `prot`, este pedido pasaría entero y el servidor lo rechazaría al pagar.
+    const c = await entrarConUltimoPedido(page, (c) => [armadoConVegetalExclusivo(c), armadoPedible(c)]);
     expect(await carrito(page)).toEqual([]);
     await repetir(page);
-    expect(await carrito(page)).toEqual(['P02']);
+    expect(await carrito(page)).toEqual([c.proteina()]);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });
 
   test('el menú secreto no se repite: rota cada mes bajo el mismo id, así que NO sería lo mismo', async ({ page }) => {
-    await entrarConUltimoPedido(page, [SIG_SECRETO, SIG_NORMAL], '1x Secreto + 1x The Marinara');
+    const c = await entrarConUltimoPedido(page, (c) => [menuSecreto(c), signaturePedible(c)]);
     await repetir(page);
-    expect(await carrito(page)).toEqual(['SIG02']);
+    expect(await carrito(page)).toEqual([c.signature()]);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });
 });

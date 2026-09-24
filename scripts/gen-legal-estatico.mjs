@@ -34,6 +34,17 @@ function constante(nombre) {
   if (!m) throw new Error(`no se encontró ${nombre} en 01-catalogo-y-estado.ts`);
   return m[1].replace(/\\'/g, "'");
 }
+// Los colores salen del `:root` de `src/shell.html`, igual que los datos salen del cliente: esta
+// página se escribió con la paleta de la app anterior y siguió así después del rediseño.
+const shell = readFileSync(join(ROOT, 'src/shell.html'), 'utf8');
+const raiz = shell.slice(shell.indexOf(':root{'), shell.indexOf('}', shell.indexOf('--sw-bg:')));
+function token(nombre) {
+  const m = raiz.match(new RegExp(`--sw-${nombre}:\\s*(#[0-9A-Fa-f]{3,8})`));
+  if (!m) throw new Error(`no se encontró --sw-${nombre} en el :root de src/shell.html`);
+  return m[1];
+}
+const COLOR = { bg: token('bg'), body: token('text-body'), muted: token('text-muted'), border: token('border') };
+
 const BIZ = {
   name: constante('BIZ_NAME'),
   ruc: constante('BIZ_RUC'),
@@ -84,17 +95,17 @@ const html = `<!doctype html>
 <meta name="description" content="Qué datos recoge SND//WCH, para qué los usa y con quién los comparte. Delivery de sándwiches en ${esc(BIZ.city)}.">
 <style>
   :root{color-scheme:light dark}
-  body{margin:0;background:#1E3932;color:#F2F0EB;font-family:Georgia,'Times New Roman',serif;line-height:1.65}
+  body{margin:0;background:${COLOR.bg};color:${COLOR.body};font-family:Georgia,'Times New Roman',serif;line-height:1.65}
   main{max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}
   h1{font-size:1.75rem;line-height:1.2;margin:0 0 .25rem}
-  .sub{color:#A8C8B0;font-size:.85rem;font-style:italic;margin:0 0 2rem}
+  .sub{color:${COLOR.muted};font-size:.85rem;font-style:italic;margin:0 0 2rem}
   h2{font-size:1rem;letter-spacing:.12em;color:#CBA258;margin:2rem 0 .5rem;text-transform:uppercase}
   p{margin:0 0 1rem}
-  .datos{border:1px solid #3A6B58;border-radius:10px;padding:1rem 1.25rem;margin:0 0 2rem;font-size:.9rem}
+  .datos{border:1px solid ${COLOR.border};border-radius:10px;padding:1rem 1.25rem;margin:0 0 2rem;font-size:.9rem}
   .datos div{margin-bottom:.35rem}
   .datos span{color:#CBA258}
   a{color:#CBA258}
-  footer{margin-top:2.5rem;border-top:1px solid #3A6B58;padding-top:1.25rem;font-size:.85rem;color:#A8C8B0}
+  footer{margin-top:2.5rem;border-top:1px solid ${COLOR.border};padding-top:1.25rem;font-size:.85rem;color:${COLOR.muted}}
 </style>
 </head>
 <body>

@@ -139,10 +139,12 @@ function pedidoTerminado(st){return !!STATUSES[st]&&!STATUSES[st].next;}
 // concentran mejor la variedad real de pan mostrada en el menú. Posible reincorporación
 // futura — si vuelve, es solo restaurar esta entrada + volver SIG02.base a 'B02' (mismo
 // cambio en SIG_DATA de catalog.ts) y agregar "B02" de vuelta a VALID_BASES ahí también.
-var BASES=[
-  {id:'B01',l:'Classic',s:'White',   d:'Miga suave y corteza fina. No pelea con el relleno, lo sostiene.'},
-  {id:'B03',l:'Focaccia',s:'Artesanal',d:'Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.'}
-];
+// LA CARTA SALE DE `supabase/functions/_shared/carta.ts` (2026-09-24), la misma que usa el
+// servidor para cobrar: la trae el bundle nuevo, que corre antes que este archivo. Lo de acá
+// abajo solo le pone nombre a cada parte. Antes cada lista estaba escrita aquí y en
+// catalog.ts, y `parity` las comparaba con regex. Un cambio de carta se hace allá, una vez.
+var CARTA_VIEJA=(window as any).__sndNuevo.carta;
+var BASES=CARTA_VIEJA.BASES;
 // `sigOnly` se declara en el tipo aunque HOY ningún ítem lo use (se fue con THE CHICAGO,
 // ver abajo). Sin la declaración TypeScript infiere el tipo desde los literales y los
 // filtros `!x.sigOnly` de sOBuild/sAdminSecretSignature dejan de compilar — o sea que
@@ -158,405 +160,31 @@ var BASES=[
 // producto en vez de corregir la estructura.
 // Los valores nuevos suben SOLO donde el costo pasaba el techo de 45%; donde ya estaba
 // sano no se toca (P06 15CM sigue en 6, que es 22% de costo — el 45% es un techo, no una
-// meta a la que haya que subir). DEBEN coincidir con PROT_PRICE en catalog.ts.
-var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;pDbl30:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean;noDouble30?:boolean}[]=[
-  // l/s invertidos (antes 'Asado // Res') — rompía la convención genérico+estilo que
-  // siguen el resto de proteínas (Pollo/Cajún, Atún/House, Albóndiga/Marinara): "Res" es
-  // el ingrediente genérico (mismo rol que Pollo/Atún/Embutido), "Asado" es la
-  // preparación/estilo (mismo rol que Cajún/House/Italiano) — hallazgo de auditoría de
-  // copy. DEBE coincidir con PROT_LABEL.P01 en supabase/functions/api/catalog.ts.
-  // sigOnly desde el 2026-09-05 (decisión del dueño): sale de ARMA EL TUYO por RENTABILIDAD.
-  // Res 30CM costaba 47.6% contra el techo de 45%; era la peor del catálogo. Sigue acá porque
-  // THE ORIGINAL (SIG01) la lleva y en receta cerrada sí rinde — ver SIG_ONLY_PROTS en
-  // supabase/functions/api/catalog.ts, que es quien lo hace cumplir del lado del servidor.
-  {id:'P01',l:'Res',  s:'Asado',        d:'Punta de pecho a fuego lento hasta que se deshace sola con el tenedor.',p15:14.9,p30:24.9,pDbl:7,pDbl30:14,sigOnly:true},
-  {id:'P02',l:'Pollo',  s:'Teriyaki',   d:'Muslo marinado toda la noche en sillao, jengibre y ajo. Se glasea al armar.',p15:13.9,p30:23.9,pDbl:6,pDbl30:11},
-  // vaultOnly: exclusiva del menú secreto (SIG05, menú secreto) — no seleccionable en BUILD
-  // YOUR OWN (ver el filtro en sOBuild) aunque siga en este array para que sigPrice/
-  // dblProtRef/etc. la encuentren por id igual que cualquier otra proteína.
-  {id:'P03',l:'Pollo',  s:'Cajun',      d:'Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.',p15:13.9,p30:23.9,pDbl:6,pDbl30:11,vaultOnly:true},
-  // p15/p30 subidos de 14/25 a 16/30 (análisis financiero de esta sesión) — con el mismo
-  // costo real por kilo que P05 (~S/38/kg), el atún BYO rentaba solo 46.4%/44.0% contra
-  // el objetivo del negocio (~55% margen / 45% costo), mientras P05 con costo idéntico ya
-  // rentaba 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive
-  // aparte en SIG_DATA/SIGS y ya rentaba sano (55.3%/49.6%), el problema era solo la
-  // proteína suelta en BUILD YOUR OWN. DEBE coincidir con PROT_PRICE.P04 en catalog.ts.
-  // ⚠ EL DOBLE DE ATÚN VUELVE EN 15CM, Y SIGUE APAGADO EN 30CM (2026-09-12, decisión del
-  // dueño). Se había apagado entero el 2026-08-21 por DOS motivos, y solo uno sigue vivo:
-  //
-  //  1. MARGEN — ya no aplica. Decía «en 30CM se cobraban S/9 por 170 g de atún que cuestan
-  //     S/11.39, pérdida real de S/2.39». Las dos mitades de esa frase cambiaron: `pDbl`
-  //     dejó de ser plano AL DÍA SIGUIENTE (se partió en pDbl/pDbl30 el 2026-08-22) y el
-  //     atún se cotizó el 2026-09-04 a S/43.96/kg en vez de los S/67 investigados online.
-  //     Hoy: 15CM cobra 10.90 y cuesta 3.25 (29.8%); 30CM cobra 21.90 y cuesta 6.50 (29.7%).
-  //     Son de los mejores márgenes del catálogo — estaba apagado un upsell que ganaba plata.
-  //  2. FÍSICO — «170 g de ensalada de atún en un pan de 30CM es un sándwich que se desarma».
-  //     El dueño lo revisó y lo APROBÓ el 2026-09-12: el 30CM también se prende. Era lo único
-  //     que quedaba, y no lo decidía el modelo sino quien arma el sándwich.
-  //
-  // Las dos banderas siguen existiendo y no se borran: `noDouble` apaga el doble en los dos
-  // tamaños y `noDouble30` solo en el de 30CM. Hoy ninguna proteína usa ninguna de las dos,
-  // pero el mecanismo se queda —igual que `sigOnly`— porque el día que haga falta, agregarlo
-  // de cero es mucho más caro que dejar la puerta puesta. `npm run parity` compara los dos
-  // conjuntos contra el servidor aunque estén vacíos.
-  {id:'P04',l:'Atún',   s:'House',      d:'En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.',p15:16.9,p30:32.9,pDbl:10.9,pDbl30:21.9},
-  // p30 subido de 26 a 30 — mismo motivo que P04: el embutido premium cuesta casi el
-  // doble por kilo que pollo/res — DEBE coincidir con PROT_PRICE.P05 en catalog.ts.
-  // "THE ITALIAN" rompía la convención de nombre genérico + estilo del resto de
-  // proteínas BYO (POLLO/CAJUN, ATÚN/HOUSE, ALBÓNDIGA/MARINARA) — hallazgo de auditoría
-  // de marca. Ahora EMBUTIDO/ITALIANO sigue el mismo patrón.
-  // sigOnly desde el 2026-09-05 (decisión del dueño), mismo motivo que P01: el embutido 15CM
-  // costaba 45.7% contra el techo de 45%. Sigue acá porque THE SMOKE (SIG03) lo lleva.
-  {id:'P05',l:'Embutido',s:'Italiano',   d:'Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.',p15:16.9,p30:32.9,pDbl:9.9,pDbl30:19.9,sigOnly:true},
-  // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
-  // no tenía sentido que su doble proteína costara más que la de res/pollo (P01/P02,
-  // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-  // l corregido de 'Meatball' a 'Albóndiga' — único nombre en inglés entre las 6
-  // proteínas, rompía la convención 100% en español del resto (Res/Pollo/Pollo/Atún/
-  // Embutido) y ni coincidía con su propia descripción ("Albóndigas caseras..."). id
-  // NO cambia (solo el label) — DEBE coincidir con PROT_LABEL.P06 en catalog.ts.
-  // ⚠ pDbl30 corregido de 6 a 12 el 2026-09-05: era la ÚNICA proteína del catálogo cuyo
-  // doble costaba lo mismo en 15CM que en 30CM, o sea un precio que no escaló con la porción
-  // que agrega. El costo pasaba de 22.3% a 44.7% solo por eso — a un pelo del techo de 45%,
-  // y sin que nada fallara. Es el MISMO defecto que ya había obligado a partir `pDbl` en dos
-  // (pDbl / pDbl30) en agosto: se partió el campo y a esta fila se le copió el mismo número.
-  // A S/12 vuelve a 22.3%, igual que su 15CM. DEBE coincidir con PROT_PRICE.P06 en catalog.ts.
-  {id:'P06',l:'Albóndiga',s:'Marinara',  d:'Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.',p15:14.9,p30:26.9,pDbl:6,pDbl30:12},
-  // P08 entra el 2026-09-06 (decisión del dueño). Devuelve el armador a CUATRO proteínas
-  // después de que res y embutido salieran por rentabilidad.
-  //
-  // ⚠ LO QUE LA HACE VIABLE ES QUE NO TIENE MERMA DE COCCIÓN: es fiambre, 1 kg comprado es
-  // 1 kg servido. Todas las demás pierden en la olla (res 0.54, pollo 0.64-0.69), así que su
-  // costo por porción es ~1.85x el del insumo crudo. Acá el precio del insumo ES el costo de
-  // la porción — por eso una proteína más cara por kilo que la res sale más barata por
-  // sándwich. 85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51 → 44.7% de costo en los dos
-  // tamaños, justo debajo del techo de 45%.
-  // DEBE coincidir con PROT_PRICE.P08 en supabase/functions/api/catalog.ts.
-  {id:'P08',l:'Pavo',   s:'Horneado',   d:'Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.',p15:15.9,p30:28.9,pDbl:9,pDbl30:17}
-  // P07 (RES // CHICAGO, corte laminado) se retiró junto con THE CHICAGO (SIG07) el
-  // 2026-08-22 — era su proteína exclusiva y sin ese Signature no tenía consumidor. Ver
-  // el comentario completo del retiro en SIGS más abajo. Si SIG07 vuelve, hay que
-  // restaurar la entrada P07 — label "Res" / "Chicago", descripción "Corte fino laminado,
-  // sazón italiana, estilo Chicago", p15 14.9, p30 22.9, pDbl 6, sigOnly — más
-  // PROT_PRICE.P07/PROT_LABEL.P07/SIG_ONLY_PROTS en catalog.ts. (Se describe en prosa a
-  // propósito: scripts/parity.mjs parsea este array con regex y tomaría un literal
-  // comentado como si fuera una proteína viva, reportando una falsa diferencia con el
-  // servidor.)
-];
+// meta a la que haya que subir). (hoy sale de _shared/carta.ts, igual que en el servidor).
+var PROTS:{id:string;l:string;s:string;d:string;p15:number;p30:number;pDbl:number;pDbl30:number;vaultOnly?:boolean;sigOnly?:boolean;noDouble?:boolean;noDouble30?:boolean}[]=CARTA_VIEJA.PROTS;
 // vaultOnly (T04): seleccionable en ARMA EL TUYO pese a solo aparecer en la receta del
 // menú secreto — confirmado por el dueño para tratarlo como exclusivo. No se puede pedir
 // por BUILD YOUR OWN aunque siga en este array (SIG_DATA/priceSigBuild lo sigue
 // necesitando para tasar ese Signature) — filtro real en byoTops() más abajo. DEBE
-// coincidir con VAULT_ONLY_TOPS en catalog.ts.
+// salir de la misma carta que el servidor (hoy sale de _shared/carta.ts, igual que en el servidor).
 // T07 (Giardiniera) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su topping
 // exclusivo y, además, el ÚNICO topping del catálogo que había que producir en casa
 // (salmuera de 24-48 h + 3 días de reposo). Si SIG07 vuelve, restaurar la entrada T07 —
 // "Giardiniera" / "Encurtido picante", spicy, sigOnly — más T07 en VALID_TOPS/TOP_LABEL/
 // SIG_ONLY_TOPS en catalog.ts.
-var TOPS:{id:string;l:string;s:string;d?:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=[
-  {id:'T01',l:'Tomate',   s:'Fresco',d:'En rodajas gruesas, cortado el mismo día.'},
-  // sigOnly desde el 2026-09-05: el dueño lo reemplaza por LECHUGA (T09) en ARMA EL TUYO.
-  // No se borra — SIG01 y SIG03 lo llevan en su receta. Ver SIG_ONLY_TOPS en catalog.ts.
-  {id:'T02',l:'Pepinillo',s:'Encurtido',d:'Ácido y crujiente. Le corta la grasa a cada bocado.',sigOnly:true},
-  {id:'T03',l:'Cebolla',  s:'Morada juliana',d:'En pluma fina y cruda. Dulce al entrar, con filo al final.'},
-  {id:'T04',l:'Jalapeño', s:'Encurtido',d:'Picor limpio y corto, del que no tapa lo demás.',vaultOnly:true},
-  {id:'T05',l:'Aceituna', s:'Negra en rodajas',d:'Salada, con un fondo amargo que despierta el resto.'},
-  {id:'T06',l:'Pimiento', s:'Curado',d:'Curado en aceite: dulce, ahumado y sin nada de agua.'},
-  // T08 (Apio) RETIRADO del catálogo el 2026-09-12 (decisión del dueño: "chau al apio").
-  // Había quedado en un estado que no podía durar: salió de ARMA EL TUYO el 2026-09-04
-  // marcándolo sigOnly porque THE FRESH lo llevaba, y el 2026-09-05 THE FRESH pasó a atún
-  // escurrido + mayonesa + pimienta con tops:[]. Desde ese día era un insumo que había que
-  // comprar, lavar y picar al momento para CERO pedidos posibles — y nada avisaba, porque
-  // un ingrediente inalcanzable no produce ningún error.
-  // Para restaurarlo: volver a poner acá
-  //   {id:'T08',l:'Apio',s:'Picado',d:'Se pica al armar, no antes, para que llegue crujiendo.'}
-  // y agregar T08 a VALID_TOPS y TOP_LABEL en supabase/functions/api/catalog.ts (NO a
-  // SIG_ONLY_TOPS, salvo que alguna receta vuelva a llevarlo).
-  // Lechuga agregada 2026-09-04 (decisión del dueño: igualar al estándar de Subway). Era
-  // el único de su set que no teníamos, y el de más volumen (21 g) al menor costo por
-  // gramo. DEBE coincidir con VALID_TOPS/TOP_LABEL en catalog.ts.
-  {id:'T09',l:'Lechuga',  s:'Fresca',d:'En tiras y fría. Es lo que hace crujir los bordes.'}
-];
+var TOPS:{id:string;l:string;s:string;d?:string;vaultOnly?:boolean;sigOnly?:boolean;spicy?:boolean}[]=CARTA_VIEJA.TOPS;
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso ya usado en el análisis financiero, y con mejor derretido que el Americano
-// procesado que reemplaza — id NO cambia, DEBE coincidir con VALID_CHEESE en catalog.ts.
-var CHEESE=[
-  {id:'C01',l:'Mozzarella',s:'',d:'Se derrite hasta el borde y estira al morder.'},
-  {id:'C02',l:'Cheddar',  s:'',d:'Curado y salado. No se pierde debajo de la carne.'},
-  {id:'C03',l:'Edam',     s:'',d:'Cremoso y discreto. El que no tapa nada.'}
-];
+// procesado que reemplaza — id NO cambia (hoy sale de _shared/carta.ts, igual que en el servidor).
+var CHEESE=CARTA_VIEJA.CHEESE;
 // `spicy` marca las únicas 2 salsas cuya propia descripción ya declara picor ("calor
 // progresivo"/"golpe de picor") — no es una clasificación nueva inventada, solo expone
 // visualmente un dato que ya estaba en `d`. Usado por el paso 05 de BUILD YOUR OWN para
 // darle jerarquía visual a la única lista plana de 13 ítems sin agrupar/iconos del flujo
 // (hallazgo de auditoría UX).
-var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boolean;sigOnly?:boolean}[]=[
-  {id:'S01',l:'Aioli',   s:'Signature',d:'Ajo y limón sobre base cremosa. Suave: va con todo.'},
-  // vaultOnly: exclusiva del menú secreto (SIG05, junto con S12) — mismo criterio que sigOnly
-  // en S13, solo que anclado al menú secreto en vez de a un signature público. Confirmado
-  // por el dueño para tratarla igual que Au Jus.
-  {id:'S02',l:'Spicy',   s:'Mayo',     d:'Cremosa al entrar. El calor llega después, y se queda.',spicy:true,vaultOnly:true},
-  {id:'S03',l:'Smoke',   s:'BBQ',      d:'Ahumada y espesa, con miel y pimentón. La más contundente.'},
-  {id:'S04',l:'Honey',   s:'Mustard',  d:'Miel y mostaza suave. Dulce que corta, no que empalaga.'},
-  // Perfil documentado 2026-08-08 (confirmado por el dueño, LLM Council de menú) — hasta
-  // ahora era la única de las 12 salsas sin descripción de sabor, lo que bloqueaba evaluar
-  // si era redundante con otras o cómo combinaba en SIG06. Es salada/umami, NO dulce —
-  // dato relevante: SIG06 (Teriyaki+Satay+SNDWCH) tiene 2 fuentes dulces, no 3, porque
-  // esta salsa aporta un contrapunto salado, no otro dulzor apilado.
-  {id:'S05',l:'SNDWCH',  s:'Special',  d:'Salada y umami, imposible de ubicar. No decimos qué lleva.'},
-  {id:'S06',l:'Oil & Vinegar',s:'Classic', d:'Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich.'},
-  {id:'S08',l:'Teriyaki',s:'Glaze',    d:'Soja, jengibre y azúcar reducidos hasta que brillan.'},
-  // S09 vuelve (decisión del dueño 2026-08-21) tras haberse retirado el mismo día junto
-  // con The Ember (SIG08), su único consumidor. Vuelve CAMBIADA: ahora lleva ají y es
-  // picante. Eso tapa el hueco más grave que encontró el council de salsas — S02 y S12,
-  // las 2 únicas picantes, son exclusivas del menú secreto, así que ARMA EL TUYO no tenía
-  // ninguna opción picante para el público general. En un negocio de comida en Perú, eso
-  // se lee como carta incompleta, no como menú secreto. DEBE coincidir con SAUCE_LABEL.S09
-  // y VALID_SAUCES en supabase/functions/api/catalog.ts.
-  {id:'S09',l:'Chimichurri',s:'Piña y Ají',d:'Piña asada y ají. Dulce y ahumada de entrada, con picor al final.',spicy:true},
-  // Subtítulo cambiado de ARGENTINO a PIÑA ASADA — ya no es el chimichurri clásico solo
-  // (ajo, perejil, ácido), se le agrega piña asada por decisión del dueño (dulce-ahumado
-  // que corta el ácido/herbal). DEBE coincidir con cualquier copia espejo del lado
-  // servidor si alguna vez se agrega (hoy las salsas no tienen label server-side).
-  {id:'S10',l:'Peanut',  s:'Satay',    d:'Maní tostado con soya y jengibre. Espesa y tostada.'},
-  // Descripción reescrita 2026-08-08 (decisión del dueño, LLM Council de menú) — con S04
-  // (Honey Mustard) en el mismo catálogo, "intensa, con carácter" no diferenciaba en qué
-  // eje difieren las dos mostazas. Dijon es ácida y filosa, SIN dulzor — S04 es lo
-  // opuesto (dulce, suave). Mismo ingrediente base, roles opuestos, ambas se quedan.
-  // Ojo: evitar la palabra "picante" acá — no es exacta para Dijon (es acidez/pungencia,
-  // no calor) y además rompe tests/menu-exclusivity-toppings-sauces.spec.ts, que usa esa
-  // palabra como proxy para verificar que ninguna salsa picante-de-verdad (vaultOnly)
-  // aparezca en BUILD YOUR OWN.
-  {id:'S11',l:'Mostaza', s:'Dijon',    d:'Ácida y filosa. Sin una gota de dulce.'},
-  {id:'S12',l:'Picante', s:'Miel',     d:'Primero la miel. Después el golpe.',spicy:true,vaultOnly:true}
-  // S13 (Au Jus) se retiró con THE CHICAGO (SIG07) el 2026-08-22 — era su salsa exclusiva
-  // y salía de la cocción de P07, que también se fue. Sin ese Signature no hay de dónde
-  // sacarla ni dónde servirla. Si SIG07 vuelve, restaurar la entrada S13 — "Au Jus" /
-  // "Para mojar", descripción "Caldo de la cocción de la carne, servido aparte para mojar
-  // cada bocado", sigOnly — más S13 en VALID_SAUCES/SAUCE_LABEL/SIG_ONLY_SAUCES en
-  // catalog.ts.
-];
-var SIGS:any[]=[
-  // PRECIOS +S/2 en los 5 Signatures del menú de apertura (decisión del dueño,
-  // 2026-08-22, en AMBOS tamaños para no alterar la diferencia p30-p15 de la que depende
-  // R03). Se subió DESPUÉS de recostear todo el menú con la merma de cocción real del
-  // recetario: los cinco ya cumplían el techo de 45% de insumos y esta subida es para
-  // ganar margen, no para tapar un hueco. DEBEN coincidir con SIG_DATA en catalog.ts y
-  // con la tabla catalog_prices, que es la que de verdad cobra.
-  // Precio de curaduría (2026-08-08, decisión del dueño tras auditoría financiera/LLM
-  // Council): SIG01/02/03/06 p30 y SIG04 p15+p30 estaban EXACTAMENTE igualados al precio
-  // de armar la misma proteína+tamaño por BUILD YOUR OWN (ver itemUnitPrice — BYO cobra
-  // directo prot.p15/p30, sin sumar nada por curaduría) — 0 premio de precio por la
-  // curaduría en 5 de 7 Signatures. +S/2 en esos puntos exactos de paridad (nunca donde ya
-  // había premio, ej. SIG01 p15=18 vs BYO P01 p15=14 se deja igual). DEBE coincidir con
-  // SIG_DATA en supabase/functions/api/catalog.ts.
-  // Badge corregido esta sesión (hallazgo de auditoría de producción/marketing): PREMIUM
-  // estaba en el signature más barato de los tres comparables (18/22) mientras el más
-  // caro (SIG03, 21/26) llevaba MÁS PEDIDO — posicionamiento invertido frente al precio
-  // real. THE ORIGINAL pasa a CLÁSICO (encaja mejor: el asado mechado de siempre).
-  // recommended:true en vez de asumir "el primero del array" para el badge Recomendado
-  // del home — antes se calculaba por posición (i===0), frágil si SIGS se reordena de
-  // nuevo (ya pasó una vez esta sesión, al mover el badge chef) — hallazgo de auditoría
-  // de copy/estructura, BAJO. Pitch reescrito para referenciar su propio badge (Clásico:
-  // el primero del catálogo, el punto de partida) en vez de una descripción genérica que
-  // cualquier otro Signature también podría reclamar (hallazgo de auditoría de copy).
-  //
-  // ⚠ LA ESTRELLA SE MOVIÓ A SIG02 EL 2026-09-12, y no por gusto: THE ORIGINAL deja
-  // S/14.70 en 15CM contra los S/17.43 de THE MARINARA (29.7% de costo contra 20.4%).
-  // Recomendar el cuarto de cinco en contribución es regalar S/2.73 cada vez que alguien
-  // hace caso. `recommended` NO vive en `catalog_items` (SIG_CONTENT solo lleva n/s/badge/
-  // pitch/img/active, ver catalog.ts), así que este literal SÍ es la fuente real de la
-  // bandera — es la única del bloque que no se puede mover desde el panel.
-  {id:'SIG01',n:'The Original',s:'Signature',badge:'Clásico',base:'B01',prot:'P01',tops:['T01','T02','T03'],sauces:['S01','S04'],p15:20.9,p30:26.9,
-    pitch:'El almuerzo que tiene que aguantar hasta la noche. Punta de pecho a fuego lento hasta que se deshace sola, con pepinillo encurtido que le corta la grasa a cada bocado. Si es tu primera vez acá, empieza por este.'},
-  // RANCH (antes S07) ya no existe en el catálogo (retirada por decisión del dueño) —
-  // esta receta ya venía sin ella (no encajaba con el encuadre 100% italiano del pitch,
-  // quedaba fuera de lugar sobre albóndigas en marinara). Queda con una sola salsa, tal
-  // como pide el pitch.
-  // Badge cambiado de PREMIUM a ITALIANO (auditoría de naming por sabor 2026-08-07):
-  // "Premium" prometía una experiencia elevada que la proteína real no entrega (carne
-  // molida, el insumo más barato del catálogo por kilo) y contradecía el propio pitch
-  // ("el clásico de toda la vida"). ITALIANO describe el estilo real (marinara +
-  // vinagreta al estilo italiano) sin implicar sobreprecio — mismo patrón descriptivo que
-  // ya usa AHUMADO (SIG03). Explícitamente NO se usa
-  // "Casero"/"Tradicional" ni ningún sinónimo (decisión del dueño: la marca se posiciona
-  // como compañía consolidada, no como negocio local/casero).
-  // Queso corregido de OPCIONAL a FIJO 2026-08-08 (decisión del dueño, LLM Council de
-  // menú — investigación real de comparables exitosos confirmó que el queso derretido es
-  // estructural en esta categoría de sándwich, no un extra: "melted mozzarella is what
-  // makes a Meatball Sub"). fixedCheese:'C01' (Mozzarella) va siempre en la receta, sin
-  // depender de que el cliente lo pida — DEBE coincidir con SIG_DATA.SIG02 en catalog.ts.
-  // Sin cambio de precio (costo real ~S/0.39-0.77/unidad, el dueño confirmó no subirlo).
-  // base movida de B02 (retirado, ver BASES arriba) a B01 — un roll blanco simple es de
-  // hecho más auténtico para un meatball sub que uno con hierbas.
-  // chef:true (FAVORITO DEL CHEF) retirado esta sesión (auditoría de menú/copy) — se
-  // había movido acá desde SIG03 por tener mejor margen real (P06, carne molida, cuesta
-  // ~3.8x menos por kilo que P05 sin bajar de precio proporcionalmente), pero el badge
-  // implica un juicio de sabor genuino de una persona real, y el propio código admitía
-  // que la razón era margen, no gusto — mismo riesgo que ya motivó retirar MÁS PEDIDO/
-  // EDICIÓN LIMITADA (afirmar algo que no existe). El negocio tampoco tiene un rol de
-  // "chef" — el dueño arma los pedidos él mismo. P06 sigue siendo el de mejor margen real
-  // del catálogo (no se le baja el precio), solo ya no se lo comunica con esta etiqueta.
-  // Nombre cambiado de "The Meatball" a "The Marinara" 2026-08-08 (decisión del dueño, LLM
-  // Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que la
-  // proteína interna ya muestra en español ("Albóndiga", ver PROTS.P06 arriba), bilingüismo
-  // visible en la misma tarjeta (título vs. desglose de ingredientes). "Marinara" es un
-  // préstamo que se usa igual en español e inglés — evita la traducción duplicada y sigue
-  // encajando con el badge "Italiano". DEBE coincidir con SIG_LABEL.SIG02 en catalog.ts.
-  {id:'SIG02',n:'The Marinara',s:'Signature',badge:'Italiano',recommended:true,base:'B01',prot:'P06',tops:['T01','T03','T05'],sauces:['S06'],p15:21.9,p30:28.9,fixedCheese:'C01',
-    pitch:'Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con mozzarella derretida hasta el borde. Se come con las dos manos y con servilleta al lado.'},
-  // Se retiró TERIYAKI (S08, perfil asiático) — no encajaba con "fiambres italianos
-  // ahumados"; esa salsa ya tiene su propio signature (SIG06). Queda con SMOKE/BBQ solo,
-  // que ya describe por sí sola el "glaseado dulce-ahumado" del pitch.
-  // p30 subido de 26 a 30 (mismo motivo que P05 arriba) — mantiene el criterio de premio
-  // S/0 a 30CM frente a armarlo en BUILD YOUR OWN.
-  // Badge corregido esta sesión (hallazgo de auditoría financiera/legal): MÁS PEDIDO
-  // afirmaba un dato de ventas real que no existe — el negocio aún no ha abierto, no hay
-  // ningún pedido real que respalde "el más pedido" (riesgo de publicidad engañosa).
-  // AHUMADO es puramente descriptivo del propio producto (coincide con el nombre THE
-  // SMOKE), no una afirmación verificable sobre el comportamiento de otros clientes.
-  // Queso FIJO agregado 2026-08-08 (mismo criterio y misma sesión que SIG02) —
-  // fixedCheese:'C02' (Cheddar): comparable exitoso investigado (Firehouse "Smokehouse
-  // Beef & Cheddar Brisket") combina ahumado+BBQ+cheddar derretido como estándar de la
-  // categoría — DEBE coincidir con SIG_DATA.SIG03 en catalog.ts. Sin cambio de precio.
-  {id:'SIG03',n:'The Smoke',   s:'Signature',badge:'Ahumado',base:'B03',prot:'P05',tops:['T03','T02','T01'],sauces:['S03'],p15:23.9,p30:34.9,fixedCheese:'C02',
-    pitch:'El del viernes, cuando el día ya se acabó y te lo estás cobrando. Tres fiambres ahumados puestos en pliegues sobre focaccia, cheddar derretido y una BBQ espesa con miel y pimentón. De los que se quedan contigo.'},
-  // p30 subido de 25 a 30 — se nos escapó actualizar este Signature cuando P04 (atún)
-  // subió su p30 de 25 a 30; hasta ahora THE FRESH vendía S/5 más barato que armar
-  // exactamente la misma receta por BUILD YOUR OWN (hallazgo de auditoría, CRÍTICO).
-  // Ahora sí iguala el criterio de premio S/0 a 30CM que ya tienen los demás Signatures.
-  // Badge cambiado de LIGERO a CÍTRICO (auditoría de naming por sabor 2026-08-07):
-  // "Ligero" choca con la proteína real (atún CON MAYONESA + Aioli, otra base cremosa) —
-  // evidencia real de "health halo" muestra que una etiqueta tipo "light" puede bajar la
-  // percepción de sabor cuando el bocado real resulta cremoso, no solo ser inexacta.
-  // Receta y pitch corregidos otra vez 2026-08-08 (decisión del dueño, LLM Council de
-  // naming/sabor 2026-08-08): el consejo señaló, con 5/5 asesores y 5/5 rondas de
-  // revisión por pares, que el fix de arriba corrigió el badge pero dejó intactos el
-  // nombre del producto y el pitch — "Ligero" seguía escrito en el pitch, prometiendo algo
-  // que el bocado real (dos bases cremosas: mayonesa de P04 + Aioli) no entregaba. En vez
-  // de renombrar el producto, el dueño eligió arreglar la receta: se quita el Aioli
-  // (duplicaba la mayonesa que P04 ya trae) y se agrega un chorrito de limón real —
-  // CÍTRICO ahora se sostiene con un ingrediente directo, no heredado del Aioli. El limón
-  // es un ingrediente de preparación (se exprime al armar el sándwich), no una salsa
-  // seleccionable — no tiene entrada propia en SAUCES/catalog.ts, solo vive en este pitch
-  // (confirmado con el dueño 2026-08-08, no asumir de nuevo que necesita ser una entidad
-  // de catálogo). "Ligero" se retira del pitch (no es honesto con una base de mayonesa,
-  // sea una o dos).
-  // Pimiento (T06) reemplazado por Apio (T08) 2026-08-08 (decisión del dueño, LLM Council
-  // de menú) — el pimiento curado es tierno, no aporta crocancia real, dejando esta receta
-  // con un solo elemento crocante (Pepinillo) y riesgo real de fatiga de paladar (5/5
-  // asesores lo confirmaron). Apio picado es el ingrediente clásico de ensalada de atún
-  // para esto exacto. Pendiente sin resolver todavía: la receta sigue sin ningún elemento
-  // dulce (Dijon+limón apilan ácido) — el dueño solo confirmó el fix de crocancia, no el
-  // de dulzor, no inventar una solución sin pedido explícito.
-  {id:'SIG04',n:'The Fresh',   s:'Signature',badge:'Sin vueltas',    base:'B01',prot:'P04',tops:[],sauces:[],p15:20.9,p30:34.9,
-    // Receta rehecha el 2026-09-05 (decisión del dueño): la original de Estados Unidos, que
-    // es atún ESCURRIDO, mayonesa y pimienta — nada más. Por eso `tops` y `sauces` quedan
-    // vacíos: la mayonesa ya está dentro de P04 y la pimienta es parte de su preparación, no
-    // un ítem del catálogo (ver RECETARIO.md).
-    //
-    // El pitch se reescribe SIEMPRE junto con la receta. El anterior nombraba apio, limón y
-    // mostaza dijon; ninguno de los tres sigue. Un texto que promete lo que ya no está es la
-    // clase de defecto que nada en el código detecta y que ya obligó a retirar dos badges.
-    //
-    // ⚠ Y EL BADGE ES PARTE DE ESE TEXTO — se corrigió recién el 2026-09-12, una semana
-    // después de la receta. Decía 'Cítrico', que era cierto cuando la receta llevaba S11
-    // (dijon y limón) y dejó de serlo el día que salió: quedó un rótulo de sabor prometiendo
-    // un cítrico que el sándwich no tiene, al lado de un pitch que ya decía "Nada más". La
-    // regla de este repo para los números escritos a mano vale igual para los rótulos de
-    // sabor: si la receta se mueve, el badge se revisa en la MISMA operación.
-    // 'Sin vueltas' describe lo único que el producto de verdad es. Reversible desde
-    // Admin // Catálogo en un toque — el badge vive en catalog_items, esto es solo semilla.
-    pitch:'Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más.'},
-  // badge:'Asiático' es el permanente (mismo rol que Clásico/Italiano/Ahumado en el resto).
-  //
-  // ⚠ `newUntil` SE RETIRÓ DE ESTE SIGNATURE EL 2026-09-12, y no por incumplir la fecha:
-  // el comentario anterior pedía "AJUSTAR a la fecha real de apertura en cuanto se
-  // confirme" (era 2026-10-31, anclado a un lanzamiento de ~septiembre que ya se movió a
-  // la segunda semana de octubre). Ajustarlo hacia adelante lo habría EMPEORADO.
-  //
-  // El motivo es que `sigBadge()` REEMPLAZA el badge, no lo agrega: mientras `newUntil` no
-  // pase, esta tarjeta dice "Nuevo" EN LUGAR DE "Asiático". Y el día de la apertura el
-  // 100% de la carta es nuevo para el 100% de los clientes, así que "Nuevo" no distingue
-  // nada — mientras que "Asiático" es lo único que le dice a alguien a qué sabe. El badge
-  // costaba información en vez de darla, justo en las semanas que más importan.
-  //
-  // EL MECANISMO SE QUEDA, y está bien construido: expira solo, que era el defecto que
-  // vino a arreglar ('Nuevo' era un string fijo que se habría quedado ahí para siempre).
-  // Sirve el día que entre un Signature de verdad nuevo a una carta que el cliente ya
-  // conoce — que es el único momento en que la palabra significa algo.
-  // Pepinillo (T02) quitado 2026-08-08 (decisión explícita del dueño) — el consejo de
-  // menú había señalado que el pepinillo mitigaba sin querer el riesgo de "doble dulce"
-  // (teriyaki+satay, dos salsas dulces sin nada ácido) documentado por fuentes de chef;
-  // el dueño pidió quitarlo igual. Queda Tomate+Pimiento. El riesgo de doble dulce ya NO
-  // tiene ningún elemento ácido que lo corte — sin resolver, documentado a propósito
-  // (no se agregó ningún reemplazo sin que el dueño lo pidiera). DEBE coincidir con
-  // SIG_DATA.SIG06 en catalog.ts si esa entrada llega a declarar tops explícitos.
-  // Naming ("The Teriyaki" sin salsa Teriyaki Glaze/S08) revisado 2026-08-08 — un council
-  // posterior señaló que el nombre no coincide con ninguna salsa de la receta (usa S10
-  // Peanut Satay + S05 SNDWCH Special). El dueño decidió NO reactivar S08 (agregarla
-  // habría sumado una tercera fuente dulce — "dulce, soja, jengibre" — al doble dulce ya
-  // documentado arriba). El nombre queda igual sin cambiar la receta: "Teriyaki" describe
-  // la proteína (Pollo//Teriyaki, P02, marinado real), no una salsa — el pitch ya lo deja
-  // claro liderando con "Pollo teriyaki caramelizado", no promete una salsa que no está.
-  // Además, con S05 ya documentado como salado/umami (no dulce, ver SAUCES arriba), esta
-  // receta tiene 2 fuentes dulces reales (proteína marinada + satay), no 3.
-  {id:'SIG06',n:'The Teriyaki',s:'Signature',badge:'Asiático',base:'B01',prot:'P02',tops:['T01','T06'],sauces:['S10','S05'],p15:19.9,p30:25.9,
-    pitch:'Para cuando ya te aburriste de lo de siempre. Muslo marinado toda la noche en sillao, jengibre y ajo, glaseado recién al armarlo, con maní tostado y pimiento curado en aceite. Dulce y salado en el mismo bocado.'},
-  // Pitch corregido: usa la misma masa clásica que THE ORIGINAL (B01), no un "pan
-  // italiano" aparte — es justo el pan correcto/auténtico para este plato (un roll
-  // clásico, no focaccia), pero el texto anterior prometía algo que no era (hallazgo de
-  // auditoría de producción).
-  // THE CHICAGO (SIG07) se retiró del catálogo de apertura el 2026-08-22 (decisión del
-  // dueño). NO es un problema de producto — su naming por procedencia real era el mejor
-  // resuelto del catálogo y es el único plato que nadie más vende en Trujillo. Es puro
-  // costo de producción para una persona sola cocinando en casa, según el recetario que
-  // se escribió el mismo día (ver RECETARIO.md): 3 días de calendario (marinar → asar →
-  // enfriar toda la noche EN el jus → laminar), su propio corte a S/28-34/kg en tanda
-  // separada que nunca se puede mezclar con el mechado de P01, un margen de cocción de
-  // pocos grados (52-55°C, el único ítem donde equivocarse 5°C arruina la tanda), un
-  // laminado fino que a cuchillo llega a 1.5-2.5 mm cuando la técnica pide 0.5-1 mm de
-  // rebanadora, la giardiniera como ÚNICO topping de producción propia (5 días de
-  // anticipación), y el au jus en envase aparte con riesgo real de derrame en moto.
-  // Con él salen sus tres ingredientes exclusivos: P07, T07 y S13 (ver arriba).
-  // Vuelve cuando haya rodaje y ojalá una rebanadora. Para restaurarlo: reponer las 3
-  // entradas de arriba, esta entrada, SIG_IMG.SIG07, SIG07 en RESERVE_SIGS y en
-  // SIG_HOME_ORDER, y del lado servidor SIG_DATA.SIG07/SIG_LABEL.SIG07/RESERVE_SIGS.
-  // Variante de temporada de apertura (aprobada 2026-08-07, investigación de menú §10.8/
-  // §11.4): S08 (Teriyaki Glaze) y S09 (Chimichurri Piña Asada) eran las únicas 2 salsas
-  // del catálogo sin ninguna receta fija detrás. Reutiliza la proteína más preparada del
-  // negocio (P01, la de THE ORIGINAL) — cero fricción de producción, cero SKU nuevo.
-  // `availableUntil` (distinto de `newUntil`, que solo cambia el badge a "Nuevo" pero
-  // nunca oculta el ítem — verificado en sigBadge() antes de reusarlo, habría sido el
-  // mismo error de "EDICIÓN LIMITADA sin mecanismo real" que ya se retiró antes) hace que
-  // Menú secreto — nunca aparece para invitados ni para quien no llegó al rango que pide
-  // minOrders (ver sOSig). Bajado 15 → 5 → 3 pedidos (decisiones de negocio; el paso a 3 es
-  // del 2026-08-26). Este literal es solo la SEMILLA: el valor real vive en la columna
-  // `min_orders` de la tabla `secret_signature` y se edita desde Admin // Menú secreto sin
-  // tocar código. Cambiar solo acá no cambia nada, igual que con `catalog_prices`.
-  // OJO: el umbral ya NO coincide con ningún rango de RANKS (INICIADO sigue en 5). Por eso
-  // ni la tarjeta bloqueada ni la celebración post-pedido derivan su texto de rankName() —
-  // hablan de pedidos, que es lo que el mecanismo realmente mide. Ver sOSig y _lSecretUnlock.
-  // DEBE coincidir con SIG_GATES.SIG05 en supabase/functions/api/catalog.ts — el servidor es
-  // quien de verdad rechaza el pedido si no calificas, esto solo evita mostrarlo/dejarlo
-  // elegir en la UI antes de intentarlo.
-  // Pitch sin ingredientes explícitos (pedido del dueño) — el sándwich secreto lo es de
-  // verdad, no solo de nombre: ni el pitch ni la vista previa deben decir qué lleva. Se
-  // revela recién cuando lo pides. Ver ingredientsLine en sOSig() y
-  // sigPreviewOverlayHTML(), que ocultan el desglose de Pan/Proteína/Toppings/Salsas
-  // específicamente para s.secret.
-  // Rotación mensual (decisión del dueño, 2026-08-10 — reemplaza "The Vault" fijo, que
-  // existió hasta esa fecha). n/base/prot/tops/sauces/p15/p30/minOrders de abajo son solo
-  // el respaldo/semilla para el primer render antes de que loadCatalogBackground()
-  // reciba la fila vigente de la tabla `secret_signature` (vía get-catalog); a partir de
-  // ahí esos campos de este mismo objeto se sobreescriben en memoria, igual que ya pasa
-  // con p15/p30 de cualquier Signature. No editar este literal para cambiar el sándwich
-  // del mes — eso se hace desde Admin // Menú secreto.
-  {id:'SIG05',n:'Menú secreto',s:'Reserve',  badge:'Secreto',   base:'B03',prot:'P03',tops:['T04','T06','T03'],sauces:['S02','S12'],p15:24.9,p30:30.9,
-    secret:true,minOrders:3,
-    pitch:'Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo.'}
-];
+var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boolean;sigOnly?:boolean}[]=CARTA_VIEJA.SAUCES;
+var SIGS:any[]=CARTA_VIEJA.SIGS;
 // Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
 // que el modo "BUILD YOUR OWN" en la pantalla de inicio, confundiendo a un cliente nuevo
 // sobre si estaba viendo un sándwich curado por la casa o el armado libre (hallazgo de
@@ -576,7 +204,9 @@ function sigTypeTag(tag){
 // (aceituna negra, ajena a su receta), SIG05 (ingredientes de banh mi vietnamita — zanahoria
 // juliana/cilantro — sin relación con pollo cajún/spicy mayo/miel picante) y SIG06 (se veía
 // un segundo plato de fondo) se re-sourcearon/recortaron también.
-var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',SIG04:'img/sig04.jpg',SIG05:'img/sig05.jpg',SIG06:'img/sig06.jpg'};
+// Turkey (SIG10) y Tuna Melt (SIG12) todavía no tienen foto: se pintan sin ella, a la misma
+// altura (ver FUENTES.md, «las dos que faltan»).
+var SIG_IMG:Record<string,string>=CARTA_VIEJA.SIG_IMG;
 // Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -594,13 +224,13 @@ var SIG_IMG={SIG01:'img/sig01.jpg',SIG02:'img/sig02.jpg',SIG03:'img/sig03.jpg',S
 // A 1050 px (4.4x los píxeles de las de 500) en JPEG las seis pesaban 1.3 MB, que es lo que
 // el cliente baja de golpe al abrir esta pantalla porque las seis miniaturas se ven a la
 // vez; en WebP pesan 635 KB sin perder un píxel.
-var PROT_IMG={P01:'img/prot_p01.webp',P02:'img/prot_p02.webp',P04:'img/prot_p04.webp',P05:'img/prot_p05.webp',P06:'img/prot_p06.webp',P08:'img/prot_p08.webp'};
+var PROT_IMG:Record<string,string>=CARTA_VIEJA.PROT_IMG;
 // Foto de cada bebida de la casa. Hasta ahora las 3 se pintaban con un ícono de línea
 // dentro de un círculo: el mismo tratamiento para las tres, sin decir de qué color ni de
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
 // sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
 // que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
-var DRINK_IMG={D06:'img/drink_d06.jpg',D07:'img/drink_d07.jpg',D08:'img/drink_d08.jpg'};
+var DRINK_IMG:Record<string,string>=CARTA_VIEJA.DRINK_IMG;
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -669,7 +299,7 @@ var RWDS=[
 // la botella. Con eso, y costeando por MEDIO LITRO —que es el envase real, no el vaso de
 // 350 ml que suponía el recetario— las tres quedan en 19-32% de costo, menos de la mitad del
 // techo de 45%: son la parte más rentable del catálogo (ver modelo/costo_bebidas.py).
-// DEBEN coincidir con SIDE_PRICE en catalog.ts y con catalog_prices.
+// Semilla en _shared/carta.ts; el precio real vive en catalog_prices.
 // D09 (The Spice // Chai) sale del menú el 2026-09-06, decisión del dueño. Costeado por
 // BOTELLA DE MEDIO LITRO —el envase real que ya se compró, no el vaso de 300 ml que suponía
 // el recetario— quedaba en 42.5% de costo contra 19-32% de las otras tres. Era la única
@@ -679,12 +309,7 @@ var RWDS=[
 // catalog_prices. (Se describe en prosa a propósito: scripts/parity.mjs parsea este array con
 // regex y tomaría un literal comentado como una bebida viva, reportando una falsa diferencia
 // con el servidor.)
-var SIDES=[
-  // `d` es la descripción de venta que se muestra en BEBIDAS Y SIDES.
-  {id:'D06',l:'The Bloom',    s:'Hibiscus',p:6,d:'Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.',icon:'flor'},
-  {id:'D07',l:'The Midnight', s:'Brew',    p:5,d:'Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.',icon:'moon'},
-  {id:'D08',l:'The Cool',     s:'Mint',    p:6,d:'Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.',icon:'hoja'}
-];
+var SIDES=CARTA_VIEJA.SIDES;
 
 // HORARIO — valor de arranque mientras carga el real desde el servidor (ver
 // loadStoreHoursBackground más abajo, que lo sobreescribe con lo que el dueño configuró
@@ -726,11 +351,24 @@ function isWithinStoreHours(d){
 // nunca puede detectar porque corre sobre Chromium de escritorio, que sí respeta el
 // CSS del input. Reemplazado por franjas horarias propias (HOY/MAÑANA + cada 30 min
 // dentro del horario real) para que el control se vea y funcione igual en cualquier
-// dispositivo. #o-sched sigue existiendo como input oculto con el mismo formato
-// "YYYY-MM-DDTHH:mm" que antes, así el resto del flujo (effectiveOrderDate, doOrder)
-// no tuvo que cambiar.
+// dispositivo. #o-sched sigue existiendo como input oculto, ahora con el desfase de Lima
+// ("YYYY-MM-DDTHH:mm-05:00"): el resto del flujo (effectiveOrderDate, doOrder) lo lee con
+// `new Date()` y obtiene el mismo instante desde cualquier zona.
 var SCHED_LEAD_MINUTES=20;
-function schedDateForDay(dayKey){var d=new Date();if(dayKey==='tomorrow')d.setDate(d.getDate()+1);return d;}
+// ⚠ LAS FRANJAS SON HORAS DE LIMA, no del teléfono (A5, 2026-09-24). Se armaban con
+// `setHours` y `new Date("AAAA-MM-DDTHH:mm")`, que usan la zona del DISPOSITIVO: quien pedía
+// desde Madrid elegía «20:00» y el pedido quedaba para las 13:00 de Lima, sin ningún error.
+// Toda fecha de franja pasa por `fechaEnLima()`, que escribe el desfase explícito. Lima no
+// tiene horario de verano, así que el desfase es fijo.
+var LIMA_DESFASE='-05:00';
+function diaEnLima(d:Date):string{
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+}
+function fechaEnLima(dia:string,minutos:number):Date{
+  return new Date(dia+'T'+String(Math.floor(minutos/60)).padStart(2,'0')+':'+String(minutos%60).padStart(2,'0')+':00'+LIMA_DESFASE);
+}
+// El mediodía de Lima de HOY o MAÑANA: un instante que cae en ese día de Lima desde cualquier zona.
+function schedDateForDay(dayKey){return new Date(fechaEnLima(diaEnLima(new Date()),12*60).getTime()+(dayKey==='tomorrow'?86400000:0));}
 // Devuelve las franjas del día con su estado. `full` viene de la capacidad real que manda
 // el servidor (#23): antes el cliente ofrecía todas las franjas por igual y el rechazo por
 // hora llena aparecía recién al tocar PAGAR, con el sándwich ya armado y la dirección ya
@@ -741,7 +379,7 @@ function schedSlotsDetailed(dayKey){
   if(!range)return[];
   var out=[],now=new Date(),isToday=dayKey==='today';
   for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
-    var slotDate=new Date(d);slotDate.setHours(0,0,0,0);slotDate.setMinutes(totalMin);
+    var slotDate=fechaEnLima(diaEnLima(d),totalMin);
     if(isToday&&slotDate.getTime()<now.getTime()+SCHED_LEAD_MINUTES*60000)continue;
     out.push({t:String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'),full:hourIsFull(slotDate)});
   }
@@ -790,10 +428,8 @@ function useNextFreeSlot(){
 }
 function schedInputValue(){
   if(!schedSlot)return'';
-  var d=schedDateForDay(schedDay),parts=schedSlot.split(':');
-  d.setHours(parseInt(parts[0],10),parseInt(parts[1],10),0,0);
-  var pad=function(n){return String(n).padStart(2,'0');};
-  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  // Con el desfase escrito: «2026-10-10T20:00-05:00» es el mismo instante en cualquier teléfono.
+  return diaEnLima(schedDateForDay(schedDay))+'T'+schedSlot+LIMA_DESFASE;
 }
 function initSchedDefault(){
   if(schedSlot)return;
@@ -807,7 +443,7 @@ function scheduleTimePickerHTML(){
   var days=[{key:'today',l:'HOY'},{key:'tomorrow',l:'MAÑANA'}];
   var dayChips=days.map(function(dd){
     var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
-    var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
+    var sub=d.toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'short',day:'numeric',month:'short'});
     return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'var(--sw-card2,#171A14)':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
   var slots=schedSlotsDetailed(schedDay);
@@ -1238,7 +874,9 @@ var pendingRecurringId:string|null=null,miHoraApartada:string|null=null;
 // ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
 // como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
 function hourIsFull(d){
-  var h=new Date(d);h.setMinutes(0,0,0);
+  // En UTC y no en la zona del teléfono: Lima va en horas enteras, así que la hora UTC truncada
+  // es la de Lima; con `setMinutes` un teléfono en la India (+5:30) caía en la media hora.
+  var h=new Date(d);h.setUTCMinutes(0,0,0);
   var k=h.toISOString();
   if(miHoraApartada&&k===miHoraApartada&&typeof cargaPorHora[k]==='number')return cargaPorHora[k]-1>=maxPerHour;
   if(!fullHours.length)return false;

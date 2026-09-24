@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, entrarConTelefono, cartaDeLaApp } from './helpers';
 
 // Cubre la reestructura de recompensas de esta sesión: R05 ("BEBIDA // GRATIS", 220 pts
 // tras la recalibración de puntos contra el costo real de insumos) antes no descontaba
 // nada del total — canjearla costaba puntos reales sin entregar ningún valor. Este test
-// confirma que hoy sí perdona el precio real de la bebida elegida (D06 THE BLOOM, S/4) y
+// confirma que hoy sí perdona el precio real de la bebida elegida (la que sea) y
 // que el rewardId viaja hasta place-order.
 
 test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento real', async ({ page }) => {
@@ -28,18 +28,20 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // para llegar a startOrder().
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
-  // THE ORIGINAL (SIG01) 15CM = S/20.90 — cualquier signature serviría, se fija uno
-  // concreto solo para que el flujo sea determinista.
+  // Un Signature y una bebida de la carta que la app tiene cargada: cualquiera sirve, lo que se
+  // prueba es la recompensa, no el producto.
+  const c = await cartaDeLaApp(page);
+  const bebida = c.bebida();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
+  await page.locator(`[onclick^="sigId='${c.signature()}'"]`).click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   // Sale del modo "pago rápido" (un solo ítem) para poder agregar también una bebida —
   // R05 solo es elegible sobre una línea de bebida/side, nunca sobre un sándwich.
   await page.locator('text=+ CARRITO').click();
   await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
-  await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
+  await page.locator(`[onclick*="addSideToCart('${bebida}')"]`).click();
   await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   // Texto exacto de la línea del carrito, no una subcadena — "text=THE BLOOM" también
@@ -48,18 +50,18 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // Playwright esperaba a que desapareciera antes de poder hacer clic; con el fix P0 de
   // la crítica impeccable 2026-07-30 el toast ya no bloquea el botón, así que el clic
   // ahora sucede de inmediato, mientras el toast todavía está en pantalla).
-  await expect(page.getByText('The Bloom // Hibiscus', { exact: true })).toBeVisible();
+  await expect(page.getByText(c.nombreBebida[bebida]!, { exact: true })).toBeVisible();
 
-  // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la
-  // bebida (S/6, THE BLOOM tras la subida de precios del 2026-08-22) — antes de aquella
-  // sesión este número siempre era S/0 (recompensa rota). El tope R05_FLAT_WAIVER subió
-  // de 4 a 6 en la misma ronda, así que sigue cubriendo la bebida entera.
+  // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la bebida —
+  // antes de una sesión de agosto este número siempre era S/0 (recompensa rota). El tope de
+  // R05 cubre la bebida más cara de la carta (lo fija tests-api/carrito.test.ts).
   await page.locator("[onclick*=\"toggleReward('R05')\"]").click();
   // El bug de auditoría (HTML crudo visible al aplicar cualquier recompensa con
   // ahorro) hacía que este texto SOLO apareciera bien renderizado en el resumen de
   // TOTAL, nunca en la fila de la recompensa misma — ahora aparece en ambos lugares
   // (arreglado), así que el locator debe apuntar específicamente a la fila del picker.
-  await expect(page.locator("[onclick*=\"toggleReward('R05')\"] >> text=ahorras S/6")).toBeVisible();
+  const ahorro = await page.evaluate((p) => (window as any).SOLES_TXT + (window as any).pz(p), c.precioBebida[bebida]!);
+  await expect(page.locator(`[onclick*="toggleReward('R05')"] >> text=ahorras ${ahorro}`)).toBeVisible();
 
   await page.locator('#o-nom').fill('Bruno Cliente');
   await page.locator('#o-phone').fill('987654323');
@@ -113,20 +115,21 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await entrarConTelefono(page, '900000003', '1234');
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
 
-  // THE ORIGINAL (SIG01) 15CM = S/20.90.
+  const c = await cartaDeLaApp(page);
+  const sig = c.signature();
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId=\'SIG01\'"]').click();
+  await page.locator(`[onclick^="sigId='${sig}'"]`).click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
 
   await page.locator('text=+ CARRITO').click();
   await page.locator('[onclick*="irABebidas("]').first().click(); // entrar a bebidas desde el carrito
-  await page.locator('[onclick*="addSideToCart(\'D06\')"]').click();
+  await page.locator(`[onclick*="addSideToCart('${c.bebida()}')"]`).click();
   await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
   await page.locator("[onclick*=\"toggleReward('R06')\"]").click();
 
-  // El ahorro de la recompensa debe ser el precio COMPLETO del sándwich (S/20.90) — y el
+  // El ahorro de la recompensa debe ser el precio COMPLETO del sándwich — y el
   // combo NO debe aparecer, porque ese sándwich ya no cuenta para el combo (fix de una
   // sesión anterior). Si el combo se colara de nuevo, la bebida quedaría gratis sin que
   // nadie lo decidiera.
@@ -147,7 +150,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
     };
   });
   expect(cuenta.aplicada, 'la recompensa no quedó aplicada').toBe('R06');
-  expect(cuenta.recompensa, 'R06 tiene que perdonar el sándwich ENTERO').toBeCloseTo(20.9, 2);
+  expect(cuenta.recompensa, 'R06 tiene que perdonar el sándwich ENTERO').toBeCloseTo(c.p15[sig]!, 2);
   expect(cuenta.combo, 'el sándwich regalado siguió contando para el combo').toBe(0);
   // Y que el descuento se VEA en el recibo con su monto: una cuenta que no se puede
   // seguir enseña a desconfiar justo antes de pagar.

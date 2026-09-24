@@ -19,13 +19,17 @@ import { gotoApp, OPEN_ALL_DAY_HOURS } from './helpers';
 
 // Hora fija dentro de cada test: la capacidad se compara por INICIO DE HORA, así que sin
 // reloj fijo la franja marcada como llena se movería sola a mitad de prueba.
-const HOY_14 = new Date();
-HOY_14.setHours(14, 5, 0, 0);
+//
+// Las horas son de la TIENDA, en Lima, no del equipo que corre la prueba: con `setHours` esta
+// prueba pasaba solo porque el navegador y el runner compartían zona, que es exactamente el
+// supuesto del defecto A5 (ver scheduled-order.spec.ts).
+const DIA_LIMA = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const enLima = (h: number, m = 0) => new Date(`${DIA_LIMA}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00-05:00`);
+const horaEnLima = (iso: string) => Number(new Date(iso).toLocaleString('en-GB', { timeZone: 'America/Lima', hour: '2-digit', hourCycle: 'h23' }));
+const HOY_14 = enLima(14, 5);
 
 function inicioDeHora(h: number) {
-  const d = new Date(HOY_14);
-  d.setHours(h, 0, 0, 0);
-  return d.toISOString();
+  return enLima(h).toISOString();
 }
 
 const horas = (extra: Record<string, unknown>) => ({
@@ -111,7 +115,7 @@ test('la franja llena no queda preseleccionada por defecto', async ({ page }) =>
   await page.locator('[onclick*="scheduleMode=\'later\'"]').click();
   const elegido = await page.locator('#o-sched').inputValue();
   expect(elegido).toBeTruthy();
-  expect(new Date(elegido).getHours()).toBeGreaterThanOrEqual(16);
+  expect(horaEnLima(elegido)).toBeGreaterThanOrEqual(16);
 });
 
 test('un pedido AHORA con la hora actual llena avisa antes de la pantalla de pago', async ({ page }) => {

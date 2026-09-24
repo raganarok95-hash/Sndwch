@@ -14,6 +14,7 @@ import { sendRetentionEmail } from "../email.ts";
 import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
 // El prompt de Flow para el borrador semanal — el dueno genera sus videos ahi.
 import { flowPromptSemanal } from "./video.ts";
+import { ID_SECRETO, esSecreto } from "../../_shared/carta.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
@@ -374,27 +375,16 @@ export async function actAdminInventoryRestock(b: any) {
     return { code, name: String(it?.name || "").trim(), add };
   });
 
-  const applied: { code: string; from: number; to: number }[] = [];
-  for (const it of items) {
-    const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(it.code)}&select=stock_qty`);
-    const from = existing.length && existing[0].stock_qty != null ? Number(existing[0].stock_qty) : 0;
-    const to = from + it.add;
-    // Reponer es EXACTAMENTE el momento en que se cocinó una tanda, y es el único momento
-    // en que el sistema puede saberlo. De acá cuelga toda la alerta de caducidad (#5): sin
-    // esta fecha, una tanda de hace cinco días y una de hoy son el mismo número de stock.
-    // La edición normal de stock NO la toca a propósito — corregir un número a mano es una
-    // corrección, no cocinar de nuevo, y refrescar la fecha ahí borraría la caducidad real.
-    const cookedAt = new Date().toISOString();
-    if (existing.length) {
-      await sbUpdate("inventory", `product_code=eq.${encodeURIComponent(it.code)}`, { stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
-    } else {
-      await sbInsert("inventory", { product_code: it.code, product_name: it.name, stock_qty: to, in_stock: true, batch_cooked_at: cookedAt });
-    }
-    // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
-    // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
-    await notifyRestockedSignatures(it.code);
-    applied.push({ code: it.code, from, to });
-  }
+  // Toda la tanda en una sola llamada a la base, que suma sobre lo que HAY en ese momento (A1).
+  // Antes se leía el stock, se sumaba acá y se escribía el total: un pedido que reservaba
+  // entre las dos llamadas quedaba borrado del stock y se vendía lo que ya no había. La base
+  // también anota la fecha de la tanda —de ella cuelga la alerta de caducidad (#5)— y crea el
+  // insumo que todavía no tenía fila. La edición normal de stock NO toca esa fecha: corregir un
+  // número a mano es una corrección, no cocinar de nuevo.
+  const applied = (await rpc("reponer_tanda", { p_items: items })) as { code: string; from: number; to: number }[];
+  // Una tanda es exactamente el momento en que vuelve lo que faltaba: quien pidió
+  // "avísame cuando vuelva" se entera ahora, no cuando alguien se acuerde de mirar.
+  for (const it of applied) await notifyRestockedSignatures(it.code);
   // Una sola entrada de auditoría por tanda, no una por insumo: el log se lee para
   // reconstruir qué pasó, y 20 líneas idénticas del mismo minuto lo entierran.
   await logAdminAction(s.phone, "inventory-restock", undefined, { items: applied });
@@ -1270,12 +1260,12 @@ export async function actAdminProblemAddresses(b: any) {
 // Ninguno de los tres iba a avisar nunca: son texto, no cálculo.
 //
 // Por eso ahora es una FUNCIÓN y no un array: cada número sale de la constante que de verdad
-// lo manda (REFERRER_REWARD_POINTS, SIG_GATES.SIG05.minOrders, WEEKLY_PLAN_PRICE...), leída
+// lo manda (REFERRER_REWARD_POINTS, SIG_GATES[ID_SECRETO].minOrders, WEEKLY_PLAN_PRICE...), leída
 // en el momento de armar el texto. El umbral del menú secreto además es editable desde el
 // panel, así que un literal se desincronizaría otra vez el día que el dueño lo mueva.
 //
 // Llamar a loadCatalogPrices() antes (que arrastra loadSecretSignature) es lo que hace que
-// SIG_GATES.SIG05.minOrders sea el valor vigente y no la semilla del código.
+// SIG_GATES[ID_SECRETO].minOrders sea el valor vigente y no la semilla del código.
 //
 // ── EL GUION DE VIDEO NO ES UN EXTRA: ES EL FORMATO QUE DE VERDAD SE PAUTA ──────────────
 //
@@ -1309,7 +1299,7 @@ export async function actAdminProblemAddresses(b: any) {
 export type Ocasion = { momento: string; disparador: string; dow: number; hora: number };
 
 export function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string; ocasion: Ocasion }[] {
-  const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
+  const secretoMin = SIG_GATES[ID_SECRETO]?.minOrders ?? 3;
   return [
   {
     theme: "LANZAMIENTO",
@@ -1409,7 +1399,7 @@ function marketingWeekIndex(offset = 0): number {
 }
 export async function actAdminMarketingContent(b: any) {
   await requireAdmin(b.token);
-  // Sin esto, SIG_GATES.SIG05.minOrders sería la semilla del código y no el umbral que el
+  // Sin esto, SIG_GATES[ID_SECRETO].minOrders sería la semilla del código y no el umbral que el
   // dueño tenga puesto hoy en el panel — justo el número que este texto promete en público.
   await loadCatalogPrices();
   const temas = marketingContent();
@@ -1709,7 +1699,7 @@ export async function actAdminSecretSignatureSet(b: any) {
   // base al catálogo sin que nadie lo haya decidido.
   const usadosEnPublicos = new Set<string>();
   for (const code of Object.keys(SIG_DATA)) {
-    if (code === "SIG05") continue;
+    if (esSecreto(code)) continue;
     if (SIG_CONTENT[code] && SIG_CONTENT[code].active === false) continue;
     const d = SIG_DATA[code];
     usadosEnPublicos.add(d.prot);

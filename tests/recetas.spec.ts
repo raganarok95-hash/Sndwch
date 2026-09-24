@@ -64,8 +64,10 @@ test('el escalado se le pide al servidor, no se calcula en el cliente', async ({
   const calls = await entrarARecetas(page, { recipes: [RECETA_BASE], targetPortions: null });
   await page.locator('#rec-target').fill('76');
   await page.getByRole('button', { name: 'Calcular' }).click();
+  // La llamada sale después del clic: se espera a que llegue en vez de contar en el acto (con la
+  // suite entera en paralelo, contar al instante fallaba de vez en cuando).
+  await expect.poll(() => calls.filter((c) => c.action === 'admin-recipes').length).toBeGreaterThan(1);
   const pedidas = calls.filter((c) => c.action === 'admin-recipes');
-  expect(pedidas.length).toBeGreaterThan(1);
   expect(pedidas[pedidas.length - 1].body.targetPortions).toBe(76);
 });
 

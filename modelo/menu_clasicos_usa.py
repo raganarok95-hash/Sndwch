@@ -117,7 +117,8 @@ MENU = [
 ]
 
 # ── EL MENÚ DE HOY, con el MISMO costeo ───────────────────────────────────────────────
-ACTUAL = [(sid, _rpp.SIG[sid][0], _rpp.SIG[sid][6], _rpp.SIG[sid][7]) for sid in _rpp.SIG]
+# «El menú de hoy» de este análisis es la carta de APERTURA, retirada el 2026-09-24 al entrar la v4.
+ACTUAL = [(sid, _rpp.SIG_APERTURA[sid][0], _rpp.SIG_APERTURA[sid][6], _rpp.SIG_APERTURA[sid][7]) for sid in _rpp.SIG_APERTURA]
 
 
 def tabla(titulo, filas):
@@ -146,7 +147,7 @@ def ponderar(p15, m15, p30, m30, mix15=MIX15):
 
 
 nuevo  = [(n, p15, costo(0, **kw), p30, costo(1, **kw)) for n, p15, p30, kw, _ in MENU]
-actual = [(nom, p15, _rpp.costo_sig(sid, 0), p30, _rpp.costo_sig(sid, 1))
+actual = [(nom, p15, _rpp.costo_sig(sid, 0, _rpp.SIG_APERTURA), p30, _rpp.costo_sig(sid, 1, _rpp.SIG_APERTURA))
           for sid, nom, p15, p30 in ACTUAL]
 
 print("=" * 93)

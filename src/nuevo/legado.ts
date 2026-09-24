@@ -9,7 +9,8 @@
 // compilador señala todo lo que dependía de ella. A medida que las piezas viejas migren, sus
 // entradas se borran de acá; el día que este archivo quede vacío, la migración terminó.
 
-import type { Direccion, ItemCarrito } from '../../supabase/functions/_shared/dominio.ts';
+import type { LineaDelCarrito } from '../../supabase/functions/_shared/dinero.ts';
+import type { Direccion, ItemCarrito, PedidoDelCliente } from '../../supabase/functions/_shared/dominio.ts';
 
 type DiaDelCarrito = 'today' | 'tomorrow';
 
@@ -44,6 +45,18 @@ type Viejo = {
   horaLima: (ms: number) => string;
   envioADireccion: (a: Direccion | null) => number | null;
   DIAS_SEMANA: string[];
+  cust: { total_orders?: number | null } | null;
+  myOrders: PedidoDelCliente[];
+  listLoading: boolean;
+  loadMyOrders: () => Promise<void>;
+  _sndOd: string | null;
+  rtStars: number;
+  rtMsg: string;
+  cartItemRepeatable: (it: ItemCarrito) => boolean;
+  STATUSES: Record<string, { label: string; next: string | null }>;
+  SIGS: { id: string; n: string }[];
+  SIDES: { id: string; l: string }[];
+  PROTS: { id: string; l: string }[];
 };
 
 const w = window as unknown as Viejo;
@@ -109,5 +122,47 @@ export const legado = {
   envioA: (a: Direccion | null): number | null => w.envioADireccion(a),
   get diasSemana(): string[] {
     return w.DIAS_SEMANA;
+  },
+  pedidos: {
+    get lista(): PedidoDelCliente[] {
+      return w.myOrders || [];
+    },
+    get cargando(): boolean {
+      return !!w.listLoading;
+    },
+    /** Pide los pedidos al servidor y vuelve a pintar «Tus pedidos» (loadMyOrders, 06-*). */
+    cargar: (): Promise<void> => w.loadMyOrders(),
+    /** Abre el detalle de un pedido (sOrdDetail, 06-*), con la calificación en blanco. */
+    abrir(id: string): void {
+      w._sndOd = id;
+      w.rtStars = 0;
+      w.rtMsg = '';
+      w.sndScreen = 'p_ord_detail';
+      w.render();
+    },
+    /** Si una línea de un pedido pasado se puede volver a pedir hoy tal cual (cartItemRepeatable,
+     *  03-*: sigue en la carta, se puede pedir suelta y no es del menú secreto). Si lo es, es una
+     *  línea que el módulo de dinero sabe tasar. */
+    repetible: (it: ItemCarrito): it is ItemCarrito & LineaDelCarrito => w.cartItemRepeatable(it),
+    estado(st: string | null): { texto: string; terminado: boolean } {
+      const e = st ? w.STATUSES[st] : undefined;
+      return { texto: e ? e.label : st || '', terminado: !!e && !e.next };
+    },
+  },
+  /** Cuántos pedidos pagados lleva el cliente con cuenta (lo lleva la base); null si es invitado. */
+  get pedidosDelCliente(): number | null {
+    return w.cust ? w.cust.total_orders || 0 : null;
+  },
+  /** «The Chicago 30CM», «The Midnight», «Pollo 15CM»: el nombre de la carta, sin la segunda
+   *  parte («// Italian Beef»). '' si ya no está en la carta. */
+  nombreDeLinea(it: ItemCarrito): string {
+    const cm = it.size === '15' || it.size === '30' ? ' ' + it.size + 'CM' : '';
+    if (it.type === 'side') return (w.SIDES.find((d) => d.id === it.code) || { l: '' }).l;
+    if (it.type === 'sig') {
+      const s = w.SIGS.find((x) => x.id === it.sigId);
+      return s ? s.n + cm : '';
+    }
+    const p = w.PROTS.find((x) => x.id === it.prot);
+    return p ? p.l + cm : '';
   },
 };

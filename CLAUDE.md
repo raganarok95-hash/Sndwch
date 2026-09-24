@@ -82,8 +82,8 @@ Si todo vuelve a este archivo, en tres meses volvemos a los 52 000 tokens.
 
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
-**Los literales de precio de `catalog.ts` (`PROT_PRICE`, `SIG_DATA`, `SIDE_PRICE`,
-`REWARDS`) son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
+**Los precios de la carta (`supabase/functions/_shared/carta.ts`, de donde salen `PROT_PRICE`,
+`SIG_DATA` y `SIDE_PRICE`) y `REWARDS` de `catalog.ts` son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
 tabla `catalog_prices`**, que `loadCatalogPrices()` carga encima de esos literales en cada
 llamada. Si un código tiene fila en esa tabla, el literal del archivo NUNCA se usa para
 cobrar.
@@ -99,7 +99,7 @@ BYO costaba S/30 — el producto curado salía más barato que su propio build, 
 ~39% contra el 55% objetivo. Ya sincronizado, pero la trampa sigue ahí para el próximo
 cambio.
 
-**Regla para cualquier sesión futura**: después de editar un precio en `catalog.ts`,
+**Regla para cualquier sesión futura**: después de editar un precio en `_shared/carta.ts` o `catalog.ts`,
 verificar con `execute_sql` si ese `code` tiene fila en `catalog_prices` y, si la tiene,
 actualizarla en la misma sesión con `apply_migration`. Un cambio de precio no está
 terminado hasta que la tabla lo refleje. (SIG05 es la excepción: su precio vive en
@@ -128,8 +128,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
 
 - **El menú se edita desde el panel, no desde el código.** Los 5 Signatures públicos viven
   en `catalog_items` (append-only), SIG05 en `secret_signature`, y los precios de
-  proteínas/bebidas/recompensas en `catalog_prices`. Los literales de `catalog.ts` y de
-  `src/app/01-*` son **semilla**: el primer render y el respaldo si la base no responde.
+  proteínas/bebidas/recompensas en `catalog_prices`. `_shared/carta.ts` es la **semilla**: el
+  primer render y el respaldo si la base no responde. Es UNA sola carta para cliente, servidor
+  y modelo (este vía `modelo/carta.json`, que `check:carta` mantiene al día): un producto nuevo
+  se agrega ahí, y la lógica pregunta por sus propiedades (`secreto`, `soloEnSignature`,
+  `orden`…), nunca por su código.
   El precio de un Signature ya NO se toca desde `catalog_prices` —
   `admin-catalog-set-price` rechaza la categoría `sig`.
 - **Registrar una acción es un paso APARTE de importarla.** `actAdminRetentionReport`
@@ -238,8 +241,9 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
 4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`, 88 comprobaciones hoy). Si falla, el
-   cliente mostraría un número y el servidor cobraría otro. Cubre precios, topes de
+   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el
+   cliente mostraría un número y el servidor cobraría otro. La carta ya no pasa por acá (es una
+   sola, `_shared/carta.ts`). Cubre topes de
    recompensa, umbrales, zonas de delivery (con precio y excluidas), tarifa por distancia
    (`DELIVERY_KM_RATE`/`ROAD_FACTOR`/`MIN_FEE`/`MAX_KM` + `STORE_LAT`/`STORE_LON`), nombres, y
    los DOS precios del catálogo que NO viven en `catalog_prices` —`EXTRA_SAUCE_PRICE` y

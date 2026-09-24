@@ -1154,3 +1154,28 @@ la foto; ahora lee el argumento entero. `-- --probar` le inyecta una columna que
 humo en verde y recién ahí se aplicó el borrado (migración 20260924185004). Antes se buscó en la
 base quién más nombraba esas columnas: solo `retention_report`, y era un falso positivo —lee
 `size` DENTRO de `items`, no la columna—. Los 7 flujos e2e corren ya contra el esquema sin ellas.
+
+## 2026-09-24 · La carta v4 en la base, sin plancha, y una sola carta en el código
+
+**Decisiones del dueño, este día:** la carta pasa a los clásicos de USA (Philly Cheesesteak,
+Meatball Marinara, Turkey, Tuna Melt, Italian Hoagie, Classic Tuna; salen The Original, The
+Smoke y The Teriyaki, y con ellos la res mechada y el pollo teriyaki), **sin badges**, con los
+textos de Philly y Turkey al estilo de las cadenas grandes (ingredientes, sin adorno) y sin
+promocionar «sin queso». **No hay plancha**: la res y la cebolla del Philly se saltean al
+momento en una sartén grande. A futuro el provolone reemplaza al edam (no está hecho).
+
+La plancha había entrado a los textos desde una oración de `MENU_CLASICOS_USA.md` que nadie había
+decidido. De ahí la regla: **una decisión entra al código solo si está anotada acá con su fecha;
+una frase en otro documento no es una decisión.**
+
+**Una sola carta (`supabase/functions/_shared/carta.ts`).** Estaba escrita tres veces —cliente,
+servidor y modelo— y cambiar el menú rompió decenas de pruebas y chequeos sin que cambiara
+ninguna regla. Ahora el servidor deriva de ella sus estructuras, el cliente la recibe por el
+bundle nuevo, y el modelo lee `modelo/carta.json` (`check:carta` lo mantiene al día). La lógica
+pregunta por propiedades (`secreto`, `soloEnSignature`, `orden`, `tipo`), nunca por un código.
+Se verificó que las tres copias anteriores y las derivadas eran idénticas antes de borrarlas.
+
+**La migración `20260924221018_carta_v4_clasicos_usa`** se generó desde esa misma carta (filas
+de `catalog_items` y precios de `catalog_prices`), se probó en el Postgres local contra el estado
+real de producción, y se aplicó. Las recetas de P09 y T10 son **primera versión**: el
+rendimiento de la res (0.70) es supuesto y se corrige con la primera tanda.

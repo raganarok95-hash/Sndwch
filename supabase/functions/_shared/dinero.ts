@@ -22,6 +22,8 @@
 // céntimos es 6270, exacto. Se convierte a soles solo al devolver.
 
 /** Reglas del dinero que NO vienen de la base (no se editan desde el panel). */
+import { CARTA, idsDe } from './carta.ts';
+
 export const REGLAS = {
   /** Descuento por cada par sándwich + bebida. Bajado de S/2 a S/1 el 2026-08-22: a S/2 el
    *  combo se comía entre el 58% y el 118% de lo que deja una bebida (ver catalog.ts). */
@@ -38,7 +40,7 @@ export const REGLAS = {
   recargoPan: { B03: { p15: 0.5, p30: 1 } } as Record<string, { p15: number; p30: number }>,
   /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
    *  del catálogo y se gamearía. */
-  reservas: ['SIG05'] as readonly string[],
+  reservas: idsDe(CARTA.signatures, (x) => x.tipo === 'Reserve') as readonly string[],
   /** Desde cuántos sándwiches el organizador de un pedido grupal se lleva el 15CM más barato. */
   organizadorDesde: 5,
   /** Bebida gratis de hora valle. RETIRADA el 2026-09-05 (era la única operación con

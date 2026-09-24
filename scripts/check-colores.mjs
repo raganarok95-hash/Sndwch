@@ -68,7 +68,28 @@ const PALETA_VIEJA = {
   // `tests/contraste.spec.ts` midiendo, no mirando.
   '#4A5A52': '--sw-text-muted2',
   '#3E4C46': '--sw-text-muted2',
+  // Los dos grises verdosos de los correos, que nunca vivieron en `src/` y por eso ningún
+  // chequeo los veía (2026-09-24).
+  '#8BAF9A': '--sw-text-muted2',
+  '#6E8A7A': '--sw-text-muted3',
 };
+
+// Todo lo que pinta HTML fuera del cliente: los correos, el prompt de video y la página legal
+// estática. Hasta el 2026-09-24 solo se miraba `src/`, y los correos salieron dos meses en la
+// paleta anterior sin que nada lo notara.
+function archivosDelServidor(dir) {
+  const out = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...archivosDelServidor(p));
+    else if (e.name.endsWith('.ts')) out.push(p);
+  }
+  return out;
+}
+const FUERA_DEL_CLIENTE = [
+  ...archivosDelServidor(join(ROOT, 'supabase/functions')),
+  join(ROOT, 'scripts/gen-legal-estatico.mjs'),
+].sort();
 
 const problems = [];
 const viejos = [];
@@ -78,6 +99,7 @@ for (const [nombre, src] of [
   ['src/shell.html', readFileSync(join(ROOT, 'src/shell.html'), 'utf8')],
   ...readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()
     .map((x) => ['src/app/' + x, readFileSync(join(APP_DIR, x), 'utf8')]),
+  ...FUERA_DEL_CLIENTE.map((p) => [p.slice(ROOT.length + 1), readFileSync(p, 'utf8')]),
 ]) {
   // Un comentario CSS abarca VARIAS líneas, y mirar solo la línea actual daba un falso
   // positivo en el comentario que explica por qué la paleta anterior se fue — que es
@@ -93,10 +115,15 @@ for (const [nombre, src] of [
     // Los comentarios SÍ pueden nombrar la paleta vieja: media docena de ellos cuentan
     // justamente por qué se fue, y borrar ese relato para pasar un chequeo sería cambiar
     // historia por verde. Solo se persigue el hex que de verdad pinta algo.
+    //
+    // ⚠ Un `//` antes del hex NO basta para llamarlo comentario: en un correo el HTML lleva
+    // «SND//WCH» y «ALERTAS //» dentro de la cadena, y con esa regla el chequeo daba por
+    // comentario —y dejaba pasar— justamente los colores que tenía que cazar. Cuenta solo el
+    // `//` que abre la línea o que va después de código y un espacio (`x; // ...`).
     const enComentario = (idx) => {
       if (empiezaDentro) return true;
       const antes = line.slice(0, idx);
-      return antes.includes('//') || antes.includes('/*') || antes.trimStart().startsWith('*');
+      return /^\s*(\/\/|\/\*|\*)/.test(antes) || /[;,{}()]\s+\/\/ /.test(antes) || /\s\/\*/.test(antes);
     };
     for (const [hex, token] of Object.entries(PALETA_VIEJA)) {
       const re = new RegExp(`${hex}(?![0-9A-Fa-f])`, 'gi');
@@ -134,6 +161,24 @@ for (const f of readdirSync(APP_DIR).filter((x) => x.endsWith('.ts')).sort()) {
       }
     }
   });
+}
+
+// ── LA PALETA DE LOS CORREOS TIENE QUE SER LA DE LA APP (2026-09-24) ─────────────────────
+// Un correo no puede leer `var(--sw-x)`, así que `_shared/paleta.ts` lleva los valores. Es una
+// copia, y una copia se desalinea en silencio: se compara token por token contra el `:root`.
+{
+  const shell = readFileSync(join(ROOT, 'src/shell.html'), 'utf8');
+  const raiz = shell.slice(shell.indexOf(':root{'), shell.indexOf('}', shell.indexOf('--sw-bg:')));
+  const oro = (shell.match(/\n\.wm-mark i:first-child\{background:(#[0-9A-Fa-f]{6})\}/) || [])[1];
+  const paleta = readFileSync(join(ROOT, 'supabase/functions/_shared/paleta.ts'), 'utf8');
+  const pares = [...paleta.matchAll(/^\s*"?([a-z0-9-]+)"?:\s*"(#[0-9A-Fa-f]{3,8})",/gm)];
+  if (pares.length < 10) viejos.push(`_shared/paleta.ts — solo se leyeron ${pares.length} colores; ¿cambió su forma?`);
+  for (const [, nombre, valor] of pares) {
+    const esperado = nombre === 'oro' ? oro : (raiz.match(new RegExp(`--sw-${nombre}:\\s*(#[0-9A-Fa-f]{3,8})`)) || [])[1];
+    if (!esperado) viejos.push(`_shared/paleta.ts — «${nombre}» no existe en el :root de src/shell.html`);
+    else if (esperado.toLowerCase() !== valor.toLowerCase())
+      viejos.push(`_shared/paleta.ts — «${nombre}» vale ${valor} y en src/shell.html vale ${esperado}`);
+  }
 }
 
 if (viejos.length) {

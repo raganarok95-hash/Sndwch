@@ -16,6 +16,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
+import { PALETA as C } from "../_shared/paleta.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -95,7 +96,7 @@ Deno.serve(async (req: Request) => {
     const cancelReasonRows = [...cancelReasons.entries()].sort((a, b) => b[1] - a[1]);
 
     const row = (label: string, value: string) =>
-      `<tr><td style="padding:6px 0;color:#A8C8B0;font-size:13px">${label}</td><td style="padding:6px 0;color:#fff;font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
+      `<tr><td style="padding:6px 0;color:${C["text-muted"]};font-size:13px">${label}</td><td style="padding:6px 0;color:${C.text};font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
 
     const html = emailShell("RESUMEN // SEMANAL", `
       <table style="width:100%;border-collapse:collapse">
@@ -106,31 +107,31 @@ Deno.serve(async (req: Request) => {
       </table>
       ${needsRestock.length
         ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
-            <div style="font-size:11px;color:#ffa500;letter-spacing:.1em;margin-bottom:6px">PARA COMPRAR ESTA SEMANA //</div>
-            ${needsRestock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${i.in_stock === false ? "⛔" : "⚠"} ${i.product_name || i.product_code}${i.stock_qty != null ? " — quedan " + i.stock_qty : ""}</div>`).join("")}
+            <div style="font-size:11px;color:${C.warn};letter-spacing:.1em;margin-bottom:6px">PARA COMPRAR ESTA SEMANA //</div>
+            ${needsRestock.map((i: any) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">${i.in_stock === false ? "⛔" : "⚠"} ${i.product_name || i.product_code}${i.stock_qty != null ? " — quedan " + i.stock_qty : ""}</div>`).join("")}
           </div>`
-        : `<div style="margin-top:18px;font-size:12px;color:#25D366">✓ Inventario sin alertas.</div>`}
+        : `<div style="margin-top:18px;font-size:12px;color:${C.ok}">✓ Inventario sin alertas.</div>`}
       ${possibleOverstock.length
         ? `<div style="margin-top:14px;padding:14px;background:rgba(58,134,255,.1);border:1px solid rgba(58,134,255,.3);border-radius:8px">
             <div style="font-size:11px;color:#3A86FF;letter-spacing:.1em;margin-bottom:6px">POSIBLE SOBRE-STOCK (revisa vencimiento) //</div>
-            ${possibleOverstock.map((i: any) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">📦 ${i.product_name || i.product_code} — ${i.stock_qty} unidades</div>`).join("")}
-            <div style="font-size:10px;color:#8BAF9A;margin-top:6px">Basado en nivel de stock, no en velocidad de venta real.</div>
+            ${possibleOverstock.map((i: any) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">📦 ${i.product_name || i.product_code} — ${i.stock_qty} unidades</div>`).join("")}
+            <div style="font-size:10px;color:${C["text-muted2"]};margin-top:6px">Basado en nivel de stock, no en velocidad de venta real.</div>
           </div>`
         : ""}
       ${avgDeliveryMin != null
         ? `<div style="margin-top:14px;padding:14px;background:${deliveryOffPromise ? "rgba(255,71,87,.12)" : "rgba(37,211,102,.1)"};border:1px solid ${deliveryOffPromise ? "rgba(255,71,87,.3)" : "rgba(37,211,102,.3)"};border-radius:8px">
-            <div style="font-size:11px;color:${deliveryOffPromise ? "#ff4757" : "#25D366"};letter-spacing:.1em;margin-bottom:4px">TIEMPO REAL DE ENTREGA //</div>
-            <div style="font-size:13px;color:#F2F0EB">Promedio: <b>${avgDeliveryMin} min</b> (prometemos ${ESTIMATED_DELIVERY_RANGE[0]}-${ESTIMATED_DELIVERY_RANGE[1]} min)</div>
+            <div style="font-size:11px;color:${deliveryOffPromise ? "#ff4757" : C.ok};letter-spacing:.1em;margin-bottom:4px">TIEMPO REAL DE ENTREGA //</div>
+            <div style="font-size:13px;color:${C["text-body"]}">Promedio: <b>${avgDeliveryMin} min</b> (prometemos ${ESTIMATED_DELIVERY_RANGE[0]}-${ESTIMATED_DELIVERY_RANGE[1]} min)</div>
             ${deliveryOffPromise ? `<div style="font-size:11px;color:#ff4757;margin-top:4px">⚠ Se está desviando de lo prometido — considera ajustar el rango o el proceso.</div>` : ""}
           </div>`
         : ""}
       ${cancelReasonRows.length
         ? `<div style="margin-top:14px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
-            <div style="font-size:11px;color:#A8C8B0;letter-spacing:.1em;margin-bottom:6px">MOTIVOS DE CANCELACIÓN ESTA SEMANA //</div>
-            ${cancelReasonRows.map(([reason, count]) => `<div style="font-size:12px;color:#F2F0EB;margin-bottom:4px">${reason} — <b>${count}</b></div>`).join("")}
+            <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">MOTIVOS DE CANCELACIÓN ESTA SEMANA //</div>
+            ${cancelReasonRows.map(([reason, count]) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">${reason} — <b>${count}</b></div>`).join("")}
           </div>`
         : ""}
-      <p style="font-size:11px;color:#8BAF9A;margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
+      <p style="font-size:11px;color:${C["text-muted2"]};margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
     `);
 
     const r = await fetch("https://api.resend.com/emails", {

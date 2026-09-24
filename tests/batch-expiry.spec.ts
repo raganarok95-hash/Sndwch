@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, entrarConTelefono, cartaDeLaApp } from './helpers';
 
 // #5 — Caducidad de tanda. SEGURIDAD ALIMENTARIA, no optimización de merma.
 //
@@ -29,6 +29,12 @@ const MOCK_ORDER = {
 
 const haceHoras = (h: number) => new Date(Date.now() - h * 3600 * 1000).toISOString();
 
+// El insumo sale de la carta que la app tiene cargada, nunca de un código escrito: una proteína
+// (se cocina en tandas) o una bebida (se compra lista). Se lee después de cargar la app y antes
+// de abrir el inventario, que es cuando se piden el catálogo y las tandas.
+let INSUMO = '';
+const conInsumo = (armar: (id: string) => unknown) => () => armar(INSUMO);
+
 async function abrirInventario(page: any) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000000', '1234');
@@ -46,14 +52,15 @@ const BASE = {
 test('una tanda vencida se lee como prohibición, no como un dato más', async ({ page }) => {
   await gotoApp(page, {
     ...BASE,
-    'get-catalog': { inventory: { P01: { inStock: true, qty: 6 } } },
-    'admin-inventory-batches': {
+    'get-catalog': conInsumo((id) => ({ inventory: { [id]: { inStock: true, qty: 6 } } })),
+    'admin-inventory-batches': conInsumo((id) => ({
       // Cocinada hace 80 h con 3 días (72 h) de vida útil: venció hace 8.
-      batches: { P01: { cookedAt: haceHoras(80), shelfLifeDays: 3, estado: 'vencida' } },
+      batches: { [id]: { cookedAt: haceHoras(80), shelfLifeDays: 3, estado: 'vencida' } },
       warnHours: 24,
       defaultDays: 3,
-    },
+    })),
   });
+  INSUMO = (await cartaDeLaApp(page)).proteina();
   await abrirInventario(page);
 
   // "No usar" y no un simple "vencida": la fila tiene que decir qué hacer, porque se lee
@@ -64,14 +71,15 @@ test('una tanda vencida se lee como prohibición, no como un dato más', async (
 test('una tanda por vencer avisa con las horas que quedan', async ({ page }) => {
   await gotoApp(page, {
     ...BASE,
-    'get-catalog': { inventory: { P01: { inStock: true, qty: 6 } } },
-    'admin-inventory-batches': {
+    'get-catalog': conInsumo((id) => ({ inventory: { [id]: { inStock: true, qty: 6 } } })),
+    'admin-inventory-batches': conInsumo((id) => ({
       // Hace 52 h de 72: quedan 20, dentro de la ventana de aviso de 24.
-      batches: { P01: { cookedAt: haceHoras(52), shelfLifeDays: 3, estado: 'por-vencer' } },
+      batches: { [id]: { cookedAt: haceHoras(52), shelfLifeDays: 3, estado: 'por-vencer' } },
       warnHours: 24,
       defaultDays: 3,
-    },
+    })),
   });
+  INSUMO = (await cartaDeLaApp(page)).proteina();
   await abrirInventario(page);
   await expect(page.locator('text=/vence en 20 h/')).toBeVisible();
 });
@@ -79,14 +87,15 @@ test('una tanda por vencer avisa con las horas que quedan', async ({ page }) => 
 test('un insumo sin tanda registrada no recibe una fecha inventada', async ({ page }) => {
   await gotoApp(page, {
     ...BASE,
-    // D06 es una bebida que se compra ya lista: nunca hubo una tanda que cocinar.
-    'get-catalog': { inventory: { D06: { inStock: true, qty: 30 } } },
-    'admin-inventory-batches': {
-      batches: { D06: { cookedAt: null, shelfLifeDays: 3, estado: 'sin-tanda' } },
+    // Una bebida se compra ya lista: nunca hubo una tanda que cocinar.
+    'get-catalog': conInsumo((id) => ({ inventory: { [id]: { inStock: true, qty: 30 } } })),
+    'admin-inventory-batches': conInsumo((id) => ({
+      batches: { [id]: { cookedAt: null, shelfLifeDays: 3, estado: 'sin-tanda' } },
       warnHours: 24,
       defaultDays: 3,
-    },
+    })),
   });
+  INSUMO = (await cartaDeLaApp(page)).bebida();
   await abrirInventario(page);
   // Ninguna fila puede hablar de una tanda que no existe.
   await expect(page.locator('text=/Tanda del/')).toHaveCount(0);
@@ -95,29 +104,30 @@ test('un insumo sin tanda registrada no recibe una fecha inventada', async ({ pa
 test('la vida útil se cambia por insumo desde el panel, sin tocar código', async ({ page }) => {
   const calls = await gotoApp(page, {
     ...BASE,
-    'get-catalog': { inventory: { P01: { inStock: true, qty: 6 } } },
-    'admin-inventory-batches': {
-      batches: { P01: { cookedAt: haceHoras(10), shelfLifeDays: 3, estado: 'ok' } },
+    'get-catalog': conInsumo((id) => ({ inventory: { [id]: { inStock: true, qty: 6 } } })),
+    'admin-inventory-batches': conInsumo((id) => ({
+      batches: { [id]: { cookedAt: haceHoras(10), shelfLifeDays: 3, estado: 'ok' } },
       warnHours: 24,
       defaultDays: 3,
-    },
+    })),
     'admin-inventory-set-shelf-life': (body: any) => ({ success: true, days: body.days }),
   });
+  INSUMO = (await cartaDeLaApp(page)).proteina();
   await abrirInventario(page);
 
-  const campo = page.locator('#vida-P01');
+  const campo = page.locator(`#vida-${INSUMO}`);
   await expect(campo).toBeVisible();
   // Precargado con lo que la base dice de ESE insumo, no con el default global.
   await expect(campo).toHaveValue('3');
 
   await campo.fill('7');
-  await page.locator('[onclick*="setShelfLife(\'P01\'"]').click();
+  await page.locator(`[onclick*="setShelfLife('${INSUMO}'"]`).click();
 
   await expect
     .poll(() => calls.filter((c) => c.action === 'admin-inventory-set-shelf-life').length)
     .toBeGreaterThan(0);
   const guardado = calls.find((c) => c.action === 'admin-inventory-set-shelf-life');
-  expect(guardado.body.code).toBe('P01');
+  expect(guardado.body.code).toBe(INSUMO);
   expect(guardado.body.days).toBe(7);
 });
 
@@ -126,11 +136,12 @@ test('si la lectura de tandas falla, el inventario se sigue pudiendo usar', asyn
   // plena hora de servicio la inutiliza. El fallo tiene que degradar, no bloquear.
   await gotoApp(page, {
     ...BASE,
-    'get-catalog': { inventory: { P01: { inStock: true, qty: 6 } } },
+    'get-catalog': conInsumo((id) => ({ inventory: { [id]: { inStock: true, qty: 6 } } })),
     // Sin mock: el helper responde 400 a cualquier acción no mockeada, que es justo el
     // fallo que se quiere provocar.
   });
+  INSUMO = (await cartaDeLaApp(page)).proteina();
   await abrirInventario(page);
-  await expect(page.locator('#qty-P01')).toBeVisible();
+  await expect(page.locator(`#qty-${INSUMO}`)).toBeVisible();
   await expect(page.locator('text=/Tanda del/')).toHaveCount(0);
 });
