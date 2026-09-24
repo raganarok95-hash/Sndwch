@@ -20,6 +20,7 @@ import { storePausedUntil, promosKilled } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
+import { ID_SECRETO } from "../../_shared/carta.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -575,7 +576,7 @@ export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ 
     const rangoAhora = computeRankName(r.customer?.total_orders || 0);
     if (rangoAntes !== rangoAhora) {
       // El rango que desbloquea el menú secreto se deriva de SIG_GATES, no se escribe.
-      const vaultRank = computeRankName(SIG_GATES.SIG05.minOrders);
+      const vaultRank = computeRankName(SIG_GATES[ID_SECRETO].minOrders);
       try {
         await sendPushToPhone(p.phone, {
           title: "🎖️ ¡Subiste de rango!",

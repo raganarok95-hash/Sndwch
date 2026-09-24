@@ -14,6 +14,7 @@ import { sendRetentionEmail } from "../email.ts";
 import { batchExpiryStatus, BATCH_EXPIRY_WARN_HOURS, BATCH_SHELF_LIFE_DEFAULT_DAYS, orderMargin } from "./orders.ts";
 // El prompt de Flow para el borrador semanal — el dueno genera sus videos ahi.
 import { flowPromptSemanal } from "./video.ts";
+import { ID_SECRETO, esSecreto } from "../../_shared/carta.ts";
 
 // Cuando un ingrediente que faltaba vuelve a stock, revisa si eso hace que algún
 // Signature que dependía de él (base o proteína) vuelva a estar completo, y si es así
@@ -1259,12 +1260,12 @@ export async function actAdminProblemAddresses(b: any) {
 // Ninguno de los tres iba a avisar nunca: son texto, no cálculo.
 //
 // Por eso ahora es una FUNCIÓN y no un array: cada número sale de la constante que de verdad
-// lo manda (REFERRER_REWARD_POINTS, SIG_GATES.SIG05.minOrders, WEEKLY_PLAN_PRICE...), leída
+// lo manda (REFERRER_REWARD_POINTS, SIG_GATES[ID_SECRETO].minOrders, WEEKLY_PLAN_PRICE...), leída
 // en el momento de armar el texto. El umbral del menú secreto además es editable desde el
 // panel, así que un literal se desincronizaría otra vez el día que el dueño lo mueva.
 //
 // Llamar a loadCatalogPrices() antes (que arrastra loadSecretSignature) es lo que hace que
-// SIG_GATES.SIG05.minOrders sea el valor vigente y no la semilla del código.
+// SIG_GATES[ID_SECRETO].minOrders sea el valor vigente y no la semilla del código.
 //
 // ── EL GUION DE VIDEO NO ES UN EXTRA: ES EL FORMATO QUE DE VERDAD SE PAUTA ──────────────
 //
@@ -1298,7 +1299,7 @@ export async function actAdminProblemAddresses(b: any) {
 export type Ocasion = { momento: string; disparador: string; dow: number; hora: number };
 
 export function marketingContent(): { theme: string; whatsapp: string; caption: string; photoIdea: string; videoIdea: string; ocasion: Ocasion }[] {
-  const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
+  const secretoMin = SIG_GATES[ID_SECRETO]?.minOrders ?? 3;
   return [
   {
     theme: "LANZAMIENTO",
@@ -1398,7 +1399,7 @@ function marketingWeekIndex(offset = 0): number {
 }
 export async function actAdminMarketingContent(b: any) {
   await requireAdmin(b.token);
-  // Sin esto, SIG_GATES.SIG05.minOrders sería la semilla del código y no el umbral que el
+  // Sin esto, SIG_GATES[ID_SECRETO].minOrders sería la semilla del código y no el umbral que el
   // dueño tenga puesto hoy en el panel — justo el número que este texto promete en público.
   await loadCatalogPrices();
   const temas = marketingContent();
@@ -1698,7 +1699,7 @@ export async function actAdminSecretSignatureSet(b: any) {
   // base al catálogo sin que nadie lo haya decidido.
   const usadosEnPublicos = new Set<string>();
   for (const code of Object.keys(SIG_DATA)) {
-    if (code === "SIG05") continue;
+    if (esSecreto(code)) continue;
     if (SIG_CONTENT[code] && SIG_CONTENT[code].active === false) continue;
     const d = SIG_DATA[code];
     usadosEnPublicos.add(d.prot);

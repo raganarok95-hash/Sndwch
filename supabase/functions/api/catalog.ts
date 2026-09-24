@@ -6,6 +6,7 @@ import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
 import { computeRankName , REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
 import { REGLAS, resolverCarrito, tasarLinea, type LineaDelCarrito, type Precios, type Recompensa } from "../_shared/dinero.ts";
+import { CARTA, esSecreto, etiqueta, ID_SECRETO, idsDe, signaturesDeLaCarta } from "../_shared/carta.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -85,7 +86,7 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
 
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
 // ver el mismo cambio (con el detalle completo) en BASES en src/app.ts.
-export const VALID_BASES = new Set(["B01", "B03"]);
+export const VALID_BASES = new Set(idsDe(CARTA.panes));
 // T08 (Apio) agregado 2026-08-08 (decisión del dueño, LLM Council de menú) — ver el mismo
 // cambio en TOPS en src/app.ts.
 // T07 (Giardiniera) fuera desde el 2026-08-22: se retiró con THE CHICAGO (SIG07), su
@@ -96,13 +97,13 @@ export const VALID_BASES = new Set(["B01", "B03"]);
 // más hace que un sándwich se vea lleno, por lo que menos cuesta. Ver CAMINO_MENU.md §1.
 // T10 (cebolla blanca salteada) entra con el Philly, carta v4 2026-09-24: solo Signatures.
 // T02 (pepinillo) retirado con la carta v4: ya ningún Signature lo lleva.
-export const VALID_TOPS = new Set(["T01", "T03", "T04", "T05", "T06", "T09", "T10"]);
+export const VALID_TOPS = new Set(idsDe(CARTA.vegetales));
 // C01 renombrado de Americano a Mozzarella 2026-08-08 (decisión del dueño, LLM Council de
 // menú) — precio real investigado (Braedt ~S/22.50/kg) similar o menor al proxy genérico
 // de queso (S/35/kg) ya usado en MENU_FINANCIAL_ANALYSIS.md, y con mejor derretido que el
 // Americano procesado que reemplaza — el id no cambia, solo el label (ver CHEESE en
 // src/app.ts). C02 (Cheddar) se mantiene sin cambio.
-export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
+export const VALID_CHEESE = new Set(idsDe(CARTA.quesos));
 // S07 (RANCH) retirado por decisión del dueño — ver el mismo cambio en SAUCES en
 // src/app.ts.
 // Proteínas que NO admiten doble porción. El atún es la única (decisión del dueño
@@ -118,11 +119,10 @@ export const VALID_CHEESE = new Set(["C01", "C02", "C03"]);
 // motivo físico —«170 g de ensalada en un pan de 30CM se desarma»— lo revisó el dueño y lo
 // aprobó. Ver el comentario largo de P04 en src/app/01-*.
 // Los conjuntos NO se borran aunque estén vacíos: el mecanismo cuesta nada mantenerlo y
-// mucho reconstruirlo, y `npm run parity` los compara igual — leer un conjunto vacío es
-// justamente lo que su parseo tuvo que aprender a distinguir de "no lo encontré".
-// DEBEN coincidir con noDouble / noDouble30 en PROTS del cliente.
-export const NO_DOUBLE_PROTS = new Set<string>([]);
-export const NO_DOUBLE_30_PROTS = new Set<string>([]);
+// mucho reconstruirlo.
+// Salen de `sinDoble`/`sinDoble30` de la carta (_shared/carta.ts), igual que en el cliente.
+export const NO_DOUBLE_PROTS = new Set<string>(idsDe(CARTA.proteinas, (x) => !!x.sinDoble));
+export const NO_DOUBLE_30_PROTS = new Set<string>(idsDe(CARTA.proteinas, (x) => !!x.sinDoble30));
 // UN solo punto de corte para las dos rutas (Signature y ARMA EL TUYO), que antes repetían
 // la misma condición palabra por palabra — el patrón que ya obligó a extraer
 // cancellationDeltas. Con dos conjuntos, repetirla eran cuatro condiciones que mantener.
@@ -144,7 +144,7 @@ export function assertDoubleAllowed(doubleProt: boolean, prot: string, size: str
 // en un negocio de comida en Perú. S09 es ahora esa opción.
 // S13 (Au Jus) fuera desde el 2026-08-22: salía de la cocción de P07 y solo se servía en
 // THE CHICAGO (SIG07); los dos se retiraron.
-export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "S08", "S09", "S10", "S11", "S12"]);
+export const VALID_SAUCES = new Set(idsDe(CARTA.salsas));
 // P04/P05 p30 subido (22→25, 26→30) — el salto de precio 15CM→30CM era un monto fijo
 // por proteína sin importar su costo real; el atún y el embutido italiano cuestan casi
 // el doble por kilo que pollo/res, así que duplicar su porción a 30CM subía el costo
@@ -165,7 +165,7 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // el objetivo del negocio (~55% margen), mientras P05 con costo idéntico ya rentaba
 // 53.1%/53.3% a este mismo precio. THE FRESH (SIG04) no se toca — su precio vive aparte
 // en SIG_DATA y ya rentaba sano; el problema era solo la proteína suelta en BUILD YOUR
-// OWN. DEBE coincidir con PROTS en src/app.ts.
+// OWN. Los precios salen de _shared/carta.ts, la misma que usa el cliente.
 // `pDbl` es el recargo de doble proteína en 15CM y `pDbl30` el de 30CM. Antes había UN
 // solo `pDbl` plano para los dos tamaños y eso cobraba mal: la porción que agrega el doble
 // escala con el tamaño (85 g en 15CM, 170 g en 30CM) pero el recargo no. Con los costos
@@ -176,7 +176,7 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // en vez de corregir la estructura.
 // Se sube SOLO donde el costo pasaba el techo de 45%: P06 se queda en 6/6 porque ya estaba
 // sano (22% y 45%) — el 45% es un techo, no una meta a la que haya que subir.
-// DEBEN coincidir con PROTS en src/app.ts.
+// Salen de _shared/carta.ts, la misma que usa el cliente.
 // +S/2 en TODOS los p30 el 2026-09-04 (decisión del dueño). El 30CM es donde el ARMA EL
 // TUYO se rompía: el pan y la proteína se duplican pero el precio solo subía S/8, así que el
 // piso fijo (S/6.40 a 30CM) se comía el margen. Con esto res 30CM baja de 55.5% a 51.0% y
@@ -184,51 +184,9 @@ export const VALID_SAUCES = new Set(["S01", "S02", "S03", "S04", "S05", "S06", "
 // que harían falta para llevar res exactamente al 45%: una subida así en el producto de
 // ticket alto, en un negocio que aún no abre, cuesta más de lo que el techo vale.
 // ⚠ Un cambio de precio NO está terminado hasta que `catalog_prices` lo refleje.
-export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number; pDbl30: number }> = {
-  // P01 (res mechada) y P02 (pollo teriyaki) retiradas con la carta v4 (2026-09-24): ya no se
-  // preparan. Los pedidos viejos conservan su resumen (statUnitPrice/statItemLabel toleran el id).
-  // P03 sube igual que los demás por coherencia de la tabla, aunque no tiene efecto público:
-  // es vaultOnly, así que no se puede pedir por ARMA EL TUYO.
-  P03: { p15: 13.9, p30: 23.9, pDbl: 6, pDbl30: 11 },
-  P04: { p15: 16.9, p30: 32.9, pDbl: 10.9, pDbl30: 21.9 },
-  P05: { p15: 16.9, p30: 32.9, pDbl: 9.9, pDbl30: 19.9 },
-  // pDbl bajado de 7 a 6 — carne molida (~S/10/kg) es el insumo más barato del catálogo,
-  // no tenía sentido que costara más que la doble proteína de res/pollo (P01/P02,
-  // pDbl:6, insumos 2-4x más caros por kilo). DEBE coincidir con PROTS.P06 en src/app.ts.
-  // pDbl30 corregido de 6 a 12 el 2026-09-05: era la única proteína cuyo doble costaba lo
-  // mismo en los dos tamaños. Ver el comentario largo en PROTS.P06 (src/app/01-*).
-  P06: { p15: 14.9, p30: 26.9, pDbl: 6, pDbl30: 12 },
-  // P08 (PAVO // HORNEADO) entra el 2026-09-06 (decisión del dueño). Es la 4ta proteína del
-  // armador, que había quedado con TRES al salir res y embutido por rentabilidad.
-  //
-  // ⚠ LO QUE LA HACE VIABLE ES QUE NO TIENE MERMA DE COCCIÓN. Es fiambre: 1 kg comprado es
-  // 1 kg servido. Todas las demás pierden en la olla —res 0.54, pollo 0.64-0.69— así que su
-  // costo real por porción es ~1.85x el del insumo crudo. Acá el precio del insumo ES el
-  // costo de la porción, y por eso una proteína a S/44.20/kg (más cara por kilo que la res a
-  // S/20) sale más barata por sándwich que la res.
-  //   85 g × S/44.20/kg = S/3.76 · 170 g = S/7.51
-  // Con el piso fijo del armador (S/3.35 en 15CM, S/5.41 en 30CM) el precio que deja el costo
-  // exactamente en el techo de 45% es 2.222 × (piso + proteína): S/15.79 y S/28.72. Se cobra
-  // S/15.90 y S/28.90 por la convención de .90 — 44.7% de costo en LOS DOS tamaños.
-  //
-  // [WEB] S/43.75/kg es el precio RETAIL de jamón de pavo Braedt en Metro/Vivanda; se costea
-  // a S/44.20 por conservador. Al por mayor (Makro Trujillo) debería estar por debajo, así
-  // que el error cae del lado seguro. Falta cotización propia del dueño.
-  //
-  // pDbl 9 / pDbl30 17: la porción que agrega cuesta S/3.76 y S/7.51, o sea 41.8% y 44.2%.
-  // Se calcularon contra el costo REAL de la porción extra, no copiando el de otra proteína —
-  // que es el defecto que ya obligó a partir `pDbl` en dos y a corregir P06.
-  // DEBE coincidir con PROTS.P08 en src/app/01-*.
-  P08: { p15: 15.9, p30: 28.9, pDbl: 9, pDbl30: 17 },
-  // P09 (RES // LAMINADA) entra con la carta v4 (2026-09-24): la res del Philly, laminada en
-  // frío y salteada al momento en sartén grande (no hay plancha). Porción 85 g a S/20/kg con rendimiento 0.70 = S/2.43 (el
-  // rendimiento es supuesto: medirlo en la primera tanda). p15/p30 dejan el armado en el techo
-  // de 45%, calculados con modelo/rentabilidad_por_parte.py igual que el pavo (44.8% en los dos
-  // tamaños); el doble es el de la v4. DEBE coincidir con PROTS.P09 en src/app/01-*.
-  P09: { p15: 12.9, p30: 22.9, pDbl: 7, pDbl30: 13 },
-  // P07 (RES // CHICAGO) fuera desde el 2026-08-22 — se retiró con SIG07, su único
-  // consumidor. Para restaurarlo: P07: { p15: 14.9, p30: 22.9, pDbl: 6 }.
-};
+export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number; pDbl30: number }> = Object.fromEntries(
+  CARTA.proteinas.map((x) => [x.id, { p15: x.p15, p30: x.p30, pDbl: x.dbl15, pDbl30: x.dbl30 }]),
+);
 // Proteína/toppings/salsas exclusivas del sándwich secreto — no se pueden pedir por
 // BUILD YOUR OWN aunque sigan en PROT_PRICE/VALID_TOPS/VALID_SAUCES (deriveCart/
 // deriveOrder las siguen necesitando para tasar SIG05). Es lo que hace que el precio del
@@ -239,9 +197,9 @@ export const PROT_PRICE: Record<string, { p15: number; p30: number; pDbl: number
 // loadSecretSignature() a partir de `vault_only_ids` de la fila vigente en la tabla
 // `secret_signature` — mutables (.clear()/.add()) en vez de literales para que ese
 // refresco funcione sin reasignar el binding que ya importan otros módulos.
-export const VAULT_ONLY_PROTS = new Set(["P03"]);
-export const VAULT_ONLY_TOPS = new Set(["T04"]);
-export const VAULT_ONLY_SAUCES = new Set(["S02", "S12"]);
+export const VAULT_ONLY_PROTS = new Set(idsDe(CARTA.proteinas, (x) => !!x.soloSecreto));
+export const VAULT_ONLY_TOPS = new Set(idsDe(CARTA.vegetales, (x) => !!x.soloSecreto));
+export const VAULT_ONLY_SAUCES = new Set(idsDe(CARTA.salsas, (x) => !!x.soloSecreto));
 // Nombre del sándwich secreto vigente (ej. "Reserva de Agosto") — separado de
 // SIG_LABEL.SIG05 porque ese trae pegado el sufijo " // RESERVE" usado en notificaciones/
 // recibos, mientras que este es el nombre "limpio" que se muestra en la tarjeta del
@@ -303,7 +261,7 @@ export function pistasValidas(h: unknown): { t: string; s: string }[] {
 // Giardiniera, P07 corte Chicago). El mecanismo se queda intacto a propósito: es el
 // mismo que va a hacer falta cuando SIG07 vuelva, o cuando aparezca otro Signature con
 // un ingrediente propio.
-export const SIG_ONLY_SAUCES = new Set<string>([]);
+export const SIG_ONLY_SAUCES = new Set<string>(idsDe(CARTA.salsas, (x) => !!x.soloEnSignature));
 // T08 (Apio) pasa a SIG-ONLY el 2026-09-04 (decisión del dueño: sacarlo de ARMA EL TUYO).
 // NO se borra del catálogo: THE FRESH (SIG04) lo lleva, y es su ÚNICO elemento crocante —
 // entró ahí el 2026-08-08 justamente porque el pimiento curado no aportaba crocancia y la
@@ -315,7 +273,7 @@ export const SIG_ONLY_SAUCES = new Set<string>([]);
 // T08 (Apio) salió del Set el 2026-09-12 junto con su retiro del catálogo: estaba acá
 // porque THE FRESH lo llevaba, y esa receta cambió el 2026-09-05. Un id en SIG_ONLY_TOPS
 // que ningún Signature usa no restringe nada — solo lo vuelve imposible de pedir.
-export const SIG_ONLY_TOPS = new Set<string>(["T10"]);
+export const SIG_ONLY_TOPS = new Set<string>(idsDe(CARTA.vegetales, (x) => !!x.soloEnSignature));
 // P01 (Res) y P05 (Embutido) salen de ARMA EL TUYO el 2026-09-05 (decisión del dueño), por
 // RENTABILIDAD y no por producto. Cada una se pasaba del techo de 45% de costo en un tamaño:
 //   · Res 30CM ....... 47.6%  (el 15CM estaba en 44.2%)
@@ -333,13 +291,13 @@ export const SIG_ONLY_TOPS = new Set<string>(["T10"]);
 // a haber margen (proveedor más barato, o subir el precio), lo primero que hay que revisar
 // es devolver P01 acá.
 // Carta v4 (2026-09-24): P05 queda solo para el Italian Hoagie. P01 y P02 se retiraron enteras.
-export const SIG_ONLY_PROTS = new Set<string>(["P05"]);
+export const SIG_ONLY_PROTS = new Set<string>(idsDe(CARTA.proteinas, (x) => !!x.soloEnSignature));
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05, el menú secreto, S/24.90) muy por encima del
 // resto del catálogo — mismo criterio que R03_FLAT_WAIVER. SIG07 salió de este Set al
 // retirarse del catálogo el 2026-08-22.
-export const RESERVE_SIGS = new Set(["SIG05"]);
+export const RESERVE_SIGS = new Set(idsDe(CARTA.signatures, (x) => x.tipo === "Reserve"));
 // Recargo de doble proteína del tamaño pedido. Único punto donde se decide pDbl vs
 // pDbl30 en el servidor — si agregas un cálculo nuevo de doble proteína, pásalo por acá.
 // DEBE coincidir con dblFee() en src/app.ts.
@@ -359,56 +317,32 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
 // Carta v4 (2026-09-24): los seis clásicos de USA. The Original, The Smoke y The Teriyaki salieron:
 // su fila vive en `catalog_items` con active=false (loadCatalogItems la carga y priceSigBuild
 // rechaza pedirlos). Sin badges (decisión del dueño).
-export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = {
-  SIG02: { n: "Meatball Marinara", s: "Signature", badge: "", pitch: "", img: "img/sig02.jpg", active: true },
-  SIG04: { n: "Classic Tuna", s: "Signature", badge: "", pitch: "", img: "img/sig04.jpg", active: true },
-  SIG09: { n: "Philly Cheesesteak", s: "Signature", badge: "", pitch: "", img: "img/sig09.jpg", active: true },
-  SIG10: { n: "Turkey", s: "Signature", badge: "", pitch: "", img: null, active: true },
-  SIG11: { n: "Italian Hoagie", s: "Signature", badge: "", pitch: "", img: "img/sig11.jpg", active: true },
-  SIG12: { n: "Tuna Melt", s: "Signature", badge: "", pitch: "", img: null, active: true },
-};
-export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = {
-  // CARTA v4, LOS CLÁSICOS DE USA (2026-09-24) — ver docs/MENU_CLASICOS_USA.md y DECISIONES.
-  // SEMILLA: la fuente real es `catalog_items`. La historia de las recetas anteriores (The
-  // Original, The Smoke, The Teriyaki, The Chicago) quedó en git y en docs/DECISIONES.md.
-  // DEBEN coincidir con SIGS en src/app/01-* (lo vigila `npm run parity`).
-  //
-  // Queso fijo (`fixedCheese`) = parte de la receta: priceSigBuild lo suma siempre a los
-  // ingredientes, lo pida o no el cliente. Por ahora cheddar (C02) y mozzarella (C01); el
-  // provolone reemplazará al edam cuando se cotice (dueño, 2026-09-24).
-  SIG09: { base: "B01", prot: "P09", tops: ["T10", "T06"], sauces: [], p15: 22.9, p30: 32.9, fixedCheese: "C02" },
-  SIG02: { base: "B01", prot: "P06", tops: ["T01", "T03", "T05"], sauces: ["S06"], p15: 21.9, p30: 28.9, fixedCheese: "C01" },
-  SIG10: { base: "B01", prot: "P08", tops: ["T09", "T01", "T03", "T06"], sauces: ["S06"], p15: 23.9, p30: 34.9 },
-  SIG12: { base: "B01", prot: "P04", tops: [], sauces: [], p15: 22.9, p30: 36.9, fixedCheese: "C02" },
-  SIG11: { base: "B01", prot: "P05", tops: ["T09", "T01", "T03", "T06"], sauces: ["S06"], p15: 23.9, p30: 33.9, fixedCheese: "C01" },
-  // Atún escurrido, mayonesa y pimienta: la mayonesa está dentro de P04 y la pimienta es parte
-  // de su preparación (RECETARIO.md), por eso `tops` y `sauces` van vacíos.
-  SIG04: { base: "B01", prot: "P04", tops: [], sauces: [], p15: 20.9, p30: 34.9 },
-  // Menú secreto — ver SIG_GATES. Nunca aparece en el menú público; solo un cliente que
-  // ya alcanzó el rango exigido lo ve/puede pedirlo (ver sigGateError). Valores de abajo
-  // son solo el respaldo inicial/semilla — desde la rotación mensual (decisión del dueño,
-  // 2026-08-10) loadSecretSignature() los sobreescribe en cada refresco con la fila
-  // vigente de la tabla `secret_signature` (ver esa función más abajo), igual que
-  // loadCatalogPrices() ya hace con los precios. No editar este literal para cambiar el
-  // sándwich del mes — eso se hace desde el panel admin.
-  SIG05: { base: "B03", prot: "P03", tops: ["T04", "T06", "T03"], sauces: ["S02", "S12"], p15: 24.9, p30: 30.9 },
-};
+export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = Object.fromEntries(
+  signaturesDeLaCarta().map((x) => [x.id, { n: x.nombre, s: x.tipo, badge: "", pitch: "", img: x.foto ?? null, active: true }]),
+);
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = Object.fromEntries(
+  CARTA.signatures.map((x) => [x.id, {
+    base: x.pan, prot: x.prot, tops: [...x.vegetales], sauces: [...x.salsas], p15: x.p15, p30: x.p30,
+    ...(x.queso ? { fixedCheese: x.queso } : {}),
+    ...(x.quesoOpcional ? { cheeseOptional: true } : {}),
+  }]),
+);
 // Sabores con acceso restringido — hoy solo el menú secreto (permanente), pero el mismo
 // campo earlyAccessUntil sirve para abrir un Signature nuevo antes al Círculo Interno y
 // recién después a todos (poner una fecha ISO ahí en vez de dejarlo indefinido). Se
 // compara contra customers.total_orders de la SESIÓN que hace el pedido — un invitado
 // (sin sesión) nunca puede pedirlos, sin importar qué diga el carrito.
 // Bajado de 15 a 5 pedidos (decisión de negocio) para que el menú secreto se desbloquee
-// mucho antes en la vida del cliente — DEBE coincidir con SIG05.minOrders en src/app.ts.
+// mucho antes en la vida del cliente — semilla en `secreto.minPedidos` de _shared/carta.ts.
 // minOrders también admin-editable por fila desde la rotación mensual — ver
-// loadSecretSignature(), que sobreescribe SIG_GATES.SIG05.minOrders igual que sobreescribe
-// SIG_DATA.SIG05 arriba.
+// loadSecretSignature(), que sobreescribe SIG_GATES[ID_SECRETO].minOrders igual que sobreescribe
+// SIG_DATA[ID_SECRETO] arriba.
 export const SIG_GATES: Record<string, { minOrders: number; earlyAccessUntil?: string }> = {
   // Bajado 15 → 5 → 3 pedidos (el paso a 3 es del 2026-08-26). SEMILLA únicamente: el valor
   // real vive en `secret_signature.min_orders` y loadSecretSignature() lo sobreescribe en
   // cada refresco, así que se edita desde Admin // Menú secreto sin desplegar nada.
-  SIG05: { minOrders: 3 },
 };
+for (const x of CARTA.signatures) if (x.secreto) SIG_GATES[x.id] = { minOrders: x.secreto.minPedidos };
 export function sigGateError(sigId: string, totalOrders: number): string | null {
   const gate = SIG_GATES[sigId];
   if (!gate) return null;
@@ -456,7 +390,7 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
 // 61-84% que el negocio venía usando para las bebidas costeaba SOLO el insumo, nunca el
 // envase: con una botella con tapa a rosca a ~S/1 (estimado, falta cotizar) el margen real
 // era 56-66%. El chai lleva +S/3 porque es el único con costo de insumo alto de verdad.
-// DEBEN coincidir con SIDES en src/app.ts.
+// Salen de _shared/carta.ts, la misma que usa el cliente.
 //
 // D09 (THE SPICE // CHAI) sale del menú el 2026-09-06, decisión del dueño. El número lo
 // respalda: costeado por BOTELLA DE MEDIO LITRO —que es el envase real, no el vaso de 300 ml
@@ -467,31 +401,17 @@ export function assertCartGatesAllowed(rawItems: any, totalOrders: number): void
 // Además era la única con un insumo que no se puede stockear (ver RECETARIO.md PARTE 4).
 // Para restaurarlo: D09 acá y en SIDE_LABEL, la entrada en SIDES (src/app/01-*), y una fila
 // `('D09','side','{"price":9}')` en catalog_prices.
-export const SIDE_PRICE: Record<string, number> = { D06: 6, D07: 5, D08: 6 };
-export const SIDE_LABEL: Record<string, string> = {
-  // Catálogo de bebidas de la casa — sin jugos a propósito (decisión de negocio: los
-  // jugos ya los vende cualquier juguería del barrio, esto busca diferenciarse).
-  D06: "THE BLOOM // HIBISCUS",
-  D07: "THE MIDNIGHT // BREW",
-  D08: "THE COOL // MINT",
-};
+export const SIDE_PRICE: Record<string, number> = Object.fromEntries(CARTA.bebidas.map((x) => [x.id, x.precio]));
+export const SIDE_LABEL: Record<string, string> = Object.fromEntries(CARTA.bebidas.map((x) => [x.id, etiqueta(x).toUpperCase()]));
 // "BUILD" se renombró a "SIGNATURE" (hallazgo de auditoría UX, CRÍTICO) — chocaba con el
-// modo "BUILD YOUR OWN" del cliente. DEBE coincidir con el tag `s` de SIGS en src/app.ts.
+// modo "BUILD YOUR OWN" del cliente. Sale del `tipo` de cada Signature en _shared/carta.ts.
 // SIG02 renombrado de "THE MEATBALL" a "THE MARINARA" 2026-08-08 (decisión del dueño, LLM
 // Council de naming/sabor) — "The Meatball" (inglés) repetía el mismo ingrediente que su
 // propia proteína interna ya muestra en español ("ALBÓNDIGA // MARINARA", ver PROT_LABEL
 // abajo), bilingüismo visible en la misma tarjeta. "Marinara" es un préstamo ya usado
 // igual en español e inglés (la salsa italiana), evita la traducción duplicada y sigue
-// encajando con el badge "Italiano". DEBE coincidir con SIGS.SIG02 en src/app.ts.
-export const SIG_LABEL: Record<string, string> = {
-  SIG02: "MEATBALL MARINARA // SIGNATURE",
-  SIG04: "CLASSIC TUNA // SIGNATURE",
-  SIG09: "PHILLY CHEESESTEAK // SIGNATURE",
-  SIG10: "TURKEY // SIGNATURE",
-  SIG11: "ITALIAN HOAGIE // SIGNATURE",
-  SIG12: "TUNA MELT // SIGNATURE",
-  SIG05: "MENÚ SECRETO // RESERVE",
-};
+// encajando con el badge "Italiano". Los nombres salen de _shared/carta.ts.
+export const SIG_LABEL: Record<string, string> = Object.fromEntries(CARTA.signatures.map((x) => [x.id, etiqueta(x).toUpperCase()]));
 // Antes cambiar un precio requería editar el mismo número en 2 lugares (index.html Y
 // esta función) y redesplegar ambos — ver migración create_catalog_prices_table. Esto
 // sobreescribe los números hardcodeados de arriba con lo que haya en la tabla, dejando
@@ -550,7 +470,7 @@ export async function loadCatalogItems(): Promise<void> {
       // SIG05 tiene su propia tabla y su propio ciclo: si alguien insertara una fila acá
       // con ese id, loadSecretSignature() la pisaría después y el resultado sería
       // impredecible. Se ignora explícitamente en vez de dejarlo al orden de las llamadas.
-      if (id === "SIG05") continue;
+      if (esSecreto(id)) continue;
       const tops = Array.isArray(row.tops) ? row.tops : [];
       const sauces = Array.isArray(row.sauces) ? row.sauces : [];
       SIG_DATA[id] = {
@@ -583,7 +503,7 @@ export async function loadCatalogItems(): Promise<void> {
   }
 }
 // Sándwich secreto con rotación mensual (decisión del dueño, 2026-08-10 — reemplaza el
-// "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA.SIG05/SIG_GATES.SIG05/
+// "THE VAULT" fijo que existía hasta esa fecha). Antes SIG_DATA[ID_SECRETO]/SIG_GATES[ID_SECRETO]/
 // VAULT_ONLY_* eran literales de código: cambiar el sándwich del mes exigía editar 2
 // archivos (este + src/app.ts) y redesplegar. Ahora la fila más reciente de la tabla
 // `secret_signature` (una por cada vez que el admin publica un cambio, nunca se
@@ -600,7 +520,7 @@ export async function loadSecretSignature(): Promise<void> {
       hints: pistasValidas(row.hints),
       past: secretosQueYaNoVuelven(rows),
     };
-    SIG_DATA.SIG05 = {
+    SIG_DATA[ID_SECRETO] = {
       base: row.base,
       prot: row.protein_id,
       tops: Array.isArray(row.tops) ? row.tops : [],
@@ -609,8 +529,8 @@ export async function loadSecretSignature(): Promise<void> {
       p30: Number(row.price_30),
     };
     SECRET_SIGNATURE_NAME = String(row.name || "").trim() || "Menú secreto";
-    SIG_LABEL.SIG05 = `${SECRET_SIGNATURE_NAME.toUpperCase()} // RESERVE`;
-    SIG_GATES.SIG05 = { minOrders: Number(row.min_orders) || 5 };
+    SIG_LABEL[ID_SECRETO] = `${SECRET_SIGNATURE_NAME.toUpperCase()} // RESERVE`;
+    SIG_GATES[ID_SECRETO] = { minOrders: Number(row.min_orders) || 5 };
     // vault_only_ids es una lista plana de ids (proteína y/o tops y/o salsas) que este
     // ciclo quiere reservados solo para el menú secreto — se reparte en los 3 Sets según
     // a qué categoría pertenece cada id, en vez de que el admin tenga que llenar 3 campos
@@ -621,65 +541,28 @@ export async function loadSecretSignature(): Promise<void> {
     VAULT_ONLY_SAUCES.clear();
     for (const id of vaultOnlyIds) {
       if (id === row.protein_id) VAULT_ONLY_PROTS.add(id);
-      else if (SIG_DATA.SIG05.tops.includes(id)) VAULT_ONLY_TOPS.add(id);
-      else if (SIG_DATA.SIG05.sauces.includes(id)) VAULT_ONLY_SAUCES.add(id);
+      else if (SIG_DATA[ID_SECRETO].tops.includes(id)) VAULT_ONLY_TOPS.add(id);
+      else if (SIG_DATA[ID_SECRETO].sauces.includes(id)) VAULT_ONLY_SAUCES.add(id);
     }
   } catch (e) {
-    // Igual que loadCatalogPrices: si falla, seguimos con SIG_DATA.SIG05/SIG_GATES.SIG05/
+    // Igual que loadCatalogPrices: si falla, seguimos con SIG_DATA[ID_SECRETO]/SIG_GATES[ID_SECRETO]/
     // VAULT_ONLY_* como estén en memoria (el literal de arriba en el primer arranque de
     // cada instancia, o la última fila cargada con éxito) en vez de bloquear un pedido.
     console.error("loadSecretSignature failed:", e);
   }
 }
 // P01 corregido de "ASADO // RES" a "RES // ASADO" — rompía la convención genérico+estilo
-// del resto (Pollo/Cajún, Atún/House, Albóndiga/Marinara) — DEBE coincidir con PROTS.P01
-// en src/app.ts.
+// del resto (Pollo/Cajún, Atún/House, Albóndiga/Marinara) — hoy todos los nombres salen de _shared/carta.ts.
 // Etiquetas de pan/toppings/salsas. El servidor solo necesitaba los ids para tasar y
 // descontar inventario, así que hasta ahora los nombres legibles vivían únicamente en el
 // cliente — pero la generación automática de guiones de video (actions/video.ts) construye
 // el prompt a partir de la receta REAL, y "T03" no le dice nada a un modelo de video.
-// DEBEN coincidir con BASES/TOPS/SAUCES en src/app.ts, mismo criterio que PROT_LABEL.
-export const BASE_LABEL: Record<string, string> = {
-  B01: "Classic // White",
-  B03: "Focaccia // Artesanal",
-};
-export const TOP_LABEL: Record<string, string> = {
-  T01: "Tomate // Fresco",
-  T03: "Cebolla // Morada juliana",
-  T04: "Jalapeño // Encurtido",
-  T05: "Aceituna // Negra en rodajas",
-  T06: "Pimiento // Curado",
-  T09: "Lechuga // Fresca",
-  T10: "Cebolla // Salteada",
-};
-export const SAUCE_LABEL: Record<string, string> = {
-  S01: "Aioli // Signature",
-  S02: "Spicy // Mayo",
-  S03: "Smoke // BBQ",
-  S04: "Honey // Mustard",
-  S05: "SNDWCH // Special",
-  S06: "Oil & Vinegar // Classic",
-  S08: "Teriyaki // Glaze",
-  S09: "Chimichurri // Piña y Ají",
-  S10: "Peanut // Satay",
-  S11: "Mostaza // Dijon",
-  S12: "Picante // Miel",
-};
+// Salen de _shared/carta.ts, mismo criterio que PROT_LABEL.
+export const BASE_LABEL: Record<string, string> = Object.fromEntries(CARTA.panes.map((x) => [x.id, etiqueta(x)]));
+export const TOP_LABEL: Record<string, string> = Object.fromEntries(CARTA.vegetales.map((x) => [x.id, etiqueta(x)]));
+export const SAUCE_LABEL: Record<string, string> = Object.fromEntries(CARTA.salsas.map((x) => [x.id, etiqueta(x)]));
 
-export const PROT_LABEL: Record<string, string> = {
-  P03: "POLLO // CAJUN",
-  P04: "ATÚN // HOUSE",
-  P05: "EMBUTIDO // ITALIANO",
-  // P06 corregido de "MEATBALL // MARINARA" a "ALBÓNDIGA // MARINARA" — único nombre en
-  // inglés entre las 6 proteínas, ni coincidía con su propia descripción en español —
-  // DEBE coincidir con PROTS.P06 en src/app.ts.
-  P06: "ALBÓNDIGA // MARINARA",
-  // "Horneado" y no "Oven Roasted": el resto del catálogo interno ya está 100% en español
-  // (Res/Pollo/Atún/Embutido/Albóndiga) y mezclar idiomas en la misma lista es el defecto que
-  // obligó a renombrar MEATBALL. DEBE coincidir con PROTS.P08 en src/app/01-*.
-  P08: "PAVO // HORNEADO",
-  P09: "RES // LAMINADA",
-};
+export const PROT_LABEL: Record<string, string> = Object.fromEntries(CARTA.proteinas.map((x) => [x.id, etiqueta(x).toUpperCase()]));
 
 // priced es el PricedBuild completo (tipo definido más abajo) — antes esta función solo
 // recibía basePrice/dblSurcharge sueltos, así que solo podía implementar R04/R06 y dejaba
@@ -922,7 +805,7 @@ export function priceCartItem(raw: any): PricedItem {
       // `snapIngredients`: foto de la composición REAL al momento de pedir. A diferencia de
       // BUILD YOUR OWN (que guarda base/prot/tops/sauces en el propio ítem, así que
       // re-derivarlo siempre da lo mismo), un Signature guarda solo su `sigId` y su receta
-      // vive en SIG_DATA — y SIG_DATA.SIG05 CAMBIA cada mes (menú secreto con rotación,
+      // vive en SIG_DATA — y SIG_DATA[ID_SECRETO] CAMBIA cada mes (menú secreto con rotación,
       // tabla secret_signature). Sin esta foto, cancelar/reponer un pedido viejo del menú
       // secreto después de una rotación restituía al inventario los ingredientes del
       // sándwich secreto de ESTE mes, no los del que de verdad se vendió — corrompiendo el

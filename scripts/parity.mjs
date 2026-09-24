@@ -98,26 +98,10 @@ function clientObjArray(varName, idPrefix, fields) {
   return out;
 }
 
-const cProt = need(clientObjArray('PROTS', 'P', ['p15', 'p30', 'pDbl', 'pDbl30']), 'PROTS (cliente)');
-const cSide = need(clientObjArray('SIDES', 'D', ['p']), 'SIDES (cliente)');
+// LA CARTA YA NO SE COMPARA ACÁ (2026-09-24): proteínas, bebidas, Signatures, nombres,
+// exclusividades, doble y el umbral del menú secreto salen de `supabase/functions/_shared/carta.ts`
+// en los dos lados (el cliente la recibe por el bundle nuevo). No hay dos copias que comparar.
 const cRew = need(clientObjArray('RWDS', 'R', ['pts']), 'RWDS (cliente)');
-
-// SIGS: bloques multilínea, así que se recorta por id y se leen los campos sueltos.
-const cSig = {};
-{
-  const start = app.indexOf('var SIGS');
-  const chunk = app.slice(start, start + 40000);
-  const re = /\{id:'(SIG\d+)',([\s\S]*?)\n(?=  \{id:'SIG|\];)/g;
-  let m;
-  while ((m = re.exec(chunk))) {
-    const [, id, body] = m;
-    const num = (f) => { const x = body.match(new RegExp('\\b' + f + ':(-?[\\d.]+)')); return x ? Number(x[1]) : null; };
-    const str = (f) => { const x = body.match(new RegExp('\\b' + f + ":'([^']*)'")); return x ? x[1] : null; };
-    const arr = (f) => { const x = body.match(new RegExp('\\b' + f + ':\\[([^\\]]*)\\]')); return x ? x[1].split(',').map((s) => s.trim().replace(/'/g, '')).filter(Boolean) : null; };
-    cSig[id] = { p15: num('p15'), p30: num('p30'), base: str('base'), prot: str('prot'), tops: arr('tops'), sauces: arr('sauces') };
-  }
-}
-need(cSig, 'SIGS (cliente)');
 
 const cZones = {};
 {
@@ -143,29 +127,7 @@ function serverRecord(src, name, fields) {
   return out;
 }
 
-const sProt = need(serverRecord(catalog, 'PROT_PRICE', ['p15', 'p30', 'pDbl', 'pDbl30']), 'PROT_PRICE (servidor)');
 const sRew = need(serverRecord(catalog, 'REWARDS', ['pts']), 'REWARDS (servidor)');
-
-const sSig = {};
-{
-  const start = catalog.indexOf('export const SIG_DATA');
-  const chunk = catalog.slice(start, catalog.indexOf('\n};', start));
-  for (const m of chunk.matchAll(/^\s{2}(SIG\d+): \{(.*)\}/gm)) {
-    const body = m[2];
-    const num = (f) => { const x = body.match(new RegExp('\\b' + f + ': (-?[\\d.]+)')); return x ? Number(x[1]) : null; };
-    const str = (f) => { const x = body.match(new RegExp('\\b' + f + ': "([^"]*)"')); return x ? x[1] : null; };
-    const arr = (f) => { const x = body.match(new RegExp('\\b' + f + ': \\[([^\\]]*)\\]')); return x ? x[1].split(',').map((s) => s.trim().replace(/"/g, '')).filter(Boolean) : null; };
-    sSig[m[1]] = { p15: num('p15'), p30: num('p30'), base: str('base'), prot: str('prot'), tops: arr('tops'), sauces: arr('sauces') };
-  }
-}
-need(sSig, 'SIG_DATA (servidor)');
-
-const sSide = {};
-{
-  const m = catalog.match(/export const SIDE_PRICE[^=]*= \{([^}]*)\}/);
-  if (m) for (const p of m[1].matchAll(/(D\d+): ([\d.]+)/g)) sSide[p[1]] = { p: Number(p[2]) };
-}
-need(sSide, 'SIDE_PRICE (servidor)');
 
 const sZones = {};
 {
@@ -175,21 +137,8 @@ const sZones = {};
 need(sZones, 'DELIVERY_ZONE_FEES (servidor)');
 
 // ---------- comparaciones ----------
-for (const id of new Set([...Object.keys(cProt), ...Object.keys(sProt)])) {
-  cmp(`Proteína ${id} (PROTS ↔ PROT_PRICE)`, cProt[id] ?? null, sProt[id] ?? null);
-}
-for (const id of new Set([...Object.keys(cSide), ...Object.keys(sSide)])) {
-  cmp(`Bebida ${id} (SIDES ↔ SIDE_PRICE)`, cSide[id] ?? null, sSide[id] ?? null);
-}
 for (const id of new Set([...Object.keys(cRew), ...Object.keys(sRew)])) {
   cmp(`Recompensa ${id} (REWARDS)`, cRew[id] ?? null, sRew[id] ?? null);
-}
-for (const id of new Set([...Object.keys(cSig), ...Object.keys(sSig)])) {
-  // SIG05 es la excepción documentada: su composición y precio viven en la tabla
-  // `secret_signature` y se recargan en cada llamada, así que los literales de los dos
-  // lados son solo semilla y no tienen por qué coincidir entre sí.
-  if (id === 'SIG05') continue;
-  cmp(`Signature ${id} (SIGS ↔ SIG_DATA)`, cSig[id] ?? null, sSig[id] ?? null);
 }
 cmp('Zonas de delivery (DELIVERY_PRICE_ZONES ↔ DELIVERY_ZONE_FEES)', cZones, sZones);
 
@@ -439,70 +388,10 @@ cmp('DELIVERY_EXCLUDED_ZONES (zonas sin reparto)',
   stringList(app, /var DELIVERY_EXCLUDED_ZONES=\[([^\]]*)\]/, 'src/app/', 'DELIVERY_EXCLUDED_ZONES'),
   stringList(env, /export const DELIVERY_EXCLUDED_ZONES = \[([^\]]*)\]/, 'env.ts', 'DELIVERY_EXCLUDED_ZONES'));
 
-// Menú secreto: el rango que lo desbloquea sí vive en código en los dos lados.
-cmp('Menú secreto — pedidos mínimos (SIGS.SIG05.minOrders ↔ SIG_GATES.SIG05)',
-  scalar(app, 'minOrders del menú secreto', /secret:true,minOrders:(\d+)/, 'src/app/'),
-  scalar(catalog, 'SIG_GATES.SIG05', /SIG05: \{ minOrders: (\d+) \}/, 'catalog.ts'));
-
-// ---------- NOMBRES (agregado 2026-08-26) ----------
-//
-// Hasta acá todo lo comparado era DINERO y composición. Los NOMBRES no se comparaban nunca,
-// y son la otra mitad que se puede desincronizar sin que nada avise: el cliente arma la
-// etiqueta desde `l`/`n` + `s` de cada array, y el servidor tiene su propio mapa *_LABEL,
-// que es el que sale impreso en el recibo, el correo de confirmación y la push. Si se
-// separan, el cliente ve "The Marinara" y el comprobante dice otra cosa. Ya pasó con P06,
-// que era "MEATBALL // MARINARA" en el servidor y "Albóndiga" en el cliente — se detectó a
-// ojo en una auditoría, no por una comprobación automática.
-//
-// Convención: la etiqueta del servidor es (l + " // " + s). Se compara SIN distinguir
-// mayúsculas a propósito: el servidor no es uniforme (SIG_LABEL y PROT_LABEL van en
-// mayúsculas, SAUCE_LABEL/TOP_LABEL/BASE_LABEL en capitalización normal) y esa diferencia
-// es de presentación, no un desajuste. Lo que importa es que las PALABRAS sean las mismas.
-function clientLabels(varName, idPrefix, nameField) {
-  const start = app.indexOf('var ' + varName);
-  if (start < 0) return {};
-  const chunk = app.slice(start, start + 40000);
-  const out = {};
-  // Una entrada por línea en todos estos arrays, así que leer por línea es mucho más
-  // robusto que intentar delimitar objetos con lookaheads sobre texto multilínea.
-  const re = new RegExp("^\\s*\\{id:'(" + idPrefix + "\\d+)'(.*)$", 'gm');
-  let m;
-  while ((m = re.exec(chunk))) {
-    const [, id, body] = m;
-    if (out[id]) break; // ya salimos de este array y estamos leyendo otra estructura
-    const g = (f) => { const x = body.match(new RegExp("\\b" + f + ":\\s*'([^']*)'")); return x ? x[1] : null; };
-    const l = g(nameField), sub = g('s');
-    if (l && sub) out[id] = (l + ' // ' + sub).toUpperCase();
-  }
-  return out;
-}
-
-function serverLabels(name) {
-  const start = catalog.indexOf('export const ' + name);
-  if (start < 0) return {};
-  const chunk = catalog.slice(start, catalog.indexOf('\n};', start) + 3 || start + 8000);
-  const out = {};
-  for (const m of chunk.matchAll(/^\s{2}([A-Z]+\d+):\s*"([^"]*)"/gm)) out[m[1]] = m[2].toUpperCase();
-  return out;
-}
-
-for (const [varName, prefix, nameField, serverMap, humano] of [
-  ['SIGS', 'SIG', 'n', 'SIG_LABEL', 'Signature'],
-  ['PROTS', 'P', 'l', 'PROT_LABEL', 'Proteína'],
-  ['TOPS', 'T', 'l', 'TOP_LABEL', 'Topping'],
-  ['SAUCES', 'S', 'l', 'SAUCE_LABEL', 'Salsa'],
-  ['SIDES', 'D', 'l', 'SIDE_LABEL', 'Bebida'],
-  ['BASES', 'B', 'l', 'BASE_LABEL', 'Pan'],
-]) {
-  const c = need(clientLabels(varName, prefix, nameField), varName + ' — nombres (cliente)');
-  const sv = need(serverLabels(serverMap), serverMap + ' (servidor)');
-  for (const id of new Set([...Object.keys(c), ...Object.keys(sv)])) {
-    // El menú secreto cambia de nombre cada mes desde `secret_signature`, así que sus
-    // literales son semilla y no tienen por qué coincidir (misma excepción que arriba).
-    if (id === 'SIG05') continue;
-    cmp(humano + ' ' + id + ' — nombre (' + varName + ' ↔ ' + serverMap + ')', c[id] ?? null, sv[id] ?? null);
-  }
-}
+// (Los NOMBRES de la carta, el umbral del menú secreto, el doble y la exclusividad se comparaban
+// acá hasta el 2026-09-24. Hoy salen de `_shared/carta.ts` en los dos lados: ver la nota de
+// arriba. Lo que sí queda por probar de la exclusividad es que el servidor RECHACE lo que la
+// carta marca, y eso lo hace tests-api/proteinas-fuera-del-armador.test.ts.)
 
 // ---------- constantes que NO son de dinero pero igual viven duplicadas ----------
 // Las cuatro de abajo estaban defendidas solo por un comentario "DEBE coincidir con...",
@@ -570,38 +459,6 @@ cmp('RANKS (nombres y umbrales de rango)',
   ranks(app, /var RANKS=\[([\s\S]*?)\];/, 'src/app/'),
   ranks(env, /export const RANKS: \{ name: string; minOrders: number \}\[\] = \[([\s\S]*?)\];/, 'env.ts'));
 
-// Proteínas sin opción de doble. Son DOS conjuntos desde el 2026-09-12: `noDouble` apaga el
-// doble en los dos tamaños y `noDouble30` solo en el de 30CM (el atún usa el segundo — ver
-// el comentario de P04). El cliente las esconde, el servidor las rechaza. Si se separan, o
-// se ofrece un extra que el servidor no cobra, o se cobra uno que el cliente nunca mostró.
-//
-// El conjunto de 15CM está VACÍO hoy, y eso es justo lo que hay que poder leer: el parseo
-// tiene que distinguir "vacío" de "no lo encontré". La primera versión de este bloque quedó
-// ciega apenas se agregó el tipo genérico (`new Set<string>([])` no casaba con su regex) y
-// dio un falso positivo. Un chequeo de paridad que no sabe leer un conjunto vacío es
-// exactamente el que se calla el día que alguien lo vacíe sin querer.
-function clientDoubleFlag(flag) {
-  const start = app.indexOf('var PROTS');
-  if (start < 0) return null;
-  const block = app.slice(start, app.indexOf('];', start));
-  const out = [];
-  // `noDouble` no puede casar dentro de `noDouble30`: se ancla a la coma o la llave previa.
-  const rx = new RegExp(`\\{\\s*id:\\s*'(P\\d+)'[^}]*?[,{]\\s*${flag}:\\s*true`, 'g');
-  let m;
-  while ((m = rx.exec(block))) out.push(m[1]);
-  return out.sort();
-}
-function serverDoubleSet(name) {
-  // `<string>` opcional: el conjunto vacío lo necesita para tipar, el lleno lo infiere.
-  const m = catalog.match(new RegExp(`export const ${name} = new Set(?:<string>)?\\(\\[([^\\]]*)\\]\\)`));
-  if (!m) {
-    problems.push(`${name}: no se encontró en catalog.ts — el formato cambió y este script quedó ciego`);
-    return null;
-  }
-  return (m[1].match(/"(P\d+)"/g) ?? []).map((x) => x.replace(/"/g, '')).sort();
-}
-cmp('NO_DOUBLE_PROTS (sin doble en ningún tamaño)', clientDoubleFlag('noDouble'), serverDoubleSet('NO_DOUBLE_PROTS'));
-cmp('NO_DOUBLE_30_PROTS (sin doble solo en 30CM)', clientDoubleFlag('noDouble30'), serverDoubleSet('NO_DOUBLE_30_PROTS'));
 
 // ---------- los supuestos del modelo financiero: env.ts ↔ Python ----------
 //
@@ -652,64 +509,6 @@ cmpModelo('Supuesto del modelo: attach de bebida (DRINK_ATTACH ↔ drinkPct)', '
     tsSupuesto('drinkPct'), (pyNum(compMenu, 'DRINK_ATTACH', 'comparativa_menu.py') ?? 0) * 100);
 cmpModelo('Supuesto del modelo: viralidad (VIRAL ↔ referralsPer100)', 'modelo/modelo_v11_metas.py',
     tsSupuesto('referralsPer100'), (pyNum(metasPy, 'VIRAL', 'modelo_v11_metas.py') ?? 0) * 100);
-
-// ---------- exclusividad de ingredientes (sigOnly / vaultOnly) ----------
-//
-// ⚠ ESTAS LISTAS DECIDEN QUÉ SE PUEDE PEDIR, y hasta el 2026-09-12 no las comparaba nadie.
-//
-// El servidor las tiene como Sets (`SIG_ONLY_PROTS`, `VAULT_ONLY_TOPS`, …) y `priceByoBuild`
-// rechaza con ellas: "Proteína inválida.", "Topping inválido.", "Salsa inválida.". El cliente
-// las tiene como banderas `sigOnly:true` / `vaultOnly:true` en los literales de PROTS/TOPS/
-// SAUCES, y filtra con ellas el armador y la repetición de un pedido pasado.
-//
-// Si se separan, falla en SILENCIO y en las dos direcciones:
-//   · cliente MÁS PERMISIVO → el cliente arma el sándwich entero, escribe su dirección y el
-//     servidor lo rechaza al pagar. Es el defecto que ya obligó a poner el selector de
-//     distrito y a tachar las horas llenas, y el que reapareció en "repetir pedido".
-//   · cliente MÁS ESTRICTO → un ingrediente desaparece del armador sin que nadie lo retirara.
-//     Venta perdida, cero errores, nada que mirar.
-//
-// Es el mismo caso de los precios duplicados, con la diferencia de que acá no hay un número
-// visible que delate la diferencia: no se nota hasta que un cliente se queda sin pagar.
-function clientFlagSet(varName, bandera) {
-  const start = app.indexOf('var ' + varName);
-  if (start < 0) {
-    problems.push(`${varName}: no se encontró en src/app — este chequeo quedó ciego`);
-    return null;
-  }
-  const fin = app.indexOf('\n];', start);
-  const bloque = app.slice(start, fin < 0 ? start + 9000 : fin);
-  const ids = [];
-  // Una sola línea por ítem (así están escritos los tres arrays); se toma el id solo si la
-  // bandera aparece en ESA línea, nunca en el bloque entero.
-  for (const linea of bloque.split('\n')) {
-    const m = linea.match(/\{\s*id:\s*'([A-Z0-9]+)'/);
-    if (m && new RegExp(bandera + '\\s*:\\s*true').test(linea)) ids.push(m[1]);
-  }
-  return ids.sort();
-}
-function serverSet(nombre) {
-  // Acepta `new Set([...])` y `new Set<string>([...])` — el genérico apareció al vaciar
-  // NO_DOUBLE_PROTS y ya dejó ciego a este script una vez.
-  const m = catalog.match(new RegExp('export const ' + nombre + '\\s*=\\s*new Set(?:<[^>]*>)?\\(\\[([^\\]]*)\\]'));
-  if (!m) {
-    problems.push(`${nombre}: no se encontró en catalog.ts — este chequeo quedó ciego`);
-    return null;
-  }
-  return (m[1].match(/"([A-Z0-9]+)"/g) || []).map((x) => x.replace(/"/g, '')).sort();
-}
-for (const [varName, bandera, setName] of [
-  ['PROTS', 'sigOnly', 'SIG_ONLY_PROTS'],
-  ['PROTS', 'vaultOnly', 'VAULT_ONLY_PROTS'],
-  ['TOPS', 'sigOnly', 'SIG_ONLY_TOPS'],
-  ['TOPS', 'vaultOnly', 'VAULT_ONLY_TOPS'],
-  ['SAUCES', 'sigOnly', 'SIG_ONLY_SAUCES'],
-  ['SAUCES', 'vaultOnly', 'VAULT_ONLY_SAUCES'],
-]) {
-  const c = clientFlagSet(varName, bandera);
-  const sv = serverSet(setName);
-  if (c && sv) cmp(`Exclusividad: ${varName}.${bandera} ↔ ${setName}`, c, sv);
-}
 
 // ---------- el techo de CAC contra el Python ----------
 //

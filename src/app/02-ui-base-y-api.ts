@@ -409,7 +409,7 @@ async function loadCatalogBackground(){
     // sigPreviewOverlayHTML, checkout) sigue leyendo esos mismos campos sin cambios.
     var secret=r.secretSignature;
     if(secret){
-      var secretSig=SIGS.find(function(s){return s.id==='SIG05';});
+      var secretSig=SIGS.find(function(s){return s.secret;});
       if(secretSig){
         secretSig.n=secret.name;secretSig.base=secret.base;secretSig.prot=secret.prot;
         secretSig.tops=secret.tops;secretSig.sauces=secret.sauces;

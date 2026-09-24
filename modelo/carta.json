@@ -1,0 +1,386 @@
+{
+  "_generado": "NO SE EDITA A MANO. Sale de supabase/functions/_shared/carta.ts (node scripts/exportar-carta.mjs).",
+  "panes": [
+    {
+      "id": "B01",
+      "nombre": "Classic",
+      "sabor": "White",
+      "desc": "Miga suave y corteza fina. No pelea con el relleno, lo sostiene."
+    },
+    {
+      "id": "B03",
+      "nombre": "Focaccia",
+      "sabor": "Artesanal",
+      "desc": "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa."
+    }
+  ],
+  "proteinas": [
+    {
+      "id": "P03",
+      "nombre": "Pollo",
+      "sabor": "Cajun",
+      "desc": "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.",
+      "p15": 13.9,
+      "p30": 23.9,
+      "dbl15": 6,
+      "dbl30": 11,
+      "soloSecreto": true
+    },
+    {
+      "id": "P04",
+      "nombre": "Atún",
+      "sabor": "House",
+      "desc": "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.",
+      "p15": 16.9,
+      "p30": 32.9,
+      "dbl15": 10.9,
+      "dbl30": 21.9,
+      "foto": "img/prot_p04.webp"
+    },
+    {
+      "id": "P05",
+      "nombre": "Embutido",
+      "sabor": "Italiano",
+      "desc": "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.",
+      "p15": 16.9,
+      "p30": 32.9,
+      "dbl15": 9.9,
+      "dbl30": 19.9,
+      "soloEnSignature": true,
+      "foto": "img/prot_p05.webp"
+    },
+    {
+      "id": "P06",
+      "nombre": "Albóndiga",
+      "sabor": "Marinara",
+      "desc": "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.",
+      "p15": 14.9,
+      "p30": 26.9,
+      "dbl15": 6,
+      "dbl30": 12,
+      "foto": "img/prot_p06.webp"
+    },
+    {
+      "id": "P08",
+      "nombre": "Pavo",
+      "sabor": "Horneado",
+      "desc": "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.",
+      "p15": 15.9,
+      "p30": 28.9,
+      "dbl15": 9,
+      "dbl30": 17,
+      "foto": "img/prot_p08.webp"
+    },
+    {
+      "id": "P09",
+      "nombre": "Res",
+      "sabor": "Laminada",
+      "desc": "Laminada fina y salteada al momento.",
+      "p15": 12.9,
+      "p30": 22.9,
+      "dbl15": 7,
+      "dbl30": 13
+    }
+  ],
+  "vegetales": [
+    {
+      "id": "T01",
+      "nombre": "Tomate",
+      "sabor": "Fresco",
+      "desc": "En rodajas gruesas, cortado el mismo día."
+    },
+    {
+      "id": "T03",
+      "nombre": "Cebolla",
+      "sabor": "Morada juliana",
+      "desc": "En pluma fina y cruda. Dulce al entrar, con filo al final."
+    },
+    {
+      "id": "T04",
+      "nombre": "Jalapeño",
+      "sabor": "Encurtido",
+      "desc": "Picor limpio y corto, del que no tapa lo demás.",
+      "soloSecreto": true
+    },
+    {
+      "id": "T05",
+      "nombre": "Aceituna",
+      "sabor": "Negra en rodajas",
+      "desc": "Salada, con un fondo amargo que despierta el resto."
+    },
+    {
+      "id": "T06",
+      "nombre": "Pimiento",
+      "sabor": "Curado",
+      "desc": "Curado en aceite: dulce, ahumado y sin nada de agua."
+    },
+    {
+      "id": "T09",
+      "nombre": "Lechuga",
+      "sabor": "Fresca",
+      "desc": "En tiras y fría. Es lo que hace crujir los bordes."
+    },
+    {
+      "id": "T10",
+      "nombre": "Cebolla",
+      "sabor": "Salteada",
+      "desc": "Blanca, salteada junto con la res.",
+      "soloEnSignature": true
+    }
+  ],
+  "quesos": [
+    {
+      "id": "C01",
+      "nombre": "Mozzarella",
+      "desc": "Se derrite hasta el borde y estira al morder."
+    },
+    {
+      "id": "C02",
+      "nombre": "Cheddar",
+      "desc": "Curado y salado. No se pierde debajo de la carne."
+    },
+    {
+      "id": "C03",
+      "nombre": "Edam",
+      "desc": "Cremoso y discreto. El que no tapa nada."
+    }
+  ],
+  "salsas": [
+    {
+      "id": "S01",
+      "nombre": "Aioli",
+      "sabor": "Signature",
+      "desc": "Ajo y limón sobre base cremosa. Suave: va con todo."
+    },
+    {
+      "id": "S02",
+      "nombre": "Spicy",
+      "sabor": "Mayo",
+      "desc": "Cremosa al entrar. El calor llega después, y se queda.",
+      "picante": true,
+      "soloSecreto": true
+    },
+    {
+      "id": "S03",
+      "nombre": "Smoke",
+      "sabor": "BBQ",
+      "desc": "Ahumada y espesa, con miel y pimentón. La más contundente."
+    },
+    {
+      "id": "S04",
+      "nombre": "Honey",
+      "sabor": "Mustard",
+      "desc": "Miel y mostaza suave. Dulce que corta, no que empalaga."
+    },
+    {
+      "id": "S05",
+      "nombre": "SNDWCH",
+      "sabor": "Special",
+      "desc": "Salada y umami, imposible de ubicar. No decimos qué lleva."
+    },
+    {
+      "id": "S06",
+      "nombre": "Oil & Vinegar",
+      "sabor": "Classic",
+      "desc": "Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich."
+    },
+    {
+      "id": "S08",
+      "nombre": "Teriyaki",
+      "sabor": "Glaze",
+      "desc": "Soja, jengibre y azúcar reducidos hasta que brillan."
+    },
+    {
+      "id": "S09",
+      "nombre": "Chimichurri",
+      "sabor": "Piña y Ají",
+      "desc": "Piña asada y ají. Dulce y ahumada de entrada, con picor al final.",
+      "picante": true
+    },
+    {
+      "id": "S10",
+      "nombre": "Peanut",
+      "sabor": "Satay",
+      "desc": "Maní tostado con soya y jengibre. Espesa y tostada."
+    },
+    {
+      "id": "S11",
+      "nombre": "Mostaza",
+      "sabor": "Dijon",
+      "desc": "Ácida y filosa. Sin una gota de dulce."
+    },
+    {
+      "id": "S12",
+      "nombre": "Picante",
+      "sabor": "Miel",
+      "desc": "Primero la miel. Después el golpe.",
+      "picante": true,
+      "soloSecreto": true
+    }
+  ],
+  "bebidas": [
+    {
+      "id": "D06",
+      "nombre": "The Bloom",
+      "sabor": "Hibiscus",
+      "precio": 6,
+      "desc": "Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.",
+      "icono": "flor",
+      "foto": "img/drink_d06.jpg"
+    },
+    {
+      "id": "D07",
+      "nombre": "The Midnight",
+      "sabor": "Brew",
+      "precio": 5,
+      "desc": "Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.",
+      "icono": "moon",
+      "foto": "img/drink_d07.jpg"
+    },
+    {
+      "id": "D08",
+      "nombre": "The Cool",
+      "sabor": "Mint",
+      "precio": 6,
+      "desc": "Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.",
+      "icono": "hoja",
+      "foto": "img/drink_d08.jpg"
+    }
+  ],
+  "signatures": [
+    {
+      "id": "SIG09",
+      "nombre": "Philly Cheesesteak",
+      "tipo": "Signature",
+      "orden": 1,
+      "estrella": true,
+      "pan": "B01",
+      "prot": "P09",
+      "vegetales": [
+        "T10",
+        "T06"
+      ],
+      "salsas": [],
+      "p15": 22.9,
+      "p30": 32.9,
+      "queso": "C02",
+      "foto": "img/sig09.jpg",
+      "pitch": "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta."
+    },
+    {
+      "id": "SIG02",
+      "nombre": "Meatball Marinara",
+      "tipo": "Signature",
+      "orden": 2,
+      "pan": "B01",
+      "prot": "P06",
+      "vegetales": [
+        "T01",
+        "T03",
+        "T05"
+      ],
+      "salsas": [
+        "S06"
+      ],
+      "p15": 21.9,
+      "p30": 28.9,
+      "queso": "C01",
+      "foto": "img/sig02.jpg",
+      "pitch": "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con mozzarella derretida hasta el borde. Se come con las dos manos y con servilleta al lado."
+    },
+    {
+      "id": "SIG10",
+      "nombre": "Turkey",
+      "tipo": "Signature",
+      "orden": 3,
+      "pan": "B01",
+      "prot": "P08",
+      "vegetales": [
+        "T09",
+        "T01",
+        "T03",
+        "T06"
+      ],
+      "salsas": [
+        "S06"
+      ],
+      "p15": 23.9,
+      "p30": 34.9,
+      "pitch": "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre."
+    },
+    {
+      "id": "SIG12",
+      "nombre": "Tuna Melt",
+      "tipo": "Signature",
+      "orden": 4,
+      "pan": "B01",
+      "prot": "P04",
+      "vegetales": [],
+      "salsas": [],
+      "p15": 22.9,
+      "p30": 36.9,
+      "queso": "C02",
+      "pitch": "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo."
+    },
+    {
+      "id": "SIG11",
+      "nombre": "Italian Hoagie",
+      "tipo": "Signature",
+      "orden": 5,
+      "pan": "B01",
+      "prot": "P05",
+      "vegetales": [
+        "T09",
+        "T01",
+        "T03",
+        "T06"
+      ],
+      "salsas": [
+        "S06"
+      ],
+      "p15": 23.9,
+      "p30": 33.9,
+      "queso": "C01",
+      "foto": "img/sig11.jpg",
+      "pitch": "Embutidos italianos en pliegues, mozzarella, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
+    },
+    {
+      "id": "SIG04",
+      "nombre": "Classic Tuna",
+      "tipo": "Signature",
+      "orden": 6,
+      "pan": "B01",
+      "prot": "P04",
+      "vegetales": [],
+      "salsas": [],
+      "p15": 20.9,
+      "p30": 34.9,
+      "foto": "img/sig04.jpg",
+      "pitch": "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más."
+    },
+    {
+      "id": "SIG05",
+      "nombre": "Menú secreto",
+      "tipo": "Reserve",
+      "orden": 99,
+      "secreto": {
+        "minPedidos": 3
+      },
+      "pan": "B03",
+      "prot": "P03",
+      "vegetales": [
+        "T04",
+        "T06",
+        "T03"
+      ],
+      "salsas": [
+        "S02",
+        "S12"
+      ],
+      "p15": 24.9,
+      "p30": 30.9,
+      "foto": "img/sig05.jpg",
+      "pitch": "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo."
+    }
+  ]
+}

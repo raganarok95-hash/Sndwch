@@ -12,10 +12,11 @@
 //     sin proteína — y eso rompe recién en producción.
 // Por eso las aserciones son opuestas: no se puede en BYO, sí se puede en su Signature.
 //
-// ⚠ Lo que esta prueba NO puede ver: que alguien VACÍE `SIG_ONLY_PROTS`. Pregunta a esa misma
-// lista qué revisar, así que vacía no revisa nada y pasa. Eso lo caza `npm run parity`, que la
-// compara contra la marca `sigOnly` de PROTS en el cliente, una copia independiente (probado
-// el 2026-09-24 vaciándola).
+// ⚠ Lo que esta prueba NO puede ver: que alguien le QUITE la marca `soloEnSignature` a una
+// proteína en `_shared/carta.ts`. Pregunta a la carta qué revisar, así que sin la marca no hay
+// nada que revisar. Hasta el 2026-09-24 eso lo cazaba `parity` comparando dos copias; hoy hay
+// una sola carta, y quitar la marca ES la decisión de devolverla al armador (se revisa en el
+// diff, no en una prueba).
 //
 // jsr.io está bloqueado por el proxy, así que el assert va acá adentro (ver CLAUDE.md).
 function assertEquals<T>(actual: T, expected: T, msg?: string): void {

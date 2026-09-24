@@ -511,11 +511,14 @@ function confirmRerender(){syncConfirmFields();render();}
 // la única de las dos dimensiones que hoy se puede medir, y habrá que rehacerlo con ventas
 // reales. Un Signature que se venda el triple puede merecer la primera fila aunque deje
 // S/1 menos.
-var SIG_DISPLAY_ORDER=['SIG09','SIG02','SIG10','SIG12','SIG11','SIG04'];
+//
+// El orden vive en la carta (`orden` de cada Signature en `_shared/carta.ts`), no acá: antes era
+// una lista de códigos que se quedaba atrás cada vez que la carta cambiaba. Un Signature que la
+// base agrega sin estar en la carta va al final.
 function sigsEnOrden(lista){
+  var o=CARTA_VIEJA.ORDEN;
   return lista.slice().sort(function(a,b){
-    var ia=SIG_DISPLAY_ORDER.indexOf(a.id),ib=SIG_DISPLAY_ORDER.indexOf(b.id);
-    return (ia<0?99:ia)-(ib<0?99:ib);
+    return (o[a.id]!=null?o[a.id]:999)-(o[b.id]!=null?o[b.id]:999);
   });
 }
 function lastPaidOrder(){

@@ -6,6 +6,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { loadCatalogPrices, loadCatalogItems, PROT_PRICE, SIG_DATA, SIG_CONTENT, SIG_GATES, SIDE_PRICE, REWARDS, VALID_BASES, VALID_TOPS, VALID_SAUCES, VALID_CHEESE, SIG_ONLY_PROTS, SIG_ONLY_TOPS, SIG_ONLY_SAUCES, VAULT_ONLY_PROTS, VAULT_ONLY_TOPS, VAULT_ONLY_SAUCES, SECRET_SIGNATURE_NAME, SECRET_EXTRA } from "../catalog.ts";
+import { ID_SECRETO, esSecreto } from "../../_shared/carta.ts";
 
 // Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
 // que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
@@ -70,16 +71,16 @@ export async function actGetCatalog(_b: any) {
     sides: SIDE_PRICE,
     inventory,
     rewardPts,
-    secretSignature: SIG_DATA.SIG05
+    secretSignature: SIG_DATA[ID_SECRETO]
       ? {
           name: SECRET_SIGNATURE_NAME,
-          base: SIG_DATA.SIG05.base,
-          prot: SIG_DATA.SIG05.prot,
-          tops: SIG_DATA.SIG05.tops,
-          sauces: SIG_DATA.SIG05.sauces,
-          p15: SIG_DATA.SIG05.p15,
-          p30: SIG_DATA.SIG05.p30,
-          minOrders: SIG_GATES.SIG05 ? SIG_GATES.SIG05.minOrders : 5,
+          base: SIG_DATA[ID_SECRETO].base,
+          prot: SIG_DATA[ID_SECRETO].prot,
+          tops: SIG_DATA[ID_SECRETO].tops,
+          sauces: SIG_DATA[ID_SECRETO].sauces,
+          p15: SIG_DATA[ID_SECRETO].p15,
+          p30: SIG_DATA[ID_SECRETO].p30,
+          minOrders: SIG_GATES[ID_SECRETO] ? SIG_GATES[ID_SECRETO].minOrders : 5,
           vaultOnlyProts: [...VAULT_ONLY_PROTS],
           vaultOnlyTops: [...VAULT_ONLY_TOPS],
           vaultOnlySauces: [...VAULT_ONLY_SAUCES],
@@ -168,7 +169,7 @@ export async function actAdminCatalogItemsSet(b: any) {
   // acá, loadSecretSignature() pisaría lo publicado un instante después y el panel diría
   // "guardado" sin efecto — el mismo fallo silencioso que ya se corrigió en el editor de
   // precios. Se rechaza con un mensaje que dice a dónde ir.
-  if (itemId === "SIG05") throw new ApiError("El menú secreto se edita en Admin // Menú secreto, no acá.", 400);
+  if (esSecreto(itemId)) throw new ApiError("El menú secreto se edita en Admin // Menú secreto, no acá.", 400);
 
   const name = String(b.name || "").trim();
   if (!name) throw new ApiError("Falta el nombre del Signature.", 400);
