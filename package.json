@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.nuevo.json --noEmit",
     "parity": "node scripts/parity.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:precios": "node scripts/check-precios-visibles.mjs",
@@ -36,7 +36,11 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",
-    "typescript": "^7.0.2",
-    "deno": "^2.9.5"
+    "deno": "^2.9.5",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "lit-html": "^3.3.3"
   }
 }

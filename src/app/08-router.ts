@@ -532,6 +532,8 @@ var LIST_SCREENS: Record<string, number> = {
   p_recurring: 2,
 };
 
+// El registro que deja src/nuevo/main.ts. Si una pantalla está ahí, la pinta la base nueva.
+function pantallaNueva(sc:string):{pintar:(el:HTMLElement)=>void}|null{var n=(window as any).__sndNuevo;return n&&n.pantallas&&n.pantallas[sc]||null;}
 function renderScreen(){
   if(busy){
     var appElBusy=(document.getElementById('app') as HTMLInputElement | null);
@@ -584,7 +586,11 @@ function renderScreen(){
       STATUSES.CANCELADO.c='#8A8A8A';
     }
   }
-  switch(sndScreen){
+  // Una pantalla que ya migró a la base nueva (src/nuevo) no se escribe acá: el router le deja
+  // un contenedor vacío y, después de pintar, se lo entrega para que se dibuje sola.
+  var nueva=pantallaNueva(sndScreen);
+  if(nueva)h='<div id="pantalla-nueva" data-pantalla="'+sndScreen+'" style="display:contents"></div>';
+  else switch(sndScreen){
     case'o_home':      h=sOHome();break;
     case'o_sig':       h=sOSig();break;
     case'o_build':     h=sOBuild();break;
@@ -613,7 +619,6 @@ function renderScreen(){
     case'p_avisos':    h=sPAvisos();break;
     case'p_profile':   h=sPProfile();break;
     case'p_favorites': h=sPFavorites();break;
-    case'p_recurring': h=sPRecurring();break;
     // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
     // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
     // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
@@ -658,6 +663,7 @@ function renderScreen(){
   // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
   var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';
   (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+offlineBanner+updateBanner+h+'</div>';
+  if(nueva)nueva.pintar(document.getElementById('pantalla-nueva') as HTMLElement);
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;
   // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias

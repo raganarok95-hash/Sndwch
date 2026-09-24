@@ -104,7 +104,7 @@ test('la pantalla lista los pedidos fijos y permite quitarlos', async ({ page })
   await expect(page.getByText(/lo mandamos solo/i)).toHaveCount(0);
 
   // La app usa su propio modal (showConfirm), no el diálogo nativo del navegador.
-  await page.locator('[onclick*="doDeleteRecurring"]').click();
+  await page.getByRole('button', { name: 'Quitar el fijo' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
   await expect.poll(() => calls.filter((c) => c.action === 'recurring-delete').length).toBeGreaterThan(0);
   expect(calls.find((c) => c.action === 'recurring-delete')!.body.id).toBe('rec-1');

@@ -1,0 +1,33 @@
+# Índice de búsqueda del repo (knowledge-rag). Indexa el repo EN SU LUGAR —no copia nada a
+# documents/—, así el índice no puede quedar desfasado de una copia vieja.
+# El índice y el modelo de embeddings viven en data/ y models_cache/ (ignorados por git):
+# se regeneran con `npm run indice`.
+paths:
+  documents_dir: ".."
+  data_dir: "data"
+  models_cache_dir: "models_cache"
+documents:
+  supported_formats: [".md", ".ts", ".sql", ".py"]
+  exclude_patterns:
+    - ".git"
+    - "node_modules"
+    - ".knowledge-rag"
+    - "img"
+    - "test-results"
+    - "playwright-report"
+    - "__pycache__"
+    - "index.html"
+    - "admin.js"
+    - "*.d.ts"
+# El proxy de este entorno bloquea HuggingFace (403). El único modelo MULTILINGÜE que fastembed
+# publica también en Google Cloud Storage es multilingual-e5-large, y casi todo el repo está en
+# español. Los e5 exigen los prefijos "query: " / "passage: ". El reordenador (cross-encoder)
+# solo se descarga de HuggingFace: queda apagado; la búsqueda híbrida (BM25 + vectores) sigue.
+models:
+  embedding:
+    model: "intfloat/multilingual-e5-large"
+    dimensions: 1024
+    query_prefix: "query: "
+    passage_prefix: "passage: "
+  reranker:
+    enabled: false

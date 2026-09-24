@@ -15,6 +15,22 @@ anótalo acá.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
+- **HuggingFace (`huggingface.co`) está BLOQUEADO por el proxy: responde 403** (comprobado
+  el 2026-09-24). Toda librería que baje modelos de ahí por defecto (fastembed,
+  sentence-transformers, `knowledge-rag`) falla al arrancar. No se reintenta: se baja el
+  modelo de otro origen y se le impide a la librería llamar a HuggingFace.
+  - **Google Cloud Storage sí responde.** fastembed publica ahí sus modelos:
+    `https://storage.googleapis.com/qdrant-fastembed/fast-multilingual-e5-large.tar.gz`
+    (el que usa `knowledge-rag`). Se descarga con `curl` y se extrae en
+    `.knowledge-rag/models_cache/` (ignorado por git).
+  - **Se corre con `HF_HUB_OFFLINE=1`** (más `KNOWLEDGE_RAG_DIR=/home/user/Sndwch/.knowledge-rag`).
+    "Sin conexión" significa **sin conexión a HuggingFace**, no sin red: obliga a la librería a
+    usar el modelo ya bajado en vez de intentar llegar a un host que el proxy rechaza.
+  - **`knowledge-rag` se instala con `pip install --ignore-installed PyYAML knowledge-rag`**:
+    el PyYAML del sistema (paquete de Debian) no se deja desinstalar.
+  - **No hay GPU**: el indexado corre en CPU con un modelo de 1024 dimensiones sobre ~456
+    archivos, y tarda. Lanzarlo en segundo plano.
+
 - **El service worker sirve el shell desde caché (stale-while-revalidate) desde
   2026-08-19** — `sw.js`. Dos trampas que lo hacían fallar en silencio y que ya están
   resueltas, pero conviene no reintroducir: sin `event.waitUntil()` el navegador apaga el

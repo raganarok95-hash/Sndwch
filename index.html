@@ -705,6 +705,614 @@ body.kb-open #app{padding-bottom:0}
 <div id="app"></div>
 <div id="ui-overlays"></div>
 <script>
+(() => {
+  // node_modules/lit-html/lit-html.js
+  var t = globalThis;
+  var i = (t3) => t3;
+  var s = t.trustedTypes;
+  var e = s ? s.createPolicy("lit-html", { createHTML: (t3) => t3 }) : void 0;
+  var h = "$lit$";
+  var o = `lit$${Math.random().toFixed(9).slice(2)}$`;
+  var n = "?" + o;
+  var r = `<${n}>`;
+  var l = document;
+  var c = () => l.createComment("");
+  var a = (t3) => null === t3 || "object" != typeof t3 && "function" != typeof t3;
+  var u = Array.isArray;
+  var d = (t3) => u(t3) || "function" == typeof t3?.[Symbol.iterator];
+  var f = "[ 	\n\f\r]";
+  var v = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g;
+  var _ = /-->/g;
+  var m = />/g;
+  var p = RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ 	
+\f\r"'\`<>=]|("|')|))|$)`, "g");
+  var g = /'/g;
+  var $ = /"/g;
+  var y = /^(?:script|style|textarea|title)$/i;
+  var x = (t3) => (i3, ...s2) => ({ _$litType$: t3, strings: i3, values: s2 });
+  var b = x(1);
+  var w = x(2);
+  var T = x(3);
+  var E = /* @__PURE__ */ Symbol.for("lit-noChange");
+  var A = /* @__PURE__ */ Symbol.for("lit-nothing");
+  var C = /* @__PURE__ */ new WeakMap();
+  var P = l.createTreeWalker(l, 129);
+  function V(t3, i3) {
+    if (!u(t3) || !t3.hasOwnProperty("raw")) throw Error("invalid template strings array");
+    return void 0 !== e ? e.createHTML(i3) : i3;
+  }
+  var N = (t3, i3) => {
+    const s2 = t3.length - 1, e4 = [];
+    let n2, l2 = 2 === i3 ? "<svg>" : 3 === i3 ? "<math>" : "", c2 = v;
+    for (let i4 = 0; i4 < s2; i4++) {
+      const s3 = t3[i4];
+      let a2, u2, d2 = -1, f2 = 0;
+      for (; f2 < s3.length && (c2.lastIndex = f2, u2 = c2.exec(s3), null !== u2); ) f2 = c2.lastIndex, c2 === v ? "!--" === u2[1] ? c2 = _ : void 0 !== u2[1] ? c2 = m : void 0 !== u2[2] ? (y.test(u2[2]) && (n2 = RegExp("</" + u2[2], "g")), c2 = p) : void 0 !== u2[3] && (c2 = p) : c2 === p ? ">" === u2[0] ? (c2 = n2 ?? v, d2 = -1) : void 0 === u2[1] ? d2 = -2 : (d2 = c2.lastIndex - u2[2].length, a2 = u2[1], c2 = void 0 === u2[3] ? p : '"' === u2[3] ? $ : g) : c2 === $ || c2 === g ? c2 = p : c2 === _ || c2 === m ? c2 = v : (c2 = p, n2 = void 0);
+      const x2 = c2 === p && t3[i4 + 1].startsWith("/>") ? " " : "";
+      l2 += c2 === v ? s3 + r : d2 >= 0 ? (e4.push(a2), s3.slice(0, d2) + h + s3.slice(d2) + o + x2) : s3 + o + (-2 === d2 ? i4 : x2);
+    }
+    return [V(t3, l2 + (t3[s2] || "<?>") + (2 === i3 ? "</svg>" : 3 === i3 ? "</math>" : "")), e4];
+  };
+  var S = class _S {
+    constructor({ strings: t3, _$litType$: i3 }, e4) {
+      let r2;
+      this.parts = [];
+      let l2 = 0, a2 = 0;
+      const u2 = t3.length - 1, d2 = this.parts, [f2, v2] = N(t3, i3);
+      if (this.el = _S.createElement(f2, e4), P.currentNode = this.el.content, 2 === i3 || 3 === i3) {
+        const t4 = this.el.content.firstChild;
+        t4.replaceWith(...t4.childNodes);
+      }
+      for (; null !== (r2 = P.nextNode()) && d2.length < u2; ) {
+        if (1 === r2.nodeType) {
+          if (r2.hasAttributes()) for (const t4 of r2.getAttributeNames()) if (t4.endsWith(h)) {
+            const i4 = v2[a2++], s2 = r2.getAttribute(t4).split(o), e5 = /([.?@])?(.*)/.exec(i4);
+            d2.push({ type: 1, index: l2, name: e5[2], strings: s2, ctor: "." === e5[1] ? I : "?" === e5[1] ? L : "@" === e5[1] ? z : H }), r2.removeAttribute(t4);
+          } else t4.startsWith(o) && (d2.push({ type: 6, index: l2 }), r2.removeAttribute(t4));
+          if (y.test(r2.tagName)) {
+            const t4 = r2.textContent.split(o), i4 = t4.length - 1;
+            if (i4 > 0) {
+              r2.textContent = s ? s.emptyScript : "";
+              for (let s2 = 0; s2 < i4; s2++) r2.append(t4[s2], c()), P.nextNode(), d2.push({ type: 2, index: ++l2 });
+              r2.append(t4[i4], c());
+            }
+          }
+        } else if (8 === r2.nodeType) if (r2.data === n) d2.push({ type: 2, index: l2 });
+        else {
+          let t4 = -1;
+          for (; -1 !== (t4 = r2.data.indexOf(o, t4 + 1)); ) d2.push({ type: 7, index: l2 }), t4 += o.length - 1;
+        }
+        l2++;
+      }
+    }
+    static createElement(t3, i3) {
+      const s2 = l.createElement("template");
+      return s2.innerHTML = t3, s2;
+    }
+  };
+  function M(t3, i3, s2 = t3, e4) {
+    if (i3 === E) return i3;
+    let h2 = void 0 !== e4 ? s2._$Co?.[e4] : s2._$Cl;
+    const o3 = a(i3) ? void 0 : i3._$litDirective$;
+    return h2?.constructor !== o3 && (h2?._$AO?.(false), void 0 === o3 ? h2 = void 0 : (h2 = new o3(t3), h2._$AT(t3, s2, e4)), void 0 !== e4 ? (s2._$Co ?? (s2._$Co = []))[e4] = h2 : s2._$Cl = h2), void 0 !== h2 && (i3 = M(t3, h2._$AS(t3, i3.values), h2, e4)), i3;
+  }
+  var R = class {
+    constructor(t3, i3) {
+      this._$AV = [], this._$AN = void 0, this._$AD = t3, this._$AM = i3;
+    }
+    get parentNode() {
+      return this._$AM.parentNode;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    u(t3) {
+      const { el: { content: i3 }, parts: s2 } = this._$AD, e4 = (t3?.creationScope ?? l).importNode(i3, true);
+      P.currentNode = e4;
+      let h2 = P.nextNode(), o3 = 0, n2 = 0, r2 = s2[0];
+      for (; void 0 !== r2; ) {
+        if (o3 === r2.index) {
+          let i4;
+          2 === r2.type ? i4 = new k(h2, h2.nextSibling, this, t3) : 1 === r2.type ? i4 = new r2.ctor(h2, r2.name, r2.strings, this, t3) : 6 === r2.type && (i4 = new Z(h2, this, t3)), this._$AV.push(i4), r2 = s2[++n2];
+        }
+        o3 !== r2?.index && (h2 = P.nextNode(), o3++);
+      }
+      return P.currentNode = l, e4;
+    }
+    p(t3) {
+      let i3 = 0;
+      for (const s2 of this._$AV) void 0 !== s2 && (void 0 !== s2.strings ? (s2._$AI(t3, s2, i3), i3 += s2.strings.length - 2) : s2._$AI(t3[i3])), i3++;
+    }
+  };
+  var k = class _k {
+    get _$AU() {
+      return this._$AM?._$AU ?? this._$Cv;
+    }
+    constructor(t3, i3, s2, e4) {
+      this.type = 2, this._$AH = A, this._$AN = void 0, this._$AA = t3, this._$AB = i3, this._$AM = s2, this.options = e4, this._$Cv = e4?.isConnected ?? true;
+    }
+    get parentNode() {
+      let t3 = this._$AA.parentNode;
+      const i3 = this._$AM;
+      return void 0 !== i3 && 11 === t3?.nodeType && (t3 = i3.parentNode), t3;
+    }
+    get startNode() {
+      return this._$AA;
+    }
+    get endNode() {
+      return this._$AB;
+    }
+    _$AI(t3, i3 = this) {
+      t3 = M(this, t3, i3), a(t3) ? t3 === A || null == t3 || "" === t3 ? (this._$AH !== A && this._$AR(), this._$AH = A) : t3 !== this._$AH && t3 !== E && this._(t3) : void 0 !== t3._$litType$ ? this.$(t3) : void 0 !== t3.nodeType ? this.T(t3) : d(t3) ? this.k(t3) : this._(t3);
+    }
+    O(t3) {
+      return this._$AA.parentNode.insertBefore(t3, this._$AB);
+    }
+    T(t3) {
+      this._$AH !== t3 && (this._$AR(), this._$AH = this.O(t3));
+    }
+    _(t3) {
+      this._$AH !== A && a(this._$AH) ? this._$AA.nextSibling.data = t3 : this.T(l.createTextNode(t3)), this._$AH = t3;
+    }
+    $(t3) {
+      const { values: i3, _$litType$: s2 } = t3, e4 = "number" == typeof s2 ? this._$AC(t3) : (void 0 === s2.el && (s2.el = S.createElement(V(s2.h, s2.h[0]), this.options)), s2);
+      if (this._$AH?._$AD === e4) this._$AH.p(i3);
+      else {
+        const t4 = new R(e4, this), s3 = t4.u(this.options);
+        t4.p(i3), this.T(s3), this._$AH = t4;
+      }
+    }
+    _$AC(t3) {
+      let i3 = C.get(t3.strings);
+      return void 0 === i3 && C.set(t3.strings, i3 = new S(t3)), i3;
+    }
+    k(t3) {
+      u(this._$AH) || (this._$AH = [], this._$AR());
+      const i3 = this._$AH;
+      let s2, e4 = 0;
+      for (const h2 of t3) e4 === i3.length ? i3.push(s2 = new _k(this.O(c()), this.O(c()), this, this.options)) : s2 = i3[e4], s2._$AI(h2), e4++;
+      e4 < i3.length && (this._$AR(s2 && s2._$AB.nextSibling, e4), i3.length = e4);
+    }
+    _$AR(t3 = this._$AA.nextSibling, s2) {
+      for (this._$AP?.(false, true, s2); t3 !== this._$AB; ) {
+        const s3 = i(t3).nextSibling;
+        i(t3).remove(), t3 = s3;
+      }
+    }
+    setConnected(t3) {
+      void 0 === this._$AM && (this._$Cv = t3, this._$AP?.(t3));
+    }
+  };
+  var H = class {
+    get tagName() {
+      return this.element.tagName;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    constructor(t3, i3, s2, e4, h2) {
+      this.type = 1, this._$AH = A, this._$AN = void 0, this.element = t3, this.name = i3, this._$AM = e4, this.options = h2, s2.length > 2 || "" !== s2[0] || "" !== s2[1] ? (this._$AH = Array(s2.length - 1).fill(new String()), this.strings = s2) : this._$AH = A;
+    }
+    _$AI(t3, i3 = this, s2, e4) {
+      const h2 = this.strings;
+      let o3 = false;
+      if (void 0 === h2) t3 = M(this, t3, i3, 0), o3 = !a(t3) || t3 !== this._$AH && t3 !== E, o3 && (this._$AH = t3);
+      else {
+        const e5 = t3;
+        let n2, r2;
+        for (t3 = h2[0], n2 = 0; n2 < h2.length - 1; n2++) r2 = M(this, e5[s2 + n2], i3, n2), r2 === E && (r2 = this._$AH[n2]), o3 || (o3 = !a(r2) || r2 !== this._$AH[n2]), r2 === A ? t3 = A : t3 !== A && (t3 += (r2 ?? "") + h2[n2 + 1]), this._$AH[n2] = r2;
+      }
+      o3 && !e4 && this.j(t3);
+    }
+    j(t3) {
+      t3 === A ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, t3 ?? "");
+    }
+  };
+  var I = class extends H {
+    constructor() {
+      super(...arguments), this.type = 3;
+    }
+    j(t3) {
+      this.element[this.name] = t3 === A ? void 0 : t3;
+    }
+  };
+  var L = class extends H {
+    constructor() {
+      super(...arguments), this.type = 4;
+    }
+    j(t3) {
+      this.element.toggleAttribute(this.name, !!t3 && t3 !== A);
+    }
+  };
+  var z = class extends H {
+    constructor(t3, i3, s2, e4, h2) {
+      super(t3, i3, s2, e4, h2), this.type = 5;
+    }
+    _$AI(t3, i3 = this) {
+      if ((t3 = M(this, t3, i3, 0) ?? A) === E) return;
+      const s2 = this._$AH, e4 = t3 === A && s2 !== A || t3.capture !== s2.capture || t3.once !== s2.once || t3.passive !== s2.passive, h2 = t3 !== A && (s2 === A || e4);
+      e4 && this.element.removeEventListener(this.name, this, s2), h2 && this.element.addEventListener(this.name, this, t3), this._$AH = t3;
+    }
+    handleEvent(t3) {
+      "function" == typeof this._$AH ? this._$AH.call(this.options?.host ?? this.element, t3) : this._$AH.handleEvent(t3);
+    }
+  };
+  var Z = class {
+    constructor(t3, i3, s2) {
+      this.element = t3, this.type = 6, this._$AN = void 0, this._$AM = i3, this.options = s2;
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    _$AI(t3) {
+      M(this, t3);
+    }
+  };
+  var B = t.litHtmlPolyfillSupport;
+  B?.(S, k), (t.litHtmlVersions ?? (t.litHtmlVersions = [])).push("3.3.3");
+  var D = (t3, i3, s2) => {
+    const e4 = s2?.renderBefore ?? i3;
+    let h2 = e4._$litPart$;
+    if (void 0 === h2) {
+      const t4 = s2?.renderBefore ?? null;
+      e4._$litPart$ = h2 = new k(i3.insertBefore(c(), t4), t4, void 0, s2 ?? {});
+    }
+    return h2._$AI(t3), h2;
+  };
+
+  // node_modules/lit-html/directive.js
+  var t2 = { ATTRIBUTE: 1, CHILD: 2, PROPERTY: 3, BOOLEAN_ATTRIBUTE: 4, EVENT: 5, ELEMENT: 6 };
+  var e2 = (t3) => (...e4) => ({ _$litDirective$: t3, values: e4 });
+  var i2 = class {
+    constructor(t3) {
+    }
+    get _$AU() {
+      return this._$AM._$AU;
+    }
+    _$AT(t3, e4, i3) {
+      this._$Ct = t3, this._$AM = e4, this._$Ci = i3;
+    }
+    _$AS(t3, e4) {
+      return this.update(t3, e4);
+    }
+    update(t3, e4) {
+      return this.render(...e4);
+    }
+  };
+
+  // node_modules/lit-html/directives/unsafe-html.js
+  var e3 = class extends i2 {
+    constructor(i3) {
+      if (super(i3), this.it = A, i3.type !== t2.CHILD) throw Error(this.constructor.directiveName + "() can only be used in child bindings");
+    }
+    render(r2) {
+      if (r2 === A || null == r2) return this._t = void 0, this.it = r2;
+      if (r2 === E) return r2;
+      if ("string" != typeof r2) throw Error(this.constructor.directiveName + "() called with a non-string value");
+      if (r2 === this.it) return this._t;
+      this.it = r2;
+      const s2 = [r2];
+      return s2.raw = s2, this._t = { _$litType$: this.constructor.resultType, strings: s2, values: [] };
+    }
+  };
+  e3.directiveName = "unsafeHTML", e3.resultType = 1;
+  var o2 = e2(e3);
+
+  // src/nuevo/legado.ts
+  var w2 = window;
+  var legado = {
+    api: (accion, datos) => w2.api(accion, datos),
+    get token() {
+      return w2.token;
+    },
+    get pantalla() {
+      return w2.sndScreen;
+    },
+    /** Navega a una pantalla por el router viejo (que pinta la nueva si está migrada). */
+    irA(pantalla) {
+      w2.sndScreen = pantalla;
+      w2.render();
+    },
+    aviso: (texto, tipo) => w2.showToast(texto, tipo),
+    confirmar: (texto) => w2.showConfirm(texto),
+    // Piezas de interfaz viejas que todavía son HTML en texto. Se pintan con unsafeHTML y se
+    // reemplazan cuando migren.
+    htmlVacio: (titulo, texto, pose) => w2.VACIO(titulo, texto, "", pose),
+    htmlCabecera: (titulo, volver) => w2.H(titulo, volver),
+    htmlNav: () => w2.NAV(),
+    get direcciones() {
+      return w2.myAddresses || [];
+    },
+    set direcciones(v2) {
+      w2.myAddresses = v2;
+    },
+    carrito: {
+      cargar(items) {
+        w2.loadCart(items);
+        return w2.cart.length > 0 && w2.sndScreen === "o_cart";
+      },
+      elegirDireccion: (id) => w2.pickAddr(id),
+      franjasLibres: (dia) => w2.schedSlots(dia),
+      programar(dia, franja) {
+        w2.scheduleMode = "later";
+        w2.schedDay = dia;
+        w2.schedSlot = franja;
+      },
+      /** El origen del carrito: el pedido fijo del que sale, y la hora que tiene apartada. */
+      marcarOrigenFijo(id, horaApartada) {
+        w2.pendingRecurringId = id;
+        w2.miHoraApartada = horaApartada;
+      },
+      repintar: () => w2.confirmRerender()
+    },
+    enlace: {
+      get fijo() {
+        return w2.fijoFromUrl;
+      },
+      get franja() {
+        return w2.franjaFromUrl;
+      }
+    },
+    imagenSignature: (sigId) => w2.SIG_IMG[sigId] || "",
+    imagenProteina: (prot) => w2.PROT_IMG[prot] || "",
+    soles: (n2) => w2.SOLES_TXT + w2.pz(n2),
+    horaLima: (ms) => w2.horaLima(ms),
+    envioA: (a2) => w2.envioADireccion(a2),
+    get diasSemana() {
+      return w2.DIAS_SEMANA;
+    }
+  };
+
+  // src/nuevo/pantallas/fijo.ts
+  var estado = { cargando: false, fijos: [], sugerido: null, desdeConfirmados: null, seleccionado: null };
+  var contenedor = null;
+  function cambiar(parcial) {
+    estado = { ...estado, ...parcial };
+    if (contenedor && contenedor.isConnected) D(vista(), contenedor);
+  }
+  function diaMinuscula(w3) {
+    return (legado.diasSemana[w3] || "").toLowerCase();
+  }
+  function diasPlural(w3) {
+    const d2 = diaMinuscula(w3);
+    return /s$/.test(d2) ? d2 : d2 + "s";
+  }
+  function hhmmATexto(hhmm) {
+    const [h2, m2] = String(hhmm || "").split(":").map(Number);
+    if (h2 === void 0 || m2 === void 0 || !Number.isFinite(h2) || !Number.isFinite(m2)) return "";
+    return (h2 % 12 || 12) + (m2 ? ":" + String(m2).padStart(2, "0") : "") + (h2 < 12 ? " a.m." : " p.m.");
+  }
+  function actual() {
+    return estado.fijos.find((f2) => f2.id === estado.seleccionado) || estado.fijos[0] || null;
+  }
+  function direccionDe(f2) {
+    const dirs = legado.direcciones;
+    const suya = f2 && f2.addressId != null ? dirs.find((d2) => Number(d2.id) === Number(f2.addressId)) : void 0;
+    return suya || dirs.find((d2) => typeof d2.lat === "number" && typeof d2.lon === "number") || null;
+  }
+  function totalDe(precio, f2) {
+    if (precio == null) return null;
+    const envio = legado.envioA(direccionDe(f2));
+    return envio == null ? null : precio + envio;
+  }
+  function imagenDe(items) {
+    for (const it of items) {
+      if (it.sigId) {
+        const img = legado.imagenSignature(it.sigId);
+        if (img) return img;
+      }
+      if (it.type !== "side" && it.prot) {
+        const img = legado.imagenProteina(it.prot);
+        if (img) return img;
+      }
+    }
+    return "";
+  }
+  function inicioDeHoraIso(ms) {
+    const d2 = new Date(ms);
+    d2.setMinutes(0, 0, 0);
+    return d2.toISOString();
+  }
+  async function abrir(id) {
+    cambiar({ cargando: true });
+    legado.irA("p_recurring");
+    try {
+      const [lista, dirs] = await Promise.all([
+        legado.api("recurring-list", { token: legado.token }),
+        legado.direcciones.length ? Promise.resolve(null) : legado.api("addresses-list", { token: legado.token }).catch(() => null)
+      ]);
+      if (dirs && Array.isArray(dirs.addresses)) legado.direcciones = dirs.addresses;
+      const fijos = Array.isArray(lista.recurring) ? lista.recurring : [];
+      cambiar({
+        cargando: false,
+        fijos,
+        sugerido: lista.sugerido || null,
+        desdeConfirmados: typeof lista.desdeConfirmados === "number" ? lista.desdeConfirmados : null,
+        seleccionado: id && fijos.some((f2) => f2.id === id) ? id : fijos[0]?.id ?? null
+      });
+    } catch {
+      cambiar({ cargando: false, fijos: [], sugerido: null });
+    }
+  }
+  function pedirAhora(f2) {
+    const franja = legado.enlace.fijo === f2.id && legado.enlace.franja ? legado.enlace.franja : f2.slot;
+    if (!legado.carrito.cargar(f2.items)) return;
+    const vez = f2.vez ? Date.parse(f2.vez) : NaN;
+    legado.carrito.marcarOrigenFijo(f2.id, f2.apartada && Number.isFinite(vez) ? inicioDeHoraIso(vez) : null);
+    const dir = direccionDe(f2);
+    if (dir) legado.carrito.elegirDireccion(dir.id);
+    if (Number.isFinite(vez)) {
+      const d2 = new Date(vez).toDateString();
+      const man = /* @__PURE__ */ new Date();
+      man.setDate(man.getDate() + 1);
+      const dia = d2 === (/* @__PURE__ */ new Date()).toDateString() ? "today" : d2 === man.toDateString() ? "tomorrow" : null;
+      if (dia && legado.carrito.franjasLibres(dia).includes(franja)) legado.carrito.programar(dia, franja);
+    }
+    legado.carrito.repintar();
+  }
+  function pedirSugerido(s2) {
+    legado.carrito.cargar(s2.items);
+  }
+  async function dejarFijo(s2) {
+    if (s2.weekday == null || !s2.slot) return;
+    const dir = direccionDe(null);
+    try {
+      await legado.api("recurring-add", { token: legado.token, items: s2.items, weekday: s2.weekday, slot: s2.slot, addressId: dir ? dir.id : null });
+      legado.aviso("Listo: fijo los " + diasPlural(s2.weekday) + " a las " + hhmmATexto(s2.slot) + ". Te avisamos antes.");
+      await abrir();
+    } catch (e4) {
+      legado.aviso("No se pudo guardar: " + e4.message);
+    }
+  }
+  async function saltar(f2, deshacer) {
+    try {
+      await legado.api("recurring-skip", { token: legado.token, id: f2.id, deshacer });
+    } catch (e4) {
+      legado.aviso("No se pudo: " + e4.message);
+      return;
+    }
+    legado.aviso(deshacer ? "Listo, esta semana sí va." : "Listo: esta semana no va. La próxima te avisamos.");
+    await abrir(f2.id);
+  }
+  async function quitar(f2) {
+    if (!await legado.confirmar("¿Quitar este pedido fijo? Dejaremos de avisarte.")) return;
+    const antes = estado.fijos;
+    const quedan = antes.filter((x2) => x2.id !== f2.id);
+    cambiar({ fijos: quedan, seleccionado: estado.seleccionado === f2.id ? quedan[0]?.id ?? null : estado.seleccionado });
+    try {
+      await legado.api("recurring-delete", { token: legado.token, id: f2.id });
+    } catch (e4) {
+      cambiar({ fijos: antes });
+      legado.aviso("No se pudo quitar: " + e4.message);
+    }
+  }
+  var NUNCA = " No te cobramos sin que confirmes.";
+  function caja(f2, s2) {
+    if (!f2 && s2) {
+      if (s2.weekday == null || !s2.slot) {
+        return b`<div class="prog"><b>¿Lo dejamos fijo?</b><s>Guárdalo desde el carrito eligiendo el día y la hora. Nada se manda solo.${NUNCA}</s></div>`;
+      }
+      const wd = s2.weekday;
+      return b`<button class="prog" @click=${() => dejarFijo(s2)}>
+      <b>¿Lo dejamos fijo los ${diasPlural(wd)}?</b>
+      <s>Te avisamos antes de la hora de siempre y confirmas en un toque. Nada se manda solo.${NUNCA} Se quita desde acá, sin llamar a nadie.</s>
+    </button>`;
+    }
+    if (!f2) return b``;
+    const dia = diaMinuscula(f2.weekday);
+    const hora = hhmmATexto(f2.slot);
+    let titulo;
+    let texto;
+    switch (f2.estado) {
+      case "apartada":
+        titulo = `Tu ${dia} de las ${hora} está guardado`;
+        texto = `Hasta las ${f2.sueltaA ? legado.horaLima(Date.parse(f2.sueltaA)) : ""}; si no lo confirmas, se suelta solo para otro.`;
+        break;
+      case "soltada":
+        titulo = "Tu lugar de hoy ya se soltó";
+        texto = "Si todavía hay lugar a esa hora, puedes pedirlo igual.";
+        break;
+      case "saltada":
+        titulo = "Esta semana no va";
+        texto = `El ${dia} que viene te avisamos otra vez.`;
+        break;
+      case "usada":
+        titulo = "Ya está pedido";
+        texto = `El ${dia} que viene te avisamos otra vez.`;
+        break;
+      case "cerrado":
+        titulo = `Ese ${dia} no atendemos a las ${hora}`;
+        texto = "Quítalo y guárdalo de nuevo con otra hora.";
+        break;
+      case "faltan-confirmaciones":
+        titulo = `Fijo los ${diasPlural(f2.weekday)} · ${hora}`;
+        texto = "Te avisamos una hora antes y confirmas en un toque." + (estado.desdeConfirmados ? ` Cuando lo hayas pedido ${estado.desdeConfirmados} veces desde acá, te guardamos el lugar${f2.confirmados ? ` (vas ${f2.confirmados})` : ""}.` : "");
+        break;
+      default:
+        titulo = `Fijo los ${diasPlural(f2.weekday)} · ${hora}`;
+        texto = "Desde el día antes te guardamos el lugar, y te avisamos antes de soltarlo.";
+    }
+    return b`<div class="prog">
+    <b>${titulo}</b><s>${texto + NUNCA}</s>
+    <div class="acc">
+      ${f2.estado === "saltada" ? b`<button @click=${() => saltar(f2, true)}>Mejor sí va</button>` : f2.estado !== "usada" ? b`<button @click=${() => saltar(f2, false)}>Esta semana no</button>` : A}
+      <button @click=${() => quitar(f2)}>Quitar el fijo</button>
+    </div>
+  </div>`;
+  }
+  function otros(f2) {
+    if (!f2) return A;
+    const resto = estado.fijos.filter((x2) => x2.id !== f2.id);
+    if (!resto.length) return A;
+    return b`<div class="otros"><em>Otros guardados</em>
+    ${resto.map((x2) => {
+      const t3 = totalDe(x2.precio, x2);
+      return b`<button class="o" @click=${() => cambiar({ seleccionado: x2.id })}>
+        <b>${x2.label}</b><p>${t3 != null ? legado.soles(t3) : diasPlural(x2.weekday) + " · " + hhmmATexto(x2.slot)}</p>
+      </button>`;
+    })}
+  </div>`;
+  }
+  function vista() {
+    const volver = () => legado.irA("p_home");
+    if (estado.cargando) return b`<div class="mfj"></div>`;
+    const f2 = actual();
+    const s2 = f2 ? null : estado.sugerido;
+    if (!f2 && !s2) {
+      return b`${o2(legado.htmlCabecera("TU PEDIDO FIJO", "sndScreen='p_home';render()"))}
+      <div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">
+        ${o2(legado.htmlVacio("Sin pedido fijo", "Cuando repitas un pedido te ofrecemos dejarlo fijo, o guárdalo desde el carrito.", "mira"))}
+      </div>
+      ${o2(legado.htmlNav())}`;
+    }
+    const o3 = f2 || s2;
+    const wd = f2 ? f2.weekday : s2.weekday;
+    const slot = f2 ? f2.slot : s2.slot;
+    const dir = direccionDe(f2);
+    const total = totalDe(o3.precio, f2);
+    const precio = total != null ? legado.soles(total) : o3.precio != null ? legado.soles(o3.precio) : "—";
+    const foto = imagenDe(o3.items);
+    const franja = f2 && legado.enlace.fijo === f2.id ? legado.enlace.franja : null;
+    const pedir = () => f2 ? pedirAhora(f2) : pedirSugerido(s2);
+    return b`<div class="mfj fi">
+    ${foto ? b`<div class="hero" aria-hidden="true"><img src=${foto} alt="" /><div class="v"></div></div>` : b`<div class="hero vacio" aria-hidden="true"></div>`}
+    <button class="sal" @click=${volver} aria-label="Volver">←</button>
+    <div class="cuerpo">
+      <div class="tx">
+        <em>${f2 ? "Tu pedido fijo" : "Lo que más pides"}</em>
+        <b>${o3.label.split(" + ").map((p2, i3) => i3 ? b`<br />+ ${p2}` : b`${p2}`)}</b>
+        <s>${wd != null && slot ? `${f2 ? "Fijo los " : "Lo pides los "}${diasPlural(wd)} · ${hhmmATexto(slot)}` : ""}${dir ? b`<br />${dir.address}${dir.reference ? ", " + dir.reference : ""}` : A}</s>
+      </div>
+      <div class="vec">
+        <div><s>Lo pediste</s><b>${o3.veces ? o3.veces + (o3.veces === 1 ? " vez" : " veces") : "Aún no"}</b></div>
+        <div><s>Siempre a las</s><b>${o3.horaHabitual ? hhmmATexto(o3.horaHabitual) : slot ? hhmmATexto(slot) : "—"}</b></div>
+        <div><s>Te sale</s><b>${precio}</b></div>
+      </div>
+      ${caja(f2, s2)} ${otros(f2)}
+    </div>
+    <div class="go sw-barra">
+      <button class="oro" @click=${pedir}>${franja ? "Pedirlo a las " + hhmmATexto(franja) : "Pedirlo ahora"}</button>
+      <button class="cel" @click=${pedir}>${precio}</button>
+    </div>
+  </div>`;
+  }
+  var pantallaFijo = {
+    pintar(el) {
+      contenedor = el;
+      D(vista(), el);
+    }
+  };
+
+  // src/nuevo/main.ts
+  var registro = {
+    pantallas: { p_recurring: pantallaFijo },
+    fijo: { abrir }
+  };
+  window.__sndNuevo = registro;
+})();
+
+</script>
+<script>
 'use strict';
 var SB_URL = 'https://rjosezuoyngiadunfzyn.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqb3NlenVveW5naWFkdW5menluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1ODA0MTgsImV4cCI6MjA5MjE1NjQxOH0.fl4gayRXQvplNPzhf4TEzyWqrZXxXYBYHV0tMdJw1fs';
@@ -2372,7 +2980,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '2debb08640';
+var APP_BUILD = '9e0a8968be';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -10773,252 +11381,11 @@ function sAlgoSalioMal() {
 // SIEMPRE»: es lo único de ella que no se copia, porque es falso. Lo que la pantalla sí puede
 // prometer —y la maqueta no podía— es el LUGAR GUARDADO: desde que el hábito está probado, su
 // hora queda apartada desde el día antes (servidor: franja.ts).
-var myRecurring = [];
+// La pantalla vive en la base nueva: src/nuevo/pantallas/fijo.ts. Acá quedan solo las dos piezas
+// que todavía usa el carrito viejo (los días del selector y guardar el carrito como fijo), y la
+// puerta de entrada con su nombre de siempre, que llaman el perfil y el enlace del aviso.
 var DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-// Lo que más pide quien todavía no tiene un fijo (lo calcula el servidor del historial), y
-// desde cuántas confirmaciones se aparta lugar. Los dos llegan en recurring-list: la cifra no
-// se escribe acá para que no se desincronice del servidor.
-var fijoSugerido = null, fijoDesdeConfirmados = null, fijoSel = null;
-function diasPlural(w) { var d = (DIAS_SEMANA[w] || '').toLowerCase(); return /s$/.test(d) ? d : d + 's'; }
-// "19:30" → "7:30 p.m." y "19:00" → "7 p.m.", como horaLima: el fijo se guarda en 24 h y se lee
-// como lo dice la gente.
-function hhmmATexto(hhmm) {
-    var p = String(hhmm || '').split(':'), hh = Number(p[0]), mm = Number(p[1]);
-    if (!isFinite(hh) || !isFinite(mm))
-        return '';
-    return (hh % 12 || 12) + (mm ? ':' + String(mm).padStart(2, '0') : '') + (hh < 12 ? ' a.m.' : ' p.m.');
-}
-function fijoActual() {
-    return myRecurring.find(function (r) { return r.id === fijoSel; }) || myRecurring[0] || null;
-}
-// A dónde va: la dirección guardada con el fijo, o si no tiene, la primera marcada en el mapa
-// (la misma de la que el checkout calcula el envío).
-function direccionDelFijo(r) {
-    var a = r && r.addressId != null ? myAddresses.find(function (x) { return mismoId(x.id, r.addressId); }) : null;
-    return a || myAddresses.find(function (x) { return typeof x.lat === 'number' && typeof x.lon === 'number'; }) || null;
-}
-function imagenDelPedido(items) {
-    for (var i = 0; i < (items || []).length; i++) {
-        var it = items[i];
-        if (it.sigId && SIG_IMG[it.sigId])
-            return SIG_IMG[it.sigId];
-        if (it.type !== 'side' && it.prot && PROT_IMG[it.prot])
-            return PROT_IMG[it.prot];
-    }
-    return '';
-}
-// «Te sale»: la comida a precio de hoy (servidor) más el envío a SU dirección con la misma
-// tarifa del checkout. Sin dirección con pin, solo la comida no sería «lo que te sale».
-function totalDelFijo(o) {
-    if (!o || typeof o.precio !== 'number')
-        return null;
-    var envio = envioADireccion(direccionDelFijo(o));
-    return envio == null ? null : o.precio + envio;
-}
-// La caja punteada de la maqueta («¿Lo dejamos fijo los jueves?»). Dice lo que es cierto
-// AHORA para este fijo: si su lugar está guardado y hasta cuándo, si ya se soltó, si ya lo
-// pidió. Cada hora sale del servidor; ninguna está escrita.
-function cajaDelFijo(r, sg) {
-    var nunca = ' No te cobramos sin que confirmes.';
-    if (!r) {
-        if (sg.weekday == null || !sg.slot) {
-            return '<div class="prog"><b>¿Lo dejamos fijo?</b><s>Guárdalo desde el carrito eligiendo el día y la hora. Nada se manda solo.' + nunca + '</s></div>';
-        }
-        return '<button class="prog" onclick="dejarFijoSugerido()"><b>¿Lo dejamos fijo los ' + diasPlural(sg.weekday) + '?</b>'
-            + '<s>Te avisamos antes de la hora de siempre y confirmas en un toque. Nada se manda solo.' + nunca + ' Se quita desde acá, sin llamar a nadie.</s></button>';
-    }
-    var dia = (DIAS_SEMANA[r.weekday] || '').toLowerCase(), hora = hhmmATexto(r.slot), b = '', s = '';
-    switch (r.estado) {
-        case 'apartada':
-            b = 'Tu ' + dia + ' de las ' + hora + ' está guardado';
-            // horaLima ya termina en «p.m.»: un punto más quedaba «6 p.m..».
-            s = 'Hasta las ' + horaLima(Date.parse(r.sueltaA)) + '; si no lo confirmas, se suelta solo para otro.';
-            break;
-        case 'soltada':
-            b = 'Tu lugar de hoy ya se soltó';
-            s = 'Si todavía hay lugar a esa hora, puedes pedirlo igual.';
-            break;
-        case 'saltada':
-            b = 'Esta semana no va';
-            s = 'El ' + dia + ' que viene te avisamos otra vez.';
-            break;
-        case 'usada':
-            b = 'Ya está pedido';
-            s = 'El ' + dia + ' que viene te avisamos otra vez.';
-            break;
-        case 'cerrado':
-            b = 'Ese ' + dia + ' no atendemos a las ' + hora;
-            s = 'Quítalo y guárdalo de nuevo con otra hora.';
-            break;
-        case 'faltan-confirmaciones':
-            b = 'Fijo los ' + diasPlural(r.weekday) + ' · ' + hora;
-            s = 'Te avisamos una hora antes y confirmas en un toque.'
-                + (fijoDesdeConfirmados ? ' Cuando lo hayas pedido ' + fijoDesdeConfirmados + ' veces desde acá, te guardamos el lugar' + (r.confirmados ? ' (vas ' + r.confirmados + ')' : '') + '.' : '');
-            break;
-        default:
-            b = 'Fijo los ' + diasPlural(r.weekday) + ' · ' + hora;
-            s = 'Desde el día antes te guardamos el lugar, y te avisamos antes de soltarlo.';
-    }
-    var acc = '<div class="acc">'
-        + (r.estado === 'saltada' ? '<button onclick="saltarFijo(\'' + r.id + '\',true)">Mejor sí va</button>'
-            : (r.estado !== 'usada' ? '<button onclick="saltarFijo(\'' + r.id + '\')">Esta semana no</button>' : ''))
-        + '<button onclick="doDeleteRecurring(\'' + r.id + '\')">Quitar el fijo</button></div>';
-    return '<div class="prog"><b>' + esc(b) + '</b><s>' + esc(s + nunca) + '</s>' + acc + '</div>';
-}
-// «Otros guardados»: los demás fijos, en una fila cada uno. Tocar uno lo pone al frente.
-function otrosFijos(r) {
-    var otros = myRecurring.filter(function (x) { return !r || x.id !== r.id; });
-    if (!r || !otros.length)
-        return '';
-    return '<div class="otros"><em>Otros guardados</em>' + otros.map(function (x) {
-        var t = totalDelFijo(x);
-        return '<button class="o" onclick="fijoSel=\'' + x.id + '\';render()"><b>' + esc(x.label || '') + '</b><p>' + (t != null ? SOLES_TXT + pz(t) : esc(diasPlural(x.weekday) + ' · ' + hhmmATexto(x.slot))) + '</p></button>';
-    }).join('') + '</div>';
-}
-function sPRecurring() {
-    var bk = "sndScreen='p_home';render()";
-    var r = fijoActual(), sg = r ? null : fijoSugerido;
-    if (!r && !sg) {
-        return H('TU PEDIDO FIJO', bk) + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
-            + VACIO('Sin pedido fijo', 'Cuando repitas un pedido te ofrecemos dejarlo fijo, o guárdalo desde el carrito.', '', 'mira') + '</div>' + NAV();
-    }
-    var o = r || sg, wd = r ? r.weekday : sg.weekday, slot = r ? r.slot : sg.slot;
-    var a = direccionDelFijo(r);
-    var total = totalDelFijo(o);
-    var foto = imagenDelPedido(o.items || []);
-    var pedir = r ? "pedirFijoAhora('" + r.id + "')" : 'pedirSugerido()';
-    var franja = r && fijoFromUrl === r.id && franjaFromUrl ? franjaFromUrl : null;
-    var precio = total != null ? SOLES_TXT + pz(total) : (typeof o.precio === 'number' ? SOLES_TXT + pz(o.precio) : '—');
-    return '<div class="mfj fi">'
-        + (foto ? '<div class="hero" aria-hidden="true"><img src="' + foto + '" alt=""><div class="v"></div></div>' : '<div class="hero vacio" aria-hidden="true"></div>')
-        + '<button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>'
-        + '<div class="cuerpo">'
-        + '<div class="tx"><em>' + (r ? 'Tu pedido fijo' : 'Lo que más pides') + '</em>'
-        + '<b>' + String(o.label || '').split(' + ').map(esc).join('<br>+ ') + '</b>'
-        + '<s>' + (wd != null && slot ? (r ? 'Fijo los ' : 'Lo pides los ') + diasPlural(wd) + ' · ' + hhmmATexto(slot) : '')
-        + (a ? '<br>' + esc(a.address) + (a.reference ? ', ' + esc(a.reference) : '') : '') + '</s></div>'
-        + '<div class="vec">'
-        + '<div><s>Lo pediste</s><b>' + (o.veces ? o.veces + (o.veces === 1 ? ' vez' : ' veces') : 'Aún no') + '</b></div>'
-        + '<div><s>Siempre a las</s><b>' + (o.horaHabitual ? hhmmATexto(o.horaHabitual) : (slot ? hhmmATexto(slot) : '—')) + '</b></div>'
-        + '<div><s>Te sale</s><b>' + precio + '</b></div>'
-        + '</div>'
-        + cajaDelFijo(r, sg)
-        + otrosFijos(r)
-        + '</div>'
-        + '<div class="go sw-barra"><button class="oro" onclick="' + pedir + '">' + (franja ? 'Pedirlo a las ' + hhmmATexto(franja) : 'Pedirlo ahora') + '</button>'
-        + '<button class="cel" onclick="' + pedir + '">' + precio + '</button></div>'
-        + '</div>';
-}
-async function goRecurring(id) {
-    sndScreen = 'p_recurring';
-    busy = true;
-    busyMsg = 'Cargando...';
-    render();
-    try {
-        // Las direcciones hacen falta para «Te sale» (envío) y para dejar el pedido listo con la
-        // suya: quien llega por el aviso no pasó por el perfil.
-        var res = await Promise.all([
-            api('recurring-list', { token: token }),
-            myAddresses.length ? Promise.resolve(null) : api('addresses-list', { token: token }).catch(function () { return null; }),
-        ]);
-        var r = res[0];
-        myRecurring = Array.isArray(r.recurring) ? r.recurring : [];
-        fijoSugerido = r.sugerido || null;
-        fijoDesdeConfirmados = typeof r.desdeConfirmados === 'number' ? r.desdeConfirmados : null;
-        if (res[1] && Array.isArray(res[1].addresses))
-            myAddresses = res[1].addresses;
-    }
-    catch (e) {
-        myRecurring = [];
-        fijoSugerido = null;
-    }
-    fijoSel = id && myRecurring.some(function (x) { return x.id === id; }) ? id : (myRecurring[0] ? myRecurring[0].id : null);
-    busy = false;
-    render();
-}
-function inicioDeHoraIso(ms) { var d = new Date(ms); d.setMinutes(0, 0, 0); return d.toISOString(); }
-// «Pedirlo ahora» deja el carrito listo para pagar: los ítems, SU dirección, y la hora del fijo
-// si toca hoy o mañana y todavía hay lugar. El carrito lleva el id del fijo (metaAttribution),
-// así el servidor le gasta su lugar apartado y lo cuenta como una confirmación.
-function pedirFijoAhora(id) {
-    var r = myRecurring.find(function (x) { return x.id === id; });
-    if (!r)
-        return;
-    var franja = fijoFromUrl === id && franjaFromUrl ? franjaFromUrl : r.slot;
-    loadCart(r.items);
-    if (!cart.length || sndScreen !== 'o_cart')
-        return;
-    pendingRecurringId = r.id;
-    miHoraApartada = r.apartada && r.vez ? inicioDeHoraIso(Date.parse(r.vez)) : null;
-    var a = direccionDelFijo(r);
-    if (a)
-        pickAddr(a.id);
-    var vez = r.vez ? Date.parse(r.vez) : NaN;
-    if (isFinite(vez)) {
-        var d = new Date(vez).toDateString(), hoy = new Date(), man = new Date();
-        man.setDate(man.getDate() + 1);
-        var dia = d === hoy.toDateString() ? 'today' : d === man.toDateString() ? 'tomorrow' : null;
-        if (dia && schedSlots(dia).indexOf(franja) >= 0) {
-            scheduleMode = 'later';
-            schedDay = dia;
-            schedSlot = franja;
-        }
-    }
-    confirmRerender();
-}
-function pedirSugerido() { if (fijoSugerido)
-    loadCart(fijoSugerido.items); }
-async function dejarFijoSugerido() {
-    var sg = fijoSugerido;
-    if (!sg || sg.weekday == null || !sg.slot)
-        return;
-    var a = direccionDelFijo(null);
-    busy = true;
-    busyMsg = 'Dejándolo fijo...';
-    render();
-    try {
-        await api('recurring-add', { token: token, items: sg.items, weekday: sg.weekday, slot: sg.slot, addressId: a ? a.id : null });
-        showToast('Listo: fijo los ' + diasPlural(sg.weekday) + ' a las ' + hhmmATexto(sg.slot) + '. Te avisamos antes.');
-        await goRecurring();
-    }
-    catch (e) {
-        busy = false;
-        render();
-        showToast('No se pudo guardar: ' + e.message);
-    }
-}
-// «Esta semana no» suelta el lugar de la próxima vez sin quitar el fijo; «Mejor sí va» lo
-// vuelve a poner.
-async function saltarFijo(id, deshacer) {
-    try {
-        await api('recurring-skip', { token: token, id: id, deshacer: !!deshacer });
-    }
-    catch (e) {
-        showToast('No se pudo: ' + e.message);
-        return;
-    }
-    showToast(deshacer ? 'Listo, esta semana sí va.' : 'Listo: esta semana no va. La próxima te avisamos.');
-    goRecurring(id);
-}
-async function doDeleteRecurring(id) {
-    if (!(await showConfirm('¿Quitar este pedido fijo? Dejaremos de avisarte.')))
-        return;
-    // Optimista, igual que favoritos: se quita al instante y se reinserta si el borrado falla.
-    var idx = myRecurring.findIndex(function (r) { return r.id === id; });
-    var removed = idx >= 0 ? myRecurring.splice(idx, 1)[0] : null;
-    if (fijoSel === id)
-        fijoSel = myRecurring[0] ? myRecurring[0].id : null;
-    render();
-    try {
-        await api('recurring-delete', { token: token, id: id });
-    }
-    catch (e) {
-        if (removed)
-            myRecurring.splice(idx, 0, removed);
-        render();
-        showToast('No se pudo quitar: ' + e.message);
-    }
-}
+function goRecurring(id) { return window.__sndNuevo.fijo.abrir(id); }
 // Guarda el carrito actual como pedido fijo. Vive acá, junto al resto del pedido fijo, para
 // que toda la funcionalidad quede en un solo sitio.
 async function saveCartAsRecurring() {
@@ -12387,6 +12754,8 @@ var LIST_SCREENS = {
     p_addresses: 3,
     p_recurring: 2,
 };
+// El registro que deja src/nuevo/main.ts. Si una pantalla está ahí, la pinta la base nueva.
+function pantallaNueva(sc) { var n = window.__sndNuevo; return n && n.pantallas && n.pantallas[sc] || null; }
 function renderScreen() {
     if (busy) {
         var appElBusy = document.getElementById('app');
@@ -12447,135 +12816,138 @@ function renderScreen() {
             STATUSES.CANCELADO.c = '#8A8A8A';
         }
     }
-    switch (sndScreen) {
-        case 'o_home':
-            h = sOHome();
-            break;
-        case 'o_sig':
-            h = sOSig();
-            break;
-        case 'o_build':
-            h = sOBuild();
-            break;
-        case 'o_item_confirm':
-            h = sOItemConfirm();
-            break;
-        case 'o_cart':
-            h = sOCart();
-            break;
-        case 'o_sides':
-            h = sOSides();
-            break;
-        case 'o_sent':
-            h = sOSent();
-            break;
-        case 'p_auth':
-            h = sPAuth();
-            break;
-        // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
-        case 'p_gauth':
-            h = sGoogleAuth();
-            break;
-        // Primera apertura. Ver sHello() en 05-*.
-        case 'p_hello':
-            h = sHello();
-            break;
-        case 'p_welcome':
-            h = sWelcome();
-            break;
-        case 'p_recover':
-            h = sPRecover();
-            break;
-        case 'p_legal':
-            h = sPLegal();
-            break;
-        case 'p_returns':
-            h = sPReturns();
-            break;
-        case 'p_complaints':
-            h = sPComplaints();
-            break;
-        case 'p_home':
-            h = sPHome();
-            break;
-        case 'p_rewards':
-            h = sPRewards();
-            break;
-        case 'p_history':
-            h = sPHistory();
-            break;
-        case 'p_orders':
-            h = sPOrders();
-            break;
-        case 'p_ord_detail':
-            h = sOrdDetail();
-            break;
-        case 'p_problema':
-            h = sAlgoSalioMal();
-            break;
-        case 'o_secreto':
-            h = sMenuSecreto();
-            break;
-        case 'p_pago':
-            h = sPPago();
-            break;
-        case 'p_avisos':
-            h = sPAvisos();
-            break;
-        case 'p_profile':
-            h = sPProfile();
-            break;
-        case 'p_favorites':
-            h = sPFavorites();
-            break;
-        case 'p_recurring':
-            h = sPRecurring();
-            break;
-        // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
-        // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
-        // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
-        // dejó la app abierta en esa pantalla la volvería a ver al recargar.
-        case 'gift_card':
-            h = TARJETA_REGALO_ACTIVA ? sGiftCard() : (sndScreen = 'p_home', sPHome());
-            break;
-        case 'weekly_plan':
-            h = PLAN_SEMANAL_ACTIVO ? sWeeklyPlan() : (sndScreen = 'p_home', sPHome());
-            break;
-        case 'group_order':
-            h = sGroupOrder();
-            break;
-        case 'group_split':
-            h = sGroupSplit();
-            break;
-        case 'p_addresses':
-            h = sPAddresses();
-            break;
-        case 'delivery_confirm':
-            h = sDeliveryConfirm();
-            break;
-        // ── LAS 34 PANTALLAS DEL PANEL YA NO ESTÁN ESCRITAS ACÁ ────────────────────────
-        // Estaban como 34 `case` fijos, y eso era lo que ataba el router al panel: mientras el
-        // router nombrara cada pantalla de admin, el panel no se podía sacar del bundle que
-        // descarga TODO cliente que abre la carta.
-        //
-        // Ahora el panel se registra a sí mismo en `ADMIN_SCREENS` al cargarse y el router solo
-        // pregunta. Si el panel no está cargado no hay entrada y cae al home del cliente — que
-        // es exactamente lo que tiene que pasar cuando alguien sin sesión de admin escribe una
-        // pantalla de admin en la URL.
-        default:
-            var pantallaAdmin = ADMIN_SCREENS[sndScreen];
-            // Si el panel no cargó, se DICE. Caer al home del cliente en silencio dejaría al
-            // dueño sin panel y sin ninguna pista de por qué — el peor de los dos errores.
-            h = pantallaAdmin
-                ? pantallaAdmin()
-                : (adminBundleError
-                    ? '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px">'
-                        + '<div style="font-family:\'Bodoni Moda\',serif;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">El panel no cargó</div>'
-                        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);max-width:280px;line-height:1.55">' + esc(adminBundleError) + '</p>'
-                        + BTN('Reintentar //', 'adminBundleError=\'\';render()')
-                        + '</div>'
-                    : sOHome());
-    }
+    // Una pantalla que ya migró a la base nueva (src/nuevo) no se escribe acá: el router le deja
+    // un contenedor vacío y, después de pintar, se lo entrega para que se dibuje sola.
+    var nueva = pantallaNueva(sndScreen);
+    if (nueva)
+        h = '<div id="pantalla-nueva" data-pantalla="' + sndScreen + '" style="display:contents"></div>';
+    else
+        switch (sndScreen) {
+            case 'o_home':
+                h = sOHome();
+                break;
+            case 'o_sig':
+                h = sOSig();
+                break;
+            case 'o_build':
+                h = sOBuild();
+                break;
+            case 'o_item_confirm':
+                h = sOItemConfirm();
+                break;
+            case 'o_cart':
+                h = sOCart();
+                break;
+            case 'o_sides':
+                h = sOSides();
+                break;
+            case 'o_sent':
+                h = sOSent();
+                break;
+            case 'p_auth':
+                h = sPAuth();
+                break;
+            // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
+            case 'p_gauth':
+                h = sGoogleAuth();
+                break;
+            // Primera apertura. Ver sHello() en 05-*.
+            case 'p_hello':
+                h = sHello();
+                break;
+            case 'p_welcome':
+                h = sWelcome();
+                break;
+            case 'p_recover':
+                h = sPRecover();
+                break;
+            case 'p_legal':
+                h = sPLegal();
+                break;
+            case 'p_returns':
+                h = sPReturns();
+                break;
+            case 'p_complaints':
+                h = sPComplaints();
+                break;
+            case 'p_home':
+                h = sPHome();
+                break;
+            case 'p_rewards':
+                h = sPRewards();
+                break;
+            case 'p_history':
+                h = sPHistory();
+                break;
+            case 'p_orders':
+                h = sPOrders();
+                break;
+            case 'p_ord_detail':
+                h = sOrdDetail();
+                break;
+            case 'p_problema':
+                h = sAlgoSalioMal();
+                break;
+            case 'o_secreto':
+                h = sMenuSecreto();
+                break;
+            case 'p_pago':
+                h = sPPago();
+                break;
+            case 'p_avisos':
+                h = sPAvisos();
+                break;
+            case 'p_profile':
+                h = sPProfile();
+                break;
+            case 'p_favorites':
+                h = sPFavorites();
+                break;
+            // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
+            // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
+            // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
+            // dejó la app abierta en esa pantalla la volvería a ver al recargar.
+            case 'gift_card':
+                h = TARJETA_REGALO_ACTIVA ? sGiftCard() : (sndScreen = 'p_home', sPHome());
+                break;
+            case 'weekly_plan':
+                h = PLAN_SEMANAL_ACTIVO ? sWeeklyPlan() : (sndScreen = 'p_home', sPHome());
+                break;
+            case 'group_order':
+                h = sGroupOrder();
+                break;
+            case 'group_split':
+                h = sGroupSplit();
+                break;
+            case 'p_addresses':
+                h = sPAddresses();
+                break;
+            case 'delivery_confirm':
+                h = sDeliveryConfirm();
+                break;
+            // ── LAS 34 PANTALLAS DEL PANEL YA NO ESTÁN ESCRITAS ACÁ ────────────────────────
+            // Estaban como 34 `case` fijos, y eso era lo que ataba el router al panel: mientras el
+            // router nombrara cada pantalla de admin, el panel no se podía sacar del bundle que
+            // descarga TODO cliente que abre la carta.
+            //
+            // Ahora el panel se registra a sí mismo en `ADMIN_SCREENS` al cargarse y el router solo
+            // pregunta. Si el panel no está cargado no hay entrada y cae al home del cliente — que
+            // es exactamente lo que tiene que pasar cuando alguien sin sesión de admin escribe una
+            // pantalla de admin en la URL.
+            default:
+                var pantallaAdmin = ADMIN_SCREENS[sndScreen];
+                // Si el panel no cargó, se DICE. Caer al home del cliente en silencio dejaría al
+                // dueño sin panel y sin ninguna pista de por qué — el peor de los dos errores.
+                h = pantallaAdmin
+                    ? pantallaAdmin()
+                    : (adminBundleError
+                        ? '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:14px">'
+                            + '<div style="font-family:\'Bodoni Moda\',serif;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">El panel no cargó</div>'
+                            + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);max-width:280px;line-height:1.55">' + esc(adminBundleError) + '</p>'
+                            + BTN('Reintentar //', 'adminBundleError=\'\';render()')
+                            + '</div>'
+                        : sOHome());
+        }
     GOLD = _prevGold;
     if (_prevStatusColors)
         Object.keys(_prevStatusColors).forEach(function (k) { STATUSES[k].c = _prevStatusColors[k]; });
@@ -12588,6 +12960,8 @@ function renderScreen() {
     // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
     var updateBanner = (updateReady && !busy) ? '<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">' + icon('refresh', 13, '#1a1200') + '<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>' : '';
     document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">' + offlineBanner + updateBanner + h + '</div>';
+    if (nueva)
+        nueva.pintar(document.getElementById('pantalla-nueva'));
     window.scrollTo(0, sameScreen ? scrollY : 0);
     _lastRenderedSc = sndScreen;
     // Antes esto era `if(sndScreen==='p_auth')`. El botón de Google ahora aparece en varias
