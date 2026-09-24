@@ -1467,7 +1467,7 @@ function sOSent(){
   // que cancela solo un Yape/Plin sin confirmar tras STALE_MANUAL_PAYMENT_HOURS_CLIENT.
   var manualWaiting=pending&&!!methodLabel;
   var deadlineLabel=manualWaiting&&window._lOrderCreatedAt
-    ?new Date(window._lOrderCreatedAt+STALE_MANUAL_PAYMENT_HOURS_CLIENT*3600000).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})
+    ?new Date(window._lOrderCreatedAt+STALE_MANUAL_PAYMENT_HOURS_CLIENT*3600000).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'})
     :null;
   // Antes esta pantalla nunca mostraba la referencia del pedido (útil para ubicarlo en
   // MIS PEDIDOS o mencionarlo si hay que escribir a soporte) y usaba la misma tarjeta

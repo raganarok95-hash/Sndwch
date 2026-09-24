@@ -39,7 +39,8 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
 
   await page.locator('[onclick*="scheduleMode=\'later\'"]').click();
   const schedValue = await page.locator('#o-sched').inputValue();
-  expect(schedValue).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
+  // Con el desfase de Lima escrito: sin él, cada teléfono lo leería en su propia zona (A5).
+  expect(schedValue).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}-05:00$/);
 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
@@ -54,4 +55,46 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
   // navegador, así que solo confirmamos que el cliente lo convirtió a un ISO parseable
   // en el futuro, no un valor literal exacto.
   expect(new Date(placeOrderCall!.body.scheduledFor).getTime()).toBeGreaterThan(Date.now());
+});
+
+// A5 (2026-09-24) — Las franjas son horas de la TIENDA, en Lima. Se armaban con `setHours` y
+// `new Date("AAAA-MM-DDTHH:mm")`, que usan la zona del TELÉFONO: un familiar que pide desde
+// Madrid elegía «20:00» y el pedido llegaba a la cocina para las 13:00 de Lima. Nada falla —
+// el pedido se crea, se cobra y queda programado a la hora equivocada.
+test.describe('desde un teléfono con otra zona horaria', () => {
+  test.use({ timezoneId: 'Europe/Madrid' });
+
+  test('la franja elegida llega al servidor como esa hora en Lima', async ({ page }) => {
+    const calls = await gotoApp(page, {
+      'place-order': (body: any) => ({
+        success: true,
+        order: { id: 'ord-3', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total },
+        customer: null,
+      }),
+    });
+
+    await page.locator('[onclick*="startOrderWithSig("]').first().click();
+    await page.locator('[onclick*="size=\'15\'"]').click();
+    await page.locator('[onclick^="sigId="]').first().click();
+    await page.getByRole('button', { name: 'CONTINUAR //' }).click();
+    await page.locator('#o-nom').fill('Cliente Lejos');
+    await page.locator('#o-phone').fill('987654321');
+    await page.locator('#o-addr').fill('Jr. Pizarro 456, Trujillo');
+    await page.locator('#o-district').selectOption('trujillo');
+    await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
+    await page.locator('[onclick*="scheduleMode=\'later\'"]').click();
+
+    // La última franja del día elegido: la que el cliente ve escrita es la que tiene que llegar.
+    const franja = page.locator('[onclick^="pickSchedSlot("]').last();
+    const elegida = (await franja.innerText()).trim();
+    await franja.click();
+
+    await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
+    await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+    await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+
+    const enviado = calls.find((c) => c.action === 'place-order')!.body.scheduledFor;
+    const enLima = new Date(enviado).toLocaleTimeString('en-GB', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    expect(enLima).toBe(elegida);
+  });
 });

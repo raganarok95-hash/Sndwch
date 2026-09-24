@@ -316,7 +316,7 @@ function batchLine(code){
   if(!isFinite(cocinado))return null;
   var limite=cocinado+(b.shelfLifeDays||invDefaultDays)*24*3600*1000;
   var horas=Math.round((limite-Date.now())/3600000);
-  var f=new Date(cocinado).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit'});
+  var f=new Date(cocinado).toLocaleDateString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'2-digit'});
   if(b.estado==='vencida')return{c:'var(--sw-danger,#ff8888)',t:'Tanda del '+f+' — VENCIDA hace '+Math.abs(horas)+' h. No usar.'};
   if(b.estado==='por-vencer')return{c:'#E8B34A',t:'Tanda del '+f+' — vence en '+horas+' h.'};
   return{c:'#9DA096',t:'Tanda del '+f+' — quedan '+Math.floor(horas/24)+' d.'};
@@ -752,7 +752,7 @@ function sAdminSecretSignature(){
       +'</div>'
     +BTN('Publicar sándwich del mes //','saveSecretSignature()')
     +(ssHistory.length?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-      +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
+      +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'})+'</div>';}).join(''):'')
     +'</div>';
 }
 // ── Signatures editables desde el panel (2026-08-27) ──────────────────────────────────
@@ -840,7 +840,7 @@ function sAdminCatalogItems(){
       +BTN('Publicar cambios //','saveCatalogItem()')
       :'<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096)">No hay Signatures publicados todavía.</p>')
     +(ciHistory.length?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
-      +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+pz(h.price_15)+'/'+SOLES_TXT+pz(h.price_30)+' · '+new Date(h.created_at).toLocaleDateString('es-PE')+'</div>';}).join(''):'')
+      +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+pz(h.price_15)+'/'+SOLES_TXT+pz(h.price_30)+' · '+new Date(h.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'})+'</div>';}).join(''):'')
     +'</div>';
 }
 async function saveCatalogItem(){
@@ -1006,7 +1006,7 @@ function sAdminAudit(){
     return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px 14px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(AUDIT_ACTION_LABEL[l.action]||l.action)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+esc(l.actor_phone)+'</span></div>'
       +(l.target?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px;word-break:break-all">'+esc(String(l.target))+'</div>':'')
-      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(new Date(l.created_at).toLocaleString('es-PE'))+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(new Date(l.created_at).toLocaleString('es-PE',{timeZone:'America/Lima'}))+'</div>'
       +'</div>';
   }).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;padding:20px 0">Sin registros aún //</div>';
   h+='</div>';
@@ -1031,7 +1031,7 @@ async function pauseStore(minutes){
   try{
     var r=await api('admin-pause-store',{token:token,minutes:minutes});
     storePausedUntil=r.pausedUntil||null;
-    storeHoursMsg=minutes>0?'Pausado. Volvemos solos a las '+new Date(r.pausedUntil).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+'.':'Pedidos reactivados.';
+    storeHoursMsg=minutes>0?'Pausado. Volvemos solos a las '+new Date(r.pausedUntil).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'})+'.':'Pedidos reactivados.';
     render();
     setTimeout(function(){storeHoursMsg='';if(sndScreen==='admin_hours')render();},3500);
   }catch(e){showToast(e.message);}
@@ -1088,7 +1088,7 @@ function sAdminHours(){
   h+='<div style="background:'+(pausaActiva?'rgba(255,170,0,.12)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(pausaActiva?'rgba(255,170,0,.5)':'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:18px">'
     +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+(pausaActiva?'Pedidos en pausa //':'Pausa temporal //')+'</div>'
     +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;margin-bottom:10px">'
-    +(pausaActiva?'Se reactivan solos a las '+new Date(storePausedUntil).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+'. No tienes que hacer nada.':'Si te quedaste sin insumos o no puedes atender un rato. Se reabre sola.')+'</div>'
+    +(pausaActiva?'Se reactivan solos a las '+new Date(storePausedUntil).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'})+'. No tienes que hacer nada.':'Si te quedaste sin insumos o no puedes atender un rato. Se reabre sola.')+'</div>'
     +(pausaActiva
       ? '<button onclick="pauseStore(0)" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:11px;border-radius:8px;text-align:center;min-height:44px">Reactivar ahora</button>'
       : '<div style="display:flex;gap:8px">'+[[30,'30 min'],[60,'1 hora'],[180,'3 horas'],[600,'Resto del día']].map(function(x){
@@ -1187,7 +1187,7 @@ function sAdminRatings(){
       // auditoría de diseño admin, MEDIO). customer_phone puede venir null si la cuenta
       // ya se borró (anonimización, ver actDeleteAccount) — se omite en ese caso.
       +(r.customer_phone?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:6px">'+esc(r.customer_phone)+'</div>':'')
-      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(new Date(r.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'}))+'</div>'
       +'</div>';
   }).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;padding:20px 0">Sin calificaciones //</div>';
   h+='</div>';
@@ -1245,7 +1245,7 @@ function sAdminPrepList(){
     h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px;line-height:1.5">Calculado hacia atrás desde cada hora de entrega, contando '+(d.minutesPerOrder||5)+' min por sándwich y que los armas uno tras otro.</div>';
     var plan=(d.assembly&&d.assembly.length)?d.assembly:d.orders.map(function(o){return{ref:o.ref,customerName:o.customerName,deliveryTime:o.deliveryTime,startBy:null,late:false};});
     h+=plan.map(function(o){
-      var hora=function(t){return t?new Date(t).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—';};
+      var hora=function(t){return t?new Date(t).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}):'—';};
       return'<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#1B1F18);border:1px solid '+(o.late?'rgba(255,85,85,.45)':'#2C3228')+';border-radius:8px;padding:10px 14px;margin-bottom:6px">'
         +'<div style="min-width:0"><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.ref)+' · '+esc(o.customerName)+'</div>'
         +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">Entrega '+esc(hora(o.deliveryTime))+(o.late?' · ya vas tarde':'')+'</div></div>'
@@ -1592,7 +1592,7 @@ function sAdminCalendar(){
     // distinguir "recién subido, normal" de "lleva 3 semanas esperando, algo se
     // atascó" (auditoría UX, P2).
     var oldestUpload=rawUploads.reduce(function(a,b){return new Date(a.uploaded_at)<new Date(b.uploaded_at)?a:b;});
-    var oldestDate=new Date(oldestUpload.uploaded_at).toLocaleDateString('es-PE',{day:'2-digit',month:'short'});
+    var oldestDate=new Date(oldestUpload.uploaded_at).toLocaleDateString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short'});
     h+='<div style="margin-top:10px;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">'+rawUploads.length+' clip'+(rawUploads.length===1?'':'s')+' esperando — el más antiguo desde el '+oldestDate+'.</div>';
   }
   h+='</div>';
@@ -1860,7 +1860,7 @@ function sAdminComplaints(){
       +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);margin-top:8px;line-height:1.5"><b>Detalle:</b> '+esc(c.detail)+'</div>'
       +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:4px;line-height:1.5"><b>Pide:</b> '+esc(c.consumer_request)+'</div>'
       +(c.order_ref?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">Pedido: '+esc(c.order_ref)+'</div>':'')
-      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE'))+'</div>'
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+esc(new Date(c.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'}))+'</div>'
       +(c.provider_response?'<div style="background:var(--sw-card2,#171A14);border-radius:8px;padding:10px 12px;margin-top:10px;font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)"><b style="color:'+GOLD+'">Respuesta:</b> '+esc(c.provider_response)+'</div>'
         :(openId
           ?'<div style="margin-top:10px"><textarea id="cq-resp-'+c.id+'" placeholder="Escribe tu respuesta al consumidor" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);width:100%;font-size:13px;font-family:EB Garamond,serif;min-height:70px;box-sizing:border-box;margin-bottom:8px"></textarea><button onclick="doRespondComplaint('+Number(c.id)+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:10px 0;border-radius:8px;text-align:center">Guardar respuesta //</button></div>'
@@ -2012,7 +2012,7 @@ function printRecipeLabels(code){
   var r=(recipesData&&recipesData.recipes||[]).filter(function(x){return x.recipe_code===code;})[0];
   if(!r)return;
   var hoy=new Date();
-  var f=function(d){return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase().replace('.','');};
+  var f=function(d){return d.toLocaleDateString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short'}).toUpperCase().replace('.','');};
   var vence=r.shelfLifeDays>0?new Date(hoy.getTime()+r.shelfLifeDays*86400000):null;
   var g=r.portion_grams?r.portion_grams+'g':'';
   // Se imprimen varias iguales: una tanda son muchas bolsas, y rotular a mano una por una es

@@ -576,11 +576,24 @@ function isWithinStoreHours(d){
 // nunca puede detectar porque corre sobre Chromium de escritorio, que sí respeta el
 // CSS del input. Reemplazado por franjas horarias propias (HOY/MAÑANA + cada 30 min
 // dentro del horario real) para que el control se vea y funcione igual en cualquier
-// dispositivo. #o-sched sigue existiendo como input oculto con el mismo formato
-// "YYYY-MM-DDTHH:mm" que antes, así el resto del flujo (effectiveOrderDate, doOrder)
-// no tuvo que cambiar.
+// dispositivo. #o-sched sigue existiendo como input oculto, ahora con el desfase de Lima
+// ("YYYY-MM-DDTHH:mm-05:00"): el resto del flujo (effectiveOrderDate, doOrder) lo lee con
+// `new Date()` y obtiene el mismo instante desde cualquier zona.
 var SCHED_LEAD_MINUTES=20;
-function schedDateForDay(dayKey){var d=new Date();if(dayKey==='tomorrow')d.setDate(d.getDate()+1);return d;}
+// ⚠ LAS FRANJAS SON HORAS DE LIMA, no del teléfono (A5, 2026-09-24). Se armaban con
+// `setHours` y `new Date("AAAA-MM-DDTHH:mm")`, que usan la zona del DISPOSITIVO: quien pedía
+// desde Madrid elegía «20:00» y el pedido quedaba para las 13:00 de Lima, sin ningún error.
+// Toda fecha de franja pasa por `fechaEnLima()`, que escribe el desfase explícito. Lima no
+// tiene horario de verano, así que el desfase es fijo.
+var LIMA_DESFASE='-05:00';
+function diaEnLima(d:Date):string{
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+}
+function fechaEnLima(dia:string,minutos:number):Date{
+  return new Date(dia+'T'+String(Math.floor(minutos/60)).padStart(2,'0')+':'+String(minutos%60).padStart(2,'0')+':00'+LIMA_DESFASE);
+}
+// El mediodía de Lima de HOY o MAÑANA: un instante que cae en ese día de Lima desde cualquier zona.
+function schedDateForDay(dayKey){return new Date(fechaEnLima(diaEnLima(new Date()),12*60).getTime()+(dayKey==='tomorrow'?86400000:0));}
 // Devuelve las franjas del día con su estado. `full` viene de la capacidad real que manda
 // el servidor (#23): antes el cliente ofrecía todas las franjas por igual y el rechazo por
 // hora llena aparecía recién al tocar PAGAR, con el sándwich ya armado y la dirección ya
@@ -591,7 +604,7 @@ function schedSlotsDetailed(dayKey){
   if(!range)return[];
   var out=[],now=new Date(),isToday=dayKey==='today';
   for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
-    var slotDate=new Date(d);slotDate.setHours(0,0,0,0);slotDate.setMinutes(totalMin);
+    var slotDate=fechaEnLima(diaEnLima(d),totalMin);
     if(isToday&&slotDate.getTime()<now.getTime()+SCHED_LEAD_MINUTES*60000)continue;
     out.push({t:String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'),full:hourIsFull(slotDate)});
   }
@@ -640,10 +653,8 @@ function useNextFreeSlot(){
 }
 function schedInputValue(){
   if(!schedSlot)return'';
-  var d=schedDateForDay(schedDay),parts=schedSlot.split(':');
-  d.setHours(parseInt(parts[0],10),parseInt(parts[1],10),0,0);
-  var pad=function(n){return String(n).padStart(2,'0');};
-  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  // Con el desfase escrito: «2026-10-10T20:00-05:00» es el mismo instante en cualquier teléfono.
+  return diaEnLima(schedDateForDay(schedDay))+'T'+schedSlot+LIMA_DESFASE;
 }
 function initSchedDefault(){
   if(schedSlot)return;
@@ -657,7 +668,7 @@ function scheduleTimePickerHTML(){
   var days=[{key:'today',l:'HOY'},{key:'tomorrow',l:'MAÑANA'}];
   var dayChips=days.map(function(dd){
     var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
-    var sub=d.toLocaleDateString('es-PE',{weekday:'short',day:'numeric',month:'short'});
+    var sub=d.toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'short',day:'numeric',month:'short'});
     return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'var(--sw-card2,#171A14)':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
   }).join('');
   var slots=schedSlotsDetailed(schedDay);
@@ -1088,7 +1099,9 @@ var pendingRecurringId:string|null=null,miHoraApartada:string|null=null;
 // ¿Está llena la hora en la que caería esta fecha? Se compara por INICIO DE HORA porque es
 // como lo agrupa el servidor; comparar por minuto exacto no marcaría nada nunca.
 function hourIsFull(d){
-  var h=new Date(d);h.setMinutes(0,0,0);
+  // En UTC y no en la zona del teléfono: Lima va en horas enteras, así que la hora UTC truncada
+  // es la de Lima; con `setMinutes` un teléfono en la India (+5:30) caía en la media hora.
+  var h=new Date(d);h.setUTCMinutes(0,0,0);
   var k=h.toISOString();
   if(miHoraApartada&&k===miHoraApartada&&typeof cargaPorHora[k]==='number')return cargaPorHora[k]-1>=maxPerHour;
   if(!fullHours.length)return false;

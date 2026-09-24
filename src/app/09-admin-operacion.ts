@@ -134,7 +134,7 @@ function sAdminHealth(){
       +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px;line-height:1.4">'+esc(sg.hint)+(clickable?' →':'')+'</div>'
       +'</div>';
   }).join('');
-  h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Revisado: '+esc(new Date(healthData.checkedAt).toLocaleString('es-PE'))+'</div>';
+  h+='<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Revisado: '+esc(new Date(healthData.checkedAt).toLocaleString('es-PE',{timeZone:'America/Lima'}))+'</div>';
   h+='<div style="margin-top:14px">'+BTN('Volver a revisar //','loadHealth()',true)+'</div>';
   return h+'</div>';
 }
@@ -567,7 +567,7 @@ function addressFlagsBanner(){
         +'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(o.customer_address)+'</div>'
         +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#9DA096)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
-        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
         // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
         // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
         // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
@@ -769,7 +769,7 @@ function sAdminFocus(){
     +'</div>'
     // La receta, en escala de cocina, arriba de todo lo demás.
     +orderRecipeHTML(o.items,true)
-    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
+    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
     +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('warning',16,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
     +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-ok,#25D366);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
     +'<div style="height:1px;background:var(--sw-border,#2C3228);margin:18px 0"></div>'

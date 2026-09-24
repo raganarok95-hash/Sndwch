@@ -865,7 +865,7 @@ function SZTOG(){
   // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
   return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
 }
-function today(){return new Date().toLocaleDateString('es-PE');}
+function today(){return new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima'});}
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que
 // importa: sin ella, el ref era adivinable (puro timestamp) y servía como única prueba
 // de acceso para rastrear un pedido de invitado sin cuenta (ver actMyOrders/actSubmitRating

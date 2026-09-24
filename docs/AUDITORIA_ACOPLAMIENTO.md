@@ -98,6 +98,13 @@ permisos, validación y código muerto.
   ⚠ `send-order-email`, `daily-summary`, `birthday-bonus` y `winback-campaign` no están en el
   deploy automático: sus correos siguen viejos en producción hasta desplegarlas a mano.
 
+- **A5** (2026-09-24): las franjas se arman en hora de Lima (`fechaEnLima()`, 01-*) y el valor
+  oculto lleva el desfase escrito (`…T20:00-05:00`). La prueba nueva de `scheduled-order.spec.ts`
+  corre el navegador en Madrid; sin el arreglo, «23:30» llegaba como 16:30. La de capacidad
+  pasaba solo porque navegador y runner compartían zona — el mismo supuesto del defecto — y
+  ahora arma sus horas en Lima. De paso, las 16 fechas y horas mostradas con `toLocale…` sin
+  zona (pausa de la tienda, vencimiento de pago, tandas) se muestran en hora de Lima.
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida
