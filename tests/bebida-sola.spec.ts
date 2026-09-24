@@ -46,6 +46,8 @@ test('se puede pedir una bebida sola, sin armar ningún sándwich', async ({ pag
 // igual "por si acaso".
 test('la pestaña dice que la bebida se puede pedir sola', async ({ page }) => {
   await gotoApp(page, {});
-  await page.getByRole('button', { name: 'Bebidas' }).click();
-  await expect(page.locator('text=/no hace falta armar un sándwich/i')).toBeVisible();
+  // Desde el rediseño la promesa va en la tarjeta de bebidas del inicio —«Se piden solas o con
+  // tu sándwich»—, que es donde el cliente decide si entra. Antes era otra frase en la pestaña.
+  const tarjeta = page.locator('button[onclick^="irABebidas("]').first();
+  await expect(tarjeta).toContainText(/se piden solas/i);
 });

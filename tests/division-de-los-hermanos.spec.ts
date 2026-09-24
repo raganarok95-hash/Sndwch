@@ -15,32 +15,38 @@ import { gotoApp } from './helpers';
 //     render), y su modo de fallo es MUDO: si se rompe, la app se ve perfectamente bien,
 //     solo que del color del hermano equivocado.
 
-test('los dos lados son botones accesibles y dicen cuál está activo', async ({ page }) => {
+// ⚠ DESDE EL REDISEÑO LA DIVISIÓN ES LA PUERTA (2026-09-24). Estas pruebas describían una barra
+// de tres pestañas (Signatures / Arma el tuyo / Bebidas) con `aria-pressed`, que ya no existe:
+// hoy cada hermano es su propio lado y se elige en la puerta partida, a la que se vuelve con
+// «Cambiar de lado». Se reescribieron sobre eso, protegiendo lo mismo: que cada lado se pueda
+// elegir con teclado y lector, que cada hermano esté en su lado, y que el color sea el de toda
+// la app.
+const sando = (page: any) => page.getByRole('button', { name: /Ya está resuelto/ });
+const wicho = (page: any) => page.getByRole('button', { name: /Tú decides/ });
+async function aLaPuerta(page: any) {
+  await page.getByRole('button', { name: 'Cambiar de lado' }).click();
+  await expect(sando(page)).toBeVisible();
+}
+
+test('los dos lados son botones accesibles, y elegir uno se nota sin ver el color', async ({ page }) => {
   await gotoApp(page, {});
-
-  await expect(page.getByRole('button', { name: 'Signatures' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Arma el tuyo' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Bebidas' })).toBeVisible();
-
-  // aria-pressed es la única forma de saber cuál está activo sin ver el color — y por lo
-  // tanto la única que sirve para alguien que usa lector de pantalla.
-  await expect(page.getByRole('button', { name: 'Signatures' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Arma el tuyo' }).click();
-  await expect(page.getByRole('button', { name: 'Arma el tuyo' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'Signatures' })).toHaveAttribute('aria-pressed', 'false');
+  await aLaPuerta(page);
+  // Botones de verdad: se llega con Tab y los anuncia el lector de pantalla por su nombre.
+  await expect(sando(page)).toBeEnabled();
+  await expect(wicho(page)).toBeEnabled();
+  await wicho(page).focus();
+  await page.keyboard.press('Enter');
+  // Elegir un lado ENTRA a ese lado: el armador de WICHO, con su primera pregunta.
+  await expect(page.locator('text=¿De qué tamaño?')).toBeVisible();
 });
 
 test('cada hermano está en su lado', async ({ page }) => {
   await gotoApp(page, {});
-  // Los personajes son las dos mitades de la marca: si un lado se queda sin el suyo, la
-  // división deja de decir de quién es la pantalla.
-  await expect(page.locator('img[alt="SANDO"]')).toBeVisible();
-  await expect(page.locator('img[alt="WICHO"]')).toBeVisible();
-
-  const sando = (await page.locator('img[alt="SANDO"]').boundingBox())!;
-  const wicho = (await page.locator('img[alt="WICHO"]').boundingBox())!;
+  await aLaPuerta(page);
+  const a = (await sando(page).boundingBox())!;
+  const b = (await wicho(page).boundingBox())!;
   // SANDO a la izquierda, WICHO a la derecha. Es el orden del logo del dueño.
-  expect(sando.x).toBeLessThan(wicho.x);
+  expect(a.x).toBeLessThan(b.x);
 });
 
 test('elegir el lado de WICHO tiñe la app entera, y volver la devuelve', async ({ page }) => {
@@ -51,17 +57,19 @@ test('elegir el lado de WICHO tiñe la app entera, y volver la devuelve', async 
   const verde = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--sw-card').trim());
 
-  await page.getByRole('button', { name: 'Arma el tuyo' }).click();
+  await aLaPuerta(page);
+  await wicho(page).click();
   await expect(page.locator('html')).toHaveAttribute('data-lado', 'wicho');
   const azul = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--sw-card').trim());
 
   // No basta con que el atributo cambie: lo que importa es que los TOKENS cambien, porque
-  // de ellos cuelgan los 997 sitios que pintan superficie.
+  // de ellos cuelgan los cientos de sitios que pintan superficie.
   expect(azul).not.toBe(verde);
 
   // Y tiene que volver. Un lado que se queda pegado es el mismo defecto mudo al revés.
-  await page.getByRole('button', { name: 'Signatures' }).click();
+  await page.evaluate(() => (window as any).volverALaPuerta());
+  await sando(page).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-lado', 'wicho');
 });
 
@@ -74,6 +82,8 @@ test('el precio NO cambia de color entre los dos lados', async ({ page }) => {
     page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--sw-gold').trim());
 
   const antes = await oro();
-  await page.getByRole('button', { name: 'Arma el tuyo' }).click();
+  await aLaPuerta(page);
+  await wicho(page).click();
+  await expect(page.locator('html')).toHaveAttribute('data-lado', 'wicho');
   expect(await oro()).toBe(antes);
 });

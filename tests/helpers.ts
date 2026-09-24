@@ -131,7 +131,13 @@ export async function clearDeliveryPin(page: Page) {
 // Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
 // el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
 export async function elegirSando(page: Page) {
-  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
+  // La app RECUERDA el lado elegido (localStorage `sw_lado`): quien vuelve entra directo a su
+  // lado sin ver la puerta. Una prueba que carga la app dos veces vive exactamente eso, y
+  // esperar una puerta que la app no muestra la dejaba colgada (recetas.spec.ts, 2026-09-24).
+  // Se toca la puerta SOLO si está: es lo mismo que hace un cliente.
+  const puerta = page.getByRole('button', { name: /Ya está resuelto/ });
+  await Promise.race([puerta.waitFor(), page.waitForSelector('text=Y además')]);
+  if (await puerta.isVisible()) await puerta.click();
   // Se espera un texto que SOLO existe en el mundo de SANDO ya pintado. Antes era
   // "SIGNATURE", que era la pestaña del catálogo viejo; al desaparecer esa barra el helper
   // se quedaba esperando 30s en cada prueba de la suite. El ancla es el tramo de abajo del

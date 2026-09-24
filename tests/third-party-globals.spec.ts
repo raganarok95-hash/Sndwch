@@ -68,15 +68,15 @@ test('la app sobrevive a un script externo que pisa sus funciones globales', asy
   // ARMA EL TUYO desde el 2026-09-17. Vale mas que el clic anterior: ejercita la entrada
   // nueva Y el paso siguiente, con las globales ya pisadas por el script externo.
   await page.getByRole('button', { name: /Tú decides/ }).click();
-  const paso = page.locator('text=/Ver el paso a paso completo/i').first();
-  await expect(paso).toBeVisible();
-  await paso.click();
-  // El armador ya no rotula "Paso 1 // 5": desde el concepto 6 (2026-09-16) el progreso es
-  // un riel que además muestra QUE llevas elegido en cada paso. Se afirma sobre el riel —
-  // que exista y que el paso encendido sea el primero— porque eso es lo que el cliente ve
-  // hoy, y porque un `data-actual` es un gancho más estable que un texto de rótulo.
-  await expect(page.locator('[data-paso]')).toHaveCount(5);
-  await expect(page.locator('[data-actual="1"]')).toHaveText(/PAN/i);
+  // Elegir WICHO abre el armador directo en su primera pregunta (antes había un paso intermedio
+  // «Ver el paso a paso completo», retirado en el rediseño del 2026-09-17). Se afirma sobre el
+  // riel, que es lo que el cliente ve: un solo paso encendido, el primero, y se puede avanzar.
+  await expect(page.locator('text=¿De qué tamaño?')).toBeVisible();
+  await expect(page.locator('[aria-label$=" (aquí)"]')).toHaveCount(1);
+  await expect(page.locator('[aria-label$=" (aquí)"]')).toHaveAttribute('aria-label', /TAMAÑO/i);
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await page.locator('button[onclick="byoStepNext()"]').click();
+  await expect(page.locator('[aria-label$=" (aquí)"]')).toHaveAttribute('aria-label', /PAN/i);
 
   expect(errores, 'no debe quedar ningún error de JavaScript sin manejar').toEqual([]);
 });

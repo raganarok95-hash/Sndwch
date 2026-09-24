@@ -1036,3 +1036,32 @@ chequeo seguía en verde. Ahora empareja los paréntesis y salta el tipo de reto
 
 **Despliegue**: la función ya está en la base, pero el `api` desplegado no la llama hasta que esta
 rama llegue a `main`. No cambia nada de lo que corre hoy.
+
+## 2026-09-24 · Paso 5 (primera parte): de 22 pruebas rojas a 3, y qué había detrás
+
+Llevaban días rojas y, siendo siempre las mismas, ya no avisaban de nada. Mirando cada una:
+
+- **19 buscaban el inicio anterior al rediseño del 2026-09-17**: textos («Signatures», «Arma el
+  tuyo», «Build your own bite», «Recomendado», «Repetir pedido»), una barra de tres pestañas con
+  `aria-pressed`, un paso intermedio del armador. Se reescribieron sobre lo que la app hace hoy y,
+  donde se pudo, sobre lo que se puede HACER (botones que empiezan un pedido, la puerta con sus dos
+  lados, el riel del armador) en vez de sobre una frase. Cada una conserva lo que protegía.
+- **Una era un defecto real**: en el primer paso del armador, el botón deshabilitado «Elige un
+  tamaño» tenía opacidad .4 y quedaba en 2.13:1 de contraste (mínimo 4.5:1). Su texto ES la
+  instrucción de qué hacer. Ahora se distingue por la forma (solo borde), no apagando el texto.
+- **El estimado de entrega se había mudado**, no roto: del inicio («25-40 min») al checkout
+  («Llega 2:30 – 2:45 p.m.»). La prueba lo sigue ahí, y se vio fallar con la cola sin sumar.
+- **El ayudante `elegirSando` esperaba siempre la puerta**, pero la app recuerda el lado elegido:
+  cargarla dos veces en una prueba la dejaba colgada. Ahora toca la puerta solo si está, que es
+  lo que hace un cliente que vuelve.
+
+**Las 3 que quedan esperan pantallas aprobadas que todavía no existen**, y no se «arreglaron»
+bajándoles la exigencia:
+- el puente «¿Prefieres que ya esté resuelto?» (2 pruebas) vive en el Mundo WICHO de la maqueta
+  M22 con puente (tarea #71). Se perdió en el rediseño del 17 sin que nadie lo decidiera: el commit
+  que partió el inicio no lo trasladó.
+- la entrada «Pedir lo mismo» (tarea #69), perdida en el mismo rediseño. La LÓGICA de repetir sí
+  se sigue probando, en verde, a través de `loadCart` —la función que hoy usa «Pedirlo ahora» del
+  pedido fijo—, y se vio fallar con el filtro de la carta roto.
+
+Están en `tests/ROJAS_CONOCIDAS.txt` con su tarea al lado.

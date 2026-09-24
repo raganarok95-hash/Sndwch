@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando, entrarConTelefono } from './helpers';
+import { irAlArmador, gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando, entrarConTelefono } from './helpers';
 
 // LAS TRES PALANCAS DEL MODELO — medición y empujones (2026-09-06).
 //
@@ -89,7 +89,9 @@ test('ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armado
   // mezcla escondiendo o encareciendo ARMA EL TUYO rompería la mitad de la identidad de la
   // marca (los dos hermanos) para ganar céntimos.
   await gotoApp(page);
-  await page.locator('text=Arma el tuyo').click();
+  // ⚠ El puente vive en el Mundo WICHO aprobado (maqueta M22 con puente), que todavía no está
+  // construido (tarea #71): esta prueba queda roja hasta entonces, en tests/ROJAS_CONOCIDAS.txt.
+  await irAlArmador(page);
   await expect(page.locator('text=¿Prefieres que ya esté resuelto?')).toBeVisible();
   // ⚠ ACÁ DECÍA `text=The Original`, escrito a mano — y el código dice explícitamente lo
   // contrario: «El nombre sale del catálogo (que el servidor refresca), nunca escrito a

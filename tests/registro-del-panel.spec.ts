@@ -89,15 +89,17 @@ test('el router usa el registro para pintar una pantalla del panel', async ({ pa
 // admin en la URL.
 test('una pantalla de admin que no está registrada cae al home del cliente', async ({ page }) => {
   await conPanelCargado(page);
-  const pintado = await page.evaluate(() => {
+  // «El home del cliente» se reconoce por lo que se puede HACER en él, no por un texto: los
+  // Signatures que se piden (lado de SANDO), el armador (lado de WICHO) o la puerta que elige
+  // entre los dos. Buscaba «Build your own bite|SIGNATURE|ARMA EL TUYO», textos del inicio
+  // anterior al rediseño, y llevaba días roja.
+  const esHomeDelCliente = await page.evaluate(() => {
     const w = window as any;
     w.sndScreen = 'admin_que_no_existe';
     w.render();
-    return document.getElementById('app')!.innerText || '';
+    return !!document.querySelector('#app [onclick^="startOrderWithSig("], #app [onclick^="elegirLado("], #app [onclick="byoStepNext()"]');
   });
-  expect(pintado, 'una pantalla inexistente dejó la app en blanco en vez de volver al home').toMatch(
-    /Build your own bite|SIGNATURE|ARMA EL TUYO/i,
-  );
+  expect(esHomeDelCliente, 'una pantalla inexistente dejó la app en blanco en vez de volver al home').toBe(true);
 });
 
 test('con el registro vacío la app del cliente sigue funcionando', async ({ page }) => {

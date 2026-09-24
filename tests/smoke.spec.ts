@@ -24,12 +24,21 @@ import { gotoApp } from './helpers';
 //
 // Ahora se ancla a los DOS CAMINOS DE PEDIDO, que es lo que de verdad tiene que estar
 // pintado para decir que la app arrancó — y son la mitad de la identidad de la marca (los
-// dos hermanos), así que si alguno desaparece de la home es un problema de negocio, no de
-// texto.
+// dos hermanos), así que si alguno desaparece es un problema de negocio, no de texto.
+//
+// ⚠ DESDE EL REDISEÑO LOS DOS CAMINOS NO ESTÁN EN LA MISMA PANTALLA (2026-09-24). Cada hermano
+// es su propio lado: `gotoApp` entra por el de SANDO (su carta de Signatures) y la puerta —a
+// la que se vuelve con «Cambiar de lado»— ofrece los dos. La prueba buscaba los textos
+// «Signatures» y «Arma el tuyo» en el inicio y llevaba días roja. Ahora pide lo que el
+// cliente de verdad tiene delante: Signatures que se pueden pedir, y la puerta con la mitad
+// de cada hermano.
 test('la app carga y muestra los dos caminos de pedido', async ({ page }) => {
   await gotoApp(page);
-  await expect(page.locator('text=Signatures').first()).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=Arma el tuyo').first()).toBeVisible();
+  await expect(page.locator('button[onclick^="startOrderWithSig("]').first()).toBeVisible({ timeout: 10000 });
+  await page.getByRole('button', { name: 'Cambiar de lado' }).click();
+  await expect(page.locator('button[onclick="elegirLado(\'sig\')"]')).toBeVisible();
+  await expect(page.locator('button[onclick="elegirLado(\'byo\')"]')).toBeVisible();
+  await page.locator('button[onclick="elegirLado(\'sig\')"]').click();
   // Un menú sin un solo precio es una app sin carta: se pinta igual y no vende nada. Es el
   // mismo criterio con el que la prueba de humo de producción mira el CONTENIDO del
   // catálogo y no solo que el endpoint responda 200.

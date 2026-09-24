@@ -44,7 +44,8 @@ const SIG_ITEMS = [
 test.describe('la estrella del menú', () => {
   test('exactamente UN Signature lleva el sello, y se ve como sello y no como sufijo', async ({ page }) => {
     await gotoApp(page);
-    const sellos = page.locator('text=Recomendado');
+    // El sello dice «La estrella» desde el mosaico de SANDO (2026-09-17); antes «Recomendado».
+    const sellos = page.getByText('La estrella', { exact: true });
     await expect(sellos).toHaveCount(1);
 
     // Un sufijo de texto y un sello se distinguen por tener fondo propio: sin fondo, el
@@ -63,7 +64,8 @@ test.describe('la estrella del menú', () => {
     // aparecen dos nombres distintos.
     const nombres = await page.evaluate(() => {
       const SIGS = (window as any).SIGS as any[];
-      const orden = Array.from(document.querySelectorAll('div[onclick^="startOrderWithSig"]'))
+      // Cada tarjeta del mosaico es un botón que empieza el pedido con ese Signature.
+      const orden = Array.from(document.querySelectorAll('[onclick^="startOrderWithSig"]'))
         .map((el) => (el.getAttribute('onclick') || '').match(/startOrderWithSig\('([^']+)'\)/))
         .filter(Boolean)
         .map((m) => (m as RegExpMatchArray)[1]);
@@ -76,6 +78,8 @@ test.describe('la estrella del menú', () => {
     expect(nombres.orden[0]).toBe(nombres.estrella[0]);
   });
 
+  // ⚠ El puente vive en el Mundo WICHO aprobado (maqueta M22 con puente), todavía sin construir
+  // (tarea #71): esta prueba queda roja hasta entonces, en tests/ROJAS_CONOCIDAS.txt.
   test('el puente desde ARMA EL TUYO ofrece esa MISMA estrella, no otra', async ({ page }) => {
     await gotoApp(page, {
       'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {}, sigItems: SIG_ITEMS },

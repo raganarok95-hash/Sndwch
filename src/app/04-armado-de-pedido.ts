@@ -241,7 +241,10 @@ function BYO_PIE(){
     +BYO_LOQUELLEVAS()
     +'</div>'
     +'<button type="button"'+(listo?' onclick="byoStepNext()"':' disabled')+' style="all:unset;box-sizing:border-box;'
-    +(listo?'cursor:pointer;':'opacity:.4;')+'flex:0 0 auto;background:'+(listo?ACC():'transparent')+';'
+    // Deshabilitado se distingue por la FORMA —solo borde, sin relleno de color—, no apagando
+    // el texto: ese texto es la instrucción («Elige un tamaño») y con opacidad .4 quedaba en
+    // 2.13:1 de contraste (mínimo 4.5:1). Lo vio tests/contraste.spec.ts el 2026-09-24.
+    +(listo?'cursor:pointer;':'cursor:default;')+'flex:0 0 auto;background:'+(listo?ACC():'transparent')+';'
     +'color:'+(listo?ACC_INK():'var(--sw-text-muted,#9DA096)')+';'
     +(listo?'':'box-shadow:inset 0 0 0 1px var(--sw-border,#1F3243);')
     +'border-radius:999px;padding:14px 26px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;'

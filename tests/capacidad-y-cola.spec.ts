@@ -44,17 +44,30 @@ async function armarSandwich(page: any) {
   await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
 }
 
+// ⚠ EL ESTIMADO SE MUDÓ AL CHECKOUT (2026-09-24). Antes se veía «25-40 min» en el inicio; desde
+// el rediseño se dice como HORA en el checkout («Llega 2:30 – 2:45 p.m.»), que es como lo
+// dibujan las maquetas. Lo que estas pruebas cuidan no cambió: la cola suma minutos. La hora
+// esperada se arma con el mismo formateador de la app (`textoVentana`) porque lo que se prueba
+// es CUÁNTO se suma, no cómo se escribe una hora.
+async function ventanaEsperada(page: any, desdeMin: number, hastaMin: number): Promise<string> {
+  return page.evaluate(([a, b]: number[]) => (window as any).textoVentana(Date.now() + a * 60000, Date.now() + b * 60000), [desdeMin, hastaMin]);
+}
+
 test('el estimado de entrega suma la cola, no promete la cocina vacía', async ({ page }) => {
   await page.clock.setFixedTime(HOY_14);
   // 3 pedidos por delante × 5 min = +15 sobre el rango base 25-40.
   await gotoApp(page, horas({ queueAhead: 3, queueMinutesPerOrder: 5, maxPerHour: 10, fullHours: [] }));
-  await expect(page.locator('text=/40-55 min/').first()).toBeVisible();
+  await armarSandwich(page);
+  await expect(page.getByText(await ventanaEsperada(page, 40, 55), { exact: true })).toBeVisible();
+  await expect(page.locator('text=/3 pedidos por delante/')).toBeVisible();
 });
 
 test('sin cola, el estimado es exactamente el de siempre', async ({ page }) => {
   await page.clock.setFixedTime(HOY_14);
   await gotoApp(page, horas({ queueAhead: 0, fullHours: [] }));
-  await expect(page.locator('text=/25-40 min/').first()).toBeVisible();
+  await armarSandwich(page);
+  await expect(page.getByText(await ventanaEsperada(page, 25, 40), { exact: true })).toBeVisible();
+  await expect(page.locator('text=/por delante/')).toHaveCount(0);
 });
 
 test('si el servidor no manda capacidad, no se infla nada ni se apaga nada', async ({ page }) => {
@@ -62,8 +75,8 @@ test('si el servidor no manda capacidad, no se infla nada ni se apaga nada', asy
   // anterior, nunca inventar una demora ni bloquear franjas que sí están libres.
   await page.clock.setFixedTime(HOY_14);
   await gotoApp(page, horas({}));
-  await expect(page.locator('text=/25-40 min/').first()).toBeVisible();
   await armarSandwich(page);
+  await expect(page.getByText(await ventanaEsperada(page, 25, 40), { exact: true })).toBeVisible();
   await page.locator('[onclick*="scheduleMode=\'later\'"]').click();
   await expect(page.locator('div[title="Esa hora ya está llena"]')).toHaveCount(0);
 });

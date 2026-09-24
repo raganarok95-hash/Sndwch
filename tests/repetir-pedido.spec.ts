@@ -54,21 +54,40 @@ async function entrarConUltimoPedido(page: any, items: any[], summary = '1x algo
     (window as any).cust = { phone: '900000001', name: 'Ana', total_orders: 4 };
   });
   await page.evaluate(async () => { await (window as any).loadUserExtras(); });
-  await expect(page.locator('text=Repetir pedido')).toBeVisible();
+}
+
+// ⚠ LA ENTRADA A «PEDIR LO MISMO» NO EXISTE HOY (2026-09-24). Se perdió en el rediseño del
+// 2026-09-17, que partió el inicio en los dos mundos de los hermanos y no trasladó la tarjeta
+// del último pedido. Volver a ponerla es la tarea #69 («Pedir lo mismo» arriba de Tus
+// pedidos, pantalla 33). Hasta entonces:
+//   · la prueba de la ENTRADA queda roja, en tests/ROJAS_CONOCIDAS.txt, a la espera de #69;
+//   · las de la LÓGICA —qué entra al carrito y qué se avisa— ejercitan `loadCart`, la misma
+//     función que usa hoy «Pedirlo ahora» del pedido fijo. Así siguen protegiendo algo vivo
+//     en vez de quedar rojas por una pantalla que falta.
+async function repetir(page: any) {
+  await page.evaluate(() => {
+    const w = window as any;
+    w.loadCart(w.lastPaidOrder().items);
+  });
 }
 
 const carrito = (page: any) => page.evaluate(() => (window as any).cart.map((c: any) => c.prot || c.sigId || c.code));
 
+test('el inicio ofrece «Pedir lo mismo» con el último pedido (se construye en la tarea #69)', async ({ page }) => {
+  await entrarConUltimoPedido(page, [BYO_POLLO], '1x Pollo');
+  await expect(page.getByRole('button', { name: /Pedir lo mismo/ })).toBeVisible();
+});
+
 test.describe('repetir pedido', () => {
   test('un pedido sano se repite entero y llega al carrito tal cual', async ({ page }) => {
     await entrarConUltimoPedido(page, [BYO_POLLO, SIG_NORMAL], '1x Pollo + 1x The Marinara');
-    await page.locator('text=Pedir lo mismo').click();
+    await repetir(page);
     expect(await carrito(page)).toEqual(['P02', 'SIG02']);
   });
 
   test('una proteína que salió de ARMA EL TUYO no entra al carrito — el servidor la rechazaría', async ({ page }) => {
     await entrarConUltimoPedido(page, [BYO_RES], '1x Arma el tuyo (Res) 15CM');
-    await page.locator('text=Pedir lo mismo').click();
+    await repetir(page);
     expect(await carrito(page)).toEqual([]);
     // Sin nada repetible no se manda a un carrito vacío sin explicación.
     await expect(page.locator('text=ya no se puede repetir')).toBeVisible();
@@ -76,7 +95,7 @@ test.describe('repetir pedido', () => {
 
   test('si solo parte del pedido sigue en la carta, se repite esa parte Y se dice qué falta', async ({ page }) => {
     await entrarConUltimoPedido(page, [BYO_RES, BYO_POLLO], '1x Res + 1x Pollo');
-    await page.locator('text=Pedir lo mismo').click();
+    await repetir(page);
     expect(await carrito(page)).toEqual(['P02']);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });
@@ -86,14 +105,14 @@ test.describe('repetir pedido', () => {
     // Las dos líneas son de pollo, así que la proteína no descarta nada: si el filtro solo
     // mirara `prot`, este pedido pasaría entero y el servidor lo rechazaría al pagar.
     expect(await carrito(page)).toEqual([]);
-    await page.locator('text=Pedir lo mismo').click();
+    await repetir(page);
     expect(await carrito(page)).toEqual(['P02']);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });
 
   test('el menú secreto no se repite: rota cada mes bajo el mismo id, así que NO sería lo mismo', async ({ page }) => {
     await entrarConUltimoPedido(page, [SIG_SECRETO, SIG_NORMAL], '1x Secreto + 1x The Marinara');
-    await page.locator('text=Pedir lo mismo').click();
+    await repetir(page);
     expect(await carrito(page)).toEqual(['SIG02']);
     await expect(page.locator('text=ya no está en la carta')).toBeVisible();
   });

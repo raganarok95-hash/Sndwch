@@ -1,33 +1,19 @@
 # Pruebas de Playwright que HOY fallan y se sabe por qué. Una por línea: «archivo › título».
 #
-# No es una lista de excepciones para siempre: es una deuda con fecha. Cada una se arregla en el
-# paso 5 del plan (docs/REVISION_DE_LA_BASE.md) y SE BORRA DE ACÁ el mismo día.
-# `npm run test:estado` corre la suite entera y:
+# No es una lista de excepciones para siempre: es una deuda con fecha y con dueño. Cada una
+# espera una pantalla aprobada que todavía no está construida, y SE BORRA DE ACÁ el mismo día
+# que esa pantalla exista. `npm run test:estado` corre la suite entera y:
 #   · falla si aparece una roja que NO está en esta lista (eso es un defecto nuevo);
 #   · avisa si una de la lista ya pasa (hay que borrarla, o volvería a esconder una regresión).
 #
-# 2026-09-24 — 21 buscan textos o botones del inicio ANTERIOR al rediseño («Signatures»,
-# «Arma el tuyo», «Build your own bite») y se quedan esperando antes de llegar a lo que
-# prueban. contraste.spec.ts reporta textos bajo el mínimo WCAG AA: puede ser un defecto real.
-bebida-sola.spec.ts › la pestaña dice que la bebida se puede pedir sola
-capacidad-y-cola.spec.ts › el estimado de entrega suma la cola, no promete la cocina vacía
-capacidad-y-cola.spec.ts › si el servidor no manda capacidad, no se infla nada ni se apaga nada
-capacidad-y-cola.spec.ts › sin cola, el estimado es exactamente el de siempre
-contraste.spec.ts › ningún texto queda por debajo del contraste mínimo, en ninguna de las dos pieles
-division-de-los-hermanos.spec.ts › cada hermano está en su lado
-division-de-los-hermanos.spec.ts › el precio NO cambia de color entre los dos lados
-division-de-los-hermanos.spec.ts › elegir el lado de WICHO tiñe la app entera, y volver la devuelve
-division-de-los-hermanos.spec.ts › los dos lados son botones accesibles y dicen cuál está activo
-estrella-del-menu.spec.ts › la estrella del menú › el Signature de la estrella es el PRIMERO de la lista del home
+# 2026-09-24 — de 22 rojas quedan 3. Las otras 19 buscaban textos o botones del inicio anterior
+# al rediseño del 2026-09-17 y se reescribieron sobre lo que la app hace hoy; una era un defecto
+# real (el botón deshabilitado del armador con contraste 2.13:1) y se corrigió.
+#
+# Tarea #71 — Mundo WICHO (maqueta M22 con puente): el puente «¿Prefieres que ya esté resuelto?»
 estrella-del-menu.spec.ts › la estrella del menú › el puente desde ARMA EL TUYO ofrece esa MISMA estrella, no otra
-estrella-del-menu.spec.ts › la estrella del menú › exactamente UN Signature lleva el sello, y se ve como sello y no como sufijo
 palancas-del-modelo.spec.ts › ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armador
-recetas.spec.ts › la etiqueta dice de dónde sale la fecha límite, y avisa si falta
-registro-del-panel.spec.ts › una pantalla de admin que no está registrada cae al home del cliente
-repetir-pedido.spec.ts › repetir pedido › el menú secreto no se repite: rota cada mes bajo el mismo id, así que NO sería lo mismo
-repetir-pedido.spec.ts › repetir pedido › si solo parte del pedido sigue en la carta, se repite esa parte Y se dice qué falta
-repetir-pedido.spec.ts › repetir pedido › un TOPPING que salió del armador también frena la repetición, no solo la proteína
-repetir-pedido.spec.ts › repetir pedido › un pedido sano se repite entero y llega al carrito tal cual
-repetir-pedido.spec.ts › repetir pedido › una proteína que salió de ARMA EL TUYO no entra al carrito — el servidor la rechazaría
-smoke.spec.ts › la app carga y muestra los dos caminos de pedido
-third-party-globals.spec.ts › la app sobrevive a un script externo que pisa sus funciones globales
+#
+# Tarea #69 — «Pedir lo mismo» arriba de Tus pedidos (pantalla 33). La lógica de repetir sí está
+# cubierta y en verde (loadCart); lo que falta es la entrada visible.
+repetir-pedido.spec.ts › el inicio ofrece «Pedir lo mismo» con el último pedido (se construye en la tarea #69)
