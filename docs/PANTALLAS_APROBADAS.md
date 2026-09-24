@@ -9,8 +9,9 @@ Se actualiza **en la misma sesión** en que el dueño aprueba o rechaza algo. Un
 aprobación que solo vive en el chat se pierde cuando se corta el contexto, y entonces la
 siguiente sesión vuelve a preguntar lo mismo o —peor— asume.
 
-Regla: **nada de esto está programado todavía.** Todo vive como maqueta. El código del
-cliente (`src/app/*`) no se toca hasta que el dueño lo autorice explícitamente.
+**Las maquetas aprobadas están en `docs/maquetas/`** (PNG + fuente HTML + índice) desde el
+2026-09-24, y son la especificación exacta, no una referencia. Antes vivían en `/tmp`.
+El dueño autorizó programarlas el 2026-09-23 («así avanzamos con el front»).
 
 ---
 

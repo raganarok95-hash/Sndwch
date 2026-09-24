@@ -1,0 +1,241 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i{text-decoration:none;font-style:normal}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden;background:#EFE6D4}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.bS{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:58}
+.bW{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:58}
+.sal{position:absolute;top:18px;left:24px;font-size:20px;z-index:40;color:#1E2B22}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;background:#D8823C;z-index:50;
+  display:flex;align-items:center;justify-content:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;color:#20301F;text-transform:uppercase}
+
+/* ═══ 30A · EL MOSTRADOR ═══ Manda lo ÚLTIMO que agregaste, en foto grande: es lo que
+   acabas de decidir y lo que más dudas. Lo demás vive en un carrusel que se desliza —
+   no en una lista vertical que crece hasta empujar el total fuera de la pantalla.  */
+#A .hero{position:absolute;left:8px;right:8px;top:0;height:352px;overflow:hidden;z-index:1}
+#A .hero img{width:100%;height:100%;object-fit:cover;display:block}
+#A .hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,18,14,.45) 0 14%,transparent 40%,rgba(10,18,14,.92))}
+#A .hero .tx{position:absolute;left:18px;right:18px;bottom:18px}
+#A .hero .tx em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#A .hero .tx b{display:block;font:800 24px/1.1 Archivo,sans-serif;color:#F7F4EA;margin-top:9px;letter-spacing:-.02em}
+#A .hero .tx s{display:block;font-family:'EB Garamond',serif;font-style:italic;font-size:13px;color:#BFC9B6;margin-top:6px}
+#A .hero .ct{position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:14px}
+#A .hero .ct span{width:30px;height:30px;border:1px solid #6E7E70;border-radius:999px;color:#EFE6D4;
+  display:flex;align-items:center;justify-content:center;font:400 16px/1 Archivo,sans-serif}
+#A .hero .ct i{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#F7F4EA}
+#A .hero .pz{position:absolute;right:18px;top:64px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#F7F4EA}
+#A .rot{position:absolute;left:24px;right:24px;top:378px;display:flex;justify-content:space-between;align-items:baseline;z-index:5}
+#A .rot em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#8A9482;text-transform:uppercase}
+#A .rot u{font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#8A9482}
+#A .car{position:absolute;left:24px;right:0;top:404px;height:176px;display:flex;gap:10px;z-index:5}
+#A .car .c{width:142px;flex:0 0 auto}
+#A .car .c .im{height:112px;overflow:hidden;position:relative}
+#A .car .c .im img{width:100%;height:100%;object-fit:cover;display:block}
+#A .car .c .im i{position:absolute;right:8px;top:8px;background:#1E2B22;color:#EFE6D4;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;padding:3px 7px}
+#A .car .c b{display:block;font:700 12px/1.25 Archivo,sans-serif;color:#1E2B22;margin-top:9px;text-transform:uppercase;letter-spacing:-.01em}
+#A .car .c p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6C7860;margin-top:4px}
+#A .sum{position:absolute;left:24px;right:24px;top:600px;z-index:5;border-top:1px solid #DCD3BE}
+#A .sum .l{display:flex;justify-content:space-between;padding:9px 0;font-family:'EB Garamond',serif;font-size:12.5px;color:#6C7860}
+#A .sum .l b{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6C7860}
+#A .sum .l.on,#A .sum .l.on b{color:#D8823C}
+#A .tot{position:absolute;left:24px;right:24px;bottom:96px;display:flex;justify-content:space-between;align-items:flex-end;z-index:5}
+#A .tot em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#8A9482;text-transform:uppercase;padding-bottom:9px}
+#A .tot b{font-family:Anton,sans-serif;font-size:50px;color:#1E2B22;line-height:.8}
+
+/* ═══ 30B · EL CARTEL ═══ Cero fotos. Lo que llevas escrito en grande, como un cartel
+   de pizarra. Y el TOTAL no es un número al pie: es la última línea del mismo cartel,
+   del mismo tamaño que los sándwiches — porque es un renglón más de la cuenta.     */
+#B{background:#1E2B22}
+#B .sal{color:#EFE6D4}
+#B .enc{position:absolute;left:24px;right:24px;top:86px;z-index:5;display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid #33463A;padding-bottom:14px}
+#B .enc em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#B .enc u{font-family:'EB Garamond',serif;font-style:italic;font-size:12.5px;color:#7E8C7E}
+#B .it{position:absolute;left:24px;right:24px;z-index:5;border-bottom:1px solid #33463A;padding:16px 0}
+#B .i1{top:138px}#B .i2{top:242px}#B .i3{top:346px}
+#B .it .r{display:flex;align-items:baseline;gap:12px}
+#B .it .r i{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E8172;width:22px}
+#B .it .r b{flex:1;font-family:Anton,sans-serif;font-size:33px;line-height:.92;color:#F7F4EA;letter-spacing:-.005em;text-transform:uppercase}
+#B .it .r p{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#F7F4EA}
+#B .it s{display:block;margin-left:34px;font-family:'EB Garamond',serif;font-style:italic;font-size:12.5px;color:#7E8C7E;margin-top:7px}
+#B .desc{position:absolute;left:24px;right:24px;top:452px;z-index:5}
+#B .desc .l{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #33463A;
+  font-family:'EB Garamond',serif;font-size:13px;color:#7E8C7E}
+#B .desc .l b{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7E8C7E}
+#B .desc .l.on,#B .desc .l.on b{color:#D8823C}
+#B .fin{position:absolute;left:24px;right:24px;top:556px;z-index:5;padding-top:18px;border-top:2px solid #D8823C;
+  display:flex;align-items:baseline;gap:12px}
+#B .fin i{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E8172;width:22px}
+#B .fin b{flex:1;font-family:Anton,sans-serif;font-size:33px;color:#D8823C;text-transform:uppercase;letter-spacing:-.005em}
+#B .fin p{font-family:Anton,sans-serif;font-size:33px;color:#D8823C}
+#B .llega{position:absolute;left:24px;right:24px;top:636px;z-index:5;font-family:'EB Garamond',serif;font-style:italic;
+  font-size:13px;color:#7E8C7E;line-height:1.55}
+#B .add{position:absolute;left:24px;right:24px;bottom:96px;z-index:5;border:1px dashed #3E5347;padding:15px 16px;
+  display:flex;justify-content:space-between;align-items:center}
+#B .add span{font:700 11px/1 Archivo,sans-serif;letter-spacing:.14em;color:#8CC8EC;text-transform:uppercase}
+#B .add u{font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#7E8C7E}
+
+/* ═══ 30C · LA CUADRÍCULA ═══ Nada de renglones: el pedido es un tablero. Cada cosa
+   ocupa una celda del mismo tamaño, el TOTAL es una celda más (la naranja) y los dos
+   huecos vacíos son la invitación real a agregar — ahí es donde se vende la bebida. */
+#G .grid{position:absolute;left:8px;right:8px;top:74px;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:2px}
+#G .ce{position:relative;height:190px;overflow:hidden;background:#1E2B22}
+#G .ce img{width:100%;height:100%;object-fit:cover;display:block}
+#G .ce .v{position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(10,18,14,.9))}
+#G .ce .tx{position:absolute;left:12px;right:12px;bottom:11px}
+#G .ce .tx b{display:block;font:800 13px/1.2 Archivo,sans-serif;color:#F7F4EA;text-transform:uppercase;letter-spacing:-.01em}
+#G .ce .tx s{display:block;font-family:'EB Garamond',serif;font-style:italic;font-size:11.5px;color:#B6C1AC;margin-top:4px}
+#G .ce .pz{position:absolute;left:12px;top:11px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#F7F4EA}
+#G .ce .qt{position:absolute;right:10px;top:9px;background:rgba(10,18,14,.72);color:#EFE6D4;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 8px}
+#G .tt{background:#D8823C;display:flex;flex-direction:column;justify-content:space-between;padding:14px 14px 12px}
+#G .tt em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.28em;color:#4A3318;text-transform:uppercase}
+#G .tt b{font-family:Anton,sans-serif;font-size:42px;line-height:.85;color:#20301F}
+#G .tt s{font-family:'EB Garamond',serif;font-size:11.5px;color:#4A3318;line-height:1.4}
+#G .nv{background:#E6DCC6;border:1px dashed #C3B99F;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;gap:7px;text-align:center;padding:0 14px}
+#G .nv span{font-size:22px;color:#A9A08A;line-height:1}
+#G .nv b{font:700 11px/1.3 Archivo,sans-serif;letter-spacing:.12em;color:#6C7860;text-transform:uppercase}
+#G .nv s{font-family:'EB Garamond',serif;font-style:italic;font-size:11.5px;color:#A0A08C}
+#G .pieg{position:absolute;left:24px;right:24px;bottom:96px;z-index:5;border-top:1px solid #DCD3BE;padding-top:12px;
+  display:flex;justify-content:space-between;font-family:'EB Garamond',serif;font-size:12.5px;color:#8A9482}
+
+/* ═══ 31A · EL NÚMERO ═══ Pagar no necesita ilustración: necesita que el número sea
+   inconfundible. Ocupa la pantalla y se sale por los bordes. Debajo, lo único que
+   realmente decides — y el recargo escrito en soles, no en porcentaje.             */
+#N{background:#EFE6D4}
+#N .ar{position:absolute;left:24px;top:88px;z-index:5}
+#N .ar em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#N .ar s{display:block;font-family:'EB Garamond',serif;font-size:13.5px;color:#8A9482;margin-top:10px;line-height:1.5}
+#N .big{position:absolute;left:-16px;right:-16px;top:196px;z-index:4;text-align:center;
+  font-family:Anton,sans-serif;font-size:188px;line-height:.8;color:#1E2B22;letter-spacing:-.045em}
+#N .big i{font-size:74px;letter-spacing:-.02em}
+#N .sub{position:absolute;left:24px;right:24px;top:396px;z-index:5;text-align:center;
+  font-family:'EB Garamond',serif;font-style:italic;font-size:13.5px;color:#8A9482}
+#N .op{position:absolute;left:24px;right:24px;top:470px;z-index:5;border-top:1px solid #DCD3BE}
+#N .o{display:flex;align-items:center;justify-content:space-between;padding:21px 2px;border-bottom:1px solid #DCD3BE}
+#N .o n{font:800 21px/1 Archivo,sans-serif;color:#B7AE99;letter-spacing:-.01em}
+#N .o.on n{color:#1E2B22}
+#N .o s{font-family:'EB Garamond',serif;font-style:italic;font-size:13px;color:#8A9482}
+#N .o.on s{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:11px;letter-spacing:.14em;color:#D8823C;text-transform:uppercase}
+#N .dir{position:absolute;left:24px;right:24px;bottom:104px;z-index:5;display:flex;justify-content:space-between;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A9482}
+#N .dir u{color:#D8823C;letter-spacing:.12em;text-transform:uppercase;font-size:10px}
+
+/* ═══ 31B · EL CÓDIGO ═══ Acá casi todos pagan con Yape, y pagar con Yape es una cosa
+   física: un código pegado en la pared. La pantalla ES ese código, impreso con el
+   monto encima como en el cartel de una bodega. La tarjeta queda de puerta abajo.  */
+#Q{background:#14211A}
+#Q .sal{color:#F7F4EA}
+#Q .enc{position:absolute;left:24px;right:24px;top:86px;z-index:5}
+#Q .enc em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#8CC8EC;text-transform:uppercase}
+#Q .enc b{display:block;font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;color:#EFE6D4;margin-top:10px}
+#Q .cartel{position:absolute;left:34px;right:34px;top:168px;z-index:5;background:#F7F4EA;padding:20px 20px 22px;
+  box-shadow:0 16px 34px rgba(0,0,0,.42)}
+#Q .cartel .top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #DCD3BE;padding-bottom:12px}
+#Q .cartel .top em{font:700 9px/1 Archivo,sans-serif;letter-spacing:.28em;color:#8A9482;text-transform:uppercase}
+#Q .cartel .top u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A9482}
+#Q .cartel .mt{font-family:Anton,sans-serif;font-size:74px;line-height:.86;color:#1E2B22;margin-top:14px;letter-spacing:-.03em}
+#Q .cartel .mt i{font-size:32px}
+#Q .cartel .qr{margin-top:16px;display:flex;justify-content:center}
+#Q .cartel .qr img{width:184px;height:184px;display:block}
+#Q .cartel .pie{margin-top:14px;text-align:center;font-family:'EB Garamond',serif;font-style:italic;font-size:12.5px;color:#8A9482}
+#Q .alt{position:absolute;left:24px;right:24px;bottom:110px;z-index:5;border-top:1px solid #26362B;padding-top:18px;
+  display:flex;justify-content:space-between;align-items:center}
+#Q .alt n{font:800 16px/1 Archivo,sans-serif;color:#7E8C7E}
+#Q .alt s{font-family:'EB Garamond',serif;font-style:italic;font-size:12.5px;color:#6C7860}
+</style></head><body>
+
+<div class="f" id="A">
+  <div class="tag">30A · EL MOSTRADOR</div><div class="bS"></div><div class="bW"></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal" style="color:#F7F4EA">←</div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div>
+      <b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div>
+      <b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div>
+      <b>Agregar bebida</b><p>desde 5.00</p></div>
+  </div>
+  <div class="sum">
+    <div class="l on"><span>Combo · sándwich + bebida</span><b>−2.00</b></div>
+    <div class="l"><span>Envío · 3.4 km</span><b>7.00</b></div>
+  </div>
+  <div class="tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="go">Pagar</div>
+</div>
+
+<div class="f" id="B">
+  <div class="tag">30B · EL CARTEL</div><div class="bS"></div><div class="bW"></div>
+  <div class="sal">←</div>
+  <div class="enc"><em>Tu pedido</em><u>tres cosas</u></div>
+  <div class="it i1"><div class="r"><i>01</i><b>The Marinara</b><p>21.90</p></div><s>30 cm · sin queso · salsa aparte</s></div>
+  <div class="it i2"><div class="r"><i>02</i><b>Arma el tuyo</b><p>13.90</p></div><s>15 cm · pollo teriyaki · sin pepinillo</s></div>
+  <div class="it i3"><div class="r"><i>03</i><b>The Midnight ×2</b><p>10.00</p></div><s>helada, como debe ser</s></div>
+  <div class="desc">
+    <div class="l on"><span>Combo · sándwich + bebida</span><b>−2.00</b></div>
+    <div class="l"><span>Envío · 3.4 km</span><b>7.00</b></div>
+  </div>
+  <div class="fin"><i>—</i><b>Total</b><p>50.80</p></div>
+  <div class="llega">Llega entre 7:40 y 8:05 p.m.<br>Av. Larco 1234, Dpto 302.</div>
+  <div class="add"><span>+ Agregar algo más</span><u>bebidas desde S/5.00</u></div>
+  <div class="go">Pagar</div>
+</div>
+
+<div class="f" id="G">
+  <div class="tag">30C · LA CUADRÍCULA</div><div class="bS"></div><div class="bW"></div>
+  <div class="sal">←</div>
+  <div class="grid">
+    <div class="ce"><img src="../../../img/sig02.jpg"><div class="v"></div>
+      <div class="pz">21.90</div><div class="qt">×1</div>
+      <div class="tx"><b>The Marinara</b><s>30 cm · sin queso</s></div></div>
+    <div class="ce"><img src="../../../img/prot_p02.webp"><div class="v"></div>
+      <div class="pz">13.90</div><div class="qt">×1</div>
+      <div class="tx"><b>Arma el tuyo</b><s>15 cm · teriyaki</s></div></div>
+    <div class="ce"><img src="../../../img/drink_d07.jpg"><div class="v"></div>
+      <div class="pz">10.00</div><div class="qt">×2</div>
+      <div class="tx"><b>The Midnight</b><s>helada</s></div></div>
+    <div class="ce tt"><em>Total</em><b>S/50.80</b><s>Combo −2.00 · envío S/7.00 ya incluido</s></div>
+    <div class="ce nv"><span>+</span><b>Otra bebida</b><s>desde S/5.00</s></div>
+    <div class="ce nv"><span>+</span><b>Papas</b><s>S/6.00</s></div>
+  </div>
+  <div class="pieg"><span>Llega entre 7:40 y 8:05 p.m.</span><u style="color:#D8823C;font:700 9px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase">Cambiar</u></div>
+  <div class="go">Pagar</div>
+</div>
+
+<div class="f" id="N">
+  <div class="tag">31A · EL NÚMERO</div><div class="bS"></div><div class="bW"></div>
+  <div class="sal">←</div>
+  <div class="ar"><em>Tu cuenta</em><s>Envío de S/7.00 ya incluido.<br>No se suma nada más.</s></div>
+  <div class="big">50<i>.80</i></div>
+  <div class="sub">tres cosas · pedido #1042</div>
+  <div class="op">
+    <div class="o on"><n>Yape</n><s>sin recargo</s></div>
+    <div class="o"><n>Tarjeta</n><s>son S/2.79 más</s></div>
+  </div>
+  <div class="dir"><span>Av. Larco 1234 · 7:40 p.m.</span><u>Cambiar</u></div>
+  <div class="go">Pagar con Yape</div>
+</div>
+
+<div class="f" id="Q">
+  <div class="tag">31B · EL CÓDIGO</div><div class="bS"></div><div class="bW"></div>
+  <div class="sal">←</div>
+  <div class="enc"><em>Pagar con Yape</em><b>Escanea y listo.</b></div>
+  <div class="cartel">
+    <div class="top"><em>Sándwiches SND//WCH</em><u>#1042</u></div>
+    <div class="mt">S/50<i>.80</i></div>
+    <div class="qr"><img src="../../../img/yape-qr.png"></div>
+    <div class="pie">o abre Yape y confirma desde ahí</div>
+  </div>
+  <div class="alt"><n>Prefiero tarjeta</n><s>son S/2.79 más</s></div>
+  <div class="go">Ya pagué</div>
+</div>
+</body></html>

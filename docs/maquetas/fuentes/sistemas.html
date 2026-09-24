@@ -1,0 +1,127 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&family=Anton&family=Fraunces:opsz,wght@9..144,400..900&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:22px;padding:22px;align-items:flex-start}
+.f{width:372px;position:relative;overflow:hidden;flex:0 0 auto}
+.tag{position:absolute;top:0;left:0;z-index:20;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;
+  letter-spacing:.18em;padding:7px 11px}
+.riel{height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.dots{display:flex;gap:4px}.dots i{width:9px;height:9px;border-radius:50%;display:block}
+.wm{font-family:'Fraunces',serif;font-weight:620;font-size:14px;display:inline-flex;align-items:baseline}
+.wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+.foto{position:relative;height:196px;overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.abre{display:flex;gap:13px;align-items:flex-end;padding:8px 18px 0}
+.abre img{width:84px;flex:0 0 auto;display:block}
+
+/* ══ A · PAPEL ══ crema de su hocico + tinta verde + el naranja del forro. Sans pesada.
+   Ni fondo negro ni dorado: carta de deli impresa. */
+#A{background:#EFE6D4}
+#A .wm{color:#1E2B22}
+#A .abre .cita{flex:1;border-left:3px solid #D8823C;padding-left:12px;padding-bottom:10px}
+#A .abre p{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#1E2B22;line-height:1.24}
+#A .abre span{display:block;font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#6C7860;margin-top:8px}
+#A .enc{padding:20px 18px 6px}
+#A h1{font-family:Archivo,sans-serif;font-weight:800;font-size:38px;color:#1E2B22;line-height:.94;letter-spacing:-.02em;text-transform:uppercase}
+#A .sub{font-family:Archivo,sans-serif;font-weight:500;font-size:12px;color:#6C7860;margin-top:9px;line-height:1.5;padding-bottom:16px}
+#A .bd{border-top:2px solid #1E2B22}
+#A .info{padding:13px 18px 16px}
+#A .k{font:700 9px/1 Archivo,sans-serif;letter-spacing:.26em;color:#D8823C;text-transform:uppercase}
+#A .nom{font-family:Archivo,sans-serif;font-weight:800;font-size:27px;color:#1E2B22;line-height:1;margin-top:7px;text-transform:uppercase;letter-spacing:-.02em}
+#A .rec{font-family:'EB Garamond',serif;font-size:13px;color:#4A5544;line-height:1.5;margin-top:7px}
+#A .pr{display:flex;align-items:baseline;justify-content:space-between;margin-top:11px}
+#A .pr b{font-family:Archivo,sans-serif;font-weight:800;font-size:26px;color:#1E2B22}
+#A .pr s{text-decoration:none;font:700 11px/1 Archivo,sans-serif;color:#6C7860;letter-spacing:.1em}
+
+/* ══ B · OLIVA ══ su casaca como fondo, en tono medio. Serif suave, tan cálido.
+   Verde, pero NO el verde casi negro de antes. ══ */
+#B{background:#47543D}
+#B .wm{color:#F2EBD9}
+#B .abre .cita{flex:1;padding-bottom:10px}
+#B .abre p{font-family:'Fraunces',serif;font-weight:500;font-size:19px;color:#F2EBD9;line-height:1.26}
+#B .abre span{display:block;font:600 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;margin-top:8px}
+#B .enc{padding:20px 18px 6px}
+#B h1{font-family:'Fraunces',serif;font-weight:800;font-size:38px;color:#F2EBD9;line-height:.96}
+#B .sub{font-family:'EB Garamond',serif;font-size:13px;color:#C2CBB4;margin-top:8px;line-height:1.5;padding-bottom:16px}
+#B .bd{border-top:1px solid #5E6C53}
+#B .info{padding:13px 18px 16px}
+#B .k{font:600 9px/1 Archivo,sans-serif;letter-spacing:.26em;color:#E8B77F;text-transform:uppercase}
+#B .nom{font-family:'Fraunces',serif;font-weight:700;font-size:27px;color:#F2EBD9;line-height:1.04;margin-top:6px}
+#B .rec{font-family:'EB Garamond',serif;font-size:13px;color:#C2CBB4;line-height:1.5;margin-top:7px}
+#B .pr{display:flex;align-items:baseline;justify-content:space-between;margin-top:11px}
+#B .pr b{font-family:'Fraunces',serif;font-weight:700;font-size:26px;color:#E8B77F}
+#B .pr s{text-decoration:none;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#9DAA8E}
+
+/* ══ C · TINTA Y NARANJA ══ oscuro pero CÁLIDO, no verde. El naranja manda, el dorado se
+   retira. Display condensada enorme. ══ */
+#C{background:#17120E}
+#C .wm{color:#F5EFE6}
+#C .abre .cita{flex:1;padding-bottom:10px}
+#C .abre p{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#F5EFE6;line-height:1.24}
+#C .abre span{display:block;font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;margin-top:8px}
+#C .enc{padding:18px 18px 4px}
+#C h1{font-family:Anton,sans-serif;font-size:46px;color:#F5EFE6;line-height:.9;text-transform:uppercase;letter-spacing:.005em}
+#C .sub{font-family:Archivo,sans-serif;font-weight:400;font-size:12px;color:#8A8078;margin-top:10px;line-height:1.5;padding-bottom:15px}
+#C .bd{border-top:1px solid #2C241D}
+#C .info{padding:12px 18px 16px}
+#C .k{font:700 9px/1 Archivo,sans-serif;letter-spacing:.26em;color:#D8823C;text-transform:uppercase}
+#C .nom{font-family:Anton,sans-serif;font-size:34px;color:#F5EFE6;line-height:.92;margin-top:6px;text-transform:uppercase}
+#C .rec{font-family:Archivo,sans-serif;font-weight:400;font-size:12px;color:#8A8078;line-height:1.55;margin-top:8px}
+#C .pr{display:flex;align-items:baseline;justify-content:space-between;margin-top:12px}
+#C .pr b{font-family:Anton,sans-serif;font-size:30px;color:#D8823C}
+#C .pr s{text-decoration:none;font-family:Archivo,sans-serif;font-weight:500;font-size:11px;color:#8A8078;letter-spacing:.1em}
+</style></head><body>
+
+<div class="f" id="A"><div class="tag">A · PAPEL</div>
+  <div class="riel"><div class="dots"><i style="background:#D8823C"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm">SND<span class="mk"><i style="background:#D8823C"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div style="width:28px"></div></div>
+  <div class="abre"><img src="../../../img/sando_cuerpo.png">
+    <div class="cita"><p>“Estas cinco las armé yo. Respondo por cada una.”</p><span>SANDO</span></div></div>
+  <div class="enc"><h1>La carta</h1>
+    <div class="sub">Recetas cerradas. Eliges una y no hay nada más que decidir.</div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig02.jpg"></div>
+    <div class="info"><div class="k">I · la estrella</div><div class="nom">The Marinara</div>
+      <div class="rec">Albóndiga en marinara · mozzarella · tomate · cebolla morada</div>
+      <div class="pr"><b>S/21.90</b><s>30CM S/28.90</s></div></div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig01.jpg"></div>
+    <div class="info"><div class="k">II</div><div class="nom">The Original</div>
+      <div class="rec">Punta de pecho · tomate · pepinillo · cebolla · aioli</div>
+      <div class="pr"><b>S/20.90</b><s>30CM S/26.90</s></div></div></div></div>
+
+<div class="f" id="B"><div class="tag">B · OLIVA</div>
+  <div class="riel"><div class="dots"><i style="background:#E8B77F"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm">SND<span class="mk"><i style="background:#E8B77F"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div style="width:28px"></div></div>
+  <div class="abre"><img src="../../../img/sando_cuerpo.png">
+    <div class="cita"><p>“Estas cinco las armé yo. Respondo por cada una.”</p><span>SANDO</span></div></div>
+  <div class="enc"><h1>La carta</h1>
+    <div class="sub">Recetas cerradas. Eliges una y no hay nada más que decidir.</div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig02.jpg"></div>
+    <div class="info"><div class="k">I · la estrella</div><div class="nom">The Marinara</div>
+      <div class="rec">Albóndiga en marinara · mozzarella · tomate · cebolla morada</div>
+      <div class="pr"><b>S/21.90</b><s>30CM S/28.90</s></div></div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig01.jpg"></div>
+    <div class="info"><div class="k">II</div><div class="nom">The Original</div>
+      <div class="rec">Punta de pecho · tomate · pepinillo · cebolla · aioli</div>
+      <div class="pr"><b>S/20.90</b><s>30CM S/26.90</s></div></div></div></div>
+
+<div class="f" id="C"><div class="tag">C · TINTA Y NARANJA</div>
+  <div class="riel"><div class="dots"><i style="background:#D8823C"></i><i style="background:#8CC8EC"></i></div>
+    <div class="wm">SND<span class="mk"><i style="background:#D8823C"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div style="width:28px"></div></div>
+  <div class="abre"><img src="../../../img/sando_cuerpo.png">
+    <div class="cita"><p>“Estas cinco las armé yo. Respondo por cada una.”</p><span>SANDO</span></div></div>
+  <div class="enc"><h1>La carta</h1>
+    <div class="sub">Recetas cerradas. Eliges una y no hay nada más que decidir.</div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig02.jpg"></div>
+    <div class="info"><div class="k">I · la estrella</div><div class="nom">The Marinara</div>
+      <div class="rec">Albóndiga en marinara · mozzarella · tomate · cebolla morada</div>
+      <div class="pr"><b>S/21.90</b><s>30CM S/28.90</s></div></div></div>
+  <div class="bd"><div class="foto"><img src="../../../img/sig01.jpg"></div>
+    <div class="info"><div class="k">II</div><div class="nom">The Original</div>
+      <div class="rec">Punta de pecho · tomate · pepinillo · cebolla · aioli</div>
+      <div class="pr"><b>S/20.90</b><s>30CM S/26.90</s></div></div></div></div>
+</body></html>

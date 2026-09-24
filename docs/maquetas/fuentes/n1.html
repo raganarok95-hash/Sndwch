@@ -1,0 +1,179 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em{text-decoration:none;font-style:normal}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden;background:var(--bg)}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.bS{position:absolute;left:0;top:0;bottom:0;width:8px;background:#CBA258;z-index:58}
+.bW{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:58}
+
+/* el "//" real: dos barras idénticas, una por hermano */
+.mk{display:inline-flex;gap:.16em;align-items:center}
+.mk b{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mk b:first-child{background:#CBA258}.mk b:last-child{background:#8CC8EC}
+
+/* ── LOS TRES SISTEMAS NEUTRALES ──
+   Ninguno usa el crema+verde de SANDO ni el celeste de WICHO como fondo. Los dos
+   hermanos entran solo como ACENTO, siempre los dos juntos, nunca uno solo.        */
+#N1{--bg:#15171A;--sur:#FAFAF8;--ink:#15171A;--inkb:#F3F3F0;--dim:#8A8F94;--dimb:#6C7278;
+    --line:#E4E3DE;--lineb:#23272C;--btnb:#FAFAF8;--btni:#15171A}
+#N2{--bg:#C7C8C4;--sur:#E9E9E5;--ink:#1A1C1F;--inkb:#1A1C1F;--dim:#7A7D80;--dimb:#7A7D80;
+    --line:#B3B4B0;--lineb:#B3B4B0;--btnb:#1A1C1F;--btni:#EFEEEA}
+#N3{--bg:#0E1013;--sur:#151A20;--ink:#F3F3F0;--inkb:#F3F3F0;--dim:#79808A;--dimb:#79808A;
+    --line:#242A32;--lineb:#242A32;--btnb:transparent;--btni:#0E1013}
+
+.sal{position:absolute;top:18px;left:24px;font-size:20px;z-index:40;color:#F7F4EA}
+.hero{position:absolute;left:8px;right:8px;top:0;height:326px;overflow:hidden;z-index:1}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,12,.42) 0 12%,transparent 38%,rgba(8,10,12,.9))}
+.hero .pz{position:absolute;right:18px;top:62px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff}
+.hero .tx{position:absolute;left:18px;bottom:18px;right:120px}
+.hero .tx em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#CBA258;text-transform:uppercase}
+.hero .tx b{display:block;font:800 23px/1.1 Archivo,sans-serif;color:#fff;margin-top:9px;letter-spacing:-.02em}
+.hero .tx s{display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#B9BEC2;margin-top:7px}
+.hero .ct{position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:13px}
+.hero .ct span{width:29px;height:29px;border:1px solid rgba(255,255,255,.42);color:#fff;
+  display:flex;align-items:center;justify-content:center;font:400 15px/1 Archivo,sans-serif}
+.hero .ct i{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff}
+
+.panel{position:absolute;left:8px;right:8px;top:326px;bottom:0;background:var(--sur);z-index:3}
+#N3 .panel{background:transparent}
+.rot{position:absolute;left:24px;right:24px;top:352px;z-index:5;display:flex;justify-content:space-between;align-items:baseline}
+.rot em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:var(--dim);text-transform:uppercase}
+.rot u{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.car{position:absolute;left:24px;right:0;top:378px;height:170px;display:flex;gap:10px;z-index:5}
+.car .c{width:138px;flex:0 0 auto}
+.car .c .im{height:106px;overflow:hidden;position:relative;background:#222}
+.car .c .im img{width:100%;height:100%;object-fit:cover;display:block}
+.car .c .im i{position:absolute;right:0;top:0;background:rgba(8,10,12,.78);color:#fff;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 7px}
+.car .c b{display:block;font:700 12px/1.2 Archivo,sans-serif;color:var(--ink);margin-top:9px;text-transform:uppercase;letter-spacing:-.01em}
+.car .c p{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-top:4px}
+#N3 .car .c b,#N3 .car .c p{color:var(--inkb)}#N3 .car .c p{color:var(--dimb)}
+
+.sum{position:absolute;left:24px;right:24px;top:582px;z-index:5;border-top:1px solid var(--line)}
+#N3 .sum{border-color:var(--lineb)}
+.sum .l{display:flex;justify-content:space-between;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--dim)}
+#N3 .sum .l{color:var(--dimb)}
+.sum .l.on{color:#A8862F}#N1 .sum .l.on,#N3 .sum .l.on{color:#CBA258}
+
+.tot{position:absolute;left:24px;right:24px;bottom:104px;z-index:5;display:flex;align-items:flex-end;justify-content:space-between}
+.tot .lb{display:flex;align-items:center;gap:8px;padding-bottom:10px}
+.tot .lb em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:var(--dim);text-transform:uppercase}
+.tot .lb .mk{font-size:13px}
+.tot b{font-family:Anton,sans-serif;font-size:52px;line-height:.8;color:var(--ink)}
+#N3 .tot b{color:var(--inkb)}#N3 .tot .lb em{color:var(--dimb)}
+.llega{position:absolute;left:24px;right:24px;bottom:84px;z-index:5;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)}
+#N3 .llega{color:var(--dimb)}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:50;background:var(--btnb);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;color:var(--btni);text-transform:uppercase}
+#N3 .go{background:linear-gradient(90deg,#CBA258 0%,#CBA258 50%,#8CC8EC 50%,#8CC8EC 100%)}
+.go .mk{font-size:15px}
+#N1 .go .mk b:first-child,#N2 .go .mk b:first-child{background:#CBA258}
+#N3 .go .mk b{background:#0E1013}
+
+/* ── 31 · EL CÓDIGO, bien hecho ── El papel va de borde a borde, sin sombra ni tarjeta
+   flotando. El QR grande y centrado, con el mismo aire por los cuatro lados.        */
+#Q{--bg:#0E1013;--dim:#79808A}
+#Q .cab{position:absolute;left:24px;right:24px;top:84px;z-index:5;display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:13px;border-bottom:1px solid #242A32}
+#Q .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#Q .cab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#79808A}
+#Q .mtx{position:absolute;left:24px;right:24px;top:126px;z-index:5;display:flex;align-items:flex-end;justify-content:space-between}
+#Q .mtx b{font-family:Anton,sans-serif;font-size:62px;line-height:.82;color:#F3F3F0;letter-spacing:-.025em}
+#Q .mtx b i{font-size:28px}
+#Q .mtx s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#79808A;text-align:right;line-height:1.7;padding-bottom:6px}
+#Q .papel{position:absolute;left:8px;right:8px;top:222px;height:352px;background:#FAFAF8;z-index:4}
+#Q .papel .hd{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px dashed #D5D4CF}
+#Q .papel .hd em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8A8F94;text-transform:uppercase}
+#Q .papel .hd .mk{font-size:13px}
+#Q .papel .qr{display:flex;justify-content:center;padding:22px 0 0}
+#Q .papel .qr img{width:236px;height:236px;display:block}
+#Q .papel .pie{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8A8F94;margin-top:14px;letter-spacing:.06em}
+#Q .alt{position:absolute;left:24px;right:24px;top:600px;z-index:5;border-top:1px solid #242A32;border-bottom:1px solid #242A32;
+  padding:19px 0;display:flex;justify-content:space-between;align-items:center}
+#Q .alt n{font:800 17px/1 Archivo,sans-serif;color:#79808A}
+#Q .alt s{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#79808A}
+#Q .nota{position:absolute;left:24px;right:24px;top:684px;z-index:5;font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;color:#4E555E;line-height:1.7}
+#Q .go{background:linear-gradient(90deg,#CBA258 0%,#CBA258 50%,#8CC8EC 50%,#8CC8EC 100%);color:#0E1013}
+#Q .go .mk b{background:#0E1013}
+</style></head><body>
+
+<div class="f" id="N1">
+  <div class="tag">30A · TINTA Y PAPEL</div><div class="bS"></div><div class="bW"></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal">←</div><div class="panel"></div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div><b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div><b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div><b>Agregar</b><p>desde 5.00</p></div>
+  </div>
+  <div class="sum"><div class="l on"><span>COMBO · SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO · 3.4 KM</span><span>7.00</span></div></div>
+  <div class="tot"><div class="lb"><span class="mk"><b></b><b></b></span><em>Total</em></div><b>S/50.80</b></div>
+  <div class="llega">LLEGA ENTRE 7:40 Y 8:05 P.M.</div>
+  <div class="go"><span class="mk"><b></b><b></b></span>Pagar</div>
+</div>
+
+<div class="f" id="N2">
+  <div class="tag">30A · ACERO</div><div class="bS"></div><div class="bW"></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal">←</div><div class="panel"></div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div><b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div><b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div><b>Agregar</b><p>desde 5.00</p></div>
+  </div>
+  <div class="sum"><div class="l on"><span>COMBO · SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO · 3.4 KM</span><span>7.00</span></div></div>
+  <div class="tot"><div class="lb"><span class="mk"><b></b><b></b></span><em>Total</em></div><b>S/50.80</b></div>
+  <div class="llega">LLEGA ENTRE 7:40 Y 8:05 P.M.</div>
+  <div class="go"><span class="mk"><b></b><b></b></span>Pagar</div>
+</div>
+
+<div class="f" id="N3">
+  <div class="tag">30A · NOCHE BICOLOR</div><div class="bS"></div><div class="bW"></div>
+  <div class="hero"><img src="../../../img/sig02.jpg"><div class="v"></div>
+    <div class="pz">21.90</div>
+    <div class="tx"><em>Lo último que agregaste</em><b>The Marinara 30CM</b><s>sin queso · salsa aparte</s></div>
+    <div class="ct"><span>−</span><i>1</i><span>+</span></div></div>
+  <div class="sal">←</div><div class="panel"></div>
+  <div class="rot"><em>Y también llevas</em><u>desliza →</u></div>
+  <div class="car">
+    <div class="c"><div class="im"><img src="../../../img/prot_p02.webp"><i>×1</i></div><b>Arma el tuyo</b><p>15 cm · 13.90</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d07.jpg"><i>×2</i></div><b>The Midnight</b><p>helada · 10.00</p></div>
+    <div class="c"><div class="im"><img src="../../../img/drink_d08.jpg"><i>+</i></div><b>Agregar</b><p>desde 5.00</p></div>
+  </div>
+  <div class="sum"><div class="l on"><span>COMBO · SANDWICH + BEBIDA</span><span>−2.00</span></div>
+    <div class="l"><span>ENVIO · 3.4 KM</span><span>7.00</span></div></div>
+  <div class="tot"><div class="lb"><span class="mk"><b></b><b></b></span><em>Total</em></div><b>S/50.80</b></div>
+  <div class="llega">LLEGA ENTRE 7:40 Y 8:05 P.M.</div>
+  <div class="go"><span class="mk"><b></b><b></b></span>Pagar</div>
+</div>
+
+<div class="f" id="Q">
+  <div class="tag">31 · EL CÓDIGO</div><div class="bS"></div><div class="bW"></div>
+  <div class="sal">←</div>
+  <div class="cab"><em>Pagar con Yape</em><u>#1042</u></div>
+  <div class="mtx"><b>S/50<i>.80</i></b><s>ENVIO S/7.00 INCLUIDO<br>NO SE SUMA NADA MAS</s></div>
+  <div class="papel">
+    <div class="hd"><em>SND<span class="mk" style="margin:0 2px"><b></b><b></b></span>WCH · TRUJILLO</em><em>#1042</em></div>
+    <div class="qr"><img src="../../../img/yape-qr.png"></div>
+    <div class="pie">ESCANEA DESDE YAPE · O ABRE LA APP Y CONFIRMA</div>
+  </div>
+  <div class="alt"><n>Prefiero tarjeta</n><s>SON S/2.79 MAS</s></div>
+  <div class="nota">APENAS CONFIRMES EL PAGO, EL PEDIDO ENTRA A LA COCINA.<br>NO CIERRES ESTA PANTALLA ANTES.</div>
+  <div class="go"><span class="mk"><b></b><b></b></span>Ya pagué</div>
+</div>
+</body></html>

@@ -445,6 +445,15 @@ que faltan.
 contra negro al cargarlo como referencia, y ese negro sale como manchas en lo generado.
 Fondo blanco plano y al doble de tamaño.
 
+## LAS MAQUETAS APROBADAS SON LA ESPECIFICACIÓN EXACTA (dueño, 2026-09-24)
+
+«Las maquetas no son referencias sino como debe quedar exactamente.» Viven en
+`docs/maquetas/` (PNG en `aprobadas/`, HTML en `fuentes/`, índice en su README) y una
+pantalla aprobada se construye **hasta que se vea como su PNG**. Toda aprobación nueva se
+guarda ahí **el mismo día** — antes vivían en `/tmp` y cinco fuentes se perdieron. Lo vigila
+`npm run check:maquetas`. Los datos de muestra dentro de la maqueta (nombres, precios) no se
+copian: salen del código.
+
 ## PEDIR LA IMAGEN QUE FALTA ES PARTE DEL DISEÑO (2026-09-18)
 
 **No diseñes contra el inventario de `img/`.** Las imágenes son **ilimitadas** en Flow y el

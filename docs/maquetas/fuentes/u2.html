@@ -1,0 +1,155 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;width:1240px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.kraft{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.wm{position:absolute;top:15px;right:20px;z-index:44;display:inline-flex;align-items:center;gap:7px}
+.wm img{width:29px;height:29px;display:block}
+.wm .tx{display:inline-flex;align-items:center;font:800 14px/1 Archivo,sans-serif;letter-spacing:.01em;color:#3A2710}
+.wm .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
+.wm .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm .mk i:first-child{background:#A8791E}.wm .mk i:last-child{background:#2E7FA8}
+
+/* ═════ DETALLE DE UN PEDIDO ═════ No es el carrito otra vez: es el acta de algo que YA
+   pasó. Lo único que este pedido tiene y ningún otro es la hora REAL contra la
+   prometida — eso es lo que manda la pantalla.                                    */
+#D .cab{position:absolute;left:26px;top:80px;z-index:6}
+#D .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#D .cab b{font-family:Anton,sans-serif;font-size:42px;line-height:.88;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
+#D .reloj{position:absolute;left:26px;right:26px;top:190px;z-index:6;border:2px solid #4A3218;padding:14px 16px;
+  background:rgba(242,228,202,.34)}
+#D .reloj .r{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0}
+#D .reloj .r s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33;text-transform:uppercase}
+#D .reloj .r n{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#33230F}
+#D .reloj .r.ok n{color:#3E6B2E}
+#D .reloj .l{height:1px;background:rgba(74,50,24,.3);margin:6px 0}
+#D .lis{position:absolute;left:26px;right:26px;top:330px;z-index:6}
+#D .li{display:flex;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+#D .li i{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;width:18px}
+#D .li .t b{font:800 14px/1.2 Archivo,sans-serif;color:#33230F;text-transform:uppercase;letter-spacing:-.01em}
+#D .li .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7A5B33;margin-top:4px}
+#D .li p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F;margin-left:auto}
+#D .ex{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A}
+#D .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px;border-top:2px solid #4A3218;padding-top:11px}
+#D .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px}
+#D .tt b{font-family:Anton,sans-serif;font-size:40px;line-height:.82;color:#33230F}
+#D .acc{position:absolute;left:26px;right:26px;bottom:100px;z-index:6}
+#D .acc .r{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px dashed rgba(74,50,24,.4)}
+#D .acc .r b{font:700 11px/1 Archivo,sans-serif;letter-spacing:.14em;color:#6E4F2A;text-transform:uppercase}
+#D .acc .r s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#8A6A3C}
+
+/* ═════ TU PEDIDO FIJO ═════ El que repite no quiere elegir otra vez: quiere UN toque. Por
+   eso el fijo ocupa la pantalla y los demás guardados caben en una fila. El dato que
+   nadie muestra —cuántas veces lo pediste— es lo que lo hace tuyo.               */
+#P{background:#12212B}
+#P .hero{position:absolute;left:0;right:0;top:0;height:352px;z-index:1;overflow:hidden}
+#P .hero img{width:100%;height:100%;object-fit:cover}
+#P .hero .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,16,22,.5) 0 16%,transparent 38%,#12212B 97%)}
+#P .tx{position:absolute;left:24px;right:24px;top:236px;z-index:6}
+#P .tx em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8CC8EC;text-transform:uppercase}
+#P .tx b{font-family:Anton,sans-serif;font-size:40px;line-height:.9;color:#F2F6F8;margin-top:10px;letter-spacing:-.02em}
+#P .tx s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC;margin-top:10px;line-height:1.7}
+#P .vec{position:absolute;left:24px;right:24px;top:400px;z-index:6;display:flex;gap:9px}
+#P .vec div{flex:1;border:1px solid #27455A;padding:12px 10px}
+#P .vec div s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#6E90A4;text-transform:uppercase}
+#P .vec div n{font-family:Anton,sans-serif;font-size:24px;color:#F2F6F8;margin-top:7px}
+#P .prog{position:absolute;left:24px;right:24px;top:494px;z-index:6;border:1px dashed #2F5266;padding:14px 15px}
+#P .prog b{font:800 14px/1.15 Archivo,sans-serif;color:#D6E6EF}
+#P .prog s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7FA6BC;margin-top:7px;line-height:1.7}
+#P .otros{position:absolute;left:24px;right:24px;bottom:104px;z-index:6}
+#P .otros em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E90A4;text-transform:uppercase}
+#P .o{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #1E3E50}
+#P .o b{font:700 13px/1 Archivo,sans-serif;color:#D6E6EF}
+#P .o p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7FA6BC}
+
+/* ═════ LO LEGAL ═════ Nadie lee un muro de texto, y el texto legal NO SE PUEDE TOCAR. Lo
+   que sí se puede es contarlo antes: cada documento con una línea en criollo, y el
+   formal completo debajo, intacto.                                               */
+#L{background:#F2EFE6}
+#L .cab{position:absolute;left:26px;top:80px;z-index:6}
+#L .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#8A8578;text-transform:uppercase}
+#L .cab b{font-family:Anton,sans-serif;font-size:42px;line-height:.88;color:#24261F;margin-top:10px;letter-spacing:-.02em}
+#L .doc{position:absolute;left:26px;right:26px;z-index:6;border-top:1px solid #D6D0C0;padding-top:15px}
+#L .d1{top:190px}#L .d2{top:330px}#L .d3{top:470px}
+#L .doc b{font:800 18px/1.15 Archivo,sans-serif;color:#24261F;letter-spacing:-.01em}
+#L .doc q{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E6A5E;margin-top:9px;line-height:1.75}
+#L .doc .w{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+#L .doc .w s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#A09A8A;letter-spacing:.12em}
+#L .doc .w u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#9C5F14;text-transform:uppercase}
+#L .pie{position:absolute;left:26px;right:26px;bottom:104px;z-index:6;border-top:1px solid #D6D0C0;padding-top:14px}
+#L .pie s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#A09A8A;line-height:1.9}
+</style></head><body>
+
+<div class="f kraft" id="D">
+  <div class="tag">DETALLE DE UN PEDIDO</div>
+  <div class="sal" style="color:#3A2710">←</div>
+  <div class="wm"><img src="../../../img/marca/avatar-1024-transparente.png"><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Pedido #1042 · 17 sep</em><b>LLEGÓ A LAS<br>7:52 P.M.</b></div>
+  <div class="reloj">
+    <div class="r"><s>Lo pediste</s><n>7:18 p.m.</n></div>
+    <div class="l"></div>
+    <div class="r"><s>Prometimos</s><n>7:40 – 8:05 p.m.</n></div>
+    <div class="l"></div>
+    <div class="r ok"><s>Llegó</s><n>7:52 p.m. · dentro</n></div>
+  </div>
+  <div class="lis">
+    <div class="li"><i>01</i><div class="t"><b>The Chicago 30CM</b><s>SIN GIARDINIERA</s></div><p>28.90</p></div>
+    <div class="li"><i>02</i><div class="t"><b>The Midnight</b><s>HELADA</s></div><p>5.00</p></div>
+    <div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−1.00</span></div>
+    <div class="ex"><span>ENVIO 3.4 KM · PAGADO CON YAPE</span><span>7.00</span></div>
+    <div class="tt"><em>Pagaste</em><b>S/38.80</b></div>
+  </div>
+  <div class="acc">
+    <div class="r"><b>Pedir lo mismo</b><s>S/38.80 HOY</s></div>
+    <div class="r"><b>Algo salió mal</b><s>HASTA 48 H DESPUES</s></div>
+    <div class="r"><b>Descargar comprobante</b><s>PDF</s></div>
+  </div>
+</div>
+
+<div class="f" id="P">
+  <div class="tag">TU PEDIDO FIJO</div>
+  <div class="hero"><img src="../../../img/sig07.jpg"><div class="v"></div></div>
+  <div class="sal" style="color:#fff">←</div>
+  <div class="tx"><em>Tu pedido fijo</em><b>THE CHICAGO 30CM<br>+ THE MIDNIGHT</b>
+    <s>SIN GIARDINIERA · BEBIDA HELADA<br>AV. LARCO 1234, DPTO 302</s></div>
+  <div class="vec">
+    <div><s>Lo pediste</s><n>9 veces</n></div>
+    <div><s>Siempre a las</s><n>7:20 p.m.</n></div>
+    <div><s>Te sale</s><n>S/38.80</n></div>
+  </div>
+  <div class="prog"><b>¿Lo dejamos fijo los jueves?</b>
+    <s>LO MANDAMOS SOLO, A LA HORA DE SIEMPRE.<br>SE CANCELA DESDE ACA, SIN LLAMAR A NADIE.</s></div>
+  <div class="otros"><em>Otros guardados</em>
+    <div class="o"><b>The Original 15CM + papas</b><p>S/24.40</p></div>
+    <div class="o"><b>Arma el tuyo · teriyaki</b><p>S/19.90</p></div>
+  </div>
+  <div class="go"><div class="mi oro">Pedirlo ahora</div><div class="mi cel">S/38.80</div></div>
+</div>
+
+<div class="f" id="L">
+  <div class="tag">LO LEGAL</div>
+  <div class="sal" style="color:#24261F">←</div>
+  <div class="cab"><em>Las reglas del juego</em><b>LO LEGAL,<br>EN CRIOLLO</b></div>
+  <div class="doc d1"><b>Términos y condiciones</b>
+    <q>DE QUÉ NOS HACEMOS CARGO Y DE QUÉ NO CUANDO<br>PIDES, PAGAS Y RECIBES.</q>
+    <div class="w"><s>ACTUALIZADO · [FECHA REAL]</s><u>Leer completo</u></div></div>
+  <div class="doc d2"><b>Política de privacidad</b>
+    <q>QUÉ DATOS TUYOS GUARDAMOS, PARA QUÉ, Y CÓMO<br>PEDIR QUE LOS BORREMOS.</q>
+    <div class="w"><s>ACTUALIZADO · [FECHA REAL]</s><u>Leer completo</u></div></div>
+  <div class="doc d3"><b>Cambios y devoluciones</b>
+    <q>QUÉ PASA SI EL PEDIDO LLEGA MAL, TARDE O NO LLEGA.<br>INCLUYE CANCELACIONES.</q>
+    <div class="w"><s>ACTUALIZADO · [FECHA REAL]</s><u>Leer completo</u></div></div>
+  <div class="pie"><s>RAZÓN SOCIAL, RUC Y DIRECCIÓN FISCAL VAN ACÁ —<br>LOS PONE EL DUEÑO, NO SE INVENTAN.</s></div>
+</div>
+</body></html>

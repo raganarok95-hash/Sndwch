@@ -1,0 +1,100 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px}
+.f{width:372px;height:812px;position:relative;overflow:hidden;background:#EFE6D4}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.bS{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:55}
+.bW{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:55}
+.sal{position:absolute;top:18px;left:24px;font-size:20px;color:#F7F4EA;z-index:20}
+
+/* ══ 30 · EL CARRITO ══ Lo que llevas se ve, a sangre y sin marcos: una sola banda
+   partida en tantas franjas como cosas hay. Él está delante, sosteniéndolas. */
+#C .tira{position:absolute;left:8px;right:8px;top:0;height:330px;display:flex;gap:2px;z-index:1}
+#C .tira .s{flex:1;position:relative;overflow:hidden}
+#C .tira .s img{width:100%;height:100%;object-fit:cover;display:block}
+#C .tira .s i{position:absolute;top:12px;left:12px;width:26px;height:26px;border-radius:999px;background:#1E2B22;
+  color:#EFE6D4;display:flex;align-items:center;justify-content:center;font:700 12px/1 Archivo,sans-serif;font-style:normal}
+#C .fade{position:absolute;left:8px;right:8px;top:0;height:330px;z-index:2;
+  background:linear-gradient(180deg,rgba(15,24,18,.5) 0%,transparent 24%,transparent 56%,#EFE6D4 99%)}
+#C .sando{position:absolute;left:-16px;bottom:120px;width:172px;z-index:5;
+  filter:drop-shadow(10px 12px 22px rgba(30,43,34,.3))}
+#C .dice{position:absolute;left:150px;right:24px;top:286px;z-index:6}
+#C .dice em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#C .dice p{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#1E2B22;line-height:1.28;margin-top:10px}
+#C .lista{position:absolute;left:150px;right:24px;top:400px;z-index:6}
+#C .lista .l{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid #DCD3BE}
+#C .lista .l .q{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8A9482;width:16px;flex:0 0 auto}
+#C .lista .l .n{flex:1;font-family:Archivo,sans-serif;font-weight:700;font-size:13px;color:#1E2B22;text-transform:uppercase;letter-spacing:-.01em}
+#C .lista .l .p{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:#1E2B22}
+#C .lista .ah{display:flex;justify-content:space-between;padding:9px 0;font-family:'EB Garamond',serif;
+  font-size:12.5px;color:#6C7860}
+#C .tot{position:absolute;left:24px;right:24px;bottom:110px;display:flex;align-items:flex-end;justify-content:space-between;z-index:6}
+#C .tot em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.3em;color:#8A9482;text-transform:uppercase;padding-bottom:10px}
+#C .tot b{font-family:Anton,sans-serif;font-size:58px;color:#1E2B22;line-height:.8}
+#C .env{position:absolute;left:24px;right:24px;bottom:88px;font-family:'EB Garamond',serif;font-style:italic;
+  font-size:12px;color:#8A9482;z-index:6}
+#C .go{position:absolute;left:24px;right:24px;bottom:34px;background:#D8823C;color:#1E2B22;text-align:center;
+  padding:19px 0;font:700 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase;z-index:6}
+
+/* ══ 31 · EL PAGO ══ No hay producto que mostrar: acá lo único que pasa es que él te
+   extiende la cuenta. Así que la pantalla es él, y el número. */
+#P{background:#14211A}
+#P .halo{position:absolute;left:-60px;right:-60px;top:60px;height:520px;z-index:0;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(216,130,60,.28) 0%,transparent 70%)}
+#P .sando{position:absolute;right:-40px;bottom:0;width:290px;z-index:2;
+  filter:drop-shadow(-12px 10px 30px rgba(0,0,0,.5))}
+#P .sal{color:#F7F4EA}
+#P .dice{position:absolute;left:24px;right:24px;top:92px;z-index:5}
+#P .dice em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#P .dice p{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#EFE6D4;line-height:1.3;margin-top:12px;max-width:16ch}
+#P .monto{position:absolute;left:24px;top:238px;z-index:5}
+#P .monto b{font-family:Anton,sans-serif;font-size:96px;color:#F7F4EA;line-height:.78;letter-spacing:-.02em;display:block}
+#P .monto s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-size:14px;color:#9FAE95;margin-top:14px;line-height:1.5}
+#P .datos{position:absolute;left:24px;right:150px;top:432px;z-index:5}
+#P .datos .d{padding:11px 0;border-bottom:1px solid #2C3D2C}
+#P .datos .d s{text-decoration:none;display:block;font:700 8px/1 Archivo,sans-serif;letter-spacing:.24em;color:#6C7860;text-transform:uppercase}
+#P .datos .d b{display:block;font-family:'EB Garamond',serif;font-size:15.5px;color:#EFE6D4;margin-top:5px;font-weight:400}
+#P .datos .d u{text-decoration:none;font:700 8px/1 Archivo,sans-serif;letter-spacing:.2em;color:#D8823C;margin-left:8px}
+#P .como{position:absolute;left:24px;right:150px;bottom:112px;display:flex;gap:18px;align-items:baseline;z-index:5}
+#P .como .o{font-family:Anton,sans-serif;font-size:25px;color:#4A5C48;text-transform:uppercase}
+#P .como .o.on{color:#F7F4EA;border-bottom:5px solid #D8823C;padding-bottom:4px}
+#P .como .o s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#7E8C76;margin-top:7px;text-transform:none}
+#P .go{position:absolute;left:24px;right:24px;bottom:34px;background:#D8823C;color:#14211A;text-align:center;
+  padding:19px 0;font:700 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase;z-index:6}
+</style></head><body>
+
+<div class="f" id="C"><div class="tag">30 · EL CARRITO</div><div class="bS"></div><div class="bW"></div>
+  <div class="tira">
+    <div class="s"><img src="../../../img/sig02.jpg"></div>
+    <div class="s"><img src="../../../img/prot_p02.webp"></div>
+    <div class="s"><img src="../../../img/drink_d07.jpg"><i>2</i></div>
+  </div>
+  <div class="fade"></div><span class="sal">&#8592;</span>
+  <img class="sando" src="../../../img/sando_cuerpo.png">
+  <div class="dice"><em>Lo tengo listo</em><p>“Tres cosas.<br>¿Te las mando?”</p></div>
+  <div class="lista">
+    <div class="l"><span class="q">1</span><span class="n">The Marinara</span><span class="p">21.90</span></div>
+    <div class="l"><span class="q">1</span><span class="n">Arma el tuyo</span><span class="p">13.90</span></div>
+    <div class="l"><span class="q">2</span><span class="n">The Midnight</span><span class="p">10.00</span></div>
+    <div class="ah"><span>Combo · sándwich + bebida ×2</span><span>−2.00</span></div>
+    <div class="ah"><span>Envío · 3.4 km</span><span>7.00</span></div>
+  </div>
+  <div class="tot"><em>Total</em><b>S/50.80</b></div>
+  <div class="env">Llega entre 7:40 y 8:05 p.m. · el envío ya está adentro</div>
+  <div class="go">Pagar</div></div>
+
+<div class="f" id="P"><div class="tag">31 · EL PAGO</div><div class="bS"></div><div class="bW"></div>
+  <div class="halo"></div>
+  <img class="sando" src="../../../img/sando_cuerpo.png">
+  <span class="sal">&#8592;</span>
+  <div class="dice"><em>Tu cuenta</em><p>“Son cincuenta con ochenta. Yo respondo por el pedido.”</p></div>
+  <div class="monto"><b>50<span style="font-size:52px">.80</span></b><s>Envío de S/7.00 incluido.<br>No se suma nada más.</s></div>
+  <div class="datos">
+    <div class="d"><s>Te lo dejamos en</s><b>Av. Larco 1234, Dpto 302<u>CAMBIAR</u></b></div>
+    <div class="d"><s>Llega</s><b>7:40 – 8:05 p.m.<u>PROGRAMAR</u></b></div>
+  </div>
+  <div class="como"><span class="o on">Yape<s>sin recargo</s></span><span class="o">Tarjeta<s>+5.5%</s></span></div>
+  <div class="go">Pagar con Yape</div></div>
+</body></html>

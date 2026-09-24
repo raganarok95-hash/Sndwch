@@ -1,0 +1,114 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q{text-decoration:none;font-style:normal;display:block;quotes:none}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:832px}
+.f{width:372px;height:812px;position:relative;overflow:hidden;background:#0A0B0C}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:44;color:#8C8880}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.halo{position:absolute;left:-60px;right:-60px;top:100px;height:400px;z-index:0;
+  background:radial-gradient(45% 45% at 50% 50%,rgba(203,162,88,.16) 0%,transparent 72%)}
+.cab{position:absolute;left:24px;right:24px;top:80px;z-index:6;text-align:center}
+.cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.34em;color:#CBA258;text-transform:uppercase}
+.nom{position:absolute;left:24px;right:24px;z-index:6;text-align:center}
+.nom b{font-family:Anton,sans-serif;font-size:58px;line-height:.88;color:#F2F0EA;letter-spacing:-.03em}
+.nom .mes{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;margin-top:14px;text-transform:uppercase}
+.pre{position:absolute;left:24px;right:24px;bottom:100px;z-index:6;display:flex;align-items:flex-end;justify-content:space-between}
+.pre em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A60;padding-bottom:8px;text-transform:uppercase}
+.pre b{font-family:Anton,sans-serif;font-size:44px;line-height:.82;color:#F2F0EA}
+
+/* ── A · LAS TRES PISTAS ── Se puede decir cómo SABE sin decir qué LLEVA. Tres sensaciones
+   en vez de una receta: informa de verdad y el secreto sigue entero. */
+#A .nom{top:174px}
+#A .pistas{position:absolute;left:30px;right:30px;top:330px;z-index:6}
+#A .pistas em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase;text-align:center}
+#A .p{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid #1E1F21}
+#A .p k{width:30px;height:30px;border-radius:999px;border:1px solid #CBA258;color:#CBA258;
+  font:700 11px/29px Archivo,sans-serif;text-align:center;flex:0 0 auto}
+#A .p .t b{font:800 15px/1.15 Archivo,sans-serif;color:#EDEAE2}
+#A .p .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E6A60;margin-top:5px}
+#A .reloj{position:absolute;left:24px;right:24px;top:586px;z-index:6;display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid #232426;padding-top:16px}
+#A .reloj s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E6A60;letter-spacing:.1em}
+#A .reloj b{font-family:Anton,sans-serif;font-size:22px;color:#CBA258}
+
+/* ── B · LOS QUE YA PASARON ── Lo que más empuja a pedirlo no es el de ahora: es ver los
+   que te perdiste. Revelarlos no rompe nada, porque ya no existen. */
+#B .nom{top:150px}
+#B .ant{position:absolute;left:24px;right:24px;top:296px;z-index:6}
+#B .ant em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#6E6A60;text-transform:uppercase}
+#B .a{display:flex;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid #1E1F21}
+#B .a i{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4E4B45;width:34px}
+#B .a .t{flex:1}
+#B .a .t b{font:800 14px/1.15 Archivo,sans-serif;color:#8C8880}
+#B .a .t s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4E4B45;margin-top:4px}
+#B .a p{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4E4B45;letter-spacing:.14em}
+#B .a.hoy .t b{color:#F2F0EA}#B .a.hoy i{color:#CBA258}#B .a.hoy p{color:#CBA258}
+#B .adv{position:absolute;left:30px;right:30px;top:596px;z-index:6;text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4E4B45;line-height:1.9}
+
+/* ── C · EL CUSTODIO ── La bóveda tiene dueño. SANDO la cuida: aparece de perfil, cortado
+   por el borde, y su frase es lo único que se sabe del sándwich. */
+#C .nom{top:150px;text-align:left;right:166px}
+#C .nom b{font-size:52px}
+#C .dice{position:absolute;left:24px;right:166px;top:320px;z-index:6}
+#C .dice q{font-family:Anton,sans-serif;font-size:21px;line-height:1.14;color:#CBA258;letter-spacing:-.01em;text-transform:uppercase}
+#C .dice s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E6A60;margin-top:12px;letter-spacing:.2em}
+#C .sando{position:absolute;right:-26px;top:212px;width:182px;z-index:5;
+  filter:drop-shadow(-10px 12px 26px rgba(0,0,0,.6)) saturate(.85) brightness(.88)}
+#C .reloj{position:absolute;left:24px;right:24px;top:494px;z-index:6;border-top:1px solid #232426;border-bottom:1px solid #232426;
+  padding:16px 0;display:flex;justify-content:space-between;align-items:center}
+#C .reloj s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E6A60;letter-spacing:.1em}
+#C .reloj b{font-family:Anton,sans-serif;font-size:22px;color:#CBA258}
+#C .adv{position:absolute;left:24px;right:24px;top:578px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4E4B45;line-height:1.9}
+</style></head><body>
+
+<div class="f" id="A">
+  <div class="tag">SECRETO · A · las tres pistas</div>
+  <div class="halo"></div><div class="sal">←</div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b><div class="mes">El secreto de septiembre</div></div>
+  <div class="pistas"><em>No decimos qué lleva. Decimos cómo pega.</em>
+    <div class="p"><k>01</k><div class="t"><b>Pica, y no de mentira</b><s>SI NO AGUANTAS EL AJI, ESTE NO ES</s></div></div>
+    <div class="p"><k>02</k><div class="t"><b>Lleva algo ahumado</b><s>ES LO PRIMERO QUE SE SIENTE</s></div></div>
+    <div class="p"><k>03</k><div class="t"><b>No es para compartir</b><s>SE COME DE UNA SENTADA</s></div></div>
+  </div>
+  <div class="reloj"><s>ESTE SE VA EN</s><b>11 días</b></div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="B">
+  <div class="tag">SECRETO · B · los que ya pasaron</div>
+  <div class="halo"></div><div class="sal">←</div>
+  <div class="cab"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL CHIFERO</b><div class="mes">El secreto de septiembre · 11 días</div></div>
+  <div class="ant"><em>Los que ya no vuelven</em>
+    <div class="a hoy"><i>SEP</i><div class="t"><b>El Chifero</b><s>NO DECIMOS QUE LLEVA</s></div><p>AHORA</p></div>
+    <div class="a"><i>AGO</i><div class="t"><b>El Norteño</b><s>CABRITO, CULANTRO Y ZARANDAJA</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUL</i><div class="t"><b>El Bravo</b><s>ROCOTO, QUESO FRESCO Y CHICHARRON</s></div><p>SE FUE</p></div>
+    <div class="a"><i>JUN</i><div class="t"><b>El Dominguero</b><s>PAVO AL HORNO Y SALSA CRIOLLA</s></div><p>SE FUE</p></div>
+  </div>
+  <div class="adv">CADA UNO DURÓ UN MES Y NO VOLVIÓ.<br>EL DE SEPTIEMBRE TE QUEDAN 11 DÍAS.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+
+<div class="f" id="C">
+  <div class="tag">SECRETO · C · el custodio</div>
+  <div class="halo"></div><div class="sal">←</div>
+  <img class="sando" src="../../../img/sando2_perfil.png">
+  <div class="cab" style="text-align:left"><em>Lo desbloqueaste</em></div>
+  <div class="nom"><b>EL<br>CHIFERO</b><div class="mes" style="text-align:left">El secreto de septiembre</div></div>
+  <div class="dice"><q>“Este lo hago yo,<br>y no lo anoto<br>en ningún lado.”</q><s>SANDO</s></div>
+  <div class="reloj"><s>ESTE SE VA EN</s><b>11 días</b></div>
+  <div class="adv">NO SALE EN LA CARTA. NO SE REPITE.<br>EL DE OCTUBRE SERÁ OTRO Y NO AVISA.</div>
+  <div class="pre"><em>15 cm</em><b>S/24.90</b></div>
+  <div class="go"><div class="mi oro">Pedirlo a ciegas</div><div class="mi cel">S/24.90</div></div>
+</div>
+</body></html>

@@ -1,0 +1,72 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:26px;padding:26px;font-family:'EB Garamond',serif}
+.f{width:390px;height:844px;position:relative;overflow:hidden;flex:0 0 auto}
+.wm{font-family:'Fraunces',serif;font-weight:620;letter-spacing:.02em;line-height:1;display:inline-flex;align-items:baseline}
+.wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+/* ── 1 · ENTRADA ─────────────────────────────────────────── */
+#e{background:#14120F;display:flex;flex-direction:column;padding:0 30px}
+#e .top{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#e .sub{font-style:italic;font-size:15px;color:#9A968C;text-align:center;line-height:1.5}
+#e .acc{padding-bottom:40px;display:flex;flex-direction:column;gap:0}
+.gbtn{background:#fff;border-radius:999px;height:54px;display:flex;align-items:center;justify-content:center;gap:11px;
+      font-family:'Bodoni Moda',serif;font-weight:640;font-size:16px;color:#1f1f1f}
+.gbtn .g{width:21px;height:21px;border-radius:50%;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0);
+         display:flex;align-items:center;justify-content:center;font:700 12px/1 Arial;color:#fff}
+.row{padding:19px 0;border-top:1px solid #241F18;display:flex;align-items:baseline;justify-content:space-between}
+.row b{font-family:'Bodoni Moda',serif;font-weight:640;font-size:19px;color:#F2EFE6}
+.row s{text-decoration:none;font-style:italic;font-size:14px;color:#8E8A80}
+#e .why{font-size:13px;color:#8E8A80;line-height:1.55;margin:22px 0 26px;text-align:center}
+#e .legal{font-size:11px;color:#5E5A52;text-align:center;line-height:1.5;padding-top:18px;border-top:1px solid #241F18}
+/* ── 2 · LA PUERTA ───────────────────────────────────────── */
+#p{display:flex;flex-direction:column}
+#p .mitades{flex:1;display:flex;min-height:0}
+#p .h{flex:1;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+#p .hs{background:radial-gradient(120% 90% at 10% 20%,#1E1B15 0%,#110F0C 100%)}
+#p .hw{background:radial-gradient(120% 90% at 90% 20%,#EAF4FB 0%,#CFE6F5 100%)}
+#p .cara{position:absolute;left:0;right:0;top:0;bottom:190px;display:flex;align-items:center}
+#p .hs .cara{justify-content:flex-end}
+#p .hw .cara{justify-content:flex-start}
+#p .cara img{width:134%;max-height:100%;object-fit:contain;display:block;flex:0 0 auto}
+#p .txt{position:relative;padding:0 20px 34px}
+#p .hs .txt{text-align:right}
+#p .nom{font-size:10px;letter-spacing:.3em;font-weight:600;text-transform:uppercase}
+#p .prom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;line-height:1.04;margin-top:7px}
+#p .baj{font-style:italic;font-size:13px;line-height:1.4;margin-top:6px}
+#p .hs .nom{color:#CBA258}#p .hs .prom{color:#F6F2E8}#p .hs .baj{color:#9C978B}
+#p .hw .nom{color:#7B5EA0}#p .hw .prom{color:#241D38}#p .hw .baj{color:#5E5677}
+#p .cab{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;justify-content:center;padding-top:26px}
+#p .pie{background:#110F0C;padding:15px 0 20px;text-align:center}
+#p .pie span{font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#CBA258}
+#p .pie em{font-style:italic;font-size:13px;color:#8E8A80;letter-spacing:0;text-transform:none;margin-left:10px;font-weight:400}
+</style></head><body>
+
+<div class="f" id="e">
+  <div class="top">
+    <div class="wm" style="font-size:40px;color:#F6F2E8">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</div>
+    <div class="sub">Sándwiches por encargo.<br>Delivery en Trujillo.</div>
+  </div>
+  <div class="acc">
+    <div class="gbtn"><span class="g">G</span>Continuar con Google</div>
+    <div class="why">Tu cuenta guarda tus puntos,<br>tus direcciones y tus pedidos.</div>
+    <div class="row"><b>Entrar con mi correo</b><s>ya tengo cuenta</s></div>
+    <div class="row"><b>Ver la carta primero</b><s>sin cuenta</s></div>
+    <div class="legal">Al continuar aceptas los Términos<br>y la Política de Privacidad.</div>
+  </div>
+</div>
+
+<div class="f" id="p">
+  <div class="cab"><div class="wm" style="font-size:19px"><span style="color:#F6F2E8">SND</span><span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span><span style="color:#241D38">WCH</span></div></div>
+  <div class="mitades">
+    <div class="h hs"><div class="cara"><img src="../../../img/sando.webp" alt=""></div>
+      <div class="txt"><div class="nom">SND</div><div class="prom">Ya está resuelto</div><div class="baj">Cinco recetas cerradas.</div></div></div>
+    <div class="h hw"><div class="cara"><img src="../../../img/wicho.webp" alt=""></div>
+      <div class="txt"><div class="nom">WCH</div><div class="prom">Tú decides</div><div class="baj">Pan, proteína, lo que quieras.</div></div></div>
+  </div>
+  <div class="pie"><span>Abierto ahora</span><em>cierra 10:00 p.m. · delivery desde S/5</em></div>
+</div>
+
+</body></html>

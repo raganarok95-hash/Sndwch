@@ -1,0 +1,87 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:24px;font-family:'EB Garamond',serif}
+.f{width:390px;height:844px;position:relative;overflow:hidden;background:#8CC8EC;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:12px;padding:15px 18px 0}
+.top .fl{font-size:21px;color:#15242D}
+.top .paso{font-size:10px;letter-spacing:.26em;font-weight:600;text-transform:uppercase;color:#4A3D62}
+.top .c{margin-left:auto;width:30px;height:30px;border-radius:50%;background:#4A3D62;color:#F3EAF9;
+  display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+/* ══ EL HÉROE ES TU SÁNDWICH, NO LA LISTA ══
+   En el lado de SANDO el protagonista es el plato terminado, y está bien: él ya decidió.
+   Acá el valor es que lo armas TÚ, así que el protagonista tiene que ser lo que llevas
+   armado — en corte, creciendo capa por capa. La lista de opciones es lo secundario.
+   En todas mis versiones anteriores estaba al revés: la lista arriba y lo que llevabas en
+   una línea de 13px abajo. Eso era un formulario con fotos. */
+.tuyo{padding:14px 18px 0;display:flex;gap:16px;align-items:center}
+.corte{width:126px;flex:0 0 auto}
+.capas{flex:1;min-width:0}
+.capas .t{font-size:9px;letter-spacing:.28em;font-weight:600;text-transform:uppercase;color:#4A3D62}
+.capas .l{font-family:'Bodoni Moda',serif;font-size:17px;font-weight:640;color:#15242D;line-height:1.35;margin-top:5px}
+.capas .l em{font-style:normal;color:#5E7F92}
+.capas .pr{font-family:'Bodoni Moda',serif;font-size:26px;font-weight:640;color:#5C400E;margin-top:8px;line-height:1}
+.capas .pr s{text-decoration:none;font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:#3C5666;margin-left:8px}
+h2{font-family:'Bodoni Moda',serif;font-weight:640;font-size:30px;color:#15242D;line-height:1;padding:20px 18px 0}
+.ay{font-size:12px;color:#3C5666;padding:6px 18px 12px;line-height:1.45}
+/* las opciones: banda ancha, y la FOTO NO SE TIÑE NUNCA. El texto vive al lado, sobre su
+   celeste, con corte recto — no un velo encima de la comida. */
+.op{display:flex;align-items:stretch;min-height:96px;position:relative}
+.op .txt{flex:1;min-width:0;padding:13px 14px 13px 18px;display:flex;flex-direction:column;justify-content:center}
+.op .txt b{font-family:'Bodoni Moda',serif;font-weight:640;font-size:20px;color:#15242D;line-height:1.05}
+.op .txt b s{text-decoration:none;font-family:'EB Garamond',serif;font-size:9px;letter-spacing:.2em;
+  font-weight:600;text-transform:uppercase;color:#4A3D62;margin-left:8px}
+.op .txt i{font-style:normal;font-size:11px;color:#3C5666;line-height:1.4;margin-top:4px}
+.op .txt u{text-decoration:none;font-style:italic;font-size:14px;color:#5C400E;margin-top:5px}
+.op img{width:140px;flex:0 0 auto;object-fit:cover;display:block}
+.op.sel{background:#C3A6D2}
+.op.sel .txt b,.op.sel .txt i{color:#1F1733}
+.op.sel .txt u{color:#4A2E06}
+.op.sel:before{content:"";position:absolute;left:0;top:0;bottom:0;width:7px;background:#4A3D62;z-index:2}
+.sep{height:2px;background:rgba(21,36,45,.16);margin:0 18px}
+.pie{margin-top:auto;background:#F0D8CC;border-top:3px solid #15242D;padding:13px 18px 20px;
+  display:flex;align-items:center;gap:14px}
+.pie .bt{background:#4A3D62;color:#FBF6EE;padding:14px 28px;font-family:'Bodoni Moda',serif;
+  font-weight:640;font-size:15px;border-radius:58% 42% 50% 50%/52% 54% 46% 48%;margin-left:auto}
+.pie .n{font-size:11px;color:#2E4A5A;line-height:1.4}
+</style></head><body>
+<div class="f">
+  <div class="top"><span class="fl">&#8592;</span><svg width="28" height="28" viewBox="0 0 40 40"><path d="M22.50,20.00 L22.56,20.27 L22.59,20.56 L22.59,20.86 L22.55,21.16 L22.47,21.46 L22.36,21.76 L22.22,22.06 L22.04,22.34 L21.82,22.60 L21.57,22.85 L21.28,23.07 L20.97,23.26 L20.63,23.42 L20.27,23.54 L19.89,23.62 L19.49,23.66 L19.08,23.66 L18.67,23.61 L18.26,23.52 L17.86,23.38 L17.46,23.19 L17.08,22.95 L16.73,22.67 L16.40,22.35 L16.10,21.99 L15.84,21.59 L15.62,21.15 L15.45,20.69 L15.33,20.21 L15.26,19.70 L15.24,19.19 L15.29,18.66 L15.39,18.14 L15.54,17.62 L15.76,17.12 L16.04,16.64 L16.36,16.18 L16.75,15.75 L17.18,15.37 L17.66,15.02 L18.18,14.73 L18.73,14.49 L19.32,14.32 L19.93,14.20 L20.55,14.15 L21.19,14.17 L21.83,14.26 L22.46,14.42 L23.08,14.65 L23.67,14.94 L24.24,15.31 L24.77,15.74 L25.26,16.23 L25.70,16.77 L26.08,17.37 L26.40,18.01 L26.65,18.69 L26.82,19.40 L26.92,20.13 L26.94,20.88 L26.88,21.63 L26.74,22.38 L26.52,23.12 L26.21,23.83 L25.83,24.52 L25.37,25.17 L24.83,25.77 L24.23,26.31 L23.57,26.79 L22.85,27.21 L22.09,27.54 L21.28,27.79 L20.45,27.96 L19.60,28.04 L18.73,28.02 L17.86,27.92 L17.00,27.71 L16.16,27.42 L15.35,27.03 L14.58,26.55 L13.86,25.99 L13.20,25.34 L12.60,24.63 L12.09,23.85 L11.65,23.01 L11.30,22.12 L11.05,21.19 L10.90,20.23 L10.86,19.25 L10.91,18.27 L11.08,17.29 L11.35,16.32 L11.73,15.38 L12.20,14.48 L12.78,13.63 L13.45,12.85 L14.20,12.13 L15.04,11.49 L15.94,10.94 L16.91,10.49 L17.93,10.14 L18.98,9.90 L20.06,9.78 L21.16,9.77 L22.26,9.87 L23.35,10.10 L24.42,10.45 L25.45,10.91 L26.44,11.48 L27.36,12.16 L28.21,12.94 L28.98,13.82 L29.65,14.77 L30.22,15.80 L30.68,16.90 L31.03,18.04 L31.25,19.22 L31.34,20.43 L31.31,21.65 L31.14,22.86 L30.84,24.06 L30.41,25.22 L29.86,26.34 L29.19,27.41 L28.40,28.40 L27.50,29.30 L26.51,30.11 L25.43,30.82 L24.27,31.40 L23.05,31.87 L21.77,32.20 L20.47,32.39 L19.14,32.45 L17.80,32.36 L16.48,32.12 L15.18,31.75 L13.92,31.23 L12.71,30.58 L11.58,29.80 L10.52,28.90 L9.57,27.88 L8.72,26.76 L8.00,25.56 L7.40,24.27 L6.95,22.92 L6.64,21.52 L6.48,20.08 L6.47,18.64 L6.62,17.18 L6.92,15.75 L7.38,14.35 L7.99,13.00 L8.75,11.71 L9.64,10.51 L10.66,9.40 L11.80,8.41 L13.04,7.53 L14.38,6.79 L15.80,6.20 L17.28,5.76 L18.81,5.47 L20.37,5.35 L21.94,5.40 L23.50,5.62 L25.04,6.00 L26.53,6.55 L27.97,7.26 L29.33,8.13 L30.59,9.14 L31.75,10.28 L32.78,11.55 L33.68,12.92 L34.42,14.39 L35.01,15.94 L35.43,17.56 L35.68,19.21 L35.75,20.89 L35.64,22.58 L35.35,24.25 L34.88,25.89 L34.23,27.48 L33.41,28.99 L32.44,30.42 L31.31,31.74 L30.04,32.94 L28.64,34.00 L27.13,34.91 L25.52,35.65 L23.84,36.23 L22.10,36.62 L20.32,36.82 L18.52,36.83 L16.71,36.65 L14.94,36.28 L13.20,35.72 L11.53,34.97 L9.93,34.04 L8.44,32.94 L7.08,31.69 L5.84,30.29" fill="none" stroke="#4A3D62" stroke-width="3" stroke-linecap="round"/></svg><span class="paso">Prote&iacute;na &nbsp;2 de 4</span><span class="c">1</span></div>
+
+  <div class="tuyo">
+    <svg class="corte" viewBox="0 0 126 96">
+      <!-- corte del sándwich: se ve crecer. Lo hecho va en color, lo que falta en fantasma. -->
+      <path d="M8,40 C8,20 30,10 63,10 C96,10 118,20 118,40 L118,44 L8,44 Z" fill="#E0A863" stroke="#15242D" stroke-width="3"/>
+      <rect x="8" y="46" width="110" height="13" fill="#B4623C" stroke="#15242D" stroke-width="3"/>
+      <rect x="8" y="61" width="110" height="9" fill="rgba(21,36,45,.12)" stroke="rgba(21,36,45,.35)" stroke-width="2" stroke-dasharray="5 5"/>
+      <rect x="8" y="72" width="110" height="9" fill="rgba(21,36,45,.12)" stroke="rgba(21,36,45,.35)" stroke-width="2" stroke-dasharray="5 5"/>
+      <path d="M8,83 L118,83 C118,91 96,94 63,94 C30,94 8,91 8,83 Z" fill="#E0A863" stroke="#15242D" stroke-width="3"/>
+    </svg>
+    <div class="capas"><div class="t">Tu s&aacute;ndwich</div>
+      <div class="l">15CM &middot; Classic<br>Pollo teriyaki<br><em>falta queso, verdes y salsa</em></div>
+      <div class="pr">S/13.90<s>total hasta ahora</s></div></div>
+  </div>
+
+  <h2>&iquest;Qu&eacute; va adentro?</h2>
+  <div class="ay">Lo que elijas ac&aacute; es el s&aacute;ndwich. Todo lo dem&aacute;s lo acompa&ntilde;a.</div>
+
+  <div class="op sel"><div class="txt"><b>Pollo<s>Teriyaki</s></b>
+    <i>Muslo marinado toda la noche en sillao y jengibre.</i><u>S/13.90</u></div>
+    <img src="../../../img/prot_p02.webp"></div>
+  <div class="sep"></div>
+  <div class="op"><div class="txt"><b>Alb&oacute;ndiga<s>Marinara</s></b>
+    <i>Chicas, hechas ac&aacute;, cocidas en su marinara.</i><u>S/14.90</u></div>
+    <img src="../../../img/prot_p06.webp"></div>
+  <div class="sep"></div>
+  <div class="op"><div class="txt"><b>At&uacute;n<s>House</s></b>
+    <i>En lascas gruesas, nunca hecho pasta.</i><u>S/16.90</u></div>
+    <img src="../../../img/prot_p04.webp"></div>
+  <div class="sep"></div>
+  <div class="op"><div class="txt"><b>Pavo<s>Horneado</s></b>
+    <i>Lonjas de un mil&iacute;metro puestas en pliegues.</i><u>S/15.90</u></div>
+    <img src="../../../img/prot_p08.webp"></div>
+
+  <div class="pie"><div class="n">Queso, verdes y salsas<br>van en un solo paso.</div>
+    <div class="bt">Siguiente</div></div>
+</div></body></html>

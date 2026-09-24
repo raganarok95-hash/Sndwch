@@ -1,0 +1,124 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.f{width:372px;height:812px;position:relative;overflow:hidden;flex:0 0 auto}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.bS{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:55}
+.bW{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:55}
+
+/* ══ 27 · LA BOLSA ══ Carrito y pago son UN objeto: la bolsa de papel que te va a llegar,
+   con su boleta engrapada. Un paso menos en el embudo y una cosa real, no un layout. */
+#B{background:#B98F5E}
+#B .kraft{position:absolute;inset:0;
+  background:repeating-linear-gradient(91deg,rgba(0,0,0,.05) 0 1px,transparent 1px 7px),
+             linear-gradient(180deg,#C79C69 0%,#B98F5E 22%,#AD8455 100%)}
+/* el doblez de arriba de la bolsa */
+#B .doblez{position:absolute;left:0;right:0;top:0;height:74px;background:#A87E50;
+  box-shadow:0 3px 0 rgba(0,0,0,.14),0 10px 18px rgba(0,0,0,.18)}
+#B .doblez:after{content:"";position:absolute;left:0;right:0;top:36px;height:1px;background:rgba(0,0,0,.18)}
+#B .sal{position:absolute;top:24px;left:24px;font-size:20px;color:#F7EFE2;z-index:9}
+#B .mk{position:absolute;top:26px;right:24px;z-index:9;font-family:'Instrument Serif',serif;font-size:15px;color:#F7EFE2}
+/* la boleta engrapada sobre la bolsa */
+#B .boleta{position:absolute;left:26px;right:26px;top:104px;background:#FBF8F0;padding:22px 20px 24px;
+  box-shadow:0 14px 34px rgba(60,40,20,.34)}
+#B .grapa{position:absolute;left:50%;top:-7px;transform:translateX(-50%) rotate(-6deg);width:34px;height:9px;
+  background:#9A9A96;box-shadow:0 2px 3px rgba(0,0,0,.35);z-index:3}
+#B .boleta .hd{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+  color:#8A8471;letter-spacing:.08em}
+#B .boleta .rw{display:flex;align-items:baseline;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;
+  color:#1E2B22;padding:7px 0}
+#B .boleta .rw .q{width:22px;flex:0 0 auto;color:#8A8471}
+#B .boleta .rw .n{flex:1;font-weight:500}
+#B .boleta .rw .n em{font-style:normal;display:block;font-size:10.5px;color:#8A8471;margin-top:2px}
+#B .boleta .rw .p{flex:0 0 auto;font-weight:600}
+#B .boleta .dash{border-top:2px dashed #DCD4C0;margin:12px 0}
+#B .boleta .sub{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6E6A61;padding:4px 0}
+#B .boleta .sub.ah{color:#6C7860}
+#B .boleta .tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px}
+#B .boleta .tot em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.26em;color:#8A8471}
+#B .boleta .tot b{font-family:Anton,sans-serif;font-size:38px;color:#1E2B22}
+#B .boleta .dir{margin-top:16px;font-family:'EB Garamond',serif;font-size:13.5px;color:#4A5544;line-height:1.5}
+#B .boleta .dir s{text-decoration:none;display:block;font:700 8px/1 Archivo,sans-serif;letter-spacing:.2em;color:#8A8471;margin-bottom:6px}
+#B .boleta .dir b{display:inline-block;font:700 8px/1 Archivo,sans-serif;letter-spacing:.18em;color:#D8823C;margin-left:6px}
+/* el sello de cómo pagas, estampado sobre el papel */
+#B .sellos{position:absolute;left:26px;right:26px;bottom:126px;display:flex;gap:16px;z-index:6}
+#B .sellos .s{flex:1;text-align:center;padding:13px 0 11px;border:3px double #8A7A5E;color:#7A6A4E;
+  font-family:Anton,sans-serif;font-size:20px;text-transform:uppercase;transform:rotate(-1.4deg)}
+#B .sellos .s.on{border-color:#1E2B22;color:#1E2B22;background:rgba(255,255,255,.4)}
+#B .sellos .s u{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-style:italic;
+  font-size:11.5px;text-transform:none;margin-top:4px}
+#B .go{position:absolute;left:26px;right:26px;bottom:38px;background:#1E2B22;color:#F7EFE2;text-align:center;
+  padding:20px 0;font:700 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase;z-index:6}
+#B .leg{position:absolute;left:26px;right:26px;bottom:16px;text-align:center;font-family:'EB Garamond',serif;
+  font-style:italic;font-size:11.5px;color:#5E4B32;z-index:6}
+
+/* ══ 28 · LA CARTILLA ══ El contenido que aprobaste, pero como la cartilla de sellos de
+   toda la vida — un objeto, no tres cajas con borde. */
+#C{background:#1B2A20}
+#C .mesa{position:absolute;inset:0;background:
+  radial-gradient(120% 80% at 50% 0%,#24382A 0%,#16241B 70%)}
+#C .sal{position:absolute;top:20px;left:24px;font-size:20px;color:#EFE6D4;z-index:9}
+#C .card{position:absolute;left:24px;right:24px;top:74px;height:420px;background:#EFE6D4;
+  box-shadow:0 22px 46px rgba(0,0,0,.45);transform:rotate(-1.2deg);overflow:hidden}
+#C .card .foto{height:190px;overflow:hidden}
+#C .card .foto img{width:100%;height:100%;object-fit:cover;display:block}
+#C .card .cap{padding:16px 20px 0}
+#C .card .cap em{font-style:normal;font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#C .card .cap b{display:block;font-family:Anton,sans-serif;font-size:34px;color:#1E2B22;text-transform:uppercase;line-height:.9;margin-top:9px}
+/* los sellos: círculos troquelados, tres ya marcados */
+#C .sellos{display:flex;gap:11px;padding:20px 20px 0}
+#C .sellos .s{flex:1;aspect-ratio:1;border-radius:999px;border:2px dashed #C4BBA5;display:flex;
+  align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:17px;color:#C4BBA5}
+#C .sellos .s.ok{border:2px solid #D8823C;background:#D8823C;color:#EFE6D4;transform:rotate(-4deg)}
+#C .card .pie{padding:14px 20px 0;font-family:'EB Garamond',serif;font-size:13.5px;color:#5C6755;line-height:1.5}
+#C .card .pie b{color:#1E2B22;font-weight:600}
+/* las otras metas: sin una sola caja — texto y el dato que decide */
+#C .otras{position:absolute;left:26px;right:26px;top:526px}
+#C .otras .r{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#6C7860;text-transform:uppercase}
+#C .otras .g{display:flex;align-items:baseline;gap:14px;padding:15px 0;border-bottom:1px solid #2E4030}
+#C .otras .g .n{flex:1;font-family:'EB Garamond',serif;font-size:16px;color:#C9D3BF}
+#C .otras .g .d{font-family:Anton,sans-serif;font-size:17px;color:#6C7860}
+#C .otras .g.ya .n{color:#EFE6D4}
+#C .otras .g.ya .d{color:#D8823C;font-size:12px;font-family:Archivo,sans-serif;font-weight:700;letter-spacing:.14em}
+#C .go{position:absolute;left:26px;right:26px;bottom:38px;border:2px solid #D8823C;color:#D8823C;text-align:center;
+  padding:17px 0;font:700 12px/1 Archivo,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+</style></head><body>
+
+<div class="f" id="B"><div class="tag">27 · LA BOLSA</div>
+  <div class="kraft"></div><div class="doblez"></div><div class="bS"></div><div class="bW"></div>
+  <span class="sal">&#8592;</span><span class="mk">SND//WCH</span>
+  <div class="boleta"><div class="grapa"></div>
+    <div class="hd"><span>TU PEDIDO</span><span>18 SEP · 19:32</span></div>
+    <div class="dash"></div>
+    <div class="rw"><span class="q">1</span><span class="n">THE MARINARA<em>15CM · Classic · sin cebolla</em></span><span class="p">21.90</span></div>
+    <div class="rw"><span class="q">1</span><span class="n">ARMA EL TUYO<em>15CM · pollo teriyaki · cheddar</em></span><span class="p">13.90</span></div>
+    <div class="rw"><span class="q">2</span><span class="n">THE MIDNIGHT<em>medio litro</em></span><span class="p">10.00</span></div>
+    <div class="dash"></div>
+    <div class="sub"><span>Subtotal</span><span>45.80</span></div>
+    <div class="sub ah"><span>Combo · sándwich + bebida ×2</span><span>−2.00</span></div>
+    <div class="sub"><span>Envío · 3.4 km</span><span>7.00</span></div>
+    <div class="tot"><em>Total</em><b>S/50.80</b></div>
+    <div class="dir"><s>Te lo dejamos en</s>Av. Larco 1234, Dpto 302 — portón negro, al lado de la botica<b>CAMBIAR</b></div>
+  </div>
+  <div class="sellos"><div class="s on">Yape<u>sin recargo</u></div><div class="s">Tarjeta<u>+5.5%</u></div></div>
+  <div class="go">Pagar con Yape</div>
+  <div class="leg">Llega entre 7:40 y 8:05 p.m.</div></div>
+
+<div class="f" id="C"><div class="tag">28 · LA CARTILLA</div>
+  <div class="mesa"></div><div class="bS"></div><div class="bW"></div>
+  <span class="sal">&#8592;</span>
+  <div class="card">
+    <div class="foto"><img src="../../../img/sig01.jpg"></div>
+    <div class="cap"><em>Vas por</em><b>Un sándwich<br>gratis</b></div>
+    <div class="sellos"><div class="s ok">&#10003;</div><div class="s ok">&#10003;</div><div class="s ok">&#10003;</div><div class="s">4</div><div class="s">5</div></div>
+    <div class="pie">Te faltan <b>dos pedidos</b>. Llevas 240 de 400 puntos, y cada pedido suma unos 50.</div>
+  </div>
+  <div class="otras"><div class="r">O cambia de meta</div>
+    <div class="g ya"><span class="n">4ta salsa gratis</span><span class="d">YA LA TIENES</span></div>
+    <div class="g ya"><span class="n">Bebida gratis</span><span class="d">YA LA TIENES</span></div>
+    <div class="g"><span class="n">Sube a 30CM</span><span class="d">1 pedido</span></div>
+  </div>
+  <div class="go">Canjear algo ahora</div></div>
+</body></html>

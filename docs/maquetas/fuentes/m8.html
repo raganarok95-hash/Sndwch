@@ -1,0 +1,93 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;display:flex;gap:24px;padding:24px;font-family:'EB Garamond',serif}
+.f{width:390px;height:844px;position:relative;overflow:hidden;background:#101B15;flex:0 0 auto}
+/* ══ SANDO SIRVE UN PLATO A LA VEZ ══
+   "Ya está resuelto" no es una lista para comparar: es que él ya decidió. Así que no hay
+   scroll de fichas — hay un plato delante tuyo y se pasa al siguiente de costado. La foto
+   ocupa la pantalla, no una casilla dentro de la pantalla. */
+.foto{position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.foto .baja{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,16,12,.55) 0%,transparent 28%,transparent 62%,#101B15 100%)}
+/* el forro naranja de su casaca: una sola franja vertical, el borde izquierdo de la pantalla */
+.forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:#D8823C;z-index:6}
+.riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;
+  justify-content:space-between;padding:15px 18px 0 22px}
+.riel .x{font-size:21px;color:#F7F4EA;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.riel .wm{font-family:'Fraunces',serif;font-weight:620;font-size:14px;color:#F7F4EA;
+  display:inline-flex;align-items:baseline;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.riel .wm i{display:inline-block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.riel .mk{display:inline-flex;gap:.16em;margin:0 .04em;align-self:center}
+.riel .c{width:30px;height:30px;border-radius:50%;background:#CBA258;color:#101B15;display:flex;
+  align-items:center;justify-content:center;font-weight:600;font-size:13px}
+/* él, chiquito, sobre la foto: es quien te lo está sirviendo */
+.sirve{position:absolute;right:14px;top:calc(60% - 152px);width:104px;z-index:5;
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.55))}
+.ficha{position:absolute;left:22px;right:20px;top:57%;z-index:4}
+.num{font-size:10px;letter-spacing:.34em;font-weight:600;color:#C9A87C;text-transform:uppercase}
+.num b{color:#D8823C;font-weight:600;margin-left:10px;letter-spacing:.2em}
+h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:44px;color:#F7F4EA;line-height:.96;margin-top:12px}
+.pitch{font-size:14px;color:#9BA890;line-height:1.55;margin-top:14px;max-width:31ch}
+.pie{position:absolute;left:22px;right:20px;bottom:74px;z-index:4}
+/* el acanalado de su puño, a todo el ancho, separando el plato de su precio */
+.puno{height:9px;background:#26362C;margin-bottom:16px;
+  background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 2px,transparent 2px 6px)}
+.cuenta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.cuenta .p{font-family:'Bodoni Moda',serif;font-weight:640;font-size:38px;color:#CBA258;line-height:.9}
+.cuenta .p s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-size:12px;
+  color:#7E8C76;letter-spacing:.06em;margin-top:7px}
+.cuenta .b{background:#CBA258;color:#101B15;padding:16px 28px;font-family:'Bodoni Moda',serif;
+  font-weight:640;font-size:15px;flex:0 0 auto}
+/* pasar de plato: cinco marcas rectas, la de este relleno. Nada redondo en su mundo. */
+.pasar{position:absolute;left:22px;right:20px;bottom:30px;display:flex;align-items:center;gap:7px;z-index:4}
+.pasar i{height:3px;flex:1;background:#2B3B31;display:block}
+.pasar i.on{background:#F7F4EA}
+.pasar i.vlt{background:#4A3D62}
+.pasar em{font-style:normal;font-size:9px;letter-spacing:.26em;color:#7E8C76;margin-left:9px}
+/* ── el último de la fila: el secreto, todavía cerrado ── */
+#v .foto img{filter:blur(20px) saturate(.45) brightness(.4);transform:scale(1.15)}
+#v .ojo{position:absolute;left:50%;top:26%;transform:translate(-50%,-50%);z-index:5}
+#v h1{color:#fff}
+#v .barra{height:3px;background:rgba(195,166,210,.24);position:relative;margin-top:22px;max-width:190px}
+#v .barra b{position:absolute;left:0;top:0;bottom:0;width:33%;background:#C3A6D2}
+#v .falta{font-size:11px;color:#C3A6D2;letter-spacing:.08em;margin-top:9px}
+</style></head><body>
+
+<div class="f" id="a">
+  <div class="forro"></div>
+  <div class="foto"><img src="../../../img/sig02.jpg"><div class="baja"></div></div>
+  <div class="riel"><span class="x">&#10005;</span>
+    <span class="wm">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</span>
+    <span class="c">2</span></div>
+  <img class="sirve" src="../../../img/sando_cuerpo.png">
+  <div class="ficha">
+    <div class="num">I de V<b>LA ESTRELLA</b></div>
+    <h1>The<br>Marinara</h1>
+    <div class="pitch">Alb&oacute;ndigas hechas ac&aacute;, cocidas dentro de su propia marinara. Para la noche en que ya decidiste que no vas a cocinar.</div>
+  </div>
+  <div class="pie"><div class="puno"></div>
+    <div class="cuenta"><div class="p">S/21.90<s>30CM &middot; S/28.90</s></div><div class="b">Lo quiero</div></div></div>
+  <div class="pasar"><i class="on"></i><i></i><i></i><i></i><i></i><i class="vlt"></i><em>DESLIZA</em></div>
+</div>
+
+<div class="f" id="v">
+  <div class="forro" style="background:#4A3D62"></div>
+  <div class="foto"><img src="../../../img/sig05.jpg"><div class="baja"></div></div>
+  <div class="riel"><span class="x">&#10005;</span>
+    <span class="wm">SND<span class="mk"><i style="background:#CBA258"></i><i style="background:#8CC8EC"></i></span>WCH</span>
+    <span class="c">2</span></div>
+  <div class="ojo"><svg width="64" height="64" viewBox="0 0 40 40"><path d="M22.50,20.00 L22.56,20.27 L22.59,20.56 L22.59,20.86 L22.55,21.16 L22.47,21.46 L22.36,21.76 L22.22,22.06 L22.04,22.34 L21.82,22.60 L21.57,22.85 L21.28,23.07 L20.97,23.26 L20.63,23.42 L20.27,23.54 L19.89,23.62 L19.49,23.66 L19.08,23.66 L18.67,23.61 L18.26,23.52 L17.86,23.38 L17.46,23.19 L17.08,22.95 L16.73,22.67 L16.40,22.35 L16.10,21.99 L15.84,21.59 L15.62,21.15 L15.45,20.69 L15.33,20.21 L15.26,19.70 L15.24,19.19 L15.29,18.66 L15.39,18.14 L15.54,17.62 L15.76,17.12 L16.04,16.64 L16.36,16.18 L16.75,15.75 L17.18,15.37 L17.66,15.02 L18.18,14.73 L18.73,14.49 L19.32,14.32 L19.93,14.20 L20.55,14.15 L21.19,14.17 L21.83,14.26 L22.46,14.42 L23.08,14.65 L23.67,14.94 L24.24,15.31 L24.77,15.74 L25.26,16.23 L25.70,16.77 L26.08,17.37 L26.40,18.01 L26.65,18.69 L26.82,19.40 L26.92,20.13 L26.94,20.88 L26.88,21.63 L26.74,22.38 L26.52,23.12 L26.21,23.83 L25.83,24.52 L25.37,25.17 L24.83,25.77 L24.23,26.31 L23.57,26.79 L22.85,27.21 L22.09,27.54 L21.28,27.79 L20.45,27.96 L19.60,28.04 L18.73,28.02 L17.86,27.92 L17.00,27.71 L16.16,27.42 L15.35,27.03 L14.58,26.55 L13.86,25.99 L13.20,25.34 L12.60,24.63 L12.09,23.85 L11.65,23.01 L11.30,22.12 L11.05,21.19 L10.90,20.23 L10.86,19.25 L10.91,18.27 L11.08,17.29 L11.35,16.32 L11.73,15.38 L12.20,14.48 L12.78,13.63 L13.45,12.85 L14.20,12.13 L15.04,11.49 L15.94,10.94 L16.91,10.49 L17.93,10.14 L18.98,9.90 L20.06,9.78 L21.16,9.77 L22.26,9.87 L23.35,10.10 L24.42,10.45 L25.45,10.91 L26.44,11.48 L27.36,12.16 L28.21,12.94 L28.98,13.82 L29.65,14.77 L30.22,15.80 L30.68,16.90 L31.03,18.04 L31.25,19.22 L31.34,20.43 L31.31,21.65 L31.14,22.86 L30.84,24.06 L30.41,25.22 L29.86,26.34 L29.19,27.41 L28.40,28.40 L27.50,29.30 L26.51,30.11 L25.43,30.82 L24.27,31.40 L23.05,31.87 L21.77,32.20 L20.47,32.39 L19.14,32.45 L17.80,32.36 L16.48,32.12 L15.18,31.75 L13.92,31.23 L12.71,30.58 L11.58,29.80 L10.52,28.90 L9.57,27.88 L8.72,26.76 L8.00,25.56 L7.40,24.27 L6.95,22.92 L6.64,21.52 L6.48,20.08 L6.47,18.64 L6.62,17.18 L6.92,15.75 L7.38,14.35 L7.99,13.00 L8.75,11.71 L9.64,10.51 L10.66,9.40 L11.80,8.41 L13.04,7.53 L14.38,6.79 L15.80,6.20 L17.28,5.76 L18.81,5.47 L20.37,5.35 L21.94,5.40 L23.50,5.62 L25.04,6.00 L26.53,6.55 L27.97,7.26 L29.33,8.13 L30.59,9.14 L31.75,10.28 L32.78,11.55 L33.68,12.92 L34.42,14.39 L35.01,15.94 L35.43,17.56 L35.68,19.21 L35.75,20.89 L35.64,22.58 L35.35,24.25 L34.88,25.89 L34.23,27.48 L33.41,28.99 L32.44,30.42 L31.31,31.74 L30.04,32.94 L28.64,34.00 L27.13,34.91 L25.52,35.65 L23.84,36.23 L22.10,36.62 L20.32,36.82 L18.52,36.83 L16.71,36.65 L14.94,36.28 L13.20,35.72 L11.53,34.97 L9.93,34.04 L8.44,32.94 L7.08,31.69 L5.84,30.29" fill="none" stroke="#C3A6D2" stroke-width="3.2" stroke-linecap="round"/></svg></div>
+  <div class="ficha">
+    <div class="num" style="color:#C3A6D2">VI de VI<b style="color:#C3A6D2">CERRADO</b></div>
+    <h1>El s&aacute;ndwich<br>secreto</h1>
+    <div class="pitch">No est&aacute; en la carta. Cambia cada mes. No se dice qu&eacute; lleva &mdash; se revela cuando lo pides.</div>
+    <div class="barra"><b></b></div>
+    <div class="falta">1 de 3 pedidos</div>
+  </div>
+  <div class="pie"><div class="puno"></div>
+    <div class="cuenta"><div class="p" style="color:#C3A6D2;font-size:26px">Te faltan 2 pedidos<s>y se abre solo</s></div></div></div>
+  <div class="pasar"><i></i><i></i><i></i><i></i><i></i><i class="vlt" style="background:#C3A6D2"></i><em>&Uacute;LTIMO</em></div>
+</div>
+</body></html>

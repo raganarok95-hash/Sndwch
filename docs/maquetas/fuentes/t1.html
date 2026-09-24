@@ -1,0 +1,121 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:22px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.f{width:372px;height:812px;position:relative;overflow:hidden;flex:0 0 auto;background:#EFE6D4}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.bS{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:55}
+.bW{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:55}
+
+/* ══ 24 · EL DESLIZADOR ══ Revisar el pedido es MIRARLO, no leer una tabla.
+   Un ítem por pantalla, a tamaño real. Deslizas para ver el siguiente. */
+#D{background:#14211A}
+#D .ph{position:absolute;left:8px;right:8px;top:0;height:470px;overflow:hidden}
+#D .ph img{width:100%;height:100%;object-fit:cover;display:block}
+#D .ph .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,18,13,.55) 0%,transparent 26%,transparent 58%,#14211A 100%)}
+#D .sal{position:absolute;top:18px;left:24px;font-size:20px;color:#F7F4EA;z-index:9}
+#D .cnt{position:absolute;top:18px;right:24px;z-index:9;font:700 10px/1 Archivo,sans-serif;letter-spacing:.24em;color:#EFE6D4}
+#D .info{position:absolute;left:24px;right:22px;top:404px;z-index:6}
+#D .info em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#D .info b{display:block;font-family:Anton,sans-serif;font-size:46px;color:#F7F4EA;text-transform:uppercase;line-height:.86;margin-top:12px}
+#D .info p{font-family:'EB Garamond',serif;font-size:15px;color:#9FAE95;margin-top:13px;line-height:1.5}
+#D .qt{position:absolute;left:24px;right:22px;top:596px;display:flex;align-items:center;gap:20px;z-index:6}
+#D .qt i{font-style:normal;width:46px;height:46px;border:2px solid #4A5C48;color:#EFE6D4;display:flex;
+  align-items:center;justify-content:center;font:400 22px/1 Archivo,sans-serif}
+#D .qt u{text-decoration:none;font-family:Anton,sans-serif;font-size:34px;color:#F7F4EA;width:30px;text-align:center}
+#D .qt .pr{margin-left:auto;font-family:Anton,sans-serif;font-size:34px;color:#D8823C}
+#D .pts{position:absolute;left:24px;bottom:104px;display:flex;gap:7px;z-index:6}
+#D .pts i{width:34px;height:3px;background:#3A4A38;display:block}
+#D .pts i.on{background:#EFE6D4}
+#D .go{position:absolute;left:24px;right:22px;bottom:34px;background:#D8823C;color:#14211A;
+  display:flex;align-items:center;justify-content:space-between;padding:18px 22px;z-index:6}
+#D .go b{font:700 12px/1 Archivo,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+#D .go u{text-decoration:none;font-family:Anton,sans-serif;font-size:23px}
+
+/* ══ 25 · LA CUENTA EN LA MANO ══ Te extienden la cuenta. Un solo bloque centrado:
+   cuánto, a dónde, y con qué pagas. Nada más en pantalla. */
+#Q .sal{position:absolute;top:18px;left:24px;font-size:20px;color:#1E2B22;z-index:9}
+#Q .caja{position:absolute;left:30px;right:30px;top:118px;background:#fff;padding:34px 28px 30px;
+  box-shadow:0 20px 50px rgba(30,43,34,.2);text-align:center}
+#Q .caja em{font-style:normal;font:700 9px/1 Archivo,sans-serif;letter-spacing:.34em;color:#8A9482;text-transform:uppercase}
+#Q .caja .tot{font-family:Anton,sans-serif;font-size:76px;color:#1E2B22;line-height:.82;margin-top:16px}
+#Q .caja .det{font-family:'EB Garamond',serif;font-size:14px;color:#6C7860;margin-top:14px;line-height:1.55}
+#Q .caja .hr{height:2px;background:#E4DCC8;margin:24px 0 22px}
+#Q .caja .a{font-family:'EB Garamond',serif;font-size:16px;color:#1E2B22;line-height:1.45}
+#Q .caja .a s{text-decoration:none;display:block;font:700 9px/1 Archivo,sans-serif;letter-spacing:.2em;
+  color:#8A9482;text-transform:uppercase;margin-bottom:7px}
+#Q .caja .a b{display:inline-block;font:700 9px/1 Archivo,sans-serif;letter-spacing:.18em;color:#D8823C;margin-top:9px}
+#Q .como{position:absolute;left:30px;right:30px;top:576px;display:flex;gap:14px}
+#Q .como .o{flex:1;text-align:center;padding:18px 0 16px;border:2px solid #CFC7B2;background:#F6F1E4}
+#Q .como .o.on{border-color:#1E2B22;background:#1E2B22}
+#Q .como .o b{display:block;font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;text-transform:uppercase}
+#Q .como .o.on b{color:#EFE6D4}
+#Q .como .o s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-style:italic;font-size:12px;color:#8A9482;margin-top:5px}
+#Q .como .o.on s{color:#9FAE95}
+#Q .go{position:absolute;left:30px;right:30px;bottom:44px;background:#D8823C;color:#1E2B22;text-align:center;
+  padding:20px 0;font:700 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+#Q .leg{position:absolute;left:30px;right:30px;bottom:18px;text-align:center;font-family:'EB Garamond',serif;
+  font-style:italic;font-size:11.5px;color:#8A9482}
+
+/* ══ 26 · ELIGE TU META ══ Los puntos no motivan; el premio sí. Eliges qué quieres y
+   toda la pantalla trabaja para eso — y cuenta en PEDIDOS, no en puntos. */
+#E{background:#14211A}
+#E .ph{position:absolute;left:8px;right:8px;top:0;height:420px;overflow:hidden}
+#E .ph img{width:100%;height:100%;object-fit:cover;display:block}
+#E .ph .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,18,13,.5) 0%,transparent 28%,transparent 54%,#14211A 100%)}
+#E .sal{position:absolute;top:18px;left:24px;font-size:20px;color:#F7F4EA;z-index:9}
+#E .tit{position:absolute;left:24px;right:22px;top:330px;z-index:6}
+#E .tit em{font-style:normal;font:700 10px/1 Archivo,sans-serif;letter-spacing:.3em;color:#D8823C;text-transform:uppercase}
+#E .tit b{display:block;font-family:Anton,sans-serif;font-size:44px;color:#F7F4EA;text-transform:uppercase;line-height:.86;margin-top:12px}
+/* el progreso en PEDIDOS: cinco casillas, no una barra abstracta de puntos */
+#E .ped{position:absolute;left:24px;right:22px;top:478px;z-index:6}
+#E .ped .l{font-family:'EB Garamond',serif;font-size:15px;color:#9FAE95;line-height:1.5}
+#E .ped .l b{color:#F7F4EA;font-weight:600}
+#E .ped .cajas{display:flex;gap:9px;margin-top:16px}
+#E .ped .cajas i{flex:1;height:52px;border:2px solid #3A4A38;display:flex;align-items:center;justify-content:center;
+  font-family:Anton,sans-serif;font-size:19px;color:#3A4A38;font-style:normal}
+#E .ped .cajas i.ok{background:#D8823C;border-color:#D8823C;color:#14211A}
+#E .otras{position:absolute;left:24px;right:22px;bottom:104px;z-index:6}
+#E .otras .r{font:700 9px/1 Archivo,sans-serif;letter-spacing:.28em;color:#6C7860;text-transform:uppercase;margin-bottom:12px}
+#E .otras .lista{display:flex;gap:9px}
+#E .otras .lista span{flex:1;padding:11px 8px;border:1px solid #3A4A38;font-family:'EB Garamond',serif;
+  font-size:11.5px;color:#9FAE95;text-align:center;line-height:1.3}
+#E .go{position:absolute;left:24px;right:22px;bottom:34px;background:#1E2B22;border:2px solid #D8823C;color:#D8823C;
+  text-align:center;padding:16px 0;font:700 12px/1 Archivo,sans-serif;letter-spacing:.16em;text-transform:uppercase;z-index:6}
+</style></head><body>
+
+<div class="f" id="D"><div class="tag">24 · EL DESLIZADOR</div><div class="bS"></div><div class="bW"></div>
+  <div class="ph"><img src="../../../img/sig02.jpg"><div class="v"></div></div>
+  <span class="sal">&#10005;</span><span class="cnt">1 DE 3</span>
+  <div class="info"><em>En tu bolsa</em><b>The Marinara</b>
+    <p>15CM · Classic · sin cebolla</p></div>
+  <div class="qt"><i>&minus;</i><u>1</u><i>+</i><span class="pr">21.90</span></div>
+  <div class="pts"><i class="on"></i><i></i><i></i></div>
+  <div class="go"><b>Pagar los tres</b><u>S/50.80</u></div></div>
+
+<div class="f" id="Q"><div class="tag">25 · LA CUENTA EN LA MANO</div><div class="bS"></div><div class="bW"></div>
+  <span class="sal">&#8592;</span>
+  <div class="caja">
+    <em>Tu cuenta</em>
+    <div class="tot">S/50.80</div>
+    <div class="det">Dos sándwiches y dos bebidas.<br>Envío de S/7.00 ya incluido.</div>
+    <div class="hr"></div>
+    <div class="a"><s>Te lo dejamos en</s>Av. Larco 1234, Dpto 302<br>
+      <span style="font-size:13px;color:#8A9482">Portón negro, al lado de la botica</span>
+      <b>CAMBIAR</b></div>
+  </div>
+  <div class="como"><div class="o on"><b>Yape</b><s>sin recargo</s></div><div class="o"><b>Tarjeta</b><s>+5.5%</s></div></div>
+  <div class="go">Pagar con Yape</div>
+  <div class="leg">Llega entre 7:40 y 8:05 p.m.</div></div>
+
+<div class="f" id="E"><div class="tag">26 · ELIGE TU META</div><div class="bS"></div><div class="bW"></div>
+  <div class="ph"><img src="../../../img/sig01.jpg"><div class="v"></div></div>
+  <span class="sal">&#8592;</span>
+  <div class="tit"><em>Vas por</em><b>Un sándwich<br>gratis</b></div>
+  <div class="ped"><div class="l">Te faltan <b>dos pedidos</b>. Cada uno suma más o menos 50 puntos, y ya llevas 240 de 400.</div>
+    <div class="cajas"><i class="ok">1</i><i class="ok">2</i><i class="ok">3</i><i>4</i><i>5</i></div></div>
+  <div class="otras"><div class="r">O cambia de meta</div>
+    <div class="lista"><span>4ta salsa<br>ya la tienes</span><span>Bebida gratis<br>ya la tienes</span><span>Sube a 30CM<br>falta 1 pedido</span></div></div>
+  <div class="go">Canjear algo ahora</div></div>
+</body></html>
