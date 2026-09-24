@@ -253,9 +253,16 @@ var vidScript = null, vidSigId = '', vidAngle = '', vidFormato = '', vidErr = ''
 async function loadVideoScript() {
     sndScreen = 'admin_video';
     vidErr = '';
+    // Sin carta no hay guion que pedir: se dice, en vez de pedirlo para un código escrito a mano
+    // ('SIG01' hasta el 2026-09-24, que la carta v4 retiró — el pedido habría fallado igual).
     if (!vidSigId) {
         var first = SIGS.find(function (x) { return !x.secret; });
-        vidSigId = first ? first.id : 'SIG01';
+        if (!first) {
+            vidErr = 'La carta no tiene ningún Signature para armar un guion.';
+            render();
+            return;
+        }
+        vidSigId = first.id;
     }
     busy = true;
     busyMsg = 'Armando el guion...';
