@@ -406,7 +406,7 @@ export async function actAdminExportOrders(b: any) {
   const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "orders",
-    `select=ref,date,customer_name,customer_phone,contact_phone,customer_address,customer_email,summary,total,status,payment_status,payment_method,mode,size,eta_minutes,redeemed_reward,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
+    `select=ref,date,customer_name,customer_phone,contact_phone,customer_address,customer_email,summary,total,status,payment_status,payment_method,eta_minutes,redeemed_reward,created_at&order=created_at.desc&limit=${EXPORT_LIMIT + 1}`,
   );
   // Exporta teléfono/dirección/correo de TODOS los pedidos — tan sensible como cualquier
   // otra acción admin que ya se audita, y no quedaba ningún rastro de quién lo descargó
@@ -474,7 +474,7 @@ export async function actDashboardStats(b: any) {
       // customer_phone se agregó para poder atribuir ingresos de esta misma ventana a
       // acquisition_source más abajo (bySource) — antes bySource solo contaba
       // registros/conversión, nunca cuánto dinero trajo cada canal.
-      `select=total,payment_status,created_at,items,product_key,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
+      `select=total,payment_status,created_at,items,summary,payment_method,status,customer_phone&created_at=gte.${encodeURIComponent(fetchSince)}&order=created_at.desc&limit=${DASHBOARD_WINDOW_LIMIT + 1}`,
     ),
     sbGet("inventory", "in_stock=eq.false&select=product_code,product_name&limit=500"),
     sbGet("inventory", "stock_qty=not.is.null&select=product_code,product_name,stock_qty,low_stock_threshold&limit=500"),
@@ -902,7 +902,7 @@ export async function actAdminRangeReport(b: any) {
   const rows = await sbGet(
     "orders",
     `created_at=gte.${encodeURIComponent(from.toISOString())}&created_at=lte.${encodeURIComponent(to.toISOString())}` +
-      `&select=total,payment_status,payment_method,created_at,items,product_key,summary,status&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
+      `&select=total,payment_status,payment_method,created_at,items,summary,status&order=created_at.asc&limit=${RANGE_REPORT_ORDER_LIMIT + 1}`,
   );
   const truncated = rows.length > RANGE_REPORT_ORDER_LIMIT;
   const orders = rows.slice(0, RANGE_REPORT_ORDER_LIMIT);

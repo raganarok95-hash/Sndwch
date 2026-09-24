@@ -35,8 +35,8 @@ const LIMA_MS = 5 * 3600000;
 
 export type Fijo = { id: string; weekday: number; slot: string; active?: boolean; skip_on?: string | null };
 export type PedidoDelFijo = {
-  // La columna admite null en la base (lo mostraron los tipos generados, 2026-09-24). Pasa a
-  // NOT NULL en el paso 6; mientras tanto, sin fecha el pedido no cuenta (NaN).
+  // Obligatoria en la base desde el paso 6 (2026-09-24); antes admitía null y sin fecha el
+  // pedido no contaba (NaN). Se deja el `| null` porque la usan también filas armadas a mano.
   created_at: string | null;
   delivery_time?: string | null;
   status?: string | null;

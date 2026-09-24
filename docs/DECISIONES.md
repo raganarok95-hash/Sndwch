@@ -1122,3 +1122,30 @@ bono, rango, historial) la usan `crear_pedido` y `confirmar_pago_manual`.
 **Proceso**: la migración se probó en el Postgres local ANTES de aplicarla a la base real. Y
 guardar la foto del esquema y los tipos después de una migración ya no es un comando armado a
 mano: `scripts/pg-local/guardar-foto.mjs` y `guardar-tipos.mjs`.
+
+## 2026-09-24 · Paso 6: el esquema de `orders` dice lo que la app ya suponía
+
+**`delivery_time` era texto** y se comparaba como texto: la capacidad de una hora y el orden de los
+pedidos programados dependían de que todas las cadenas vinieran en el mismo formato. Ahora es
+`timestamptz` (migración 20260924183412). El flujo e2e nuevo «un pedido programado guarda su hora
+como fecha y ocupa su hora en la capacidad» se vio fallar quitando los programados del conteo en
+`capacidad.ts`.
+
+**Lo que la base ahora garantiza por su cuenta**: `created_at` no nulo, `items` no nulo, con
+`'[]'` por defecto y obligado a ser una lista, y `id` con formato uuid. El id se queda como `text`
+con un check en vez de pasar a `uuid`: con el tipo, un id mal escrito en una URL revienta con un
+500 en la conversión; con el check, sigue siendo un 404. Lo prueba `tests-db/esquema-de-pedidos.sql`.
+
+**Cuatro columnas muertas (`mode`, `product_key`, `size`, `build`) no se quitaron todavía.** Las
+dejó de leer esta rama —dashboard, reporte por rango, exportación, historial del cliente, «lo de
+siempre»—, pero el `api` desplegado desde `main` todavía las escribe al insertar: quitarlas hoy
+rompía cada pedido en producción. El borrado vive en
+`supabase/migrations-al-mergear/quitar_columnas_viejas_de_orders.sql` y se aplica justo después del
+merge; `check:pg` lo anuncia en cada corrida mientras siga pendiente.
+
+**Cómo se supo quién las pedía**: `check:columnas` (nuevo, dentro de `verify`) compara cada
+consulta de texto a PostgREST contra la foto del esquema. Su primera versión leía solo el literal
+pegado al nombre de la tabla y se le escapaban tres de las cuatro consultas que el borrado iba a
+romper (había comentarios entre medio y consultas armadas con `+`). Se vio simulando el borrado en
+la foto; ahora lee el argumento entero. `-- --probar` le inyecta una columna que no existe.
+

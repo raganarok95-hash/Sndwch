@@ -284,6 +284,10 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    Cada flujo (`tests-e2e/flujos.mjs`) entra por la API y después mira la base. Es lo único que
    ejecuta el servidor y la base juntos: un flujo de dinero nuevo (cobrar, devolver, confirmar)
    se agrega acá. ~4 s.
+5i. `npm run check:columnas` — que toda columna que el servidor nombra en un
+   `sbGet/sbUpdate/sbDelete` escrito como texto exista en `supabase/esquema-actual.sql`. Es la
+   clase de defecto de `assertHourCapacity` (columna inexistente, error tragado por un catch).
+   Antes de quitar una columna de la base, este chequeo dice quién la sigue pidiendo.
 5g. `tests/panel-todas-las-herramientas.spec.ts` abre las 30 herramientas del panel una
    por una y comprueba que ninguna reviente, se quede en "No se pudo cargar" con una
    respuesta válida, ni se pinte con la piel del cliente. La lista sale de
@@ -305,6 +309,12 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    recompensas), revisa que el test siga representando el flujo real antes de asumir que
    "pasa" = "funciona".
 8. Commit + push a la rama de trabajo, merge `--no-ff` a `main`, push `main`.
+   **Si existe `supabase/migrations-al-mergear/`**, lo que hay ahí se aplica JUSTO DESPUÉS de que el
+   deploy de `main` termine (quita columnas que la versión anterior todavía escribía), se mueve a
+   `supabase/migrations/` con su versión real, y se regeneran foto y tipos
+   (`scripts/pg-local/guardar-foto.mjs`, `guardar-tipos.mjs`). `check:pg` lo recuerda mientras exista.
+- **`orders.id` es `text` con un check de formato uuid, a propósito**: cambiar el tipo a `uuid` haría
+  que un id mal escrito en la URL diera 500 en vez de 404.
 
 ## Fotos de producto
 

@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924182608
+// generado-contra-migracion: 20260924183412
 export type Json =
   | string
   | number
@@ -940,7 +940,7 @@ export type Database = {
           build: Json | null
           cancel_reason: string | null
           contact_phone: string | null
-          created_at: string | null
+          created_at: string
           customer_address: string
           customer_email: string | null
           customer_name: string
@@ -956,7 +956,7 @@ export type Database = {
           eta_minutes: number | null
           group_code: string | null
           id: string
-          items: Json | null
+          items: Json
           lat: number | null
           lon: number | null
           mode: string | null
@@ -990,7 +990,7 @@ export type Database = {
           build?: Json | null
           cancel_reason?: string | null
           contact_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           customer_address: string
           customer_email?: string | null
           customer_name: string
@@ -1006,7 +1006,7 @@ export type Database = {
           eta_minutes?: number | null
           group_code?: string | null
           id?: string
-          items?: Json | null
+          items?: Json
           lat?: number | null
           lon?: number | null
           mode?: string | null
@@ -1040,7 +1040,7 @@ export type Database = {
           build?: Json | null
           cancel_reason?: string | null
           contact_phone?: string | null
-          created_at?: string | null
+          created_at?: string
           customer_address?: string
           customer_email?: string | null
           customer_name?: string
@@ -1056,7 +1056,7 @@ export type Database = {
           eta_minutes?: number | null
           group_code?: string | null
           id?: string
-          items?: Json | null
+          items?: Json
           lat?: number | null
           lon?: number | null
           mode?: string | null

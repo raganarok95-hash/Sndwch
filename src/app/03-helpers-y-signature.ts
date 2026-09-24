@@ -341,15 +341,6 @@ function loadBuild(bld){
   byoStep=4;
   enterConfirm();
 }
-// Convierte el "build" legado (un pedido/favorito de antes del carrito) al formato
-// de línea de carrito actual.
-function buildToCartItem(bld){
-  var item=Object.assign({},bld);
-  item.type=bld.mode;
-  delete item.mode;
-  item.qty=1;
-  return item;
-}
 // Limpia el estado del builder antes de empezar un pedido nuevo — evita que un
 // build abandonado (o de un pedido anterior en la misma sesión) reaparezca
 // precargado en un pedido sin relación.
@@ -527,7 +518,8 @@ function sigsEnOrden(lista){
   });
 }
 function lastPaidOrder(){
-  return myOrders.find(function(o){return o.payment_status==='paid'&&((o.items&&o.items.length)||o.build);});
+  // Un pedido siempre trae `items` desde que `orders.build` se retiró de la base (2026-09-24).
+  return myOrders.find(function(o){return o.payment_status==='paid'&&o.items&&o.items.length;});
 }
 // Precio de una línea del carrito (una unidad, sin multiplicar por qty). Lo calcula el módulo
 // de dinero compartido con el servidor (ver DINERO en 01-*): 0 si la línea ya no está en la carta.
@@ -1715,7 +1707,7 @@ function sOSig(){
   // visible también aquí (donde el cliente ya está decidiendo qué pedir) para el que
   // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
   var lastOrdSig=cust?lastPaidOrder():null;
-  var recoItemsSig=lastOrdSig?(lastOrdSig.items&&lastOrdSig.items.length?lastOrdSig.items:(lastOrdSig.build?[buildToCartItem(lastOrdSig.build)]:null)):null;
+  var recoItemsSig=lastOrdSig?lastOrdSig.items:null;
   var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#F2F0EB)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
   // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
   // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en

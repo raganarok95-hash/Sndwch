@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924182608
+-- foto-tomada-tras-migracion: 20260924183412
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -311,9 +311,9 @@ create table public.orders (
   total numeric(10,2) not null,
   status text default 'RECIBIDO'::text,
   date text default to_char(now(), 'DD/MM/YYYY'::text),
-  created_at timestamp with time zone default now(),
+  created_at timestamp with time zone default now() not null,
   notes text,
-  delivery_time text,
+  delivery_time timestamp with time zone,
   lat double precision,
   lon double precision,
   payment_status text default 'pending'::text,
@@ -326,7 +326,7 @@ create table public.orders (
   size text,
   build jsonb,
   redeemed_reward text,
-  items jsonb,
+  items jsonb default '[]'::jsonb not null,
   contact_phone text,
   alerted_stuck boolean default false not null,
   alerted_scheduled_reminder boolean default false not null,
@@ -648,6 +648,10 @@ alter table public.order_problems add constraint order_problems_motivo_check CHE
 alter table public.order_problems add constraint order_problems_pkey PRIMARY KEY (id);
 
 alter table public.order_problems add constraint order_problems_resolution_check CHECK ((resolution = ANY (ARRAY['reposicion'::text, 'credito'::text, 'reembolso'::text])));
+
+alter table public.orders add constraint orders_id_es_uuid CHECK ((id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'::text));
+
+alter table public.orders add constraint orders_items_es_lista CHECK ((jsonb_typeof(items) = 'array'::text));
 
 alter table public.orders add constraint orders_pkey PRIMARY KEY (id);
 

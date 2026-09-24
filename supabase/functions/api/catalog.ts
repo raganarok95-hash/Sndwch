@@ -1304,7 +1304,7 @@ export function buildTopProducts(orders: any[], limit: number): { name: string; 
       });
       return;
     }
-    const key = o.product_key || (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
+    const key = (o.summary || "").split(" S/")[0].split("·")[0].trim() || "otro";
     if (!productMap[key]) productMap[key] = { count: 0, revenue: 0 };
     productMap[key].count += 1;
     productMap[key].revenue += o.total || 0;

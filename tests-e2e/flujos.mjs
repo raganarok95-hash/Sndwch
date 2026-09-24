@@ -157,4 +157,24 @@ export const FLUJOS = {
     afirmar(valor(s, `select coalesce(sum(delta),0) from credit_ledger where customer_phone = '${phone}'`) === '0.00' ||
       Number(valor(s, `select coalesce(sum(delta),0) from credit_ledger where customer_phone = '${phone}'`)) === 0, 'el libro de crédito no cuadra en cero');
   },
+
+  async 'un pedido programado guarda su hora como fecha y ocupa su hora en la capacidad'(s, precios) {
+    const { token, phone } = await registrarYEntrar(s);
+    s.sql(`update customers set credit_balance = 100 where phone = '${phone}'`);
+    // Mañana a las 15:00 hora Lima (20:00 UTC), dentro del horario abierto de la semilla.
+    const d = new Date(Date.now() + 86400000);
+    const cuando = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 20, 0, 0)).toISOString();
+    const items = [{ type: 'sig', sigId: 'SIG04', size: '15', qty: 1 }];
+    const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_MINIMO) * 100) / 100;
+    const r = await s.llamar('place-order', {
+      token, ref: 'E2E-PROG', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
+      items, total, useCredit: true, summary: '1x The Fresh', deliveryZone: 'trujillo', scheduledFor: cuando,
+    });
+    afirmar(r.status === 200, `place-order programado: ${r.status} ${r.error || ''}`);
+    // La hora se guarda como FECHA (desde el paso 6), y se compara como fecha, no como texto.
+    afirmar(valor(s, `select delivery_time = '${cuando}'::timestamptz from orders where ref = 'E2E-PROG'`) === 't', 'la hora programada no quedó guardada como esa fecha');
+    const h = await s.llamar('get-store-hours', {});
+    const k = new Date(Date.parse(cuando)).toISOString();
+    afirmar(h.cargaPorHora && Number(h.cargaPorHora[k] || 0) >= 1, `la hora programada no ocupa su lugar en la capacidad: ${JSON.stringify(h.cargaPorHora || {}).slice(0, 200)}`);
+  },
 };

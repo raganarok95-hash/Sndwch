@@ -536,7 +536,7 @@ export async function actRemindMonthlyRecap(b: any) {
   const orders = await sbGet(
     "orders",
     `created_at=gte.${startIso}&created_at=lt.${endIso}&payment_status=eq.paid&status=neq.CANCELADO` +
-      `&customer_phone=not.is.null&select=customer_phone,items,total,delivery_fee,product_key,summary&limit=20000`,
+      `&customer_phone=not.is.null&select=customer_phone,items,total,delivery_fee,summary&limit=20000`,
   );
   const porCliente = new Map<string, any[]>();
   for (const o of orders) {

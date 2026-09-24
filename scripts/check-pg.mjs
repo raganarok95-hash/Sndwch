@@ -10,7 +10,7 @@
 // del esquema no esté vieja: si hay una migración más nueva que ella, falla.
 //
 // Correr con: npm run check:pg   (dentro de `npm run verify`)
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { levantarPostgres } from './pg-local/postgres.mjs';
 import { cargarEsquema, psql } from './pg-local/esquema.mjs';
 
@@ -50,3 +50,11 @@ if (fallas.length) {
   process.exit(1);
 }
 console.log(`✓ Base: ${n} archivo(s) de tests-db/ pasan contra el esquema real (foto tras ${ultima})`);
+// Lo que espera al merge a main (quitar columnas que la versión desplegada todavía escribe) no se
+// puede aplicar desde la rama. Que no se olvide: se anuncia en cada corrida mientras exista.
+const pendientes = existsSync('supabase/migrations-al-mergear')
+  ? readdirSync('supabase/migrations-al-mergear').filter((f) => f.endsWith('.sql'))
+  : [];
+if (pendientes.length) {
+  console.log(`⚠ ${pendientes.length} migración(es) esperan al merge a main (aplicarlas justo después): ` + pendientes.join(', '));
+}

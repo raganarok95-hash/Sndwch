@@ -9,30 +9,30 @@ begin
   insert into customers (phone, name, pin, dni, points, total_orders) values ('900000009', 'Invita', 'x', '70000009', 0, 0);
   insert into customers (phone, name, pin, dni, points, total_orders, referred_by) values ('930000001', 'Ana', 'x', '70000010', 0, 0, '900000009');
   insert into orders (id, ref, customer_phone, contact_phone, customer_name, customer_address, total, delivery_fee, payment_status, payment_method, items)
-  values ('o1', 'Y-1', '930000001', 'x', 'Ana', 'x', 30, 5, 'pending', 'yape', '[]'),
-         ('o2', 'Y-2', null, 'x', 'Invitado', 'x', 20, 5, 'pending', 'yape', '[]'),
-         ('o3', 'Y-3', '930000001', 'x', 'Ana', 'x', 20, 5, 'pending', 'yape', '[]');
-  update orders set status = 'CANCELADO' where id = 'o3';
+  values ('00000000-0000-4000-8000-000000000001', 'Y-1', '930000001', 'x', 'Ana', 'x', 30, 5, 'pending', 'yape', '[]'),
+         ('00000000-0000-4000-8000-000000000002', 'Y-2', null, 'x', 'Invitado', 'x', 20, 5, 'pending', 'yape', '[]'),
+         ('00000000-0000-4000-8000-000000000003', 'Y-3', '930000001', 'x', 'Ana', 'x', 20, 5, 'pending', 'yape', '[]');
+  update orders set status = 'CANCELADO' where id = '00000000-0000-4000-8000-000000000003';
 
   -- 1. Confirmar: pagado, puntos, bono, historial.
-  r := confirmar_pago_manual('o1', cuenta, rangos);
-  if (r->>'ya_estaba')::boolean or (select payment_status from orders where id = 'o1') <> 'paid' then raise exception '1 no quedó pagado: %', r; end if;
+  r := confirmar_pago_manual('00000000-0000-4000-8000-000000000001', cuenta, rangos);
+  if (r->>'ya_estaba')::boolean or (select payment_status from orders where id = '00000000-0000-4000-8000-000000000001') <> 'paid' then raise exception '1 no quedó pagado: %', r; end if;
   if (select points from customers where phone = '930000001') <> 25 + 120 then raise exception '1 puntos: %', (select points from customers where phone = '930000001'); end if;
   if (select points from customers where phone = '900000009') <> 400 then raise exception '1 quien invita no recibió su bono'; end if;
   select count(*) into n from transactions where customer_phone in ('930000001', '900000009');
   if n <> 3 then raise exception '1 movimientos: % (esperaba 3)', n; end if;
 
   -- 2. Confirmar dos veces: no se toca nada.
-  r := confirmar_pago_manual('o1', cuenta, rangos);
+  r := confirmar_pago_manual('00000000-0000-4000-8000-000000000001', cuenta, rangos);
   if not (r->>'ya_estaba')::boolean or (select points from customers where phone = '930000001') <> 145 then raise exception '2 doble confirmación: %', r; end if;
 
   -- 3. Un pedido cancelado no se confirma.
-  r := confirmar_pago_manual('o3', cuenta, rangos);
-  if not (r->>'ya_estaba')::boolean or (select payment_status from orders where id = 'o3') = 'paid' then raise exception '3 confirmó un cancelado'; end if;
+  r := confirmar_pago_manual('00000000-0000-4000-8000-000000000003', cuenta, rangos);
+  if not (r->>'ya_estaba')::boolean or (select payment_status from orders where id = '00000000-0000-4000-8000-000000000003') = 'paid' then raise exception '3 confirmó un cancelado'; end if;
 
   -- 4. Invitado (sin cuenta): solo se marca pagado.
-  r := confirmar_pago_manual('o2', null, rangos);
-  if (select payment_status from orders where id = 'o2') <> 'paid' or r->'customer' <> 'null'::jsonb then raise exception '4 invitado: %', r; end if;
+  r := confirmar_pago_manual('00000000-0000-4000-8000-000000000002', null, rangos);
+  if (select payment_status from orders where id = '00000000-0000-4000-8000-000000000002') <> 'paid' or r->'customer' <> 'null'::jsonb then raise exception '4 invitado: %', r; end if;
 
   -- 5. Quien invitó borró su cuenta: el pedido se crea igual y no hay bono (antes: fallaba entero).
   insert into customers (phone, name, pin, dni, points, total_orders, referred_by) values ('930000002', 'Beto', 'x', '70000011', 0, 0, '900000099');
