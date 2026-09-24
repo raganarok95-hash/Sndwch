@@ -1091,3 +1091,34 @@ del propio volcado, no contra el esquema real con sus restricciones, funciones y
   la foto, y el workflow queda en rojo con el diff.
 - El arranque del Postgres local se movió a `scripts/pg-local/postgres.mjs`, compartido por el
   chequeo del respaldo y el de la base, en vez de copiarse.
+
+## 2026-09-24 · Paso 5 (cierre): el backend real de punta a punta, y confirmar un pago en una transacción
+
+**El backend real corre entero en local** (`npm run check:e2e`, ~4 s): Postgres con el esquema
+real, PostgREST delante (lo mismo que pone Supabase) y la edge function `api` tal cual, en Deno.
+Nada simulado salvo terceros sin clave (Culqi, Resend, Meta, push), que el propio código salta.
+Seis flujos, cada uno entrando por la API y mirando la base después: registrarse y entrar; pagar
+con crédito (total justo, saldo, pedido, libro de crédito, puntos = historial); un total
+manipulado se rechaza sin tocar nada; Yape pendiente reserva stock y cancelarlo lo devuelve; el
+dueño confirma el Yape (puntos una sola vez aunque confirme dos veces); cancelar un pedido pagado
+con crédito deja la cuenta exactamente como estaba. Se vieron fallar con un defecto de crédito
+inyectado en el servidor.
+
+**`confirmManualPayment` tenía los mismos defectos que el paso 4 corrigió al crear pedidos**: el
+pedido se marcaba pagado en una petición y los puntos en otras (si fallaban, pagado sin puntos
+para siempre), y el bono de referido se decidía con una lectura previa al lock. Ahora
+`confirmar_pago_manual` (migración 20260924182608) marca pagado y acredita la cuenta en una
+transacción; un doble clic gana una sola vez.
+
+**Un defecto que tenían las dos, crear y confirmar**: el historial exige que el cliente exista, y
+el bono se anotaba a nombre de quien invitó sin comprobar que su cuenta siguiera existiendo. Si la
+había borrado, el primer pedido pagado del invitado fallaba entero —con tarjeta, después de
+cobrar—. `tests-db/confirmar-pago.sql` lo reproduce: sin la comprobación, revienta con la clave
+foránea.
+
+**Una sola copia de las reglas de la cuenta**: `aplicar_pedido_a_la_cuenta` (saldo bajo lock,
+bono, rango, historial) la usan `crear_pedido` y `confirmar_pago_manual`.
+
+**Proceso**: la migración se probó en el Postgres local ANTES de aplicarla a la base real. Y
+guardar la foto del esquema y los tipos después de una migración ya no es un comando armado a
+mano: `scripts/pg-local/guardar-foto.mjs` y `guardar-tipos.mjs`.

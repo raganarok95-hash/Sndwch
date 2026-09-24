@@ -15,6 +15,15 @@ anótalo acá.
 
 ## Capacidades y limitaciones técnicas descubiertas (mantener actualizado)
 
+- **Las descargas de GitHub Releases SÍ pasan el proxy** (comprobado el 2026-09-24): así se baja
+  PostgREST para `npm run check:e2e` (`scripts/e2e/servidor-local.mjs` lo guarda en `.cache/`,
+  fuera de git). Si algún día deja de pasar, el chequeo lo DICE en vez de saltarse.
+- **Postgres 16 está instalado** (`/usr/lib/postgresql/16/bin`) y las pruebas levantan uno propio
+  (`scripts/pg-local/postgres.mjs`). La base real es Postgres 17: el cargador local quita el
+  permiso `MAINTAIN`, que el 16 no conoce.
+- **Node 22 corre TypeScript sin compilar** con `--experimental-strip-types`: así los flujos de
+  punta a punta usan el mismo `_shared/dinero.ts` que el servidor.
+
 - **HuggingFace (`huggingface.co`) está BLOQUEADO por el proxy: responde 403** (comprobado
   el 2026-09-24). Toda librería que baje modelos de ahí por defecto (fastembed,
   sentence-transformers, `knowledge-rag`) falla al arrancar. No se reintenta: se baja el

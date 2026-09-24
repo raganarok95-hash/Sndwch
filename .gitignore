@@ -30,3 +30,6 @@ __pycache__/
 # Índice de búsqueda local (knowledge-rag): se regenera con npm run indice
 .knowledge-rag/data/
 .knowledge-rag/models_cache/
+
+# Binarios descargados para las pruebas de punta a punta (PostgREST)
+.cache/

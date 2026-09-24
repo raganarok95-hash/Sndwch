@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20260924173551
+-- foto-tomada-tras-migracion: 20260924182608
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -910,6 +910,77 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_antes customers;
+  v_cli customers;
+  v_bono boolean := false;
+  v_rango text;
+  v_phone text := p_cuenta->>'phone';
+  v_credito numeric := coalesce((p_cuenta->>'credit_delta')::numeric, 0);
+  v_invita text := nullif(p_cuenta->>'referrer_phone', '');
+begin
+  select * into v_antes from public.customers where phone = v_phone for update;
+  if not found then
+    raise exception 'customer_not_found';
+  end if;
+  -- Quien invitó puede haber borrado su cuenta: sin ella no hay a quién darle el bono, y
+  -- anotarlo rompería la clave foránea del historial y con ella el pedido entero.
+  if v_invita is not null and not exists (select 1 from public.customers where phone = v_invita) then
+    v_invita := null;
+  end if;
+  v_cli := public.finalize_order_customer_update(
+    v_phone,
+    coalesce((p_cuenta->>'points_delta')::int, 0),
+    v_credito,
+    1,
+    p_cuenta->>'last_address',
+    coalesce((p_cuenta->>'redeemed_delta')::int, 0),
+    v_invita,
+    case when v_invita is null then 0 else coalesce((p_cuenta->>'referral_bonus')::int, 0) end,
+    case when v_invita is null then 0 else (p_cuenta->>'referrer_bonus')::int end
+  );
+  v_bono := coalesce(v_cli.referral_bonus_granted, false) and not coalesce(v_antes.referral_bonus_granted, false);
+  select r->>'name' into v_rango
+    from jsonb_array_elements(p_rangos) r
+   where (r->>'min')::int <= v_cli.total_orders
+   order by (r->>'min')::int desc
+   limit 1;
+
+  insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
+  values (v_phone, 'earn_confirmed', coalesce((p_cuenta->>'base_points')::int, 0), p_cuenta->>'descripcion', p_ref, true);
+
+  if v_credito <> 0 then
+    insert into public.credit_ledger (customer_phone, delta, reason)
+    values (v_phone, v_credito, 'Pedido pagado con crédito (' || p_ref || ')');
+  end if;
+
+  if p_cuenta->>'reward_label' is not null then
+    insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
+    values (v_phone, 'redeem', -(p_cuenta->>'reward_pts')::int,
+            (p_cuenta->>'reward_label') || ' canjeado en pedido ' || p_ref, p_ref, true);
+  end if;
+
+  if v_bono then
+    insert into public.transactions (customer_phone, type, points, description, confirmed)
+    values (v_phone, 'earn_confirmed', (p_cuenta->>'referral_bonus')::int, 'Bono por referido', true);
+    insert into public.transactions (customer_phone, type, points, description, confirmed)
+    values (v_invita, 'earn_confirmed',
+            coalesce((p_cuenta->>'referrer_bonus')::int, (p_cuenta->>'referral_bonus')::int),
+            'Sándwich gratis por invitar a ' || coalesce(p_cuenta->>'nombre', ''), true);
+  end if;
+
+  return jsonb_build_object('customer', to_jsonb(v_cli), 'bono_referido', v_bono,
+                            'pedidos_antes', v_antes.total_orders, 'rango', v_rango);
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -1018,6 +1089,35 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb DEFAULT NULL::jsonb, p_rangos jsonb DEFAULT '[]'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_pedido orders;
+  v_cuenta jsonb;
+begin
+  update public.orders set payment_status = 'paid'
+   where id = p_order_id and payment_status is distinct from 'paid' and status is distinct from 'CANCELADO'
+  returning * into v_pedido;
+  if v_pedido is null then
+    return jsonb_build_object('ya_estaba', true);
+  end if;
+  if p_cuenta is not null and exists (select 1 from public.customers where phone = p_cuenta->>'phone') then
+    v_cuenta := public.aplicar_pedido_a_la_cuenta(p_cuenta, v_pedido.ref, p_rangos);
+  end if;
+  return jsonb_build_object(
+    'ya_estaba', false,
+    'order', to_jsonb(v_pedido),
+    'customer', v_cuenta->'customer',
+    'bono_referido', coalesce((v_cuenta->>'bono_referido')::boolean, false)
+  );
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.crear_pedido(p_pedido jsonb, p_cuenta jsonb DEFAULT NULL::jsonb, p_rangos jsonb DEFAULT '[]'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1025,37 +1125,11 @@ CREATE OR REPLACE FUNCTION public.crear_pedido(p_pedido jsonb, p_cuenta jsonb DE
  SET search_path TO 'public'
 AS $function$
 declare
-  v_antes customers;
-  v_cli customers;
-  v_bono boolean := false;
-  v_rango text;
+  v_cuenta jsonb;
   v_pedido orders;
-  v_ref text := p_pedido->>'ref';
-  v_phone text := p_cuenta->>'phone';
-  v_credito numeric := coalesce((p_cuenta->>'credit_delta')::numeric, 0);
 begin
   if p_cuenta is not null then
-    select * into v_antes from public.customers where phone = v_phone for update;
-    if not found then
-      raise exception 'customer_not_found';
-    end if;
-    v_cli := public.finalize_order_customer_update(
-      v_phone,
-      (p_cuenta->>'points_delta')::int,
-      v_credito,
-      1,
-      p_cuenta->>'last_address',
-      coalesce((p_cuenta->>'redeemed_delta')::int, 0),
-      nullif(p_cuenta->>'referrer_phone', ''),
-      coalesce((p_cuenta->>'referral_bonus')::int, 0),
-      (p_cuenta->>'referrer_bonus')::int
-    );
-    v_bono := coalesce(v_cli.referral_bonus_granted, false) and not coalesce(v_antes.referral_bonus_granted, false);
-    select r->>'name' into v_rango
-      from jsonb_array_elements(p_rangos) r
-     where (r->>'min')::int <= v_cli.total_orders
-     order by (r->>'min')::int desc
-     limit 1;
+    v_cuenta := public.aplicar_pedido_a_la_cuenta(p_cuenta, p_pedido->>'ref', p_rangos);
   end if;
 
   insert into public.orders (
@@ -1068,40 +1142,15 @@ begin
     x.promised_from, x.promised_to, x.ref, x.customer_phone, x.contact_phone, x.customer_name, x.customer_email,
     x.customer_address, x.lat, x.lon, x.group_code, x.recurring_id, x.summary, x.notes, x.total, x.delivery_fee,
     x.delivery_km, x.delivery_zone, 'RECIBIDO', x.payment_status, x.payment_id, x.payment_method, x.items,
-    x.delivery_time, x.redeemed_reward, x.redeemed_reward_pts, v_rango
+    x.delivery_time, x.redeemed_reward, x.redeemed_reward_pts, v_cuenta->>'rango'
   from jsonb_populate_record(null::public.orders, p_pedido) x
   returning * into v_pedido;
 
-  if p_cuenta is not null then
-    insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
-    values (v_phone, 'earn_confirmed', (p_cuenta->>'base_points')::int, p_cuenta->>'descripcion', v_ref, true);
-
-    if v_credito <> 0 then
-      insert into public.credit_ledger (customer_phone, delta, reason)
-      values (v_phone, v_credito, 'Pedido pagado con crédito (' || v_ref || ')');
-    end if;
-
-    if p_cuenta->>'reward_label' is not null then
-      insert into public.transactions (customer_phone, type, points, description, order_ref, confirmed)
-      values (v_phone, 'redeem', -(p_cuenta->>'reward_pts')::int,
-              (p_cuenta->>'reward_label') || ' canjeado en pedido ' || v_ref, v_ref, true);
-    end if;
-
-    if v_bono then
-      insert into public.transactions (customer_phone, type, points, description, confirmed)
-      values (v_phone, 'earn_confirmed', (p_cuenta->>'referral_bonus')::int, 'Bono por referido', true);
-      insert into public.transactions (customer_phone, type, points, description, confirmed)
-      values (p_cuenta->>'referrer_phone', 'earn_confirmed',
-              coalesce((p_cuenta->>'referrer_bonus')::int, (p_cuenta->>'referral_bonus')::int),
-              'Sándwich gratis por invitar a ' || coalesce(p_cuenta->>'nombre', ''), true);
-    end if;
-  end if;
-
   return jsonb_build_object(
     'order', to_jsonb(v_pedido),
-    'customer', case when v_cli is null then null else to_jsonb(v_cli) end,
-    'bono_referido', v_bono,
-    'pedidos_antes', case when v_antes is null then null else v_antes.total_orders end
+    'customer', v_cuenta->'customer',
+    'bono_referido', coalesce((v_cuenta->>'bono_referido')::boolean, false),
+    'pedidos_antes', (v_cuenta->>'pedidos_antes')::int
   );
 end;
 $function$
@@ -1992,6 +2041,8 @@ revoke all on function public.adjust_credit_balance(p_phone text, p_delta numeri
 
 revoke all on function public.admin_adjust_credit(p_phone text, p_delta numeric) from public; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to postgres; grant execute on function public.admin_adjust_credit(p_phone text, p_delta numeric) to service_role;
 
+revoke all on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) from public; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to postgres; grant execute on function public.aplicar_pedido_a_la_cuenta(p_cuenta jsonb, p_ref text, p_rangos jsonb) to service_role;
+
 revoke all on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) from public; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to postgres; grant execute on function public.check_rate_limit(p_key text, p_limit integer, p_window_minutes integer) to service_role;
 
 revoke all on function public.claim_discovery_challenge(p_phone text, p_month text, p_bonus integer) from public; grant execute on function public.claim_discovery_challenge(p_phone text, p_month text, p_bonus integer) to postgres; grant execute on function public.claim_discovery_challenge(p_phone text, p_month text, p_bonus integer) to service_role;
@@ -2001,6 +2052,8 @@ revoke all on function public.claim_monthly_challenge(p_phone text, p_month text
 revoke all on function public.cleanup_old_rate_limits() from public; grant execute on function public.cleanup_old_rate_limits() to postgres; grant execute on function public.cleanup_old_rate_limits() to service_role;
 
 revoke all on function public.confirm_weekly_plan_credit(p_plan_id uuid) from public; grant execute on function public.confirm_weekly_plan_credit(p_plan_id uuid) to postgres; grant execute on function public.confirm_weekly_plan_credit(p_plan_id uuid) to service_role;
+
+revoke all on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.confirmar_pago_manual(p_order_id text, p_cuenta jsonb, p_rangos jsonb) to service_role;
 
 revoke all on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) from public; grant execute on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) to postgres; grant execute on function public.crear_pedido(p_pedido jsonb, p_cuenta jsonb, p_rangos jsonb) to service_role;
 

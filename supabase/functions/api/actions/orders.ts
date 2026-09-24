@@ -1880,72 +1880,53 @@ export async function actAdminOrders(b: any) {
 // legado contra entrega) se confirma manualmente por un operador, aquí es donde se
 // otorgan los puntos (nunca antes), replicando la misma lógica de "puntos solo tras
 // pago confirmado" que usa actPlaceOrder para tarjeta/crédito/recompensa.
-async function confirmManualPayment(order: any) {
-  // Parte de un pedido grupal repartido: si con este pago ya pagaron todos, el grupo sale
-  // sin esperar al plazo. Va ANTES del return de abajo: las partes de los invitados no
-  // tienen teléfono de cliente, y justo esas son las que suelen pagarse al último.
+// ── CONFIRMAR UN PAGO MANUAL ES UNA SOLA OPERACIÓN (2026-09-24) ─────────────────────────
+// Marcar el pedido pagado, sumar los puntos, el bono de referido y el historial pasa en UNA
+// transacción, dentro de `confirmar_pago_manual` (migración 20260924182608). Antes el pedido se
+// marcaba pagado en una petición y los puntos en otras: si una fallaba, el pedido quedaba
+// pagado SIN puntos para siempre (reconfirmar ya no hacía nada), y el bono de referido se
+// decidía con una lectura previa al lock. Devuelve null si el pedido ya estaba pagado o
+// cancelado (doble toque, reintento de red): entonces no se tocó nada.
+async function confirmManualPayment(order: any): Promise<{ order: any } | null> {
+  const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
+  let c: any = null;
+  if (order.customer_phone) {
+    const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
+    c = rows[0] || null;
+  }
+  // Puntos solo sobre la comida, nunca sobre el delivery (igual que al crear el pedido). Quien
+  // invitó se PROPONE; la base decide bajo lock si el bono corresponde y si su cuenta existe.
+  const earnedPoints = pointsFor(order.total, order.delivery_fee);
+  const cuenta = c ? {
+    phone: order.customer_phone,
+    points_delta: earnedPoints,
+    credit_delta: 0,
+    redeemed_delta: 0,
+    last_address: order.customer_address,
+    referrer_phone: c.referred_by || null,
+    referral_bonus: c.referred_by ? REFERRAL_BONUS_POINTS : 0,
+    referrer_bonus: c.referred_by ? REFERRER_REWARD_POINTS : 0,
+    base_points: earnedPoints,
+    descripcion: "Pedido SND//WCH (" + methodLabel + ")",
+    nombre: order.customer_name,
+  } : null;
+  const r = await rpc("confirmar_pago_manual", {
+    p_order_id: String(order.id),
+    p_cuenta: cuenta,
+    p_rangos: RANKS.map((x) => ({ min: x.minOrders, name: x.name })),
+  });
+  if (r.ya_estaba) return null;
+
+  // Lo de abajo es de apoyo: nada de esto puede deshacer un pago ya confirmado.
+  // Parte de un pedido grupal repartido: si con este pago ya pagaron todos, el grupo sale sin
+  // esperar al plazo. Las partes de los invitados no tienen cuenta y suelen pagarse al último.
   try {
-    const gRow = order.id ? await sbGet("orders", `id=eq.${encodeURIComponent(order.id)}&select=group_code`) : [];
-    if (gRow[0]?.group_code) await cerrarGrupoSiTodosPagaron(gRow[0].group_code);
+    if (r.order?.group_code) await cerrarGrupoSiTodosPagaron(r.order.group_code);
   } catch (e) {
     console.error("cerrarGrupoSiTodosPagaron", e);
   }
-  if (!order.customer_phone) return;
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
-  if (!rows.length) return;
-  const c = rows[0];
-  const methodLabel = order.payment_method === "yape" ? "Yape" : order.payment_method === "plin" ? "Plin" : "pago contra entrega";
-  // Igual que en finalizeAndInsertOrder — los puntos se ganan solo sobre la comida, nunca
-  // sobre el delivery (pass-through al motorizado, sin margen real detrás).
-  const earnedPoints = pointsFor(order.total, order.delivery_fee);
-
-  // Mismo fix que en finalizeAndInsertOrder — referral_bonus_granted (monotónico) en vez
-  // de total_orders===0 como proxy de "primer pedido" (hallazgo de auditoría, CRÍTICO).
-  let referrerPhone: string | null = null;
-  if (c.referred_by && !c.referral_bonus_granted) {
-    const referrerRows = await sbGet("customers", `phone=eq.${encodeURIComponent(c.referred_by)}&select=phone`);
-    if (referrerRows.length) referrerPhone = c.referred_by;
-  }
-
-  // Una sola llamada atómica (ver migración finalize_order_customer_update) en vez de
-  // varias secuenciales — mismo motivo que en actPlaceOrder.
-  await rpc("finalize_order_customer_update", {
-    p_phone: order.customer_phone,
-    p_points_delta: earnedPoints,
-    p_credit_delta: 0,
-    p_total_orders_delta: 1,
-    p_last_address: order.customer_address,
-    p_total_redeemed_delta: 0,
-    p_referrer_phone: referrerPhone,
-    p_referral_bonus: referrerPhone ? REFERRAL_BONUS_POINTS : 0,
-    p_referrer_bonus: referrerPhone ? REFERRER_REWARD_POINTS : 0,
-  });
-
-  await sbInsert("transactions", {
-    customer_phone: order.customer_phone,
-    type: "earn_confirmed",
-    points: earnedPoints,
-    description: "Pedido SND//WCH (" + methodLabel + ")",
-    order_ref: order.ref,
-    confirmed: true,
-  });
-  if (referrerPhone) {
-    await sbInsert("transactions", {
-      customer_phone: order.customer_phone,
-      type: "earn_confirmed",
-      points: REFERRAL_BONUS_POINTS,
-      description: "Bono por referido",
-      confirmed: true,
-    });
-    await sbInsert("transactions", {
-      customer_phone: referrerPhone,
-      type: "earn_confirmed",
-      points: REFERRER_REWARD_POINTS,
-      description: "Sándwich gratis por invitar a " + order.customer_name,
-      confirmed: true,
-    });
-    await rewardReferrer(referrerPhone, order.customer_name);
-  }
+  if (!c) return { order: r.order };
+  if (r.bono_referido && c.referred_by) await rewardReferrer(c.referred_by, order.customer_name);
 
   // Recién ACÁ un pedido Yape/Plin se vuelve una venta real (el admin confirmó que el
   // dinero llegó), así que este es el momento de reportarlo a Meta — no cuando el cliente
@@ -1980,6 +1961,7 @@ async function confirmManualPayment(order: any) {
   } catch {
     // un push fallido no debe bloquear la confirmación del pago
   }
+  return { order: r.order };
 }
 
 // CANCELADO deliberadamente NO está aquí: solo se llega a ese estado a través de
@@ -2070,8 +2052,9 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
     // si dos solicitudes llegan casi juntas (doble clic en "ENTREGADO"), solo una de ellas
     // encuentre la fila para actualizar — la otra recibe un array vacío y no vuelve a
     // otorgar puntos por el mismo pedido (ver el mismo patrón en actAdminConfirmPayment).
-    const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid`, { payment_status: "paid" });
-    if (claim.length) await confirmManualPayment(order);
+    // confirmar_pago_manual hace de reclamo atómico: solo una de dos solicitudes simultáneas
+    // (doble clic en «ENTREGADO») encuentra el pedido sin pagar y otorga los puntos.
+    await confirmManualPayment({ ...order, id: orderId });
   }
 
   // El filtro por el estado que se leyó arriba hace de reclamo atómico. Sin él, este
@@ -2206,14 +2189,15 @@ export async function actAdminConfirmPayment(b: any) {
   // ganarlo UNA vez — antes se leía payment_status, se otorgaban puntos, y RECIÉN AL FINAL
   // se marcaba paid, dejando una ventana donde dos solicitudes casi simultáneas otorgaban
   // el bono/puntos dos veces para el mismo pedido (confirmado en vivo durante la auditoría).
-  const claim = await sbUpdate("orders", `id=eq.${encodeURIComponent(orderId)}&payment_status=neq.paid&status=neq.CANCELADO`, { payment_status: "paid" });
-  if (!claim.length) throw new ApiError("Este pedido ya estaba confirmado o fue cancelado.", 409);
-  await confirmManualPayment(order);
+  // El reclamo atómico vive en confirmar_pago_manual: marca pagado SOLO si no lo estaba y no
+  // está cancelado, y en la misma transacción otorga los puntos. Un doble clic gana una vez.
+  const confirmado = await confirmManualPayment({ ...order, id: orderId });
+  if (!confirmado) throw new ApiError("Este pedido ya estaba confirmado o fue cancelado.", 409);
   // Confirmar que un Yape/Plin de verdad llegó es tan sensible como cancelar un pedido o
   // dar puntos manuales (ambos ya se auditan) — no quedaba ningún rastro de quién lo
   // confirmó ni cuándo (hallazgo de auditoría de código, ALTO).
   await logAdminAction(s.phone, "confirm-payment", orderId, { paymentMethod: order.payment_method, total: order.total });
-  return { success: true, order: claim[0] };
+  return { success: true, order: confirmado.order };
 }
 
 // Captura de pantalla del comprobante de transferencia (item 12 de la lista de fricción

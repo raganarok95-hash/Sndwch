@@ -279,6 +279,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
    script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
    verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+5h. `npm run check:e2e` — flujos de punta a punta contra el backend REAL levantado en local:
+   el `api` en Deno + PostgREST + Postgres con el esquema real (`scripts/e2e/servidor-local.mjs`).
+   Cada flujo (`tests-e2e/flujos.mjs`) entra por la API y después mira la base. Es lo único que
+   ejecuta el servidor y la base juntos: un flujo de dinero nuevo (cobrar, devolver, confirmar)
+   se agrega acá. ~4 s.
 5g. `tests/panel-todas-las-herramientas.spec.ts` abre las 30 herramientas del panel una
    por una y comprueba que ninguna reviente, se quede en "No se pudo cargar" con una
    respuesta válida, ni se pinte con la piel del cliente. La lista sale de

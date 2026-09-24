@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20260924173551
+// generado-contra-migracion: 20260924182608
 export type Json =
   | string
   | number
@@ -1812,6 +1812,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      aplicar_pedido_a_la_cuenta: {
+        Args: { p_cuenta: Json; p_rangos?: Json; p_ref: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_minutes: number }
         Returns: boolean
@@ -1930,6 +1934,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      confirmar_pago_manual: {
+        Args: { p_cuenta?: Json; p_order_id: string; p_rangos?: Json }
+        Returns: Json
       }
       crear_pedido: {
         Args: { p_cuenta?: Json; p_pedido: Json; p_rangos?: Json }
