@@ -63,6 +63,10 @@ vive en el chat o en `/tmp`, no existe.
 
 - Nada por ahora: todo lo mostrado está decidido.
 
+## Qué prometen y qué existe
+
+Ver `FUNCIONES_PROMETIDAS.md`: cada promesa de cada maqueta contra el código y la base.
+
 ## Datos de muestra dentro de las maquetas
 
 Nombres de clientes, direcciones, precios y el nombre del sándwich secreto de las maquetas
