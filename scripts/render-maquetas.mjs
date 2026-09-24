@@ -46,6 +46,7 @@ export const MAPA = [
   ['tu-pedido-fijo', 'u2.html', 1],
   ['lo-legal', 'u2.html', 2],
   ['mundo-wicho-M22', 'm14.html', 1],
+  ['mundo-wicho-M22-con-puente', 'm22-con-puente.html', 1],
   ['mundo-sando-M15', 'm8.html', 0],
   ['la-puerta-M2', 'm.html', 1],
 ];
