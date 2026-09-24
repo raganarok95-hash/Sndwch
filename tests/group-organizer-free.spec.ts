@@ -48,7 +48,7 @@ test('el grupo muestra cuántos sándwiches faltan para que uno vaya gratis', as
   await page.goto(APP_FILE + '?group=OFI001');
   await page.waitForSelector('text=PEDIDO GRUPAL');
 
-  await expect(page.locator('text=Faltan 2 sándwiches para que uno vaya gratis')).toBeVisible();
+  await expect(page.locator('text=Faltan 2 para que uno vaya gratis')).toBeVisible();
 });
 
 test('al llegar a 5 sándwiches el grupo anuncia que uno va gratis', async ({ page }) => {
@@ -106,7 +106,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
   await expect(page.locator('text=¡Un sándwich va gratis!')).toBeVisible();
 
-  await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
+  await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
@@ -177,9 +177,9 @@ test('un grupo de 4 sándwiches todavía no descuenta nada', async ({ page }) =>
   // comprobado instrumentando el flujo. La pantalla se pinta recién con la última. Es el
   // mismo timeout que ya usan los specs de admin por la misma razón, y no relaja lo que se
   // comprueba: el texto exigido es idéntico.
-  await expect(page.locator('text=Faltan 1 sándwich para que uno vaya gratis')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Faltan 1 para que uno vaya gratis')).toBeVisible({ timeout: 10000 });
 
-  await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
+  await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 

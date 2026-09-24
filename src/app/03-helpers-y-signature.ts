@@ -1569,11 +1569,17 @@ async function doCreateGroupOrder(){
   loadGroupOrder();
   startGroupPoll();
 }
+var _grpDirPedidas=false;
 async function loadGroupOrder(){
   if(!groupCode)return;
   try{
     var res=await api('get-group-order',{token:token,code:groupCode});
     groupData=res;
+    // El envío estimado del organizador sale de su dirección con pin (envioEstimadoGrupo).
+    if(res&&res.isOrganizer&&token&&!myAddresses.length&&!_grpDirPedidas){
+      _grpDirPedidas=true;
+      try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
+    }
     render();
   }catch(e){stopGroupPoll();showToast(e.message);sndScreen='o_home';render();}
 }
@@ -1627,99 +1633,190 @@ async function doCancelGroupOrder(){
   stopGroupPoll();
   sndScreen='o_home';render();
 }
+// ══ PEDIDO GRUPAL (maqueta docs/maquetas/aprobadas/pedido-grupal.png · k1.html #GR) ══════
+// Papel kraft, «QUIÉNES COMEN», una fila por persona con lo que eligió, y la barra partida:
+// «Cerrar y pagar» (cada uno paga lo suyo) a la izquierda, «Yo invito» a la derecha.
+function wmClaro():string{
+  return'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
+}
+function linkDelGrupo():string{return location.origin+location.pathname+'?group='+encodeURIComponent(groupCode||'');}
+async function copiarEnlaceGrupo(){
+  var link=linkDelGrupo();
+  try{await navigator.clipboard.writeText(link);showToast('Enlace copiado. Pásalo por WhatsApp.');}
+  catch(e){shareGroupOrder();}
+}
+// Las personas del grupo, en el orden en que llegaron, con lo suyo sumado.
+function gentePorPersona(g:any):{name:string,labels:string[],suma:number}[]{
+  var orden:string[]=[],por:any={};
+  (g.items||[]).forEach(function(it:any){
+    var n=it.contributorName||'';
+    if(!por[n]){por[n]={name:n,labels:[],suma:0};orden.push(n);}
+    por[n].labels.push(it.label+(it.qty>1?' ×'+it.qty:''));
+    por[n].suma+=it.unitPrice*it.qty;
+  });
+  return orden.map(function(n){return por[n];});
+}
+// El envío todavía no está elegido (sale de la dirección al cerrar). Al organizador se le
+// estima con su primera dirección marcada en el mapa, con la MISMA fórmula que cobra el
+// servidor; quien entra por el link no la conoce, y se le dice que se sabe al cerrar.
+function envioEstimadoGrupo(g:any):{km:number,fee:number}|null{
+  if(!g.isOrganizer)return null;
+  var a=myAddresses.find(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';});
+  if(!a)return null;
+  var km=Math.round(haversineKm(a.lat,a.lon,STORE_LAT,STORE_LON)*DELIVERY_ROAD_FACTOR*100)/100;
+  if(!isFinite(km)||km>DELIVERY_MAX_KM)return null;
+  return{km:km,fee:deliveryFeeForKm(km)};
+}
+// Las cifras de esta pantalla van con dos decimales y en columna, como en la maqueta (7.00).
+function d2(n:number):string{return(Math.round(n*100)/100).toFixed(2);}
+function quienSoyEnElGrupo(g:any):string{
+  return groupJoinName||(g.isOrganizer?(cust&&cust.name?cust.name:g.organizerName):'');
+}
 function sGroupOrder(){
   var g=groupData;
   var bk="stopGroupPoll();sndScreen='o_home';render()";
   if(!g){
-    return H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px" class="fi">'+skeletonCards(3,64)+'</div>'+NAV();
+    return'<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
+      +'<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div></div>';
   }
-  var h=H('PEDIDO GRUPAL',bk)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  h+='<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Pedido<span class="cut-sep" style="color:'+GOLD+'"> // </span>grupal</div>';
-  h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.1em;margin-bottom:16px">Organiza '+esc(g.organizerName)+' · código '+esc(g.code)+'</div>';
-  if(g.status==='open'){
-    var msLeft=new Date(g.expiresAt).getTime()-Date.now();
-    if(msLeft>0){
-      var minsLeft=Math.floor(msLeft/60000),secsLeft=Math.floor((msLeft%60000)/1000);
-      var urgent=msLeft<120000;
-      h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+(urgent?'var(--sw-danger,#ff8888)':'#9DA096')+';letter-spacing:.1em;margin-bottom:14px">Cierra en '+minsLeft+':'+String(secsLeft).padStart(2,'0')+'</div>';
-    }
-  }
-  if(g.isOrganizer&&g.status==='open'){
-    h+=BTN('Compartir link //','shareGroupOrder()');
-  }
-  h+=(g.items.length?g.items.map(function(it){
-    return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 14px;margin:10px 0 0;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(it.label)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+esc(it.contributorName)+'</div></div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(it.unitPrice)+'</div></div>';
-  }).join(''):'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:14px">Nadie agregó su pedido todavía.</div>');
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin:16px 0"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-body,#EFEDE4)">Total</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+'">'+SOLES+pz(g.total)+'</span></div>';
-  // Avance del sándwich gratis del organizador. Es el motor del canal de oficinas: le
-  // da a quien está juntando al grupo una razón concreta para insistirle a un compañero
-  // más, y esa insistencia es la venta que el dueño no puede hacer él mismo.
-  var freeAt=g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES;
-  var swQty=typeof g.sandwichQty==='number'?g.sandwichQty:0;
-  if(g.status==='open'){
-    var falta=Math.max(0,freeAt-swQty);
-    var pctFree=Math.min(100,Math.round(swQty/freeAt*100));
-    h+='<div style="background:var(--sw-card2,#171A14);border:1px solid '+(falta?'var(--sw-border,#2C3228)':GOLD)+';border-radius:10px;padding:14px 16px;margin-bottom:16px">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(falta?'var(--sw-text,#FFFFFF)':GOLD)+'">'
-      +(falta?('Faltan '+falta+' sándwich'+(falta===1?'':'es')+' para que uno vaya gratis'):'¡Un sándwich va gratis!')+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:3px">'
-      +(falta?('Con '+freeAt+' o más, el 15CM más barato del grupo no se cobra.'):'Se descuenta el 15CM más barato al cerrar y pagar.')+'</div>'
-      +'<div style="height:4px;background:var(--sw-bg,#12150F);border-radius:4px;margin-top:10px;overflow:hidden"><div style="height:100%;width:'+pctFree+'%;background:'+GOLD+'"></div></div>'
-      +'</div>';
-  }
-  // SE ACABÓ EL TIEMPO PERO EL PEDIDO NO SE PERDIÓ (2026-09-23, decisión del dueño).
-  // Antes acá solo decía "ya se cerró" y el organizador se quedaba SIN botón de pagar: todo
-  // lo que los demás habían sumado se perdía. Y se perdía por mirarlo, porque leer el grupo
-  // es lo que lo marca cerrado. Ahora los 15 minutos significan "ya no entra nadie más": se
-  // paga con los que alcanzaron, y se dice en la misma pantalla por qué no hay uno gratis
-  // en vez de que el cliente lo descubra al final.
-  if(g.status!=='open'){
-    if(g.canPay){
-      var faltaron=typeof g.missingForFree==='number'?g.missingForFree:0;
-      h+='<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
-        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">Se acabó el tiempo para sumarse</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:3px">'
-        +(g.freeApplies
-          ?'Igual llegaron: el 15CM más barato no se cobra.'
-          :('No llegaron a '+(g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES)+' sándwiches'+(faltaron?(' — faltaron '+faltaron):'')+', así que esta vez ninguno va gratis.'))
-        +' Puedes pagar con lo que hay.</div></div>';
-      // El botón vive acá y no en el bloque de arriba a propósito: ese solo se pinta con el
-      // grupo abierto, y este caso es justamente el grupo ya cerrado. Sin esta línea el
-      // organizador ve el aviso y sigue sin poder hacer nada con él.
-      h+=BTN('Pagar con los que hay //','doCloseGroupOrder()');
-      h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Cancelar pedido grupal</div>';
-    }else{
-      h+='<div style="text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em">'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':g.status==='paid'?'Este pedido grupal ya se pagó':'Este pedido grupal ya se cerró')+'</div>';
-    }
-  }
-  if(g.status==='open'){
-    // Antes esta sección solo se mostraba a quien NO organizaba — quien creó el pedido
-    // grupal podía compartir el link y cerrar/cobrar, pero nunca agregar su propio
-    // sándwich (hallazgo reportado en vivo). Ahora se muestra siempre que el pedido
-    // siga abierto, sin importar quién sea.
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
-    h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:12px">Agregar mi pedido //</div>';
-    h+=INP('grp-name','Tu nombre','text',groupJoinName||(g.isOrganizer&&cust?cust.name:''),'clientes');
-    h+='<div style="display:flex;gap:8px;margin:10px 0"><div onclick="groupSize=\'15\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='15'?GOLD:'#171A14')+';color:'+(groupSize==='15'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">15CM</div><div onclick="groupSize=\'30\';render()" style="flex:1;text-align:center;padding:10px;border-radius:8px;cursor:pointer;background:'+(groupSize==='30'?GOLD:'#171A14')+';color:'+(groupSize==='30'?'var(--sw-on-gold,#241a08)':'#9DA096')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600">30CM</div></div>';
-    h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
-      var price=groupSize==='15'?s.p15:s.p30;
-      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(price)+'</div></div><button onclick="doAddGroupItem(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
+  var abierto=g.status==='open';
+  var repartido=g.status==='splitting'||(g.status==='paid'&&g.partes&&g.partes.length);
+  var puedeCerrar=g.isOrganizer&&(abierto||g.canPay);
+  var h='<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
+    +'<div class="tit"><em>Pedido grupal · #'+esc(g.code)+'</em><b>QUIÉNES<br>COMEN</b></div>';
+  if(abierto)h+='<button class="link" onclick="copiarEnlaceGrupo()"><s>'+esc(linkDelGrupo().replace(/^https?:\/\//,''))+'</s><u>Copiar enlace</u></button>';
+  if(repartido){
+    h+=partesDelGrupoHTML(g);
+  }else{
+    var gente=gentePorPersona(g);
+    h+='<div class="gente">'+gente.map(function(p){
+      return'<div class="g"><k>'+esc((p.name.trim()[0]||'?').toUpperCase())+'</k><div class="t"><b>'+esc(p.name)+'</b><s>'+esc(p.labels.join(' + '))+'</s></div><p>'+d2(p.suma)+'</p></div>';
     }).join('');
-    // Antes solo se podían agregar Signatures — quien solo quería sumar una bebida sin
-    // sándwich (o completar la suya) no tenía forma de hacerlo (hallazgo de auditoría UX).
-    h+='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin:14px 0 12px">Bebidas y sides //</div>';
-    h+=SIDES.map(function(s){
-      return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+s.l+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+s.s+'</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p)+'</div></div><button onclick="doAddGroupSide(\''+s.id+'\')" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px">Agregar</button></div>';
-    }).join('');
-    h+='<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+';margin-top:8px;min-height:14px">'+esc(groupMsg)+'</div>';
-    if(g.isOrganizer){
-      h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
-      h+=BTN('Cerrar y pagar //','doCloseGroupOrder()');
-      h+='<div onclick="doCancelGroupOrder()" style="text-align:center;margin-top:14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Cancelar pedido grupal</div>';
+    if(abierto){
+      var ms=new Date(g.expiresAt).getTime()-Date.now();
+      var min=Math.max(0,Math.ceil(ms/60000));
+      // El sándwich gratis del organizador va en esta misma fila: es la razón concreta para
+      // insistirle a uno más, y la maqueta no tiene otra fila donde ponerlo sin empujar el total.
+      var freeAt=g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES;
+      var swQty=typeof g.sandwichQty==='number'?g.sandwichQty:0;
+      var falta=Math.max(0,freeAt-swQty);
+      h+='<div class="g esp'+(ms<120000?' urge':'')+'"><k>?</k><div class="t"><b>'+(gente.length?'¿Falta alguien?':'Nadie eligió todavía')+'</b><s>'+(min===1?'Les queda 1 minuto':'Les quedan '+min+' minutos')+'</s>'
+        +'<s class="oro">'+(falta?('Faltan '+falta+' para que uno vaya gratis'):'¡Un sándwich va gratis!')+'</s></div><p>'+swQty+'/'+freeAt+'</p></div>';
     }
+    h+='</div>';
   }
-  h+='</div>'+NAV();
-  return h;
+  h+='<div class="sello" aria-hidden="true"><img class="av" src="img/marca/avatar-1024-transparente.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
+  // Se acabó el tiempo pero el pedido no se perdió (2026-09-23): los 15 minutos significan
+  // «ya no entra nadie más», se paga con los que alcanzaron y se dice por qué no hubo gratis.
+  if(!abierto&&g.canPay&&!repartido){
+    var faltaron=typeof g.missingForFree==='number'?g.missingForFree:0;
+    h+='<div class="aviso"><b>Se acabó el tiempo para sumarse</b><s>'
+      +(g.freeApplies?'Igual llegaron: el 15CM más barato no se cobra.'
+        :('No llegaron a '+(g.organizerFreeAt||ORGANIZER_FREE_MIN_SANDWICHES)+' sándwiches'+(faltaron?(' — faltaron '+faltaron):'')+', así que esta vez ninguno va gratis.'))
+      +' Puedes pagar con lo que hay.</s></div>';
+  }
+  if(!repartido&&(abierto||g.canPay)){
+    var gente2=gentePorPersona(g);
+    var env=envioEstimadoGrupo(g);
+    var n=Math.max(1,gente2.length);
+    var yo=quienSoyEnElGrupo(g);
+    var mia=gente2.find(function(p){return p.name===yo;});
+    h+='<div class="cta">';
+    h+='<div class="l"><span>'+(env?'Envío '+env.km.toFixed(1)+' km · se parte entre todos':'Envío · se parte entre todos')+'</span><span>'+(env?d2(env.fee):'al cerrar')+'</span></div>';
+    if(mia)h+='<div class="l"><span>Tu parte por ahora</span><span>'+d2(mia.suma+(env?Math.floor(env.fee*100/n)/100:0))+'</span></div>';
+    h+='<div class="tt"><em>Van</em><b>'+SOLES_TXT+pz((g.total||0)+(env?env.fee:0))+'</b></div></div>';
+  }
+  if(abierto)h+=sumarAlGrupoHTML(g);
+  else if(!g.canPay&&!repartido){
+    h+='<div class="aviso"><b>'+(g.status==='cancelled'?'Este pedido grupal fue cancelado':g.status==='paid'?'Este pedido grupal ya se pagó':'Este pedido grupal ya se cerró')+'</b></div>';
+  }
+  if(puedeCerrar&&!repartido){
+    h+='<button class="cancelar" onclick="doCancelGroupOrder()">Cancelar pedido grupal</button>';
+    h+=botonesCierreGrupo();
+  }
+  return h+'</div>';
+}
+// Lo que cada uno suma: nombre, tamaño y la carta. Mismo action de siempre (add-group-item).
+function sumarAlGrupoHTML(g:any):string{
+  var h='<div class="sumar"><em>Suma lo tuyo</em>'
+    +'<input id="grp-name" aria-label="Tu nombre" placeholder="Tu nombre" autocomplete="given-name" value="'+esc(groupJoinName||(g.isOrganizer&&cust?cust.name:''))+'">'
+    +'<div class="tam" role="radiogroup" aria-label="Tamaño">'
+    +['15','30'].map(function(sz){return'<button role="radio" aria-checked="'+(groupSize===sz)+'" class="'+(groupSize===sz?'on':'')+'" onclick="groupSize=\''+sz+'\';render()">'+sz+'CM</button>';}).join('')+'</div>';
+  h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
+    return'<div class="it"><div class="t"><b>'+esc(s.n)+'</b><s>'+esc(s.s)+' · '+d2(groupSize==='15'?s.p15:s.p30)+'</s></div><button onclick="doAddGroupItem(\''+s.id+'\')">Agregar</button></div>';
+  }).join('');
+  h+=SIDES.map(function(s){
+    return'<div class="it"><div class="t"><b>'+esc(s.l)+'</b><s>'+esc(s.s)+' · '+d2(s.p)+'</s></div><button onclick="doAddGroupSide(\''+s.id+'\')">Agregar</button></div>';
+  }).join('');
+  return h+'<div class="msg" role="status">'+esc(groupMsg)+'</div></div>';
+}
+// Los dos cierres del grupo. «Cerrar y pagar»: cada uno paga lo suyo (decisión del dueño,
+// 2026-09-24) — el servidor crea un pedido Yape por persona con su parte del envío
+// (actions/group.ts · repartirGrupo). «Yo invito»: el organizador paga todo en un pedido.
+function botonesCierreGrupo():string{
+  return'<div class="go sw-barra"><button class="oro" onclick="abrirRepartoGrupo()">Cerrar y pagar</button><button class="cel" onclick="doCloseGroupOrder()">Yo invito</button></div>';
+}
+var repartoAddrId:any=null,repartoPhone='';
+async function abrirRepartoGrupo(){
+  // Quien entra por el link del grupo no pasó por el perfil: sin esto vería «guarda la
+  // dirección» teniendo direcciones guardadas.
+  if(!myAddresses.length){
+    try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
+  }
+  var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
+  repartoAddrId=conPin.length?conPin[0].id:null;
+  repartoPhone=cust&&cust.phone?String(cust.phone):'';
+  sndScreen='group_split';render();
+}
+function sGroupSplit(){
+  var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
+  var h='<div class="mgr fi"><button class="sal" onclick="sndScreen=\'group_order\';render()" aria-label="Volver">←</button>'+wmClaro()
+    +'<div class="tit"><em>Cerrar y pagar · #'+esc(groupCode||'')+'</em><b>¿DÓNDE LO<br>DEJAMOS?</b></div>'
+    +'<div class="aviso"><s>El envío sale de esta dirección y se parte entre todos. A cada uno le llega su parte para pagarla con Yape; tienen '+GROUP_SPLIT_MINUTES_CLIENT+' minutos. Lo que no se pague se cancela y el resto sale igual.</s></div>';
+  if(!conPin.length){
+    return h+'<div class="aviso"><b>Primero guarda la dirección marcándola en el mapa.</b></div>'
+      +'<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
+  }
+  h+='<div class="gente" role="radiogroup" aria-label="Dirección">'+conPin.map(function(a:any){
+    var on=repartoAddrId===a.id;
+    return'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>';
+  }).join('')+'</div>';
+  h+='<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="'+esc(repartoPhone)+'"></div>';
+  return h+'<div class="go sw-barra"><button class="oro solo" onclick="doSplitGroupOrder()">Repartir y cobrar a cada uno</button></div></div>';
+}
+var GROUP_SPLIT_MINUTES_CLIENT=20;
+async function doSplitGroupOrder(){
+  var a=myAddresses.find(function(x:any){return x.id===repartoAddrId;});
+  if(!a){showToast('Elige la dirección.');return;}
+  var tel=gv('grp-phone').trim()||repartoPhone;
+  busy=true;busyMsg='Repartiendo...';render();
+  try{
+    await api('split-group-order',{token:token,code:groupCode,address:a.address+(a.reference?' — '+a.reference:''),lat:a.lat,lon:a.lon,contactPhone:tel});
+    busy=false;sndScreen='group_order';render();
+    loadGroupOrder();startGroupPoll();
+  }catch(e:any){busy=false;render();showToast(e.message);}
+}
+// Las partes, una por persona. Cada una se paga con el mismo Yape de siempre: se abre la
+// pantalla de pedido enviado para ESA referencia, con su monto y su comprobante.
+function partesDelGrupoHTML(g:any):string{
+  var partes=g.partes||[];
+  var pagadas=partes.filter(function(p:any){return p.paid;}).length;
+  var vivas=partes.filter(function(p:any){return!p.cancelled;}).length;
+  var msLeft=g.splitDeadline?Date.parse(g.splitDeadline)-Date.now():0;
+  var h='<div class="gente"><div class="g esp"><k>'+pagadas+'</k><div class="t"><b>'+pagadas+' de '+vivas+' pagaron</b><s>'
+    +(g.status==='splitting'&&msLeft>0?('Quedan '+Math.ceil(msLeft/60000)+' min · lo que no se pague se cancela'):'Cada uno paga lo suyo')+'</s></div><p>—</p></div>';
+  h+=partes.map(function(p:any){
+    var der=p.cancelled?'<span class="est no">No pagó a tiempo</span>':p.paid?'<span class="est">Pagado</span>'
+      :(g.status==='splitting'?'<button class="pagar" onclick="pagarParteGrupo(\''+esc(p.ref)+'\','+p.total+')">Pagar</button>':'');
+    return'<div class="g"><k>'+esc((String(p.name||'').trim()[0]||'?').toUpperCase())+'</k><div class="t"><b>'+esc(p.name)+'</b><s>'+SOLES_TXT+pz(p.total)+' · envío '+d2(p.envio)+'</s></div>'+der+'</div>';
+  }).join('');
+  return h+'</div>';
+}
+function pagarParteGrupo(ref:string,total:number){
+  window._lRef=ref;window._lTot=total;window._lPayMethod='yape';window._lPendingPayment=true;
+  window._lOrderCreatedAt=Date.now();window._lPoints=0;window._lVentana='';
+  receiptUploadState=null;
+  stopGroupPoll();sndScreen='o_sent';render();
 }
 
 function sOSig(){

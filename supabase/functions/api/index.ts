@@ -63,7 +63,7 @@ import {
 } from "./actions/problems.ts";
 import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
-  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder,
+  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
@@ -267,6 +267,8 @@ const ACTIONS: Record<string, (b: any) => Promise<unknown>> = {
   "add-group-item": actAddGroupItem,
   "cancel-group-order": actCancelGroupOrder,
   "close-group-order": actCloseGroupOrder,
+  "split-group-order": actSplitGroupOrder,
+  "expire-group-shares": actExpireGroupShares,
 };
 
 Deno.serve(async (req: Request) => {

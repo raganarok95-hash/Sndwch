@@ -13,7 +13,7 @@ import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from 
 import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
-import { organizerFreeSandwichApplies } from "./group.ts";
+import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled } from "./hours.ts";
@@ -50,7 +50,7 @@ async function alertLowStockCrossing(codes: string[], qtys: number[]): Promise<v
 // una reserva/pedido ya descontó stock real pero la operación termina fallando de
 // todos modos. Antes cada uno repetía el mismo try/catch con solo el texto del mensaje
 // de consola distinto (hallazgo de la auditoría de código).
-async function restockBestEffort(codes: string[], qtys: number[], context: string): Promise<void> {
+export async function restockBestEffort(codes: string[], qtys: number[], context: string): Promise<void> {
   if (!codes.length) return;
   try {
     await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
@@ -234,7 +234,7 @@ export function pointsFor(total: number, deliveryFee: number): number {
   return Math.round(total - (deliveryFee || 0));
 }
 
-type FinalizeOrderParams = {
+export type FinalizeOrderParams = {
   ref: string;
   phone: string | null;
   contactPhone: string;
@@ -479,7 +479,7 @@ function reportPurchaseToMeta(p: FinalizeOrderParams, cliente?: { ad_tracking_op
   });
 }
 
-async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
+export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ order: any; customer: any }> {
   // Rango del cliente (ver computeRankName/env.ts) al momento de ESTE pedido — se guarda
   // en el pedido en vez de calcularse al imprimir el ticket porque para cocina lo
   // relevante es "quién es este cliente ahora", no una consulta aparte cada vez que se
@@ -1942,6 +1942,15 @@ export async function actAdminOrders(b: any) {
 // otorgan los puntos (nunca antes), replicando la misma lógica de "puntos solo tras
 // pago confirmado" que usa actPlaceOrder para tarjeta/crédito/recompensa.
 async function confirmManualPayment(order: any) {
+  // Parte de un pedido grupal repartido: si con este pago ya pagaron todos, el grupo sale
+  // sin esperar al plazo. Va ANTES del return de abajo: las partes de los invitados no
+  // tienen teléfono de cliente, y justo esas son las que suelen pagarse al último.
+  try {
+    const gRow = order.id ? await sbGet("orders", `id=eq.${encodeURIComponent(order.id)}&select=group_code`) : [];
+    if (gRow[0]?.group_code) await cerrarGrupoSiTodosPagaron(gRow[0].group_code);
+  } catch (e) {
+    console.error("cerrarGrupoSiTodosPagaron", e);
+  }
   if (!order.customer_phone) return;
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(order.customer_phone)}`);
   if (!rows.length) return;
@@ -2401,7 +2410,7 @@ export async function actAdminReceiptUrl(b: any) {
 // un pago que nunca llega deja el pedido "vivo" para siempre y el inventario bloqueado.
 // Compartido entre la cancelación manual (admin) y la expiración automática de abajo —
 // re-deriva los ingredientes de cada línea del pedido y los devuelve al inventario.
-async function restockOrderItems(items: any): Promise<void> {
+export async function restockOrderItems(items: any): Promise<void> {
   if (!Array.isArray(items) || !items.length) return;
   const ingredients: string[] = [];
   for (const it of items) {

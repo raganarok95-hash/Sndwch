@@ -12,10 +12,10 @@ test('alguien sin cuenta se une por link y agrega su pedido', async ({ page }) =
   await stubWindowOpen(page);
   await page.goto(APP_FILE + '?group=ABC123');
   await page.waitForSelector('text=PEDIDO GRUPAL');
-  await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
+  await expect(page.getByText('Pedido grupal · #ABC123')).toBeVisible();
   // Countdown de 15 min (ventana corta a propósito, ver GROUP_ORDER_WINDOW_MINUTES) —
   // el mock expira en 1h así que alcanza a mostrar minutos de sobra sin acercarse a 0.
-  await expect(page.locator('text=CIERRA EN')).toBeVisible();
+  await expect(page.getByText(/les quedan \d+ minutos/i)).toBeVisible();
 
   await page.locator('#grp-name').fill('Beto');
   await page.getByRole('button', { name: 'AGREGAR' }).first().click();
@@ -46,13 +46,13 @@ test('el organizador también puede agregar su propio sándwich al pedido grupal
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
-  await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
+  await expect(page.getByText('Pedido grupal · #ABC123')).toBeVisible();
 
   // Antes esta sección (agregar mi pedido) solo aparecía para quien NO organizaba —
   // el organizador solo veía CERRAR Y PAGAR / CANCELAR y nunca podía sumar su propio
   // sándwich. El nombre viene pre-rellenado con el de su cuenta.
   await expect(page.locator('#grp-name')).toHaveValue('Ana Cliente');
-  await expect(page.getByRole('button', { name: 'CERRAR Y PAGAR //' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /yo invito/i })).toBeVisible();
   await page.getByRole('button', { name: 'AGREGAR' }).first().click();
 
   await expect(page.locator('text=¡Listo! Tu pedido se agregó.')).toBeVisible({ timeout: 10000 });
@@ -91,11 +91,11 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
 
   await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
   await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
-  await expect(page.locator('text=Organiza Ana Cliente')).toBeVisible();
+  await expect(page.getByText('Pedido grupal · #ABC123')).toBeVisible();
   await expect(page.locator('text=Beto')).toBeVisible();
   await expect(page.locator('text=Caro')).toBeVisible();
 
-  await page.getByRole('button', { name: 'CERRAR Y PAGAR //' }).click();
+  await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
@@ -136,7 +136,6 @@ test('alguien sin cuenta agrega solo una bebida al pedido grupal, sin sándwich'
   await stubWindowOpen(page);
   await page.goto(APP_FILE + '?group=ABC123');
   await page.waitForSelector('text=PEDIDO GRUPAL');
-  await expect(page.locator('text=BEBIDAS Y SIDES //')).toBeVisible();
 
   await page.locator('#grp-name').fill('Beto');
   await page.getByRole('button', { name: 'AGREGAR' }).last().click();

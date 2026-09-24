@@ -42,7 +42,7 @@ test('un grupo vencido todavía se puede pagar, y dice por qué no hubo gratis',
   await expect(page.locator('text=faltaron 2')).toBeVisible();
 
   // El botón es lo que de verdad se había perdido.
-  const pagar = page.getByRole('button', { name: /PAGAR CON LOS QUE HAY/i });
+  const pagar = page.getByRole('button', { name: /yo invito/i });
   await expect(pagar).toBeVisible();
   await pagar.click();
   // Cerrar y pagar siempre pasa por una confirmación — no se cobra un grupo de varias
@@ -64,5 +64,5 @@ test('un grupo ya pagado no ofrece pagar de nuevo', async ({ page }) => {
   await page.waitForSelector('text=PEDIDO GRUPAL');
 
   await expect(page.locator('text=Este pedido grupal ya se pagó')).toBeVisible();
-  await expect(page.getByRole('button', { name: /PAGAR CON LOS QUE HAY/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /yo invito/i })).toHaveCount(0);
 });

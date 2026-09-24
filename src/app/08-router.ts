@@ -613,6 +613,7 @@ function renderScreen(){
     case'gift_card':   h=TARJETA_REGALO_ACTIVA?sGiftCard():(sndScreen='p_home',sPHome());break;
     case'weekly_plan': h=PLAN_SEMANAL_ACTIVO?sWeeklyPlan():(sndScreen='p_home',sPHome());break;
     case'group_order': h=sGroupOrder();break;
+    case'group_split': h=sGroupSplit();break;
     case'p_addresses': h=sPAddresses();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;
     // ── LAS 34 PANTALLAS DEL PANEL YA NO ESTÁN ESCRITAS ACÁ ────────────────────────

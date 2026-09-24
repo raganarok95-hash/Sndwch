@@ -127,7 +127,9 @@ function renderOverlays(){
   //
   // p_problema (35 · Algo salió mal): la pantalla ES el canal para decir qué pasó, y su
   // maqueta aprobada no lleva la burbuja; encima le tapaba la hora de respuesta prometida.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'){
+  // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
+  // aprobada la burbuja caía encima del total y de la barra de cierre.
+  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }

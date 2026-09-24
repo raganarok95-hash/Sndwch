@@ -45,6 +45,11 @@ en la base real. Las cifras y nombres de muestra no cuentan: salen del código.
    muestran los anteriores. La historia sí existe (la tabla nunca borra filas); la fecha de
    fin y las pistas hay que agregarlas y cargarlas desde el panel.
 5. **Pedido grupal: «tu parte por ahora», «el envío se parte entre todos» y «Yo invito»**.
+   ✅ **Hecho el 2026-09-24** (el dueño eligió «cada uno paga lo suyo»): «Cerrar y pagar»
+   pide la dirección con pin y crea un pedido Yape por persona con su parte del envío
+   partida en céntimos (`split-group-order`, `repartirGrupo`); lo que no se paga en 20
+   minutos se cancela y repone stock (`expire-group-shares`). «Yo invito» es el cierre de
+   siempre. El enlace muestra el dominio real, no `snd.pe`. Lo que sigue es el texto previo:
    Hoy paga todo quien organiza, en un solo cobro. «Tu parte» y el envío repartido se pueden
    **mostrar**; que cada uno pague lo suyo no existe. Y los dos botones («Cerrar y pagar» /
    «Yo invito») hoy hacen lo mismo. Además, el enlace `snd.pe/g/…` no es el dominio real
