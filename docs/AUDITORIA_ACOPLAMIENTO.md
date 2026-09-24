@@ -62,3 +62,45 @@ lados que comparar.
 7. **Los documentos**: `RECETARIO.md` sin plancha y sin productos retirados. Regla nueva: una
    decisión del dueño entra al código solo si está anotada en `docs/DECISIONES.md` con su fecha;
    una frase en otro documento no es una decisión.
+
+---
+
+# Segunda pasada: otros defectos y problemas futuros (2026-09-24)
+
+Pedido del dueño: *«¿qué más puedes encontrar de errores o futuros problemas de código?»*. Se
+buscaron las clases que ya costaron caro en este proyecto: errores que se tragan en silencio,
+escrituras que no son atómicas, dinero fuera del módulo de dinero, fechas en la zona equivocada,
+permisos, validación y código muerto.
+
+## Defectos vivos (van primero)
+
+| # | Qué | Dónde | Qué pasa |
+|---|---|---|---|
+| A1 | **Registrar una tanda pisa el stock** | `actAdminInventoryRestock` (admin.ts) | Lee el stock, suma la tanda y escribe el total. Un pedido que reserva entre la lectura y la escritura queda borrado del stock: se vende lo que ya no hay. `restock_inventory` suma bien pero no anota la fecha de la tanda ni crea el insumo, por eso no se usa ahí. |
+| A2 | **Vincular el pedido de invitado al crear la cuenta** no pasa por `aplicar_pedido_a_la_cuenta` | `actRegister` (auth.ts) | Tres pasos sin transacción (cuenta, historial, bono), con la regla del referido copiada y el mismo defecto de clave foránea que el paso 5 arregló en crear y confirmar: si quien invitó borró su cuenta, falla a medias. |
+| A3 | **Cancelar un pedido pagado** (cliente y dueño) devuelve crédito y quita puntos en llamadas sueltas | `actCancelMyOrder`, cancelación admin (orders.ts) | Estado, cuenta e historial en pasos separados: si uno falla, el pedido queda cancelado con el saldo sin devolver, o devuelto sin anotar. Es lo único del dinero de la cuenta que no quedó en una transacción. |
+| A4 | **«Cerrar sesión en todos los dispositivos» se traga el error** | `doLogoutEverywhere` (07-*) | Si la llamada falla, cierra la sesión local y el cliente cree que cerró todas: un teléfono perdido sigue con la sesión abierta. |
+| A5 | **La hora programada se interpreta en la zona del teléfono** | `schedInputValue`/`effectiveOrderDate` (01-*) | Las horas son de la tienda en Lima, pero se arman con `setHours` y `new Date("AAAA-MM-DDTHH:mm")`, que usan la zona del dispositivo. Quien pide desde un teléfono con otra zona (un familiar desde el extranjero) programa corrido por la diferencia. |
+| A6 | **El correo al cliente usa la paleta retirada** | `email.ts` (21 usos de `#A8C8B0`/`#1E3932`…) | `check:colores` no mira ese archivo. |
+
+## Problemas futuros (no rompen hoy)
+
+- **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida
+  no tiene tipo. Se cierran a medida que cada pantalla migra a la base nueva.
+- **Comentario desactualizado** en orders.ts sobre «dos versiones vivas» de
+  `finalize_order_customer_update`: el esquema real tiene una sola. Engaña al próximo que lo lea.
+- **Tres exportaciones sin uso** (`BUSINESS_CITY`, `Constants`, `sbRpc`).
+
+## Lo que se revisó y está bien
+
+- Todas las acciones del panel exigen sesión de dueño (`requireAdmin` o secreto de cron).
+- El dinero fuera de `dinero.ts` es solo formato de montos y reportes, no cobros.
+- De los 40 `catch` vacíos del cliente, 37 son del navegador (almacenamiento local, service
+  worker, vibración) donde ignorar el error es correcto; los 3 que tragan una llamada al servidor
+  son A4 y dos recargas de direcciones que degradan a lista vacía.
+- No quedan funciones de la base con varias versiones vivas.
+
+## Orden de trabajo
+
+A1 → A6 primero (defectos vivos, cada uno con su prueba vista fallar), después el plan de la
+primera pasada empezando por la carta única.
